@@ -203,22 +203,25 @@ Lunch, then. Staff drift off their desks, Jun included. They only go the once.
 # speaker:npc
 Seen what you wanted? Once they've gone home, it's just Zainab and Graham.
 + [Yes, call it a day.]
-    ~ act_evening = true
-    #set_global:act_evening:true
-    # speaker:npc
-    Right. Home time for nearly everyone.
-    # speaker:npc
-    Zainab will head for the kitchen coffee, and Graham will show you the log.
-    -> hub
+    -> lever_day_go
 + [Not yet.]
     # speaker:npc
     Take your time.
     -> hub
 
+=== lever_day_go ===
+~ act_evening = true
+#set_global:act_evening:true
+# speaker:npc
+Right. Home time for nearly everyone.
+# speaker:npc
+Zainab will head for the kitchen coffee, and Graham will show you the log.
+-> hub
+
 === lever_day_refused ===
 + [Skip them and call it a day anyway.]
     ~ skip_day = true
-    -> lever_day_end
+    -> lever_day_go
 + [Not yet.]
     # speaker:npc
     Take your time.
@@ -242,7 +245,7 @@ Good. What did the file server say?
 
 === terminal_ticked ===
 # speaker:npc
-It prints like a real console, with the scan as a table, but the products and names are made up.
+The Terminal prints like a real console, with the scan as a table, but the products and names are made up.
 # speaker:npc
 Switch to Panels and back again. The Terminal keeps its log for as long as the view is open.
 #complete_task:terminal_view

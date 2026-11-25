@@ -57,7 +57,7 @@ Regenerated after the tour round 1 fixes from `ink/ama_owusu.ink` (every `# spea
 | 47 | ink terminal_talk | That's the banner. On a real network, that's what you'd look up before you guess. | 15 |
 | 48 | ink terminal_talk | Same findings, same names. The Terminal shows the addresses and banners the panels tidy away. | 15 |
 | 49 | ink terminal_talk | Try it, then tell me. | 5 |
-| 50 | ink terminal_ticked | It prints like a real console, with the scan as a table, but the products and names are made up. | 20 |
+| 50 | ink terminal_ticked | The Terminal prints like a real console, with the scan as a table, but the products and names are made up. | 21 |
 | 51 | ink terminal_ticked | Switch to Panels and back again. The Terminal keeps its log for as long as the view is open. | 19 |
 | 52 | ink recap | Which part? | 2 |
 | 53 | ink recap | Right. | 1 |
@@ -79,7 +79,7 @@ Regenerated after the tour round 1 fixes from `ink/ama_owusu.ink` (every `# spea
 | 69 | bark network_foothold_gained:hotdesk_jack | You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network. | 23 |
 | 70 | bark network_device_unplugged:hotdesk_jack | Unplugging ended every session that ran through the box. Your keyring keeps what you found. | 15 |
 | 71 | bark global_variable_changed:printer_off | Printer's off. It won't answer on the network now. | 9 |
-| 72 | bark network_foothold_gained:kitchen_jack | That works too. Nobody's watching the kitchen port. The box is your foothold, so anything it can reach, you can look at. Now sweep the network. | 26 |
+| 72 | bark network_foothold_gained:kitchen_jack | That works too. The box is your foothold, so anything it can reach, you can look at. Now sweep the network. | 21 |
 | 73 | bark global_variable_changed:sweep_done | Those are the machines that answered. One spare port showed you every PC, the printer, a camera and a file share. Scan the printer next. | 25 |
 | 74 | bark global_variable_changed:scan_printer_done | The scan lists what the printer offers, each with its product and version. The admin page is the one to check. | 21 |
 | 75 | bark global_variable_changed:confirm_both_done | Two reports that looked the same. Only testing showed which was real and why the other was a false alarm. There's a technique card in the printer cupboard. | 28 |
@@ -293,3 +293,7 @@ New (Ama): "If you'd rather not wait, the kitchen has a spare port too, and nobo
 Cut (Ama): "Anyone still at the hot desk port when Jun comes back gets caught."; "Same findings, same names, printed the way a console prints them. Its scan came back as a table, lined up in columns."
 
 Longest line 28 words. No line prints a variable or carries a stage direction.
+
+## Final line edits before voicing (2026-11-25, from TOUR_REVIEW_R2)
+
+Changed (Ama): terminal_ticked now opens "The Terminal prints like a real console, ..." (was "It prints ..."); the kitchen plug-in bark is "That works too. The box is your foothold, so anything it can reach, you can look at. Now sweep the network." (cut "Nobody's watching the kitchen port."). Routing only, no line changed: the skip-day choice and the yes choice both divert to the new knot `lever_day_go`. The Ama table above is current.
