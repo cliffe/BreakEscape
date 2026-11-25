@@ -63,7 +63,7 @@ module ValidateOfficeLife
   # conversation, inventory, scripted patrol), so never a V5 trigger.
   OFFICE_LIFE_EVENT_EXCLUSIONS = %w[
     npc_ko npc_hidden npc_attacked npc_became_hostile npc_hostile_changed npc_hostile_state_changed
-    npc_influence_changed npc_items_changed npc_reported npc_arrived npc_used_object npc_used_object_done
+    npc_influence_changed npc_items_changed npc_reported npc_arrived npc_left npc_used_object npc_used_object_done
     item_picked_up item_unlocked item_consumed item_removed_from_scene
   ].freeze
 
