@@ -39,7 +39,15 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 
 `--access` prints each session with its stored `access` and its computed level word `level admin`, `level user`, `level none` (`level error` if the work raised). `--ops-log` prints the `priv_audit` rows and ends with `ops log OK`.
 
-**The leak check needs each keyboard sign-in named.** The capture holds neither the request body nor a PC id in a keyboard sign-in answer (a remote sign-in carries its PC's host label, so it needs nothing). Where more than one PC admits the account
+**The leak check.** The recorder tags each sign-in, sign-out and lock row with its PC, so a new run is checked with no names:
+
+```bash
+env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
+```
+
+It exits 2 if you give `--signin` or `--logout` with a tagged capture. Give every capture file of the game, oldest first. `--resume` stays available for a session that survived a power cut (no tag reaches it).
+
+**Checking an older capture (made before recorder 1.0.21, no tags): `--untagged`, with each keyboard sign-in named.** The capture then holds neither the request body nor a PC id in a keyboard sign-in answer (a remote sign-in carries its PC's host label, so it needs nothing). Where more than one PC admits the account
 (here every sign-in PC admits several accounts) an unnamed keyboard sign-in earns nothing, and the check then reports the administrator's `access` and the owner's items as leaks (these are the check failing closed, not a game finding).
 List the sign-ins and sign-outs of the run, oldest first, with the order each has among its kind (a remote sign-in is marked and needs no entry):
 
@@ -62,7 +70,7 @@ for f in sys.argv[1:]:
 Then give every KEYBOARD line to the check, with the PC you signed in at (`bay_pc`, `store_pc`, `hot_desk`, `desk_a`, `desk_b` or `lab_pc`; the beats say where), after the game id and before the files. `n` counts EVERY successful sign-in answer of that account in the log, remote and relay ones included: in a run where Adel signs in at the keyboard, remotely with the token and again at the keyboard, the keyboard ones are `adel#1` and `adel#3`, not 1 and 2 (the printout above shows which). Name every keyboard sign-in, an ordinary account's too, at the PC it was really at. Example for a run with Uma's and Adel's keyboard sign-ins at `bay_pc`:
 
 ```bash
-env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> \
+env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb --untagged <game_id> \
   --signin uma@bay_pc#1 --signin adel@bay_pc#1 --signin adel@bay_pc#2 --signin adel@bay_pc#5 \
   --logout adel@store_pc#5 \
   $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
@@ -244,7 +252,7 @@ Rows 11 to 14 of section 7 of the brief. The scenario adds the room `it_room` (s
 
 `{"cmd":"sync"}`, the leak check over every capture file, `verify-run.rb <game_id> --access` and `--ops-log` as two commands.
 - No answer holds the key `admin` under an NPC, the administrator's password (outside the note in `store`), or Olu's items before beat 2. `--ops-log` ends `ops log OK` (16 rows in game 173). `--access` in game 173 ended with `bay_pc` = ravi (password, level admin), `desk_b` = deskadmin (level admin), `lab_pc` = adel (level admin), `store_pc` = uma (credential, level user).
-- The leak check names every keyboard sign-in. Game 173's command (your numbers follow your own listing): `--signin uma@bay_pc#1 --signin adel@bay_pc#1 --signin adel@bay_pc#2 --signin adel@bay_pc#6 --signin adel@bay_pc#7 --signin uma@bay_pc#4 --signin adel@bay_pc#8 --signin uma@hot_desk#5 --signin adel@hot_desk#9 --signin sam@hot_desk#1 --signin adel@hot_desk#10 --signin adel@bay_pc#11 --signin adel@desk_a#13 --signin deskadmin@desk_b#1 --signin adel@lab_pc#14 --signin ravi@hot_desk#1 --signin ravi@bay_pc#2`, with `--logout` entries for each sign-out made while another PC held an administrator session (`adel@store_pc#6`, `adel@bay_pc#7`, `uma@hot_desk#8`, `adel@hot_desk#9`, `adel@bay_pc#10`, `adel@hot_desk#11`, `ravi@hot_desk#12`, `adel@desk_a#13`, `adel@bay_pc#14`). That run gave three findings, all about what an administrator at `bay_pc` is meant to see (the profile of an account cached at that PC, "Uma to do.txt", beat 2) or the audit row of the stick override: these are reported to the scanner side.
+- A new run's leak check takes no names (the tags place every sign-in and sign-out). For an older untagged capture, game 173's command (your numbers follow your own listing) was `--untagged` with `--signin uma@bay_pc#1 --signin adel@bay_pc#1 --signin adel@bay_pc#2 --signin adel@bay_pc#6 --signin adel@bay_pc#7 --signin uma@bay_pc#4 --signin adel@bay_pc#8 --signin uma@hot_desk#5 --signin adel@hot_desk#9 --signin sam@hot_desk#1 --signin adel@hot_desk#10 --signin adel@bay_pc#11 --signin adel@desk_a#13 --signin deskadmin@desk_b#1 --signin adel@lab_pc#14 --signin ravi@hot_desk#1 --signin ravi@bay_pc#2`, with `--logout` entries for each sign-out made while another PC held an administrator session (`adel@store_pc#6`, `adel@bay_pc#7`, `uma@hot_desk#8`, `adel@hot_desk#9`, `adel@bay_pc#10`, `adel@hot_desk#11`, `ravi@hot_desk#12`, `adel@desk_a#13`, `adel@bay_pc#14`). That run gave three findings, all about what an administrator at `bay_pc` is meant to see (the profile of an account cached at that PC, "Uma to do.txt", beat 2) or the audit row of the stick override: these are reported to the scanner side.
 
 
 ## Earned secrets

@@ -36,6 +36,8 @@ Helpers for driving the game through the dev-only `window.__test` bridge. See `d
 
   The script prints `HEAD_START=...` with what it applied. Confirm with `verify-run.rb <game_id>` (current room, unlocked rooms, inventory) or, in the browser, `brief` / `state` after `bootstrap`. Not covered: NPC conversation state, ink variables, door states beyond unlocked rooms. Set the globals the scenario's own gates read, and check the objectives the run starts with.
 
+- `access-leak-check.rb` — the leak check over `--capture-responses` files (see its header). A capture recorded by 1.0.21 or later carries `pc` and `hash` tags and takes no `--signin` or `--logout`; a capture from before that holds none and needs `--untagged` (with its `--signin`/`--logout` entries); `--resume` works in both.
+
 - `session-start.sh` / `cmd.sh` / `session-stop.sh` — keep one browser open across many tool calls and drive it a command at a time.
 
   ```bash

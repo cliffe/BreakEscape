@@ -27,8 +27,15 @@ require_relative '../../../lib/break_escape/lock_step_model' unless defined?(Bre
 #
 # Limits that remain, stated exactly:
 #   - `pcId` is not on the PC form's cancel and waiting-prompt answers (NOT decided for this stage): in a scenario with both PC steps and
-#     lock steps, a PC push step open, an echo-less cancel on mfa/approve or waiting prompt on mfa/prompt reads as the PC's, because it
-#     is the same bytes as a lock's with its echo dropped (R1-SCANNER8 narrowed it to a PC step of a kind that route serves);
+#     lock steps, in an UNTAGGED capture a PC push step open, an echo-less cancel on mfa/approve or waiting prompt on mfa/prompt reads as
+#     the PC's, because it is the same bytes as a lock's with its echo dropped (R1-SCANNER8 narrowed it to a PC step of a kind that route
+#     serves). In a TAGGED capture (P11, hardening) the row's `pc` tag settles it: the answer is the PC's only when the tag names a PC
+#     with an open step of a kind the route serves, and a `null` tag is never the PC's, so an echo-less lock-form answer is a finding;
+#   - K1 (route rooms): the server marks the GET room and door-open answers of an unpromoted route room `routeRoom: true`, and the rules
+#     then treat the room as shut. It re-opens only by a door open that proves it, or a 200 object unlock whose echo names a non-door
+#     subject of exactly that room (not a takeable or needsTag one). Without the key (a server that does not send it) the reader is inert.
+#     Residual: a promotion that leaves no such answer (`viaPass`, or an ungated object unlock) keeps the room shut here, so a later
+#     gate in it is reported (fails closed);
 #   - an open of a lock whose answer carries no contents and no room data (an empty gated lock) cannot be told, without its echo, from
 #     the open of an ordinary lock: an echo-less one is not reported;
 #   - a lock inside a room that has not opened (gated or ordinary, other than the start room) or inside a closed gated container is

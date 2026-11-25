@@ -182,20 +182,26 @@ require_relative 'helpdesk_leak_rules'
 # keyring) for an account the scenario marks `creds.admin: true` and that PC admits earns `admin:<pc id>`. The PC is named by
 # the answer's `host` label (a remote sign-in; a label that names no PC earns nothing and never falls through to a guess), else by
 # the one PC that admits the account. A browser capture holds neither the request body nor a PC id in a keyboard sign-in
-# answer (no recorder tags it), so where more than one PC admits the account nothing is earned (fail closed) and
-# `scan(lines, signins: ["<account id>@<pc id>#<n>"])` (`access-leak-check.rb --signin`) names the PC of ONE sign-in: the
+# answer. In a TAGGED capture (recorder 1.0.21 and later) the row's own `pc` tag names the PC the request was about, and the
+# sign-in is placed there when that PC admits the account (a tag at a PC that does not admit it places nothing and is an `ops_tag`
+# finding; a `null` tag places nothing). In an UNTAGGED capture (made before 1.0.21; `scan(..., tags: :absent)`, CLI
+# `--untagged`), where more than one PC admits the account nothing is earned (fail closed) and
+# `scan(lines, signins: ["<account id>@<pc id>#<n>"])` (`access-leak-check.rb --untagged --signin`) names the PC of ONE sign-in: the
 # account's n-th successful POST /login answer in the log (or `<account id>@<pc id>@<row time>`, the row's `t`), credited from
-# that row only and for that account only. `ops_steps` cannot name an admin session.
+# that row only and for that account only. A tagged capture takes no `signins:` or `logouts:` (ArgumentError; the CLI exits 2).
+# `ops_steps` cannot name an admin session.
 # Session ends take the step and the account back (R2-C2): a later sign-in at that PC, a successful POST /lock_session (no
 # `pcId` ends every PC), a PC in an answer's `endedPcIds` (a displacing grant, claim or hand-back that names it), a 403 desktop
 # answer (off, not_responding, expired, no_session), a bootstrap whose `sessions` map lacks the PC or holds it locked, for
-# another account, or WITHOUT `access: "admin"` (the step only; R3-C3), and a successful POST /logout (every PC: the answer does
-# not say which, unless a `logouts: ["<account id>@<pc id>#<n>" | "<account id>@<pc id>@<row time>"]` entry (`--logout`) names that one
+# another account, or WITHOUT `access: "admin"` (the step only; R3-C3), and a successful POST /logout (a tagged run: the row's `pc`
+# tag names the PC, and a `null` tag ends every PC; an untagged run: every PC, the answer does
+# not say which, unless a `logouts: ["<account id>@<pc id>#<n>" | "<account id>@<pc id>@<row time>"]` entry (`--untagged --logout`) names that one
 # row's PC and the run holds that account there: it then ends that PC only; an entry that does not hold is unused, exit 2). Also, from data already in the log (R3 check 2): a token sign-in's `expiresInS` plus its row time is a deadline
 # after which the step and account are gone; a `GET /network` host row of a sign-in PC with no `session` (step and account) or a
 # `session` without `access: "admin"` (step), and a 200 desktop answer with no session, another account's, or no admin access, take
 # it back. A 200 answer never RESTORES a step. The one way back after a power cut (the session survives it: the desktop opens with
-# no sign-in) is `resumes: ["<account id>@<pc id>@<row time>"]` (`--resume`), ONE 200 desktop row after a 403 `off` or
+# no sign-in) is `resumes: ["<account id>@<pc id>@<row time>"]` (`--resume`, still needed in both modes: no tag reaches a session
+# that survived a power cut), ONE 200 desktop row after a 403 `off` or
 # `not_responding` at that PC, or after ONE answer that showed the held account's session at that PC without `access: "admin"` (a
 # bootstrap, a `GET /network` host row of that username, a 200 desktop row: what an off PC shows; a real client sends no request while
 # the PC is off, so no 403 exists), whose session is the account held then, with no other end in between (R3-B1). Entries that
@@ -239,6 +245,11 @@ require_relative 'helpdesk_leak_rules'
 #   account itself, or, in the same answer, another account with an equal password and a hash record of its own), the
 #   entry being `<npc>.cracked` with the keys of the server's row and that account's own password. The password is
 #   allowed at that one path and nowhere else. The earned set starts empty each scan and grows only from such answers.
+# - per record, in a TAGGED capture (hardening H1 to H4): a POST /crack row's `hash` tag names the record. Running credits, the
+#   run-order flags (running seen, no-match seen, infeasible seen) and the start of the current run are kept per hash id, and a
+#   salted grant spends only its own record's credit and only once that run's wait (`readyInSeconds`, less a 2-second tolerance,
+#   from the row time of its first `running` row) has passed. A row whose tag is `null` earns nothing and changes no record's
+#   state. An UNTAGGED capture keeps the older run-wide credits and flags (per account, not per record).
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
@@ -438,7 +449,8 @@ class AccessLeakScanner
     tag_analysis(files, mode)[:problem]
   end
 
-  # Kept only until the CLI calls tag_problem itself (U5): the `login` check, and every other refusal, in :auto mode.
+  # Thin alias of `tag_problem(files, :auto)` (every refusal, either mode read as it is). The CLI calls `tag_problem` with its own
+  # mode; this stays only for older callers. A top-level `login` key is refused (the recorder writes `pc`, never `login`).
   def self.hand_tag_problem(files)
     tag_problem(files, :auto)
   end
@@ -4523,15 +4535,16 @@ class AccessLeakScanner
   #     a pass answer needs one open step for that account (named by an earlier `mfaRequired` answer, narrowed by the answer's
   #     host label), the route that matches its kind (verify for a code, prompt with approvedBy owner for push, approve
   #     with approvedBy player and a taken phone for push and number matching) and a status of 200. A login success needs
-  #     the PC to be named (the row's `login` tag or the answer's host label) or every PC that could be it to be free of a
+  #     the PC to be named (the row's `pc` tag, or in an untagged capture the answer's host label or a `--signin` name) or every PC that could be it to be free of a
   #     step; an unnamed answer that could be at a PC that owes a step is a finding. The way in is exempt only when the
   #     answer says it was a claim, a token or an assist invite (relay) the scenario's registry holds for that account at a PC the
   #     answer could be about (a technique session only in the bootstrap `sessions`; `relay: true` alone, a saved connection
   #     and a technique answer on a sign-in are not exempt); an account with creds.mfa false is exempt. An account's own locked
   #     session is unlocked with no step (as the server does) once per lock, after a pass answer earned that session and a 200
   #     lock_session answer locked it. Every successful sign-in answer, a logout and an `endedPcIds` entry take the earned
-  #     session back. A sign-in answer the capture cannot place at a PC (the recorder writes no `login` tag) is named
-  #     like the privilege rules' ones: `--signin <account>@<pc>#<n>` (or `@<row time>`) names the PC of ONE sign-in success,
+  #     session back. In a tagged capture the sign-in row's `pc` tag places it (and a sign-out or lock row's tag
+  #     names the PC it ends; a tag the answer's `pcId` contradicts is an `ops_tag` finding). A sign-in answer an UNTAGGED capture
+  #     cannot place at a PC is named like the privilege rules' ones (`--untagged` only): `--signin <account>@<pc>#<n>` (or `@<row time>`) names the PC of ONE sign-in success,
   #     `--logout` that of ONE sign-out; the PC must admit the account, a name is used by one row only, a name that a later
   #     answer refutes, that no desktop row confirms or that matches no row exits 2, and a named sign-in at a step PC still needs the step or a real unlock.
   #     (`--resume` has nothing to restore here: no answer ends an earned session by a power cut.)
