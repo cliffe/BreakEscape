@@ -3114,7 +3114,7 @@
     },
     "ca12_visitor_tailgater": {
       "sourceHash": "75d2d83d89e5c88c2460e655af71500cf86c8d6d7374c32717df50b551e0c432",
-      "validatorExit": 1,
+      "validatorExit": 0,
       "validator": [
         "Validating scenario: <scenarios>/ca12_visitor_tailgater/scenario.json.erb",
         "Using schema: <root>/scripts/scenario-schema.json",
@@ -3164,7 +3164,7 @@
         "Checking for common issues...",
         "Checking recommended fields...",
         "✓ Schema validation passed!",
-        "⚠️ Found 26 issue(s) and suggestion(s):",
+        "⚠️ Found 24 issue(s) and suggestion(s):",
         "",
         "1. ⚠️ WARNING: 'rooms/lobby/npcs[1]/eventMappings[1]' is a person-chat cutscene but has no 'background' property. Person-chat cutscenes should have a background image for better visual presentation (e.g., 'assets/backgrounds/hq1.png')",
         "2. ⚠️ WARNING: 'rooms/lobby/npcs[1]/eventMappings[3]' is a person-chat cutscene but has no 'background' property. Person-chat cutscenes should have a background image for better visual presentation (e.g., 'assets/backgrounds/hq1.png')",
@@ -3190,8 +3190,6 @@
         "22. 💡 SUGGESTION: global 'ca12_novest_hint' is set (/timers[6]/setGlobal) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).",
         "23. 💡 SUGGESTION: global 'kit_attack_done' is set (/rooms/training_room/npcs[0]/eventMappings[3]/setGlobal) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).",
         "24. 💡 SUGGESTION: global 'kit_caught' is set (/rooms/training_room/npcs[0]/eventMappings[5]/setGlobal) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).",
-        "25. ❌ ERROR: SOCIAL: schema: The property '#/social/awarenessEpisode/world' contains additional properties [\"holdUntil\", \"holdMaxMs\"] outside of the schema when none are allowed",
-        "26. ❌ ERROR: SOCIAL: schema: The property '#/social/awarenessEpisode/strings' contains additional properties [\"flipDefenderLineByGlobal\"] outside of the schema when none are allowed",
         "",
         "ℹ Office-life sync budget (V8): workstation globals 3/24; office-life onceOnly mappings 2/10; small keys 5/64",
         "",
@@ -3203,7 +3201,7 @@
         "ℹ Desk boxes: legacy in 2 map(s) (room_aw_merrin_lobby, room_aw_merrin_sallow); footprint in 0",
         "",
         "✓ Validation complete!",
-        "Result: 2 errors (0 known), 6 warnings",
+        "Result: 0 errors (0 known), 6 warnings",
         ""
       ],
       "graphExit": 0,

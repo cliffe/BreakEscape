@@ -17,6 +17,7 @@
 # what binds the set to the episode: ids, counts, the done global, the host NPC and the carry-over.
 require_relative '../../lib/break_escape/scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
 require_relative '../../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
+require_relative '../../lib/break_escape/wearable_model' unless defined?(BreakEscape::WearableModel)
 
 module ValidateSocial
   module Awareness
@@ -189,7 +190,7 @@ module ValidateSocial
 
     # ---- office kit: check and annual shells carry none --------------------------
 
-    KIT_KEYS = %w[officePresets npcThoughts stepAway].freeze
+    KIT_KEYS = %w[officePresets npcThoughts stepAway stepAways].freeze
     ANNUAL_ID = /(^|_)annual(_|$)/.freeze
     KIT_NAME = /(?<![A-Za-z0-9])kit_[A-Za-z0-9]/.freeze
 
@@ -449,8 +450,70 @@ module ValidateSocial
         elsif Mail.blank?(c['talk'])
           issues << warn_("world.costume.talk is missing; the talk portrait is derived as assets/characters/#{c['sprite']}_talk.png, which must exist")
         end
+        if BreakEscape::WearableModel.wearable_items(ctx.json).any?
+          issues << warn_('world.costume is set and the scenario has a wearable item; removeCostume restores the chosen avatar, not the wearable, so the sprite and the worn global can disagree. Use the wearable instead of a world costume')
+        end
+      end
+      issues.concat(world_hold_checks(ctx, world))
+      issues
+    end
+
+    # E2 (the hold): holdUntil (a global) with a positive holdMaxMs keeps the learner in `room`
+    # after the call. worldFor drops holdUntil when the cap is not a positive finite number, so a
+    # mis-authored hold silently runs as no hold and leaves the beat's mappings armed.
+    HOLD_CAP_WARN_MS = 90_000
+
+    def self.world_hold_checks(ctx, world)
+      issues = []
+      has_until = world.key?('holdUntil')
+      has_cap = world.key?('holdMaxMs')
+      cap = world['holdMaxMs']
+      cap_ok = cap.is_a?(Numeric) && cap.positive?
+      if has_until
+        name = world['holdUntil']
+        if !name.is_a?(String) || name.strip.empty?
+          issues << err('awarenessEpisode.world.holdUntil must be a global name (string)')
+        else
+          unless ctx.all_globals.key?(name)
+            issues << err("awarenessEpisode.world.holdUntil \"#{name}\" is not a declared global")
+          end
+          if server_owned_globals(ctx).include?(name)
+            issues << err("awarenessEpisode.world.holdUntil \"#{name}\" is a server-owned global (worn, imported or credit); the client write of it would be refused on sync")
+          end
+        end
+        unless cap_ok
+          issues << err('awarenessEpisode.world.holdUntil needs a positive world.holdMaxMs (a hold with no cap could strand the learner)')
+        end
+      elsif has_cap
+        issues << warn_('awarenessEpisode.world.holdMaxMs has no effect without world.holdUntil')
+      end
+      if cap_ok && cap > HOLD_CAP_WARN_MS
+        issues << warn_('awarenessEpisode.world.holdMaxMs exceeds 90 s (rubric F2: no wait past 90 s without a prompt)')
       end
       issues
+    end
+
+    # Globals a client sync cannot write (mirrors Game#server_owned_global_name?): worn-costume
+    # globals, imported globals, the creditOnPass credit globals and se_captures.
+    def self.server_owned_globals(ctx)
+      names = BreakEscape::WearableModel.worn_globals(ctx.json).map(&:to_s)
+      names.concat(ctx.import_names.to_a)
+      names << 'se_captures'
+      rooms = ctx.json['rooms'].is_a?(Hash) ? ctx.json['rooms'] : {}
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+
+        room['doors'].each do |door|
+          credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+          next unless credit.is_a?(Hash)
+
+          credit.each_value do |block|
+            set = block.is_a?(Hash) ? block['setGlobal'] : nil
+            names.concat(set.keys.map(&:to_s)) if set.is_a?(Hash)
+          end
+        end
+      end
+      names.to_set
     end
 
     # ---- flipAftermath and stepLabels (ENG-01) ---------------------------------------
@@ -527,6 +590,7 @@ module ValidateSocial
         issues << err('strings.brief is empty; the brief stage would open on a blank panel')
       end
       issues.concat(flip_by_choice_checks(ctx, strings['flipDefenderLineByChoice'])) if strings.key?('flipDefenderLineByChoice')
+      issues.concat(flip_by_global_checks(ctx, strings['flipDefenderLineByGlobal'])) if strings.key?('flipDefenderLineByGlobal')
       issues.concat(brief_card_checks(strings))
       if strings.key?('teamLine')
         t = strings['teamLine']
@@ -601,6 +665,40 @@ module ValidateSocial
           end if ep['facilitated'] == true
         else
           issues << err('strings.facilitator must be an object { <stageId>: string, pause: string }')
+        end
+      end
+      issues
+    end
+
+    # E5: strings.flipDefenderLineByGlobal, an ordered list of { global, line, heading? }; the first
+    # entry whose global is truthy wins. An undeclared global is never set; a {var} placeholder is
+    # not filled in for these lines; a repeated global leaves the later entry unreachable.
+    def self.flip_by_global_checks(ctx, list)
+      unless list.is_a?(Array) && list.all? { |e| e.is_a?(Hash) }
+        return [err('strings.flipDefenderLineByGlobal must be a list of { global, line, heading? } objects')]
+      end
+
+      issues = []
+      seen = {}
+      list.each_with_index do |e, i|
+        at = "strings.flipDefenderLineByGlobal[#{i}]"
+        g = e['global']
+        if !g.is_a?(String) || g.strip.empty?
+          issues << err("#{at}.global must be a global name (string)")
+        else
+          issues << err("#{at}.global '#{g}' is not declared in globalVariables; nothing sets it, so the line would never show") unless ctx.all_globals.key?(g)
+          issues << warn_("#{at}.global '#{g}' repeats an earlier entry; the first entry for a global wins, so this one can never show") if seen[g]
+          seen[g] = true
+        end
+        %w[line heading].each do |k|
+          next if k == 'heading' && !e.key?(k)
+
+          v = e[k]
+          if !v.is_a?(String) || v.strip.empty?
+            issues << err("#{at}.#{k} is empty or not a string")
+          elsif v.match?(/\{\w+\}/)
+            issues << err("#{at}.#{k} has a {placeholder}; these lines are shown as written, so the braces would appear on screen")
+          end
         end
       end
       issues
@@ -855,6 +953,7 @@ module ValidateSocial
         end
       end
       issues.concat(step_away_checks(ep))
+      issues.concat(step_aways_global_checks(ctx, ep))
       issues.concat(step_away_look_up_checks(ctx, ep))
       issues
     end
@@ -863,6 +962,7 @@ module ValidateSocial
     # check mission, a twin (defendOnly) or a brief episode the runner ignores it, so authoring it
     # there is a mistake.
     def self.step_away_checks(ep)
+      return step_aways_checks(ep) if ep.key?('stepAways')
       return [] unless ep.key?('stepAway')
       v = ep['stepAway']
       return [err('stepAway must be true or false')] unless v == true || v == false
@@ -872,12 +972,90 @@ module ValidateSocial
       []
     end
 
+    PICKED_KEYS_RESERVED = %w[v variant stage done sent defend mistakeChoices drill concern privacy sandbox assistant defendProgress debriefSeen].freeze
+
+    # E3: stepAways is a list of beats (max 6), exclusive with stepAway. The engine (stepAwayBeats)
+    # drops, silently, any beat that breaks rules 2, 3, 5 or 6 below, so this is where the author sees it.
+    def self.step_aways_checks(ep)
+      list = ep['stepAways']
+      return [err('stepAways must be a list of beat objects { id, after, ... }')] unless list.is_a?(Array) && list.all? { |b| b.is_a?(Hash) }
+
+      issues = []
+      issues << err('stepAway and stepAways are both set; use one (stepAways wins, so stepAway would be ignored)') if ep.key?('stepAway')
+      issues << err('stepAways has more than 6 beats') if list.size > 6
+      if check_mission?(ep)
+        return issues << err('stepAways is set in a check mission; only a full episode takes the step-away panel')
+      end
+      unless ep['variant'] == 'full'
+        return issues << err("stepAways is set on a #{ep['variant'].inspect} episode; only a full episode takes the step-away panel")
+      end
+      stages = Array(ep['stages'])
+      ids = {}
+      afters = {}
+      keys = {}
+      list.each_with_index do |b, i|
+        at = "stepAways[#{i}]"
+        id = b['id']
+        after = b['after']
+        issues << err("#{at}.id must be a non-empty string") if !id.is_a?(String) || id.strip.empty?
+        issues << err("#{at}.id '#{id}' repeats an earlier beat") if id.is_a?(String) && ids[id]
+        ids[id] = true if id.is_a?(String)
+        pos = after.is_a?(String) ? stages.index(after) : nil
+        defend = after == 'defend'
+        if pos.nil?
+          issues << err("#{at}.after #{after.inspect} is not a stage of this episode (#{stages.join(', ')})")
+        elsif pos == stages.size - 1
+          issues << err("#{at}.after '#{after}' is the last stage; nothing follows it, so the beat would never show")
+        elsif defend && !(stages.index('debrief') && stages.index('debrief') > pos)
+          issues << err("#{at}.after is 'defend' but the debrief does not follow it; the beat after defend needs the debrief")
+        end
+        issues << err("#{at}.after '#{after}' already has a beat; each stage takes one") if after.is_a?(String) && afters[after]
+        afters[after] = true if after.is_a?(String)
+        pk = b['pickedKey'] || (defend ? 'stepAwayPicked' : 'worldBeatPicked')
+        if !pk.is_a?(String) || !pk.match?(/\A[A-Za-z][A-Za-z0-9]{0,39}\z/)
+          issues << err("#{at}.pickedKey #{pk.inspect} must be 1-40 letters and digits, starting with a letter")
+        elsif PICKED_KEYS_RESERVED.include?(pk) || pk.end_with?('Via')
+          issues << err("#{at}.pickedKey '#{pk}' is an episode-state key or ends in 'Via'; pick another name")
+        elsif keys[pk]
+          issues << err("#{at}.pickedKey '#{pk}' repeats an earlier beat; give each beat its own pickedKey")
+        end
+        keys[pk] = true
+        ev = b['event']
+        issues << err("#{at}.event is episode_step_away on a beat that is not after defend; only the post-defend beat may emit it") if ev == 'episode_step_away' && !defend
+        issues << err("#{at}.resumeOnDone is true with no doneGlobal; there is nothing to wait for") if b['resumeOnDone'] == true && Mail.blank?(b['doneGlobal'])
+        pre = b['strings'] || (defend ? 'stepAway' : 'worldBeat')
+        strings = ep['strings'].is_a?(Hash) ? ep['strings'] : {}
+        issues << warn_("#{at}: strings.#{pre} has no text; the engine falls back to its generic step-away copy") unless strings[pre].is_a?(String) && !strings[pre].strip.empty?
+      end
+      issues
+    end
+
+    # Declared-global checks for stepAways need the scenario, so they live here.
+    def self.step_aways_global_checks(ctx, ep)
+      list = ep['stepAways']
+      return [] unless list.is_a?(Array)
+
+      issues = []
+      list.each_with_index do |b, i|
+        next unless b.is_a?(Hash)
+
+        %w[readyGlobal doneGlobal].each do |k|
+          v = b[k]
+          next if v.nil?
+
+          issues << err("stepAways[#{i}].#{k} '#{v}' is not declared in globalVariables; an undeclared name is not saved") unless v.is_a?(String) && ctx.all_globals.key?(v)
+        end
+      end
+      issues
+    end
+
     # Living office: the panel's Look up button reads kit_defend_done, which only a host eventMapping can
     # set (setGlobal on the defend-complete event). A kit shell (one that declares a kit_ global) with
     # stepAway true and no such mapping would leave Look up disabled for ever. Shells with no kit_ globals
     # are left alone: without the kit the panel has nothing to look up.
     def self.step_away_look_up_checks(ctx, ep)
-      return [] unless ep['stepAway'] == true
+      post = ep['stepAways'].is_a?(Array) ? ep['stepAways'].find { |b| b.is_a?(Hash) && b['after'] == 'defend' } : nil
+      return [] unless (ep['stepAway'] == true && !ep.key?('stepAways')) || post&.dig('readyGlobal') == 'kit_defend_done'
       gv = ctx.json['globalVariables']
       return [] unless gv.is_a?(Hash) && gv.keys.any? { |k| k.to_s.start_with?('kit_') }
 
@@ -899,7 +1077,7 @@ module ValidateSocial
       return [] if sets.any? { |h| h.key?('kit_defend_done') }
 
       found = events.uniq.empty? ? 'none' : events.uniq.join(', ')
-      [warn_("stepAway is true but no eventMapping sets kit_defend_done; the panel's Look up button would stay disabled (events that set other kit_ globals: #{found})")]
+      [warn_("the step-away beat after defend waits on kit_defend_done but no eventMapping sets it; the panel's Look up button would stay disabled (events that set other kit_ globals: #{found})")]
     end
 
     # ---- the defend set ----------------------------------------------------------

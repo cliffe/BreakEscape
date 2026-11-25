@@ -3137,7 +3137,7 @@
         "concernForm": {"$ref": "#/definitions/socialConcernForm"},
         "world": {
           "type": "object",
-          "description": "ENG-05a/05b: world-play modifier on a call attack (E12). Not a stage: the write stage is still the call. The runner moves the learner into `room`, puts the costume on, and on the call ending (any outcome) or an early exit moves them back and gives the chosen avatar back (aw9). `startRoom` must equal the scenario's startRoom. Linted by awareness.rb",
+          "description": "ENG-05a/05b: world-play modifier on a call attack (E12). Not a stage: the write stage is still the call. The runner moves the learner into `room`, puts the costume on, and on the call ending (any outcome, or after `holdUntil`/`holdMaxMs` when a hold is set) or an early exit moves them back and gives the chosen avatar back (aw9); only a costume this block put on comes off, never a worn wearable. `startRoom` must equal the scenario's startRoom. Linted by awareness.rb",
           "required": ["room", "startRoom"],
           "properties": {
             "room": {"type": "string", "minLength": 1, "description": "The room the attack is played in (a rooms key)"},
@@ -3160,7 +3160,9 @@
               },
               "patternProperties": {"^_": {}},
               "additionalProperties": false
-            }
+            },
+            "holdUntil": {"type": "string", "minLength": 1, "description": "E2: a global name. After the call's outcome the learner stays in `room` until this global is true or `holdMaxMs` has passed; the engine writes it true if the cap ends the hold, a reload while held, or the give-up. Needs holdMaxMs. Must not be a server-owned global (worn, imported or credit globals)."},
+            "holdMaxMs": {"type": "number", "exclusiveMinimum": 0, "description": "E2: the cap in ms, counted from the first moment the call's outcome is seen. Required with holdUntil; no effect without it."}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -3242,6 +3244,12 @@
             "weakestTells": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when skills tied ({names} is the joined list, {counts} is 'caught X of Y'; default 'The tells most often missed: {names} ({counts} each).'). For a non-phishing set where 'tells' reads as phishing jargon"},
             "stepAway": {"type": "string", "description": "EC1: the step-away panel's line; default 'Look up from the kiosk to see how a case like this plays out here. It takes about 20 seconds, and your place is saved.'"},
             "stepAwayHeading": {"type": "string", "description": "EC1: the step-away panel's heading; default 'Before the debrief'"},
+            "stepAwayWaiting": {"type": "string", "description": "E3: the post-defend beat's line while its doneGlobal has not landed (default 'Still out there. Carry on whenever you like.')"},
+            "stepAwayReadyWait": {"type": "string", "description": "E3: the post-defend beat's line while Look up is not ready yet (default 'Look up is ready once your result has saved.')"},
+            "worldBeat": {"type": "string", "description": "E3: the default panel line for a stepAways beat after a stage other than defend (a beat's `strings` names another prefix; <prefix>, <prefix>Heading, <prefix>Waiting and <prefix>ReadyWait are the four keys). Custom prefixes are not in this schema: use the defaults or stepAway"},
+            "worldBeatHeading": {"type": "string", "description": "E3: the heading for a worldBeat panel"},
+            "worldBeatWaiting": {"type": "string", "description": "E3: a worldBeat panel's line while its doneGlobal has not landed"},
+            "worldBeatReadyWait": {"type": "string", "description": "E3: a worldBeat panel's line while Look up is not ready yet"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
             "writeReloadNote": {"type": "string", "description": "batch-6 (E14 F11): the write-stage launch note that a close/reload starts the compose draft again (default 'If you close or reload before you send, your draft starts again.'). '' suppresses it"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
@@ -3255,6 +3263,21 @@
             "flipPageIntroByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's page intro per chosen host option id (check.hosts[].id), used instead of flipPageIntro when the id matches; any other host keeps flipPageIntro"},
             "debriefHostLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "D286: one debrief line per chosen fake-check host option id (check.hosts[].id), drawn after the concept panels; no chosen host, or an id with no entry, draws nothing"},
             "flipDefenderLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's defender line per chosen host option id (check.hosts[].id); any other host keeps flipDefenderLine"},
+            "flipDefenderLineByGlobal": {
+              "type": "array",
+              "description": "E5: ordered list; the first entry whose global is truthy wins (after flipDefenderLineNoSpray and flipDefenderLineByHost, before flipDefenderLineByChoice). Also read on the missed / landed-no-tells flip, in place of flipMissed. Point entries at boolean globals: any truthy value matches, including a counter or a pretext state object. An optional heading replaces flipMissedHeading on the missed path.",
+              "items": {
+                "type": "object",
+                "required": ["global", "line"],
+                "properties": {
+                  "global": {"type": "string", "minLength": 1},
+                  "line": {"type": "string", "minLength": 1},
+                  "heading": {"type": "string", "minLength": 1}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
             "flipGuessIntroNoSpray": {"type": "string", "description": "The flip intro instead of flipGuessIntro when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
@@ -3482,6 +3505,28 @@
         },
         "facilitated": {"type": "boolean"},
         "stepAway": {"type": "boolean", "description": "EC1 (living office): true shows the step-away panel when the runner reopens after the defend triage: Look up (enabled once kit_defend_done is true) closes the kiosk and emits episode_step_away; Carry on shows the debrief. The debrief keeps the defend answers in the state, and the success screen waits until the debrief closes. A full episode only (never a twin, brief or check); a facilitated run shows Look up on the pause after defend"},
+        "stepAways": {
+          "type": "array",
+          "maxItems": 6,
+          "description": "E3: step-away beats, a list form of `stepAway` (mutually exclusive with it). Each beat shows the step-away panel after its `after` stage. A full episode only (never a twin, brief or check). The engine drops, silently, any beat that breaks the rules the validator reports (awareness.rb)",
+          "items": {
+            "type": "object",
+            "required": ["id", "after"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1, "description": "Unique beat id"},
+              "after": {"type": "string", "minLength": 1, "description": "A declared stage id, not the last; each stage takes at most one beat"},
+              "event": {"type": "string", "minLength": 1, "description": "The event Look up emits; default episode_world_beat (episode_step_away only on the beat after defend)"},
+              "readyGlobal": {"type": ["string", "null"], "description": "A declared global; Look up is enabled once it is true. null: always ready"},
+              "doneGlobal": {"type": ["string", "null"], "description": "A declared global the world sets when the beat is over; the panel waits on it"},
+              "pickedKey": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]{0,39}$", "description": "The episode-state key recording the pick; default stepAwayPicked after defend, else worldBeatPicked. Must be unique, must not be a state key, must not end in Via"},
+              "strings": {"type": "string", "minLength": 1, "description": "The strings prefix for this beat's copy (<prefix>, <prefix>Heading, <prefix>Waiting, <prefix>ReadyWait); default stepAway after defend, else worldBeat"},
+              "facilitated": {"type": "boolean", "description": "Default true: a facilitated run shows Look up on the pause"},
+              "resumeOnDone": {"type": "boolean", "description": "true returns the learner when doneGlobal lands; needs a doneGlobal"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
         "assistant": {"$ref": "#/definitions/socialAssistant"}
       },
       "patternProperties": {"^_": {}},
