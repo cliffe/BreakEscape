@@ -15,8 +15,8 @@ Report per case: PASS or FAIL, the probe output summary, the three screenshot pa
    "No mission 'test_npc_walk_in_out'", STOP and report: the row needs AC0's yes (`db/seeds.rb` registers it).
 3. `tools/playtest/start-keyless-server.sh 3026`
 4. `PLAYTEST_PORT=3026 tools/playtest/new-game.sh test_npc_walk_in_out --imports=none` and note the game id `<G>`.
-5. Start the session at a small viewport so rooms do not fit the camera (out-of-view floor exists):
-   `tools/playtest/session-start.sh --url http://127.0.0.1:3026/break_escape/games/<G> --vw 800 --vh 600`
+5. Start the session at 800x420 so rooms do not fit the camera (out-of-view floor exists). 800x600 shows the whole 10x10 lobby from the ward, so case (f) can only fade; the store and ward are fine either way:
+   `tools/playtest/session-start.sh --url http://127.0.0.1:3026/break_escape/games/<G> --vw 800 --vh 420`
    Drive it with `tools/playtest/cmd.sh <G> '<json>'`.
 6. `{"cmd":"eval","fn":"() => window.__test.throttleFps(20)"}` (expect `after` about 17 to 20). Call it again after any reload.
 7. `{"cmd":"eval","fn":"() => typeof window.npcBehaviorManager?.walkNPCIn"}` must be `"function"`.
@@ -76,7 +76,7 @@ Pass ("fade"): `how: 'faded'`; the first visible row is at the west (vault) door
 1. The porter is visible at (13, 6.5). Screenshot `e-start`; set `porter_leave` to true.
 2. The bark "Right, that's my shift. I'm off to the store." shows at once; screenshot `e-mid` about 2.5 s later (the walk-out has a 2000 ms delay), while walking.
 3. Wait for `npc_left:walk_porter` (max 20 s); screenshot `e-end`.
-Pass: bark before the walk starts; `npc_left` with `d.to === 'walk_store'` and `how: 'walked'`; no `npc_arrived:walk_porter`; the last row with `a > 0` and `vis: true` is out of view (he was hidden once out of sight, not in view); while walking out, an interact on him does not open a chat (`{"cmd":"interact","id":"walk_porter"}` returns no minigame).
+Pass: bark before the walk starts; `npc_left` with `d.to === 'walk_store'` and `how: 'walked'`; no `npc_arrived:walk_porter`; the last row with `a > 0` and `vis: true` is out of view (he was hidden once out of sight, not in view); while walking out, a direct `window.handleObjectInteraction(<his sprite>)` opens no chat. Do NOT use `__test.interact` for this: it clicks, the click walks the player towards him, the camera follows, and the exit cell comes into view (that, not the engine, caused the four re-plans and the fade of the first live runs).
 
 ### (f) Conversation on arrival: `walk_inspector`
 1. Screenshot `f-start`; `{"cmd":"interact","id":"walk_notice"}` (pick it up; dismiss any reader with `{"cmd":"dismiss"}`).

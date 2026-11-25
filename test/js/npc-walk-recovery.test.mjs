@@ -9,7 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { world, flush } from './helpers/npc-walk-world.mjs';
-import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
+import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, WALK_PICK_DEPTH, WALK_VIEW_MARGIN, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
 
 const names = (w, prefix) => w.emits.filter(e => e.name.startsWith(prefix));
 const tick = (w) => w.manager._walkTick(0, {});
@@ -188,7 +188,7 @@ test('stall: a walk-in with one door re-issues once, then fades as faded', async
     assert.equal(b.moves.length, 2);
     w.advance(WALK_STALL_MS + 100); tick(w); await flush(); await flush();
     assert.equal(await p, 'faded');
-    assert.deepEqual(w.fades, [1]);
+    assert.deepEqual(w.fades, [1], 'faded in, not shown at once');
     assert.deepEqual([b.sprite.body.center.x, b.sprite.body.center.y], [160, 160]);
 });
 
@@ -282,4 +282,57 @@ test('a slow room load that finishes inside the wait still walks in', async () =
     assert.ok(b.sprite.body.center.x > 340, 'spawned in the loaded dock');
     b.arrive({ x: 160, y: 160 });
     assert.equal(await p, 'walked');
+});
+
+// ── exit and spawn cells picked deep, walk-out stops close, spawn re-checked ──────────────
+
+test('walk-out legs end within WALK_ARRIVE_PX (a 1-tile stop short left the walker in view)', async () => {
+    const w = world();
+    const b = w.addNpc('guard', { visible: true });
+    w.manager.walkNPCOut('guard', { to: 'dock' });
+    await flush();
+    assert.equal(b.moves.at(-1).opts.arriveWithin, WALK_ARRIVE_PX);
+});
+
+test('exit and spawn cells are picked WALK_PICK_DEPTH beyond the view margin', async () => {
+    assert.equal(WALK_PICK_DEPTH, 32);
+    const w = world({ view: { x: 0, y: 0, width: 300, height: 320 } });
+    const b = w.addNpc('guard', { visible: true });
+    w.manager.walkNPCOut('guard', { to: 'dock' });
+    await flush();
+    const exit = b.moves.at(-1);
+    // the sprite rect is 32 wide: its left edge must clear view right + margin + depth
+    assert.ok(exit.x - 16 >= 300 + WALK_VIEW_MARGIN + WALK_PICK_DEPTH, `exit cell x ${exit.x} is deep enough`);
+
+    const w2 = world({ view: { x: 0, y: 0, width: 300, height: 320 } });
+    const b2 = w2.addNpc('guard');
+    w2.manager.walkNPCIn('guard', { from: 'dock' });
+    await flush();
+    const first = b2.sprite.body.center;
+    assert.ok(first.x - 16 >= 300 + WALK_VIEW_MARGIN + WALK_PICK_DEPTH, `spawn x ${first.x} is deep enough`);
+});
+
+test('a spawn cell that comes into view before the NPC is shown is not used: fade at the doorway, no pop', async () => {
+    // baseline: count the view() reads of one clean walk-in
+    let n = 0;
+    const small = { x: 0, y: 0, width: 300, height: 320 };
+    const big = { x: 0, y: 0, width: 700, height: 320 };
+    const w0 = world();
+    Object.defineProperty(w0, 'view', { get() { n++; return small; }, set() {} });
+    w0.addNpc('guard');
+    w0.manager.walkNPCIn('guard', { from: 'dock' });
+    await flush();
+    const reads = n;
+    // the camera moves after the spawn search but before the re-check: the last read sees the big view
+    let m = 0;
+    const w = world();
+    Object.defineProperty(w, 'view', { get() { m++; return m < reads ? small : big; }, set() {} });
+    const b = w.addNpc('guard');
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await flush();
+    assert.deepEqual(w.fades, [1], 'faded in, not shown at once');
+    b.arrive({ x: 160, y: 160 });
+    assert.equal(await p, 'faded');
+    const arrived = names(w, 'npc_arrived:guard');
+    assert.equal(arrived.length, 1);
 });
