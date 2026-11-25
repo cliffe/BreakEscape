@@ -585,7 +585,7 @@ module BreakEscape
       assert_equal({ 'kind' => %w[local domain] }, BreakEscape::OpsLogEvents::EVENTS['signin_refused'][:detail])
     end
 
-    OPS_AS_ACCOUNT_EVENTS = %w[technique_used admin_profile_read usb_install_overridden share_folder_opened].freeze
+    OPS_AS_ACCOUNT_EVENTS = %w[technique_used admin_profile_read usb_install_overridden share_folder_opened account_password_reset account_mfa_reenrolled].freeze
 
     test 'every registered event builds a ceiling-filled row of at most 400 bytes' do
       BreakEscape::OpsLog.events.each do |name, entry|

@@ -128,7 +128,7 @@ module BreakEscape
     def keyring_for_client(pc_id: nil, route: nil, stamp: false)
       registry = registry_keyring_entries
       with_lock { stamp_keyring_gained!(registry.map { |e| e['id'] }) } if stamp && keyring_gained_pending(registry).any?
-      entries = keyring_one_row_per_account(implicit_keyring_entries, cracked_keyring_entries) + registry
+      entries = keyring_one_row_per_account(implicit_keyring_entries, cracked_keyring_entries) + registry + keyring_helpdesk_entries
       gained = keyring_gained_map # server-written only, so an Integer check is enough
       entries.each { |e| e['gainedAt'] = gained[e['id']] if gained[e['id']].is_a?(Integer) }
       # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
@@ -141,6 +141,13 @@ module BreakEscape
       answer[:crackFacts] = crack_facts if crack_facts
       answer[:rev] = keyring_rev(entries, captures, crack_facts)
       answer
+    end
+
+    # The desk-reset entries, read without creating the state key: a game no desk has touched
+    # reads and writes exactly as before.
+    def keyring_helpdesk_entries
+      resets = player_state['accountResets']
+      resets.is_a?(Hash) && resets.any? ? helpdesk_keyring_entries : []
     end
 
     # { credId => seconds left } for each live token entry of an answer, for the controller's

@@ -5,7 +5,8 @@
 // matching, three number buttons. A tap calls MfaClient.approve. Nothing here knows or computes a
 // code or the right number; the server's answer decides every outcome.
 //
-// Params: { npcId, deps: { mfa, schedule, clearScheduled, pollMs } }
+// Params: { npcId, own?, deps: { mfa, schedule, clearScheduled, pollMs } }
+//   own: true (S8b unit 16) lists the own phone of every re-enrolled account, MfaClient.phone({ own: true }).
 //   deps.mfa defaults to window.mfaClient. Opened as a child of the sign-in screen or from the
 //   held phone. Server and author text reaches the DOM through textContent only.
 // Result: { approved, denied, mode: 'live' }
@@ -32,6 +33,7 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         this.mfa = deps.mfa || null;
         this.pollMs = Number.isFinite(deps.pollMs) ? deps.pollMs : DEFAULT_POLL_MS;
         this.npcId = this.params.npcId;
+        this.own = this.params.own === true;
         this.requests = [];
         this.approvedCount = 0;
         this.deniedCount = 0;
@@ -51,6 +53,7 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         this.statusEl.setAttribute('role', 'status');
         this.statusEl.setAttribute('aria-live', 'polite');
         this.root.insertBefore(this.statusEl, this.phoneEl);
+        if (this.own) this.root.setAttribute('aria-label', 'My phone');
     }
 
     /** Nothing of the attacker's view: no intro, decision panel, banner or Send control. */
@@ -96,10 +99,10 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         const client = this._client();
         if (!client) { this._say('The phone cannot connect.'); return null; }
         let res;
-        try { res = await client.phone({ npcId: this.npcId }); } catch (e) { res = { ok: false, reason: 'error' }; }
+        try { res = await client.phone(this.own ? { own: true } : { npcId: this.npcId }); } catch (e) { res = { ok: false, reason: 'error' }; }
         if (!this.gameState.isActive) return res;
         if (!res || !res.ok) {
-            this._say(res && res.reason === 'no_phone' ? 'You are not holding this phone.' : 'The phone cannot connect.');
+            this._say(res && res.reason === 'no_phone' && !this.own ? 'You are not holding this phone.' : 'The phone cannot connect.');
         } else {
             this.requests = (res.requests || []).filter(isObj);
             if (this.requests.length) this._say(note);
@@ -160,7 +163,7 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         if (!client || this._busy || !isStr(key)) return null;
         this._busy = true;
         let res;
-        try { res = await client.approve(key, opts); } catch (e) { res = { ok: false, reason: 'error' }; }
+        try { res = await client.approve(key, this.own ? { ...opts, own: true } : opts); } catch (e) { res = { ok: false, reason: 'error' }; }
         this._busy = false;
         if (!this.gameState.isActive) return res;
         let note;
@@ -191,7 +194,7 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
 
     getTestState() {
         const base = super.getTestState();
-        return { ...base, authenticator: { ...base.authenticator, live: { cards: this.requests.length, approved: this.approvedCount, denied: this.deniedCount } } };
+        return { ...base, authenticator: { ...base.authenticator, live: { own: this.own, cards: this.requests.length, approved: this.approvedCount, denied: this.deniedCount } } };
     }
 }
 

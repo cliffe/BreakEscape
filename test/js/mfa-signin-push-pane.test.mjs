@@ -24,7 +24,7 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 for (const f of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils/dispense-on-unlock.js',
     'minigames/container/container-item-image.js', 'utils/computer-keywords.js', 'utils/pc-monitor.js',
     'utils/npc-headshot.js', 'utils/author-html.js', 'minigames/framework/base-minigame.js',
-    'utils/remote-host-text.js', 'minigames/password/password-minigame.js', 'systems/mfa-client.js',
+    'utils/remote-host-text.js', 'minigames/password/password-minigame.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js',
     'minigames/framework/minigame-manager.js', 'minigames/framework/social-overlay.js', 'ui/modal-stack.js']) copy(f);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });

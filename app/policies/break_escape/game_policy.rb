@@ -119,6 +119,11 @@ module BreakEscape
       show?
     end
 
+    # S8b unit 13
+    def helpdesk_request?
+      show?
+    end
+
     def logout?
       show?
     end

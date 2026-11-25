@@ -36,7 +36,7 @@ const applyMod = await import(applyActionsUrl);
 const { sendInventoryRemove, plantsInFlight, itemsInFlight } = applyMod;
 await import(dataUrl(read('systems/pc-policy.js')));
 const { PcSessions } = await import(dataUrl(swap(read('systems/pc-sessions.js'),
-    { '../utils/sync-before-fetch.js': read('utils/sync-before-fetch.js'), './mfa-client.js': read('systems/mfa-client.js') })));
+    { '../utils/sync-before-fetch.js': read('utils/sync-before-fetch.js'), './mfa-client.js': read('systems/mfa-client.js'), './helpdesk-client.js': read('systems/helpdesk-client.js') })));
 
 const stubs = {
     '../utils/constants.js': 'export const INTERACTION_RANGE=1e6, INTERACTION_RANGE_SQ=1e12, INTERACTION_CHECK_INTERVAL=0, DOOR_INTERACTION_RANGE_SQ=0; export function overlayDepth(){return 0;}',

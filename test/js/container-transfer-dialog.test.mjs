@@ -46,6 +46,7 @@ copy('minigames/container/cached-accounts-panel.js');
 copy('minigames/network-view/ops-model.js');
 copy('systems/pc-sessions.js');
 copy('systems/mfa-client.js');
+copy('systems/helpdesk-client.js');
 copy('utils/sync-before-fetch.js');
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });

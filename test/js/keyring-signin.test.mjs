@@ -35,6 +35,7 @@ put('systems/minigame-starters.js', ['startLockpickingMinigame', 'startKeySelect
     'startRansomwareDisplayMinigame', 'startBackupRecoveryMinigame', 'startInfusionPumpMinigame'].map(n => `export function ${n}() {}`).join('\n'));
 put('systems/ui-sounds.js', 'export function playUISound() {}\n');
 put('minigames/biometrics/fingerprint-reader-minigame.js', 'export function startFingerprintReader() {}\n');
+put('minigames/ble-scanner/ble-scanner-minigame.js', 'export function applyBlePairEffects() {}\n');
 put('systems/lockpick-catch.js', 'export function catchLockpickInView() { return false; } export function anyKeyMightFitLock() { return true; } export function lockKeyPinsOf() { return undefined; }\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
@@ -46,7 +47,7 @@ for (const rel of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils
     'utils/pc-monitor.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js',
     'utils/locked-hint.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'systems/captures.js',
     'utils/remote-host-text.js', 'utils/compromise-bolt.js', 'systems/keyring.js', 'systems/notifications.js', 'ui/modal-stack.js', 'utils/overlay-open.js',
-    'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'utils/sync-before-fetch.js', 'systems/network-links.js', 'api-client.js',
+    'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js', 'systems/network-links.js', 'api-client.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
     'minigames/container/container-minigame.js', 'minigames/container/cached-accounts-panel.js', 'minigames/network-view/ops-model.js', 'minigames/password/password-minigame.js']) copy(rel);
 
@@ -959,4 +960,18 @@ test('S7 R2-2: a cracked password has its own tag, no file line, and its own tea
     assert.equal(alerts.length, 1);
     assert.equal(alerts[0][0], teach);
     assert.doesNotMatch(alerts[0][0], /files/);
+});
+
+test('R3-CORE3: signing in with the reset password of a cracked account teaches no "cracked" lesson', async () => {
+    setup();
+    const JAKE_RESET = { id: 'dana.reset', kind: 'password', source: 'helpdesk', label: 'Reset', account: JAKE, how: 'issued', password: 'Tern-Harbour-41', accepted: true };
+    const mg = openRemote();
+    answerRemote(mg, { keyring: [JAKE_CRACKED, JAKE_RESET] });
+    const chosen = mg.signInTileFor('jjones');
+    assert.ok(chosen.kinds.includes('cracked') && chosen.kinds.includes('reset'), 'the tile carries both kinds');
+    tileFor('jjones').click();
+    q('#password-field').value = 'Tern-Harbour-41';
+    q('#submit-password').click();
+    await settle();
+    assert.equal(alerts.length, 0, 'the desk password is not a cracked one: no lesson');
 });

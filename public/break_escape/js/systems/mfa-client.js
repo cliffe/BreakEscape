@@ -32,7 +32,7 @@ let cfg = { request: null, onSession: null, emit: null, now: () => Date.now() };
 const pendingBySubject = new Map(); // key -> { kind, npcId, number?, ownPhone?, n }
 const completedBySubject = new Map(); // key -> body, handed out once
 const CODE_FRESH_MS = 60000; // a code lives for one 60 s step; the server takes this and the last
-let lastRead = null; // { npcId, code, source: 'item', deviceId, at }
+let lastRead = null; // { npcId, code, source: 'item' | 'own', deviceId, at }
 
 export function configure({ request, onSession, emit, now } = {}) {
     cfg = {
@@ -137,17 +137,22 @@ async function call(method, path, payload) {
     }
 }
 
-export async function readDevice({ itemId } = {}) {
-    const res = await call('GET', 'mfa/device', { item_id: itemId });
+/**
+ * Read a code device. `{ itemId }` reads a held device; `{ npcId }` reads the own phone of an account
+ * a desk has re-enrolled (GET /mfa/device?npc_id=). Each fills its own kind of pane only.
+ */
+export async function readDevice({ itemId, npcId } = {}) {
+    const own = npcId != null && npcId !== '' && (itemId == null || itemId === '');
+    const res = await call('GET', 'mfa/device', own ? { npc_id: npcId } : { item_id: itemId });
     if (!res.ok) {
         return { ok: false, reason: res.status === 403 || res.status === 404 ? 'no_device' : 'error', status: res.status, body: res.body };
     }
     const body = res.body || {};
-    const deviceId = typeof body.deviceId === 'string' ? body.deviceId : String(itemId ?? '');
+    const deviceId = typeof body.deviceId === 'string' ? body.deviceId : String(own ? `own:${npcId}` : (itemId ?? ''));
     if (body.enrolled === false) {
         if (lastRead && lastRead.deviceId === deviceId) lastRead = null;
     } else if (!body.used && typeof body.code === 'string' && body.code) {
-        lastRead = { npcId: body.npcId || '', code: body.code, source: 'item', deviceId, at: cfg.now() };
+        lastRead = { npcId: body.npcId || (own ? String(npcId) : ''), code: body.code, source: own ? 'own' : 'item', deviceId, at: cfg.now() };
     }
     return { ok: true, ...body, deviceId };
 }
@@ -164,9 +169,12 @@ export function codeFor(pending) {
 
 function passed(parsed, body, { keep }) {
     // R3-9: the way in the step began over stays with the completed answer, so only a screen with that way in takes it up
-    const route = (pendingBySubject.get(parsed.key) || {}).route || '';
+    const pending = pendingBySubject.get(parsed.key) || {};
+    const route = pending.route || '';
     pendingBySubject.delete(parsed.key);
-    const npcId = (body && body.npcId) || '';
+    // A lock's pass body names no owner: it is the owner the gate answer named (noteRequired). A PC
+    // subject reads the pass body only, as before.
+    const npcId = (body && body.npcId) || (parsed.kind === 'pc' ? '' : (pending.npcId || ''));
     // The code just used must not be offered again for the next sign-in
     if (lastRead && lastRead.npcId === npcId) lastRead = null;
     if (parsed.kind === 'pc') {
@@ -193,7 +201,9 @@ function refusalResult(parsed, err) {
         return { ok: false, reason: 'stale', status, body: b, stale: b.stale === 'used' ? 'used' : 'expired' };
     }
     if (b.codeLocked === true || b.closed === true) {
-        pendingBySubject.delete(parsed.key);
+        // A PC's closed step is over; a lock's step stays live on the server (the pane stays open and
+        // the player may try again), so its pending record, and the owner it names, stay too
+        if (parsed.kind === 'pc') pendingBySubject.delete(parsed.key);
         failed(parsed, npcId, 'locked');
         return { ok: false, reason: 'locked', status, body: b, retryIn: Number.isFinite(b.retryIn) ? b.retryIn : null };
     }
@@ -218,15 +228,21 @@ function refusalResult(parsed, err) {
         failed(parsed, npcId, 'locked_out');
         return { ok: false, reason: 'locked_out', status, body: b, message: typeof b.message === 'string' ? b.message : null };
     }
+    // A lock's refusal that carries the generic message and no flag is the server's generic 422 (an approve
+    // with no number on a number lock, say): the server keeps the step, so the pending record stays and the
+    // caller may try again (S8c R1-CLIENT8). A PC's stays as it was.
+    if (parsed.kind !== 'pc' && typeof b.message === 'string' && b.message) {
+        return { ok: false, reason: 'error', status, body: b, message: b.message };
+    }
     // A bare refusal (the record has gone, the account is no longer permitted, the route is closed):
     // the second step cannot go on, so the pending record goes too
     pendingBySubject.delete(parsed.key);
     return { ok: false, reason: 'gone', status, body: b, message: typeof b.message === 'string' ? b.message : null };
 }
 
-async function post(path, subject, extra, { keep = false } = {}) {
+async function post(path, subject, extra, { keep = false, query = '' } = {}) {
     const parsed = parseKey(subject);
-    const res = await call('POST', path, { ...subjectFields(parsed), ...extra });
+    const res = await call('POST', query ? `${path}?${query}` : path, { ...subjectFields(parsed), ...extra });
     if (!res.ok) {
         // Only "no such phone" means the phone is not held; any other 403 (the PC is off, the route is
         // gone) keeps its own reason in the body for the caller
@@ -244,8 +260,11 @@ async function post(path, subject, extra, { keep = false } = {}) {
         }
         return refusalResult(parsed, { status: 200, body });
     }
+    // Read before `passed` drops the pending note: an approval on the own phone is named as such
+    const viaOwnPhone = path === 'mfa/approve' && (pendingBySubject.get(parsed.key) || {}).ownPhone === true;
     const npcId = passed(parsed, body, { keep });
-    emitBoth('mfa_approved', npcId, { npcId, ...subjectDetail(parsed), by: typeof body.approvedBy === 'string' ? body.approvedBy : 'code' });
+    const by = viaOwnPhone ? 'own_phone' : (typeof body.approvedBy === 'string' ? body.approvedBy : 'code');
+    emitBoth('mfa_approved', npcId, { npcId, ...subjectDetail(parsed), by });
     return { ok: true, passed: true, body };
 }
 
@@ -268,19 +287,36 @@ export async function prompt(subject) {
     return result;
 }
 
-export async function phone({ npcId } = {}) {
-    const res = await call('GET', 'mfa/phone', { npc_id: npcId });
+/** The held phone's requests, or with `{ own: true }` those of every re-enrolled account (GET /mfa/phone?own=1). */
+export async function phone({ npcId, own = false } = {}) {
+    const res = await call('GET', 'mfa/phone', own ? { own: 1 } : { npc_id: npcId });
     if (!res.ok) return { ok: false, reason: res.status === 403 ? 'no_phone' : 'error', status: res.status, body: res.body };
     const body = res.body || {};
     return { ok: true, requests: Array.isArray(body.requests) ? body.requests : [] };
 }
 
-/** A tap on the held phone: { number } to approve a number match, { deny: true } to refuse. */
-export function approve(subject, { number, deny } = {}) {
+/** The phone's request for one lock: { subject: 'object:<id>' | 'door:<id>', npcId }. */
+export async function lockPhone(subject, { npcId } = {}) {
+    const parsed = parseKey(subject);
+    const res = await call('GET', 'mfa/phone', { npc_id: npcId, ...subjectFields(parsed) });
+    if (!res.ok) return { ok: false, reason: res.status === 403 ? 'no_phone' : 'error', status: res.status, body: res.body };
+    const body = res.body || {};
+    return { ok: true, requests: Array.isArray(body.requests) ? body.requests : [] };
+}
+
+/**
+ * A tap on the phone: { number } to approve a number match, { deny: true } to refuse. For an account a
+ * desk re-enrolled (the pending note has ownPhone) the request URL carries `?own=1` (the server reads
+ * params either way; a playtest recorder keeps the query, not the body); for a held phone there is no
+ * `own` anywhere.
+ */
+export function approve(subject, { number, deny, own: ownPhone } = {}) {
     const extra = {};
+    // `own` is passed by the "My phone" scene; the note is kept for callers that have only the subject
+    const own = ownPhone === true || (pendingBySubject.get(subjectKey(subject)) || {}).ownPhone === true;
     if (number != null) extra.number = number;
     if (deny) extra.deny = true;
-    return post('mfa/approve', subject, extra, { keep: true });
+    return post('mfa/approve', subject, extra, { keep: true, query: own ? 'own=1' : '' });
 }
 
 /** The completed answer a child scene left, left in place. Null when there is none. */

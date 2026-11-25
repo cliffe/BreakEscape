@@ -1,0 +1,1564 @@
+{
+  "name": "helpdesk_test_ops_mfa_second_step",
+  "description": "S8b unit 01: a right password at a code PC, the held device answer, a push prompt and the phone list on test_ops_mfa, before any S8b engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_brief": "TEST: Ops multi-factor sign-in\n\nA test floor for the second sign-in step (OPS_MFA_HELPDESK_PLAN.md, S8a). A lobby with a drop box, a wall port, an audit terminal and a cabinet; a floor with two PCs that ask for a six-digit code and three staff; a store room with a PC that sends a request to the owner's phone, one that asks for a number to be matched on the phone, one that asks for nothing extra, and three more staff. Nothing to solve.",
+    "endGoal": "Test only: compare the sign-in with no second step, with a code, with a request to the owner and with a number to match.",
+    "startRoom": "lobby",
+    "startPosition": {
+      "x": 7,
+      "y": 7
+    },
+    "npcNeedsSeed": "test_ops_mfa",
+    "npcWindupMs": 0,
+    "needsDebugOverlay": true,
+    "networks": {
+      "office_lan": {
+        "name": "Office network",
+        "discovery": "scan"
+      }
+    },
+    "policies": {
+      "code_gate": {
+        "mfa": "code",
+        "remote": "allowed",
+        "maxAttempts": 8
+      },
+      "push_gate": {
+        "mfa": "push",
+        "remote": "allowed",
+        "maxAttempts": 8
+      },
+      "match_gate": {
+        "mfa": "push_number_match",
+        "remote": "allowed",
+        "maxAttempts": 8
+      },
+      "plain_gate": {
+        "remote": "allowed",
+        "maxAttempts": 5
+      }
+    },
+    "credentials": {
+      "hana_token": {
+        "kind": "token",
+        "account": "hana",
+        "connectsTo": "code_pc1",
+        "label": "Accounts PC sign-in token",
+        "expiresMin": 30,
+        "proof": {
+          "foothold": "jack_office_port"
+        }
+      },
+      "hana_saved": {
+        "kind": "saved_connection",
+        "account": "hana",
+        "connectsTo": "code_pc1",
+        "label": "Accounts PC saved connection",
+        "proof": {
+          "held": "hana_saved_file"
+        }
+      }
+    },
+    "logSources": {
+      "mfa_audit": {
+        "title": "Sign-in audit",
+        "events": [
+          "signin_ok",
+          "signin_fail",
+          "signin_lockout",
+          "signin_refused",
+          "session_end",
+          "session_lock",
+          "mfa_challenge",
+          "mfa_code_ok",
+          "mfa_code_wrong",
+          "mfa_code_locked",
+          "mfa_expired",
+          "mfa_prompt_sent",
+          "mfa_prompt_approved",
+          "mfa_prompt_denied"
+        ]
+      }
+    },
+    "social": {
+      "osint": {
+        "sites": [
+          {
+            "id": "friendface",
+            "type": "social",
+            "name": "Friendface",
+            "url": "friendface.example",
+            "profiles": [
+              {
+                "person": "dev",
+                "name": "Dev Kapoor",
+                "bio": "Purchasing.",
+                "posts": [
+                  {
+                    "id": "dev_authored",
+                    "text": "Stock count done for the week."
+                  }
+                ]
+              },
+              {
+                "person": "nia",
+                "name": "Nia Faraday",
+                "bio": "Stock.",
+                "posts": [
+                  {
+                    "id": "nia_authored",
+                    "text": "Shelves relabelled at last."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "globalVariables": {
+      "se_osint_state": {}
+    },
+    "gameClock": {
+      "start": "Tue 08:30",
+      "rate": 1
+    },
+    "objectives": [
+      {
+        "aimId": "mfa_beats",
+        "title": "Try each kind of second step",
+        "description": "Test only. Nothing here ticks by itself.",
+        "status": "active",
+        "order": 0,
+        "tasks": [
+          {
+            "taskId": "m1_signed_in",
+            "title": "Sign in at the accounts PC",
+            "type": "custom",
+            "status": "active"
+          }
+        ]
+      }
+    ],
+    "rooms": {
+      "lobby": {
+        "type": "room_reception",
+        "door_sign": "Lobby",
+        "connections": {
+          "north": "floor",
+          "east": "store"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "kit_dropbox",
+            "name": "Network drop box",
+            "sprite": "drop_box1",
+            "position": {
+              "x": 8,
+              "y": 4
+            },
+            "takeable": true,
+            "rogueDevice": true,
+            "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+          },
+          {
+            "type": "pc",
+            "id": "office_port",
+            "name": "Office wall port",
+            "sprite": "network_rack1",
+            "network": "office_lan",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "networkJack": true,
+            "jackConfirm": "Plug the drop box into the office port?",
+            "plantedSprite": "pi_cluster1",
+            "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+            "observations": "A wall port marked Office."
+          },
+          {
+            "type": "ops_log_terminal",
+            "id": "audit_log_pc",
+            "name": "Audit log terminal",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "observations": "A terminal showing the building's sign-in audit log.",
+            "minigameData": {
+              "logSource": "mfa_audit"
+            }
+          },
+          {
+            "type": "filing_cabinet_locked1",
+            "id": "lobby_cabinet",
+            "name": "Cabinet by the front door",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "locked": false,
+            "observations": "A cabinet of notes the front desk keeps.",
+            "contents": [
+              {
+                "type": "text_file",
+                "id": "hana_saved_file",
+                "name": "Accounts PC.rdp",
+                "takeable": true,
+                "readable": true,
+                "credential": "hana_saved",
+                "text": "A saved connection to the accounts PC. Use it from the sign-in screen over the network.",
+                "observations": "A saved connection file someone left in the cabinet."
+              }
+            ]
+          },
+          {
+            "type": "code_device",
+            "id": "ines_device",
+            "name": "Code device",
+            "owner": "ines",
+            "position": {
+              "x": 4,
+              "y": 6
+            },
+            "takeable": true,
+            "observations": "A small code generator with a name label on the back."
+          },
+          {
+            "type": "notes1",
+            "id": "sign_lobby",
+            "name": "Sign: Start here",
+            "position": {
+              "x": 4,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Second step test. The floor is north, the store room east. The accounts you need are on the notes in each room. Some PCs ask for a code from a device, some send a request to a phone.",
+            "observations": "A sign on a stand by the front desk."
+          }
+        ]
+      },
+      "floor": {
+        "type": "room_office",
+        "door_sign": "Floor",
+        "connections": {
+          "south": "lobby"
+        },
+        "network": "office_lan",
+        "objects": [
+          {
+            "type": "pc",
+            "id": "code_pc1",
+            "name": "Accounts PC",
+            "host": "ACC01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "hana"
+              ]
+            },
+            "owner": "hana",
+            "policy": "code_gate",
+            "observations": "A desk PC on the floor. A tag on the monitor reads Hana."
+          },
+          {
+            "type": "pc",
+            "id": "code_pc2",
+            "name": "Ledger PC",
+            "host": "LED01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 7,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "hana",
+                "ines",
+                "svc_sync"
+              ]
+            },
+            "owner": "ines",
+            "policy": "code_gate",
+            "observations": "A desk PC on the floor. A tag on the monitor reads Ines."
+          },
+          {
+            "type": "notes1",
+            "id": "note_hana",
+            "name": "Note: Hana's login",
+            "position": {
+              "x": 2,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Hana's login: hquill / Quillmere-Hana-31",
+            "observations": "A note stuck under a monitor."
+          },
+          {
+            "type": "notes1",
+            "id": "note_ines",
+            "name": "Note: Ines's login",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Ines's login: ibrandt / Brandwick-Ines-44",
+            "observations": "A note stuck under a keyboard."
+          },
+          {
+            "type": "notes1",
+            "id": "note_sync",
+            "name": "Note: Sync service login",
+            "position": {
+              "x": 5,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Sync service login: svc_sync / Tidewater-Sync-90",
+            "observations": "A note pinned to the partition."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "hana",
+            "displayName": "Hana Quill",
+            "npcType": "person",
+            "position": {
+              "x": 4,
+              "y": 5
+            },
+            "spriteSheet": "female_office_worker_v2",
+            "spriteTalk": "assets/characters/female_office_worker_talk.png",
+            "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/hana.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "creds": {
+              "username": "hquill",
+              "password": "Quillmere-Hana-31"
+            },
+            "itemsHeld": [
+              {
+                "type": "code_device",
+                "id": "hana_device",
+                "droppable": true,
+                "name": "Code device",
+                "owner": "hana",
+                "takeable": true,
+                "observations": "A small code generator with a name label on the back."
+              }
+            ]
+          },
+          {
+            "id": "ines",
+            "displayName": "Ines Brandt",
+            "npcType": "person",
+            "position": {
+              "x": 6,
+              "y": 5
+            },
+            "spriteSheet": "female_blowse_v2",
+            "spriteTalk": "assets/characters/female_blowse_talk.png",
+            "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/ines.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "creds": {
+              "username": "ibrandt",
+              "password": "Brandwick-Ines-44"
+            }
+          },
+          {
+            "id": "svc_sync",
+            "displayName": "Sync service",
+            "npcType": "person",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "spriteSheet": "male_telecom_v2",
+            "spriteTalk": "assets/characters/male_telecom_talk.png",
+            "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/svc_sync.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "it",
+            "creds": {
+              "username": "svc_sync",
+              "password": "Tidewater-Sync-90",
+              "mfa": false
+            }
+          }
+        ]
+      },
+      "store": {
+        "type": "room_servers",
+        "door_sign": "Store room",
+        "connections": {
+          "west": "lobby"
+        },
+        "network": "office_lan",
+        "objects": [
+          {
+            "type": "pc",
+            "id": "push_pc",
+            "name": "Orders PC",
+            "host": "ORD01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "cal",
+                "dev"
+              ]
+            },
+            "owner": "cal",
+            "policy": "push_gate",
+            "observations": "A desk PC in the store room. A tag on the monitor reads Cal."
+          },
+          {
+            "type": "pc",
+            "id": "match_pc",
+            "name": "Stock PC",
+            "host": "STK01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 5,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "nia"
+              ]
+            },
+            "owner": "nia",
+            "policy": "match_gate",
+            "observations": "A desk PC in the store room. A tag on the monitor reads Nia."
+          },
+          {
+            "type": "pc",
+            "id": "plain_pc",
+            "name": "Shipping PC",
+            "host": "SHP01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 7,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "hana",
+                "cal"
+              ]
+            },
+            "policy": "plain_gate",
+            "observations": "A shared desk PC in the store room."
+          },
+          {
+            "type": "notes1",
+            "id": "note_cal",
+            "name": "Note: Cal's login",
+            "position": {
+              "x": 2,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Cal's login: cmoss / Mossbank-Cal-12",
+            "observations": "A note by the door."
+          },
+          {
+            "type": "notes1",
+            "id": "note_dev",
+            "name": "Note: Dev's login",
+            "position": {
+              "x": 5,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Dev's login: dkapoor / Kaporwell-Dev-77",
+            "observations": "A note under the shelf."
+          },
+          {
+            "type": "notes1",
+            "id": "note_nia",
+            "name": "Note: Nia's login",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Nia's login: nfaraday / Faradale-Nia-58",
+            "observations": "A note on the rack."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "cal",
+            "displayName": "Cal Moss",
+            "npcType": "person",
+            "position": {
+              "x": 3,
+              "y": 6
+            },
+            "spriteSheet": "male_office_worker_v2",
+            "spriteTalk": "assets/characters/male_office_worker_talk.png",
+            "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/cal.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "awareness": "low",
+            "creds": {
+              "username": "cmoss",
+              "password": "Mossbank-Cal-12"
+            }
+          },
+          {
+            "id": "dev",
+            "displayName": "Dev Kapoor",
+            "npcType": "person",
+            "position": {
+              "x": 6,
+              "y": 6
+            },
+            "spriteSheet": "male_nerd_v2",
+            "spriteTalk": "assets/characters/male_nerd_talk.png",
+            "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/dev.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "awareness": "high",
+            "creds": {
+              "username": "dkapoor",
+              "password": "Kaporwell-Dev-77"
+            },
+            "itemsHeld": [
+              {
+                "type": "phone_friendface",
+                "id": "dev_phone",
+                "name": "Dev's phone",
+                "owner": "dev",
+                "takeable": true,
+                "observations": "Dev's mobile."
+              }
+            ]
+          },
+          {
+            "id": "nia",
+            "displayName": "Nia Faraday",
+            "npcType": "person",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "spriteSheet": "female_scientist_v2",
+            "spriteTalk": "assets/characters/female_scientist_talk.png",
+            "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/nia.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "awareness": "medium",
+            "creds": {
+              "username": "nfaraday",
+              "password": "Faradale-Nia-58"
+            },
+            "itemsHeld": [
+              {
+                "type": "phone_friendface",
+                "id": "nia_phone",
+                "name": "Nia's phone",
+                "owner": "nia",
+                "takeable": true,
+                "observations": "Nia's mobile."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "lobby",
+    "unlockedRooms": [
+      "lobby",
+      "floor",
+      "store"
+    ],
+    "encounteredNPCs": [
+      "hana",
+      "ines",
+      "svc_sync",
+      "cal",
+      "dev",
+      "nia"
+    ],
+    "inventory": [
+      {
+        "type": "code_device",
+        "id": "hana_device",
+        "droppable": true,
+        "name": "Code device",
+        "owner": "hana",
+        "takeable": true,
+        "observations": "A small code generator with a name label on the back."
+      },
+      {
+        "type": "phone_friendface",
+        "id": "dev_phone",
+        "name": "Dev's phone",
+        "owner": "dev",
+        "takeable": true,
+        "observations": "Dev's mobile."
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "device_not_declared_id",
+      "method": "GET",
+      "path": "mfa/device",
+      "params": {
+        "item_id": "no_such_device"
+      }
+    },
+    {
+      "id": "device_not_held",
+      "method": "GET",
+      "path": "mfa/device",
+      "params": {
+        "item_id": "ines_device"
+      }
+    },
+    {
+      "id": "hana_wrong_password",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "code_pc1",
+        "username": "hquill",
+        "password": "nope"
+      }
+    },
+    {
+      "id": "hana_right_password_code_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "code_pc1",
+        "username": "hquill",
+        "password": "Quillmere-Hana-31"
+      }
+    },
+    {
+      "id": "verify_wrong_code",
+      "method": "POST",
+      "path": "mfa/verify",
+      "params": {
+        "pc_id": "code_pc1",
+        "code": "000000"
+      }
+    },
+    {
+      "id": "verify_no_pending_pc",
+      "method": "POST",
+      "path": "mfa/verify",
+      "params": {
+        "pc_id": "code_pc2",
+        "code": "000000"
+      }
+    },
+    {
+      "id": "verify_unknown_pc",
+      "method": "POST",
+      "path": "mfa/verify",
+      "params": {
+        "pc_id": "no_such_pc",
+        "code": "000000"
+      }
+    },
+    {
+      "id": "desktop_code_pc1_no_session",
+      "method": "GET",
+      "path": "container/code_pc1"
+    },
+    {
+      "id": "dev_right_password_push_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "push_pc",
+        "username": "dkapoor",
+        "password": "Kaporwell-Dev-77"
+      }
+    },
+    {
+      "id": "prompt_push_pc",
+      "method": "POST",
+      "path": "mfa/prompt",
+      "params": {
+        "pc_id": "push_pc"
+      }
+    },
+    {
+      "id": "phone_dev",
+      "method": "GET",
+      "path": "mfa/phone",
+      "params": {
+        "npc_id": "dev"
+      }
+    },
+    {
+      "id": "phone_cal_not_held",
+      "method": "GET",
+      "path": "mfa/phone",
+      "params": {
+        "npc_id": "cal"
+      }
+    },
+    {
+      "id": "phone_own_refused",
+      "method": "GET",
+      "path": "mfa/phone",
+      "params": {
+        "npc_id": "dev",
+        "own": "1"
+      }
+    },
+    {
+      "id": "desktop_push_pc_no_session",
+      "method": "GET",
+      "path": "container/push_pc"
+    },
+    {
+      "id": "cal_right_password_plain_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "plain_pc",
+        "username": "cmoss",
+        "password": "Mossbank-Cal-12"
+      }
+    },
+    {
+      "id": "desktop_plain_pc",
+      "method": "GET",
+      "path": "container/plain_pc"
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "floor": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "door_sign": "Floor",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "store",
+                "north": "floor"
+              },
+              "door_sign": "Lobby",
+              "locked": false
+            },
+            "store": {
+              "type": "room_servers",
+              "connections": {
+                "west": "lobby"
+              },
+              "door_sign": "Store room",
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "osint": {
+              "sites": [
+                {
+                  "id": "friendface",
+                  "url": "friendface.example",
+                  "name": "Friendface",
+                  "type": "social",
+                  "profiles": [
+                    {
+                      "bio": "Purchasing.",
+                      "name": "Dev Kapoor",
+                      "posts": [
+                        {
+                          "id": "dev_authored",
+                          "text": "Stock count done for the week."
+                        }
+                      ],
+                      "person": "dev"
+                    },
+                    {
+                      "bio": "Stock.",
+                      "name": "Nia Faraday",
+                      "posts": [
+                        {
+                          "id": "nia_authored",
+                          "text": "Shelves relabelled at last."
+                        }
+                      ],
+                      "person": "nia"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "endGoal": "Test only: compare the sign-in with no second step, with a code, with a request to the owner and with a number to match.",
+          "policies": {
+            "code_gate": {
+              "mfa": "code",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "push_gate": {
+              "mfa": "push",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "match_gate": {
+              "mfa": "push_number_match",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "plain_gate": {
+              "remote": "allowed",
+              "maxAttempts": 5
+            }
+          },
+          "gameClock": {
+            "rate": 1,
+            "start": "Tue 08:30"
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "mfa_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "Sign in at the accounts PC",
+                  "status": "active",
+                  "taskId": "m1_signed_in"
+                }
+              ],
+              "title": "Try each kind of second step",
+              "status": "active",
+              "description": "Test only. Nothing here ticks by itself."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_ops_mfa",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Ops multi-factor sign-in\n\nA test floor for the second sign-in step (OPS_MFA_HELPDESK_PLAN.md, S8a). A lobby with a drop box, a wall port, an audit terminal and a cabinet; a floor with two PCs that ask for a six-digit code and three staff; a store room with a PC that sends a request to the owner's phone, one that asks for a number to be matched on the phone, one that asks for nothing extra, and three more staff. Nothing to solve.",
+          "globalVariables": {
+            "se_osint_state": {}
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "female_office_worker_v2",
+            "female_blowse_v2",
+            "male_telecom_v2",
+            "male_office_worker_v2",
+            "male_nerd_v2",
+            "female_scientist_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": true,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "hana_device",
+              "name": "Code device",
+              "type": "code_device",
+              "owner": "hana",
+              "takeable": true,
+              "droppable": true,
+              "observations": "A small code generator with a name label on the back."
+            },
+            {
+              "id": "dev_phone",
+              "name": "Dev's phone",
+              "type": "phone_friendface",
+              "owner": "dev",
+              "takeable": true,
+              "observations": "Dev's mobile."
+            }
+          ]
+        }
+      },
+      {
+        "id": "device_not_declared_id",
+        "status": 404,
+        "body": {
+          "success": false,
+          "error": "not found"
+        }
+      },
+      {
+        "id": "device_not_held",
+        "status": 403,
+        "body": {
+          "success": false,
+          "error": "no such device"
+        }
+      },
+      {
+        "id": "hana_wrong_password",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Incorrect username or password",
+          "attemptsLeft": 7
+        }
+      },
+      {
+        "id": "hana_right_password_code_pc",
+        "status": 200,
+        "body": {
+          "success": false,
+          "mfaRequired": true,
+          "mfa": "code",
+          "pcId": "code_pc1",
+          "npcId": "hana"
+        }
+      },
+      {
+        "id": "verify_wrong_code",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Incorrect username or password",
+          "attemptsLeft": 4,
+          "mfaIncorrect": true
+        }
+      },
+      {
+        "id": "verify_no_pending_pc",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Incorrect username or password"
+        }
+      },
+      {
+        "id": "verify_unknown_pc",
+        "status": 404,
+        "body": {
+          "success": false,
+          "message": "Sign-in PC not found"
+        }
+      },
+      {
+        "id": "desktop_code_pc1_no_session",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: code_pc1",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "dev_right_password_push_pc",
+        "status": 200,
+        "body": {
+          "success": false,
+          "mfaRequired": true,
+          "mfa": "push",
+          "pcId": "push_pc",
+          "npcId": "dev"
+        }
+      },
+      {
+        "id": "prompt_push_pc",
+        "status": 200,
+        "body": {
+          "success": false,
+          "approved": false,
+          "promptsSent": 1,
+          "waiting": "held_phone"
+        }
+      },
+      {
+        "id": "phone_dev",
+        "status": 200,
+        "body": {
+          "requests": [
+            {
+              "pcId": "push_pc",
+              "host": "ORD01",
+              "username": "dkapoor",
+              "n": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "phone_cal_not_held",
+        "status": 403,
+        "body": {
+          "success": false,
+          "error": "no such phone"
+        }
+      },
+      {
+        "id": "phone_own_refused",
+        "status": 403,
+        "body": {
+          "success": false,
+          "error": "no such phone"
+        }
+      },
+      {
+        "id": "desktop_push_pc_no_session",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: push_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "cal_right_password_plain_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "cal",
+          "username": "cmoss",
+          "displayName": "Cal Moss",
+          "via": "password",
+          "portrait": "assets/characters/male_office_worker_talk.png"
+        }
+      },
+      {
+        "id": "desktop_plain_pc",
+        "status": 200,
+        "body": {
+          "container_id": "plain_pc",
+          "contents": [],
+          "session": {
+            "npcId": "cal",
+            "username": "cmoss",
+            "displayName": "Cal Moss",
+            "via": "password",
+            "portrait": "assets/characters/male_office_worker_talk.png"
+          }
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "floor": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "door_sign": "Floor",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "store",
+                "north": "floor"
+              },
+              "door_sign": "Lobby",
+              "locked": false
+            },
+            "store": {
+              "type": "room_servers",
+              "connections": {
+                "west": "lobby"
+              },
+              "door_sign": "Store room",
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "osint": {
+              "sites": [
+                {
+                  "id": "friendface",
+                  "url": "friendface.example",
+                  "name": "Friendface",
+                  "type": "social",
+                  "profiles": [
+                    {
+                      "bio": "Purchasing.",
+                      "name": "Dev Kapoor",
+                      "posts": [
+                        {
+                          "id": "dev_authored",
+                          "text": "Stock count done for the week."
+                        }
+                      ],
+                      "person": "dev"
+                    },
+                    {
+                      "bio": "Stock.",
+                      "name": "Nia Faraday",
+                      "posts": [
+                        {
+                          "id": "nia_authored",
+                          "text": "Shelves relabelled at last."
+                        }
+                      ],
+                      "person": "nia"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "endGoal": "Test only: compare the sign-in with no second step, with a code, with a request to the owner and with a number to match.",
+          "policies": {
+            "code_gate": {
+              "mfa": "code",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "push_gate": {
+              "mfa": "push",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "match_gate": {
+              "mfa": "push_number_match",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "plain_gate": {
+              "remote": "allowed",
+              "maxAttempts": 5
+            }
+          },
+          "gameClock": {
+            "rate": 1,
+            "start": "Tue 08:30"
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "mfa_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "Sign in at the accounts PC",
+                  "status": "active",
+                  "taskId": "m1_signed_in"
+                }
+              ],
+              "title": "Try each kind of second step",
+              "status": "active",
+              "description": "Test only. Nothing here ticks by itself."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_ops_mfa",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Ops multi-factor sign-in\n\nA test floor for the second sign-in step (OPS_MFA_HELPDESK_PLAN.md, S8a). A lobby with a drop box, a wall port, an audit terminal and a cabinet; a floor with two PCs that ask for a six-digit code and three staff; a store room with a PC that sends a request to the owner's phone, one that asks for a number to be matched on the phone, one that asks for nothing extra, and three more staff. Nothing to solve.",
+          "globalVariables": {
+            "se_osint_state": {}
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "female_office_worker_v2",
+            "female_blowse_v2",
+            "male_telecom_v2",
+            "male_office_worker_v2",
+            "male_nerd_v2",
+            "female_scientist_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {
+            "plain_pc": {
+              "npcId": "cal",
+              "username": "cmoss",
+              "displayName": "Cal Moss",
+              "via": "password",
+              "portrait": "assets/characters/male_office_worker_talk.png"
+            }
+          },
+          "signedInPcs": [
+            "plain_pc"
+          ],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": true,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "hana_device",
+              "name": "Code device",
+              "type": "code_device",
+              "owner": "hana",
+              "takeable": true,
+              "droppable": true,
+              "observations": "A small code generator with a name label on the back."
+            },
+            {
+              "id": "dev_phone",
+              "name": "Dev's phone",
+              "type": "phone_friendface",
+              "owner": "dev",
+              "takeable": true,
+              "observations": "Dev's mobile."
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsLog": {
+        "mfa_audit": [
+          {
+            "n": 2,
+            "as": {
+              "typed": "hquill"
+            },
+            "seq": 1,
+            "last": [
+              0,
+              1768478400000
+            ],
+            "event": "signin_fail",
+            "where": {
+              "id": "code_pc1",
+              "kind": "pc"
+            },
+            "result": "fail",
+            "serverMs": 1768478400000,
+            "elapsedMs": 0
+          },
+          {
+            "as": {
+              "account": "hquill"
+            },
+            "seq": 2,
+            "event": "mfa_challenge",
+            "where": {
+              "id": "code_pc1",
+              "kind": "pc"
+            },
+            "detail": {
+              "route": "keyboard"
+            },
+            "result": "ok",
+            "serverMs": 1768478400000,
+            "elapsedMs": 0
+          },
+          {
+            "as": {
+              "account": "hquill"
+            },
+            "seq": 3,
+            "event": "mfa_code_wrong",
+            "where": {
+              "id": "code_pc1",
+              "kind": "pc"
+            },
+            "result": "fail",
+            "serverMs": 1768478400000,
+            "elapsedMs": 0
+          },
+          {
+            "as": {
+              "account": "dkapoor"
+            },
+            "seq": 4,
+            "event": "mfa_challenge",
+            "where": {
+              "id": "push_pc",
+              "kind": "pc"
+            },
+            "detail": {
+              "route": "keyboard"
+            },
+            "result": "ok",
+            "serverMs": 1768478400000,
+            "elapsedMs": 0
+          },
+          {
+            "as": {
+              "account": "dkapoor"
+            },
+            "seq": 5,
+            "event": "mfa_prompt_sent",
+            "where": {
+              "id": "push_pc",
+              "kind": "pc"
+            },
+            "result": "ok",
+            "serverMs": 1768478400000,
+            "elapsedMs": 0
+          },
+          {
+            "as": {
+              "account": "cmoss"
+            },
+            "seq": 6,
+            "event": "signin_ok",
+            "where": {
+              "id": "plain_pc",
+              "kind": "pc"
+            },
+            "detail": {
+              "route": "keyboard",
+              "method": "password"
+            },
+            "result": "ok",
+            "serverMs": 1768478400000,
+            "elapsedMs": 0
+          }
+        ]
+      },
+      "opsUsed": [],
+      "sessions": {
+        "plain_pc": {
+          "id": "cal",
+          "via": "password"
+        }
+      },
+      "footholds": {},
+      "inventory": [
+        {
+          "id": "hana_device",
+          "name": "Code device",
+          "type": "code_device",
+          "owner": "hana",
+          "takeable": true,
+          "droppable": true,
+          "observations": "A small code generator with a name label on the back."
+        },
+        {
+          "id": "dev_phone",
+          "name": "Dev's phone",
+          "type": "phone_friendface",
+          "owner": "dev",
+          "takeable": true,
+          "observations": "Dev's mobile."
+        }
+      ],
+      "opsLogSeq": 6,
+      "pinDusted": {},
+      "mfaPending": {
+        "push_pc": {
+          "n": 1,
+          "at": 1768478400,
+          "id": "push_pc",
+          "from": null,
+          "kind": "push",
+          "last": 1768478400,
+          "nonce": 1,
+          "npcId": "dev",
+          "tries": 0,
+          "foothold": null,
+          "fromGiven": false
+        },
+        "code_pc1": {
+          "n": 0,
+          "at": 1768478400,
+          "id": "code_pc1",
+          "from": null,
+          "kind": "code",
+          "last": 0,
+          "nonce": 1,
+          "npcId": "hana",
+          "tries": 1,
+          "foothold": null,
+          "fromGiven": false
+        }
+      },
+      "mfaPrompts": {},
+      "copiedItems": [],
+      "currentRoom": "lobby",
+      "mfaAccounts": {
+        "dev": {
+          "started": 1
+        },
+        "hana": {
+          "wrong": 1,
+          "started": 1
+        }
+      },
+      "opsFindings": {},
+      "room_states": {},
+      "signedInPcs": [
+        "plain_pc"
+      ],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {
+        "code_pc1|hquill": {
+          "n": 2,
+          "seq": 1
+        }
+      },
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "opsLogClockAt": 1768478400000,
+      "unlockedRooms": [
+        "lobby",
+        "floor",
+        "store"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "hana",
+        "ines",
+        "svc_sync",
+        "cal",
+        "dev",
+        "nia"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

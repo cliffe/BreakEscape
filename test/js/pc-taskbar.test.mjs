@@ -28,7 +28,7 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 for (const rel of ['utils/escape-html.js', 'utils/more-below.js', 'utils/computer-keywords.js', 'utils/pc-monitor.js',
     'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js', 'utils/remote-host-text.js', 'utils/compromise-bolt.js', 'minigames/container/container-item-image.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-minigame.js', 'minigames/container/cached-accounts-panel.js', 'minigames/network-view/ops-model.js',
-    'minigames/text-file/text-file-minigame.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'utils/sync-before-fetch.js']) copy(rel);
+    'minigames/text-file/text-file-minigame.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js']) copy(rel);
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
     'export async function addToInventory() { return { ok: true }; }\n' +

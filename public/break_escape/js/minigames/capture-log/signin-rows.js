@@ -180,7 +180,7 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
             if (!isStr(npcId)) continue;
             const row = accountRow(npcId);
             row.password = e;
-            pushOnce(row.kinds, e.source === 'cracked' ? 'cracked' : 'in_file');
+            pushOnce(row.kinds, e.source === 'helpdesk' ? 'reset' : (e.source === 'cracked' ? 'cracked' : 'in_file'));
             pushOnce(row.sources, e.source === 'cracked' ? SOURCE_TAG_TEXT.cracked : sourceTagOfHow(e.how));
             row.order = Math.min(row.order, gainedAt(e));
             continue;
@@ -241,7 +241,17 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
         row.title = named?.account?.displayName || first?.roleLabel || named?.account?.username || null;
         row.subtitle = first?.address || named?.account?.username || null;
         row.lines = [];
-        if (caps.length) {
+        const issued = row.password && row.password.source === 'helpdesk' && isStr(row.password.password);
+        if (issued) {
+            // A desk's reset: the server handed the value over with the grant, so it is shown (S8b).
+            // It comes before a captured value, which the reset made old (R2-CLIENT1).
+            row.value = row.password.password;
+            row.valueState = null;
+            row.use = row.value;
+            const oldNotes = caps.map((c) => c.note).filter(isStr);
+            row.lines.push(...oldNotes.slice(0, MAX_ROW_NOTES));
+            if (oldNotes.length > MAX_ROW_NOTES) row.lines.push(moreNotesLine(oldNotes.length - MAX_ROW_NOTES));
+        } else if (caps.length) {
             // The value: the one served for the oldest capture that has one; with none, the mask
             let got = null;
             let valueTargetId = first.targetId;
