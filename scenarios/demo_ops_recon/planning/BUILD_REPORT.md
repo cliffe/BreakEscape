@@ -80,3 +80,26 @@ Not changed: the `work_fail_printer` chatter pool stays as built. An off resourc
 
 Checks: ink compiles (6 of 6); validator 0 errors, 24 warnings (the 23 listed in wave 2 plus one realism-wording warning on the ink condition line `{ confirm_both_done or use_card_done or terminal_view_done }`, a false positive from variable names); dialoguelint 0 ERROR; `tools/check_mapping_index_drift.rb main`: 0 failures (new scenario skipped).
 Rails test `test/controllers/break_escape/demo_ops_recon_scenario_test.rb`: 19 runs, 282 assertions, 0 failures; the whole-run leak scan (now with the refusals, kitchen plug and printer-off answers) reports 0 findings. The switched-off printer scan answers 403 `not_responding`. `bin/ops-golden-compare`: 27 runs, 0 failures. Dungeon graph regenerated.
+
+## Round 2 fixes
+
+Inputs: `IMPL_REVIEW_R2.md` (six minors) and the run 2 playtest (16 differences).
+
+| Finding | Outcome |
+|---|---|
+| n1 (reload leaves the room-seen flags set, only the start room loads) | Fixed in the scenario: a `game_loaded` mapping on Ama clears `kitchen_seen` and `server_room_seen`, so after a resume lunch and "Call it a day" wait for the player to walk into the rooms again, and Ama says where to look. The engine cannot load rooms on resume. PLAYTEST A6 and R7a state this. Not checked in a browser. |
+| n2 (Zainab leaves on every server room entry) | The relay now needs `zainab_card_given !== true`. (`onceOnly` was not used: fired onceOnly state is saved across a reload, which would stop the post-reload relay.) |
+| n3 (Graham's lunch repeats) | The relay now needs `act_evening !== true`. |
+| n4 (levers offered after the day ends) | "Send them for coffee" and "Send them to lunch" are gated on `not act_evening`. Lunch also says "They only go the once." (playtest: lunch vanished with no reason). |
+| n5 (file server bark ignores the Terminal) | "That's the file server. Try it in the Terminal too, then tell me what it said." |
+| n6 (loose test status) | Asserts 422. |
+| Playtest 12 (Jun's bark four times) | Both Jun catch mappings now have a 90 s cooldown. |
+| Playtest 6 ("Desktop is empty" reads as a bug) | Agnieszka's PC now holds `print-queue.txt`. Not seen in a browser yet. |
+| Playtest 9 (no printer-off bark seen) | Not reproduced from the mapping (it matches the others that fire). PLAYTEST says the toast is the sure feedback and asks the next run to report the bark. Open. |
+| Playtest 10 (Zainab slow) | Same cause as n1. |
+| Playtest 11, 13 (no refusal line, first recap line missing) | A story run of `ama_owusu.json` emits the refusal and every recap line, so the ink is right; the run 2 read-out missed the first line after a choice. PLAYTEST says to read the lines on screen. Open: a client or harness read-out question. |
+| Playtest 1 to 5, 7, 8, 14, 15 | Engine or harness behaviour, not scenario faults. PLAYTEST now has the exact on-screen text (eight tasks in three aims, the board names controls, eight sweep rows, no grant text on confirm, toast wording, share opens from the file server desktop, Unplug only at the port, "Agent 0x00", the filter). |
+
+Scenario test in the scanner batch: the cause was not reproduced (the batch passed on three seeds, 59569, 1, 2, before and after). The shared state found is the request-scoped store `OpsLog::Current.issued_secrets` (left set by the MFA tests, which make the log guard refuse a row that equals an issued secret) and a frozen clock from `travel_to`. The recon test now clears both, and the ops log overlay, in `setup` and `teardown`. Proof run: `access_leak_scanner*_test.rb` plus the recon test, seeds 1 and 2: 166 runs, 3386 assertions, 0 failures. The leak scan reports 0.
+
+Checks: ink compiles (6 of 6); validator 0 errors, 24 warnings (unchanged); dialoguelint no findings; `tools/check_mapping_index_drift.rb main`: 0 failures; `bin/ops-golden-compare`: 27 runs, 0 failures; dungeon graph regenerated.

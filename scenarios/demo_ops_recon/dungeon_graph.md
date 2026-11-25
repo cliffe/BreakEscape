@@ -394,34 +394,35 @@ flowchart TD
   it_room("IT room")
   rc_chidi_pc_1{"Chidi's PC"}
   rc_jun_pc_2{"Hot desk PC"}
-  rc_agnieszka_pc_3{"Agnieszka's PC"}
-  rc_hotdesk_jack_4{"Hot desk network port"}
-  rc_office_printer_5{"Office printer"}
-  rc_printer_socket_6{"Printer wall socket"}
-  rc_printer_cupboard_7[["Printer cupboard"]]
-  rc_card_factory_8{"Technique card: factory accounts"}
-  rc_office_coffee_9{"Office Coffee Station"}
-  rc_office_coffee_socket_10{"Coffee wall socket"}
-  rc_office_mugs_11{"Abandoned Mugs"}
-  rc_tour_notice_12{"Things to try"}
-  rc_npc_ama_owusu_13("Ama Owusu")
-  rc_npc_chidi_okeke_14("Chidi Okeke")
-  rc_npc_jun_watanabe_15("Jun Watanabe")
-  rc_npc_agnieszka_duda_16("Agnieszka Duda")
-  rc_kitchen_jack_17{"Kitchen wall network port"}
-  rc_fridge_18{"Fridge"}
-  rc_microwave_19{"Microwave"}
-  rc_kitchen_coffee_20{"Kitchen Coffee Station"}
-  rc_water_cooler_21{"Water Cooler"}
-  rc_washing_up_tray_22{"Washing-up Tray"}
-  rc_file_server_23{"File server"}
-  rc_zainab_tool_roll_24[["Zainab's tool roll"]]
-  rc_card_open_settings_25{"Technique card: left-open settings"}
-  rc_npc_zainab_hussain_26("Zainab Hussain")
-  rc_card_update_gap_27{"Technique card: known update gap"}
-  rc_graham_pc_28{"Graham's PC"}
-  rc_network_log_pc_29{"Network log PC"}
-  rc_npc_graham_whitfield_30("Graham Whitfield")
+  rc_agnieszka_pc_3[["Agnieszka's PC"]]
+  rc_agnieszka_print_note_4{"print-queue.txt"}
+  rc_hotdesk_jack_5{"Hot desk network port"}
+  rc_office_printer_6{"Office printer"}
+  rc_printer_socket_7{"Printer wall socket"}
+  rc_printer_cupboard_8[["Printer cupboard"]]
+  rc_card_factory_9{"Technique card: factory accounts"}
+  rc_office_coffee_10{"Office Coffee Station"}
+  rc_office_coffee_socket_11{"Coffee wall socket"}
+  rc_office_mugs_12{"Abandoned Mugs"}
+  rc_tour_notice_13{"Things to try"}
+  rc_npc_ama_owusu_14("Ama Owusu")
+  rc_npc_chidi_okeke_15("Chidi Okeke")
+  rc_npc_jun_watanabe_16("Jun Watanabe")
+  rc_npc_agnieszka_duda_17("Agnieszka Duda")
+  rc_kitchen_jack_18{"Kitchen wall network port"}
+  rc_fridge_19{"Fridge"}
+  rc_microwave_20{"Microwave"}
+  rc_kitchen_coffee_21{"Kitchen Coffee Station"}
+  rc_water_cooler_22{"Water Cooler"}
+  rc_washing_up_tray_23{"Washing-up Tray"}
+  rc_file_server_24{"File server"}
+  rc_zainab_tool_roll_25[["Zainab's tool roll"]]
+  rc_card_open_settings_26{"Technique card: left-open settings"}
+  rc_npc_zainab_hussain_27("Zainab Hussain")
+  rc_card_update_gap_28{"Technique card: known update gap"}
+  rc_graham_pc_29{"Graham's PC"}
+  rc_network_log_pc_30{"Network log PC"}
+  rc_npc_graham_whitfield_31("Graham Whitfield")
 
   office --> kitchen
   office --> server_room
@@ -429,37 +430,38 @@ flowchart TD
   office --> rc_chidi_pc_1
   office --> rc_jun_pc_2
   office --> rc_agnieszka_pc_3
-  office --> rc_hotdesk_jack_4
-  office --> rc_office_printer_5
-  office --> rc_printer_socket_6
-  office --> rc_printer_cupboard_7
-  rc_printer_cupboard_7 --> rc_card_factory_8
-  office --> rc_office_coffee_9
-  office --> rc_office_coffee_socket_10
-  office --> rc_office_mugs_11
-  office --> rc_tour_notice_12
-  office --> rc_npc_ama_owusu_13
-  office --> rc_npc_chidi_okeke_14
-  office --> rc_npc_jun_watanabe_15
-  office --> rc_npc_agnieszka_duda_16
-  kitchen --> rc_kitchen_jack_17
-  kitchen --> rc_fridge_18
-  kitchen --> rc_microwave_19
-  kitchen --> rc_kitchen_coffee_20
-  kitchen --> rc_water_cooler_21
-  kitchen --> rc_washing_up_tray_22
-  server_room --> rc_file_server_23
-  server_room --> rc_zainab_tool_roll_24
-  rc_zainab_tool_roll_24 --> rc_card_open_settings_25
-  server_room --> rc_npc_zainab_hussain_26
-  rc_npc_zainab_hussain_26 --> rc_card_update_gap_27
-  it_room --> rc_graham_pc_28
-  it_room --> rc_network_log_pc_29
-  it_room --> rc_npc_graham_whitfield_30
+  rc_agnieszka_pc_3 --> rc_agnieszka_print_note_4
+  office --> rc_hotdesk_jack_5
+  office --> rc_office_printer_6
+  office --> rc_printer_socket_7
+  office --> rc_printer_cupboard_8
+  rc_printer_cupboard_8 --> rc_card_factory_9
+  office --> rc_office_coffee_10
+  office --> rc_office_coffee_socket_11
+  office --> rc_office_mugs_12
+  office --> rc_tour_notice_13
+  office --> rc_npc_ama_owusu_14
+  office --> rc_npc_chidi_okeke_15
+  office --> rc_npc_jun_watanabe_16
+  office --> rc_npc_agnieszka_duda_17
+  kitchen --> rc_kitchen_jack_18
+  kitchen --> rc_fridge_19
+  kitchen --> rc_microwave_20
+  kitchen --> rc_kitchen_coffee_21
+  kitchen --> rc_water_cooler_22
+  kitchen --> rc_washing_up_tray_23
+  server_room --> rc_file_server_24
+  server_room --> rc_zainab_tool_roll_25
+  rc_zainab_tool_roll_25 --> rc_card_open_settings_26
+  server_room --> rc_npc_zainab_hussain_27
+  rc_npc_zainab_hussain_27 --> rc_card_update_gap_28
+  it_room --> rc_graham_pc_29
+  it_room --> rc_network_log_pc_30
+  it_room --> rc_npc_graham_whitfield_31
 
   class office,kitchen,server_room,it_room room
-  class rc_chidi_pc_1,rc_jun_pc_2,rc_agnieszka_pc_3,rc_hotdesk_jack_4,rc_office_printer_5,rc_printer_socket_6,rc_card_factory_8,rc_office_coffee_9,rc_office_coffee_socket_10,rc_office_mugs_11,rc_tour_notice_12,rc_kitchen_jack_17,rc_fridge_18,rc_microwave_19,rc_kitchen_coffee_20,rc_water_cooler_21,rc_washing_up_tray_22,rc_file_server_23,rc_card_open_settings_25,rc_card_update_gap_27,rc_graham_pc_28,rc_network_log_pc_29 item
-  class rc_printer_cupboard_7,rc_zainab_tool_roll_24 container
-  class rc_npc_ama_owusu_13,rc_npc_chidi_okeke_14,rc_npc_jun_watanabe_15,rc_npc_agnieszka_duda_16,rc_npc_zainab_hussain_26,rc_npc_graham_whitfield_30 npc
+  class rc_chidi_pc_1,rc_jun_pc_2,rc_agnieszka_print_note_4,rc_hotdesk_jack_5,rc_office_printer_6,rc_printer_socket_7,rc_card_factory_9,rc_office_coffee_10,rc_office_coffee_socket_11,rc_office_mugs_12,rc_tour_notice_13,rc_kitchen_jack_18,rc_fridge_19,rc_microwave_20,rc_kitchen_coffee_21,rc_water_cooler_22,rc_washing_up_tray_23,rc_file_server_24,rc_card_open_settings_26,rc_card_update_gap_28,rc_graham_pc_29,rc_network_log_pc_30 item
+  class rc_agnieszka_pc_3,rc_printer_cupboard_8,rc_zainab_tool_roll_25 container
+  class rc_npc_ama_owusu_14,rc_npc_chidi_okeke_15,rc_npc_jun_watanabe_16,rc_npc_agnieszka_duda_17,rc_npc_zainab_hussain_27,rc_npc_graham_whitfield_31 npc
   class node_start start
 ```

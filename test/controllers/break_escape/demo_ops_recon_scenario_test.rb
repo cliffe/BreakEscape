@@ -37,6 +37,19 @@ module BreakEscape
       JSON.parse(ScenarioBinding.render(File.read(SCENARIO_PATH)))
     end
 
+    # Other files leave process-wide state behind (the request-scoped store of issued secrets, a frozen clock
+    # that was not undone). Clear both before and after each test so the order the files run in changes nothing.
+    setup do
+      travel_back
+      OpsLog::Current.reset
+      Thread.current[:ops_log_overlay] = nil
+    end
+
+    teardown do
+      travel_back
+      OpsLog::Current.reset
+    end
+
     def build(player_state = {})
       build_network_game({ 'unlockedRooms' => ROOMS, 'currentRoom' => 'office',
                            'encounteredNPCs' => %w[ama_owusu zainab_hussain graham_whitfield] }.merge(player_state), scenario)
@@ -300,7 +313,7 @@ module BreakEscape
       assert_includes held_ids, 'card_update_gap'
       post game_path('inventory'), params: { action_type: 'add', source_npc_id: 'zainab_hussain',
                                              item: { type: 'technique_card', id: 'card_open_settings', name: 'Technique card: left-open settings' } }, as: :json
-      refute_equal 200, response.status, 'Zainab does not hold the settings card: it is in her tool roll'
+      assert_response :unprocessable_entity, 'Zainab does not hold the settings card: it is in her tool roll'
       refute_includes held_ids, 'card_open_settings'
       take_card('card_open_settings')
     end

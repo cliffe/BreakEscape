@@ -30,7 +30,7 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); this is the list a la
 | 22 | ink lever_coffee | Right. A coffee run. Chidi and Jun will head for the machine. | 12 |
 | 23 | ink lever_coffee | Anyone still at the hot desk port when Jun comes back gets caught. | 13 |
 | 24 | ink lever_lunch | Have a look in the kitchen first. That's where they eat. | 11 |
-| 25 | ink lever_lunch | Lunch, then. Staff drift off their desks, Jun included. | 9 |
+| 25 | ink lever_lunch | Lunch, then. Staff drift off their desks, Jun included. They only go the once. | 14 |
 | 26 | ink lever_day_end | Look in on the kitchen and the server room first. Zainab works in the server room, and she'll want the kitchen later. | 22 |
 | 27 | ink lever_day_end | Seen what you wanted? Once they've gone home, it's just Zainab and Graham. | 13 |
 | 28 | ink lever_day_end | Right. Home time for nearly everyone. | 6 |
@@ -63,7 +63,7 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); this is the list a la
 | 55 | bark global_variable_changed:scan_printer_done | The admin page is the one to look at. Check it, then test what it reports. | 16 |
 | 56 | bark global_variable_changed:confirm_both_done | One real, one false alarm. There's a technique card in the printer cupboard. | 13 |
 | 57 | bark global_variable_changed:use_card_done | The printer kept a saved link to Agnieszka's PC. Try it from her row. | 14 |
-| 58 | bark global_variable_changed:file_server_seen | That's the file server. Come and tell me what it said. | 11 |
+| 58 | bark global_variable_changed:file_server_seen | That's the file server. Try it in the Terminal too, then tell me what it said. | 16 |
 | 59 | bark global_variable_changed:open_share_done | You're in the shared drive. Graham can show you how that looked. | 12 |
 
 ## chidi_okeke
@@ -203,7 +203,7 @@ Lines new or reworded in the round 1 fixes (dialogue review R1 and implementatio
 | ama_owusu | ink whats_next | Then test the left-open setting, and use the card from her tool roll on it. That's an admin session, and the shared drive. | 23 |
 | ama_owusu | ink lever_coffee | Anyone still at the hot desk port when Jun comes back gets caught. | 13 |
 | ama_owusu | ink lever_lunch | Have a look in the kitchen first. That's where they eat. | 11 |
-| ama_owusu | ink lever_lunch | Lunch, then. Staff drift off their desks, Jun included. | 9 |
+| ama_owusu | ink lever_lunch | Lunch, then. Staff drift off their desks, Jun included. They only go the once. | 14 |
 | ama_owusu | ink lever_day_end | Look in on the kitchen and the server room first. Zainab works in the server room, and she'll want the kitchen later. | 22 |
 | ama_owusu | ink lever_day_end | Zainab will head for the kitchen coffee, and Graham will show you the log. | 14 |
 | ama_owusu | ink terminal_talk | Same findings, same names. The Terminal shows the addresses and banners the panels tidy away. | 15 |
@@ -221,7 +221,7 @@ Lines new or reworded in the round 1 fixes (dialogue review R1 and implementatio
 | ama_owusu | bark global_variable_changed:scan_printer_done | The admin page is the one to look at. Check it, then test what it reports. | 16 |
 | ama_owusu | bark global_variable_changed:confirm_both_done | One real, one false alarm. There's a technique card in the printer cupboard. | 13 |
 | ama_owusu | bark global_variable_changed:use_card_done | The printer kept a saved link to Agnieszka's PC. Try it from her row. | 14 |
-| ama_owusu | bark global_variable_changed:file_server_seen | That's the file server. Come and tell me what it said. | 11 |
+| ama_owusu | bark global_variable_changed:file_server_seen | That's the file server. Try it in the Terminal too, then tell me what it said. | 16 |
 | ama_owusu | bark global_variable_changed:open_share_done | You're in the shared drive. Graham can show you how that looked. | 12 |
 | chidi_okeke | ink hub | Only since about seven. Graham says it's nothing. | 8 |
 | chidi_okeke | ink hub | Jun, mostly. The network port there is live, which is handy for laptops. | 13 |
@@ -237,3 +237,12 @@ Lines new or reworded in the round 1 fixes (dialogue review R1 and implementatio
 ## Totals
 
 143 lines listed; 47 new or changed in round 1; longest 23 words.
+
+## Changed in round 2
+
+| Speaker | Source | Line | Words |
+|---|---|---|---|
+| ama_owusu | ink lever_lunch | Lunch, then. Staff drift off their desks, Jun included. They only go the once. | 14 |
+| ama_owusu | bark global_variable_changed:file_server_seen | That's the file server. Try it in the Terminal too, then tell me what it said. | 16 |
+
+The two lines above replace their round 1 versions in the tables. No other line changed.

@@ -43,9 +43,9 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
 - (choices)
 + [What's next?]
     -> whats_next
-+ [Send them for coffee.]
++ { not act_evening } [Send them for coffee.]
     -> lever_coffee
-+ { not act_midday } [Send them to lunch.]
++ { not act_midday and not act_evening } [Send them to lunch.]
     -> lever_lunch
 + { not act_evening } [Call it a day.]
     -> lever_day_end
@@ -129,7 +129,7 @@ Anyone still at the hot desk port when Jun comes back gets caught.
 ~ act_midday = true
 #set_global:act_midday:true
 # speaker:npc
-Lunch, then. Staff drift off their desks, Jun included.
+Lunch, then. Staff drift off their desks, Jun included. They only go the once.
 -> hub
 
 === lever_day_end ===

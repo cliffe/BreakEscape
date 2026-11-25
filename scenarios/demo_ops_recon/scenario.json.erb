@@ -307,6 +307,17 @@
           "access": { "people": ["agnieszka_duda"] },
           "policy": "desk",
           "observations": "Agnieszka's desk PC. She prints from here.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "agnieszka_print_note",
+              "name": "print-queue.txt",
+              "takeable": true,
+              "readable": true,
+              "text": "Print queue: two pages waiting for the office printer.",
+              "observations": "A note about Agnieszka's print queue."
+            }
+          ],
           "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
         },
         {
@@ -468,6 +479,7 @@
           "behavior": { "facePlayer": true, "immovable": true },
           "eventMappings": [
             { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
+            { "eventPattern": "game_loaded", "cooldown": 0, "setGlobal": { "kitchen_seen": false, "server_room_seen": false } },
             { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
             { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
             { "eventPattern": "network_foothold_gained:hotdesk_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "You're in. Now see what answers." },
@@ -489,7 +501,7 @@
             { "eventPattern": "global_variable_changed:scan_printer_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_both_done !== true", "cooldown": 0, "bark": "The admin page is the one to look at. Check it, then test what it reports." },
             { "eventPattern": "global_variable_changed:confirm_both_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_card_done !== true", "cooldown": 0, "bark": "One real, one false alarm. There's a technique card in the printer cupboard." },
             { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "The printer kept a saved link to Agnieszka's PC. Try it from her row." },
-            { "eventPattern": "global_variable_changed:file_server_seen", "condition": "data.value === true && data.oldValue !== true && globalVars.terminal_view_done !== true", "cooldown": 0, "bark": "That's the file server. Come and tell me what it said." },
+            { "eventPattern": "global_variable_changed:file_server_seen", "condition": "data.value === true && data.oldValue !== true && globalVars.terminal_view_done !== true", "cooldown": 0, "bark": "That's the file server. Try it in the Terminal too, then tell me what it said." },
             { "eventPattern": "global_variable_changed:open_share_done", "condition": "data.value === true && data.oldValue !== true && globalVars.read_log_done !== true", "cooldown": 0, "bark": "You're in the shared drive. Graham can show you how that looked." }
           ]
         },
@@ -549,10 +561,10 @@
             { "eventPattern": "npc_left_post:chidi_okeke", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
-            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "setGlobal": { "jun_caught": true } },
+            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?", "setGlobal": { "jun_caught": true } },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false },
             { "eventPattern": "npc_left_post:jun_watanabe", "cooldown": 0, "setGlobal": { "jun_caught": false } },
-            { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance !== null && data.playerDistance <= 80 && globalVars.jun_caught !== true", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?" }
+            { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance !== null && data.playerDistance <= 80 && globalVars.jun_caught !== true", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?" }
           ]
         },
         {
@@ -766,7 +778,7 @@
           "eventMappings": [
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 1500, "cooldown": 0, "fireOnlyWhenLoaded": true, "bark": "Quiet now. Time for a coffee in peace." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 8000, "cooldown": 0, "fireOnlyWhenLoaded": true, "needs": { "set": { "caffeine": 10 } } },
-            { "eventPattern": "room_entered:server_room", "condition": "globalVars.act_evening === true", "cooldown": 60000, "needs": { "set": { "caffeine": 10 } } }
+            { "eventPattern": "room_entered:server_room", "condition": "globalVars.act_evening === true && globalVars.zainab_card_given !== true", "cooldown": 60000, "needs": { "set": { "caffeine": 10 } } }
           ]
         }
       ]
@@ -839,7 +851,7 @@
           "eventMappings": [
             { "eventPattern": "npc_left_post:agnieszka_duda", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
             { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "fireOnlyWhenLoaded": true, "needs": { "set": { "hunger": 62 } } },
-            { "eventPattern": "room_entered:it_room", "condition": "globalVars.act_midday === true", "cooldown": 60000, "needs": { "set": { "hunger": 62 } } }
+            { "eventPattern": "room_entered:it_room", "condition": "globalVars.act_midday === true && globalVars.act_evening !== true", "cooldown": 60000, "needs": { "set": { "hunger": 62 } } }
           ]
         }
       ]
