@@ -24,7 +24,10 @@ class AccessLeakScannerPlaytest173Test < ActiveSupport::TestCase
     numbers.map { |n| Marshal.load(Marshal.dump(captured.find { |r| r['n'] == n })) }
   end
 
-  def scan(rows, signins: [])
+  # R3-SCANNER1: a plant is credited only for a device the capture shows held, so unless a case says `taken: false` (or names
+  # row 40 itself) the capture starts with row 40, the 200 answer to the add of kit_badusb.
+  def scan(rows, signins: [], taken: true)
+    rows = [pick(40).first, *rows] if taken && rows.none? { |r| r['n'] == 40 }
     scanner = AccessLeakScanner.new(scenario)
     found = scanner.scan(rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] }, signins: signins)
     [found.map { |f| [f.line, f.rule, f.owner] }, scanner]
@@ -178,5 +181,45 @@ class AccessLeakScannerPlaytest173Test < ActiveSupport::TestCase
     desktop['body']['session'] = { 'npcId' => 'uma', 'username' => 'umaquay', 'displayName' => 'Uma Quayle', 'via' => 'technique', 'footholdId' => 'jack_office_port', 'access' => 'admin' }
     found, = scan_with_grants([rows[0], rows[1], grant_row('store_pc', 'uma'), rows[2], desktop])
     assert_includes found.map { |_, rule, owner| [rule, owner] }, %w[profile_admin_read item:uma_todo]
+  end
+
+  # R3-SCANNER1: a plant is credited only for a device the capture shows held (row 40, the kit_badusb add answered 200).
+  def untaken_remove(id)
+    { 'method' => 'POST', 'path' => '/break_escape/games/173/inventory', 'status' => 200, 'body' => { 'success' => true },
+      'inv' => { 'action' => 'remove', 'itemId' => id, 'usedOn' => 'bay_usb_port' } }
+  end
+
+  test 'R3-SCANNER1: the honest implant of the held kit_badusb (row 40) earns the row' do
+    found, scanner = scan(pick(40, 119, 122, 302), signins: ADEL)
+    assert_empty found
+    assert_empty scanner.unused_entries
+  end
+
+  test 'R3-SCANNER1 (P2u): a remove of a stick the capture never shows taken earns no second storage row' do
+    rows = pick(40, 119, 122, 302)
+    audit = Marshal.load(Marshal.dump(rows[3]))
+    audit['body']['rows'] << audit['body']['rows'][0].merge('id' => 'zz', 'detail' => 'device: storage')
+    control, = scan([rows[0], rows[1], rows[2], audit], signins: ADEL)
+    assert_includes control.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG
+    found, = scan([rows[0], rows[1], rows[2], untaken_remove('kit_stick_a'), audit], signins: ADEL)
+    assert_includes found.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG
+  end
+
+  test 'R3-SCANNER1: an implant of a device never taken in the capture earns nothing' do
+    found, = scan(pick(119, 122, 302), signins: ADEL, taken: false)
+    assert_includes found.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG
+  end
+
+  test 'R3-SCANNER2 (I4, I4n, I4t): a remote password or token admin session at the PC does not earn the implant row' do
+    rows = pick(40, 119, 122, 302)
+    remote = lambda do |extra|
+      Marshal.load(Marshal.dump(rows[1])).tap { |r| r['body'].merge!({ 'remote' => true, 'footholdId' => 'jack_office_port', 'host' => 'BAY01' }.merge(extra)) }
+    end
+    [{}, { 'via' => 'credential', 'kind' => 'token', 'label' => 'Bay PC sign-in token', 'expiresInS' => 205 }].each do |extra|
+      [[], ADEL].each do |names|
+        found, = scan([rows[0], remote.call(extra), rows[2], rows[3]], signins: names)
+        assert_includes found.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG, [extra, names].inspect
+      end
+    end
   end
 end

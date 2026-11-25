@@ -537,6 +537,7 @@ class AccessLeakScanner
     @priv_deadlines = {}
     @priv_resumable = {}
     @priv_relay_held = {}     # S5bc R1: pc => account id of a relay sign-in held there (a host row never lists a relay)
+    @priv_keyboard = {}       # S5bc R3-SCANNER2: pc => true while the held admin step came from a typed (keyboard) sign-in, no foothold, no relay
     @priv_kinds = {}          # pc => [via, relay] of the session that earned the held admin step (R4-2)
     @priv_logout_pending = {} # pc => account a named --logout ended, until an answer lists that PC's session state (R4-5)
     @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
@@ -2754,6 +2755,7 @@ class AccessLeakScanner
     @priv_logout_pending.delete(pc)
     @priv_relay_held.delete(pc) # S5bc R2-SCANNER3: a technique session replaces a relay one, and a host row lists it
     @priv_kinds[pc] = priv_kind_of(session)
+    @priv_keyboard.delete(pc)
     @ops_earned.delete_if { |step| step.start_with?("through:#{pc}:") || step == "admin:#{pc}" }
     @ops_earned << "through:#{pc}:#{session['footholdId']}" if session['footholdId'].is_a?(String)
     @ops_earned << "admin:#{pc}" if session['access'] == 'admin'
@@ -3122,6 +3124,7 @@ class AccessLeakScanner
       @priv_deadlines.delete(pc)
       @priv_resumable.delete(pc)
       @priv_kinds.delete(pc)
+      @priv_keyboard.delete(pc)
       @priv_logout_pending.delete(pc)
       @priv_relay_held.delete(pc)
       exact ? @ops_session_accounts[pc] = body['npcId'] : @ops_session_accounts.delete(pc)
@@ -3134,6 +3137,7 @@ class AccessLeakScanner
 
     @ops_earned << "admin:#{pcs.first}"
     @priv_kinds[pcs.first] = priv_kind_of(body)
+    @priv_keyboard[pcs.first] = true if body['remote'] != true && !body.key?('footholdId') && body['relay'] != true
     # a token's deadline is the answer's row time plus `expiresInS` (R3 check 2, rule 1): the step is gone after it
     seconds = body['expiresInS']
     at = priv_row_time(row)
@@ -3195,7 +3199,7 @@ class AccessLeakScanner
     account = @ops_session_accounts[pc]
     return unless account
 
-    @priv_resumable[pc] = { account: account, step: @ops_earned.include?("admin:#{pc}"), deadline: @priv_deadlines[pc], kind: @priv_kinds[pc] }
+    @priv_resumable[pc] = { account: account, step: @ops_earned.include?("admin:#{pc}"), deadline: @priv_deadlines[pc], kind: @priv_kinds[pc], keyboard: @priv_keyboard[pc] }
   end
 
   # What kind of session an answer shows (R4-2): its `via` and whether it is a relay. A host row never lists a relay.
@@ -3209,6 +3213,7 @@ class AccessLeakScanner
     @ops_earned.delete("admin:#{pc}")
     @priv_deadlines.delete(pc)
     @priv_kinds.delete(pc)
+    @priv_keyboard.delete(pc)
     @priv_resumable.delete(pc)
   end
 
@@ -3263,6 +3268,7 @@ class AccessLeakScanner
     @ops_earned.delete("admin:#{pc}")
     @priv_deadlines.delete(pc)
     @priv_kinds.delete(pc)
+    @priv_keyboard.delete(pc)
   end
 
   # A resume restores the step only when every one of these holds (R4 check 3): the row is not past the token deadline of the
@@ -3286,6 +3292,7 @@ class AccessLeakScanner
 
     @ops_earned << "admin:#{pc}"
     @priv_kinds[pc] = saved[:kind] if saved[:kind]
+    @priv_keyboard[pc] = true if saved[:keyboard]
     @priv_deadlines[pc] = saved[:deadline] if saved[:deadline]
   end
 
@@ -3390,6 +3397,7 @@ class AccessLeakScanner
       @ops_session_accounts.delete(pc)
       @priv_deadlines.delete(pc)
       @priv_kinds.delete(pc)
+      @priv_keyboard.delete(pc)
       @priv_resumable.delete(pc) unless keep_resumable
       @priv_signin_pending = nil if @priv_signin_pending && @priv_signin_pending[:pc] == pc
     end
@@ -3562,7 +3570,7 @@ class AccessLeakScanner
 
     inv = row['inv']
     # S5bc R2-SCANNER1: an item given back to the tray can be planted again
-    @hv_planted.delete(inv['itemId']) if inv.is_a?(Hash) && inv['action'] == 'add' && inv['itemId'].is_a?(String)
+    @hv_held << inv['itemId'] if inv.is_a?(Hash) && inv['action'] == 'add' && inv['itemId'].is_a?(String)
     return unless body.keys == ['success'] && body['success'] == true
     return unless inv.is_a?(Hash) && inv['action'] == 'remove' && inv['itemId'].is_a?(String) && inv['usedOn'].is_a?(String)
 
@@ -3575,7 +3583,7 @@ class AccessLeakScanner
     return unless pc && @priv_pcs.key?(pc)
     # S5bc R2-SCANNER1: the server answers 200 to a remove of an item that is not held and writes no row: only the first
     # plant of a device (since it was last added) can have written one
-    return unless @hv_planted.add?(item['id'] || inv['itemId'])
+    return unless @hv_held.delete?(item['id'] || inv['itemId'])
     return unless grant.present? ? @ops_earned.include?("admin:#{pc}") : harvest_pc_admin?(pc)
 
     account = admin_act_account(pc)
@@ -3594,9 +3602,9 @@ class AccessLeakScanner
 
     pc = body['foothold']['sourceId']
     return unless @priv_pcs.key?(pc)
-    return unless @hv_planted.add?(body['consumedId']) # R2-SCANNER1: a device already taken by an earlier plant answer
+    return unless @hv_held.delete?(body['consumedId']) # R3-SCANNER1: only a device the capture shows held can have been taken
     # R2-SCANNER2: the keyboard step only (a technique session's admin step answers needs_console and writes no row)
-    return unless @ops_earned.include?("admin:#{pc}") && %w[password credential].include?(@priv_kinds[pc]&.first) && @priv_kinds[pc][1] == false
+    return unless @ops_earned.include?("admin:#{pc}") && %w[password credential].include?(@priv_kinds[pc]&.first) && @priv_kinds[pc][1] == false && @priv_keyboard[pc]
 
     item = scenario_item(body['consumedId'])
     return unless item && %w[storage hid].include?(item['usbClass']) && BreakEscape::AccessWork.plant_refused?(@data, @priv_pcs[pc], item)
@@ -5145,7 +5153,9 @@ class AccessLeakScanner
     @hv_served_hashes = Set.new # hash record ids a credited collect row named
     @hv_name_earned = Set.new   # account-only ids whose display name has been earned
     @hv_user_earned = Set.new   # account-only ids whose username has been earned
-    @hv_planted = Set.new       # S5bc R2-SCANNER1: ids of devices a credited-shape plant answer took, until an inventory add gives them back
+    # S5bc R3-SCANNER1: ids of devices the capture shows held (a start item, or a 200 inventory add), until a plant takes them.
+    # Limit: a device taken in an earlier capture file is not held here, so a plant of it is flagged.
+    @hv_held = Set.new(Array(@data['startItemsInInventory']).filter_map { |i| i['id'] if i.is_a?(Hash) && i['id'].is_a?(String) })
     @hv_acts = Hash.new(0)      # R2-L2: [:collect, pc, account, count] / [:plant, pc, account, device] => acts the capture shows so far
     @hv_relay = {}              # PC id => account id of a proved relay administrator session (R1-L1)
     @hv_relay_signed = {}       # R2-L1: PC id => account id of a proved relay SIGN-IN answer still standing (a desktop keeps the mark only on it)

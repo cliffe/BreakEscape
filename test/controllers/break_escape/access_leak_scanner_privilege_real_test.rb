@@ -1502,6 +1502,31 @@ module BreakEscape
       assert_flagged reported(twice), 'log_row', 'log:usb_override:bay_pc'
     end
 
+    # S5bc R3-SCANNER1 (P2, P2b): a remove of a device the capture never shows taken is answered 200 and writes no row, so it earns
+    # none; the plant credit needs a device the player holds (an inventory add or a start item).
+    def untaken_remove_of(rows, plant, item_id)
+      deep(rows[plant - 1]).tap { |r| r['inv']['itemId'] = item_id }
+    end
+
+    test 'R3-SCANNER1 (P2): a remove of a never-taken stick after the honest remove earns no second USB_OVERRIDE row' do
+      rows = run_real
+      plant = plant_n(rows)
+      log = log_n(rows)
+      ox2 = edit(rows, log) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['result'] = 'OK x2' }
+      assert_flagged reported(ox2), 'log_row', 'log:usb_override:bay_pc'
+      extra = ox2.dup.insert(plant, untaken_remove_of(rows, plant, 'kit_stick_a'))
+      assert_flagged reported(extra), 'log_row', 'log:usb_override:bay_pc'
+    end
+
+    test 'R3-SCANNER1 (P2b): the never-taken remove before the honest one earns no row either' do
+      rows = run_real
+      plant = plant_n(rows)
+      log = log_n(rows)
+      ox2 = edit(rows, log) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['result'] = 'OK x2' }
+      extra = ox2.dup.insert(plant - 1, untaken_remove_of(rows, plant, 'kit_stick_b'))
+      assert_flagged reported(extra), 'log_row', 'log:usb_override:bay_pc'
+    end
+
     # R2-L3: the refused word list is built from what the scanner knows, and a clash refuses the scan (as `admin` does).
     test 'R2-L3 (G7): an account-only username or display name that is a key of the answers, a PC name or a log title refuses the scan; the real deskadmin and labadmin do not' do
       rows = run_real
