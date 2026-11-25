@@ -84,6 +84,14 @@ module BreakEscape
       assert_empty rows(ko)
     end
 
+    test 'an account-only desk NPC has no person behind it: unavailable and counts nothing' do
+      game = build
+      game.scenario_data['rooms']['lobby']['npcs'].find { |n| n['id'] == 'ria' }['accountOnly'] = true
+      res = ask(game: game)
+      assert_equal [:unprocessable_entity, { reason: 'unavailable' }], [res[:status], res[:body]]
+      assert_empty game.helpdesk_tries
+    end
+
     test 'an earlier failure wins over a later one: unknown desk over the rest, unavailable over blocked' do
       @game.helpdesk_tries['it_desk|sokafor'] = { 'n' => 3, 'seq' => 1, 'stoppedAt' => T0.to_i }
       assert_equal 'not_found', ask(desk_id: 'nope', what: 'bogus', pc: 'invented')[:body][:reason]

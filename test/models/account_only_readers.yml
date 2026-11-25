@@ -227,6 +227,18 @@ app/models/break_escape/game.rb#stamp_scenario_object_ids!:
   action: keep
   why: walks objects or items held, not people; an account holds none that a player
     can reach
+app/models/break_escape/helpdesk_access.rb#helpdesk_keyring_entries:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/helpdesk_access.rb#helpdesk_npc_serving?:
+  action: skip
+  why: a desk is served by a person who has been met; an account with no person behind
+    it serves none
+app/models/break_escape/lock_step_reach.rb#build_carried_step_chains:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
 app/models/break_escape/mfa_sign_in.rb#mfa_device_answer:
   action: keep
   why: looks one NPC up by an id the server holds (session, owner, authored workaround)
@@ -236,7 +248,7 @@ app/models/break_escape/mfa_sign_in.rb#mfa_pending_account:
   action: keep
   why: reads accounts or an authored record; an account-only account is an account
     holder and stays
-app/models/break_escape/mfa_sign_in.rb#mfa_phone_answer:
+app/models/break_escape/mfa_sign_in.rb#phone_request_rows:
   action: keep
   why: reads accounts or an authored record; an account-only account is an account
     holder and stays
@@ -470,6 +482,14 @@ lib/break_escape/hiding_spots.rb#item_defs:
   action: keep
   why: walks objects or items held, not people; an account holds none that a player
     can reach
+lib/break_escape/lock_step_model.rb#each_lock_step:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/lock_step_model.rb#find_npc:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
 lib/break_escape/mfa_model.rb#each_authored_item:
   action: keep
   why: walks objects or items held, not people; an account holds none that a player
@@ -506,6 +526,10 @@ lib/break_escape/npc_habits/clues.rb#set_member_texts:
   why: walks objects or items held, not people; an account holds none that a player
     can reach
 lib/break_escape/ops_log_events.rb#account_npc:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/ops_log_events.rb#npc_held_entry:
   action: keep
   why: reads the authored scenario for tooling, models or the server's own checks,
     never an answer; an account keeps its place

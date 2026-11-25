@@ -157,7 +157,9 @@ module BreakEscape
 
     # The desk's NPC exists, has been met and is not recorded as knocked out
     def helpdesk_npc_serving?(npc_id)
-      return false unless npc_id.is_a?(String) && scenario_room_npc(npc_id)
+      npc = npc_id.is_a?(String) ? scenario_room_npc(npc_id) : nil
+      return false unless npc
+      return false if AccessIdentities.account_only?(npc) # S5c: an account with no person behind it serves no desk
 
       Array(player_state['encounteredNPCs']).include?(npc_id) && !npc_ko_record_present?(npc_id)
     end
