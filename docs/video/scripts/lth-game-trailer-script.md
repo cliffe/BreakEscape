@@ -20,20 +20,25 @@ Voices auditioned on VO1, VO4, VO5 and VO10 (measured lengths, seconds):
 
 Alnilam also read VO1 in a hushed, urgent style (4.37 s), as an alternative opening. If the chosen voice misreads "SAFETYNET", write "Safetynet" in that voice's TTS text only and keep the caption in capitals. Once the voice is picked, voice the remaining cues and re-place any that run longer than their estimate, keeping the clearances below.
 
+Re-placement rules once the cues are voiced:
+
+- VO7: "Stuck? Ask your handler." (4 words, estimate 3.93 s) fits only if VO6 measures 4.59 s or less: it starts at VO6's end plus 0.30 and must end by 65.67. At VO6's estimate (4.77 s) it runs 0.16 s over, so the plan keeps "Ask your handler." with C5 "Stuck?" on screen when it starts (62.00; C5 holds to 62.334). Place VO7 after VO6 is measured, keeping 0.30 s between them.
+- VO8: the speech starts at 71.70 with its lead silence trimmed. If the last word ends after 74.627 (0.3 s into S35), use "Walkthroughs for everyone." (3 words, about 2.5 s of speech, ending near 74.2) instead; never let it reach S36 (74.995).
+
 | Cue | Start | End | Over (picture) | Text | Words | Length (s) | Clear window (s) | Caption |
 |---|---|---|---|---|---|---|---|---|
-| VO1 | 0.60 | 5.57 | Title, before the first impact | First the hospitals. Then the power. | 6 | 4.97 measured | 0.00 to 6.77 | Burned, clear of the keyhole art |
+| VO1 | 0.60 | 5.57 | Title, before the first impact | First the hospitals. Then the power. | 6 | 4.97 measured | 0.00 to 6.77 | Burned 0.60 to 5.57, clamped to end by 5.767 (the title's end), clear of the keyhole art; a longer voice starts at 0.30 |
 | VO2 | 13.10 | 17.03 | C1, the m10 forward post, the checkpoint | Ten missions. One enemy. | 4 | 3.93 estimated | 12.81 to 17.21 | None (C1 shows the words) |
 | VO3 | 25.40 | 33.50 | C2 into the montage: lockpick, badge clone, prints, biometric, keypad, a conversation | Pick the locks. Clone the badges. Don't get caught. | 9 | 8.10 estimated | 24.49 to 34.86 | Hidden on C2; burned 26.331 to 33.50 |
 | VO4 | 37.90 | 43.16 | C3 and the decoding shots | Decode the messages. Break the ciphers. | 6 | 5.26 measured | 37.86 to 51.80, shared with VO5 | Hidden on C3; burned 39.532 to 43.16 |
-| VO5 | 44.00 | 50.94 | C4, the VM panel, the console run | Then log in. Real machines. Real CTF challenges. | 8 | 6.94 measured | shared with VO4 | Hidden on C4; burned 45.772 to 50.94 |
+| VO5 | 44.00 | 50.94 | C4, the VM panel, the console run | Then log in. Real machines. Real CTF challenges. | 8 | 6.94 measured | shared with VO4 | Hidden on C4; burned 45.872 to 50.94 |
 | VO6 | 56.85 | 61.62 | The flag accepted and the story reacting, then C5 | Every flag moves the story. | 5 | 4.77 estimated | 56.83 to 65.67, shared with VO7 | Burned 56.85 to 59.931; hidden on C5 |
-| VO7 | 61.92 | 65.02 | C5, the phone choice, the field guide opening | Ask your handler. | 3 | 3.10 estimated | shared with VO6 | Hidden on C5; burned 62.334 to 65.02 |
-| VO8 | 71.70 | 75.63 | The walkthrough, then the two villain calls | Walkthroughs for every mission. | 4 | 3.93 estimated | 71.69 to 77.43 | Burned 71.70 to 75.63 (ends before C6) |
+| VO7 | 62.00 | 65.10 | C5, the phone choice, the field guide opening | Ask your handler. | 3 | 3.10 estimated | shared with VO6 | Hidden on C5; burned 62.334 to 65.10 |
+| VO8 | 71.70 | 75.63 | The walkthrough, then the ghost call | Walkthroughs for every mission. | 4 | 3.93 estimated | 71.69 to 77.43 | Burned 71.70 to 74.33 (hidden at the turn to the villain calls) |
 | VO9 | 85.60 | 92.03 | C7a, C7b | No other game does it like this. | 7 | 6.43 estimated | 85.32 to 92.16 | None (C7b shows the words) |
 | VO10 | 96.00 | 101.90 | The lone agent, then the close | SAFETYNET: Licence to Hack. Play now. | 6 | 5.90 measured | 95.99 to 104.17 | None (the close shows the name and "Play now") |
 
-58 words in all. "Clear window" keeps 0.3 s from the nearest character line on each side. VO6 and VO7 share one window between Victoria and Irina, which is why VO7 is three words: C5 says "Stuck?" and the picture shows the field guide, so the voice adds the handler. VO6 runs 1.7 s into C5, the only cue that crosses from a shot into a card; VO8 runs 1.3 s into the villain calls, which have no dialogue. Truth notes: hospitals are m02 and m03, the power grid m04 and m07; "Real CTF challenges" rests on every mission's VM flags being required in play; "Walkthroughs for every mission" is true now (all ten published and linked); VO9 is the owner's sentence (Q2 in the recipe has the alternatives); "Play now" is also on screen.
+58 words in all. "Clear window" keeps 0.3 s from the nearest character line on each side. VO6 and VO7 share one window between Victoria and Irina, which is why VO7 is three words: C5 says "Stuck?" and the picture shows the field guide, so the voice adds the handler. VO6 runs 1.7 s into C5, the only cue that crosses from a shot into a card; VO8 may run up to 0.3 s into the ghost call (S35), never into the withheld call (S36), which leads to "Meet ENTROPY". Truth notes: hospitals are m02 and m03, the power grid m04 and m07; "Real CTF challenges" rests on every mission's VM flags being required in play; "Walkthroughs for every mission" is true now (all ten published and linked); VO9 is the owner's sentence (Q2 in the recipe has the alternatives); "Play now" is also on screen.
 
 Clearance from character lines (every gap at least 0.3 s):
 
@@ -45,12 +50,12 @@ Clearance from character lines (every gap at least 0.3 s):
 | VO4 | Kemal, S18 (37.562) | 0.34 | Victoria, S29 (52.100) | 8.94 |
 | VO5 | Kemal, S18 (37.562) | 6.44 | Victoria, S29 (52.100) | 1.16 |
 | VO6 | Victoria, S29 (56.530) | 0.32 | Irina, S33 (65.973) | 4.35 |
-| VO7 | Victoria, S29 (56.530) | 5.39 | Irina, S33 (65.973) | 0.95 |
+| VO7 | Victoria, S29 (56.530) | 5.47 | Irina, S33 (65.973) | 0.87 |
 | VO8 | Irina, S33 (71.393) | 0.31 | Voltage, S37 (77.731) | 2.10 |
 | VO9 | The Recruiter, S39 (85.019) | 0.58 | The Architect, S40 (92.459) | 0.43 |
 | VO10 | The Architect, S40 (95.692) | 0.31 | none | |
 
-Gaps between announcer cues: VO4 to VO5 0.84 s, VO6 to VO7 0.30 s. The tightest clearances (VO4, VO6, VO8, VO10 at 0.31 to 0.34 s) are measured to the end of the mp3, whose tail is silence, so the audible gap is wider.
+Gaps between announcer cues: VO4 to VO5 0.84 s, VO6 to VO7 0.38 s. The tightest clearances (VO4, VO6, VO8, VO10 at 0.31 to 0.34 s) are measured to the end of the mp3, whose tail is silence, so the audible gap is wider.
 
 V1 keeps every character line in the V2 table below; the announcer fills only the spaces between them.
 
@@ -77,4 +82,4 @@ Captions: every line above is burned in all three aspects, except S07, S18 and S
 
 Cards (both versions): C1 "Ten Missions / One Enemy"; C2 "Pick. Clone. / Crack."; C3 "Encoding & / Encryption"; C4 "Real VMs. / Real Hacking."; C5 "Stuck? / Hints. Guides. / Walkthroughs."; C6 "Meet / ENTROPY"; C7a "Real VMs and CTF / In a Spy Story"; C7b "No Other Game / Does It Like This". Close: a burned line "SAFETYNET: Licence to Hack" and the preset's "Play now".
 
-The trailer in short (both versions): the title; the lights strike at a hospital, a plant in the dark; Netherton: ENTROPY now breaks what people can't live without; a ransom screen; "Ten Missions / One Enemy" over the m10 forward post at night and a checkpoint; HaX: people die on the ward; Netherton: eight point four million people; "Pick. Clone. / Crack." and the montage (locks, badges, prints, a biometric door, a keypad, a conversation, a money trail); Kemal blocks the way: "Then come and move me."; "Encoding & Encryption" and three decoding screens; "Real VMs. / Real Hacking.", the VM open in the game and five console cuts; Victoria reads the cover CV; a flag goes in and Agent HaX answers; "Stuck?", the phone sends a field guide, Irina drops a hint, a walkthrough; two calls, then "Meet ENTROPY" on the biggest hit, Voltage and the Recruiter; the two USP cards; a briefcase flash; the Architect: four fires, one of you; a lone agent in the dark; the name and "Play now".
+The trailer in short (both versions): the title; a hospital lobby on red alert, a plant in the dark; Netherton: ENTROPY now breaks what people can't live without; a ransom screen; "Ten Missions / One Enemy" over the m10 forward post at night and a checkpoint; HaX: people die on the ward; Netherton: eight point four million people; "Pick. Clone. / Crack." and the montage (locks, badges, prints, a biometric door, a keypad, a conversation, a money trail); Kemal blocks the way: "Then come and move me."; "Encoding & Encryption" and three decoding screens; "Real VMs. / Real Hacking.", the VM open in the game and five console cuts; Victoria reads the cover CV; the archive key goes in and Agent HaX answers; "Stuck?", the phone sends a field guide, Irina drops a hint, a walkthrough; two calls, then "Meet ENTROPY" on the biggest hit, Voltage and the Recruiter; the two USP cards; a briefcase flash; the Architect: four fires, one of you; a lone agent in the dark; the name and "Play now".
