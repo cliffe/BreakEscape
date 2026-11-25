@@ -39,6 +39,10 @@ GENERATORS = ['gen_core00_shell', 'gen_e1_shells', 'gen_e2_e4_shells',
 
 # Known drift: HEAD holds hand-compacted one-line `verdict` objects in these shells' JSON files (and, for
 # ca12, a one-line `kind` object that a test reads: commit 610efa306).
+# ca12_visitor_tailgater_defend is compared as parsed JSON for every .erb and .json file, not byte for byte:
+# one hand-compacted `kind` line is the only known difference, but the generator cannot write it. Parsed
+# comparison still checks list order (so a mapping index shift fails) and values; it does not check
+# whitespace or dict key order. Review R1 m4 accepted this: narrowing it is not worth a per-line whitelist.
 JSON_COMPARED = {'ca12_visitor_tailgater_defend', 'ca14_social_media_defend', 'ca16_insider_risk_defend',
                  'ca18_credential_attacks_at_scale_defend'}
 

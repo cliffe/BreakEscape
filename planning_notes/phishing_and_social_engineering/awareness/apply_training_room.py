@@ -395,41 +395,35 @@ def _splice_object(text, start, drop, add, after=None, in_place=False):
     return _rebuild(text, start, pieces, pad, close_pad)
 
 
-def _splice_array(text, start, drop, add, ident=None):
+def _splice_array(text, start, drop, add, ident=None, label='list', strict=False, unique=False):
     """Array at `start`: drop elements satisfying `drop(parsed)`, append the values in `add`. With `ident`,
-    a dropped element the kit's `add` also holds (same ident, matched in order) stays where it is, its text
-    replaced only when the value differs, and only the other values are appended: office_kit.merge_list."""
-    kept, olds = [], []
-    first = None
-    pending = {}
-    if ident:
-        for n in add:
-            pending.setdefault(ident(n), []).append(n)
-    used = set()
+    the merge is office_kit.merge_plan itself (the same routine office_kit.merge_list runs): a dropped
+    element the kit's `add` also holds stays where it is, its text replaced only when the value differs,
+    and only the other values are appended."""
     elems = list(_elements(text, start))
+    olds = [text[a:b] for a, b in elems]
+    parsed = [json.loads(s) for s in olds]
     ind0 = _line_indent(text, start)
     ind0 = ind0[:len(ind0) - len(ind0.lstrip())]
     pad0 = _line_indent(text, elems[0][0]) if elems else ind0 + '  '
     pad0 = pad0[:len(pad0) - len(pad0.lstrip())] if elems and pad0.strip() else pad0
-    for a, b in elems:
-        first = a if first is None else first
-        s = text[a:b]
-        olds.append(s)
-        p = json.loads(s)
-        if drop(p):
-            q = pending.get(ident(p)) if ident else None
-            if q:
-                n = q.pop(0)
-                used.add(id(n))
-                kept.append(s if json.dumps(p) == json.dumps(n) else _indented(n, len(pad0)))
+    if ident:
+        plan = office_kit.merge_plan(parsed, add, drop, ident, label, strict, unique)
+    else:       # no identity: every dropped element goes and every value is appended
+        plan = [('keep', i, None) for i, p in enumerate(parsed) if not drop(p)] + [('add', None, v) for v in add]
+    kept, fresh_vals = [], []
+    for op, i, rec in plan:
+        if op == 'keep':
+            kept.append(olds[i])
+        elif op == 'set':
+            kept.append(olds[i] if json.dumps(parsed[i]) == json.dumps(rec) else _indented(rec, len(pad0)))
         else:
-            kept.append(s)
-    ind = _line_indent(text, start)
-    close_pad = ind[:len(ind) - len(ind.lstrip())]
+            fresh_vals.append(rec)
+    first = elems[0][0] if elems else None
+    close_pad = ind0
     pad = _line_indent(text, first) if first is not None else close_pad + '  '
     pad = pad[:len(pad) - len(pad.lstrip())] if first is not None and pad.strip() else pad
-    fresh = [_indented(v, len(pad)) for v in add if id(v) not in used]
-    pieces = kept + fresh
+    pieces = kept + [_indented(v, len(pad)) for v in fresh_vals]
     if pieces == olds:
         return text
     return _rebuild(text, start, pieces, pad, close_pad)
@@ -487,21 +481,25 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     ha, _ = find_host_span(text, host_id, shell)
     em = _try_member(text, ha, 'eventMappings')
     cur = json.loads(text[em[0]:em[1]]) if em else []
+    merged = office_kit._find_host(expect, host_id).get('eventMappings')    # apply_kit's list: one merge, one order
     if em and not (cur and all(office_kit.is_kit_mapping(m) for m in cur)):
-        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'], office_kit.map_ident)
-    elif not b['mappings'] and not em:
+        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'], office_kit.map_ident,
+                             f'{shell} host eventMappings', strict=True)
+    elif merged is None and not em:
         pass     # the convention form (ca00) has no kit host mappings: add no empty list
     else:
-        # none yet, or only kit mappings (strip_kit drops the key then): (re)create it at the host's end
+        # none yet, or only kit mappings (strip_kit drops the key then): (re)create it at the host's end,
+        # in the order office_kit.merge_list gives it (the old order, never the kit's)
         if em:
             text = _splice_object(text, ha, lambda k: k == 'eventMappings', [])
-        ha, _ = find_host_span(text, host_id, shell)
-        text = _splice_object(text, ha, lambda k: False, [('eventMappings', b['mappings'])])
+        if merged:
+            ha, _ = find_host_span(text, host_id, shell)
+            text = _splice_object(text, ha, lambda k: False, [('eventMappings', merged)])
     # room npcs and objects
     tr = _training_room(text)
-    text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'], office_kit.member_ident)
+    text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'], office_kit.member_ident, f'{shell} npcs', unique=True)
     tr = _training_room(text)
-    text = _splice_array(text, _member(text, tr, 'objects')[0], is_kit, b['objects'], office_kit.member_ident)
+    text = _splice_array(text, _member(text, tr, 'objects')[0], is_kit, b['objects'], office_kit.member_ident, f'{shell} objects', unique=True)
     # social.awarenessEpisode.stepAway
     social = _member(text, _root(text), 'social')[0]
     epa = _member(text, social, 'awarenessEpisode')[0]
@@ -510,26 +508,16 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] and not has_list else [])
     # social.triageSets[0].outcome.messageGlobals (the row's keyMessage)
     if not office_kit.is_convention(row):    # the convention form (ca00) has no triage set
-        oc = _first_set_outcome(text)
-        own_mg = [v for k, a, bb in _members(text, oc) if k == 'messageGlobals' for v in [json.loads(text[a:bb])]]
-        if not own_mg or all(str(v).startswith('kit_') for v in own_mg[0].values()):
-            text = _splice_object(text, oc, lambda k: k == 'messageGlobals',
-                                  [('messageGlobals', b['messageGlobals'])] if b.get('messageGlobals') else [])
-        else:    # the shell's own non-kit entries stay; the kit's are merged in as apply_kit does
-            # (old kit_ entries are dropped first, as office_kit.strip_kit does: wrap-fix review m4)
-            mg = {**{k: v for k, v in own_mg[0].items() if not str(v).startswith('kit_')}, **b.get('messageGlobals', {})}
-            text = _splice_object(text, oc, lambda k: k == 'messageGlobals', [('messageGlobals', mg)])
-        # social.triageSets[0].outcome.messageCaughtVerdicts (the row's keyCaughtVerdicts): the kit owns
-        # the entries for its own messageGlobals ids, old and new; any other entry stays
-        kit_ids = ({k for k, v in own_mg[0].items() if str(v).startswith('kit_')} if own_mg else set()) \
-            | set(b.get('messageGlobals', {}))
-        oc = _first_set_outcome(text)
-        own_mcv = [json.loads(text[a:bb]) for k, a, bb in _members(text, oc) if k == 'messageCaughtVerdicts']
-        mcv = {**{k: v for k, v in (own_mcv[0] if own_mcv else {}).items() if k not in kit_ids},
-               **b.get('messageCaughtVerdicts', {})}
-        if own_mcv or mcv:
-            text = _splice_object(text, oc, lambda k: k == 'messageCaughtVerdicts',
-                                  [('messageCaughtVerdicts', mcv)] if mcv else [])
+        # Both objects are read from apply_kit's result, so the entries keep apply_kit's order (kit-owned ones
+        # in place, new ones last): the kit's `messageGlobals` (a kit_ value) and `messageCaughtVerdicts`
+        # (the verdicts for the kit's own message ids); any other entry stays.
+        eo = office_kit.key_outcome(expect) or {}
+        for key in ('messageGlobals', 'messageCaughtVerdicts'):
+            oc = _first_set_outcome(text)
+            own = any(k == key for k, _, _ in _members(text, oc))
+            want = eo.get(key)
+            if own or want:
+                text = _splice_object(text, oc, lambda k, key=key: k == key, [(key, want)] if want else [])
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
     text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()), in_place=True)
@@ -537,7 +525,7 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     # officePresets, chatter, timers, resources and roles after globalVariables
     tl = _try_member(text, _root(text), 'timers')
     if tl:
-        text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'], office_kit.member_ident)
+        text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'], office_kit.member_ident, f'{shell} timers', unique=True)
         tl = _try_member(text, _root(text), 'timers')
         if json.loads(text[tl[0]:tl[1]]) == []:
             text = _splice_object(text, _root(text), lambda k: k == 'timers', [])
@@ -561,7 +549,7 @@ def kit_text(text, kit, row, shell, allow_drop=False):
             if text[mem[0]] == '{':
                 text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), list(b.get(key, {}).items()), in_place=True)
             else:
-                text = _splice_array(text, mem[0], is_kit, b.get(key, []), office_kit.member_ident)
+                text = _splice_array(text, mem[0], is_kit, b.get(key, []), office_kit.member_ident, f'{shell} {key}', unique=True)
             mem = _try_member(text, _root(text), key)
             if not json.loads(text[mem[0]:mem[1]]):
                 text = _splice_object(text, _root(text), lambda k, key=key: k == key, [])

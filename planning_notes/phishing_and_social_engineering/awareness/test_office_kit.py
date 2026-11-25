@@ -486,9 +486,11 @@ class ReviewFixes(unittest.TestCase):
 
     # 4: whole-name matching
     def test_kit_ownership_matches_a_whole_name_only(self):
-        for cond in ('globalVars.kit_quiet === false', 'kit_x', "value === true && !kit_x"):
+        for cond in ('globalVars.kit_quiet === false', "value === true && !globalVars.kit_x"):
             self.assertTrue(ok.is_kit_mapping({'condition': cond}), cond)
-        for cond in ('globalVars.skit_x === true', 'globalVars.payload_kit_x', 'ghost_kit_1'):
+        # a hand mapping that only mentions kit_ in other words is not claimed (merge-review m1)
+        for cond in ('globalVars.skit_x === true', 'globalVars.payload_kit_x', 'ghost_kit_1', 'kit_x',
+                     'global.kit_done == true', "value === true && !kit_x"):
             self.assertFalse(ok.is_kit_mapping({'condition': cond}), cond)
         self.assertFalse(ok.is_kit_mapping({'knot': 'skit_one'}))
         self.assertTrue(ok.is_kit_mapping({'knot': 'kit_one'}))
@@ -1443,6 +1445,243 @@ class TtsPregenerateFlag(unittest.TestCase):
             self.assertNotIn('ttsPregenerateChatter', open(f).read(), f)
         kit_ids = {r['id'] for r in ok.load_rows() if ok.active(r)}
         self.assertFalse([i for i in kit_ids if i.startswith(('ca_pre_', 'ca_post_', 'ca_annual_'))])
+
+
+# --- merge routines (merge-review R1: M1 identity, M2 kit_text order, M3 direct tests, m1 to m3) ---------
+
+def _m(event, kit_key=None, **kw):
+    d = {'eventPattern': event, **kw}
+    if kit_key:
+        d['setGlobal'] = {kit_key: True}
+    return d
+
+
+def _owned(m):
+    return ok.is_kit_mapping(m)
+
+
+def _merge_maps(old, new, strict=True):
+    return ok.merge_list(old, new, _owned, ok.map_ident, 'x host eventMappings', strict=strict)
+
+
+class MergeListTests(unittest.TestCase):
+    H1, H2 = _m('hand_a', other='h1'), _m('hand_b', other='h2')
+    A, B = _m('ev', 'kit_a'), _m('ev', 'kit_b')
+
+    def test_unchanged(self):
+        old = [self.H1, self.A, self.H2, self.B]
+        self.assertEqual(_merge_maps(old, [self.A, self.B]), old)
+
+    def test_kit_record_changed_in_place_keeps_its_index(self):
+        old = [self.H1, self.A, self.H2]
+        a2 = {**self.A, 'condition': 'globalVars.kit_a === true', 'bark': 'hi', 'needs': {'x': 1},
+              'setGlobal': {'kit_a': 1, 'extra': 2}}
+        self.assertEqual(_merge_maps(old, [a2]), [self.H1, a2, self.H2])
+
+    def test_same_event_siblings_keep_separate_identities(self):
+        x1, x2 = _m('ev', 'kit_q', condition='c1'), _m('ev', 'kit_q', condition='c2')
+        x1b = {**x1, 'condition': 'c1b'}
+        self.assertEqual(_merge_maps([x1, self.H1, x2], [x1b, x2]), [x1b, self.H1, x2])
+        x2b = {**x2, 'condition': 'c2b'}
+        self.assertEqual(_merge_maps([x1, self.H1, x2], [x1, x2b]), [x1, self.H1, x2b])
+
+    def test_removed_at_the_end_is_fine(self):
+        self.assertEqual(_merge_maps([self.H1, self.A, self.B], [self.A]), [self.H1, self.A])
+        self.assertEqual(_merge_maps([self.A, self.H1, self.B], [self.A]), [self.A, self.H1])
+
+    def test_removed_mid_list_before_hand_records_fails_loudly(self):
+        with self.assertRaises(ok.KitMergeError) as cm:
+            _merge_maps([self.H1, self.A, self.H2], [])
+        self.assertIn('x host eventMappings', str(cm.exception))
+        self.assertIn('index 1', str(cm.exception))
+
+    def test_removed_mid_list_before_kit_records_fails_loudly(self):
+        with self.assertRaises(ok.KitMergeError):
+            _merge_maps([self.A, self.B], [self.B])
+
+    def test_removed_mid_list_is_allowed_where_order_is_not_keyed(self):
+        out = ok.merge_list([self.H1, self.A, self.H2], [], _owned, ok.map_ident, 'x', strict=False)
+        self.assertEqual(out, [self.H1, self.H2])
+
+    def test_new_kit_record_goes_last(self):
+        c = _m('ev', 'kit_c')
+        self.assertEqual(_merge_maps([self.A, self.H1], [c, self.A]), [self.A, self.H1, c])
+
+    def test_all_kit_list_reordered_by_the_kit_keeps_the_old_order(self):
+        old = [self.A, self.B]
+        a2 = {**self.A, 'delay': 5}
+        self.assertEqual(_merge_maps(old, [self.B, a2]), [a2, self.B])
+
+    def test_hand_mapping_mentioning_kit_in_other_words_is_never_replaced(self):
+        h = _m('ev', other='x', condition='kit_done')
+        self.assertEqual(_merge_maps([h, self.A], [self.A]), [h, self.A])
+
+    def test_id_collision_with_a_hand_record_is_an_error(self):
+        hand, kitrec = {'id': 'shared', 'v': 1}, {'id': 'shared', 'v': 2}
+        with self.assertRaises(ok.KitMergeError) as cm:
+            ok.merge_list([hand], [kitrec], ok.is_kit_member, ok.member_ident, 'ca99 npcs', unique=True)
+        self.assertIn('ca99 npcs', str(cm.exception))
+        self.assertEqual(ok.merge_list([{'id': 'kit_a', 'v': 1}, hand], [{'id': 'kit_a', 'v': 2}],
+                                       ok.is_kit_member, ok.member_ident, 'x', unique=True),
+                         [{'id': 'kit_a', 'v': 2}, hand])
+
+    def test_identity_ignores_content(self):
+        base = _m('ev', 'kit_a')
+        for kw in ({'condition': 'c'}, {'bark': 'b'}, {'needs': {}}, {'knot': 'kit_k'}, {'delay': 3}):
+            self.assertEqual(ok.map_ident(base), ok.map_ident({**base, **kw}), kw)
+        self.assertNotEqual(ok.map_ident(base), ok.map_ident(_m('ev', 'kit_b')))
+        self.assertNotEqual(ok.map_ident(base), ok.map_ident(_m('ev2', 'kit_a')))
+
+
+class MergeDictTests(unittest.TestCase):
+    own = staticmethod(lambda k: k.startswith('kit_'))
+
+    def test_unchanged_changed_removed_new(self):
+        old = {'h1': 1, 'kit_a': 1, 'h2': 2, 'kit_b': 2}
+        self.assertEqual(ok.merge_dict(old, {'kit_a': 1, 'kit_b': 2}, self.own), old)
+        self.assertEqual(list(ok.merge_dict(old, {'kit_b': 9, 'kit_a': 8}, self.own).items()),
+                         [('h1', 1), ('kit_a', 8), ('h2', 2), ('kit_b', 9)])
+        self.assertEqual(ok.merge_dict(old, {'kit_a': 1}, self.own), {'h1': 1, 'kit_a': 1, 'h2': 2})
+        self.assertEqual(list(ok.merge_dict(old, {'kit_c': 3, 'kit_a': 1, 'kit_b': 2}, self.own)),
+                         ['h1', 'kit_a', 'h2', 'kit_b', 'kit_c'])
+
+    def test_key_collision_with_a_hand_key_is_an_error(self):
+        with self.assertRaises(ok.KitMergeError):
+            ok.merge_dict({'taken': 1}, {'taken': 2}, self.own, 'ca99 chatter')
+
+
+class SpliceTests(unittest.TestCase):
+    """The text splices run the same plan as the dict merges."""
+
+    def arr(self, items, indent=2):
+        return json.dumps(items, indent=indent)
+
+    def test_array_splice_matches_merge_list(self):
+        H1, H2 = {'id': 'h1', 'v': 1}, {'id': 'h2', 'v': 2}
+        A, B = {'id': 'kit_a', 'v': 1}, {'id': 'kit_b', 'v': 1}
+        A2, C = {'id': 'kit_a', 'v': 2}, {'id': 'kit_c', 'v': 1}
+        cases = {'unchanged': ([H1, A, H2, B], [A, B]), 'changed in place': ([H1, A, H2], [A2]),
+                 'removed at the end': ([H1, A, H2, B], [A]), 'new goes last': ([A, H1], [C, A]),
+                 'all-kit reordered': ([A, B], [B, A2])}
+        for name, (old, new) in cases.items():
+            text = self.arr(old)
+            out = atr._splice_array(text, 0, ok.is_kit_member, new, ok.member_ident)
+            self.assertEqual(json.loads(out), ok.merge_list(old, new, ok.is_kit_member, ok.member_ident), name)
+        text = self.arr(cases['unchanged'][0])
+        self.assertEqual(atr._splice_array(text, 0, ok.is_kit_member, [A, B], ok.member_ident), text)
+
+    def test_array_splice_keeps_the_text_of_an_unchanged_record(self):
+        text = '[\n  {"id": "kit_a",   "v": 1},\n  {"id": "h"}\n]'
+        out = atr._splice_array(text, 0, ok.is_kit_member, [{'id': 'kit_a', 'v': 1}], ok.member_ident)
+        self.assertEqual(out, text)
+
+    def test_array_splice_mapping_removal_mid_list_fails_loudly(self):
+        old = [_m('hand', other='x'), _m('ev', 'kit_a'), _m('hand2', other='y')]
+        with self.assertRaises(ok.KitMergeError):
+            atr._splice_array(self.arr(old), 0, ok.is_kit_mapping, [], ok.map_ident, 'x host eventMappings', strict=True)
+
+    def test_object_splice_in_place_matches_merge_dict(self):
+        old = {'h1': 1, 'kit_a': 1, 'h2': 2, 'kit_b': 2}
+        new = {'kit_b': 5, 'kit_c': 3}
+        out = atr._splice_object(json.dumps(old, indent=2), 0, lambda k: k.startswith('kit_'), list(new.items()), in_place=True)
+        self.assertEqual(list(json.loads(out).items()), list(ok.merge_dict(old, new, lambda k: k.startswith('kit_')).items()))
+
+
+def key_outcome_of(sc):
+    return ok.key_outcome(sc)
+
+
+class KitTextAgreesWithApplyKit(unittest.TestCase):
+    def kit(self):
+        return ok.load_kit('brightwell_foods')
+
+    def check(self, sc, r, allow_drop=False):
+        expect = ok.apply_kit(sc, self.kit(), r)
+        got = json.loads(atr.kit_text(dumped(sc), self.kit(), r, 'x', allow_drop=allow_drop))
+        self.assertEqual(json.dumps(got), json.dumps(expect))      # key order too
+        return got
+
+    def regen(self, first, second, edit=None):
+        sc = ok.apply_kit(twin_shell(), self.kit(), first)
+        if edit:
+            edit(ok._find_host(sc)['eventMappings'])
+        return sc, second
+
+    def hosts(self, sc):
+        return ok._find_host(sc)['eventMappings']
+
+    def test_unchanged_and_idempotent(self):
+        sc = ok.apply_kit(twin_shell(), self.kit(), row(attack=True))
+        self.assertEqual(self.check(sc, row(attack=True)), sc)
+
+    def test_all_kit_host_list_reordered_by_the_kit_keeps_the_old_order(self):
+        sc = ok.apply_kit(twin_shell(), self.kit(), row(attack=True))
+        host = ok._find_host(sc)
+        host['eventMappings'] = list(reversed([m for m in host['eventMappings'] if ok.is_kit_mapping(m)]))
+        before = [ok.map_ident(m) for m in host['eventMappings']]
+        got = self.check(sc, row(attack=True))
+        self.assertEqual([ok.map_ident(m) for m in self.hosts(got)], before)
+
+    def test_all_kit_host_list_with_a_kit_mapping_dropped_mid_list_fails_in_both(self):
+        sc = ok.apply_kit(twin_shell(), self.kit(), row(attack=True))
+        host = ok._find_host(sc)
+        host['eventMappings'] = [m for m in host['eventMappings'] if ok.is_kit_mapping(m)]
+        with self.assertRaises(ok.KitMergeError):
+            ok.apply_kit(sc, self.kit(), row(attack=False))
+        with self.assertRaises(ok.KitMergeError):
+            atr.kit_text(dumped(sc), self.kit(), row(attack=False), 'x')
+
+    def test_kit_mapping_changed_in_place_keeps_its_index(self):
+        sc = ok.apply_kit(twin_shell(), self.kit(), row(attack=True, stepAway=True))
+        host = ok._find_host(sc)
+        host['eventMappings'].append(_m('hand_last', other='z'))
+        idx = [ok.map_ident(m) for m in host['eventMappings']]
+        for m in host['eventMappings']:
+            if m.get('eventPattern') == 'episode_step_away':
+                m['bark'] = 'changed by hand'
+        got = self.check(sc, row(attack=True, stepAway=True))
+        self.assertEqual([ok.map_ident(m) for m in self.hosts(got)], idx)
+        self.assertNotIn('changed by hand', json.dumps(got))
+
+    def test_new_kit_mapping_goes_last(self):
+        sc = ok.apply_kit(twin_shell(), self.kit(), row(attack=False))
+        ok._find_host(sc)['eventMappings'].append(_m('hand_last', other='z'))
+        before = [ok.map_ident(m) for m in ok._find_host(sc)['eventMappings']]
+        got = self.check(sc, row(attack=True))
+        after = [ok.map_ident(m) for m in self.hosts(got)]
+        self.assertEqual(after[:len(before)], before)
+        self.assertEqual(ok.map_ident(self.hosts(got)[-1]), ok.map_ident(_m(
+            'global_variable_changed:episode_e1_invoice_fraud_defend_state', 'kit_attack_done')))
+
+    def test_kit_mapping_dropped_mid_list_before_hand_records_fails_in_both(self):
+        sc = ok.apply_kit(twin_shell(), self.kit(), row(attack=True))
+        ok._find_host(sc)['eventMappings'].append(_m('hand_last', other='z'))
+        with self.assertRaises(ok.KitMergeError) as a:
+            ok.apply_kit(sc, self.kit(), row(attack=False, id='ca99_test'))
+        self.assertIn('ca99_test', str(a.exception))
+        with self.assertRaises(ok.KitMergeError) as b:
+            atr.kit_text(dumped(sc), self.kit(), row(attack=False), 'ca99_test')
+        self.assertIn('index', str(b.exception))
+
+    def test_kit_mapping_dropped_at_the_end_is_fine(self):
+        sc = ok.apply_kit(twin_shell(), self.kit(), row(stepAway=True))
+        host = ok._find_host(sc)
+        self.assertEqual(host['eventMappings'][-1].get('eventPattern'), 'episode_step_away')
+        got = self.check(sc, row(stepAway=False), allow_drop=True)
+        self.assertNotIn('episode_step_away', [m.get('eventPattern') for m in self.hosts(got)])
+
+    def test_caught_verdicts_merge_in_place(self):
+        """messageCaughtVerdicts merges like messageGlobals: a kit verdict keeps its slot, a dropped one goes,
+        a hand verdict stays, a new one goes last; kit_text and apply_kit agree."""
+        sc = twin_shell()
+        oc = sc['social']['triageSets'][0]['outcome']
+        oc['messageGlobals'] = {'m_hand': 'hand_g'}
+        oc['messageCaughtVerdicts'] = {'m_hand': 'keep'}
+        r = row(keyMessage='m_new', keyCaughtVerdicts=['report'])
+        first = self.check(sc, r)
+        self.assertEqual(list(key_outcome_of(first)['messageCaughtVerdicts']), ['m_hand', 'm_new'])
+        again = self.check(first, r)
+        self.assertEqual(json.dumps(again), json.dumps(first))
 
 
 if __name__ == '__main__':
