@@ -137,3 +137,82 @@ test('bfsOutOfView with a depth preference: the nearest cell that clear, else th
     assert.ok(capped, 'still a cell');
     assert.ok(capped.x >= 370, `the deepest cell in the room (${capped.x})`);
 });
+
+// ── body placement and body-fit spawns (live case f, 2026-11-25) ─────────────
+
+/**
+ * A Phaser 3.60 body as the game builds it for an NPC: 80x80 sprite, origin 0.5, body 20x10 at
+ * offset (30, 66). reset() puts the body at the sprite's top-left, ignoring the offset, until
+ * updateFromGameObject() (the next physics step) adds it. The feet (body centre) rest at
+ * sprite + (0, 31) once synced.
+ */
+function phaserSprite(x, y) {
+    const sprite = { x, y, originX: 0.5, originY: 0.5, width: 80, height: 80 };
+    const pt = () => ({ x: 0, y: 0, copy(o) { this.x = o.x; this.y = o.y; } });
+    const body = sprite.body = {
+        enable: false, width: 20, height: 10, offset: { x: 30, y: 66 }, position: pt(), prev: pt(), prevFrame: pt(), center: pt(),
+        updateCenter() { this.center.x = this.position.x + this.width / 2; this.center.y = this.position.y + this.height / 2; },
+        reset(nx, ny) { sprite.x = nx; sprite.y = ny; this.position.x = nx - 40; this.position.y = ny - 40; this.updateCenter(); },
+        updateFromGameObject() { this.position.x = sprite.x - 40 + this.offset.x; this.position.y = sprite.y - 40 + this.offset.y; this.updateCenter(); }
+    };
+    body.updateFromGameObject();
+    return sprite;
+}
+
+test('placeBody on a Phaser-style body: the feet stay where asked after the next physics sync', () => {
+    const sprite = phaserSprite(352, -63);
+    placeBody(sprite, 116, 260);
+    assert.deepEqual({ x: sprite.body.center.x, y: sprite.body.center.y }, { x: 116, y: 260 }, 'at once');
+    sprite.body.updateFromGameObject();   // the next frame re-adds the offset
+    assert.deepEqual({ x: sprite.body.center.x, y: sprite.body.center.y }, { x: 116, y: 260 }, 'and after the sync (the old code ended at 146, 326)');
+    assert.equal(sprite.body.enable, true);
+});
+
+test('placeBody: repeated placements land exactly, from any start', () => {
+    for (const [sx, sy, x, y] of [[0, 0, 40, 40], [500, 500, 116, 164], [-90, 12, 300, 290]]) {
+        const sprite = phaserSprite(sx, sy);
+        placeBody(sprite, x, y);
+        sprite.body.updateFromGameObject();
+        assert.equal(Math.round(sprite.body.center.x), x);
+        assert.equal(Math.round(sprite.body.center.y), y);
+    }
+});
+
+test('bfsOutOfView clear: only accepts a cell whose neighbours are walkable (the body fits)', () => {
+    const gb = { minX: 0, minY: 0, cols: 80, rows: 40, step: 8 };
+    const g = grid(80, 40);
+    // A wall row at y cells 30..31
+    for (let cx = 0; cx < 80; cx++) { g[30][cx] = 1; g[31][cx] = 1; }
+    const isOutOfView = (x, y) => !rectInView(npcRectAt(x, y), view);
+    const plain = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 300, y: 160 }, isOutOfView });
+    assert.ok(plain, 'the plain search finds the edge cell');
+    // Every cell round an accepted one is walkable
+    const open = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 300, y: 160 }, isOutOfView, clear: 1 });
+    const cx = Math.floor(open.x / 8), cy = Math.floor(open.y / 8);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) assert.equal(g[cy + dy][cx + dx], 0, `neighbour ${dx},${dy} walkable`);
+});
+
+test('bfsOutOfView clear: skips a cell hard against a wall that the plain search takes', () => {
+    const gb = { minX: 0, minY: 0, cols: 80, rows: 40, step: 8 };
+    const g = grid(80, 40);
+    // Wall rows from y 232 down (cells 29+), the view's out-of-view area is below y 320+... use a
+    // start inside a strip whose nearest out-of-view cells are the row above the wall.
+    for (let cy = 29; cy < 40; cy++) for (let cx = 0; cx < 80; cx++) g[cy][cx] = 1;
+    const out = (x, y) => y > 200;
+    const plain = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 100, y: 160 }, isOutOfView: out });
+    const clear = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 100, y: 160 }, isOutOfView: out, clear: 1 });
+    assert.ok(plain && clear);
+    const row = (p) => Math.floor(p.y / 8);
+    assert.ok(row(clear) <= 27, `clear stays one cell off the wall (row ${row(clear)})`);
+    assert.ok(row(plain) <= 28);
+});
+
+test('bfsOutOfView skip: refuses the cells it names and takes the next', () => {
+    const gb = { minX: 0, minY: 0, cols: 80, rows: 40, step: 8 };
+    const g = grid(80, 40);
+    const isOutOfView = (x, y) => !rectInView(npcRectAt(x, y), view);
+    const a = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 300, y: 160 }, isOutOfView });
+    const b = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 300, y: 160 }, isOutOfView, skip: (x, y) => Math.hypot(x - a.x, y - a.y) < 48 });
+    assert.ok(b);
+    assert.ok(Math.hypot(b.x - a.x, b.y - a.y) >= 48);
+});

@@ -9,10 +9,19 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { world, flush } from './helpers/npc-walk-world.mjs';
-import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, WALK_PICK_DEPTH_PX, viewGap, npcRectAt, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
+import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, WALK_RESPAWN_GAP_PX, WALK_PICK_DEPTH_PX, viewGap, npcRectAt, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
 
 const names = (w, prefix) => w.emits.filter(e => e.name.startsWith(prefix));
 const tick = (w) => w.manager._walkTick(0, {});
+// Stall repeatedly (each after a poll tick) until the walk has ended, at most 10 times.
+async function stallUntilSettled(w, p, max = 10) {
+    let done = false;
+    p.then(() => { done = true; });
+    for (let i = 0; i < max && !done; i++) {
+        tick(w);
+        w.advance(WALK_STALL_MS + 100); tick(w); await flush(); await flush();
+    }
+}
 
 test('constants: stall 3 s, 4 re-plans, arrive within 10 px', () => {
     assert.equal(WALK_STALL_MS, 3000);
@@ -187,26 +196,65 @@ test('stall: a walk-in re-issues the move, then tries another door, then fades a
     assert.equal(w.manager.walks.get('guard').farRoom, 'annex');
     assert.ok(b.sprite.body.center.x < 0, 'respawned in the annex, out of view');
     assert.equal(b.moves.length, 3);
-    // stall 3: no door left (dock and annex tried): the timeout fade
-    w.advance(WALK_STALL_MS + 100); tick(w); await flush(); await flush();
-    w.advance(WALK_STALL_MS + 100); tick(w); await flush(); await flush();
+    // stalls 3+: other cells behind the doors, then nothing left: the timeout fade
+    await stallUntilSettled(w, p);
     assert.equal(await p, 'faded');
     assert.deepEqual([b.sprite.body.center.x, b.sprite.body.center.y], [160, 160]);
     assert.ok(w.fades.includes(1), 'faded in at its position');
 });
 
-test('stall: a walk-in with one door re-issues once, then fades as faded', async () => {
+test('stall: a walk-in with one door re-issues once, respawns at another cell out of view, then fades as faded', async () => {
     const w = world();
     const b = w.addNpc('guard');
     const p = w.manager.walkNPCIn('guard', { from: 'dock' });
     await flush();
     tick(w);
+    const first = { x: b.sprite.body.center.x, y: b.sprite.body.center.y };
     w.advance(WALK_STALL_MS + 100); tick(w); await flush();
-    assert.equal(b.moves.length, 2);
+    assert.equal(b.moves.length, 2, 'stall 1: the same move again');
     w.advance(WALK_STALL_MS + 100); tick(w); await flush(); await flush();
+    assert.equal(b.moves.length, 3, 'stall 2: respawned, still out of view');
+    const second = { x: b.sprite.body.center.x, y: b.sprite.body.center.y };
+    assert.ok(Math.hypot(second.x - first.x, second.y - first.y) >= WALK_RESPAWN_GAP_PX, `a different cell, not ${JSON.stringify(first)} again`);
+    assert.equal(w.fades.length, 0, 'no fade while another cell is out of view');
+    assert.equal(w.manager.walks.get('guard').phase, 'walking');
+    await stallUntilSettled(w, p);
     assert.equal(await p, 'faded');
     assert.deepEqual(w.fades, [1], 'faded in, not shown at once');
     assert.deepEqual([b.sprite.body.center.x, b.sprite.body.center.y], [160, 160]);
+});
+
+test('stall: respawns never repeat a cell already tried', async () => {
+    const w = world();
+    const b = w.addNpc('guard');
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await flush();
+    const seen = [{ x: b.sprite.body.center.x, y: b.sprite.body.center.y }];
+    for (let i = 0; i < 8; i++) {
+        tick(w);
+        w.advance(WALK_STALL_MS + 100); tick(w); await flush(); await flush();
+        const here = { x: b.sprite.body.center.x, y: b.sprite.body.center.y };
+        if (!seen.some(c => c.x === here.x && c.y === here.y)) {
+            for (const c of seen) assert.ok(Math.hypot(c.x - here.x, c.y - here.y) >= WALK_RESPAWN_GAP_PX, 'respawn near a tried cell');
+            seen.push(here);
+        }
+        if (!w.manager.walks.get('guard')) break;
+    }
+    assert.equal(await p, 'faded');
+    assert.ok(seen.length >= 2, 'at least one respawn happened first');
+});
+
+test('stall: a walk-in from a fixed tile (from: {x, y}) cannot respawn and fades after the re-issue', async () => {
+    const w = world();
+    const b = w.addNpc('guard');
+    const p = w.manager.walkNPCIn('guard', { from: { room: 'dock', x: 1, y: 1 } });
+    await flush();
+    tick(w);
+    w.advance(WALK_STALL_MS + 100); tick(w); await flush();
+    assert.equal(b.moves.length, 2);
+    await stallUntilSettled(w, p);
+    assert.equal(await p, 'faded');
+    assert.equal(b.moves.length, 2, 'the same tile is not a new spawn');
 });
 
 test('no stall while the body keeps moving', async () => {
