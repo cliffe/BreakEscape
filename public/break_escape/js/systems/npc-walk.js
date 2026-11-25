@@ -28,7 +28,7 @@ export const WALK_LOAD_WAIT_MS = 3000;
 export const WALK_STALL_MS = 3000;       // no movement for this long: re-plan, then fall back to the fade
 export const WALK_MAX_REPLANS = 4;        // walk-out re-plans after arriving in view
 export const WALK_ARRIVE_PX = 10;         // a walk-in ends within this of its position (goToAndStay stops at 1 tile otherwise)
-// Spawn and exit cells: prefer one this far clear of the view edge (beyond WALK_VIEW_MARGIN). Best
+// Walk-out exit cells: prefer one this far clear of the view edge (beyond WALK_VIEW_MARGIN). Best
 // effort, never a requirement: with no such cell the deepest out-of-view cell is used. The nearest
 // out-of-view cell sits on the view edge, so a walker stopping WALK_ARRIVE_PX short of it, or a
 // camera that moves a few px, put it back in view (case e: 4 re-plans, then a fade).
@@ -461,7 +461,9 @@ export function installNpcWalk(manager, env = {}) {
         const sprite = behavior.sprite;
         const from = opts.from;
         const target = w.target;
-        const vo = viewOpts(sprite);
+        // Spawns take the nearest out-of-view cell: a deep pick lands against the far wall, where
+        // the body sticks (live cases a and f stalled 20 s). recheckSpawn covers a moving camera.
+        const vo = { isOutOfView: (x, y) => !inView(x, y, sprite) };
         if (from && typeof from === 'object') {
             const room = from.room || near;
             if (room !== near && !(await ensureLoaded(room))) return null;
