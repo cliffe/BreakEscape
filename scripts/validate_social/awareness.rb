@@ -1025,7 +1025,8 @@ module ValidateSocial
         issues << err("#{at}.resumeOnDone is true with no doneGlobal; there is nothing to wait for") if b['resumeOnDone'] == true && Mail.blank?(b['doneGlobal'])
         pre = b['strings'] || (defend ? 'stepAway' : 'worldBeat')
         strings = ep['strings'].is_a?(Hash) ? ep['strings'] : {}
-        issues << warn_("#{at}: strings.#{pre} has no text; the engine falls back to its generic step-away copy") unless strings[pre].is_a?(String) && !strings[pre].strip.empty?
+        # the post-defend beat has built-in copy (STEP_AWAY_COPY), so only the other beats warn
+        issues << warn_("#{at}: strings.#{pre} has no text; the engine falls back to its generic step-away copy") unless defend || (strings[pre].is_a?(String) && !strings[pre].strip.empty?)
       end
       issues
     end
@@ -1044,6 +1045,10 @@ module ValidateSocial
           next if v.nil?
 
           issues << err("stepAways[#{i}].#{k} '#{v}' is not declared in globalVariables; an undeclared name is not saved") unless v.is_a?(String) && ctx.all_globals.key?(v)
+        end
+        done = b['doneGlobal']
+        if done.is_a?(String) && server_owned_globals(ctx).include?(done)
+          issues << err("stepAways[#{i}].doneGlobal '#{done}' is a server-owned global (worn, imported or credit); the client write of it would be refused on sync")
         end
       end
       issues

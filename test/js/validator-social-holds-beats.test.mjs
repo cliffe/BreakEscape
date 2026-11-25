@@ -159,6 +159,22 @@ test('E3: readyGlobal/doneGlobal declared, event, resumeOnDone, strings text', {
   ep(j).stepAways = [beat()];
   expectIn(lint(j), /strings\.worldBeat has no text/);
 });
+test('E3: a post-defend beat with no strings.stepAway does not warn (engine default copy)', { skip }, () => {
+  const j = mk(); declare(j, 'b1_done'); strs(j).worldBeat = 'x'; delete strs(j).stepAway;
+  ep(j).stepAways = [beat(), { id: 'b2', after: 'defend', event: 'episode_step_away', pickedKey: 'lateBeat', doneGlobal: null }];
+  expectIn(lint(j), /strings\.stepAway has no text/, 0);
+  delete strs(j).worldBeat;
+  expectIn(lint(j), /strings\.worldBeat has no text/);
+});
+test('E3: doneGlobal may not be a server-owned global', { skip }, () => {
+  const j = mk(); declare(j, 'imported_g'); j.importGlobals = [{ as: 'imported_g', from: 'm01_x', var: 'x' }];
+  strs(j).worldBeat = 'x';
+  ep(j).stepAways = [beat({ doneGlobal: 'imported_g' })];
+  expectIn(lint(j), /doneGlobal 'imported_g' is a server-owned global/);
+  declare(j, 'b1_done');
+  ep(j).stepAways = [beat()];
+  expectIn(lint(j), /server-owned/, 0);
+});
 test('E3: a beat after defend needs the debrief; the list is barred from check shells', { skip }, () => {
   const j = mk(); declare(j, 'b1_done'); strs(j).stepAway = 'x';
   ep(j).stages = ['brief', 'osint', 'write', 'flip', 'debrief', 'defend'];

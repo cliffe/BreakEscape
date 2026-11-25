@@ -751,6 +751,11 @@ test('E3 panel: a mid beat with a ready global shows its own wait line, not the 
     setup(legacyEpisode(), { kit_defend_done: false }, { v: 1, done: ['brief', 'osint', 'write', 'flip', 'defend'] });
     open(legacyEpisode(), { stepAwayAfter: 'defend' });
     assert.match(q('.epr-step-away-note').textContent, /your result has saved/);
+    // strings.stepAwayReadyWait replaces that default on the post-defend beat
+    const custom = legacyEpisode({ strings: { stepAwayReadyWait: 'Hold on, saving.' } });
+    setup(custom, { kit_defend_done: false }, { v: 1, done: ['brief', 'osint', 'write', 'flip', 'defend'] });
+    open(custom, { stepAwayAfter: 'defend' });
+    assert.equal(q('.epr-step-away-note').textContent, 'Hold on, saving.');
 });
 
 test('E3 panel: a beat after the mistake stage shows when a real sandbox scene completes and the framework reopens the runner', () => {

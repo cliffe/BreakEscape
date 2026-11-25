@@ -337,6 +337,7 @@ Shape: `awarenessEpisode.stepAways`, a list of beats, each with its own ready gl
 ]
 ```
 
+- **String prefixes.** A beat's `strings` prefix is limited to `stepAway` and `worldBeat`, because the `strings` block is closed, so two world beats in one episode share the same copy.
 - **Legacy form.** `stepAway: true` normalises in `episode-model.js` to the single `found_stick`-shaped entry above (after `defend`, `episode_step_away`, ready on `kit_defend_done`, `stepAwayPicked`, strings `stepAway`). Every existing shell keeps working unchanged; a shell sets one form or the other, not both.
 - **The other readers of the step-away.** `stepAwayOn(episode)` is true for either form. `stepAwayHeld` (the rule that keeps the mission success screen off the room until the step-away has run, `episode-model.js:110-119`) and the post-defend panel condition (`episode-runner-minigame.js:412-418`) read the post-defend beat (the one whose `event` is `episode_step_away`) from the normalised list, never `stepAway === true`. That beat's done rule stays `stepAwayBeatLive` (the `kit_<ep>_out`/`kit_<ep>_done` pair, `episode-model.js:93-100`), so `found_stick` keeps `doneGlobal: null` and today's reopen. A beat after any other stage, such as `red_stick`, never holds the success screen.
 - **Per-beat paths.** `_stepAwayReady(beat)` is true when `readyGlobal` is null or truthy; `_lookUpButton(beat)`, `_lookUp(beat)` and `_markPicked(beat)` act on that beat only and write that beat's own `pickedKey`; `_steppedAway` becomes a per-beat set keyed by `id`.

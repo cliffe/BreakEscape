@@ -650,9 +650,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     /** Look up, disabled until the beat's ready global is true (read now, then on its change event). */
     _lookUpButton(panel, beat = this._defendBeat()) {
         const btn = this._button(panel, STEP_AWAY_COPY.lookUp, () => this._lookUp(beat), 'epr-look-up');
-        // the post-defend beat waits on the saved result; another beat has its own line (strings.<prefix>ReadyWait)
-        const waitText = !beat || beat.after === 'defend' ? STEP_AWAY_COPY.wait
-            : (isStr(this.strings[`${beat.strings}ReadyWait`]) ? this.strings[`${beat.strings}ReadyWait`] : BEAT_COPY.wait);
+        // the post-defend beat waits on the saved result by default; every beat may replace the line with strings.<prefix>ReadyWait
+        const fallback = !beat || beat.after === 'defend' ? STEP_AWAY_COPY.wait : BEAT_COPY.wait;
+        const own = this.strings[`${beat ? beat.strings : 'stepAway'}ReadyWait`];
+        const waitText = isStr(own) ? own : fallback;
         const note = el('p', 'epr-step-away-note', waitText);
         note.setAttribute('aria-live', 'polite');
         panel.appendChild(note);
