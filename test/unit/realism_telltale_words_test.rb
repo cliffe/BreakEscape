@@ -53,7 +53,7 @@ class RealismTelltaleWordsTest < ActiveSupport::TestCase
 
   test 'the skin validator gives the same lines over each test_ops scenario as with the old list' do
     dirs = Dir[File.join(ROOT, 'scenarios/test_ops_*')].sort
-    assert_equal 8, dirs.size
+    assert_equal 10, dirs.size
     dirs.each do |d|
       json = JSON.parse(BreakEscape::ScenarioBinding.render(File.read(File.join(d, 'scenario.json.erb')), {}))
       now = check_realism_skin(json)
