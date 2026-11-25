@@ -1,0 +1,478 @@
+{
+ "mission": "lth_game",
+ "id": "lth_game_30_v2",
+ "title": "SAFETYNET: Licence to Hack, whole-game trailer 30 s, V2",
+ "fps": 30,
+ "length": 30.0,
+ "status": "v1 (25 Nov 2026): 30 s autoplay cut from the plan's table (900 frames); not rendered; cuts unsnapped. S40 window starts at the shot's in point (line 0.125 s in). Same placeholders as the main cut where S20 and S30 are used.",
+ "music": {
+  "track": "SpyAction/Emerald Trigger.mp3",
+  "analysis": "emerald_trigger_60.json",
+  "start": 0.0,
+  "length": 30.0,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 0.6,
+  "alternatives": [
+   "fade_out 1.6 for the soft-end render"
+  ]
+ },
+ "beat": {
+  "bpm": 150.01,
+  "period": 0.39996,
+  "offset": 0.335,
+  "note": "working grid beat = 0.335 + 0.39996 k; cuts sit on measured onsets, so snap is false on every shot; deliberate holds S23 45.872, S32 64.236, C7b 88.935"
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no code, PIN, password, flag value or answer on screen; mask the m03 VM login note (S23) in every aspect",
+  "no tool, exploit or technique named anywhere",
+  "no Break Escape on screen; never m10 story, WREN, m08 mole, m05 insider, m09 choice, Derek"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to dissolve for the alternative render"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false,
+   "duration": 5.7667,
+   "join": {
+    "type": "cut"
+   }
+  },
+  {
+   "id": "S40_architect",
+   "type": "gameplay",
+   "duration": 3.3,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m07_t13c_architect_call_fx.trimmed.mkv",
+    "in": 37.4,
+    "out": 40.999
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 1.7
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 2.6
+    }
+   },
+   "audio": {
+    "gain_db": 2.7,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "whole line inside the shot; frame-check the picture from 37.4"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Architect",
+     "text": "Four fires tonight, and only one of you.",
+     "start": 0.125,
+     "end": 3.3
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "whole line inside the shot; frame-check the picture from 37.4"
+  },
+  {
+   "id": "C7a_card_usp1",
+   "type": "card",
+   "duration": 3.3667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real VMs and CTF",
+    "In a Spy Story"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "C7b_card_usp2",
+   "type": "card",
+   "duration": 3.0667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "No Other Game",
+    "Does It Like This"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "S09_g_lockpick",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m01_t04_lockpick.trimmed.mkv",
+    "in": 6.4,
+    "out": 6.8
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.492,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   }
+  },
+  {
+   "id": "S11_g_rfid_emulate",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m03_t20_rfid_emulate.trimmed.mkv",
+    "in": 5.9,
+    "out": 6.3
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   }
+  },
+  {
+   "id": "S20_c_base64",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m01_t14_cyberchef.trimmed.mkv",
+    "in": 6.97,
+    "out": 8.166
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.725,
+     "cy": 0.385,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.56,
+     "cy": 0.4,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.56,
+     "cy": 0.36,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-4 required: Base64 decode at 200% zoom; fallback m01 t14_cyberchef 6.97-8.166 (frame-check input and output read together)"
+   },
+   "placeholder": true,
+   "placeholder_note": "GAP-4 required: Base64 decode at 200% zoom; fallback m01 t14_cyberchef 6.97-8.166 (frame-check input and output read together)",
+   "note": "GAP-4 required: Base64 decode at 200% zoom; fallback m01 t14_cyberchef 6.97-8.166 (frame-check input and output read together)"
+  },
+  {
+   "id": "S23_vm_in_game",
+   "type": "gameplay",
+   "duration": 0.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m03_t02_vm_approach.trimmed.mkv",
+    "in": 9.5,
+    "out": 10.16
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.265,
+     "cy": 0.5,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.265,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.265,
+     "cy": 0.5,
+     "zoom": 1.9
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "VM panel open in game, desktop drawn from 9.5 s; panel fills left 53% of the frame so crop to it; if the crop fails use GAP-5; deliberate hold (45.872) off any onset"
+   },
+   "masks": [
+    {
+     "x": 40,
+     "y": 780,
+     "w": 620,
+     "h": 220,
+     "note": "PROVISIONAL: login sticky note, bottom left outside the panel; set exact box on the frame check, all aspects"
+    }
+   ],
+   "note": "VM panel open in game, desktop drawn from 9.5 s; panel fills left 53% of the frame so crop to it; if the crop fails use GAP-5; deliberate hold (45.872) off any onset"
+  },
+  {
+   "id": "S28_con_session",
+   "type": "gameplay",
+   "duration": 1.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m08_console_shell_clip.mp4",
+    "in": 0.4,
+    "out": 2.043
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "session output lands 0.9 s into the shot"
+   },
+   "note": "session output lands 0.9 s into the shot"
+  },
+  {
+   "id": "S30_flag_accepted",
+   "type": "gameplay",
+   "duration": 1.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "lth_gap3_archive_key.trimmed.mkv",
+    "in": 0.0,
+    "out": 3.2
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-3 required: m01 ENTROPY archive key (input masked as bullets), cut before the contents screen, toast 'ENTROPY archive decryption key confirmed'; mask the access toast"
+   },
+   "placeholder": true,
+   "placeholder_note": "GAP-3 required: m01 ENTROPY archive key (input masked as bullets), cut before the contents screen, toast 'ENTROPY archive decryption key confirmed'; mask the access toast",
+   "note": "GAP-3 required: m01 ENTROPY archive key (input masked as bullets), cut before the contents screen, toast 'ENTROPY archive decryption key confirmed'; mask the access toast"
+  },
+  {
+   "id": "C5_card_help",
+   "type": "card",
+   "duration": 2.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Stuck?",
+    "Hints. Guides.",
+    "Walkthroughs."
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false,
+   "note": "burned line 'SAFETYNET: Licence to Hack' over the close 96.769-101.568 (upper third, Press Start 2P): NEEDS RENDERER OVERLAY (no text slot in the preset); music fade 0.6 s from 104.168",
+   "burned_line": {
+    "text": "SAFETYNET: Licence to Hack",
+    "from": 0.0,
+    "to": 4.8
+   }
+  }
+ ]
+}
