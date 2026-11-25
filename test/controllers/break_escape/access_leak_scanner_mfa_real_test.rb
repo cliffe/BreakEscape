@@ -5,7 +5,7 @@ require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 module BreakEscape
   # Ops S8a unit 23 (feature A22, the leak scanner's second-step rules): the scanner run over REAL answers of a game of
   # scenarios/test_ops_mfa, recorded as the browser's capture holds them (method, path, query, status, body, and the
-  # `inv` tag of a POST /inventory row and a `login` tag naming the PC of a sign-in). The whole run must report nothing;
+  # `inv` tag of a POST /inventory row and a `pc` tag naming the PC of a sign-in, a sign-out, a lock or a second-step row). The whole run must report nothing;
   # then one fault at a time is made in a copy of one answer, or one earlier step is left out, and must be reported.
   # The earned cases (the device's own code from a taken device, the choices from a taken phone, the one right number in
   # the number-matching sign-in answer, a session after a passed step, an exempt way in) are allowed, and each near miss
@@ -44,14 +44,23 @@ module BreakEscape
       row = { 't' => (Time.utc(2026, 1, 1) + @log.length).iso8601(3), 'method' => request.request_method,
               'path' => request.path, 'status' => response.status, 'body' => response.parsed_body }
       row['query'] = request.query_string unless request.query_string.to_s.empty?
+      # the recorder's own rule: a POST to a PC route carries `pc` = { pcId } from the body's pc_id, else null
+      row['pc'] = recorder_pc_tag if row['method'] == 'POST' && PC_ROUTE_RE.match?(row['path'])
       @log << row.merge(extra)
       @marks[mark] = @log.last if mark
       @log.last
     end
 
+    PC_ROUTE_RE = %r{/(login|logout|lock_session|mfa/verify|mfa/prompt|mfa/approve)\z}
+
+    def recorder_pc_tag
+      id = request.request_parameters['pc_id']
+      id.is_a?(String) && !id.empty? && request.query_string.to_s.empty? ? { 'pcId' => id } : nil
+    end
+
     def sign_in_row(pc, creds, mark, foothold: nil)
       sign_in(pc, *creds, foothold: foothold)
-      rec(mark, 'login' => { 'pcId' => pc })
+      rec(mark)
     end
 
     def take_row(id, type, name, mark, npc: nil)
@@ -97,7 +106,6 @@ module BreakEscape
       take_row('kit_dropbox', 'pc', 'Network drop box', nil)
       post_row('network/plant', { jack_id: 'office_port' }, nil)
       post_row('login', { pc_id: 'code_pc1', credential: 'hana_token', foothold: OFFICE }, :token)
-      @marks[:token]['login'] = { 'pcId' => 'code_pc1' }
       # push: the owner approves the third request
       sign_in_row('push_pc', CAL, :cal_required)
       post_row('mfa/prompt', { pc_id: 'push_pc' }, :prompt1)
@@ -128,7 +136,20 @@ module BreakEscape
     end
 
     def scan(rows)
-      AccessLeakScanner.new(scenario).scan(rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] })
+      AccessLeakScanner.new(scenario).scan(recorder_keys(rows).each_with_index.map { |r, i| ['run.jsonl', i + 1, r] })
+    end
+
+    # A doctored row keeps the recorder's key rule: a tagged run holds `pc` on every POST to a PC route and on no other row
+    # (a case that moves a row to another path or method moves it out of the rule, so the recorder would write no tag there).
+    def recorder_keys(rows)
+      return rows unless rows.any? { |r| r.key?('pc') }
+
+      rows.map do |r|
+        pc_route = r['method'] == 'POST' && PC_ROUTE_RE.match?(r['path'].to_s)
+        if pc_route then r.key?('pc') ? r : r.merge('pc' => nil)
+        else r.key?('pc') ? r.except('pc') : r
+        end
+      end
     end
 
     def mfa(findings)
@@ -380,7 +401,7 @@ module BreakEscape
       assert_found session, doctored(:pass_code) { |r| r['body'].delete('via') }
       assert_found session, doctored(:pass_code) { |r| r['body']['npcId'] = 'ines' }
       # the sign-in after the pass, left unnamed and unlocked: a session again with no step
-      assert_found session, doctored(:unlock) { |r| r.delete('login') }
+      assert_found session, doctored(:unlock) { |r| r['pc'] = nil }
       assert_found session, without(:lock)
       assert_found session, doctored(:lock) { |r| r['status'] = 422 }
       assert_found session, doctored(:lock) { |r| r['body']['locked'] = false }
@@ -418,14 +439,14 @@ module BreakEscape
     test 'an unnamed sign-in answer that could be at a PC that asks for a step is reported; the exempt ways in are not' do
       run_game
       # Cal is admitted at the push PC and the plain PC: unnamed, the plain PC's sign-in could be the push PC's
-      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r.delete('login') }
-      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r['login'] = { 'pcId' => 'push_pc' } }
-      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r['login'] = { 'pcId' => 'nope' } }
-      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r.delete('login'); r['body']['host'] = 'NOWHERE' }
-      assert_equal [], mfa(scan(doctored(:plain_signin) { |r| r['login'] = { 'pcId' => 'plain_pc' } }))
+      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r['pc'] = nil }
+      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r['pc'] = { 'pcId' => 'push_pc' } }
+      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r['pc'] = { 'pcId' => 'nope' } }
+      assert_found ['mfa_session', 'mfa:session:cal'], doctored(:plain_signin) { |r| r['pc'] = nil; r['body']['host'] = 'NOWHERE' }
+      assert_equal [], mfa(scan(doctored(:plain_signin) { |r| r['pc'] = { 'pcId' => 'plain_pc' } }))
       # the exempt: the service account (creds.mfa false), a token, an invite relay, a claim, a technique
-      assert_equal [], mfa(scan(doctored(:sync_signin) { |r| r.delete('login') }))
-      assert_equal [], mfa(scan(doctored(:token) { |r| r.delete('login') }))
+      assert_equal [], mfa(scan(doctored(:sync_signin) { |r| r['pc'] = nil }))
+      assert_equal [], mfa(scan(doctored(:token) { |r| r['pc'] = nil }))
       # not exempt by saying so only: a typed answer that claims to be a token with no kind, a kind that is not a token
       assert_found ['mfa_session', 'mfa:session:hana'], doctored(:token) { |r| r['body'].delete('kind') }
       assert_found ['mfa_session', 'mfa:session:hana'], doctored(:token) { |r| r['body']['kind'] = 'saved_connection' }
@@ -436,7 +457,7 @@ module BreakEscape
       assert_found ['mfa_session', 'mfa:session:hana'], doctored(:token) { |r| r['body'] = r['body'].merge('via' => 'technique').except('kind', 'label', 'expiresInS', 'route') }
       assert_equal [], mfa(scan(doctored(:token) { |r| r['body'] = r['body'].merge('relay' => true) }))
       # a body that says the account is unenrolled exempts nothing, and a host label names the PC as the tag does
-      rows = doctored(:unlock) { |r| r['body']['mfa'] = false; r.delete('login'); r['body']['host'] = 'ACC01' }
+      rows = doctored(:unlock) { |r| r['body']['mfa'] = false; r['pc'] = nil; r['body']['host'] = 'ACC01' }
       assert_equal [], mfa(scan(rows)), 'the unlock of the locked session, named by its host label'
       rows.delete_if { |r| r['path'].end_with?('/lock_session') }
       assert_found ['mfa_session', 'mfa:session:hana'], rows

@@ -78,9 +78,18 @@ module BreakEscape
       row = { 't' => (Time.utc(2026, 1, 1) + @log.length).iso8601(3), 'method' => request.request_method,
               'path' => request.path.sub(%r{/games/\d+/}, '/games/1/'), 'status' => response.status, 'body' => response.parsed_body }
       row['query'] = request.query_string unless request.query_string.to_s.empty?
+      # the recorder's own rule: a POST to a PC route carries `pc` = { pcId } from the body's pc_id, else null
+      row['pc'] = recorder_pc_tag if row['method'] == 'POST' && PC_ROUTE_RE.match?(row['path'])
       @log << row.merge(extra)
       @marks[mark] = @log.last if mark
       @log.last
+    end
+
+    PC_ROUTE_RE = %r{/(login|logout|lock_session|mfa/verify|mfa/prompt|mfa/approve)\z}
+
+    def recorder_pc_tag
+      id = request.request_parameters['pc_id']
+      id.is_a?(String) && !id.empty? && !request.query_string.to_s.match?(/(\A|[?&;])(pc_id|target_type|target_id)(\[|=|&|;|\z)/) ? { 'pcId' => id } : nil
     end
 
     def get_row(path, params = {}, mark = nil)
@@ -95,7 +104,7 @@ module BreakEscape
 
     def sign_in_row(pc, creds, mark = nil)
       sign_in(pc, *creds)
-      rec(mark, 'login' => { 'pcId' => pc })
+      rec(mark)
     end
 
     def take_row(id, type, name, mark = nil, npc: nil)
@@ -506,7 +515,6 @@ module BreakEscape
       get_row('keyring', {}, :keyring1)
       sign_in_row('front_pc', SAM, :sam_first)
       post_row('login', { pc_id: 'records_pc', credential: 'tess_saved', from: 'front_pc' }, :stale)
-      @marks[:stale]['login'] = { 'pcId' => 'records_pc' }
       sign_in_row('records_pc', [TESS[0], TESS[1]], :old_password)
       sign_in_row('records_pc', [TESS[0], TESS_NEW], :typed_new)
       post_row('logout', { pc_id: 'records_pc' })
@@ -581,7 +589,7 @@ module BreakEscape
       assert_equal @log.map { |r| r.values_at('method', 'path', 'query', 'status') },
                    committed.map { |r| r.values_at('method', 'path', 'query', 'status') },
                    'the committed capture is out of date: run this file with CAPTURE=1'
-      assert_equal @log.map { |r| r.slice('login', 'inv') }, committed.map { |r| r.slice('login', 'inv') }
+      assert_equal @log.map { |r| r.slice('pc', 'inv') }, committed.map { |r| r.slice('pc', 'inv') }
       # R2-SERVER4: and the answer bodies too, with the values that differ per game set aside
       @log.zip(committed).each_with_index do |(now, then_), i|
         assert_equal normalised_body(then_), normalised_body(now),
