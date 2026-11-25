@@ -580,11 +580,11 @@
             { "eventPattern": "npc_left_post:chidi_okeke", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
-            { "eventPattern": "npc_returned_post:jun_watanabe", "cooldown": 0, "setGlobal": { "coffee_pending": false } },
             { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?", "setGlobal": { "jun_caught": true } },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false },
             { "eventPattern": "npc_left_post:jun_watanabe", "cooldown": 0, "setGlobal": { "jun_caught": false } },
-            { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance !== null && data.playerDistance <= 80 && globalVars.jun_caught !== true", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?" }
+            { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance !== null && data.playerDistance <= 80 && globalVars.jun_caught !== true", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?" },
+            { "eventPattern": "npc_returned_post:jun_watanabe", "cooldown": 0, "setGlobal": { "coffee_pending": false } }
           ]
         },
         {
