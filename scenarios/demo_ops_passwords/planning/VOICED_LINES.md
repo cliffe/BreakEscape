@@ -33,7 +33,7 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); this is the list a la
 | 25 | ink whats_next | You've done the hands-on part. Tell me to call it a day. | 12 |
 | 26 | ink whats_next | Open the sign-in log terminal in the IT room. Find your own rows, then flag the night-time failure. | 18 |
 | 27 | ink whats_next | That's everything. Look round as long as you like. | 9 |
-| 28 | ink whats_next | While Graham's at lunch, try that password on his PC. Same password, typed by hand. | 15 |
+| 28 | ink whats_next | Next time Graham's away from his desk, try that password on his PC. Same password, typed by hand. | 18 |
 | 29 | ink tell_facts | Good. Two different places, two things she shares without a thought. | 11 |
 | 30 | ink tell_facts | Keep both. A cracker needs them. | 6 |
 | 31 | ink tell_crack_guessable | Her password was built from things she posts. Guessing was enough. | 11 |
@@ -192,6 +192,7 @@ Lines changed or added in round 1. No audio exists, so every change is free.
 - Ama barks: lunch "Lunch. Graham's off to the kitchen, and Julian's gone to his client lunch."; override "His PC blocks devices, but an administrator's session let it through. That window's the office network. Close it for today."
 - Delphine, Graham (two), Julian, Niamh, printer service: as the table rows above.
 - Jun's voice style now calls him Merrin & Sallow's junior office assistant (he is their staff, not Fenlow's).
+- Ama `whats_next` free-play line, round 2: "Next time Graham's away from his desk, try that password on his PC. Same password, typed by hand." (was "While Graham's at lunch, ...", untrue by the time it plays). No other spoken line changed; "What did that show?" is now offered only once a fact or the records are held (a choice, not a voiced line).
 
 ## Totals
 

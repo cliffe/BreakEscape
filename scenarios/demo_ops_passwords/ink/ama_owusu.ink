@@ -81,7 +81,7 @@ What can I help with?
     -> lever_day_end
 + { heard_exchange_cooler_chat and not asked_cooler } [What was that at the cooler?]
     -> cooler
-+ [What did that show?]
++ { earn_facts_done or get_records_done } [What did that show?]
     -> recap
 + { act_evening } [Give me the short version.]
     -> short_version
@@ -163,7 +163,7 @@ What can I help with?
 { crack_reused_done and act_midday and not act_evening and not told_free_play:
     ~ told_free_play = true
     # speaker:npc
-    While Graham's at lunch, try that password on his PC. Same password, typed by hand.
+    Next time Graham's away from his desk, try that password on his PC. Same password, typed by hand.
 }
 -> hub.choices
 

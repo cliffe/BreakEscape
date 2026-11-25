@@ -71,3 +71,23 @@ Sources: `planning/IMPL_REVIEW_R1.md`, `planning/DIALOGUE_REVIEW_R1.md`, the bro
 Live check (port 3024, fresh game 195, then the server stopped): before the rooms were seen, "Send them to lunch." gave Ama's walk-round lines and `act_midday` stayed false. After entering the kitchen, IT room and partner's office, the lever pressed from the office sent Graham to the fridge (`npc_left_post:graham_whitfield`, target `fridge`, about 33 s away) and Delphine to the microwave, and Julian was hidden. The game's data is a dev playtest row only.
 
 Checks after the fixes: ink 7/7 compiled; validator 0 errors, 26 warnings (was 30: the port and socket no longer work targets); dialoguelint 0 ERROR, 1 CHECK (`crowded-hub`, above); mapping drift 0 failures; Rails test 31 runs, 713 assertions, 0 failures, whole-run leak scan 0 findings; `bin/ops-golden-compare` 27 runs, 0 failures; dungeon graph regenerated (no change in its content).
+
+## Round 2 fixes
+
+| Finding | Outcome |
+|---|---|
+| R2 n1: free-play line says Graham is at lunch when it is usually false | Fixed (option a): "Next time Graham's away from his desk, try that password on his PC. Same password, typed by hand." PLAYTEST's free check now says lunch is the only window and is short (25 to 60 s). |
+| R2 n2: coffee-socket check order | PLAYTEST corrected: press the lever, then switch the machine off while she is on her way. |
+| R2 n3: hub crowding count | Correct count: up to 12 choices at once at midday before anything is told (five claims, "What's next?", coffee, weekend, "Call it a day.", cooler, recap, exit). Still a CHECK, not an ERROR. "Call it a day." not hidden (it would change behaviour the test pins). |
+| R2 m6 suggestion | `_comment` added on `desk_usb_port` saying why the confirm stays. |
+| Playtest 1: "What's next?" points at the photo | Not a fault: the year fact had already arrived from Delphine's own post, so only the photo line applies. PLAYTEST A0 now gives both cases. |
+| Playtest 2: "What did that show?" offered before any sign-in | Fixed: offered only once `earn_facts_done` or `get_records_done`. |
+| Playtest 3: reading the post does not hold the year; a click does, no toast | Engine behaviour of the feed; PLAYTEST P2a now says click the post, no toast. |
+| Playtest 4, 7, 8, 11 (file row, log terminal blocking the route, reload position, unseen lines) | Harness or engine behaviour; written up under "Harness notes" in PLAYTEST. The bark after lunch is marked not caught. |
+| Playtest 5, 6: printer refusal writes no row; verify-run loginFailures 0 | PLAYTEST P6c corrected (no row, exact refusal text); verify-run note added. Printer refusal logging left as it is. |
+| Playtest 9, 10 | PLAYTEST says the window is lunch only; lever swap is as designed. |
+| P6b teaching toast | PLAYTEST corrected: none follows. |
+| Validator `signin_log` seeds | s1 to s6 are in time order (Mon 17:32, Tue 02:10, 07:51, 08:01, 08:02, 08:09); 0 errors. |
+| Printer password in planning or PLAYTEST | None present (grep clean); it lives only in the scenario and its test. |
+
+Checks: ink 7/7 compiled; validator 0 errors, 26 warnings; dialoguelint 0 ERROR, 1 CHECK; mapping drift 0 failures; graph regenerated, no change; Rails test 31 runs, 713 assertions, 0 failures (leak scan 0 findings); `bin/ops-golden-compare` 27 runs, 0 failures.
