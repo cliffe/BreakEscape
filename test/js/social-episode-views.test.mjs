@@ -714,13 +714,13 @@ test('E5 renderFlipView: a missed call flip (walked_away, reported) reads ByGlob
         flipDefenderLineByGlobal: [
             { global: 'ca12_tailgated', line: 'Tailgated.', heading: 'You walked in' },
             { global: 'ca12_guard_alerted', line: 'Alerted.' },
-            { global: 'ca12_world_done', line: 'Never got past the lobby.' }
+            { global: 'ca12_runner_go', line: 'Never got past the lobby.' }
         ]
     };
     const run = (globals, over = {}) => {
         const h = host();
         renderFlipView(h, { call: null, missed: true, strings, globals, onContinue() {}, ...over });
-        return { line: h.querySelector('.aw-defender-line')?.textContent, missed: h.querySelector('.aw-missed')?.textContent, heading: h.querySelector('h2, h3')?.textContent };
+        return { landedClass: !!h.querySelector('.aw-defender-line.aw-landed-no-tells'), line: h.querySelector('.aw-defender-line')?.textContent, missed: h.querySelector('.aw-missed')?.textContent, heading: h.querySelector('h2, h3')?.textContent };
     };
     const tail = run({ ca12_tailgated: true });
     assert.equal(tail.line, 'Tailgated.');
@@ -729,7 +729,8 @@ test('E5 renderFlipView: a missed call flip (walked_away, reported) reads ByGlob
     const alerted = run({ ca12_guard_alerted: true });
     assert.equal(alerted.line, 'Alerted.');
     assert.equal(alerted.heading, 'Nothing to replay this time', 'no heading on the entry: flipMissedHeading');
-    assert.equal(run({ ca12_world_done: true }).line, 'Never got past the lobby.', 'the timeout comes from an explicit last entry');
+    assert.equal(run({ ca12_runner_go: true, ca12_world_done: true }).line, 'Never got past the lobby.', 'the timeout comes from an explicit last entry');
+    assert.equal(run({ ca12_world_done: true }).line, undefined, 'a got_it run at the cap matches no entry');
     const none = run({});
     assert.equal(none.line, undefined);
     assert.equal(none.missed, 'Generic miss.');
@@ -737,6 +738,8 @@ test('E5 renderFlipView: a missed call flip (walked_away, reported) reads ByGlob
     // landedNoTells reads it too
     const landed = run({ ca12_guard_alerted: true }, { missed: false, landedNoTells: true });
     assert.equal(landed.line, 'Alerted.');
+    assert.equal(landed.landedClass, true, 'the landed-no-tells class stays on a ByGlobal line');
+    assert.equal(tail.landedClass, false);
 });
 
 test('E5 globalLine: only own keys of the globals map count', () => {
