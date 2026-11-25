@@ -75,6 +75,8 @@ const STRINGS_VALUE_EXEMPT = new Set(['defendIntro', 'conceptPanel']);
 //     shell does not have.
 //   - sandboxRecapHeading/Move, assistantRecapHeading/Move (batch 11): debrief recaps of the
 //     consequence sandbox and the assistant stage, which only a full episode has.
+//   - flipDefenderLineByGlobal (E5): the ca12 full shell carries it (one line per ending, chosen by the world's globals);
+//     the defend-only fragment has no flip. Keep it here until the ca12 shell uses it, then it stays: the defend twin never will.
 //   - stepAwayHeading, stepAway (ca12 fix 1A): the step-away panel copy lives only in the hand-written full shell,
 //     which has the panel; the defend-only fragment has none.
 const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox', 'stages',

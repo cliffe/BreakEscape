@@ -79,3 +79,36 @@ Recorded 25 Nov on display :147, keyless server :3456 (worktree b-ca-trailers-ne
 | t09_zainab_drinks | none (fresh game) | 32.37 | 0.10 | -62/-30 | npc-start 0.43 at post (140,185), thirst forced 0.43, left post 1.06, at machine 5.02 (239,197), return-start 27.53, back at post 29.82, follow-off 30.63, end 31.94 | PASS. Camera followed 116 samples, scroll (-182,1) to (-128,18) (range 100 by 24), ended on the player (`following: player`). Frames at 0.5, 3, 6, 15, 31.5: Zainab on her post, mid-walk past the table with a bubble, at the machine, back on post. The room is small: the camera pans only a little (about 100 px at 1x) |
 
 Not recorded: none of the ca02 take scripts were skipped. The script's lands variant (Fatima's reply) is off, so no Done-and-row-click take was made; the reply row arrives 6.2 s after Send in these takes (send 37.43, row 43.65). t09_zainab_drinks is not in the trailer script (it is the movement-shot candidate for the cold open or office slot).
+
+## Render queue
+
+Edit lists from the 25 Nov takes (round 1, 72.5 s, lint 0 errors): `tools/video/edits/ca02_trailer_r1.json` (16:9) and `ca02_trailer_r1_narrow.json` (9:16 and 1:1). Not rendered (machine busy). Takes are read from `video_out/ca02/takes`, a symlink to `~/video-takes-local/ca02/takes` (git-ignored; recreate it on a fresh checkout). Run one at a time, nothing else rendering or capturing (`pgrep -af 'remotion|render.mjs|render.sh'`, `free -g`):
+
+```bash
+cd <worktree>
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca02_trailer_r1-16x9     # dedicated empty folder, deleted on success
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca02_trailer_r1.json 16:9
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca02_trailer_r1_narrow-9x16
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca02_trailer_r1_narrow.json 9:16
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca02_trailer_r1_narrow-1x1
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca02_trailer_r1_narrow.json 1:1
+```
+
+No `--final` (spoiler blocks are unreviewed, as for the other CA round-1 edits). Output: `video_out/ca02/renders/`.
+
+Window table (output s, take, in-out in trimmed-take s; all inside their takes and clear of the hazards above):
+
+| shot | out s | take | in-out | note |
+|---|---|---|---|---|
+| hook | 0-3.0 | t07_zainab_hook | 3.65-6.65 | speech 4.00-6.488, sentence 2 starts 6.83 |
+| topic | 8.1-15.2 | t05 run A | 5.6-12.7 | narrow file uses the same wide take, zoomed out |
+| research | 18.2-23.0 | t02 / t02n | 11.9-16.7 / 10.95-15.75 | ends before browser closes |
+| build | 23.0-30.2 | t02 / t02n | 28.2-35.4 / 25.78-32.98 | attach lands about 6.2 s in |
+| lands | 30.2-34.4 | t02 / t02n | 35.9-40.1 / 33.0-37.2 | reply row not in |
+| flip | 34.4-36.8 | t02 / t02n | 44.6-47.0 / 41.8-44.2 | before Continue |
+| fatima_flip | 36.8-45.2 | t04_fatima_flip | 8.9-17.3 | speech 9.12-16.584, menu not in |
+| inbox | 47.2-59.0 | t05 run B / t05n | 6.95-18.75 / 6.5-18.3 | card opens 3.8 s in; 16:9 crop above the verdict buttons |
+| office_life (PROPOSED) | 59.0-61.4 | t09_zainab_drinks | 1.0-3.4 | not in the script; Zainab leaves her post and walks to the drinks machine, silent, +2.4 s |
+| office | 61.4-67.0 | t07_chidi_prompt | 3.37-8.97 | Look up panel for 1.03 s, then Chidi bark 1 (speech from 3.12 s in) |
+
+Open issues for the render check: music is PeaceFolk Guitar Motif from 95.545 s (a choice; alternatives in the edit); chip is EMAIL BUILDER (script's name is 25 characters, limit 24); blue card text is 30 characters (lint warning, owner wording); VO v4 is 3.3 words/s (lint warning, the voiced file); Fatima sentence-2 caption split is estimated; framings for the hook, Fatima, office and office_life are from contact frames, check them in the render; 1:1 narrow build shows the Close fragment; 9:16 and 1:1 inbox show the verdict buttons unpressed.

@@ -37,3 +37,11 @@ Seeds (`SEEDS` in `_ca18.mjs`):
 
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Survey: `docs/video/CA_MOVEMENT_B4.md`. Helper `tools/video/takes/lib/camlib.mjs`. **Proposed script written, not yet dry-run.** Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t06_delphine_sofa (new, not yet dry-run) | fresh game, `--set kit_quiet=true`; `kit_ca18_out` not set | read her settled post (near tile (4.5,4.5) = (144,144)); `followNpc(kit_delphine_arvanitis, lerp 0.08)`; `triggerNeed(rest, 5)`; she walks to the sofa, sits about 8 s, walks back; `followPlayer` | post-set, follow-on, need-set, walk-start, arrive, trip-distance, return-start, back, cam-summary, end | optional office insert before `lorna_end` (v10) | The sofa has no `position` in the scenario: the trip length is unknown and the take throws under 120 px (then the scenario needs a sofa position, a proposal in the survey). After Look up her needs are suspended and she returns to (4.5,4.5): record the trip before the press |

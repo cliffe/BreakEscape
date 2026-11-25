@@ -93,23 +93,43 @@ const isStr = (v) => typeof v === 'string' && v.length > 0;
 const str = (strings, key) => (strings && typeof strings[key] === 'string' && strings[key]) ? strings[key] : DEFAULTS[key];
 
 /**
- * The defender line for the flip (aw2). When the learner's chosen pretext (state.sent.templateId)
+ * The first flipDefenderLineByGlobal entry whose global is truthy in `globals` (list order decides),
+ * or null. Malformed entries are skipped, and only the map's own keys count (an entry naming
+ * "constructor" never matches). "Truthy" is deliberate: a counter or a pretext state object
+ * (always an object once a call starts) also matches, so point entries at boolean globals.
+ * An entry may carry an optional `heading`, used on the missed path (see renderFlipView).
+ * `globals` is read once, at render time; a later global change does not redraw an open flip.
+ * Written for ca12 (several endings, each setting its own global).
+ */
+function globalEntry(strings, globals) {
+    const byGlobal = isObj(strings) ? strings.flipDefenderLineByGlobal : null;
+    if (!Array.isArray(byGlobal) || !isObj(globals)) return null;
+    for (const e of byGlobal) {
+        if (isObj(e) && isStr(e.global) && isStr(e.line) && Object.hasOwn(globals, e.global) && globals[e.global]) return e;
+    }
+    return null;
+}
+
+/** The line of the first matching flipDefenderLineByGlobal entry, or null. */
+export function globalLine(strings, globals) {
+    return globalEntry(strings, globals)?.line ?? null;
+}
+
+/**
+ * The defender line for the flip (aw2). Precedence: flipDefenderLineNoSpray, flipDefenderLineByHost,
+ * flipDefenderLineByGlobal (E5, first truthy global wins), flipDefenderLineByChoice, then the single
+ * flipDefenderLine (then DEFAULT). When the learner's chosen pretext (state.sent.templateId)
  * has an entry in strings.flipDefenderLineByChoice, that choice-aware line is shown, so the flip
- * quotes back the lever the learner pulled; otherwise the single flipDefenderLine (then DEFAULT).
- * The map is keyed by template id, so one episode can carry a line per pretext branch.
+ * quotes back the lever the learner pulled. The map is keyed by template id, so one episode can
+ * carry a line per pretext branch.
  */
 export function defenderLine(strings, templateId, noSpray = false, hostId = null, globals = null) {
     if (noSpray === true && isStr(strings?.flipDefenderLineNoSpray)) return strings.flipDefenderLineNoSpray;
     // A fake-check page can follow the host the learner chose (flipDefenderLineByHost[hostId]).
     const byHost = isObj(strings) ? strings.flipDefenderLineByHost : null;
     if (isObj(byHost) && isStr(hostId) && isStr(byHost[hostId])) return byHost[hostId];
-    // CA pilots (E5): an ordered list of { global, line }; the first entry whose global is truthy wins.
-    const byGlobal = isObj(strings) ? strings.flipDefenderLineByGlobal : null;
-    if (Array.isArray(byGlobal) && isObj(globals)) {
-        for (const e of byGlobal) {
-            if (isObj(e) && isStr(e.global) && isStr(e.line) && globals[e.global]) return e.line;
-        }
-    }
+    const g = globalLine(strings, globals);
+    if (g) return g;
     const byChoice = isObj(strings) ? strings.flipDefenderLineByChoice : null;
     if (isObj(byChoice) && isStr(templateId) && isStr(byChoice[templateId])) return byChoice[templateId];
     return str(strings, 'flipDefenderLine');
@@ -343,9 +363,16 @@ export function renderFlipView(container, { message = null, page = null, call = 
     } else if (missed || landedNoTells) {
         const landed = !missed && landedNoTells;
         parts.push(landed ? 'landedNoTells' : 'missed');
-        heading.textContent = str(strings, 'flipMissedHeading');
-        const line = landed && isStr(strings?.flipLandedNoTells) ? strings.flipLandedNoTells : str(strings, 'flipMissed');
-        root.appendChild(el('p', `aw-lead aw-missed${landed ? ' aw-landed-no-tells' : ''}`, line));
+        // E5: a global-chosen line replaces the generic missed text (a call flip with walked_away or
+        // reported has no call to replay, but the world still recorded what happened).
+        const byG = globalEntry(strings, globals);
+        heading.textContent = byG && isStr(byG.heading) ? byG.heading : str(strings, 'flipMissedHeading');
+        if (byG) {
+            root.appendChild(el('p', `aw-defender-line${landed ? ' aw-landed-no-tells' : ''}`, byG.line));
+        } else {
+            const line = landed && isStr(strings?.flipLandedNoTells) ? strings.flipLandedNoTells : str(strings, 'flipMissed');
+            root.appendChild(el('p', `aw-lead aw-missed${landed ? ' aw-landed-no-tells' : ''}`, line));
+        }
     } else {
         parts.push('noSend');
         root.appendChild(el('p', 'aw-lead aw-no-send', str(strings, 'flipNoSend')));

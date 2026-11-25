@@ -209,19 +209,39 @@ flowchart TD
   training_room["Studio<br/>(locked)"]
   lobby("Reception")
   rc_training_kiosk_1{"Training kiosk"}
-  rc_npc_lorna_easton_2("Lorna Easton")
-  rc_lobby_hotdesk_3{"Hot-desk workstation"}
-  rc_npc_delphine_arvanitis_4("Delphine Arvanitis")
+  rc_kit_sofa_2{"Sofa"}
+  rc_kit_ca12_journals_3{"Journal stack"}
+  rc_kit_ca12_pc_4{"Thandiwe's workstation"}
+  rc_npc_lorna_easton_5("Lorna Easton")
+  rc_npc_thandiwe_moyo_6("Thandiwe Moyo")
+  rc_npc_julian_sallow_7("Julian Sallow")
+  rc_npc_camila_ospina_8("Camila Ospina")
+  rc_npc_jun_watanabe_9("Jun Watanabe")
+  rc_npc_jo_fairweather_10("Jo Fairweather")
+  rc_ca12_badge_reader_11{"Studio door badge reader"}
+  rc_lobby_hotdesk_12{"Hot-desk workstation"}
+  rc_npc_delphine_arvanitis_13("Delphine Arvanitis")
+  rc_npc_yusuf_demir_14("Yusuf Demir")
 
   training_room --> lobby
   training_room --> rc_training_kiosk_1
-  training_room --> rc_npc_lorna_easton_2
-  lobby --> rc_lobby_hotdesk_3
-  lobby --> rc_npc_delphine_arvanitis_4
+  training_room --> rc_kit_sofa_2
+  training_room --> rc_kit_ca12_journals_3
+  training_room --> rc_kit_ca12_pc_4
+  training_room --> rc_npc_lorna_easton_5
+  training_room --> rc_npc_thandiwe_moyo_6
+  training_room --> rc_npc_julian_sallow_7
+  training_room --> rc_npc_camila_ospina_8
+  training_room --> rc_npc_jun_watanabe_9
+  training_room --> rc_npc_jo_fairweather_10
+  lobby --> rc_ca12_badge_reader_11
+  lobby --> rc_lobby_hotdesk_12
+  lobby --> rc_npc_delphine_arvanitis_13
+  lobby --> rc_npc_yusuf_demir_14
 
   class training_room lock
   class lobby room
-  class rc_training_kiosk_1,rc_lobby_hotdesk_3 item
-  class rc_npc_lorna_easton_2,rc_npc_delphine_arvanitis_4 npc
+  class rc_training_kiosk_1,rc_kit_sofa_2,rc_kit_ca12_journals_3,rc_kit_ca12_pc_4,rc_ca12_badge_reader_11,rc_lobby_hotdesk_12 item
+  class rc_npc_lorna_easton_5,rc_npc_thandiwe_moyo_6,rc_npc_julian_sallow_7,rc_npc_camila_ospina_8,rc_npc_jun_watanabe_9,rc_npc_jo_fairweather_10,rc_npc_delphine_arvanitis_13,rc_npc_yusuf_demir_14 npc
   class node_start start
 ```
