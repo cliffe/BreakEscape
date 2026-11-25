@@ -1,0 +1,48 @@
+# Per-machine cleanup settings for tools/wt-clean.sh, tools/disk-clean.sh and
+# tools/safe-rm.sh. Copy to tools/clean.local.conf in the main checkout
+# (git-ignored) and edit; or set CLEAN_CONF=/path/to/file; or override any key
+# with an environment variable of the same name. Sourced as shell. Lists are
+# space separated. Leaving a key out keeps the default shown here, which is safe
+# on any machine. $CHECKOUT is the main checkout, found from git.
+
+# Branch a worktree's HEAD must be in before it may be removed.
+#CLEAN_MAIN_BRANCH=main
+# Where worktrees live (globs; a match may be a symlink to the worktree).
+#CLEAN_WORKTREE_GLOBS="$CHECKOUT/.claude/worktrees/*"
+# Worktree names never removed (basename of the worktree or of a link to it).
+#CLEAN_KEEP="p-9-2-h p-train36-live"
+# A worktree's HEAD must not have moved for this many hours.
+#CLEAN_WT_MIN_AGE_HOURS=3
+# Folders holding symlinks to worktrees; a link left dangling by a removal goes too.
+#CLEAN_SYMLINK_DIRS=
+
+# Categories disk-clean runs when --category is not given.
+#CLEAN_CATEGORIES="worktrees logs"
+# Test logs over this size are emptied (truncated, never deleted) once idle.
+#CLEAN_LOG_MAX_MB=200
+#CLEAN_LOG_IDLE_MIN=15
+# Train output: folders matching the glob in these roots, older than N days,
+# always keeping the newest K.
+#CLEAN_TRAIN_ROOTS=
+#CLEAN_TRAIN_GLOB="train[0-9]*"
+#CLEAN_TRAIN_DAYS=2
+#CLEAN_TRAIN_KEEP_NEWEST=2
+# Bulk scratch: anything in these roots untouched for N days.
+#CLEAN_SCRATCH_ROOTS=
+#CLEAN_SCRATCH_DAYS=3
+# mktemp folders (name-XXXXXX) in these roots untouched for N days.
+#CLEAN_TMPDIR_ROOTS=
+#CLEAN_TMPDIR_DAYS=2
+# Extra roots safe-rm may delete inside (it also accepts the roots above).
+#CLEAN_RM_ROOTS=
+# disk-clean --if-low acts only when a covered volume is at least this full (%).
+#CLEAN_LOW_PCT=90
+
+# Example: a machine with worktrees on a data volume as /data/be-*, linked from $HOME.
+#CLEAN_WORKTREE_GLOBS="/data/be-*"
+#CLEAN_KEEP="be-ops-core"
+#CLEAN_SYMLINK_DIRS="$HOME"
+#CLEAN_CATEGORIES="worktrees logs leftovers train scratch tmpdirs"
+#CLEAN_TRAIN_ROOTS=/data/tmp
+#CLEAN_SCRATCH_ROOTS=/data/tmp/scratch
+#CLEAN_TMPDIR_ROOTS=/data/tmp
