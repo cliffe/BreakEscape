@@ -1,0 +1,25 @@
+// Julian Sallow, partner. Short staff chat. Names no password.
+VAR met_julian = false
+
+=== start ===
+{ met_julian:
+    -> hub
+}
+~ met_julian = true
+# speaker:npc
+Ah, the visitor. Keep it brief, I'm off to a client lunch.
+-> hub.choices
+
+=== hub ===
+# speaker:npc
+Quickly, then.
+- (choices)
++ [How do you pick passwords?]
+    # speaker:npc
+    Long and random, from a manager. I couldn't tell you one if you asked.
+    -> choices
++ [I'll let you get on.]
+    # speaker:npc
+    Good.
+    # exit_conversation
+    -> END
