@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: step-away beats (E3, list form)",
+  "description": "Fixture for engine change E3. A stepAways list: a world beat after write with doneGlobal and resumeOnDone, and the post-defend beat. Stub content, not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}
