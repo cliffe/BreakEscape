@@ -10,7 +10,7 @@ import { sleep, prepare, checkSprite } from './_ca10.mjs';
 import { followNpc, followPlayer, camState, triggerNeed, waitNpcMoved, npcPos } from '../lib/camlib.mjs';
 
 const NPC = 'kit_anjali_rao';
-const POST = { x: 237, y: 266 };
+let POST = { x: 237, y: 266 }; // surveyed estimate; replaced by her settled start position in the default export
 
 const near = (p, q, r = 24) => Math.hypot(p.x - q.x, p.y - q.y) <= r;
 
@@ -67,7 +67,12 @@ export default async (page, bridge, mark) => {
   await checkSprite(page, mark);
   const p0 = await npcPos(page, NPC);
   mark('npc-start', p0);
-  if (!p0 || !near(p0, POST)) throw new Error(`Anjali is not on her post at take start: ${JSON.stringify(p0)}`);
+  // 25 Nov dry runs: she stood at (245,233) on two fresh games, not at the surveyed (237,266). Her post is where she
+  // settles at take start; the return check is against that spot.
+  const settled = await settle(page, NPC, 8000);
+  if (!settled) throw new Error(`Anjali did not settle at take start: ${JSON.stringify(p0)}`);
+  POST = { x: settled.x, y: settled.y };
+  mark('post-set', POST);
   const smp = startSampler(page);
   try {
     mark('follow-on'); await followNpc(page, NPC, { lerp: 0.08 });
