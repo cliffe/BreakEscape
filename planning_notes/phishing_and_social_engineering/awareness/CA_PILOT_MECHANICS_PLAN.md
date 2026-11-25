@@ -409,7 +409,7 @@ Server-enforced items: `ca15_red_stick` and `ca15_session_note` are server-known
 | Nilesh | `red_stick` | "Leave it next door, somewhere people stop. Then watch who picks it up." |
 | Player choice | `red_stick` | "Why would anyone plug in a stranger's stick?" / "On it." |
 | Nilesh | `red_stick`, answer line 1 | "To find out whose it is. Kindness does the attacker's work." |
-| Nilesh | `red_stick`, answer line 2 | "No label is deliberate. A labelled stick gets opened out of nosiness. A blank one gets handed in." |
+| Nilesh | `red_stick`, answer line 2 | "No label is deliberate. A labelled stick gets opened out of nosiness. A blank one gets plugged in to find its owner." |
 
 The two answer lines play in sequence as one answer to the question, line 1 then line 2; they are not alternatives.
 | Nilesh | bark, training-room drop | "Not in here. Try next door." |
