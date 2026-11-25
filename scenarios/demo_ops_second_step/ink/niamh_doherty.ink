@@ -16,7 +16,7 @@ Can I help?
 - (choices)
 + [What's the visitor desk for?]
     # speaker:npc
-    Guests sign in there. I'm covering reception, so it's only a password for me, no phone needed.
+    Guests sign in there. The desk account is only a password, no phone needed.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

@@ -222,3 +222,24 @@ The plan (4.1 U3b, test shape) suggested the call-back desk on "a second room NP
 - Rails test: 5 new U3b cases + the NPC-list assertion updated for Priya and the IT line; 46 runs, 0 failures; the leak scanner over a played call-desk run reports 0.
 - Validator: 0 errors, 39 warnings (the only new substantive ones are the expected "callback not takeable" notices for accounts whose phone the player cannot hold). Dialoguelint: 0 ERROR (the pre-existing `crowded-hub` CHECK on Ama's hub is unchanged — no hub choice was added). `bin/ops-golden-compare`: 45 runs, 0 failures. Dungeon graph regenerated.
 - Live smoke (keyless :3056, swapped game 285): the app boots the scenario with `helpdeskForms.call_desk` (npc priya_nair, resets mfa), `social.characters.it_line` and the `it_line_call` pretext ask pointing at `call_desk`, no server errors. The pretext-call UI and form are engine code with their own JS tests; the desk_call tick was not driven in a browser (same proven mapping mechanism as U3's barks).
+
+## Tour round 1 fixes (TOUR_IMPL_REVIEW_R1, TOUR_DIALOGUE_REVIEW_R1, playtest 1)
+
+### Fixed
+- J1 (board): the afternoon now reads Thandiwe for Darren's reset, Thandiwe (or the desktop form while his screen is open) for Yusuf's approvals, Lorna's wrong answers, and Priya plus the IT line holding Yusuf's phone (M13b). Morning and late lines follow the new order.
+- J2 (M12): the bark names no route ("Yusuf's approvals come to your phone now, and his own phone shows nothing. The desk never checked who was asking."). Driven live (game 298, :3073): the form on Darren's desktop stays open when he comes back, but the desk only takes it while his session is open; sent after his return it answers "The desk cannot take this request now." His coffee trips measured 14 s and 18 s. That is too tight to type a username, the request and two answers, so the guided M12 is now Thandiwe in person, and the pointer names the form as the other route ("it only sends while his screen is open"). Deviation from plan 2.6 (the desktop form as the guided route), made on that measurement.
+- J3 / D-M3 (IT line): "Fill in the form, and we'll ring the number we hold for that account to check." Live: the line plays this, the form opens, and `dprice` is then refused ("The desk could not verify you. Tries left: 2.").
+- D-M4 / n4: `it_line` has `"voiced": true` and voice Charon (male, free in this showcase); live, the call shows ON CALL and its lines go to `/tts` under `it_line`. No `// lint: call-knot` needed: dialoguelint reports nothing.
+- D-M1, D-M2 (`tell_note` and its hub choice removed; header comment updated; nothing in the test referred to it), D-M5, D-M6 (lunch bark), m1 to m9, the recap lines that sat close to their barks (open_screen, pestered, desk_refuses), short_version's "And". Lines in VOICED_LINES.md.
+- n1: late order is now M15 then M14 in "What's next?", the late aim and the board; the "don't approve it on Gwen's phone" sentence is gone; PLAYTEST Run E agrees.
+- Playtest 1: M8 moved to second in the morning (pointer, aim, board), before the printer goes off. In the outage Darren's trips ran about 5 minutes and the idle lock shut his screen, with nothing to say why. Live: M8 ticked on the first coffee trip. The pointer adds "If you missed him, ask me to send them for coffee again."
+- n6: `desk_call` is in `TOUR_TASKS`. New test: no ink claim of the note, the IT line voiced and promising the call-back, "What's next?" in panel order, the board's afternoon and late lines.
+
+### Not changed, and why
+- n2 (stale-bark guard): the one forward-pointing bark (M2, "You'll see it on his sign-in screen at lunch") stays true until M5, and lunch waits for M2, so no guard is needed.
+- n5: Fatima's prop and the M13b call with Yusuf's phone held were not measured live this round (budget). The M13b refusal path and the call screen were checked.
+- The dialogue review's D-M5 note about the M12 sign-in at Yusuf's PC with your own phone: dropped from the pointer, as suggested. The bark carries it.
+
+### Checks
+Ink 11 compiled, 0 failed. Validator 0 errors, 38 warnings (the earlier list, one fewer). Dialoguelint: no findings (Ama's hub is down to 10 choices, so `crowded-hub` has gone). tagdiff `--old` (snapshot of HEAD): Ama has 16 structural differences, all from removing `tell_note` (knot, choice, tags, divert, assign) plus the new `lever_lunch` printer branch and its two speaker tags. The other four files have no structural change. Mapping drift: 0 failures. Graph regenerated (unchanged). Leak check on game 298: no leaks.
+Rails scenario test: 47 runs, 0 failures. That includes the whole-run leak scans, which report 0 findings, and the S8c late-order assertion, updated for M15 then M14. The captures use recorder tags, not hand-made `login` tags, so the scanner hardening needed no change. `bin/ops-golden-compare`: 45 runs, 0 failures.

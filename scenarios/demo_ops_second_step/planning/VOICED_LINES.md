@@ -296,3 +296,46 @@ New NPC it_line, the IT service line (ink, on the phone, cap 25; voice Sulafat):
 | ask_reaction | One moment. We ring the number we hold for that account to check it's them. | 15 |
 | ask_reaction | That came back fine. Fill in the form and it's done. | 11 |
 | ask_reaction | I can't do that one over the phone. | 8 |
+
+## Tour round 1 fixes (TOUR_DIALOGUE_REVIEW_R1, TOUR_IMPL_REVIEW_R1): changed, new and removed lines, text only
+
+The list is still written by hand: plan 3.3 regenerates it from `TtsLineExtractor` after dialogue sign-off. The IT line (`it_line`) is now a voiced call (`"voiced": true` on the contact, voice Charon, "in his 30s"), so its lines below join the batch; on the keyless server its lines went out to `/tts` under `it_line` (game 298).
+
+### Ink
+
+| NPC / knot | Old | New | Words |
+|---|---|---|---|
+| ama / tell_note | Good. A password on a note under a keyboard is no secret at all. | (removed with the knot and its hub choice) | - |
+| ama / tell_note | That's one way a password escapes. | (removed) | - |
+| ama / whats_next (M8, now second) | - | If you missed him, ask me to send them for coffee again. | 11 |
+| ama / whats_next (M12) | This time use the IT request form on Darren's desktop. Send them for coffee first, so his screen is open. | Now ask Thandiwe for an approval reset for Yusuf. His answers are on the kitchen board. | 16 |
+| ama / whats_next (M12) | Ask for a sign-in approval reset, for Yusuf. His answers are on the kitchen board. Then sign in at his PC with your own phone. | The same form is on Darren's desktop too, but it only sends while his screen is open. | 17 |
+| ama / whats_next (M13b) | You've still got Yusuf's phone. Ask them to move his approvals. The desk rings his phone to check, and you hold it. | Keep Yusuf's phone on you, and ask the line for an approval reset for him. | 15 |
+| ama / whats_next (M15, now before M14) | Fatima props the archive store door when the records index is down. Ask me to switch it off. | Two new door codes are on the facilities notice in the kitchen. Try the archive store door with its code. | 20 |
+| ama / whats_next (M15) | Try that door first, and don't approve it on Gwen's phone, or the prop has nothing to skip. | Then ask me to switch the records index off, and watch what Fatima does. | 14 |
+| ama / whats_next (M14) | Facilities pinned two new door codes on the facilities notice in the kitchen. The records room also wants Gwen's approval. | The records room wants Gwen's approval as well as its code. | 11 |
+| ama / lever_lunch | Not yet. Watch Darren's temper first. | Not yet. Wait for Darren's temper to run first. (printer already off) | 9 |
+| ama / lever_lunch | - | Not yet. Switch the printer off and let Darren's temper run first. | 12 |
+| ama / recap | A note under a keyboard: the second step can't help once the password's on show. | A note under a keyboard gives the password away, so the second step is all that's left. | 17 |
+| ama / recap | Darren's open screen asked for no second step. It guards signing in, not a screen left open. | Darren's open screen asked for nothing, so lock your screen when you step away. | 14 |
+| ama / recap | Darren approved just to make the requests stop. | Darren gave in to make the requests stop. A request you didn't start should be denied. | 16 |
+| ama / recap | After three wrong answers the desk stopped listening, and never said whether the name was real. | The desk's limit and its silence about names stop guessing, but not someone who has the answers. | 17 |
+| ama / recap | The phone line moved Yusuf's approvals, because the desk rang his phone to check and you were holding it. | The phone line trusted a call-back to Yusuf's phone, and you were the one holding it. | 16 |
+| ama / short_version | And the helpdesk can undo it for anyone who can answer facts from a badge and a board. | The helpdesk can undo it for anyone who can answer facts from a badge and a board. | 17 |
+| it_line / ask_reaction | One moment. We ring the number we hold for that account to check it's them. | Fill in the form, and we'll ring the number we hold for that account to check. | 16 |
+| it_line / ask_reaction | That came back fine. Fill in the form and it's done. | (removed) | - |
+| it_line / desk (choice, not voiced) | [Ask them to move an account's approvals to your phone] | [Can you move an account's approvals to my phone?] | - |
+| niamh / hub | Guests sign in there. I'm covering reception, so it's only a password for me, no phone needed. | Guests sign in there. The desk account is only a password, no phone needed. | 14 |
+| priya / hub | Ring it and we'll move an account's approvals. We call the number we hold for them back, to check it's really them. | Ring it and we'll move an account's approvals, once we've rung the number we hold to check it's really them. | 21 |
+| thandiwe / reset_verdict, reenrol_verdict | That matches. It is done: the form shows what changed. | That matches. Done, and the form shows what changed. (one clip, both knots) | 9 |
+
+Unchanged it_line lines now voiced: "IT service line, you're through to the desk." (7), "I can't do that one over the phone." (8).
+
+### Barks (ama_owusu, in place, same indices)
+
+| Event | Old | New | Words |
+|---|---|---|---|
+| see_temper_note_done | Frustrated people write things down. Read it on his sign-in screen when he's away. | Frustrated people write things down. You'll see it on his sign-in screen at lunch. | 14 |
+| number_match_done | The number on screen had to match the phone. A wrong pick cancels. Holding his phone, you could match it. | The number on screen had to match his phone, and a wrong pick cancels. With his phone in your hand, you could match it. | 24 |
+| npc_left_post:darren_price (lunch) | Darren's gone to lunch. His screen will be locked. | Darren's gone to lunch, and he'll be a while. | 9 |
+| reenrol_done | The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing. | Yusuf's approvals come to your phone now, and his own phone shows nothing. The desk never checked who was asking. | 20 |

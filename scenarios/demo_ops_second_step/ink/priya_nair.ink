@@ -17,7 +17,7 @@ Can I help?
 - (choices)
 + [How does the phone line work?]
     # speaker:npc
-    Ring it and we'll move an account's approvals. We call the number we hold for them back, to check it's really them.
+    Ring it and we'll move an account's approvals, once we've rung the number we hold to check it's really them.
     -> choices
 + [Nothing, thanks.]
     # speaker:npc

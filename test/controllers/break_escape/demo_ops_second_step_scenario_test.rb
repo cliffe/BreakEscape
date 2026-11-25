@@ -985,7 +985,7 @@ module BreakEscape
       assert_equal %w[gwen_pritchard fatima_begum], rooms['office']['npcs'].map { |n| n['id'] }.last(2)
       assert_nil npcs['gwen_pritchard']['creds'], 'Gwen and Fatima sign in at no PC, so the helpdesk rule does not reach them'
       assert_nil npcs['fatima_begum']['creds']
-      assert_equal %w[door_step propped safe_step case_step], data['objectives'].last['tasks'].map { |t| t['taskId'] }
+      assert_equal %w[propped door_step safe_step case_step], data['objectives'].last['tasks'].map { |t| t['taskId'] }
       assert_equal 'late_locks', data['objectives'].last['aimId']
       # each PIN: its lock, and one clue each (the two doors on the kitchen notice, the safe in Gwen's drawer)
       texts = scenario_texts
@@ -1316,7 +1316,7 @@ module BreakEscape
     # ---- the guided tour (SHOWCASE_TOUR_PLAN.md 2.6, unit U3) ----------------------------------------
 
     TOUR_TASKS = %w[see_note see_temper_note overhear step_holds open_screen fob number_match exempt reset_password reenrol
-                    desk_refuses door_step propped safe_step case_step].freeze
+                    desk_refuses desk_call door_step propped safe_step case_step].freeze
 
     def ama_mappings
       scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'ama_owusu' }['eventMappings']
@@ -1368,12 +1368,40 @@ module BreakEscape
       assert_equal true, data['ttsPregenerateChatter']
     end
 
-    test 'tour: the lunch lever waits for the temper note and the pointers name the desktop form' do
+    test 'tour: the lunch lever waits for the temper note and the M12 pointer names Thandiwe and the desktop form' do
       ink = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/ama_owusu.ink', __dir__))
       lunch = ink[/=== lever_lunch ===.*?(?==== lever_index)/m]
       assert_includes lunch, 'not see_temper_note_done'
-      assert_includes lunch, "Watch Darren's temper first."
-      assert_includes ink, "use the IT request form on Darren's desktop"
+      assert_includes lunch, "let Darren's temper run first."
+      # Tour round 1: the desktop form only sends while Darren's screen is open (a coffee trip measured 14 to 18 s,
+      # and a form sent after his return is refused), so the pointer sends the player to Thandiwe and names the form as the other route
+      assert_includes ink, 'Now ask Thandiwe for an approval reset for Yusuf.'
+      assert_includes ink, "The same form is on Darren's desktop too, but it only sends while his screen is open."
+    end
+
+    # Tour round 1 fixes: the note is ticked only by seeing it (no hub claim), the IT line promises the call-back
+    # rather than reporting it, and the IT line is a voiced call in a man's voice that nobody else here uses.
+    test 'tour: no ink claim of the note, the IT line voiced and promising the call-back, the board and pointers in the panel order' do
+      ama = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/ama_owusu.ink', __dir__))
+      assert_not_includes ama, '=== tell_note ==='
+      assert_not_includes ama, '#complete_task:'
+      line = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/it_line.ink', __dir__))
+      assert_not_includes line, 'came back fine'
+      assert_includes line, "we'll ring the number we hold for that account to check."
+      data = scenario
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }
+      it_line = npcs.find { |n| n['id'] == 'it_line' }
+      assert_equal true, it_line['voiced']
+      assert_equal 'Charon', it_line.dig('voice', 'name')
+      assert BreakEscape::TtsLineExtractor.voiced_phone_call?(it_line)
+      # the order of "What's next?" follows the panel, aim by aim
+      tasks = data['objectives'].sort_by { |a| a['order'] }.flat_map { |a| a['tasks'].map { |t| t['taskId'] } }
+      nxt = ama[/=== whats_next ===.*?(?==== give_lorna_card)/m].scan(/- not (\w+)_done:/).flatten
+      assert_equal tasks, nxt
+      board = data['rooms'].values.flat_map { |r| Array(r['objects']) }.find { |o| o['id'] == 'tour_notice' }['text']
+      assert_includes board, 'Meet Priya in the IT room'
+      assert_includes board, "The same form is on Darren's desktop"
+      assert_operator board.index('archive store door'), :<, board.index('records room door')
     end
   end
 end

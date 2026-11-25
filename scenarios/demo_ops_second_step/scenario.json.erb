@@ -248,10 +248,10 @@ rec = {
       "order": 0,
       "tasks": [
         { "taskId": "see_note", "title": "Find a password written on a note at a desk", "type": "custom", "status": "active" },
+        { "taskId": "open_screen", "title": "Use a screen its owner left open", "type": "custom", "status": "active" },
         { "taskId": "see_temper_note", "title": "See a password written down in a temper", "type": "custom", "status": "active" },
         { "taskId": "overhear", "title": "Overhear a login said aloud", "type": "custom", "status": "active" },
-        { "taskId": "step_holds", "title": "Watch the second step hold when nobody answers", "type": "custom", "status": "active" },
-        { "taskId": "open_screen", "title": "Use a screen its owner left open", "type": "custom", "status": "active" }
+        { "taskId": "step_holds", "title": "Watch the second step hold when nobody answers", "type": "custom", "status": "active" }
       ]
     },
     {
@@ -297,8 +297,8 @@ rec = {
       "status": "active",
       "order": 3,
       "tasks": [
-        { "taskId": "door_step", "title": "Open the records room with its code and Gwen's approval", "type": "custom", "status": "active" },
         { "taskId": "propped", "title": "Walk into the archive store through a door someone propped", "type": "custom", "status": "active" },
+        { "taskId": "door_step", "title": "Open the records room with its code and Gwen's approval", "type": "custom", "status": "active" },
         { "taskId": "safe_step", "title": "Open the records safe with its code and Anjali's fob", "type": "custom", "status": "active" },
         { "taskId": "case_step", "title": "Carry Darren's case away until he approves opening it", "type": "custom", "status": "active" }
       ]
@@ -433,7 +433,7 @@ rec = {
             { "eventPattern": "npc_left_post:anjali_rao", "onceOnly": true, "cooldown": 0, "bark": "Anjali's left her code fob on her desk." },
             { "eventPattern": "npc_left_post:yusuf_demir", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's phone is by the coffee machine." },
             { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's popped out. If it's a quick coffee, his screen stays open." },
-            { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Darren's gone to lunch. His screen will be locked." },
+            { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Darren's gone to lunch, and he'll be a while." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } },
             { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'blocked'", "cooldown": 0, "completeTask": "desk_refuses", "setGlobal": { "desk_refuses_done": true } },
             { "eventPattern": "mfa_approved:gwen_pritchard", "condition": "data.targetType === 'door' && data.targetId === 'records_room'", "cooldown": 0, "completeTask": "door_step", "setGlobal": { "door_step_done": true } },
@@ -442,15 +442,15 @@ rec = {
             { "eventPattern": "mfa_approved:darren_price", "condition": "data.targetType === 'object' && data.targetId === 'darren_case'", "cooldown": 0, "completeTask": "case_step", "setGlobal": { "case_step_done": true } },
             { "eventPattern": "pc_in_use:lorna_pc", "condition": "globalVars.step_holds_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Nobody signs in at a PC while its owner is sitting there." },
             { "eventPattern": "global_variable_changed:see_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "A password under a keyboard. The second step is what stands between that note and her desktop." },
-            { "eventPattern": "global_variable_changed:see_temper_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Frustrated people write things down. Read it on his sign-in screen when he's away." },
+            { "eventPattern": "global_variable_changed:see_temper_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Frustrated people write things down. You'll see it on his sign-in screen at lunch." },
             { "eventPattern": "global_variable_changed:overhear_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "He said his login out loud to help a colleague. Now you have it too." },
             { "eventPattern": "global_variable_changed:step_holds_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Right password, and still no way in. The request went to Lorna's phone, and she didn't answer." },
             { "eventPattern": "global_variable_changed:open_screen_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "His screen was open, so no password and no second step. The step guards the sign-in, not an open screen." },
             { "eventPattern": "global_variable_changed:fob_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The fob's six digits change every minute. Whoever holds the fob holds the second step." },
-            { "eventPattern": "global_variable_changed:number_match_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The number on screen had to match the phone. A wrong pick cancels. Holding his phone, you could match it." },
+            { "eventPattern": "global_variable_changed:number_match_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The number on screen had to match his phone, and a wrong pick cancels. With his phone in your hand, you could match it." },
             { "eventPattern": "global_variable_changed:exempt_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "This account has no second step at all. One gap like that undoes the rest." },
             { "eventPattern": "global_variable_changed:reset_password_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile." },
-            { "eventPattern": "global_variable_changed:reenrol_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing." },
+            { "eventPattern": "global_variable_changed:reenrol_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's approvals come to your phone now, and his own phone shows nothing. The desk never checked who was asking." },
             { "eventPattern": "global_variable_changed:desk_refuses_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Three wrong tries and the desk stopped listening. It never said whether the name was real." },
             { "eventPattern": "global_variable_changed:door_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The door's second step went to Gwen's phone. With her phone in your hand, you approved it yourself." },
             { "eventPattern": "global_variable_changed:propped_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Nobody approved anything. Fatima propped the door, and the step never came into it." },
@@ -709,7 +709,7 @@ rec = {
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- Read the note under Anjali's keyboard while she is away.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\n- Use Darren's screen while he is out for coffee.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nAfternoon:\n- Ask Thandiwe for a password reset for Darren and a sign-in approval reset for Yusuf.\n- Ask for a reset for Lorna with wrong answers until the desk stops listening.\nLate:\n- Read the facilities notice in the kitchen, then try the records room door while Gwen is away.\n- Ask Ama to switch the records index off and watch Fatima.\n- Gwen's drawer holds a note for the records safe. Anjali's fob gives its code.\n- Darren's case, by the front desk: carry it off, put it down, pick it up, and keep asking.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room. Do this last: staff go home."
+          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- Read the note under Anjali's keyboard while she is away.\n- Use Darren's screen while he is out for coffee.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nAfternoon:\n- Ask Thandiwe for a password reset for Darren.\n- Ask Thandiwe to move Yusuf's approvals to your phone. The same form is on Darren's desktop, but it only sends while his screen is open.\n- Ask for a reset for Lorna with wrong answers until the desk stops listening.\n- Meet Priya in the IT room, then ring the IT line on your work phone while holding Yusuf's phone.\nLate:\n- Read the facilities notice in the kitchen and try the archive store door. Then ask Ama to switch the records index off and watch Fatima.\n- Try the records room door while Gwen is away, with her phone from the side table.\n- Gwen's drawer holds a note for the records safe. Anjali's fob gives its code.\n- Darren's case, by the front desk: carry it off, put it down, pick it up, and keep asking.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room. Do this last: staff go home."
         },
         {
           "type": "exec_desk1",
@@ -1153,7 +1153,8 @@ rec = {
           "callId": "it_line_call",
           "storyPath": "scenarios/demo_ops_second_step/ink/it_line.json",
           "currentKnot": "start",
-          "voice": { "name": "Sulafat", "style": "IT service desk phone agent at Merrin & Sallow, in his 30s, even and procedural. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" }
+          "voiced": true,
+          "voice": { "name": "Charon", "style": "IT service desk phone agent at Merrin & Sallow, in his 30s, even and procedural. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" }
         }
       ]
     },
