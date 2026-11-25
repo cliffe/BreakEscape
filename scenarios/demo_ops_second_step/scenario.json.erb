@@ -33,6 +33,7 @@ rec = {
   "showPressingNeeds": true,
   "officePresets": true,
   "roomTone": true,
+  "ttsPregenerateChatter": true,
   "disableAttacks": true,
   "lighting": { "enabled": true, "defaultMode": "on" },
 
@@ -185,7 +186,8 @@ rec = {
     "door_step_done": false,
     "propped_done": false,
     "safe_step_done": false,
-    "case_step_done": false
+    "case_step_done": false,
+    "darren_pc_screen_locked": false
   },
 
   "objectives": [
@@ -387,7 +389,25 @@ rec = {
             { "eventPattern": "mfa_approved:gwen_pritchard", "condition": "data.targetType === 'door' && data.targetId === 'records_room'", "cooldown": 0, "completeTask": "door_step", "setGlobal": { "door_step_done": true } },
             { "eventPattern": "door_propped:archive_store", "cooldown": 0, "completeTask": "propped", "setGlobal": { "propped_done": true } },
             { "eventPattern": "mfa_approved:anjali_rao", "condition": "data.targetType === 'object' && data.targetId === 'records_safe'", "cooldown": 0, "completeTask": "safe_step", "setGlobal": { "safe_step_done": true } },
-            { "eventPattern": "mfa_approved:darren_price", "condition": "data.targetType === 'object' && data.targetId === 'darren_case'", "cooldown": 0, "completeTask": "case_step", "setGlobal": { "case_step_done": true } }
+            { "eventPattern": "mfa_approved:darren_price", "condition": "data.targetType === 'object' && data.targetId === 'darren_case'", "cooldown": 0, "completeTask": "case_step", "setGlobal": { "case_step_done": true } },
+            { "eventPattern": "pc_in_use:lorna_pc", "condition": "globalVars.step_holds_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Nobody signs in at a PC while its owner is sitting there." },
+            { "eventPattern": "global_variable_changed:see_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "A password under a keyboard. The second step is what stands between that note and her desktop." },
+            { "eventPattern": "global_variable_changed:see_temper_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Frustrated people write things down. Read it on his sign-in screen when he's away." },
+            { "eventPattern": "global_variable_changed:overhear_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "He said his login out loud to help a colleague. Now you have it too." },
+            { "eventPattern": "global_variable_changed:step_holds_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Right password, and still no way in. The request went to Lorna's phone, and she didn't answer." },
+            { "eventPattern": "global_variable_changed:open_screen_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "His screen was open, so no password and no second step. The step guards the sign-in, not an open screen." },
+            { "eventPattern": "global_variable_changed:fob_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The fob's six digits change every minute. Whoever holds the fob holds the second step." },
+            { "eventPattern": "global_variable_changed:number_match_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The number on screen had to match the phone. A wrong pick cancels. Holding his phone, you could match it." },
+            { "eventPattern": "global_variable_changed:exempt_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "This account has no second step at all. One gap like that undoes the rest." },
+            { "eventPattern": "global_variable_changed:reset_password_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile." },
+            { "eventPattern": "global_variable_changed:reenrol_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing." },
+            { "eventPattern": "global_variable_changed:desk_refuses_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Three wrong tries and the desk stopped listening. It never said whether the name was real." },
+            { "eventPattern": "global_variable_changed:door_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The door's second step went to Gwen's phone. With her phone in your hand, you approved it yourself." },
+            { "eventPattern": "global_variable_changed:propped_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Nobody approved anything. Fatima propped the door, and the step never came into it." },
+            { "eventPattern": "global_variable_changed:safe_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time." },
+            { "eventPattern": "global_variable_changed:case_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "You carried the case off and kept asking. Darren approved in the end, wherever the case was." },
+            { "eventPattern": "global_variable_changed:darren_pc_screen_locked", "condition": "data.value === true && data.oldValue !== true && globalVars.act_midday === true && globalVars.pestered_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's screen has locked. Now try his PC." },
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && globalVars.reset_password_done === true && globalVars.reenrol_done !== true", "cooldown": 0, "completeTask": "reenrol", "setGlobal": { "reenrol_done": true } }
           ]
         },
         {
@@ -401,7 +421,7 @@ rec = {
           "storyPath": "scenarios/demo_ops_second_step/ink/lorna_easton.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Sulafat", "style": "Receptionist and facilities lead at Merrin & Sallow, in her 50s, brisk, alert and a little wary. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Erinome", "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "reception",
           "awareness": "high",
@@ -432,7 +452,7 @@ rec = {
           "storyPath": "scenarios/demo_ops_second_step/ink/niamh_doherty.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Despina", "style": "Reception temp at Merrin & Sallow, in her early 20s, friendly and a bit unsure of the job. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Kore", "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, covering reception today. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "reception",
           "creds": { "username": "ndoherty", "password": "<%= niamh_pw %>", "mfa": false },
@@ -467,6 +487,7 @@ rec = {
           "owner": "darren_price",
           "access": { "people": ["darren_price"] },
           "policy": "floor",
+          "autoLockSeconds": 50,
           "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
           "observations": "Darren's desk PC. A tag on the monitor reads Darren.",
           "contents": [
@@ -811,7 +832,7 @@ rec = {
           "storyPath": "scenarios/demo_ops_second_step/ink/anjali_rao.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Kore", "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Aoede", "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
           "creds": { "username": "arao", "password": "<%= anjali_pw %>", "recovery": { "staff_no": "<%= rec[:anjali][:staff_no] %>", "manager": "<%= rec[:anjali][:manager] %>" } },
@@ -1051,7 +1072,7 @@ rec = {
           "storyPath": "scenarios/demo_ops_second_step/ink/thandiwe_moyo.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Leda", "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Pulcherrima", "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "it",
           "needsHome": "thandiwe_laptop",

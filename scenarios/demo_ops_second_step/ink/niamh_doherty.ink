@@ -7,7 +7,7 @@ VAR met_niamh = false
 }
 ~ met_niamh = true
 # speaker:npc
-Hi, I'm just the temp on reception.
+Hi, I'm Niamh. I'm covering reception today.
 -> hub.choices
 
 === hub ===
@@ -16,7 +16,7 @@ Can I help?
 - (choices)
 + [What's the visitor desk for?]
     # speaker:npc
-    Guests sign in there. It's only a password for me, no phone needed.
+    Guests sign in there. I'm covering reception, so it's only a password for me, no phone needed.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

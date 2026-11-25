@@ -229,3 +229,40 @@ Nothing prints a variable or contains a PIN, a code or a password. The three doo
 | fatima_begum | hub | Thanks. Careful on the way out. | 6 |
 | fatima_begum | chatter work_fail | Index is down. Again. | 4 |
 | fatima_begum | chatter wk_prop_door | Not tapping that code all day. | 6 |
+
+## Tour unit U3 (SHOWCASE_TOUR_PLAN.md 2.6): new and changed lines, text only
+
+Nothing is generated; audio waits for the dialogue sign-off. Voice changes (plan 3.2): niamh_doherty Despina to Kore (Dublin Irish, covering reception today); anjali_rao Kore to Aoede; lorna_easton Sulafat to Erinome (Lancashire, the tour's block); thandiwe_moyo Leda to Pulcherrima (southern English, light Zimbabwean inflection). Ama, Darren, Yusuf, Gwen and Fatima are unchanged. `ttsPregenerateChatter` is on.
+
+### Changed ink lines
+
+| NPC | Knot | Old | New | Words |
+|---|---|---|---|---|
+| ama_owusu | give_lorna_card | Here's Lorna's sign-in. Use it at her desk when she's away. | Here's Lorna's sign-in. Try her PC now, while she's sitting at it. | 12 |
+| ama_owusu | whats_next (reenrol) | Ask Thandiwe for a sign-in approval reset, for Yusuf. | This time use the IT request form on Darren's desktop. Send them for coffee first, so his screen is open. | 20 |
+| ama_owusu | whats_next (reenrol) | His answers are on the kitchen board. Then sign in at his PC with your own phone. | Ask for a sign-in approval reset, for Yusuf. His answers are on the kitchen board. Then sign in at his PC with your own phone. | 25 |
+| ama_owusu | lever_lunch (new) | (none) | Not yet. Watch Darren's temper first. | 6 |
+| niamh_doherty | start | Hi, I'm just the temp on reception. | Hi, I'm Niamh. I'm covering reception today. | 7 |
+| niamh_doherty | hub | Guests sign in there. It's only a password for me, no phone needed. | Guests sign in there. I'm covering reception, so it's only a password for me, no phone needed. | 17 |
+
+### New barks (ama_owusu, once only, appended mappings)
+
+| Event | Line | Words |
+|---|---|---|
+| pc_in_use:lorna_pc | Nobody signs in at a PC while its owner is sitting there. | 12 |
+| global_variable_changed:see_note_done | A password under a keyboard. The second step is what stands between that note and her desktop. | 17 |
+| global_variable_changed:see_temper_note_done | Frustrated people write things down. Read it on his sign-in screen when he's away. | 14 |
+| global_variable_changed:overhear_done | He said his login out loud to help a colleague. Now you have it too. | 15 |
+| global_variable_changed:step_holds_done | Right password, and still no way in. The request went to Lorna's phone, and she didn't answer. | 17 |
+| global_variable_changed:open_screen_done | His screen was open, so no password and no second step. The step guards the sign-in, not an open screen. | 20 |
+| global_variable_changed:fob_done | The fob's six digits change every minute. Whoever holds the fob holds the second step. | 15 |
+| global_variable_changed:number_match_done | The number on screen had to match the phone. A wrong pick cancels. Holding his phone, you could match it. | 20 |
+| global_variable_changed:exempt_done | This account has no second step at all. One gap like that undoes the rest. | 15 |
+| global_variable_changed:reset_password_done | Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile. | 23 |
+| global_variable_changed:reenrol_done | The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing. | 23 |
+| global_variable_changed:desk_refuses_done | Three wrong tries and the desk stopped listening. It never said whether the name was real. | 16 |
+| global_variable_changed:door_step_done | The door's second step went to Gwen's phone. With her phone in your hand, you approved it yourself. | 18 |
+| global_variable_changed:propped_done | Nobody approved anything. Fatima propped the door, and the step never came into it. | 14 |
+| global_variable_changed:safe_step_done | The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time. | 20 |
+| global_variable_changed:case_step_done | You carried the case off and kept asking. Darren approved in the end, wherever the case was. | 17 |
+| global_variable_changed:darren_pc_screen_locked | Darren's screen has locked. Now try his PC. | 8 |

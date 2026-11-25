@@ -130,9 +130,9 @@ What can I help with?
         Darren's badge on his desk has his staff number. His manager is on the kitchen board.
     - not reenrol_done:
         # speaker:npc
-        Ask Thandiwe for a sign-in approval reset, for Yusuf.
+        This time use the IT request form on Darren's desktop. Send them for coffee first, so his screen is open.
         # speaker:npc
-        His answers are on the kitchen board. Then sign in at his PC with your own phone.
+        Ask for a sign-in approval reset, for Yusuf. His answers are on the kitchen board. Then sign in at his PC with your own phone.
     - not desk_refuses_done:
         # speaker:npc
         Try Lorna's username at the desk, and answer wrongly until it stops listening.
@@ -169,7 +169,7 @@ What can I help with?
 === give_lorna_card ===
 #give_item:text_file
 # speaker:npc
-Here's Lorna's sign-in. Use it at her desk when she's away.
+Here's Lorna's sign-in. Try her PC now, while she's sitting at it.
 ~ lorna_card_given = true
 # speaker:npc
 Her PC will send a request to her phone each time.
@@ -211,6 +211,11 @@ Printer's off. Let's see who loses patience.
 { not kitchen_seen:
     # speaker:npc
     Have a look in the kitchen first. That's where lunch happens.
+    -> hub.choices
+}
+{ not see_temper_note_done:
+    # speaker:npc
+    Not yet. Watch Darren's temper first.
     -> hub.choices
 }
 # speaker:npc

@@ -1219,5 +1219,68 @@ module BreakEscape
       assert_equal 422, @marks[:safe_wrong]['status']
       LOCK_SECRETS.each { |secret| assert_not_includes @marks[:boot_end]['body'].to_json, secret }
     end
+
+    # ---- the guided tour (SHOWCASE_TOUR_PLAN.md 2.6, unit U3) ----------------------------------------
+
+    TOUR_TASKS = %w[see_note see_temper_note overhear step_holds open_screen fob number_match exempt reset_password reenrol
+                    desk_refuses door_step propped safe_step case_step].freeze
+
+    def ama_mappings
+      scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'ama_owusu' }['eventMappings']
+    end
+
+    test 'tour: every beat has one once-only "what you just saw" bark on its done global, short and free of secrets' do
+      maps = ama_mappings
+      secrets = [LORNA, DARREN, ANJALI, YUSUF, NIAMH].flatten + [DARREN_NEW, '5821', '3074', '6419', '40118', '40371', '40226', '40459']
+      TOUR_TASKS.each do |task|
+        found = maps.select { |m| m['eventPattern'] == "global_variable_changed:#{task}_done" && m['bark'] }
+        assert_equal 1, found.size, "#{task} has one bark"
+        assert found.first['onceOnly'], "#{task} bark is once only"
+        assert_includes found.first['condition'], 'data.value === true'
+        assert_operator found.first['bark'].split.size, :<=, 30, "#{task} bark within the 30-word cap"
+        secrets.each { |x| assert_not_includes found.first['bark'], x }
+      end
+      pointer = maps.find { |m| m['eventPattern'] == 'pc_in_use:lorna_pc' }
+      assert_equal 'Nobody signs in at a PC while its owner is sitting there.', pointer['bark']
+    end
+
+    test 'tour: Darren keeps his 90 s leave threshold and gains a 50 s idle lock; the lock bark reads the screen global' do
+      data = scenario
+      objects = data['rooms'].values.flat_map { |r| Array(r['objects']) }
+      assert_equal 50, objects.find { |o| o['id'] == 'darren_pc' }['autoLockSeconds']
+      darren = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'darren_price' }
+      assert_equal 90, darren.dig('habits', 'screen', 'lockIfAwayOverSeconds')
+      assert_equal false, data['globalVariables']['darren_pc_screen_locked']
+      bark = ama_mappings.find { |m| m['eventPattern'] == 'global_variable_changed:darren_pc_screen_locked' }
+      assert_includes bark['condition'], 'act_midday'
+      assert_includes bark['condition'], 'pestered_done'
+    end
+
+    test 'tour: the desktop form ticks reenrol only after the password reset, and Thandiwe still ticks it in person' do
+      m = ama_mappings.find { |x| x['eventPattern'] == 'helpdesk_answered:it_desk' && x['completeTask'] == 'reenrol' }
+      assert_includes m['condition'], "reset_password_done === true"
+      assert_includes m['condition'], "reenrol_done !== true"
+      ink = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/thandiwe_moyo.ink', __dir__))
+      assert_includes ink, '#complete_task:reenrol'
+    end
+
+    test 'tour: one voice per character, no two speakers share a voice, the four changed voices and the chatter pass' do
+      data = scenario
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }
+      voices = npcs.to_h { |n| [n['id'], n.dig('voice', 'name')] }
+      assert_equal voices.values.uniq.size, voices.values.size
+      assert_equal({ 'niamh_doherty' => 'Kore', 'anjali_rao' => 'Aoede', 'lorna_easton' => 'Erinome', 'thandiwe_moyo' => 'Pulcherrima' },
+                   voices.slice('niamh_doherty', 'anjali_rao', 'lorna_easton', 'thandiwe_moyo'))
+      assert_includes npcs.find { |n| n['id'] == 'niamh_doherty' }.dig('voice', 'style'), 'covering reception today'
+      assert_equal true, data['ttsPregenerateChatter']
+    end
+
+    test 'tour: the lunch lever waits for the temper note and the pointers name the desktop form' do
+      ink = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/ama_owusu.ink', __dir__))
+      lunch = ink[/=== lever_lunch ===.*?(?==== lever_index)/m]
+      assert_includes lunch, 'not see_temper_note_done'
+      assert_includes lunch, "Watch Darren's temper first."
+      assert_includes ink, "use the IT request form on Darren's desktop"
+    end
   end
 end

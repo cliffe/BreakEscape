@@ -47,6 +47,40 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
 - Keep the Cake in the inventory until M5 is done: dropped in the Office it becomes a 12-second lunch for Darren, and his screen then stays open.
 - The objectives panel has five aims, in order Morning, Midday, Afternoon (the helpdesk), Late (doors, safe, case) and Evening (the trail). The board and Ama's "What's next?" follow the same order, and "Call it a day." refuses with "Not yet..." until the seven afternoon and late tasks are done or the player chooses "Skip them and call it a day anyway." Tasks tick on their own when a beat has happened; none gates anything.
 
+## The guided tour (about 35 minutes; the whole path, in the order Ama's "What's next?" and the objectives panel give)
+
+Follow only Ama's pointers (her "What's next?" and the barks) and the objectives panel. Each beat below: what Ama points at, what you do, the "what you just saw" line she barks when the task ticks (barks are held while a minigame is open and show when it closes; read them from `npcManager.conversationHistory`, `isBark` messages, if the bubble has gone), and the tick. Every bark is once only. The detail of each click is in Runs A to E below; the beat numbers (M0 to M17) are the same.
+
+| Beat | Pointer (Ama) | You do | Bark when it ticks | Tick |
+|---|---|---|---|---|
+| M0 | "Here's Lorna's sign-in. Try her PC now, while she's sitting at it." | Click Lorna's PC with her at the desk | "Nobody signs in at a PC while its owner is sitting there." (on `pc_in_use:lorna_pc`, once, until M4 is done) | none |
+| gate | "What's next?": open the kitchen through the office, then come back | Walk Office, Kitchen, back | "That's the kitchen. ..." | none |
+| M1 | coffee, then read Anjali's note | Coffee lever; click Anjali's PC while she is away | "A password under a keyboard. The second step is what stands between that note and her desktop." | `see_note` |
+| M2 | "Switch the printer off and wait." | Printer lever; wait | "Frustrated people write things down. Read it on his sign-in screen when he's away." | `see_temper_note` (measured 50 s from the switch-off) |
+| M3 | stand beside Anjali | Wait beside her for Yusuf | "He said his login out loud to help a colleague. Now you have it too." | `overhear` |
+| M4 | sign in at Lorna's PC while she's away, ask twice | as Run A step 6 | "Right password, and still no way in. The request went to Lorna's phone, and she didn't answer." | `step_holds` |
+| M8 | Darren's short coffee trips | Coffee lever; click Darren's PC while he is out (open for about 50 s at most) | "His screen was open, so no password and no second step. The step guards the sign-in, not an open screen." | `open_screen` |
+| M6 | Anjali's fob | as Run B step 2 | "The fob's six digits change every minute. Whoever holds the fob holds the second step." | `fob` |
+| M7 | Yusuf's phone | as Run B step 4 | "The number on screen had to match the phone. A wrong pick cancels. Holding his phone, you could match it." | `number_match` |
+| lunch | "Send them to lunch" (answers "Not yet. Watch Darren's temper first." until M2 is ticked) | Lunch lever | "Darren's gone to lunch. His screen will be locked." then, when the screen locks, "Darren's screen has locked. Now try his PC." | none |
+| M5 | Darren's note, keep asking | as Run C step 2 | "He approved just to make it stop." | `pestered` |
+| M9 | the card at the visitor desk | as Run C step 3 (Niamh, "covering reception today", staffs the desk) | "This account has no second step at all. One gap like that undoes the rest." | `exempt` |
+| M11 | Thandiwe, password reset (in person) | as Run D step 2 | "Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile." | `reset_password` |
+| M12 | "This time use the IT request form on Darren's desktop. Send them for coffee first, so his screen is open." | Coffee lever; open Darren's desktop while he is out; open the "IT request form" there; ask for the approval reset for `ydemir` | "The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing." | `reenrol` (see the note below) |
+| M13 | wrong answers until it stops | as Run D step 4 | "Three wrong tries and the desk stopped listening. It never said whether the name was real." | `desk_refuses` |
+| M14 | the facilities notice, then Gwen's phone | as Run E step 2 | "The door's second step went to Gwen's phone. With her phone in your hand, you approved it yourself." | `door_step` |
+| M15 | the records index off, the archive door | as Run E step 1 | "Nobody approved anything. Fatima propped the door, and the step never came into it." | `propped` |
+| M16 | Gwen's drawer note and Anjali's fob | as Run E step 3 | "The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time." | `safe_step` |
+| M17 | Darren's case | as Run E step 4 | "You carried the case off and kept asking. Darren approved in the end, wherever the case was." | `case_step` |
+| day end | "Call it a day." answers "Not yet." with the undone afternoon and late beats until they are done, or "Skip them and call it a day anyway." | Evening lever | none | none |
+| M10 | Thandiwe has the log | as Run C step 5 | Thandiwe's existing line | `read_log` |
+
+Note on M12: the desktop form's answer carries only the desk and the result, not what was asked, so the tick is a mapping on a granted desk answer while `reset_password_done` is true and `reenrol_done` is not. A password reset asked on the form after M11 would tick it too; the in-person route through Thandiwe (Run D step 3) still ticks it by her own ink. Do M11 in person first, as the pointer says.
+
+**Measured live (U3, game 282, keyless :3053, 2026-11-25).** Printer switch-off to Darren's note: 50 s (one run). Darren's coffee trips with his screen open: 25 s and 37 s observed (the first run measured 15 to 35); a trip during the printer outage lasted 72 s, and his idle lock (`autoLockSeconds` 50) locked the open screen 50 s after he left (left 17:08:45, locked 17:09:35, back 17:09:57). So the coffee trips stay open with a gap of 13 s or more, and a long trip locks the screen at 50 s. His leave threshold stays at 90 s. Lunch: the screen locked at the leave itself (the trip was expected to be over 90 s), he was away 105 s, and both barks came at the leave ("Darren's gone to lunch. His screen will be locked." and "Darren's screen has locked. Now try his PC."). Wait before M5: none. If a lunch screen ever stays open, the idle lock closes it within 50 s.
+
+The runs below are the click-by-click detail for each aim (A and B morning and midday, C lunch and the evening, D the helpdesk, E the locks). Every run is from a fresh game.
+
 ## Run A: the morning (M1 to M4, M8, M2 and M3 outage)
 
 1. Start in Reception. Click Lorna's PC while she is at her desk.
@@ -66,7 +100,7 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
    - Server: one `mfa_challenge` row and one `mfa_prompt_sent` row with a count of 2; no approved row and no deny row. The task "Watch the second step hold when nobody answers" ticks (needs two requests).
    - Wait for Lorna to return to her desk: she barks "Sign-in requests on my phone and I wasn't even at my desk. I'm telling IT."
 7. **M2, a password written in a temper.** Click Ama, choose "Switch the printer off.". Watch Darren and Yusuf: the printer is down, they grumble ("Printer's dead. Again."), and after two failed prints Darren says "That's it. I'm writing it down." at his PC.
-   - See: the task "See a password written down in a temper" ticks when he writes it. Record the seconds from the switch-off (the first run measured about 90 to 180). You read the note itself on his sign-in screen at lunch (Run C), when he is away with his screen locked.
+   - See: the task "See a password written down in a temper" ticks when he writes it. Record the seconds from the switch-off (U3 measured 50; the first run measured about 90 to 180 before the tuning). You read the note itself on his sign-in screen at lunch (Run C), when he is away with his screen locked.
 8. **M3, a login said aloud.** The same outage sends Yusuf to Anjali ("Printer's dead. I'll ask Anjali."). Ama barks "Yusuf's off to find Anjali. Stand right next to them to hear." Before he arrives, stand right beside Anjali (at her desk; or at the Kitchen cooler if she is there) and stay until he says "Use my login, Anjali. Here it is.".
    - See: a toast "Overheard: Yusuf Demir" with his login, and the task "Overhear a login said aloud" ticks. Record his password as "overheard from Yusuf".
    - Missed it? He asks Anjali again each time the printer fails him while it stays off, so wait beside her for the next one. Do not press "Send them for coffee." during the outage: Anjali at her desk is the easiest place to stand.
@@ -93,8 +127,8 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
 
 "Send them to lunch." fires once only, so Darren's password must be in his note before lunch is pressed.
 
-1. Start a fresh game. Open the Office and the Kitchen, then back to Reception (the gate). Click Ama, choose "Switch the printer off.". Wait for Darren's "That's it. I'm writing it down." and the task "See a password written down in a temper" to tick (up to about three minutes). Then click Ama, choose "Send them to lunch.". Darren goes to the Kitchen (fridge or microwave, over 100 seconds). Ama barks "Darren's gone to lunch. His screen will be locked."
-2. **M5, pestered into approving.** Wait about two minutes after Darren leaves for lunch: his screen is still open at first, so an early click on "Darren's PC" opens his desktop ("You're on Darren Price's open screen") and ticks M8, not the sign-in. Once his screen has locked (about two minutes away; playtest 2: left 04:02:44, locked by 04:04:55), click "Darren's PC": the sign-in screen shows his note (record "from Darren's temper note"). Pick his tile, type that password, click Sign in.
+1. Start a fresh game. Open the Office and the Kitchen, then back to Reception (the gate). Click Ama, choose "Switch the printer off.". Wait for Darren's "That's it. I'm writing it down." and the task "See a password written down in a temper" to tick (about one minute). Then click Ama, choose "Send them to lunch.". Darren goes to the Kitchen (fridge or microwave, about 105 seconds). Ama barks "Darren's gone to lunch. His screen will be locked." and "Darren's screen has locked. Now try his PC."
+2. **M5, pestered into approving.** Wait for Ama's "Darren's screen has locked. Now try his PC." (U3: the screen locks at the leave, or within 50 s by the idle lock; an early click on an open screen opens his desktop and ticks M8, not the sign-in). Click "Darren's PC": the sign-in screen shows his note (record "from Darren's temper note"). Pick his tile, type that password, click Sign in.
    - See: the pane "Second step for Darren Price", a push is sent. Send again (about every 3 seconds). On the third request the pane closes and his desktop opens. Ama barks "He approved just to make it stop." (her recap says it again).
    - Server: `mfa_prompt_sent` count 3, `mfa_prompt_approved` with approver `owner`, `signin_ok`. Task "Wear someone down until they approve a sign-in" ticks. Click Start > Sign out.
 3. **M9, an account with no second step.** Go south to Reception. Click "Kiosk login card" beside the kiosk and read it (username and password: record as "from the kiosk card"). Click "Visitor kiosk", pick the Niamh tile, type the password, click Sign in.
@@ -115,7 +149,7 @@ A fresh game that first plays Run A's steps through M2 and M3 (printer off, Darr
    - See: "Password reset. New password:" with the new password; Thandiwe says "That matches. The new password is on your form."; task "Get a password reset at the IT desk" ticks. The keyring lists a "Reset" sign-in for Darren.
    - Try Darren's old note password at his PC (the note shows only after M2): refused, counted like any wrong password. Type the new one: his second step meets you (the push pane), as before.
    - Server: `helpdesk_request` granted, `account_password_reset` ok, in the approvals log (`verify-run --ops-log`).
-3. **M12, a sign-in approval reset.** Click Thandiwe, choose "I need a sign-in approval reset." (or use the form on Darren's desktop while his screen is open, M8). Username `ydemir`, "A sign-in approval reset", Yusuf's two answers, Send.
+3. **M12, a sign-in approval reset.** The tour uses the form on Darren's desktop while his screen is open (send them for coffee first; the trip leaves it open for about 50 s at most); Thandiwe in person ("I need a sign-in approval reset.") works too. Username `ydemir`, "A sign-in approval reset", Yusuf's two answers, Send.
    - See: "Sign-in approvals now come to your phone."; task "Move someone's sign-in approvals to your own phone" ticks.
    - Go to "Yusuf's PC" while he is away and the screen is locked; sign in with the password you overheard (M3). The step pane now has a "My phone" button where it showed his phone. Press it, choose the number that matches. His desktop opens.
    - Yusuf's own phone, taken from beside the coffee machine, now lists nothing for him. Anjali is never reset in this run: her fob stays live for the lock steps appended later.
@@ -164,6 +198,12 @@ A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16
 - Only Gwen can approve the two doors, and she never does by habit: a door that "does nothing" however many times "Send again" is pressed is the beat, not a fault. The archive store opens by Fatima's prop with no code, no pane and no row of an approval.
 - The records room and the archive store are shut doors on the map until they are opened; Gwen's and Fatima's desks stand in the Office all the time (a person behind a locked door is never simulated).
 
+## Not in the tour (shown by test scenarios)
+
+- A saved connection still asks for the second step; tokens, invites and claims skip it: `test_ops_mfa`.
+- The helpdesk by phone call and the call-back rule: the last unit of the tour (not built in this unit).
+- The old code device shown "No longer in use" after a re-enrolment, the lock-step device-in-use seam, number matching on a lock, the lapsed USB override: the test scenarios named in SHOWCASE_TOUR_PLAN.md 1.6.
+
 ## Free play
 
 - Ask Lorna "Do you answer sign-in requests on your phone?", Darren "How are you finding the new sign-in step?" and Thandiwe "What do you keep an eye on?".
@@ -173,7 +213,7 @@ A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16
 
 ## What to record
 
-Findings, the real number of seconds for each of: Darren's coffee trip, Darren's lunch, the printer outage to Darren's note, the outage to Yusuf's walk to Anjali (round 1 measured: coffee trip 15 to 35 s, outage to note 90 to 180 s, outage to Yusuf's walk about 40 s; lunch not yet measured); the first beat that could not be reached by clicking; any line that names a secret.
+Findings, the real number of seconds for each of: Darren's coffee trip, Darren's lunch, the printer outage to Darren's note, the outage to Yusuf's walk to Anjali (round 1 measured: coffee trip 15 to 35 s, outage to note 90 to 180 s, outage to Yusuf's walk about 40 s; U3 measured the note at 50 s, the lunch at 105 s, the idle lock at 50 s: see the guided tour); the first beat that could not be reached by clicking; any line that names a secret.
 
 ## Harness notes (playtest 3 read-outs, checked against the code)
 

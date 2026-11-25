@@ -175,3 +175,24 @@ Every beat is reachable by clicking (the codes from the notice and the drawer no
 - F1: the "Things to try" board now runs Morning, Midday, Afternoon, Late, Evening (the Evening line ends "Do this last: staff go home"). Aim orders: `afternoon_helpdesk` 2, `late_locks` 3, `evening` 4 (array order unchanged, so the test's last-in-array assertion holds). Ama's "Call it a day." now refuses with a plain line while any of the seven afternoon and late tasks is undone; "Skip them and call it a day anyway." (ink-local `skip_late`) lifts the refusal.
 - F2: `darren_drawer` moved to (3.9, 4.0), 1.1 tiles from the badge. `side_table` (9.0, 4.3) and `gwen_phone` (9.0, 3.9) moved 1.3 tiles clear of the coffee socket (8.66, 6.06). Kept warning with its reason: `Side table` and `Gwen's phone` 13 px apart: the phone sits on the table's charger by design, and clicking either gives the same pick-up of the phone. Warnings now 35.
 - F3: Ama's M14 hint names "the facilities notice in the kitchen", her M15 hint says not to approve on Gwen's phone, Thandiwe's two verdict lines are true for either kind of grant (ticks unchanged). VOICED_LINES updated; the audio for these lines needs a top-up.
+
+## Tour unit U3 (SHOWCASE_TOUR_PLAN.md 2.6, 4.1; owner's answers of 2026-11-25 are recorded as decided in plan section 5)
+
+Main was not merged into the worktree by this unit: another builders' uncommitted work shares the tree and the merge was refused by the permission check. Left to the orchestrator.
+
+### Probes (live, keyless :3053, game 282, swap game; measured seconds are in PLAYTEST.md)
+
+- Is `darren_pc_screen_locked` written before any leave? It is declared in `globalVariables` (false) and `_publish` writes it at every leave; the lock bark's `data.oldValue !== true` guard holds. Seen live: at the lunch leave the global went true and "Darren's screen has locked. Now try his PC." came with the existing "Darren's gone to lunch..." bark.
+- Temper note: 50 s from the printer switch-off (one run); no tuning of `frustration.perFail` was needed (35, workaround at 60), so it is unchanged.
+- Darren's coffee trips with the screen open: 25 s and 37 s; a trip in the printer outage 72 s. `autoLockSeconds` 50 on `darren_pc` locked the open screen exactly 50 s after the leave. `lockIfAwayOverSeconds` stays 90. Lunch: 105 s away, locked at the leave (expected trip over 90 s), so there is no lunch wait.
+- M12 by the desktop form: the desk's `helpdesk_answered` event carries only `deskId` and `result` (`helpdesk-client.js:133-135`), not what was asked. So the tick is an appended Ama mapping on a granted answer while `reset_password_done` is true and `reenrol_done` is not; Thandiwe's in-person ink still ticks it. Plan deviation, written into PLAYTEST.
+- Not probed live: the form on Darren's desktop through the browser (the Rails test for the form route already exists); the barks other than M0, M2 and the lock bark were not seen live (same mechanism: a `global_variable_changed:<task>_done` mapping).
+
+### What changed
+
+- `scenario.json.erb`: 16 appended Ama mappings (M0 on `pc_in_use:lorna_pc`, 15 "what you just saw" barks on `<task>_done`, the lock bark on `darren_pc_screen_locked`, the desktop-form tick of `reenrol`; `pestered`, `read_log` keep their existing lines); `autoLockSeconds: 50` on `darren_pc`; `darren_pc_screen_locked` declared; `ttsPregenerateChatter`; voices of Niamh (Kore, Dublin, covering reception today), Anjali (Aoede), Lorna (Erinome, Lancashire), Thandiwe (Pulcherrima).
+- Ink: `give_lorna_card` (M0 pointer), `whats_next` reenrol (desktop form pointer), `lever_lunch` (temper check), Niamh's two lines. tagdiff: 3 structural differences, all in Ama (the new `lever_lunch` condition and its divert).
+- No existing mapping moved or deleted; `check_mapping_index_drift.rb`: 0 failures (the scenario is not on main, so 0 compared).
+- Panel order: unchanged (the plan's table already follows it).
+- Validator: 0 errors, 35 warnings, the same list as before this unit (diffed against HEAD). Dialoguelint 0 ERROR (one existing `crowded-hub`). Scenario test: 41 runs, 0 failures (5 new tour cases); the whole-run leak scans are the existing ones, 0 findings.
+- The old "Darren's gone to lunch. His screen will be locked." and the new lock bark both fire at the lunch leave; the dialogue review may fold them.
