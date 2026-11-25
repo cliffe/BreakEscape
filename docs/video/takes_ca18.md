@@ -45,8 +45,31 @@ Headed Chromium on Xvfb :147, keyless server :3456, no ffmpeg. The runner is a s
 | t05b_lorna_reset_narrow | 13511 | pass, 30 marks | POST /tts 200 audio/mpeg, 28677 bytes. bubble-hidden-check: visible false, alpha 0. press to bubble 1.66 s, press to L1 audio 1.90 s, v10_clear ok at 0.46 s |
 | t06_delphine_sofa | 13512, 13513 | FAIL after 2 tries (1 script fix) | trip 144 to 145 px (minimum 120), arrive about (244,217). Return: try 1 settled on a pause at (165,134); the script now waits for the post. Try 2: she stops at (164,133) and stays, 28 px from the post (144,113), so the 24 px check fails. The post is her settled start point, which appears to be patrol and not her needsHome (tile 4.5,4.5 = 144,144). Open decision: take the post from the settle point, or widen the check to about 40 px. Not decided, not captured. |
 
-Not dry-run in this pass: t01, t03, t04, t04b, t05 (the 23 Nov dry runs predate the current code). Nothing recorded yet. `~/video-takes-local/ca18/takes` and the `video_out/ca18/takes` symlink do not exist yet.
+Not dry-run in this pass: t01, t03, t04, t04b, t05 (the 23 Nov dry runs predate the current code). Only t06 was dry-run on 26 Nov (below).
 
+### Dry run, t06 (26 Nov, after commit 5a0ed566d)
+
+Game 13518, `--set kit_quiet=true`. Passed first time: 16 marks, no errors. Trip 143 px (minimum 120). Return: she settled at (163,132), within the 40 px radius of her post (144,113). Result in the scratch folder, not the repo.
+
+### Captures (26 Nov, serial, display :147, keyless server :3456, `female_office_worker_v2`)
+
+Nine takes, one attempt each. None failed, so no retries. Every take is `pass: true`, full frame (1920x1080, canvas edge to edge), no page errors. Output in `~/video-takes-local/ca18/takes/`, with `video_out/ca18/takes` symlinked to it (`video_out/` is gitignored, as for ca13). Sync residual after the constant-offset correction is the gate figure; the raw `offsetOk*` flags in `check.json` read false before correction and are not the gate.
+
+| take | length (s) | drop % | residual A/V start / end (ms) | POST /tts | contact sheet and notes |
+|---|---|---|---|---|---|
+| t01_ama_hook | 14.97 | 0.58 | -1 / +1 | 2 lines, 200 audio/mpeg (welcome, "Attackers rarely...") | Line 1 reads in the bar, line 2 follows by itself at 9.8 s. Clean. |
+| t02_attack_run | 62.87 | 0.15 | +1 / -2 | none (no voiced lines) | Browser, pins, guesser, flip heading. Passphrase panel and queued result text hidden as the script says. |
+| t02b_attack_run_narrow | 63.44 | 0.05 | +5 / -5 | none | Same beats in the 560 px panel. Buttons in the console foot are in frame, as the dry-run note allowed. |
+| t03_ama_flip | 32.77 | 0.29 | +4 / -5 | 3 lines, 200 audio/mpeg (A4, A5, A6 "Now it's your seat...") | Three lines at the bar, then chat closes. Clean. |
+| t04_defend_list | 16.40 | 0.54 | -7 / +7 | none | Defend list, card opens. Verdict hint and progress badges hidden. |
+| t04b_defend_list_narrow | 16.57 | 0.53 | -6 / +6 | none | Same at 760 px. |
+| t05_lorna_reset | 11.14 | 0.75 | +12 / -13 | 1 line, 200 audio/mpeg (L1 "Fenlow have made me reset my password...") | Kiosk panel, then the room with Lorna's bubble hidden. |
+| t05b_lorna_reset_narrow | 10.87 | 0.76 | -6 / +6 | 1 line, 200 audio/mpeg (same L1) | Same at 560 px. |
+| t06_delphine_sofa | 20.70 | 0.44 | 0 / 0 | none | Delphine walks to the sofa and back, followed by the camera. |
+
+Marks: each take has its `.markers.json` and trimmed `.trimmed.markers.json`. Frames were checked against the contact sheets, not at each key mark, so the marks-to-frame check in Step 4 of the skill is still open for the minigame marks (t02, t04). Sidecars (`*.take.json`) are drafts with `_draft:true`, since this run's brief did not include Step 6.
+
+Assumption lines: the 40 px return radius is taken from 5a0ed566d as written. The narrow variants used the same seeds as their wide parents. Dry runs for t01, t03, t04, t04b and t05 were not repeated, as the brief asked for t06 only.
 
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
