@@ -23,7 +23,11 @@ const VT323_ROOT = new Set(['dusting.css', 'coverage-decision-form-minigame.css'
     'drug-library-integrity-minigame.css', 'log-filter-minigame.css', 'ncsc-brief-minigame.css',
     'combination-minigame.css', 'cryptex-minigame.css', 'flag-station-minigame.css',
     'forensic-data-platform-minigame.css', 'network-architecture-minigame.css', 'patch-panel-minigame.css',
-    'warranty-checklist-minigame.css']);
+    'warranty-checklist-minigame.css', 'lock-step.css', 'lock-step-push.css']);
+// Sheets whose widget is appended to document.body, outside .minigame-container: the framework's
+// `.minigame-container button { font-family: 'GNF' }` never reaches their buttons, so their controls
+// draw in the sheet's own face (ui/lock-step-pane.js appends its layer to document.body).
+const BODY_MOUNTED = new Set(['lock-step.css', 'lock-step-push.css']);
 const VT323_SELECTOR = [['biometrics-minigame.css', /\.fpr-(?!card)/]];
 
 // First family in a font-family value, quotes stripped: "VT323", 'VT323' and VT323 are the same.
@@ -81,7 +85,7 @@ function rulesOf(file) {
         let fam = famM ? firstFamily(famM[1]) : null;
         if (fam === 'inherit') fam = null;
         if (fam && fam.startsWith('var(')) fam = varFace(famM[1].trim()) || null;
-        if (isControl(sel) && !(fam && beatsFramework(sel))) fam = 'GNF';
+        if (isControl(sel) && !BODY_MOUNTED.has(file) && !(fam && beatsFramework(sel))) fam = 'GNF';
         if (!fam) {
             const sheetVt = VT323_ROOT.has(file) || VT323_SELECTOR.some(([f, rx]) => f === file && rx.test(sel));
             fam = sheetVt ? 'VT323' : 'GNF';
@@ -165,4 +169,14 @@ test('GNF rules in minigame sheets stay on the 8px grid, bar the known older one
         else if (n < ceiling) problems.push(`${f}: ${n} off-grid GNF rules, lower its ceiling in minigame-font-16-offgrid.json to ${n}${n === 0 ? ' (delete the key)' : ''}`);
     }
     assert.deepEqual(problems, []);
+});
+
+test('the body-mounted lock-step buttons draw in VT323, not GNF (the framework button rule does not reach them)', () => {
+    const src = readFileSync(join(css, '../js/ui/lock-step-pane.js'), 'utf8');
+    assert.match(src, /document\.body\.appendChild\(layer\)|body\.appendChild\(/);
+    for (const f of BODY_MOUNTED) {
+        const btn = rulesOf(f).filter((r) => /-btn\b/.test(r.sel));
+        assert.ok(btn.length > 0, `${f} has a button rule with a font size`);
+        for (const r of btn) assert.equal(r.fam, 'VT323', `${r.file}:${r.line} ${r.sel}`);
+    }
 });

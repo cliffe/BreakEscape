@@ -48,11 +48,15 @@ export function credentialsDeclared() {
 
 /**
  * The tag kind for an entry (plan 8.5): a captured password is "captured", a registry password
- * (found in a file) is "in_file", any other kind keeps its own name.
+ * (found in a file) is "in_file", a cracked password (S7) is "cracked", any other kind keeps
+ * its own name.
  */
 export function entryTagKind(entry) {
     if (!entry || typeof entry !== 'object') return null;
-    if (entry.kind === 'password') return entry.source === 'capture' ? 'captured' : 'in_file';
+    if (entry.kind === 'password') {
+        if (entry.source === 'capture') return 'captured';
+        return entry.source === 'cracked' ? 'cracked' : 'in_file';
+    }
     return typeof entry.kind === 'string' ? entry.kind : null;
 }
 
@@ -121,6 +125,10 @@ export class Keyring {
         // source, account? } }), and when this page first got each entry id (ms), for row order
         this.latestCaptures = null;
         this.firstSeen = new Map();
+        // S7: the earned fact ids of the most recent full answer that listed a hash row (sorted
+        // ids, never labels), and each running hash row's end on this page's clock (hashId => ms)
+        this.crackFacts = [];
+        this.crackEndsAt = new Map();
         // K5 (plan 10): each live token's end on this page's clock (credId => ms), from the
         // server's expiresInS, and each expired token's proof foothold (credId => footholdId) as
         // the server names it, so the greyed button shows on that foothold's screen only
@@ -210,6 +218,32 @@ export class Keyring {
         }
     }
 
+    /**
+     * S7: note each running hash row's wait from an answer. A full answer's rows carry
+     * readyInSeconds; an `unchanged` answer's `live` is { hashId: seconds } and resets the
+     * countdown of the cached running rows it names. An unchanged answer without it
+     * (live === undefined) leaves every row as it was. Only numbers from 0 to a day count.
+     */
+    noteCrackWaits(entries, live = undefined) {
+        const okSecs = (n) => (typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 86400 ? n : null);
+        const liveMap = live === undefined ? null : (live && typeof live === 'object' && !Array.isArray(live) ? live : {});
+        const now = Date.now();
+        for (const e of Array.isArray(entries) ? entries : []) {
+            if (!e || e.kind !== 'hash' || typeof e.id !== 'string') continue;
+            if (e.status !== 'running') { this.crackEndsAt.delete(e.id); continue; }
+            if (live !== undefined && !liveMap) continue;
+            const secs = okSecs(liveMap ? liveMap[e.id] : e.readyInSeconds);
+            if (secs === null) continue;
+            this.crackEndsAt.set(e.id, now + secs * 1000);
+        }
+    }
+
+    /** Whole seconds a running hash row has left by the last answer (0 once over), or null when unknown. */
+    crackSecondsLeft(hashId) {
+        if (!this.crackEndsAt.has(hashId)) return null;
+        return Math.max(0, Math.ceil((this.crackEndsAt.get(hashId) - Date.now()) / 1000));
+    }
+
     /** Whole seconds a token has left by the last answer (0 once over), or null when unknown. */
     tokenSecondsLeft(credId) {
         if (!this.tokenEndsAt.has(credId)) return null;
@@ -228,6 +262,10 @@ export class Keyring {
             this.latest = hit.entries;
             if (hit.captures) this.latestCaptures = hit.captures;
             this.noteTokenTimes(hit.entries, answer.expiresInS ?? null);
+            // Only a served readyInSeconds map moves a countdown (an answer without it changes nothing)
+            if (answer.readyInSeconds && typeof answer.readyInSeconds === 'object' && !Array.isArray(answer.readyInSeconds)) {
+                this.noteCrackWaits(hit.entries, answer.readyInSeconds);
+            }
             return hit.entries;
         }
         if (!Array.isArray(answer.entries)) return null;
@@ -239,6 +277,8 @@ export class Keyring {
         this.latest = entries;
         this.latestCaptures = captures;
         this.noteTokenTimes(entries);
+        this.noteCrackWaits(entries);
+        this.crackFacts = Array.isArray(answer.crackFacts) ? answer.crackFacts.filter(f => typeof f === 'string' && f) : [];
         const now = Date.now();
         for (const e of entries) if (!this.firstSeen.has(e.id)) this.firstSeen.set(e.id, now);
         // K3d: the capture log redraws and re-badges from the no-screen answer when it changes
@@ -344,6 +384,10 @@ export class Keyring {
     /** A registry password shows only once its file was opened here, or it was in the first answer. */
     foundVisible(entry) {
         if (!entry || entry.kind !== 'password' || entry.source === 'capture') return true;
+        // A desk's reset password: handed over by the server on the grant, no file to open (S8b R1-CLIENT3)
+        if (entry.source === 'helpdesk') return true;
+        // A cracked password (S7) is the player's own work: shown at once, never waiting on a file
+        if (entry.source === 'cracked') return true;
         if (this.firstAnswerIds?.has(entry.id)) return true;
         return typeof entry.foundIn === 'string' && this.opened.has(entry.foundIn);
     }
@@ -541,8 +585,40 @@ export class Keyring {
         const message = t.findToastText(entries, { captureLog: heldCaptureLog() });
         if (!message) return null;
         // No title and `whole` (clamp lift only), so a grouped toast is never cut on a phone
-        try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, { plainText: true, whole: true }); } catch (e) { /* no notification layer */ }
+        const opts = { plainText: true, whole: true };
+        // S7-2: exactly one find with a line and it is a hash: the toast gets a Crack button
+        const lined = (Array.isArray(entries) ? entries : []).filter(e => t.findLine(e, { captureLog: !!heldCaptureLog() }));
+        if (lined.length === 1 && lined[0].kind === 'hash' && typeof lined[0].id === 'string'
+            && (lined[0].status === 'ready' || lined[0].status === 'running')) {
+            const id = lined[0].id;
+            opts.action = { label: t.CRACK_TOAST_ACTION_TEXT, onPress: () => this.openCracker(id) };
+        }
+        try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, opts); } catch (e) { /* no notification layer */ }
         return message;
+    }
+
+    /** The hash row a held tray item proves, from the latest answer, or null. */
+    hashEntryFor(itemId) {
+        if (typeof itemId !== 'string' || !itemId) return null;
+        return this.latest.find(e => e.kind === 'hash' && e.heldItem === itemId) || null;
+    }
+
+    /**
+     * Open the cracker for a hash (S7-2: the toast button and the tray entry). Never over another
+     * screen: with a minigame, an interaction menu or a conversation up it says so and opens nothing.
+     * Answers whether the cracker was asked to open.
+     */
+    async openCracker(hashId) {
+        const w = typeof window !== 'undefined' ? window : {};
+        if (w.MinigameFramework?.currentMinigame || w.isInteractionMenuOpen?.() || inConversation()) {
+            try {
+                const t = await import('../utils/remote-host-text.js');
+                w.gameAlert?.(t.CRACKER_BUSY_TEXT, 'info', '', 4000, { plainText: true });
+            } catch (e) { /* no notification layer */ }
+            return false;
+        }
+        try { w.MinigameFramework?.startMinigame?.('ops-cracker', null, { hashId }); } catch (e) { return false; }
+        return true;
     }
 
     /** The entry a held tray item proves for Connect, from the latest answer, or null. */
@@ -677,6 +753,8 @@ export class Keyring {
         const reason = result?.reason;
         if (reason === 'remote_blocked') return toast(t.remoteOffMessage(host), 'remote_blocked');
         if (reason === 'not_permitted') return toast(t.remoteNotPermittedMessage(host), 'not_permitted');
+        // The server answered: type the password. A notice with the line the sign-in screen uses (S8b R1-CLIENT2)
+        if (reason === 'type_to_sign_in') return toast(result.message || t.CONNECT_FAILED_TEXT, 'type_to_sign_in', 'info');
         if (entry.kind === 'saved_connection' && (reason === 'kind_refused' || reason === 'locked_out')) {
             // The target's remote sign-in screen, the account and the credential chosen, the refusal shown
             w.openCredentialSignIn?.({
@@ -782,10 +860,11 @@ export class Keyring {
 }
 
 /** The kinds with a find toast; a capture is always silent. */
-export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite', 'token'];
+export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite', 'token', 'hash'];
 // The capture filter below is paired with findLine's in remote-host-text.js (a double guard).
 function findKindToasts(entry) {
-    return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);
+    // A desk's reset is shown by the form that was just answered; a cracked password by the cracker scene: no find toast
+    return entry.source !== 'capture' && entry.source !== 'helpdesk' && entry.source !== 'cracked' && FIND_KINDS.includes(entry.kind);
 }
 
 /** The held capture log that lists captures (type capture_log, holds.captures), or null. */

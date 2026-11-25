@@ -1,0 +1,536 @@
+{
+  "scenario_id": "test_ca_world_hold",
+  "scenario_name": "Test: world hold (E2)",
+  "scenario_brief": "Fixture for engine change E2: a call attack with world.holdUntil and a short holdMaxMs. After the call the learner stays in the lobby until the guard conversation closes (or the 20 s cap), then the runner hands back to the kiosk. Also reads flipDefenderLineByGlobal (E5) on the call flip. Stub content, not a mission.",
+  "endGoal": "None. Fixture only.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "ep_room",
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "finish_episode_aim",
+      "title": "Finish the episode",
+      "description": "Run the episode at the kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_ca_world_hold_defend_complete"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "finish_episode",
+          "title": "Finish the episode",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_ca_world_hold_state": {},
+    "se_awareness_records": [],
+    "episode_ca_world_hold_defend_percent": 0,
+    "episode_ca_world_hold_defend_reportRate": 0,
+    "episode_ca_world_hold_defend_complete": false,
+    "se_osint_state": {},
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "tcw_desk_influence": 0,
+    "tcw_desk_alerted": false,
+    "pretext_tcw_front_desk_state": {},
+    "pretext_tcw_front_desk_outcome": "",
+    "pretext_tcw_front_desk_lowest": 0,
+    "pretext_tcw_front_desk_reports": 0,
+    "tcw_world_done": false,
+    "tcw_guard_spoke": false,
+    "desk_latched": "",
+    "se_intel_desk_checkin": false,
+    "tcw_door_asked": false
+  },
+  "social": {
+    "people": [
+      {
+        "id": "desk",
+        "kind": "cast",
+        "address": "desk@brightwell.example",
+        "forms": {
+          "first": "Dana",
+          "formal": "Ms Desk",
+          "full": "Dana Desk"
+        }
+      }
+    ],
+    "intelFacts": {
+      "desk_checkin": {
+        "text": "Visitors check in at the front desk.",
+        "subject": "company",
+        "source": "blk_home",
+        "provides": []
+      }
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "desk_site",
+          "name": "Brightwell",
+          "url": "brightwell.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "home",
+              "title": "Home",
+              "blocks": [
+                {
+                  "id": "blk_home",
+                  "kind": "p",
+                  "text": "Test text. Visitors check in at the front desk.",
+                  "fact": "desk_checkin"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "triageSets": [
+      {
+        "id": "ca_world_hold_inbox",
+        "title": "Payments inbox",
+        "brief": "Decide what each message is.",
+        "scoringProfile": "awareness",
+        "feedbackMode": "immediate",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "changed_bank_details"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_ca_world_hold_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "ep_bank",
+            "from": {
+              "name": "Supplier Accounts",
+              "address": "accounts@halden-supply.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "New bank details",
+            "time": "09:10",
+            "body": "Please pay invoice 4471 to our new account. Details attached.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "fail",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "changed_bank_details": "New bank details by email, with a payment due."
+              },
+              "ifTrusted": "The payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "ep_laptop",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Your new laptop",
+            "time": "08:30",
+            "body": "Your laptop is ready to collect from the IT desk.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The address is IT's real one and you were expecting a laptop."
+              }
+            }
+          },
+          {
+            "id": "ep_lookalike",
+            "from": {
+              "name": "Supplier Accounts",
+              "address": "billing@haldn-supply.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Invoice reminder",
+            "time": "09:10",
+            "body": "Invoice 4472 is overdue. Pay today.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "fail",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The domain is one letter off the supplier's real one."
+              },
+              "ifTrusted": "The payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "ep_rota",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Rota for next week",
+            "time": "08:30",
+            "body": "Next week's rota is on the shared drive.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "It comes from the usual sender and asks for nothing unusual."
+              }
+            }
+          },
+          {
+            "id": "ep_phone",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Supplier call back",
+            "time": "08:30",
+            "body": "Halden rang about invoice 4470. I called them back on the number we hold and it is fine.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The call was checked on the number already on file."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "ca_world_hold",
+      "role": "finance",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "full",
+      "durationTargetMin": 13,
+      "scopeNote": "Authorised exercise at fictional Brightwell Foods. In scope: this inbox.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "finish_episode",
+      "attack": {
+        "callId": "tcw_front_desk",
+        "siteIds": [
+          "desk_site"
+        ],
+        "scored": false
+      },
+      "defend": {
+        "setId": "ca_world_hold_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "Stub brief.",
+        "flipHeading": "Now you are the target",
+        "flipIntro": "This is the message you sent.",
+        "flipDefenderLine": "Fallback defender line.",
+        "flipNoSend": "You did not send a message this time.",
+        "noBlameLine": "Anyone can miss one of these.",
+        "mondayCard": "Next time, check bank changes by phone.",
+        "defendOnly": "This version skips the attack.",
+        "flipDefenderLineByGlobal": [
+          {
+            "global": "tcw_guard_spoke",
+            "line": "Test line: the hold ended when the guard conversation closed.",
+            "heading": "Test heading: guard"
+          },
+          {
+            "global": "tcw_world_done",
+            "line": "Test line: the hold ended at the 20 s cap."
+          }
+        ],
+        "flipMissed": "Generic missed text."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      },
+      "world": {
+        "room": "lobby",
+        "startRoom": "ep_room",
+        "spawn": {
+          "x": 4,
+          "y": 6
+        },
+        "holdUntil": "tcw_world_done",
+        "holdMaxMs": 20000
+      }
+    },
+    "characters": {
+      "desk": {
+        "displayName": "Desk Clerk",
+        "channels": {
+          "person": "tcw_desk"
+        },
+        "influence": {
+          "global": "tcw_desk_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "tcw_desk_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "tcw_desk_alerted",
+                "value": true
+              },
+              {
+                "type": "endConversation"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "pretextNpcs": [
+      {
+        "character": "desk",
+        "callId": "tcw_front_desk",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "full",
+          "showTechniqueNames": "live"
+        },
+        "susceptibility": {
+          "deflect": -10
+        },
+        "unverifiableCost": -10,
+        "prepLabels": {
+          "approachTitle": "Test aim: get the desk to open the door",
+          "heldTitle": "What you found",
+          "heldEmpty": "Nothing found yet."
+        },
+        "requireFact": false,
+        "outcomeLabels": {
+          "got_it": "The door opened.",
+          "reported": "The desk reported you.",
+          "walked_away": "You walked away."
+        },
+        "lines": {
+          "say_hi": {
+            "technique": "deflect",
+            "claims": [],
+            "text": "Test line: I am here for the test."
+          }
+        },
+        "asks": {
+          "open_door": {
+            "pressure": -10,
+            "floor": -10,
+            "grants": {
+              "setGlobal": {
+                "tcw_door_asked": true
+              }
+            }
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {
+            "line": "Test line: reported."
+          },
+          "walked_away": {
+            "line": "Test line: walked away."
+          }
+        },
+        "tells": {
+          "techniques": {
+            "deflect": "Test tell: dodging the check."
+          },
+          "ask": {
+            "accepted": "Test text: the door opened.",
+            "pending": "Test text: the desk wants more.",
+            "refused": "Test text: the desk refused."
+          },
+          "bands": {
+            "calm": "The desk is calm.",
+            "wary": "The desk is wary.",
+            "refusing": "The desk is refusing."
+          }
+        },
+        "hints": [
+          "Test hint: say hello, then ask for the door."
+        ]
+      }
+    ]
+  },
+  "rooms": {
+    "ep_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {
+        "east": "lobby"
+      },
+      "npcs": [
+        {
+          "id": "ep_host",
+          "displayName": "Host",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_ca_world_hold_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_episode"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "ep_kiosk",
+          "name": "Training Kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A training kiosk. It runs the episode.",
+          "minigameData": {
+            "episodeId": "ca_world_hold"
+          },
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
+              "value": "A training kiosk. Episode finished."
+            }
+          ]
+        }
+      ]
+    },
+    "lobby": {
+      "type": "room_office",
+      "door_sign": "Lobby",
+      "connections": {
+        "west": "ep_room"
+      },
+      "npcs": [
+        {
+          "id": "tcw_desk",
+          "displayName": "Desk Clerk",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "storyPath": "scenarios/test_ca_world_hold/ink/tcw_desk.json",
+          "currentKnot": "start"
+        },
+        {
+          "id": "tcw_guard",
+          "displayName": "Guard",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "storyPath": "scenarios/test_ca_world_hold/ink/tcw_guard.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "conversation_closed:tcw_guard",
+              "condition": "!globalVars.tcw_world_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "tcw_guard_spoke": true,
+                "tcw_world_done": true
+              }
+            }
+          ]
+        }
+      ],
+      "objects": []
+    }
+  }
+}

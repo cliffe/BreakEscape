@@ -132,6 +132,16 @@
       },
       "additionalProperties": false
     },
+    "networkView": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "description": "Ops skin K3 (S6 unit 21): how this scenario's network view looks by default. Sent in the bootstrap as authored (it names no host, address or finding). Read by public/break_escape/js/minigames/network-view/skin-choice.js; a player's own choice wins over it.",
+      "properties": {
+        "defaultSkin": { "type": "string", "enum": ["gui", "cli"], "description": "The skin used when the player has not chosen one: gui is Panels, cli is Terminal. Read by skin-choice.js." },
+        "_comment": { "type": "string" }
+      }
+    },
     "gameClock": {
       "type": ["object", "string"],
       "description": "Optional in-game clock: { \"start\": \"Tue 07:30\" } (or just the string). Clock displays (phone, command board, SIEM) then show this start time plus elapsed game time instead of the real wall clock. Elapsed game time resumes after a reload. rate: game minutes per real minute (default 1). anchors: [{ condition, time }] jump the clock forward when the condition first holds.",
@@ -270,6 +280,7 @@
         "patternProperties": { "^_": {} },
         "properties": {
           "autoLockMin": { "type": ["number", "null"], "minimum": 0, "description": "Game minutes after the owner leaves before an open screen locks; 0 locks in the leave roll; null: no auto lock." },
+          "mfa": { "type": "string", "enum": ["none", "push", "push_number_match", "code"], "description": "Multi-factor sign-in (MFA plan S8a): the second step an enrolled account passes after its first factor at a PC under this policy. none (the default) asks nothing; push asks the owner's phone to approve; push_number_match also shows a number to match; code asks for the six digits on the owner's code_device. Sent to the browser (which PCs ask, and of which kind); who passes is decided on the server." },
           "maxAttempts": { "type": ["integer", "null"], "minimum": 1, "description": "Server-counted failed sign-ins per PC and username before a lockout; null: no limit." },
           "usb": { "type": "string", "enum": ["allowed", "storage_blocked", "blocked"], "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 7): allowed (default) accepts every USB device; storage_blocked refuses items with usbClass storage; blocked refuses storage and hid. Governs only a workstation or an object that names a policy." },
           "social": { "type": "string", "enum": ["allowed", "blocked"] },
@@ -281,6 +292,28 @@
       }
     },
     "defaultPolicy": { "type": "string", "x-ref": "policy", "description": "Access model: the policy a PC with no policy of its own uses." },
+    "helpdesks": {
+      "x-id-map": true, "x-serverOnly": true, "x-servedBy": "bootstrap helpdeskForms",
+      "type": "object",
+      "description": "Helpdesk recovery (MFA plan S8b, feature A23): desk id to a desk, a room NPC who will reset an account's password or move its second sign-in step to the player's own phone after checking the caller under one rule. Withheld from the bootstrap; the browser gets only helpdeskForms (per desk: npc, resets, questionLabels). One NPC serves at most one desk.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["npc", "verify", "resets"],
+        "properties": {
+          "npc": { "type": "string", "minLength": 1, "x-ref": "npc", "description": "The room NPC who serves this desk." },
+          "verify": { "type": "string", "enum": ["none", "questions", "callback"], "description": "The rule. none grants to anyone who asks; questions compares typed answers with the account's creds.recovery; callback grants only while the player holds the account owner's phone." },
+          "questions": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "description": "questions rule: the creds.recovery ids that count. Each needs a questionLabels entry." },
+          "minCorrect": { "type": "integer", "minimum": 1, "description": "questions rule: how many answers must be right. Default all of them; at most the number of questions." },
+          "maxTries": { "type": "integer", "minimum": 1, "maximum": 9, "description": "Refusals for one username before the desk stops serving it for five minutes. Default 3." },
+          "resets": { "type": "array", "items": { "type": "string", "enum": ["password", "mfa"] }, "uniqueItems": true, "description": "What the desk will do: password (issue the account's creds.resetPassword) and mfa (move the account's second step to the player's own phone)." },
+          "questionLabels": { "type": "object", "x-id-map": true, "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 40 }, "description": "Question id to the form's field label, 40 characters at most. Sent to the browser." },
+          "_comment": { "type": "string" }
+        },
+        "additionalProperties": false,
+        "patternProperties": { "^_": {} }
+      }
+    },
     "credentials": {
       "x-serverOnly": true, "x-servedBy": "GET /keyring",
       "type": "object",
@@ -292,6 +325,20 @@
         "patternProperties": { "^_": {} },
         "properties": {
           "kind": { "type": "string", "description": "An open string; CredentialModel::KINDS says which are built. Phase 1 builds password, saved_connection, assist_invite and token (K5); hash is phase 3." },
+          "salted": { "type": "boolean", "description": "hash only, optional: true means the record's token matches nothing else and a run waits before its verdict. Written here it wins over the difficulty grade's default." },
+          "crackSeconds": { "type": "integer", "minimum": 10, "maximum": 600, "description": "hash only, optional, salted records only: seconds a run waits before its verdict. Written here it wins over the difficulty grade's default." },
+          "crack": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": { "^_": {} },
+            "description": "hash only, optional: the recipe the offline cracker reads. Server-only: never sent to the browser.",
+            "properties": {
+              "password": { "type": "string", "enum": ["strong", "guessable", "reused", "common"], "description": "The password class. Optional when the account holder has a habits.password, required otherwise. common exists only here." },
+              "facts": { "type": "array", "maxItems": 4, "items": { "type": "string" }, "description": "guessable only: 1 to 4 bare social.intelFacts ids (no se_intel_ prefix, no repeats) the player must hold and pick." },
+              "passwordPattern": { "type": "string", "minLength": 1, "description": "The object id that gives the readable clue to the password pattern." },
+              "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"], "description": "easy: unsalted, no wait, a guessable record expects 1 fact. medium: salted, 60 s wait, 2 facts. hard: salted, 120 s wait, 3 or 4 facts. A salted or crackSeconds written on the record wins; the grade never supplies facts and never changes the class." }
+            }
+          },
           "account": { "type": "string", "description": "The NPC id of an account holder." },
           "proof": {
             "type": "object",
@@ -305,6 +352,7 @@
               "dropped": { "type": "string", "description": "A capture proof: an item accepted as a player drop." },
               "held": { "type": "string", "description": "A scenario item id: holds while an inventory entry carrying the server's own `credential` field for this id is held (identity-strict)." },
               "foothold": { "type": "string", "description": "A foothold id: holds while the foothold is held now." },
+              "harvested": { "x-serverOnly": true, "type": "string", "description": "Privilege plan S5b: a hash credential only. A sign-in PC id: holds once the player has collected this account from that PC's cached accounts. Never sent to the browser." },
               "technique_card": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}\\.[a-z][a-z0-9_]{0,39}\\.[a-z][a-z0-9_]{0,39}$", "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): a finding id (<hostId>.<serviceName>.<weaknessId>), where the host part may be as long as a sign-in PC id (up to 64 characters): holds once a technique card has been used on that finding, which must be a weakness whose `grants.credential` names this entry (the validator checks that both name each other). The entry's kind must be saved_connection. Not built until N15." }
             }
           },
@@ -384,6 +432,31 @@
             "required": ["ssid"],
             "additionalProperties": false,
             "patternProperties": { "^_": {} }
+          },
+          "cli": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": { "^_": {} },
+            "description": "Ops skin K3 (S6 unit 21): the Terminal's text for this network. Never sent in the bootstrap (networks are withheld whole). Read by the core's network view builder, which copies it into the view, and by public/break_escape/js/minigames/network-view/cli-gen/.",
+            "properties": {
+              "range": { "type": "string", "maxLength": 18, "pattern": "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/([0-9]|[12][0-9]|3[0-2])$", "description": "The address range the sweep prints, an IPv4 CIDR such as 10.0.0.0/24 (a private range). Read by cli-gen/." },
+              "hosts": {
+                "x-id-map": true,
+                "type": "object",
+                "propertyNames": { "minLength": 1, "maxLength": 64 },
+                "description": "Host id to its printed address. Read by cli-gen/.",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "patternProperties": { "^_": {} },
+                  "properties": {
+                    "address": { "type": "string", "pattern": "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$", "description": "A dotted IPv4 address, printed by the scanner text." },
+                    "_comment": { "type": "string" }
+                  }
+                }
+              },
+              "_comment": { "type": "string" }
+            }
           },
           "discovery": { "type": "string", "enum": ["open", "scan"], "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): open (default, and the meaning of an absent key) lists every row as today; scan lists rows only once a sweep has discovered them. Governs the network view only: no sign-in, desktop or share route reads it. Read through NetworkModel.discovery?." },
           "_comment": { "type": "string" }
@@ -3137,7 +3210,7 @@
         "concernForm": {"$ref": "#/definitions/socialConcernForm"},
         "world": {
           "type": "object",
-          "description": "ENG-05a/05b: world-play modifier on a call attack (E12). Not a stage: the write stage is still the call. The runner moves the learner into `room`, puts the costume on, and on the call ending (any outcome) or an early exit moves them back and gives the chosen avatar back (aw9). `startRoom` must equal the scenario's startRoom. Linted by awareness.rb",
+          "description": "ENG-05a/05b: world-play modifier on a call attack (E12). Not a stage: the write stage is still the call. The runner moves the learner into `room`, puts the costume on, and on the call ending (any outcome, or after `holdUntil`/`holdMaxMs` when a hold is set) or an early exit moves them back and gives the chosen avatar back (aw9); only a costume this block put on comes off, never a worn wearable. `startRoom` must equal the scenario's startRoom. Linted by awareness.rb",
           "required": ["room", "startRoom"],
           "properties": {
             "room": {"type": "string", "minLength": 1, "description": "The room the attack is played in (a rooms key)"},
@@ -3160,7 +3233,9 @@
               },
               "patternProperties": {"^_": {}},
               "additionalProperties": false
-            }
+            },
+            "holdUntil": {"type": "string", "minLength": 1, "description": "E2: a global name. After the call's outcome the learner stays in `room` until this global is true or `holdMaxMs` has passed; the engine writes it true if the cap ends the hold, a reload while held, or the give-up. Needs holdMaxMs. Must not be a server-owned global (worn, imported or credit globals)."},
+            "holdMaxMs": {"type": "number", "exclusiveMinimum": 0, "description": "E2: the cap in ms, counted from the first moment the call's outcome is seen. Required with holdUntil; no effect without it."}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -3242,6 +3317,12 @@
             "weakestTells": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when skills tied ({names} is the joined list, {counts} is 'caught X of Y'; default 'The tells most often missed: {names} ({counts} each).'). For a non-phishing set where 'tells' reads as phishing jargon"},
             "stepAway": {"type": "string", "description": "EC1: the step-away panel's line; default 'Look up from the kiosk to see how a case like this plays out here. It takes about 20 seconds, and your place is saved.'"},
             "stepAwayHeading": {"type": "string", "description": "EC1: the step-away panel's heading; default 'Before the debrief'"},
+            "stepAwayWaiting": {"type": "string", "description": "E3: the post-defend beat's line while its doneGlobal has not landed (default 'Still out there. Carry on whenever you like.')"},
+            "stepAwayReadyWait": {"type": "string", "description": "E3: the post-defend beat's line while Look up is not ready yet (default 'Look up is ready once your result has saved.')"},
+            "worldBeat": {"type": "string", "description": "E3: the default panel line for a stepAways beat after a stage other than defend (a beat's `strings` names another prefix; <prefix>, <prefix>Heading, <prefix>Waiting and <prefix>ReadyWait are the four keys). Custom prefixes are not in this schema: use the defaults or stepAway"},
+            "worldBeatHeading": {"type": "string", "description": "E3: the heading for a worldBeat panel"},
+            "worldBeatWaiting": {"type": "string", "description": "E3: a worldBeat panel's line while its doneGlobal has not landed"},
+            "worldBeatReadyWait": {"type": "string", "description": "E3: a worldBeat panel's line while Look up is not ready yet"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
             "writeReloadNote": {"type": "string", "description": "batch-6 (E14 F11): the write-stage launch note that a close/reload starts the compose draft again (default 'If you close or reload before you send, your draft starts again.'). '' suppresses it"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
@@ -3255,6 +3336,21 @@
             "flipPageIntroByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's page intro per chosen host option id (check.hosts[].id), used instead of flipPageIntro when the id matches; any other host keeps flipPageIntro"},
             "debriefHostLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "D286: one debrief line per chosen fake-check host option id (check.hosts[].id), drawn after the concept panels; no chosen host, or an id with no entry, draws nothing"},
             "flipDefenderLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's defender line per chosen host option id (check.hosts[].id); any other host keeps flipDefenderLine"},
+            "flipDefenderLineByGlobal": {
+              "type": "array",
+              "description": "E5: ordered list; the first entry whose global is truthy wins (after flipDefenderLineNoSpray and flipDefenderLineByHost, before flipDefenderLineByChoice). Also read on the missed / landed-no-tells flip, in place of flipMissed. Point entries at boolean globals: any truthy value matches, including a counter or a pretext state object. An optional heading replaces flipMissedHeading on the missed path.",
+              "items": {
+                "type": "object",
+                "required": ["global", "line"],
+                "properties": {
+                  "global": {"type": "string", "minLength": 1},
+                  "line": {"type": "string", "minLength": 1},
+                  "heading": {"type": "string", "minLength": 1}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
             "flipGuessIntroNoSpray": {"type": "string", "description": "The flip intro instead of flipGuessIntro when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
@@ -3482,6 +3578,28 @@
         },
         "facilitated": {"type": "boolean"},
         "stepAway": {"type": "boolean", "description": "EC1 (living office): true shows the step-away panel when the runner reopens after the defend triage: Look up (enabled once kit_defend_done is true) closes the kiosk and emits episode_step_away; Carry on shows the debrief. The debrief keeps the defend answers in the state, and the success screen waits until the debrief closes. A full episode only (never a twin, brief or check); a facilitated run shows Look up on the pause after defend"},
+        "stepAways": {
+          "type": "array",
+          "maxItems": 6,
+          "description": "E3: step-away beats, a list form of `stepAway` (mutually exclusive with it). Each beat shows the step-away panel after its `after` stage. A full episode only (never a twin, brief or check). The engine drops, silently, any beat that breaks the rules the validator reports (awareness.rb)",
+          "items": {
+            "type": "object",
+            "required": ["id", "after"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1, "description": "Unique beat id"},
+              "after": {"type": "string", "minLength": 1, "description": "A declared stage id, not the last; each stage takes at most one beat"},
+              "event": {"type": "string", "minLength": 1, "description": "The event Look up emits; default episode_world_beat (episode_step_away only on the beat after defend)"},
+              "readyGlobal": {"type": ["string", "null"], "description": "A declared global; Look up is enabled once it is true. null: always ready"},
+              "doneGlobal": {"type": ["string", "null"], "description": "A declared global the world sets when the beat is over; the panel waits on it"},
+              "pickedKey": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]{0,39}$", "description": "The episode-state key recording the pick; default stepAwayPicked after defend, else worldBeatPicked. Must be unique, must not be a state key, must not end in Via"},
+              "strings": {"type": "string", "minLength": 1, "description": "The strings prefix for this beat's copy (<prefix>, <prefix>Heading, <prefix>Waiting, <prefix>ReadyWait); default stepAway after defend, else worldBeat"},
+              "facilitated": {"type": "boolean", "description": "Default true: a facilitated run shows Look up on the pause"},
+              "resumeOnDone": {"type": "boolean", "description": "true returns the learner when doneGlobal lands; needs a doneGlobal"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
         "assistant": {"$ref": "#/definitions/socialAssistant"}
       },
       "patternProperties": {"^_": {}},
@@ -3755,6 +3873,7 @@
         "pressure": {"type": "number"},
         "floor": {"type": "number"},
         "verification": {"type": "array", "items": {"type": "string"}},
+        "helpdesk": {"type": "string", "minLength": 1, "description": "MFA plan S8b: a helpdesk id. A granted ask opens that desk's request form."},
         "grants": {
           "type": "object",
           "properties": {
@@ -4331,6 +4450,16 @@
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "combination", "cryptex", "ble"]
         },
+        "secondStep": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["push", "push_number_match", "code"] },
+            "owner": { "type": "string", "minLength": 1, "x-ref": "npc" }
+          },
+          "description": "S8c: a second step after the right first factor on this lock. push asks the owner's phone to approve; push_number_match also shows a number to match; code asks for the six digits on the owner's code_device. owner is an NPC id (an object may fall back to its own single owner; a room needs one). Needs locked: true and a lockType. Sent to the browser as authored; who passes is decided on the server."
+        },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "maxAttempts": { "type": "integer", "minimum": 1, "description": "Password locks: wrong guesses allowed before the pad locks out (client-side). Not secret: it survives the bootstrap filter." },
@@ -4521,7 +4650,13 @@
           "properties": {
             "username": { "type": "string", "minLength": 1, "description": "Makes an account (a password is then required). Unique, compared trimmed and case-insensitively." },
             "password": { "type": "string", "minLength": 1, "x-servedBy": [ { "route": "GET /login_accounts", "key": "postitNote" }, "GET /capture_secrets" ], "description": "The only place this account's password is authored. Server-only; served as the constructed sticky-note in a GET /login_accounts tile's postitNote when the owner writes it down (written_down?, game.rb), and by GET /capture_secrets once a capture proof for this account holds (captureProof, game.rb)." },
+            "mfa": { "x-serverOnly": true, "type": "boolean", "description": "MFA plan S8a: false exempts this account from a policy's second step. Absent means enrolled. Only the literal false counts; true is an error (it is the default)." },
+            "recovery": { "x-serverOnly": true, "type": "object", "x-id-map": true, "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 64 }, "description": "MFA plan S8b: question id to the right answer, plain text, 64 characters at most. Read by a helpdesk whose rule is questions. Never sent to the browser." },
+            "resetPassword": { "x-serverOnly": true, "type": "string", "minLength": 1, "description": "MFA plan S8b: the password a helpdesk issues for this account. Must differ from password and appear in no ink. Never sent to the browser; given once in the answer that grants it, then listed in the keyring." },
             "admin": { "type": "boolean", "description": "Privilege plan S5a: true makes this an administrator account at every sign-in PC whose access list admits it. Absent is false. Only the literal true counts. Server-only (the whole creds block is)." },
+            "accountKind": { "type": "string", "enum": ["local", "domain"], "description": "Privilege plan S5c: local (exists only on the PCs in localTo) or domain (works on every sign-in PC whose domain equals creds.domain). Absent: no kind, the access list alone decides. Kinds only narrow. Never sent to the browser." },
+            "localTo": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1, "x-ref": "object" }, "description": "Privilege plan S5c: with accountKind local, the sign-in PC ids this account exists on. Never sent to the browser." },
+            "domain": { "type": "string", "pattern": "^[A-Za-z0-9.-]{1,32}$", "description": "Privilege plan S5c: with accountKind domain, the domain this account belongs to. Never sent to the browser." },
             "card": {"x-id-map": false,  "type": "object", "description": "The card this NPC carries (replaces rfidCard): name, card_id, rfid_protocol and any protocol fields.", "additionalProperties": true },
             "_comment": { "type": "string" }
           },
@@ -4529,6 +4664,7 @@
           "patternProperties": { "^_": {} }
         },
         "staff": { "type": "boolean", "description": "Access model section 3: false drops the implicit staff role an NPC with creds has." },
+        "accountOnly": { "type": "boolean", "description": "Privilege plan S5c: true makes this NPC an account with no person behind it (a service or shared account). Room NPCs only. The entry is dropped from every room answer; the account has no tile on any PC and is typed." },
         "awareness": { "x-serverOnly": true, "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never, holdsDoors true; medium: locksScreen sometimes, holdsDoors true; high: locksScreen always, holdsDoors false). Room NPCs only. Never sent to the browser." },
         "habits": {
           "type": "object",
@@ -4536,9 +4672,12 @@
           "properties": {
             "locksScreen": { "x-serverOnly": true, "type": "string", "enum": ["never", "sometimes", "always"], "description": "Fills this NPC's habits.screen (lockChance 0, 0.5 or 1) when habits.screen is not authored. A PC's own lockChance or locksScreenOnLeave still wins." },
             "writesDown": { "x-serverOnly": true, "type": "boolean", "description": "true: the account's username and password are on a sticky note on the owner's own sign-in PC, read on its sign-in screen at the desk. Never set by a preset." },
-            "password": { "x-serverOnly": true, "type": "string", "enum": ["strong", "guessable", "reused"], "description": "A claim the validator checks: guessable needs every piece of the password readable in the world and a pattern clue; reused needs another secret equal to it. No run-time effect. Never set by a preset." },
+            "password": { "x-serverOnly": true, "type": "string", "enum": ["strong", "guessable", "reused"], "description": "A claim the validator checks: guessable needs every piece of the password readable in the world and a pattern clue; reused needs another secret equal to it. The offline cracker reads this class when a hash record has no crack.password. Never set by a preset." },
             "holdsDoors": { "x-serverOnly": true, "type": "boolean", "description": "false: a gate door that opens for this NPC will not open with the player close by, and shuts as soon as the player comes near (the loader lists the NPC in the gate's noHold). true: the gate opens beside the player and lingers. Not applied to a gate with playerMayPassIf or an authored noHold." },
+            "approvesPrompts": { "x-serverOnly": true, "type": "string", "enum": ["never", "pestered", "always"], "description": "MFA plan S8a: whether this account's owner approves a push prompt sent to their phone. never ignores it, always approves it, pestered approves after promptPatience prompts. Absent: read from awareness (low pestered; medium and high never). Room NPCs only; never sent to the browser." },
+            "promptPatience": { "x-serverOnly": true, "type": "integer", "minimum": 2, "maximum": 9, "description": "MFA plan S8a: how many prompts a 'pestered' owner takes before approving (2 to 9, default 3). Does nothing for never or always. Room NPCs only; never sent to the browser." },
             "passwordPattern": { "x-serverOnly": true, "type": "string", "minLength": 1, "description": "The object that gives the pattern for a guessable password (a parameter of password, not a habit)." },
+            "passwordDifficulty": { "x-serverOnly": true, "type": "string", "enum": ["easy", "medium", "hard"], "description": "The difficulty grade the offline cracker uses for this account's hash record (a parameter of password, not a habit). The record's own crack.difficulty wins over it." },
             "screen": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "description": "Lock-screen habit (systems/workstation-state.js, OFFICE_LIFE_PLAN 12.2, slice 16): how this person leaves the workstation they own. Applies only where the station sets neither lockChance nor locksScreenOnLeave (the object wins). A trip expected to last at most lockIfAwayOverSeconds stays open; a longer one, or one with no estimate, rolls lockChance (seeded, salt habit:<objectId>:<leaves>); the threshold alone means a long trip always locks. A locksScreen habit (slice 9.1) fills this when it is not authored; an authored habits.screen wins.", "properties": { "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a (long) trip locks the screen." }, "lockIfAwayOverSeconds": { "type": "number", "minimum": 0, "description": "Lock only when the trip is expected to last longer than this (npc_left_post expectedAwayMs)." }, "_comment": { "type": "string" } } },
             "print": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "description": "Print and forget (OFFICE_LIFE_PLAN 12.3, slice 17): this NPC owns what it prints (revealOutput hooks and needs.print commands). An owned print is reserved from other NPCs' interests; two seeded rolls per owned print decide forget, else a due time, from which the NPC fetches it to its needsHome object (an errand: it walks over, carries it back, sets it down, emits npc_print_fetched:<npcId>). Events: npc_print_uncollected:<npcId> (still on the tray after the producer's uncollectedAfterSeconds), npc_print_gone:<npcId> (taken before the fetch).", "properties": { "fetchAfterSeconds": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 3600 }, "minItems": 2, "maxItems": 2, "description": "[min, max] seconds after the print before the fetch (default [20, 60])." }, "forgetChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a print is never fetched (default 0)." }, "weight": { "type": "number", "minimum": 0.1, "maximum": 10, "description": "Score of the fetch, like an interest's weight (default 2): an urgent need can still win." }, "shareAfterSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "Unset by default. After this long an unfetched print is no longer reserved, so interest NPCs (a tidy colleague) may take it." }, "_comment": { "type": "string" } } },
             "usb": { "x-serverOnly": true, "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "description": "USB habit (USB_HABIT_PLAN.md, user decision q39): every nth judged work use at the NPC's own station (its needsHome) copies a file to a USB stick. Where the station's policy refuses storage (usb storage_blocked or blocked) the use fails with the cause usb_refused: the NPC mutters from the usb_refused pool, npc_usb_refused:<npcId> fires and a reactive feed post can key on \"cause\": \"usb_refused\". Where the policy allows it, npc_usb_copied:<npcId> fires. Needs a work plan (a work need and a non-empty work list). The NPC must hold the stick: a usb item with an id in itemsHeld (sprite usb_bowl1, usbClass storage or none, takeable). Its contents are the files on it, text_file items each with an id, name and text, and unlocked folders or archives of them; with no contents it holds one default work_file.txt. Offer an ink give of the stick only after the first refusal (gate it on setGlobal), or the habit stops before it acts. The files are served only to a player who holds the stick (given, pickpocketed, or picked up after a knock-out), never in room data. Once the stick has left the NPC the habit stops: a use is a plain use, not a failure. Room NPCs only; the browser gets it inside the work plan.", "properties": { "every": { "type": "integer", "minimum": 1, "maximum": 10, "description": "Every nth judged work use at the station carries the copy (default 2)." }, "setGlobal": { "type": "string", "minLength": 1, "description": "The workaround: a declared global set true when a refusal is first recorded (the NPC emails the file to itself instead). The server sets it on the accepted fail." }, "_comment": { "type": "string" } } },
@@ -5273,6 +5412,18 @@
         "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Display only." },
         "product": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text, an invented product name." },
         "version": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text." },
+        "cli": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": { "^_": {} },
+          "description": "Ops skin K3 (S6 unit 21): how the Terminal prints this service. Never sent in the bootstrap (services are withheld). Read by cli-gen/ through the core's view builder.",
+          "properties": {
+            "protocol": { "type": "string", "enum": ["tcp", "udp"], "description": "Printed beside the port." },
+            "service": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,23}$", "description": "The service word printed in a scan line." },
+            "banner": { "type": "string", "minLength": 1, "maxLength": 80, "description": "Plain text printed as the service's banner." },
+            "_comment": { "type": "string" }
+          }
+        },
         "weaknesses": { "type": "array", "maxItems": 4, "items": { "$ref": "#/definitions/weakness" }, "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): what is really wrong with this service, found by a check and settled by a confirm. At most 4. Ids are unique across weaknesses and decoys of the service (the validator checks that). Read through NetworkModel.weaknesses; never sent before a check." },
         "decoys": { "type": "array", "maxItems": 4, "items": { "$ref": "#/definitions/decoy" }, "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): a finding that looks real until the player confirms it, then shows its falseBecause. At most 4. Read through NetworkModel.decoys; never sent before a check." },
         "_comment": { "type": "string" }
@@ -5291,6 +5442,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Plain text, game design terms: what is wrong, never how to exploit it. With none the view shows a line per class from an engine table." },
         "needs": { "$ref": "#/definitions/opsNeeds" },
         "grants": { "$ref": "#/definitions/opsGrants" },
+        "realism": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,47}$", "description": "Ops skin K3 (S6 unit 21): the id of a realism catalog entry whose advisory and output text the Terminal prints for this finding. Resolved server-side by the core's finding builder; never sent in the bootstrap. No cli property here: the text lives in the catalog." },
         "fixedIf": { "oneOf": [ { "type": "string", "minLength": 1 }, { "x-id-map": true, "type": "object", "minProperties": 1 } ], "description": "A global name or the requireGlobal map, read server-side as offWhen is." },
         "_comment": { "type": "string" }
       },
@@ -5306,6 +5458,7 @@
         "class": { "type": "string", "enum": ["default_creds", "unpatched", "misconfig", "weak_auth", "cleartext"], "description": "As a weakness." },
         "severity": { "type": "string", "enum": ["low", "medium", "high"], "description": "As a weakness." },
         "summary": { "type": "string", "minLength": 1, "maxLength": 200, "description": "As a weakness." },
+        "realism": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,47}$", "description": "Ops skin K3 (S6 unit 21): the id of a realism catalog entry whose advisory and output text the Terminal prints for this finding (a decoy gets the same form). Resolved server-side by the core's finding builder; never sent in the bootstrap. No cli property here: the text lives in the catalog." },
         "falseBecause": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Why it is not real; plain text, shown only after the player confirms the finding." },
         "_comment": { "type": "string" }
       },
@@ -5349,14 +5502,16 @@
       "properties": {"onPairSetGlobal": { "type": "object", "additionalProperties": true, "x-id-map": true }, "minigameData": { "type": "object", "x-free-data": true }, 
         "type": {
           "type": "string",
-          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'phone_friendface' (a Friendface phone: opens the social feed; see owner), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
+          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'phone_friendface' (a Friendface phone: opens the social feed; see owner), 'code_device' (MFA plan S8a: a code generator that shows its owner's current six-digit sign-in code while held; needs owner, an account NPC; one per account), 'helpdesk_form' (MFA plan S8b: a desktop icon, in a sign-in PC's contents, that opens the request form of the helpdesks entry named by desk; needs no sprite), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
         },
         "id": { "type": "string", "description": "This object's own unique identity, distinct from opens_lock (which names the lock it opens). Used to target this specific object." },
         "name": { "type": "string" },
         "takeable": { "type": "boolean" },
+        "revealsFacts": { "type": "array", "items": { "type": "string" }, "description": "Bare social.intelFacts ids (no se_intel_ prefix) this item gives its holder as earned facts for the offline cracker." },
         "dispenses": { "type": "boolean", "description": "On a container (a badge printer): when the container is opened (any lock type), the contents go straight into the inventory (each item still checked by the server) instead of opening the container screen. Falls back to the container screen if the hand-over fails, and always for contents that are not takeable or are a notes-family item." },
         "blocksSight": { "type": "boolean", "description": "true: this prop blocks NPC sight like a wall; false: it never does. Unset: tall racks, shelving, cabinets, lockers and vending machines block (npc-sight-occlusion.js)" },
         "readable": { "type": "boolean" },
+        "desk": { "type": "string", "minLength": 1, "description": "MFA plan S8b: type helpdesk_form only: the helpdesks id whose request form this desktop icon opens, as a request over that PC. Belongs in a sign-in PC's contents." },
         "credential": { "type": "string", "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1, 3.4): names a top-level `credentials` registry id this item carries (a saved connection or a written assist code). Server-only: joins ItemIdentity::FORGEABLE_ITEM_FIELDS, so a client-built item can never carry it, and the stored field always comes from the server's own copy of the definition. The item must use a type with a tray slot that is not always-allowed (text_file), never a notes-family or always-allowed type. Cross-references are enforced only by check_credentials." },
         "technique_card": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}$", "maxLength": 40, "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): a key of the top-level `techniques` technique card registry. Allowed only on an item of type `technique_card`, and such an item must carry it (the validator checks both). It stays on the item the browser receives, as `credential` does; the registry entry it names does not. Not built until N15 (the validator refuses it)." },
         "interactable": { "type": "boolean" },
@@ -5483,6 +5638,16 @@
         "lockType": {
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login", "combination", "cryptex", "ble"]
+        },
+        "secondStep": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["push", "push_number_match", "code"] },
+            "owner": { "type": "string", "minLength": 1, "x-ref": "npc" }
+          },
+          "description": "S8c: a second step after the right first factor on this lock. push asks the owner's phone to approve; push_number_match also shows a number to match; code asks for the six digits on the owner's code_device. owner is an NPC id (an object may fall back to its own single owner; a room needs one). Needs locked: true and a lockType. Sent to the browser as authored; who passes is decided on the server."
         },
         "requires": {
           "x-serverOnly": { "unlessLockType": ["biometric", "bluetooth", "rfid"] },
@@ -5726,7 +5891,7 @@
           "$ref": "#/definitions/affordance"
         },
         "offWhen": { "oneOf": [ { "type": "string", "minLength": 1 }, {"x-id-map": true,  "type": "object", "minProperties": 1 } ], "description": "Format 1 (hardening step 8a; was affordance.offWhen): the object's outage condition in the requireGlobal form (a name, truthy, or { name: value }, all must match). While it holds the object is no source for NPC needs, slice 18a (OFFICE_LIFE_PLAN 12.4): NPCs walking to it or queued for it turn back (npc_turned_back reason 'off'), grumble from the grumble_off pool (else grumble; else a picture of the need) and take the next source or park; one already using it finishes. Switching it back on (a real change of the global) retries parked needs. On a sign-in PC it governs the player too: while it holds sign-in is refused, no share is served and no pivot relays. Switch it with set_global on a separate object (a wall socket), not on the machine." },
-        "owner": { "oneOf": [ { "type": "string", "minLength": 1, "x-ref": "npc" }, { "type": "array", "items": { "type": "string", "minLength": 1, "x-ref": "npc" }, "minItems": 1 } ], "description": "Format 2 (hardening step 8b; was screenOwner, phoneOwner, affordance.owners on objects and phoneOf, leftBehindBy on items): who owns this object or item, an NPC id. A single-owner kind (a workstation, a desk phone, a Friendface phone, a left-behind item) takes one id; a private object may take a list (several people use it). No owner on a Friendface phone (type 'phone_friendface') means the player's own phone. needsHome no longer sets an owner: write it here." },
+        "owner": { "oneOf": [ { "type": "string", "minLength": 1, "x-ref": "npc" }, { "type": "array", "items": { "type": "string", "minLength": 1, "x-ref": "npc" }, "minItems": 1 } ], "description": "Format 2 (hardening step 8b; was screenOwner, phoneOwner, affordance.owners on objects and phoneOf, leftBehindBy on items): who owns this object or item, an NPC id. A single-owner kind (a workstation, a desk phone, a Friendface phone, a left-behind item) takes one id; a private object may take a list (several people use it). No owner on a Friendface phone (type 'phone_friendface') means the player's own phone. A code device (type 'code_device', MFA plan S8a) needs an owner: an account NPC. needsHome no longer sets an owner: write it here." },
         "private": { "type": "boolean", "description": "Format 2 (hardening step 8b; was affordance.private): NPC needs system: only its owners' needs use this object (satisfies); other NPCs may still deliver to it (accepts). Owners = owner, else the NPC whose needsHome is this object. The player is unaffected." },
         "deskPhone": { "type": "boolean", "description": "Format 2 (hardening step 8b; was the presence of phoneOwner): marks this object a desk phone (OFFICE_LIFE_PLAN 12.5, slice 19). Its owner is its single owner. desk_phone_ring:<id> rings it; the owner idle at its desk answers without moving; away it misses the call (desk_phone_unanswered:<id>). Needs a standing affordance, takeable false, within 1.5 tiles of the owner's post, and useFrom to the side of the owner's chair." },
         "flagNote": { "type": "string", "description": "vm_launcher objects: a line shown in the launcher under the VM steps (minigames/vm-launcher), for where this room's flag payoff is (m03 Training Lab Terminal)." },
@@ -5740,6 +5905,9 @@
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "x-ref": "policy", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
+        "cachedAccounts": { "x-serverOnly": true, "type": "array", "maxItems": 8, "description": "Privilege plan S5b: on a sign-in PC, the accounts remembered here that an admin session can collect as hash records. Each is {npc, after?}; after is \"borrow\" (cached only once that account holder has borrowed the hot desk). Never sent to the browser.", "items": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} }, "properties": { "npc": { "type": "string", "minLength": 1, "x-ref": "npc" }, "after": { "type": "string", "enum": ["borrow"] } }, "required": ["npc"] } },
+        "portOf": { "type": "string", "minLength": 1, "x-ref": "object", "description": "Privilege plan, ruling A: on a USB-governed object that is not a sign-in PC, the id of the sign-in PC this port belongs to. An admin session at that PC lets a storage stick be planted that the policy would refuse. Sent to the browser in the room answer (an id the room already shows)." },
+        "domain": { "type": "string", "pattern": "^[A-Za-z0-9.-]{1,32}$", "description": "Privilege plan S5c: on a sign-in PC, the domain it belongs to. A domain account (creds.accountKind domain, same creds.domain) works on every PC in that domain. Sent to the browser in the room answer; shown as text only." },
         "network": { "x-serverOnly": true, "type": "string", "x-ref": "network", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser (NetworkAccess::WITHHELD_OBJECT_FIELDS)." },
         "services": { "x-serverOnly": true, "x-servedBy": ["GET /network", "POST /network/scan", "POST /network/check", "POST /network/confirm"], "type": "array", "maxItems": 8, "items": { "$ref": "#/definitions/service" }, "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): the services this sign-in host runs, shown after a host scan. Only on a sign-in object (lockType login); the validator (scripts/validate_network_ops.rb) refuses it elsewhere and while N13 is not built. Never sent in room data (NetworkAccess::WITHHELD_OBJECT_FIELDS); read through NetworkModel.services_of." },
         "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
@@ -5966,8 +6134,9 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["give_item", "unlock_door", "emit_event", "reveal_secret", "complete_task", "set_global", "unlock_object"]
+          "enum": ["give_item", "unlock_door", "emit_event", "reveal_secret", "complete_task", "set_global", "unlock_object", "grant_fact"]
         },
+        "fact": { "type": "string", "description": "Used with type: 'grant_fact': a bare social.intelFacts id the player earns when the server accepts the flag." },
         "item_name": { "type": "string" },
         "target_room": { "type": "string", "x-ref": "room" },
         "event_name": { "type": "string" },

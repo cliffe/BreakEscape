@@ -1304,6 +1304,20 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A held code device (ops layer S8a, plan 5.3): a click in the inventory opens its scene
+    // alone, which reads the code the server shows for the held item. A loose one (takeable) is
+    // picked up by the generic path, never opened.
+    // Held means in the inventory: one lying in a room with takeable false is no device in hand
+    if (sprite.scenarioData.type === 'code_device' && !sprite.scenarioData.takeable &&
+        Array.isArray(window.inventory?.items) && window.inventory.items.includes(sprite)) {
+        if (typeof window.startCodeDevice === 'function') {
+            window.startCodeDevice({ itemId: sprite.scenarioData.id });
+        } else {
+            window.gameAlert('Code device unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     // Handle the Crypto Workstation - pick it up if takeable, or use it if in inventory
     if (sprite.scenarioData.type === "workstation") {
         // If it's in inventory (marked as non-takeable), open it
@@ -1910,7 +1924,11 @@ export function handleObjectInteraction(sprite) {
     // so it is picked up below and opened from the inventory (USB habit review R2, B1).
     const pocketStickInWorld = !isInventoryItem && data.type === 'usb' && data.takeable === true &&
         data.hasContents === true && data.locked !== true && !Array.isArray(data.contents);
-    if (!pocketStickInWorld && (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents)) {
+    // A locked droppable the player put down (a carried briefcase with a lock, S8c R1 playtest 13c) is
+    // taken first, like the stick above, and opened from the tray ("Unlock"): a click on the floor copy
+    // must not open its pad where it lies. Only a droppable that is locked; every other container is as before.
+    const droppedLockedInWorld = !isInventoryItem && data.droppable === true && data.takeable === true && data.locked === true;
+    if (!pocketStickInWorld && !droppedLockedInWorld && (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents)) {
         console.log('CONTAINER ITEM INTERACTION', data);
 
         // SECURITY: Always validate with server
@@ -1922,7 +1940,7 @@ export function handleObjectInteraction(sprite) {
     }
     
     // Check if item is locked (non-container items)
-    if (data.locked === true) {
+    if (data.locked === true && !droppedLockedInWorld) {
         console.log('ITEM LOCKED', data);
         handleUnlock(sprite, 'item');
         return;

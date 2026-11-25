@@ -319,10 +319,24 @@ module ValidateSocial
       out
     end
 
+    # Item-shaped hashes outside social.osint that carry `revealsFacts` (S7): a take of the item
+    # earns each fact it names, so the fact has an award path.
+    def self.item_reveals(ctx)
+      out = Hash.new { |h, k| h[k] = [] }
+      rest = ctx.json.reject { |k, _| k == 'social' }
+      walk(rest, '') do |h, path|
+        next unless h['type'].is_a?(String) && h['revealsFacts'].is_a?(Array)
+
+        h['revealsFacts'].each { |f| out[f] << path if f.is_a?(String) }
+      end
+      out
+    end
+
     def self.award_paths(ctx, osint)
       issues = []
       hl = highlight_grants(ctx)
       calls = call_grants(ctx)
+      reveals = item_reveals(ctx)
       actions = action_grants(ctx)
       by_fact = Hash.new { |h, k| h[k] = [] }
       elements(osint).each { |e| by_fact[e[:fact]] << e }
@@ -330,7 +344,7 @@ module ValidateSocial
 
       Mail.facts(ctx).each do |fid, f|
         els = by_fact[fid]
-        outside = hl.key?(fid) || calls.key?(fid)
+        outside = hl.key?(fid) || calls.key?(fid) || reveals.key?(fid)
         if els.length > 1
           issues << err("fact '#{fid}' is granted by more than one OSINT element (#{els.map { |e| e[:id] }.join(', ')}); each fact has one award path, and the second page shows the same words unmarked")
         elsif els.length == 1

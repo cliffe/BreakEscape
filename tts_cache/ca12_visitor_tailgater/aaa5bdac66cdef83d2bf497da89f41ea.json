@@ -1,0 +1,13 @@
+{
+  "key": "aaa5bdac66cdef83d2bf497da89f41ea",
+  "npc": "ca12_jun_watanabe",
+  "text": "Printer's warm again.",
+  "voice": "Puck",
+  "style": "A junior architect at Merrin & Sallow, in his early 20s, in his first job, eager and polite; Japanese-British, grew up in the UK. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:59:07Z"
+}

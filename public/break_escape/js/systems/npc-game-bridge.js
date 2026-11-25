@@ -7,6 +7,32 @@
  * This bridge is the primary interface between NPC dialogue (Ink) and game mechanics.
  */
 
+/**
+ * Every door sprite, in any loaded room, that leads to a room (the bridge's own lookup, also
+ * used to write a door's NPC opener onto each of them: S8c).
+ * @param {string} roomId - Room ID to find doors for
+ * @returns {Array} Array of door sprites
+ */
+export function findAllDoorSpritesForRoom(roomId) {
+    if (!window.rooms) return [];
+
+    const doors = [];
+
+    // Iterate through all rooms to find doors leading to the target room
+    Object.keys(window.rooms).forEach(sourceRoomId => {
+        const room = window.rooms[sourceRoomId];
+        if (room.doorSprites && Array.isArray(room.doorSprites)) {
+            const matchingDoors = room.doorSprites.filter(doorSprite =>
+                doorSprite.doorProperties &&
+                doorSprite.doorProperties.connectedRoom === roomId
+            );
+            doors.push(...matchingDoors);
+        }
+    });
+
+    return doors;
+}
+
 export class NPCGameBridge {
   constructor() {
     this.actionLog = [];
@@ -164,9 +190,18 @@ export class NPCGameBridge {
                 return result;
             }
         } catch (error) {
+            // A second step the player closed, or that was denied or timed out: not a failure to
+            // report. A denial or an expiry gets the reject tone and "Not approved." once, here (the
+            // callers below show nothing); the player's own X gets nothing (S8c)
+            if (error?.body?.reason === 'second_step_cancelled') {
+                try { window.lockStep?.cancelFeedback?.(error); } catch (e) { /* feedback must not break the door */ }
+                const result = { success: false, secondStepCancelled: true, roomId, npcId };
+                this._logAction('unlockDoor', { roomId, npcId }, result);
+                return result;
+            }
             console.error('Error calling server for NPC unlock:', error);
-            const result = { 
-                success: false, 
+            const result = {
+                success: false,
                 error: error.message,
                 roomId,
                 npcId
@@ -183,23 +218,7 @@ export class NPCGameBridge {
      * @private
      */
     _findAllDoorSpritesForRoom(roomId) {
-        if (!window.rooms) return [];
-
-        const doors = [];
-        
-        // Iterate through all rooms to find doors leading to the target room
-        Object.keys(window.rooms).forEach(sourceRoomId => {
-            const room = window.rooms[sourceRoomId];
-            if (room.doorSprites && Array.isArray(room.doorSprites)) {
-                const matchingDoors = room.doorSprites.filter(doorSprite =>
-                    doorSprite.doorProperties &&
-                    doorSprite.doorProperties.connectedRoom === roomId
-                );
-                doors.push(...matchingDoors);
-            }
-        });
-
-        return doors;
+        return findAllDoorSpritesForRoom(roomId);
     }
 
   /**

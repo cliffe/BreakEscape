@@ -48,6 +48,29 @@
           "status": "active"
         }
       ]
+    },
+    {
+      "aimId": "red_team_drop_aim",
+      "title": "Try the red-team drop",
+      "description": "Nilesh's test: leave the red stick somewhere people stop, and see who picks it up.",
+      "status": "locked",
+      "order": 1,
+      "tasks": [
+        {
+          "taskId": "drop_the_stick",
+          "title": "Leave the red-team stick where someone will find it",
+          "type": "custom",
+          "status": "locked",
+          "optional": true
+        },
+        {
+          "taskId": "watch_who_finds_it",
+          "title": "Watch who picks it up",
+          "type": "custom",
+          "status": "locked",
+          "optional": true
+        }
+      ]
     }
   ],
   "globalVariables": {
@@ -75,7 +98,15 @@
     "kit_ca15_done": false,
     "kit_ca15_stick_choice": "",
     "kit_ca15_host_said": false,
-    "kit_key_caught": false
+    "kit_key_caught": false,
+    "ca15_drop_offered": false,
+    "ca15_drop_given": false,
+    "ca15_drop_dropped": false,
+    "ca15_drop_found": false,
+    "ca15_drop_used": false,
+    "ca15_drop_timeout": false,
+    "ca15_drop_nudge": false,
+    "ca15_drop_done": false
   },
   "chatter": {
     "kit_tarrowby": {
@@ -144,6 +175,52 @@
       "setGlobal": {
         "kit_ca15_done": true
       }
+    },
+    {
+      "id": "ca15_drop_t_found",
+      "startOnGlobal": "ca15_drop_dropped",
+      "delayMs": 90000,
+      "condition": "!globalVars.ca15_drop_found && !globalVars.ca15_drop_done",
+      "setGlobal": {
+        "ca15_drop_timeout": true,
+        "ca15_drop_done": true
+      }
+    },
+    {
+      "id": "ca15_drop_t_used",
+      "startOnGlobal": "ca15_drop_found",
+      "delayMs": 30000,
+      "condition": "!globalVars.ca15_drop_used && !globalVars.ca15_drop_done",
+      "setGlobal": {
+        "ca15_drop_done": true
+      }
+    },
+    {
+      "id": "ca15_drop_t_nudge",
+      "startOnGlobal": "ca15_drop_given",
+      "delayMs": 60000,
+      "condition": "!globalVars.ca15_drop_dropped && !globalVars.ca15_drop_done",
+      "setGlobal": {
+        "ca15_drop_nudge": true
+      }
+    },
+    {
+      "id": "ca15_drop_t_note",
+      "startOnGlobal": "ca15_drop_used",
+      "delayMs": 300,
+      "actions": [
+        {
+          "type": "give_item",
+          "item": {
+            "type": "text_file",
+            "id": "ca15_session_note",
+            "name": "Session note: TL-OPS-04",
+            "takeable": true,
+            "readable": true,
+            "text": "Session note: TL-OPS-04. She opened a file to find the owner, and our tracker reported home. A real stick would have run its payload right there."
+          }
+        }
+      ]
     }
   ],
   "social": {
@@ -572,6 +649,9 @@
       },
       "strings": {
         "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
+        "worldBeatHeading": "One from the red-team kit",
+        "worldBeat": "Nilesh has something for you. Look up from the kiosk; your place is saved.",
+        "worldBeatWaiting": "Still out there. Carry on whenever you like.",
         "weakestTells": "The risks most often missed: {names} ({counts} each).",
         "weakestTell": "The risk most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the inbox is scored.",
@@ -693,7 +773,28 @@
           "launchButton": "Open the Swap Shop"
         }
       },
-      "stepAway": true
+      "stepAways": [
+        {
+          "id": "red_stick",
+          "after": "mistake",
+          "event": "episode_world_beat",
+          "readyGlobal": null,
+          "doneGlobal": "ca15_drop_done",
+          "pickedKey": "worldBeatPicked",
+          "strings": "worldBeat",
+          "facilitated": false,
+          "resumeOnDone": true
+        },
+        {
+          "id": "found_stick",
+          "after": "defend",
+          "event": "episode_step_away",
+          "readyGlobal": "kit_defend_done",
+          "doneGlobal": null,
+          "pickedKey": "stepAwayPicked",
+          "strings": "stepAway"
+        }
+      ]
     },
     "awareness": {
       "ruleOfThumb": {
@@ -752,7 +853,9 @@
           }
         ]
       },
-      "connections": {},
+      "connections": {
+        "east": "open_plan"
+      },
       "npcs": [
         {
           "id": "nilesh_solanki",
@@ -772,6 +875,20 @@
           "spriteVisemes": "assets/characters/nilesh_solanki_visemes.png",
           "storyPath": "scenarios/ca15_shadow_it/ink/nilesh_solanki.json",
           "currentKnot": "start",
+          "itemsHeld": [
+            {
+              "type": "usb_storage_swivel",
+              "id": "ca15_red_stick",
+              "name": "Red-team stick",
+              "sprite": "usb_storage_swivel",
+              "takeable": true,
+              "interactable": true,
+              "active": true,
+              "droppable": true,
+              "needsTag": "tag_ca15_stick",
+              "observations": "No label, no note. Leave it where staff stop for a minute."
+            }
+          ],
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:episode_e15_shadow_it_defend_complete",
@@ -883,6 +1000,87 @@
               "setGlobal": {
                 "kit_ca15_done": true
               }
+            },
+            {
+              "eventPattern": "episode_world_beat",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca15_drop_offered": true
+              },
+              "conversationMode": "person-chat",
+              "targetKnot": "red_stick"
+            },
+            {
+              "eventPattern": "conversation_closed:nilesh_solanki",
+              "condition": "globalVars.ca15_drop_given && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.4,
+                  "y": 3.2
+                },
+                "speed": 80
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:nilesh_solanki",
+              "condition": "globalVars.ca15_drop_given && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "delayMs": 7000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 3.8
+                },
+                "speed": 80
+              }
+            },
+            {
+              "eventPattern": "item_dropped:ca15_red_stick",
+              "condition": "data.roomId === \"open_plan\" && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca15_drop_dropped": true
+              },
+              "completeTask": "drop_the_stick"
+            },
+            {
+              "eventPattern": "item_dropped:ca15_red_stick",
+              "condition": "data.roomId === \"training_room\" && !globalVars.ca15_drop_done",
+              "cooldown": 20000,
+              "bark": "Not in here. Try next door."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_timeout",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "Nobody bit. Corners don't get found."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_nudge",
+              "condition": "value === true && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "bark": "Next door. Somewhere people stop for a minute."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_given",
+              "condition": "value === true && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "unlockAim": "red_team_drop_aim",
+              "unlockTask": [
+                "drop_the_stick",
+                "watch_who_finds_it"
+              ]
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_done",
+              "condition": "value === true && globalVars.ca15_drop_given && !globalVars.ca15_drop_used",
+              "onceOnly": true,
+              "skipTask": [
+                "drop_the_stick",
+                "watch_who_finds_it"
+              ]
             }
           ]
         },
@@ -1319,6 +1517,234 @@
               "value": "Lost property. A memory stick has gone in with the rest, waiting for its owner."
             }
           ]
+        }
+      ]
+    },
+    "open_plan": {
+      "type": "room_lw_accounts",
+      "door_sign": "Open-Plan Office",
+      "connections": {
+        "west": "training_room"
+      },
+      "npcs": [
+        {
+          "id": "ca15_joanne_pell",
+          "voice": {
+            "name": "Zephyr",
+            "style": "Tarrowby's operations coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "displayName": "Joanne Pell",
+          "npcType": "person",
+          "position": {
+            "x": 5.75,
+            "y": 5.2
+          },
+          "spriteSheet": "joanne_pell",
+          "spriteTalk": "assets/characters/joanne_pell_talk.png",
+          "spriteVisemes": "assets/characters/joanne_pell_visemes.png",
+          "needsHome": "ca15_ops_pc",
+          "needsRooms": [
+            "open_plan"
+          ],
+          "needsSpeed": 100,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 70
+            },
+            "thirst": {
+              "decayPerMin": 12,
+              "urgentAt": 50,
+              "initial": 95
+            }
+          },
+          "interests": {
+            "tag_ca15_stick": {
+              "weight": 3,
+              "noticeRooms": [
+                "open_plan"
+              ],
+              "noticeRadius": 3
+            }
+          },
+          "chatter": {
+            "ca15_kettle": {
+              "lines": [
+                "Kettle's on, want one?",
+                "Who's nicked the big mug?"
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_picked_up:ca15_red_stick",
+              "condition": "!globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "cooldown": 0,
+              "setGlobal": {
+                "ca15_drop_found": true
+              },
+              "bark": "Someone's dropped a memory stick. Whose is this?"
+            },
+            {
+              "eventPattern": "npc_used:ca15_ops_pc",
+              "condition": "data.tag === \"tag_ca15_stick\" && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "cooldown": 0,
+              "setGlobal": {
+                "ca15_drop_used": true,
+                "ca15_drop_done": true
+              },
+              "completeTask": "watch_who_finds_it"
+            },
+            {
+              "eventPattern": "npc_use_started:ca15_ops_pc",
+              "condition": "data.npcId === \"ca15_joanne_pell\" && globalVars.ca15_drop_found && !globalVars.ca15_drop_used && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "cooldown": 0,
+              "bark": "I'll just plug it in and see whose it is."
+            }
+          ]
+        },
+        {
+          "id": "ca15_niamh_doherty",
+          "voice": {
+            "name": "Leda",
+            "style": "Tarrowby's operations assistant, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "displayName": "Niamh Doherty",
+          "npcType": "person",
+          "position": {
+            "x": 2,
+            "y": 8.1
+          },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "needsHome": "ca15_desk_pc_2",
+          "needsRooms": [
+            "open_plan"
+          ],
+          "needsSpeed": 95,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 85
+            }
+          },
+          "chatter": {
+            "ca15_kettle": {
+              "lines": [
+                "Printer's jammed again.",
+                "Is the Shipley run late again?"
+              ]
+            }
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ca15_ops_pc",
+          "name": "Joanne's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5.75,
+            "y": 3.5
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Joanne's workstation in ops. If she plugs a found stick in here, that is the attacker's way in.",
+          "affordance": {
+            "accepts": [
+              "tag_ca15_stick"
+            ],
+            "useSeconds": 6,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.5
+            }
+          }
+        },
+        {
+          "type": "pc",
+          "id": "ca15_desk_pc_2",
+          "name": "Niamh's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 2,
+            "y": 6.5
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Niamh's workstation, a comms draft open on the screen.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 8,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.5
+            }
+          }
+        },
+        {
+          "type": "coffee_station",
+          "id": "ca15_kettle",
+          "name": "Kettle and mugs",
+          "sprite": "coffee_station1",
+          "position": {
+            "x": 14,
+            "y": 7
+          },
+          "takeable": false,
+          "interactable": false,
+          "observations": "The ops kettle, a tray of mugs and a jar of teabags. Someone is always waiting on it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 15,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "ca15_kettle"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "ca15_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "position": {
+            "x": 9.5,
+            "y": 7
+          },
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 12,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2,
+            "chatter": "ca15_kettle"
+          }
         }
       ]
     }

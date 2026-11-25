@@ -1,0 +1,75 @@
+# Per-machine cleanup settings for tools/wt-clean.sh, tools/disk-clean.sh and
+# tools/safe-rm.sh. Copy to ~/.config/break-escape/clean.conf (outside every
+# checkout, so every worktree and cron see the same file; first choice) or to
+# tools/clean.local.conf in the main checkout (git-ignored) and edit; or set
+# CLEAN_CONF=/path/to/file; or override any key
+# with an environment variable of the same name. Sourced as shell. Lists are
+# space separated. Leaving a key out keeps the default shown here, which is safe
+# on any machine. Numbers must be whole numbers; 0 is refused for ages, days and
+# keep-newest unless CLEAN_ALLOW_ZERO=1. Roots and the keep list take no globs and
+# no spaces; a root may not be or contain /, $HOME, the checkout or a worktree.
+# $CHECKOUT is the main checkout, found from git.
+# If both ~/.config/break-escape/clean.conf and tools/clean.local.conf exist, the
+# ~/.config one wins and the other is ignored.
+# Roots must be absolute and may not be, contain or lie inside: /, $HOME (so not
+# ~/.claude, ~/.config or ~/.ssh), /root or another user's home, the checkout, any worktree, any
+# other git checkout (a .git in or above the root or in a direct child), the real
+# target of a symlink in $HOME or CLEAN_SYMLINK_DIRS, a CLEAN_PROTECT_EXTRA path,
+# or anything under /tmp/claude-* (other sessions' scratch). A root may not be or
+# contain /tmp, /var/tmp or /home, but may lie inside them. A checkout anywhere
+# within 4 levels inside a root also keeps that folder. The only exception is
+# this session's scratchpad: set CLEAN_OWN_SCRATCH=/tmp/claude-*/<project>/<session>/scratchpad
+# and list that folder (or one inside it) as a root. CLEAN_TRAIN_GLOB needs at
+# least 3 literal characters before any glob character.
+# Everything runs under LC_ALL=C, so only ASCII digits count as numbers.
+
+# Branch a worktree's HEAD must be in before it may be removed.
+#CLEAN_MAIN_BRANCH=main
+# Where worktrees live (globs; a match may be a symlink to the worktree).
+#CLEAN_WORKTREE_GLOBS="$CHECKOUT/.claude/worktrees/*"
+# Worktree names never removed (basename of the worktree or of a link to it).
+#CLEAN_KEEP="p-9-2-h p-train36-live"
+# A worktree's HEAD must not have moved for this many hours.
+#CLEAN_WT_MIN_AGE_HOURS=3
+# Folders holding symlinks to worktrees; a link left dangling by a removal goes too.
+#CLEAN_SYMLINK_DIRS=
+
+# Categories disk-clean runs when --category is not given.
+#CLEAN_CATEGORIES="worktrees logs"
+# Test logs over this size are trimmed to their last CLEAN_LOG_KEEP_MB (never
+# deleted) once idle, in worktrees no process is working in.
+#CLEAN_LOG_MAX_MB=200
+#CLEAN_LOG_KEEP_MB=10
+#CLEAN_LOG_IDLE_MIN=15
+# Train output: folders matching the glob in these roots, older than N days,
+# always keeping the newest K.
+#CLEAN_TRAIN_ROOTS=
+#CLEAN_TRAIN_GLOB="train[0-9]*"
+#CLEAN_TRAIN_DAYS=2
+#CLEAN_TRAIN_KEEP_NEWEST=2
+# Bulk scratch: anything in these roots untouched for N days.
+#CLEAN_SCRATCH_ROOTS=
+#CLEAN_SCRATCH_DAYS=3
+# mktemp folders (name-XXXXXX) in these roots untouched for N days.
+#CLEAN_TMPDIR_ROOTS=
+#CLEAN_TMPDIR_DAYS=2
+# Extra paths no root may be, contain or lie inside (space separated).
+#CLEAN_PROTECT_EXTRA=
+# CLEAN_OWN_SCRATCH is read from the environment only (a value here is ignored), so
+# it never ends up in a shared settings file. Locale settings here are ignored too.
+#CLEAN_OWN_SCRATCH=
+# Extra roots safe-rm may delete inside (it also accepts the roots above).
+#CLEAN_RM_ROOTS=
+# disk-clean --if-low acts only when a covered volume is at least this full (%).
+#CLEAN_LOW_PCT=90
+
+# Example: a machine with worktrees on a data volume as /data/be-*, linked from $HOME.
+#CLEAN_WORKTREE_GLOBS="/data/be-*"
+# Every long-lived lane goes on the keep list; `touch <worktree>/tmp/in-use` also
+# protects a worktree for 24 hours.
+#CLEAN_KEEP="be-ops-build be-ops-core be-ops-follow be-ops-logs be-ops-skin"
+#CLEAN_SYMLINK_DIRS="$HOME"
+#CLEAN_CATEGORIES="worktrees logs leftovers train scratch tmpdirs"
+#CLEAN_TRAIN_ROOTS=/data/tmp
+#CLEAN_SCRATCH_ROOTS=/data/tmp/scratch
+#CLEAN_TMPDIR_ROOTS=/data/tmp

@@ -1,0 +1,10 @@
+[head|Module: ]training/filehold/release_line
+[head|Title: ]Storage release line reported old
+[head|Target: ]files01 (10.20.0.10), port 445, filehold
+[head|References:]
+  TRN-0000-0111
+  TRN-0000-0112
+[head|Finding: ]f2
+[head|Status: ]Unconfirmed
+[head|Risk: ]Out of date High
+[head|Summary: ]The service reports an older build number.

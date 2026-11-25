@@ -1,0 +1,15 @@
+{
+ "scenario": "ca01_invoice_fraud_defend",
+ "lists": {
+  "host": [
+   {"k": null, "h": "6b6d9a99"},
+   {"k": "quiet_on", "h": "8fcb0e38"},
+   {"k": "defend_done", "h": "3aaa83b7"},
+   {"k": "caught", "h": "0acccba7"},
+   {"k": "quiet_off_debrief", "h": "8dfbe341"}
+  ],
+  "npc:kit_gwen_pritchard": [
+   {"k": "chg_defend_done_knot_ca01_react", "h": "5081e55b"}
+  ]
+ }
+}

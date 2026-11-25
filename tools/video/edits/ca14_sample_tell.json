@@ -1,0 +1,146 @@
+{
+ "mission": "ca14",
+ "kind": "preview",
+ "theme": "ca",
+ "fps": 30,
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "beat": {
+  "bpm": 91.62,
+  "period": 0.6549,
+  "offset": 0
+ },
+ "id": "ca14_sample_tell",
+ "title": "ca14 sample C: spot the tell 9:16",
+ "sample": "C spot the tell",
+ "length": 15.0,
+ "music": {
+  "track": "PeaceFolk/Gently Decaying Again.mp3",
+  "analysis": "gently_decaying_again_75.json",
+  "start": 102.341,
+  "length": 15.0,
+  "gain_db": -12,
+  "fade_in": 0.5,
+  "fade_out": 2.0,
+  "alternatives": [
+   "gain_db is relative; the final -14 LUFS normalise lifts the whole mix, so only the absence of voice makes it a quiet bed"
+  ]
+ },
+ "vo": [
+  {
+   "id": "q",
+   "start": 4.3,
+   "end": 9.2,
+   "text": "What gives it away?",
+   "caption": "What gives\nit away?"
+  }
+ ],
+ "shots": [
+  {
+   "id": "inbox",
+   "type": "gameplay",
+   "duration": 5.72,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_risky_card_narrow.trimmed.mkv",
+    "in": 5.15,
+    "out": 10.87
+   },
+   "audio": {
+    "gain_db": -60
+   },
+   "seat": "full",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.0
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": false,
+    "1:1": false
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "SAMPLE C: t11 retake marks: list-up 5.15 to tell-visible 7.86, live through tell-hold-end 10.86 (card on screen from 7.67). Opens Jordan Vale's fake-recruiter DM; tell is the account note and the systems request. Trust/Report/Delete shown, none pressed, no verdict."
+   }
+  },
+  {
+   "id": "inbox_hold",
+   "type": "gameplay",
+   "duration": 3.48,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_risky_card_narrow.trimmed.mkv",
+    "in": 7.86,
+    "out": 11.34
+   },
+   "freezeAt": 7.86,
+   "audio": {
+    "gain_db": -60
+   },
+   "seat": "full",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.0
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": false,
+    "1:1": false
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "SAMPLE C: frozen at t11 tell-visible 7.86 (card static to tell-hold-end 10.86); live from 5.15 to 10.87, then the freeze holds 3.48 s so the two shots keep the 9.2 s sequence. Frozen frame of the risky card"
+   }
+  },
+  {
+   "id": "plate",
+   "type": "card",
+   "style": "ca",
+   "duration": 5.8,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "Play to find out"
+   ],
+   "body": [
+    "Social media and oversharing"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "End plate text only; no answer or debrief"
+   }
+  }
+ ]
+}

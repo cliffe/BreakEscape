@@ -563,6 +563,8 @@ module BreakEscape
         npc = account_npcs.find { |n| n['id'].to_s == session['account'].to_s }
         level = session['access']
         return nil unless record[:kind] == 'pc' && npc && %w[user admin].include?(level)
+        # The PC must admit the account as its own sign-in would (kind first, then the access list).
+        return nil unless CredentialModel.pc_admits_account?(record[:object], npc)
 
         return { kind: 'session', npc: npc, access: level }
       end

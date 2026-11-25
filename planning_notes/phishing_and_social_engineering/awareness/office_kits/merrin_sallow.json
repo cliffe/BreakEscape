@@ -150,6 +150,7 @@
         "julian_sallow": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca04_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -166,6 +167,7 @@
         "delphine_arvanitis": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca14_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -182,6 +184,7 @@
         "delphine_arvanitis": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca18_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -338,18 +341,21 @@
           "currentKnot": "start",
           "eventMappings": [
             {
+              "_kitKey": "chg_ca12_out",
               "eventPattern": "global_variable_changed:kit_ca12_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca12_visitor_go",
               "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
               "condition": "value === true && globalVars.kit_ca12_out === true",
               "onceOnly": true,
               "setVisible": true
             },
             {
+              "_kitKey": "chg_ca12_visitor_go_2",
               "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
               "condition": "value === true && globalVars.kit_ca12_out === true",
               "onceOnly": true,
@@ -363,6 +369,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_camila_ospina_sets_ca12_visitor_there",
               "eventPattern": "npc_arrived:kit_camila_ospina",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_visitor_go === true",
               "onceOnly": true,
@@ -371,6 +378,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_visitor_there_knot_ca12_door",
               "eventPattern": "global_variable_changed:kit_ca12_visitor_there",
               "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true && globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done",
               "onceOnly": true,
@@ -378,6 +386,7 @@
               "targetKnot": "ca12_door"
             },
             {
+              "_kitKey": "conversation_closed_camila_ospina_sets_ca12_door_choice",
               "eventPattern": "conversation_closed:kit_camila_ospina",
               "condition": "globalVars.kit_ca12_door_choice === 'asked' && globalVars.kit_ca12_out === true",
               "onceOnly": true,
@@ -386,6 +395,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_door_choice",
               "eventPattern": "global_variable_changed:kit_ca12_door_choice",
               "condition": "value === 'reception' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
@@ -399,6 +409,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_camila_ospina_sets_ca12_done",
               "eventPattern": "npc_arrived:kit_camila_ospina",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'reception'",
               "onceOnly": true,
@@ -408,6 +419,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_door_choice_2",
               "eventPattern": "global_variable_changed:kit_ca12_door_choice",
               "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
@@ -421,6 +433,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_camila_ospina_sets_ca12_at_desks",
               "eventPattern": "npc_arrived:kit_camila_ospina",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
               "onceOnly": true,
@@ -429,6 +442,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_host_there_sets_ca12_visitor_leaving",
               "eventPattern": "global_variable_changed:kit_ca12_host_there",
               "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
               "onceOnly": true,
@@ -445,6 +459,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_at_desks_sets_ca12_visitor_leaving",
               "eventPattern": "global_variable_changed:kit_ca12_at_desks",
               "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
               "onceOnly": true,
@@ -461,6 +476,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_camila_ospina_sets_ca12_done_2",
               "eventPattern": "npc_arrived:kit_camila_ospina",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true",
               "onceOnly": true,
@@ -470,12 +486,14 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_camila_ospina",
               "_comment": "Retired 2026-11-20: V11r (re-walk after an early door arrival) is no longer needed now the engine no longer emits npc_arrived at an avoidance sidestep. Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_arrived:kit_camila_ospina",
               "condition": "data.retired_2026_11_20 === true && data.owner !== 'needs' && globalVars.kit_ca12_out === true",
               "onceOnly": true
             },
             {
+              "_kitKey": "chg_ca12_door_choice_3",
               "eventPattern": "global_variable_changed:kit_ca12_door_choice",
               "condition": "value === 'silent' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
@@ -489,6 +507,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_camila_ospina_sets_ca12_done_3",
               "eventPattern": "npc_arrived:kit_camila_ospina",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'silent'",
               "onceOnly": true,
@@ -498,12 +517,14 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_done",
               "eventPattern": "global_variable_changed:kit_ca12_done",
               "condition": "value === true",
               "onceOnly": true,
               "setVisible": false
             },
             {
+              "_kitKey": "chg_ca12_done_2",
               "eventPattern": "global_variable_changed:kit_ca12_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -514,6 +535,7 @@
       ],
       "mappings": [
         {
+          "_kitKey": "chg_ca12_door_choice",
           "eventPattern": "global_variable_changed:kit_ca12_door_choice",
           "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
           "onceOnly": true,
@@ -527,6 +549,7 @@
           }
         },
         {
+          "_kitKey": "npc_arrived_lorna_easton_sets_ca12_host_there",
           "eventPattern": "npc_arrived:lorna_easton",
           "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && !globalVars.kit_ca12_done",
           "onceOnly": true,
@@ -535,6 +558,7 @@
           }
         },
         {
+          "_kitKey": "chg_ca12_host_there",
           "eventPattern": "global_variable_changed:kit_ca12_host_there",
           "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
           "onceOnly": true,
@@ -548,6 +572,7 @@
           }
         },
         {
+          "_kitKey": "chg_ca12_at_desks",
           "eventPattern": "global_variable_changed:kit_ca12_at_desks",
           "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
           "onceOnly": true,
@@ -561,6 +586,7 @@
           }
         },
         {
+          "_kitKey": "chg_ca12_done",
           "eventPattern": "global_variable_changed:kit_ca12_done",
           "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
           "onceOnly": true,
@@ -573,6 +599,7 @@
           }
         },
         {
+          "_kitKey": "object_interacted_sets_ca12_screen_seen",
           "eventPattern": "object_interacted",
           "condition": "data.objectName === \"Thandiwe's workstation\" && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
           "onceOnly": true,
@@ -597,6 +624,7 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_ca12_out",
               "eventPattern": "global_variable_changed:kit_ca12_out",
               "condition": "value === true",
               "onceOnly": true,
@@ -608,6 +636,7 @@
               }
             },
             {
+              "_kitKey": "workstation_owner_returned_ca12_pc_sets_ca12_sat",
               "eventPattern": "workstation_owner_returned:kit_ca12_pc",
               "condition": "globalVars.kit_ca12_out === true",
               "onceOnly": true,
@@ -616,6 +645,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_sat_sets_ca12_screen_asked",
               "eventPattern": "global_variable_changed:kit_ca12_sat",
               "condition": "value === true && globalVars.kit_ca12_out === true",
               "onceOnly": true,
@@ -624,6 +654,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_sat_knot_ca12_screen",
               "eventPattern": "global_variable_changed:kit_ca12_sat",
               "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -631,6 +662,7 @@
               "targetKnot": "ca12_screen"
             },
             {
+              "_kitKey": "conversation_closed_thandiwe_moyo_sets_ca12_screen_done",
               "eventPattern": "conversation_closed:kit_thandiwe_moyo",
               "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_asked === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
@@ -639,6 +671,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_screen_done_sets_ca12_visitor_go",
               "eventPattern": "global_variable_changed:kit_ca12_screen_done",
               "condition": "value === true && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
@@ -648,6 +681,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_out_2",
               "eventPattern": "global_variable_changed:kit_ca12_out",
               "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -659,12 +693,14 @@
         "julian_sallow": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca12_out",
               "eventPattern": "global_variable_changed:kit_ca12_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca12_out_2",
               "eventPattern": "global_variable_changed:kit_ca12_out",
               "condition": "value === true",
               "onceOnly": true,
@@ -678,6 +714,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca12_done",
               "eventPattern": "global_variable_changed:kit_ca12_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -758,6 +795,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -912,6 +950,7 @@
       ],
       "mappings": [
         {
+          "_kitKey": "object_interacted_sets_ca14_seen",
           "eventPattern": "object_interacted",
           "condition": "data.objectName === \"Lorna's PC\" && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
           "onceOnly": true,
@@ -920,6 +959,7 @@
           }
         },
         {
+          "_kitKey": "object_interacted_sets_ca14_seen_2",
           "eventPattern": "object_interacted",
           "condition": "data.objectName === \"Project board\" && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
           "onceOnly": true,
@@ -942,12 +982,14 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_out_2",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
@@ -961,6 +1003,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca14_photo_choice",
               "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca14_done",
               "onceOnly": true,
@@ -968,18 +1011,21 @@
               "bark": "Odd. Catherine's got a new account. It's just liked Lorna's photo and asked to connect with me."
             },
             {
+              "_kitKey": "chg_ca14_done",
               "eventPattern": "global_variable_changed:kit_ca14_done",
               "condition": "value === true && globalVars.kit_ca14_out === true",
               "onceOnly": true,
               "needs": "resume"
             },
             {
+              "_kitKey": "chg_ca14_seen",
               "eventPattern": "global_variable_changed:kit_ca14_seen",
               "condition": "value === true && globalVars.kit_ca14_closed_unseen === true",
               "onceOnly": true,
               "completeTask": "look_at_team_photo"
             },
             {
+              "_kitKey": "chg_ca14_done_2",
               "eventPattern": "global_variable_changed:kit_ca14_done",
               "condition": "value === true && globalVars.kit_ca14_closed_unseen === true && globalVars.kit_ca14_seen !== true",
               "onceOnly": true,
@@ -1002,6 +1048,7 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_out_sets_ca14_there",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca14_out === true",
               "onceOnly": true,
@@ -1011,6 +1058,7 @@
               }
             },
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1018,6 +1066,7 @@
               "bark": "Got a lovely one of the team for the studio page."
             },
             {
+              "_kitKey": "chg_ca14_there_knot_ca14_photo",
               "eventPattern": "global_variable_changed:kit_ca14_there",
               "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && globalVars.kit_ca14_photo_choice === ''",
               "onceOnly": true,
@@ -1026,6 +1075,7 @@
               "targetKnot": "ca14_photo"
             },
             {
+              "_kitKey": "chg_ca14_there_sets_ca14_asked",
               "eventPattern": "global_variable_changed:kit_ca14_there",
               "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1035,6 +1085,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_lorna_easton_sets_ca14_photo_choice",
               "eventPattern": "conversation_closed:kit_lorna_easton",
               "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_out === true && globalVars.kit_ca14_seen === true",
               "onceOnly": true,
@@ -1043,6 +1094,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca14_photo_choice_sets_ca14_moved",
               "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
               "onceOnly": true,
@@ -1052,6 +1104,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca14_photo_choice_sets_ca14_done",
               "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
               "condition": "value === 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
               "onceOnly": true,
@@ -1061,6 +1114,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca14_moved_sets_ca14_done",
               "eventPattern": "global_variable_changed:kit_ca14_moved",
               "condition": "value === true && globalVars.kit_ca14_out === true",
               "onceOnly": true,
@@ -1070,6 +1124,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca14_done_sets_ca14_photo_choice",
               "eventPattern": "global_variable_changed:kit_ca14_done",
               "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_ca14_photo_choice === 'asked'",
               "onceOnly": true,
@@ -1078,6 +1133,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_lorna_easton_sets_ca14_closed_unseen",
               "eventPattern": "conversation_closed:kit_lorna_easton",
               "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_out === true && globalVars.kit_ca14_seen !== true",
               "onceOnly": true,
@@ -1199,6 +1255,7 @@
       ],
       "mappings": [
         {
+          "_kitKey": "chg_ca18_reset_choice",
           "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
           "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca18_done",
           "onceOnly": true,
@@ -1220,12 +1277,14 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_out_2",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
@@ -1239,6 +1298,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca18_done",
               "eventPattern": "global_variable_changed:kit_ca18_done",
               "condition": "value === true && globalVars.kit_ca18_out === true",
               "onceOnly": true,
@@ -1261,6 +1321,7 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_out_sets_ca18_there",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca18_out === true",
               "onceOnly": true,
@@ -1270,6 +1331,7 @@
               }
             },
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1277,6 +1339,7 @@
               "bark": "Fenlow have made me reset my password after this morning."
             },
             {
+              "_kitKey": "chg_ca18_there_knot_ca18_reset",
               "eventPattern": "global_variable_changed:kit_ca18_there",
               "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && globalVars.kit_ca18_reset_choice === ''",
               "onceOnly": true,
@@ -1285,6 +1348,7 @@
               "targetKnot": "ca18_reset"
             },
             {
+              "_kitKey": "chg_ca18_there_sets_ca18_asked",
               "eventPattern": "global_variable_changed:kit_ca18_there",
               "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1294,6 +1358,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_lorna_easton_sets_ca18_reset_choice",
               "eventPattern": "conversation_closed:kit_lorna_easton",
               "condition": "globalVars.kit_ca18_reset_choice === 'asked' && globalVars.kit_ca18_out === true",
               "onceOnly": true,
@@ -1302,6 +1367,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca18_reset_choice_sets_ca18_moved",
               "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
               "onceOnly": true,
@@ -1311,6 +1377,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca18_reset_choice_sets_ca18_done",
               "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
               "condition": "value === 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
               "onceOnly": true,
@@ -1320,6 +1387,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca18_moved_sets_ca18_done",
               "eventPattern": "global_variable_changed:kit_ca18_moved",
               "condition": "value === true && globalVars.kit_ca18_out === true",
               "onceOnly": true,
@@ -1329,6 +1397,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca18_done_sets_ca18_reset_choice",
               "eventPattern": "global_variable_changed:kit_ca18_done",
               "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_ca18_reset_choice === 'asked'",
               "onceOnly": true,

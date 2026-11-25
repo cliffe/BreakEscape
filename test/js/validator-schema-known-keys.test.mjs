@@ -126,7 +126,10 @@ test('timer actions of every action type give no unknown-key warning, and roomId
 // Validator opt-outs: the schema declares them for the validator only ("Validator opt-out, no effect
 // in the game"; "The onceOnly overlap check reads these"), and scenarios use them on purpose. They are
 // exempt like puzzle_graph_* author metadata and must not be retired.
-const VALIDATOR_ONLY = ['fireOnlyWhenLoaded', 'mutuallyExclusiveGlobals'];
+const VALIDATOR_ONLY = ['fireOnlyWhenLoaded', 'mutuallyExclusiveGlobals',
+  // E3 step-away strings: episode-runner-minigame.js reads them as `${prefix}Waiting`, `${prefix}ReadyWait`
+  // and `${prefix}Heading` (the prefix is a beat's `strings`), so the literal key never appears.
+  'stepAwayWaiting', 'stepAwayReadyWait', 'worldBeat', 'worldBeatHeading', 'worldBeatWaiting', 'worldBeatReadyWait'];
 
 // Keys the schema declares that nothing reads (no engine, server or tools source names them).
 // Slice 2 of the schema cleanup retires or explains each; remove an entry once it has a reader or

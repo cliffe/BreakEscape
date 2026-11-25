@@ -1,0 +1,36 @@
+{
+ "scenario": "ca06_texts_and_qr",
+ "lists": {
+  "host": [
+   {"k": null, "h": "efc2923b"},
+   {"k": null, "h": "9f483270"},
+   {"k": "quiet_on", "h": "94c44ab2"},
+   {"k": "attack_done", "h": "6b6c5c51"},
+   {"k": "defend_done", "h": "5c586e8a"},
+   {"k": "caught", "h": "f99d5552"},
+   {"k": "quiet_off_debrief", "h": "3b7ca549"},
+   {"k": "quiet_off_debrief_seen", "h": "3295c5d3"},
+   {"k": "step_away", "h": "154551d0"}
+  ],
+  "npc:kit_fatima_begum": [
+   {"k": "chg_ca06_out", "h": "d48158c5"},
+   {"k": "chg_ca06_done", "h": "8a03ea33"}
+  ],
+  "npc:kit_zainab_hussain": [
+   {"k": "chg_ca06_out", "h": "d48158c5"},
+   {"k": "chg_ca06_out_2", "h": "89b1a7df"},
+   {"k": "chg_ca06_out_3", "h": "e6bf1556"},
+   {"k": "npc_arrived_zainab_hussain_sets_ca06_there", "h": "ea9339ae"},
+   {"k": "chg_ca06_there_knot_ca06_notice", "h": "a5fbcd3a"},
+   {"k": "chg_ca06_there_sets_ca06_asked", "h": "ec4fb93c"},
+   {"k": "conversation_closed_zainab_hussain_sets_ca06_notice_choice", "h": "775719cd"},
+   {"k": "chg_ca06_notice_choice_sets_ca06_done", "h": "c0b8cdf6"},
+   {"k": "chg_ca06_notice_choice_sets_ca06_done_2", "h": "a32385cb"},
+   {"k": "chg_ca06_done_sets_ca06_notice_choice", "h": "b76514ab"},
+   {"k": "chg_ca06_done", "h": "8a03ea33"},
+   {"k": "chg_ca06_there_knot_ca06_notice~rearm", "h": "6547ea31"},
+   {"k": "chg_ca06_there_sets_ca06_asked~rearm", "h": "4499da25"},
+   {"k": "chg_ca06_there_sets_ca06_asked~rearm_cue", "h": "e3af8088"}
+  ]
+ }
+}

@@ -47,3 +47,11 @@ Not verified: any recording (capture, sync, dropped frames), the sprite (BE_SPRI
 
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Survey: `docs/video/CA_MOVEMENT_B4.md`. Helper `tools/video/takes/lib/camlib.mjs`. **Proposed script written, not yet dry-run.** Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t08_darren_cooler (new, not yet dry-run) | fresh game, `--set kit_quiet=true`; `kit_ca16_out` not set | read his settled post (near (80,224)); `followNpc(kit_darren_price, lerp 0.08)`; `triggerNeed(thirst, 5)`; he walks to the water cooler (use point about (262,219), about 182 px), drinks 20 s, walks back; `followPlayer` | post-set, follow-on, need-set, walk-start, arrive, trip-distance, return-start, back, cam-summary, end | optional office insert before `look_up` (v11) or as a cutaway under `topic` | With `kit_quiet` true his chatter ("Just grabbing some water.") stays off, so the take is silent. After Look up his needs are suspended. Natural trip about 30 s after load: refuse if not near home. Trip length is an estimate from tiles |

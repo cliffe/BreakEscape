@@ -396,6 +396,15 @@ module BreakEscape
       kinds.length == 1 ? kinds.first : nil
     end
 
+    # S5 ruling A: the PC a governed USB port belongs to, from the object's `portOf` (a non-empty
+    # string), else nil. Whether it names a real sign-in PC is the caller's check.
+    def port_pc(obj)
+      return nil unless obj.is_a?(Hash)
+
+      pc = obj['portOf']
+      pc.is_a?(String) && !pc.strip.empty? ? pc : nil
+    end
+
     # The `pc` of the first `grant_foothold` action with `needsSession` in an object's
     # triggerOnInteract, at any depth of confirm_action onConfirm lists, depth-first in list order;
     # nil when there is none. A grant with a `condition` still counts (S5a).

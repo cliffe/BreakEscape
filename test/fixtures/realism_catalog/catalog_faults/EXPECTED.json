@@ -1,0 +1,130 @@
+{
+  "dup_id_across_files": [
+    "duplicate_id",
+    "id"
+  ],
+  "dup_id_in_file": [
+    "duplicate_id_in_file",
+    "(entry)"
+  ],
+  "id_advisory_form": [
+    "advisory_form",
+    "id"
+  ],
+  "id_nickname": [
+    "nickname",
+    "id"
+  ],
+  "index_missing_id": [
+    "index_id_missing",
+    "(entry)"
+  ],
+  "index_form_changed": [
+    "index_form_changed",
+    "form"
+  ],
+  "bad_first_segment": [
+    "first_segment",
+    "module"
+  ],
+  "dup_module": [
+    "duplicate_module",
+    "module"
+  ],
+  "default_form_module": [
+    "default_form",
+    "module"
+  ],
+  "equal_neighbour_segments": [
+    "credential",
+    "module"
+  ],
+  "dotted_quad_output": [
+    "dotted_quad",
+    "output/0"
+  ],
+  "dotted_quad_title": [
+    "dotted_quad",
+    "title"
+  ],
+  "real_product_title": [
+    "real_product_name",
+    "title"
+  ],
+  "telltale_title": [
+    "telltale",
+    "title"
+  ],
+  "telltale_script": [
+    "telltale",
+    "script"
+  ],
+  "url_in_title": [
+    "host",
+    "title"
+  ],
+  "public_domain_in_title": [
+    "host",
+    "title"
+  ],
+  "backslash_in_title": [
+    "backslash",
+    "title"
+  ],
+  "percent_escape_in_title": [
+    "percent_escape",
+    "title"
+  ],
+  "hex_run_in_output": [
+    "encoded_blob",
+    "output/0"
+  ],
+  "base64_in_output": [
+    "encoded_blob",
+    "output/0"
+  ],
+  "equal_sides_in_title": [
+    "credential",
+    "title"
+  ],
+  "bad_advisory_form": [
+    "form",
+    "advisories/0"
+  ],
+  "five_advisories": [
+    "count",
+    "advisories"
+  ],
+  "seven_output_lines": [
+    "count",
+    "output"
+  ],
+  "unknown_key_on_entry": [
+    "unknown_key",
+    "(entry)"
+  ],
+  "unknown_key_on_file": [
+    "unknown_key",
+    "(file)"
+  ],
+  "angle_bracket_in_title": [
+    "angle_bracket",
+    "title"
+  ],
+  "path_in_title": [
+    "path",
+    "title"
+  ],
+  "shell_metacharacter_in_output": [
+    "shell_metacharacter",
+    "output/0"
+  ],
+  "script_mirrors_id": [
+    "script_mirrors_id",
+    "script"
+  ],
+  "index_content_changed": [
+    "index_content_changed",
+    "content"
+  ]
+}

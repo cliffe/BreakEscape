@@ -1,0 +1,9 @@
+{
+  "display_name": "Ops demo: on the network",
+  "description": "A working day at Merrin & Sallow. Plug a drop box in when the hot desk is empty, list and scan what answers, test which weaknesses are real, then read your own trail in the network log.",
+  "difficulty_level": 2,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 15,
+  "test_type": "ops_demo",
+  "test_objective": "Show discovery, scanning, findings, technique cards, the Terminal and Panels views, and the network log, inside office life."
+}

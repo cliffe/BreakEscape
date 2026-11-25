@@ -1,0 +1,23 @@
+{
+ "scenario": "ca11_misdirected_data",
+ "lists": {
+  "host": [
+   {"k": null, "h": "00117af4"},
+   {"k": "quiet_on", "h": "064a4d10"},
+   {"k": "attack_done", "h": "2e520cab"},
+   {"k": "defend_done", "h": "3360de3e"},
+   {"k": "caught", "h": "ec10c5c2"},
+   {"k": "quiet_off_debrief", "h": "7f4a20b3"},
+   {"k": "quiet_off_debrief_seen", "h": "cf8808e6"},
+   {"k": "step_away", "h": "72d4738a"}
+  ],
+  "npc:kit_yusuf_demir": [
+   {"k": "chg_ca11_out", "h": "5b35cf64"},
+   {"k": "chg_ca11_out_2", "h": "15736101"},
+   {"k": "npc_arrived_yusuf_demir_sets_ca11_at_tray", "h": "8e48f73f"},
+   {"k": "chg_ca11_at_tray", "h": "9cd9c686"},
+   {"k": "chg_ca11_at_tray_sets_ca11_done", "h": "c155d9aa"},
+   {"k": "chg_ca11_done", "h": "fb280ec1"}
+  ]
+ }
+}

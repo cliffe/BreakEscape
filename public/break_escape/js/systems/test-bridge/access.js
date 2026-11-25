@@ -237,5 +237,63 @@ export const accessBridge = {
         const views = mod.views;
         if (views instanceof Map) return json(views.get(footholdId)) ?? null;
         return views && typeof views === 'object' ? (json(views[footholdId]) ?? null) : null;
+    },
+
+    /**
+     * S5b (Ops S5bc unit 22): the collect control on the open sign-in desktop
+     * (minigames/container/cached-accounts-panel.js), read from the DOM. `{ shown, enabled, text,
+     * pcId }`; `shown` is false when no panel is mounted (no admin session) or it is hidden.
+     */
+    collectControl() {
+        const root = document.querySelector?.('.cached-accounts') || null;
+        const btn = root?.querySelector?.('#cached-accounts-btn') || null;
+        if (!btn) return { shown: false, enabled: false, text: null, pcId: null };
+        return { shown: !btn.hidden && !root.hidden, enabled: !btn.disabled, text: btn.textContent,
+            pcId: root.dataset?.pcId ?? null };
+    },
+
+    /**
+     * The panel's state: `{ present, pcId, status, note, rows }`; each row `{ hashId, npcId,
+     * name, username, tag, generic, crack }` (`crack` is the Crack button's label or null).
+     * Strings as shown, never any password (the answers carry none).
+     */
+    cachedAccounts() {
+        const root = document.querySelector?.('.cached-accounts') || null;
+        if (!root) return { present: false, pcId: null, status: null, note: null, rows: [] };
+        const text = (el, sel) => el.querySelector(sel)?.textContent ?? null;
+        const list = root.querySelector('.cached-accounts-list');
+        const noteEl = root.querySelector('.cached-accounts-note');
+        const rows = list && !list.hidden
+            ? [...list.querySelectorAll('.cached-account-row')].map(li => ({
+                hashId: li.dataset.hashId ?? null,
+                npcId: li.dataset.npcId ?? null,
+                name: text(li, '.cached-account-name'),
+                username: text(li, '.cached-account-username'),
+                tag: text(li, '.cached-account-tag'),
+                generic: li.querySelector('.cached-account-headshot')?.dataset?.frame === 'generic',
+                crack: text(li, 'button.cached-account-crack')
+            })) : [];
+        return { present: true, pcId: root.dataset?.pcId ?? null,
+            status: text(root, '.cached-accounts-status'),
+            note: noteEl && !noteEl.hidden ? noteEl.textContent : null, rows };
+    },
+
+    /** Clicks the real "Cached accounts" button. `{ ok }` or `{ ok: false, reason }`; sends nothing itself. */
+    clickCollect() {
+        const btn = document.querySelector?.('.cached-accounts #cached-accounts-btn');
+        if (!btn) return { ok: false, reason: 'no-control' };
+        if (btn.disabled) return { ok: false, reason: 'busy' };
+        btn.click();
+        return { ok: true };
+    },
+
+    /** Clicks the real Crack button on the row for `hashId`. */
+    clickCrack(hashId) {
+        const rows = [...(document.querySelectorAll?.('.cached-accounts .cached-account-row') || [])];
+        const li = rows.find(r => r.dataset?.hashId === hashId);
+        const btn = li?.querySelector('button.cached-account-crack');
+        if (!btn) return { ok: false, reason: li ? 'no-crack-button' : 'no-row', hashId };
+        btn.click();
+        return { ok: true, hashId };
     }
 };

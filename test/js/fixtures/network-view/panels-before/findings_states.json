@@ -1,0 +1,66 @@
+{
+  "variant": "findings_states",
+  "mountEvents": [
+    [
+      "network_viewed",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [],
+        "hostList": ""
+      }
+    ],
+    [
+      "network_viewed:lab_net",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [],
+        "hostList": ""
+      }
+    ]
+  ],
+  "controls": [
+    {
+      "index": 0,
+      "key": "check|print01|web",
+      "disabled": false,
+      "record": {
+        "calls": [
+          [
+            "check",
+            "jack_a",
+            {
+              "hostId": "print01",
+              "service": "web"
+            }
+          ]
+        ],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\" data-network-id=\"lab_net\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Devices</li>\n                <li class=\"network-row network-row-host network-row-device network-row-scanned\" data-host-id=\"print01\" data-kind=\"device\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pnw_portable_printer1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">Second floor printer</span></span>\n                        <span class=\"network-row-name\"></span></span>\n                    <span class=\"network-row-control\"></span><ul class=\"network-service-tiles\"><li class=\"network-service network-service-with-findings\" data-service=\"web\"><span class=\"network-service-line\">web · 80 · Brackley PrintPanel 2.0</span><button type=\"button\" class=\"minigame-button network-row-action network-check\" data-action=\"check\" disabled=\"\">Checking...</button><ul class=\"network-findings\"><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f1\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f1</span> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-high\">High</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f1.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f2\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f2</span> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Confirmed</span></span><span class=\"network-finding-summary\">Summary for f2.</span><ul class=\"network-finding-needs\" aria-label=\"Needs\"><li class=\"network-need network-need-met\" data-met=\"true\"><span class=\"network-need-mark\" aria-hidden=\"true\">✓</span> <span class=\"network-need-text\">Admin login: yes</span></li></ul></li><li class=\"network-finding network-finding-false\" data-finding=\"f3\" data-status=\"false\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f3</span> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-low\">Low</span> <span class=\"network-finding-status\">False positive</span></span><span class=\"network-finding-summary\">Summary for f3.</span><p class=\"network-finding-reason\">The build number is cosmetic.</p></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f4\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f4</span> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Confirmed</span> <span class=\"network-finding-fixed\">Fixed</span></span><span class=\"network-finding-summary\">Summary for f4.</span></li></ul></li></ul>\n                </li>\n                    </ul>\n                </div>\n                \n                \n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    },
+    {
+      "index": 1,
+      "key": "confirm|print01|web|f1",
+      "disabled": false,
+      "record": {
+        "calls": [
+          [
+            "confirm",
+            "jack_a",
+            {
+              "findingId": "print01.web.factory_login"
+            }
+          ]
+        ],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\" data-network-id=\"lab_net\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Devices</li>\n                <li class=\"network-row network-row-host network-row-device network-row-scanned\" data-host-id=\"print01\" data-kind=\"device\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pnw_portable_printer1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">Second floor printer</span></span>\n                        <span class=\"network-row-name\"></span></span>\n                    <span class=\"network-row-control\"></span><ul class=\"network-service-tiles\"><li class=\"network-service network-service-with-findings\" data-service=\"web\"><span class=\"network-service-line\">web · 80 · Brackley PrintPanel 2.0</span><button type=\"button\" class=\"minigame-button network-row-action network-check\" data-action=\"check\">Check</button><ul class=\"network-findings\"><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f1\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f1</span> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-high\">High</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f1.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\" disabled=\"\">Confirming...</button></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f2\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f2</span> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Confirmed</span></span><span class=\"network-finding-summary\">Summary for f2.</span><ul class=\"network-finding-needs\" aria-label=\"Needs\"><li class=\"network-need network-need-met\" data-met=\"true\"><span class=\"network-need-mark\" aria-hidden=\"true\">✓</span> <span class=\"network-need-text\">Admin login: yes</span></li></ul></li><li class=\"network-finding network-finding-false\" data-finding=\"f3\" data-status=\"false\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f3</span> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-low\">Low</span> <span class=\"network-finding-status\">False positive</span></span><span class=\"network-finding-summary\">Summary for f3.</span><p class=\"network-finding-reason\">The build number is cosmetic.</p></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f4\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><span class=\"network-finding-alias\">f4</span> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Confirmed</span> <span class=\"network-finding-fixed\">Fixed</span></span><span class=\"network-finding-summary\">Summary for f4.</span></li></ul></li></ul>\n                </li>\n                    </ul>\n                </div>\n                \n                \n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    }
+  ]
+}

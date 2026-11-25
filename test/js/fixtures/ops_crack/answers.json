@@ -1,0 +1,189 @@
+{
+  "keyringOneReady": {
+    "rev": "REVISION",
+    "entries": [
+      {
+        "id": "dana_hash",
+        "kind": "hash",
+        "source": "registry",
+        "account": {
+          "npcId": "dana",
+          "username": "dreyes",
+          "displayName": "Dana Reyes"
+        },
+        "label": "Stored record: Dana",
+        "token": "XXXX-XXXX-XXXX-XXXX-XXXX-DANA",
+        "salted": true,
+        "status": "ready",
+        "heldItem": "dana_file",
+        "gainedAt": 1795521600000
+      }
+    ],
+    "captures": {},
+    "crackFacts": [
+      "dana_pet",
+      "dana_town",
+      "dana_year"
+    ]
+  },
+  "crackRunning": {
+    "success": true,
+    "status": "running",
+    "readyInSeconds": 10
+  },
+  "keyringRunning": {
+    "rev": "REVISION",
+    "entries": [
+      {
+        "id": "dana_hash",
+        "kind": "hash",
+        "source": "registry",
+        "account": {
+          "npcId": "dana",
+          "username": "dreyes",
+          "displayName": "Dana Reyes"
+        },
+        "label": "Stored record: Dana",
+        "token": "XXXX-XXXX-XXXX-XXXX-XXXX-DANA",
+        "salted": true,
+        "status": "running",
+        "readyInSeconds": 10,
+        "heldItem": "dana_file",
+        "gainedAt": 1795521600000
+      }
+    ],
+    "captures": {},
+    "crackFacts": [
+      "dana_pet",
+      "dana_town",
+      "dana_year"
+    ]
+  },
+  "crackNomatch": {
+    "success": true,
+    "status": "nomatch"
+  },
+  "crackCracked": {
+    "success": true,
+    "status": "cracked",
+    "accountId": "dana",
+    "credentialIds": [
+      "dana.cracked"
+    ]
+  },
+  "keyringCracked": {
+    "rev": "REVISION",
+    "entries": [
+      {
+        "id": "dana.cracked",
+        "kind": "password",
+        "source": "cracked",
+        "account": {
+          "npcId": "dana",
+          "username": "dreyes",
+          "displayName": "Dana Reyes"
+        },
+        "label": "Cracked",
+        "password": "JuniperAshby2003"
+      },
+      {
+        "id": "dana_hash",
+        "kind": "hash",
+        "source": "registry",
+        "account": {
+          "npcId": "dana",
+          "username": "dreyes",
+          "displayName": "Dana Reyes"
+        },
+        "label": "Stored record: Dana",
+        "token": "XXXX-XXXX-XXXX-XXXX-XXXX-DANA",
+        "salted": true,
+        "status": "cracked",
+        "heldItem": "dana_file",
+        "gainedAt": 1795521600000
+      }
+    ],
+    "captures": {},
+    "crackFacts": [
+      "dana_pet",
+      "dana_town",
+      "dana_year"
+    ]
+  },
+  "crackRefusal": {
+    "success": false,
+    "reason": "not_found"
+  },
+  "crackNeedMoreFacts": {
+    "success": true,
+    "status": "needMoreFacts",
+    "missingCount": 2
+  },
+  "keyringTwoHashes": {
+    "rev": "REVISION",
+    "entries": [
+      {
+        "id": "dana_hash",
+        "kind": "hash",
+        "source": "registry",
+        "account": {
+          "npcId": "dana",
+          "username": "dreyes",
+          "displayName": "Dana Reyes"
+        },
+        "label": "Stored record: Dana",
+        "token": "XXXX-XXXX-XXXX-XXXX-XXXX-DANA",
+        "salted": true,
+        "status": "ready",
+        "heldItem": "dana_file",
+        "gainedAt": 1795521600000
+      },
+      {
+        "id": "farah_hash",
+        "kind": "hash",
+        "source": "registry",
+        "account": {
+          "npcId": "farah",
+          "username": "fnkemelu",
+          "displayName": "Farah Nkemelu"
+        },
+        "label": "Stored record: Farah",
+        "token": "XXXX-XXXX-XXXX-XXXX-XXXX-FARA",
+        "salted": true,
+        "status": "ready",
+        "heldItem": "farah_file",
+        "gainedAt": 1795521600001
+      }
+    ],
+    "captures": {},
+    "crackFacts": []
+  },
+  "crackInfeasible": {
+    "success": true,
+    "status": "infeasible",
+    "runs": 2
+  },
+  "keyringInfeasible": {
+    "rev": "REVISION",
+    "entries": [
+      {
+        "id": "eli_hash",
+        "kind": "hash",
+        "source": "registry",
+        "account": {
+          "npcId": "eli",
+          "username": "ebrandt",
+          "displayName": "Eli Brandt"
+        },
+        "label": "Stored record: Eli",
+        "token": "XXXX-XXXX-XXXX-XXXX-XXXX-ELIX",
+        "salted": false,
+        "status": "infeasible",
+        "heldItem": "eli_hash_file",
+        "gainedAt": 1795521600000
+      }
+    ],
+    "captures": {},
+    "crackFacts": []
+  }
+}

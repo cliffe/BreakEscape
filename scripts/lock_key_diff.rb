@@ -55,7 +55,7 @@ require_relative '../lib/break_escape/scenario_binding'
 module LockKeyDiff
   TOOL = 'scripts/lock_key_diff.rb (V9)'
   FORMAT = 3
-  REQ_KEYS = %w[lockType requires keyPins key_id targetFlags difficulty requiresGlobal requireGlobal].freeze
+  REQ_KEYS = %w[lockType requires keyPins key_id targetFlags difficulty requiresGlobal requireGlobal secondStep].freeze
   # What a lock asks of the player (a change is a rule 2 line on a critical-path lock); keyPins and
   # difficulty are left out, they tune a lock without swapping what opens it.
   REQUIRES_KEYS = %w[requires key_id targetFlags requiresGlobal requireGlobal].freeze

@@ -90,7 +90,8 @@ test('credential secret is masked unless revealSecret is true', () => {
     let s = open({ se_captures: SEED() }, {});
     assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, '••••••••');
     assert.doesNotMatch(s.container.textContent, /Spring2024!/);
-    assert.match(s.container.querySelector('.lpb-captures-banner').textContent, /this exercise does not record it/);
+    assert.match(s.container.querySelector('.lpb-captures-banner').textContent, /this exercise does not record it\.$/);
+    assert.doesNotMatch(s.container.querySelector('.lpb-captures-banner').textContent, /cracked/);
 
     s = open({ se_captures: SEED() }, { captures: { revealSecret: true } });
     assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, 'Spring2024!');

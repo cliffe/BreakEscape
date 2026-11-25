@@ -1,0 +1,482 @@
+{
+  "scenario": "demo_ops_recon",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "lock_chidi_pc",
+      "label": "Chidi's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_jun_pc",
+      "label": "Hot desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_agnieszka_pc",
+      "label": "Agnieszka's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_file_server",
+      "label": "File server<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_graham_pc",
+      "label": "Graham's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_chidi_okeke",
+      "label": "Chidi Okeke sign-in<br/>(cokeke)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_jun_watanabe",
+      "label": "Jun Watanabe sign-in<br/>(jwatanabe)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_agnieszka_duda",
+      "label": "Agnieszka Duda sign-in<br/>(aduda)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_graham_whitfield",
+      "label": "Graham Whitfield sign-in<br/>(gwhitfield)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_room",
+      "label": "IT room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_hotdesk_jack",
+      "label": "Hot desk network port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_kitchen_jack",
+      "label": "Kitchen wall network port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "host_lobby_camera",
+      "label": "Reception camera<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "host_printer_host",
+      "label": "Office printer<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "resource_shared_drive",
+      "label": "Shared-Drive<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "weak_file_server_storage_link_setting",
+      "label": "File server<br/>storage :445<br/>misconfig / medium",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_file_server_storage_update_lag",
+      "label": "File server<br/>storage :445<br/>unpatched / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_printer_host_admin_page_factory_login",
+      "label": "Office printer<br/>Admin page :80<br/>default_creds / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_network_log",
+      "label": "Network log<br/>net_link_up, net_link_down, share_folder_opened, network_swept, host_scanned, service_checked, finding_confirmed, technique_used, technique_refused",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_network_log_pc",
+      "label": "Network log PC<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_print_admin",
+      "label": "Agnieszka Duda saved connection<br/>(aduda)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "tech_factory_accounts",
+      "label": "Factory accounts",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_factory",
+      "label": "Technique card: factory accounts",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_update_gap",
+      "label": "Known update gap",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_update_gap",
+      "label": "Technique card: known update gap",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_open_settings",
+      "label": "Left-open settings",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_open_settings",
+      "label": "Technique card: left-open settings",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "admin@file_server",
+      "label": "File server<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@graham_pc",
+      "label": "Graham's PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "lock_chidi_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_jun_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_agnieszka_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "lock_graham_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_chidi_okeke",
+      "soft": false
+    },
+    {
+      "from": "signin_chidi_okeke",
+      "to": "lock_chidi_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_jun_watanabe",
+      "soft": false
+    },
+    {
+      "from": "signin_jun_watanabe",
+      "to": "lock_jun_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_agnieszka_duda",
+      "soft": false
+    },
+    {
+      "from": "signin_agnieszka_duda",
+      "to": "lock_agnieszka_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_agnieszka_duda",
+      "to": "lock_file_server",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_graham_whitfield",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_file_server",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_graham_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "jack_hotdesk_jack",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_hotdesk_jack",
+      "soft": false
+    },
+    {
+      "from": "jack_hotdesk_jack",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "kitchen",
+      "to": "jack_kitchen_jack",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_kitchen_jack",
+      "soft": false
+    },
+    {
+      "from": "jack_kitchen_jack",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "host_lobby_camera",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "host_printer_host",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_agnieszka_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_chidi_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_file_server",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_graham_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_jun_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "resource_shared_drive",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_file_server_storage_link_setting",
+      "soft": false,
+      "label": "storage"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_file_server_storage_update_lag",
+      "soft": false,
+      "label": "storage"
+    },
+    {
+      "from": "host_printer_host",
+      "to": "weak_printer_host_admin_page_factory_login",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "kitchen",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "it_room",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "reader_network_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_network_log",
+      "to": "reader_network_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "cred_print_admin",
+      "to": "lock_agnieszka_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_factory",
+      "to": "tech_factory_accounts",
+      "soft": false
+    },
+    {
+      "from": "tech_factory_accounts",
+      "to": "weak_printer_host_admin_page_factory_login",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_update_gap",
+      "to": "tech_update_gap",
+      "soft": false
+    },
+    {
+      "from": "tech_update_gap",
+      "to": "weak_file_server_storage_update_lag",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_open_settings",
+      "to": "tech_open_settings",
+      "soft": false
+    },
+    {
+      "from": "tech_open_settings",
+      "to": "weak_file_server_storage_link_setting",
+      "soft": false
+    },
+    {
+      "from": "weak_file_server_storage_link_setting",
+      "to": "lock_file_server",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_file_server_storage_update_lag",
+      "to": "lock_file_server",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_printer_host_admin_page_factory_login",
+      "to": "cred_print_admin",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@file_server",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "weak_file_server_storage_link_setting",
+      "to": "admin@file_server",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@graham_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "lock_file_server",
+      "to": "weak_file_server_storage_link_setting",
+      "soft": false
+    }
+  ]
+}

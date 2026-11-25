@@ -5,9 +5,15 @@ require 'set'
 require 'cgi'
 require 'time'
 require 'uri'
+require_relative '../../../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
+require_relative '../../../lib/break_escape/crack_difficulty' unless defined?(BreakEscape::CrackDifficulty)
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
+require_relative '../../../lib/break_escape/cached_accounts' unless defined?(BreakEscape::CachedAccounts) # S5b
+require_relative '../../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
+require_relative 'lock_step_leak_rules' # S8c lock second step
+require_relative 'helpdesk_leak_rules'
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -56,6 +62,15 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # Pages (engine plan section 6): a row with a "dom" key instead of a body is the text of a
 # page the tester read (the capture log device, a captures terminal), labelled by its "label".
 # It is checked for passwords like a /capture_secrets answer, since that is all such a page shows.
+#
+# Award facts (S7 review R2-L1, rule `fact_unearned`): the entry, label or text of an intel fact an item (revealsFacts) or a
+# flag reward (grant_fact) awards is a finding anywhere until a 200 answer grants it, in the server's own place and shape:
+# the top-level `facts` of an inventory answer (item facts), a grant_fact reward's `entry`, a give_item reward's `facts`.
+# After the grant the bootstrap's social.intelFacts may hold it, and its text or label may appear in any string. An entry
+# in a hash keyed by the fact's id anywhere else is a finding even when earned. Given a game, a fact it has not earned (earned_fact_ids at the end of the
+# run) is a finding at every place; without a game the scanner cannot tell earned from unearned, so only the place, the
+# shape and the order are judged (a grant is taken from the answer itself). Feed facts keep the feed rules. Limit: the
+# earned set is read once, at the end of the run.
 #
 # Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 6) adds two exceptions and one finding:
 #
@@ -167,20 +182,26 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # keyring) for an account the scenario marks `creds.admin: true` and that PC admits earns `admin:<pc id>`. The PC is named by
 # the answer's `host` label (a remote sign-in; a label that names no PC earns nothing and never falls through to a guess), else by
 # the one PC that admits the account. A browser capture holds neither the request body nor a PC id in a keyboard sign-in
-# answer (no recorder tags it), so where more than one PC admits the account nothing is earned (fail closed) and
-# `scan(lines, signins: ["<account id>@<pc id>#<n>"])` (`access-leak-check.rb --signin`) names the PC of ONE sign-in: the
+# answer. In a TAGGED capture (recorder 1.0.21 and later) the row's own `pc` tag names the PC the request was about, and the
+# sign-in is placed there when that PC admits the account (a tag at a PC that does not admit it places nothing and is an `ops_tag`
+# finding; a `null` tag places nothing). In an UNTAGGED capture (made before 1.0.21; `scan(..., tags: :absent)`, CLI
+# `--untagged`), where more than one PC admits the account nothing is earned (fail closed) and
+# `scan(lines, signins: ["<account id>@<pc id>#<n>"])` (`access-leak-check.rb --untagged --signin`) names the PC of ONE sign-in: the
 # account's n-th successful POST /login answer in the log (or `<account id>@<pc id>@<row time>`, the row's `t`), credited from
-# that row only and for that account only. `ops_steps` cannot name an admin session.
+# that row only and for that account only. A tagged capture takes no `signins:` or `logouts:` (ArgumentError; the CLI exits 2).
+# `ops_steps` cannot name an admin session.
 # Session ends take the step and the account back (R2-C2): a later sign-in at that PC, a successful POST /lock_session (no
 # `pcId` ends every PC), a PC in an answer's `endedPcIds` (a displacing grant, claim or hand-back that names it), a 403 desktop
 # answer (off, not_responding, expired, no_session), a bootstrap whose `sessions` map lacks the PC or holds it locked, for
-# another account, or WITHOUT `access: "admin"` (the step only; R3-C3), and a successful POST /logout (every PC: the answer does
-# not say which, unless a `logouts: ["<account id>@<pc id>#<n>" | "<account id>@<pc id>@<row time>"]` entry (`--logout`) names that one
+# another account, or WITHOUT `access: "admin"` (the step only; R3-C3), and a successful POST /logout (a tagged run: the row's `pc`
+# tag names the PC, and a `null` tag ends every PC; an untagged run: every PC, the answer does
+# not say which, unless a `logouts: ["<account id>@<pc id>#<n>" | "<account id>@<pc id>@<row time>"]` entry (`--untagged --logout`) names that one
 # row's PC and the run holds that account there: it then ends that PC only; an entry that does not hold is unused, exit 2). Also, from data already in the log (R3 check 2): a token sign-in's `expiresInS` plus its row time is a deadline
 # after which the step and account are gone; a `GET /network` host row of a sign-in PC with no `session` (step and account) or a
 # `session` without `access: "admin"` (step), and a 200 desktop answer with no session, another account's, or no admin access, take
 # it back. A 200 answer never RESTORES a step. The one way back after a power cut (the session survives it: the desktop opens with
-# no sign-in) is `resumes: ["<account id>@<pc id>@<row time>"]` (`--resume`), ONE 200 desktop row after a 403 `off` or
+# no sign-in) is `resumes: ["<account id>@<pc id>@<row time>"]` (`--resume`, still needed in both modes: no tag reaches a session
+# that survived a power cut), ONE 200 desktop row after a 403 `off` or
 # `not_responding` at that PC, or after ONE answer that showed the held account's session at that PC without `access: "admin"` (a
 # bootstrap, a `GET /network` host row of that username, a 200 desktop row: what an off PC shows; a real client sends no request while
 # the PC is off, so no 403 exists), whose session is the account held then, with no other end in between (R3-B1). Entries that
@@ -207,6 +228,29 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # R4-1 and R4-2: a stored-only key is found as a word before `:` or `=` in a detail string, and the
 # hidden detail keys of the registry join the hand list.
 #
+# Ops S7 (hash records and the offline cracker, `scan_crack`), rules `crack_key`, `crack_row`, `crack_answer` and
+# `crack_unearned`, all structural and failing closed (a proof that is missing, ambiguous or malformed is a finding):
+# - keys the browser never gets, wherever they sit: crack, passwordPattern, passwordDifficulty, earnedFacts, crackRuns,
+#   crackStarted, crackedAccounts; `facts` on a credential-shaped hash; `difficulty` on any hash that is not a lock
+#   (a door or object lock, the one public use of the word, is told by its own lockType, locked, keyPins, requires or
+#   dustable); `crackFacts` only as the top-level list of a GET /keyring answer that lists a hash row, of ids that name an
+#   intel fact, none `se_intel_` prefixed, and (given the game) all in its earned set;
+# - a `kind: "hash"` hash only as an element of a GET /keyring answer's entries, with the keys of the server's row, a
+#   registry source, a status word, `readyInSeconds` only on running, the token shape and the account block, and never a
+#   password, routes or connectsTo; a keyring answer's `readyInSeconds` map holds whole seconds for registry hash ids;
+# - every POST /crack answer has exactly the keys of its status (a running answer carries nothing but the wait: no
+#   account, no credential id, no miss or hit word) and the refusal codes of the route with their HTTP status;
+# - a `source: "cracked"` keyring entry, and the password on it, only in a GET /keyring answer after a 200 POST /crack
+#   answer of the exact shape `{ success: true, status: "cracked", accountId, credentialIds }` named that account (the
+#   account itself, or, in the same answer, another account with an equal password and a hash record of its own), the
+#   entry being `<npc>.cracked` with the keys of the server's row and that account's own password. The password is
+#   allowed at that one path and nowhere else. The earned set starts empty each scan and grows only from such answers.
+# - per record, in a TAGGED capture (hardening H1 to H4): a POST /crack row's `hash` tag names the record. Running credits, the
+#   run-order flags (running seen, no-match seen, infeasible seen) and the start of the current run are kept per hash id, and a
+#   salted grant spends only its own record's credit and only once that run's wait (`readyInSeconds`, less a 2-second tolerance,
+#   from the row time of its first `running` row) has passed. A row whose tag is `null` earns nothing and changes no record's
+#   state. An UNTAGGED capture keeps the older run-wide credits and flags (per account, not per record).
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -217,6 +261,8 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 #   findings = scanner.scan(lines)   # lines: [[source_label, line_no, parsed_hash], ...]
 #   scanner.report_lines(findings)
 class AccessLeakScanner
+  include LockStepLeakRules # S8c lock second step: scan_lock_steps and its ls_ helpers
+
   # Item fields whose strings are an item's content (its name and its text).
   CONTENT_FIELDS = %w[name text content].freeze
   # Keys under which the scenario nests further items, NPCs or objects.
@@ -240,6 +286,7 @@ class AccessLeakScanner
   CAPTURE_PAGE_LABEL = /(?<![[:alnum:]])captures?(?![[:alnum:]])/i.freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
+  include HelpdeskLeakRules # S8b: the helpdesk rules, in their own file
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness workarounds].freeze
@@ -301,12 +348,114 @@ class AccessLeakScanner
     nil
   end
 
+  # The recorder's tag-bearing routes, copied from response-capture.js (PC_ROUTE_RE and CRACK_ROUTE_RE); a test reads the
+  # recorder's source and checks that these still match it. A POST row whose path (without its query) ends with one of these
+  # carries the key `pc` (PC routes) or `hash` (/crack) when the recording was made by a recorder of 1.0.21 or later.
+  PC_TAG_ROUTES = %w[login logout lock_session mfa/verify mfa/prompt mfa/approve].freeze
+  CRACK_TAG_ROUTES = %w[crack].freeze
+  TAG_ID_LIMIT = 200
+  TAG_MODES = %i[required absent auto].freeze
+
+  # :pc, :hash or nil: which tag a row would carry.
+  def self.tag_route_kind(row)
+    return nil unless row.is_a?(Hash) && row['method'].to_s.upcase == 'POST'
+
+    path = row['path'].to_s.split('?').first.to_s
+    return :pc if PC_TAG_ROUTES.any? { |r| path.end_with?("/#{r}") }
+    return :hash if CRACK_TAG_ROUTES.any? { |r| path.end_with?("/#{r}") }
+
+    nil
+  end
+
+  # The route name of a tag-bearing row ("login", "mfa/verify", "crack"), or nil.
+  def self.tag_route_name(row)
+    return nil unless tag_route_kind(row)
+
+    path = row['path'].to_s.split('?').first.to_s
+    (PC_TAG_ROUTES + CRACK_TAG_ROUTES).find { |r| path.end_with?("/#{r}") }
+  end
+
+  # Whether a tag value is exactly what the recorder writes: nil, or one key (`pcId` / `hashId`) holding a string of 1 to 200
+  # characters.
+  def self.tag_value_ok?(value, id_key)
+    return true if value.nil?
+
+    value.is_a?(Hash) && value.keys == [id_key] && value[id_key].is_a?(String) &&
+      !value[id_key].empty? && value[id_key].length <= TAG_ID_LIMIT
+  end
+
+  # Judges the capture's tags before any rule runs. files: { label => rows } or [[label, rows]]. Returns { problem:, run: }:
+  # a problem string (nil when fine) and the run's mode, :tagged, :untagged, or :none (no tag-bearing row at all, which fits
+  # either mode).
+  def self.tag_analysis(files, mode = :auto)
+    raise ArgumentError, "unknown tag mode #{mode.inspect} (use one of #{TAG_MODES.join(', ')})" unless TAG_MODES.include?(mode)
+
+    modes = {}
+    files.each do |label, rows|
+      with_key = []
+      without_key = []
+      Array(rows).each_with_index do |row, i|
+        next unless row.is_a?(Hash)
+
+        where = "#{label} row #{i + 1}"
+        if row.key?('login')
+          return { problem: "#{where} holds a `login` tag: the recorder writes none, so it was added by hand and would place a sign-in the capture does not show", run: nil }
+        end
+
+        kind = tag_route_kind(row)
+        if row.key?('pc') && kind != :pc
+          return { problem: "#{where} holds a `pc` tag on a row that is not a PC sign-in, sign-out, lock or second-step POST: the recorder writes none there", run: nil }
+        end
+        if row.key?('hash') && kind != :hash
+          return { problem: "#{where} holds a `hash` tag on a row that is not a POST /crack: the recorder writes none there", run: nil }
+        end
+        next unless kind
+
+        key = kind == :pc ? 'pc' : 'hash'
+        id_key = kind == :pc ? 'pcId' : 'hashId'
+        if row.key?(key)
+          unless tag_value_ok?(row[key], id_key)
+            return { problem: "#{where} holds a `#{key}` tag that is neither null nor exactly { \"#{id_key}\": <an id of 1 to #{TAG_ID_LIMIT} characters> }", run: nil }
+          end
+          with_key << where
+        else
+          without_key << where
+        end
+      end
+      unless with_key.empty? || without_key.empty?
+        return { problem: "#{label} holds tag-bearing rows both with and without their tag key (#{without_key.first} has none, #{with_key.first} has one): a mixed or edited capture", run: nil }
+      end
+
+      modes[label] = with_key.empty? ? (without_key.empty? ? :none : :untagged) : :tagged
+    end
+    kinds = modes.values.uniq - [:none]
+    if kinds.size > 1
+      tagged = modes.select { |_, m| m == :tagged }.keys.first
+      untagged = modes.select { |_, m| m == :untagged }.keys.first
+      return { problem: "capture files of one run are in different modes (#{tagged} holds tags, #{untagged} holds none): record them all again with one recorder", run: nil }
+    end
+    run = kinds.first || :none
+    if mode == :required && run == :untagged
+      return { problem: 'the capture holds no recorder tags (a recording made before 1.0.21): record again, or pass --untagged', run: nil }
+    end
+    return { problem: 'the capture holds recorder tags but untagged mode was asked for', run: nil } if mode == :absent && run == :tagged
+
+    { problem: nil, run: run }
+  end
+
+  # A problem string, or nil. mode: :required (the CLI default: an untagged capture with tag-bearing rows is refused),
+  # :absent (the CLI's --untagged: a tagged capture is refused) or :auto (the library default: either, each read as it is).
+  def self.tag_problem(files, mode = :auto)
+    tag_analysis(files, mode)[:problem]
+  end
+
   attr_reader :passwords, :items
 
   # served_npcs: when given, the NPC ids whose password the server would serve from
   # GET /capture_secrets now (its capture proofs applied); nil keeps the scenario-only rule.
   def initialize(scenario_data, served_npcs: nil, game: nil, catalog_folder: nil, log_secrets: nil)
     @catalog_folder = catalog_folder
+    @tags_on = false # set by scan: true for a run of tagged captures (hardening U1a)
     @data = scenario_data.is_a?(Hash) ? scenario_data : {}
     @log_secrets = log_secrets&.map(&:to_s)
     @served_npcs = served_npcs&.map(&:to_s)&.to_set
@@ -391,6 +540,7 @@ class AccessLeakScanner
     @feed_posters = Set.new
     @reaction_items = 0
     collect_passwords
+    collect_crack
     collect_capture_secrets
     @object_by_id = BreakEscape::AccessIdentities.room_objects(@data).each_with_object({}) do |e, h|
       id = e[:object]['id']
@@ -406,9 +556,12 @@ class AccessLeakScanner
     collect_network_secrets
     collect_ops_secrets
     collect_privilege
+    collect_harvest # S5b, S5c
     collect_wifi_secrets
     collect_workarounds
     collect_feeds
+    collect_facts
+    require_game_methods
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
@@ -458,9 +611,9 @@ class AccessLeakScanner
   # exits 2 when it is not empty (R3-C2): a typo must not look like a leak, and an entry that did nothing must not pass.
   def unused_entries
     unused = []
-    (@priv_named || {}).each { |key, pc| unused << priv_entry_text(key, pc) unless @priv_used.include?([:signin, key]) }
+    (@priv_named || {}).each { |key, pc| unused << priv_entry_text(key, pc) unless @priv_used.include?([:signin, key]) || @mfa_used&.include?([:signin, key]) }
     (@priv_resumes || {}).each_key { |key| unused << "#{key.join('@')} (--resume)" unless @priv_used.include?([:resume, key]) }
-    (@priv_logouts || {}).each { |key, pc| unused << priv_logout_text(key, pc) unless @priv_used.include?([:logout, key]) }
+    (@priv_logouts || {}).each { |key, pc| unused << priv_logout_text(key, pc) unless @priv_used.include?([:logout, key]) || @mfa_used&.include?([:logout, key]) }
     unused
   end
 
@@ -470,7 +623,14 @@ class AccessLeakScanner
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
-  def scan(lines, ops_steps: nil, signins: nil, resumes: nil, logouts: nil)
+  def scan(lines, ops_steps: nil, signins: nil, resumes: nil, logouts: nil, tags: :auto)
+    analysis = self.class.tag_analysis(lines.group_by { |source, _, _| source }.map { |source, list| [source, list.map { |entry| entry[2] }] }, tags)
+    raise ArgumentError, analysis[:problem] if analysis[:problem]
+
+    @tags_on = analysis[:run] == :tagged
+    if @tags_on && (Array(signins).any? || Array(logouts).any?)
+      raise ArgumentError, 'a capture with recorder tags takes no --signin or --logout entry: the tags name the PCs (record untagged, or drop the entries)'
+    end
     findings = []
     seen = Set.new
     @ops_supplied = Set.new(Array(ops_steps).map(&:to_s))
@@ -486,13 +646,29 @@ class AccessLeakScanner
     @priv_signin_counts = Hash.new(0)
     @priv_deadlines = {}
     @priv_resumable = {}
+    @priv_relay_held = {}     # S5bc R1: pc => account id of a relay sign-in held there (a host row never lists a relay)
+    @priv_keyboard = {}       # S5bc R3-SCANNER2: pc => true while the held admin step came from a typed (keyboard) sign-in, no foothold, no relay
     @priv_kinds = {}          # pc => [via, relay] of the session that earned the held admin step (R4-2)
     @priv_logout_pending = {} # pc => account a named --logout ended, until an answer lists that PC's session state (R4-5)
     @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
     @priv_last_named = nil
     @ops_earned = @ops_supplied | @ops_start_steps
+    @crack_earned = Set.new # NPC ids a 200 POST /crack answer of the exact cracked shape named, so far (S7)
+    @crack_running_credits = 0 # well formed 200 running answers not yet used by a salted grant (S7)
+    @crack_running_seen = false # a well formed 200 running answer so far (R2-L4: a running row or a wait map follows one)
+    @crack_runs_seen = false # a 200 nomatch answer with `runs: 1` so far (R2-L3: the strong record's first run)
+    @crack_infeasible_seen = false # a well formed 200 infeasible answer so far (R2-L4)
+    @crack_by_id = {} # tagged runs only (hardening U2): hash id => { credits:, running_seen:, runs_seen:, infeasible_seen:, run_start: }
+    @crack_last_grant = nil # the accounts the cracked answer of the current row granted, nil if none or not grantable (R2-L2)
+    @fact_granted = @fact_start_ids.dup # award fact ids a 200 answer of the server's own shape has granted so far, and the start items' (S7 R2-L1)
+    @fact_game_earned = @game && !@fact_entries.empty? ? Array(@game.earned_fact_ids).map(&:to_s).to_set : nil
+    @networks_swept = Set.new # network ids with an earlier 200 POST /network/scan answer (success, network.id, swept: true) this run; the capture only
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
+    mfa_begin_scan # S8a: the second-step rules' own state
+    tag_begin_scan # hardening U1b: the tag refutation rule's window and present map
+    helpdesk_begin_scan # S8b: the helpdesk rules' own state
+    harvest_begin_scan # S5b, S5c
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
     lines.each_with_index do |(source, line_no, row), index|
@@ -503,9 +679,15 @@ class AccessLeakScanner
       elsif row.key?('body') then row['body']
       else row['bodyText']
       end
-      next if body.nil?
+      @mfa_row_ref = "#{source}:#{line_no}"
+      if body.nil?
+        tag_note_bodyless(row)
+        mfa_note_bodyless(row)
+        ls_note_bodyless(row) # S8c lock second step: a lost answer may have been a cancel or an expiry
+        next
+      end
 
-      ctx = response_context(row).merge(index: index)
+      ctx = response_context(row).merge(index: index, row: row)
       body = log_rows_without_typed(body) if ctx[:log_rows]
       add = lambda do |rule, owner, json_path|
         key = [source, line_no, rule, owner]
@@ -515,7 +697,10 @@ class AccessLeakScanner
         findings << Finding.new(rule: rule, owner: owner, route: ctx[:route], source: source, line: line_no,
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
+      @hv_body = body # S5b, S5c
+      scan_tags(body, row, add)
       note_privilege_before(body, ctx, row)
+      note_crack_earned(body, ctx, row)
       scan_passwords(body, ctx, legit, add)
       scan_capture_secrets(body, ctx, add)
       scan_withheld_keys(body, add)
@@ -536,6 +721,7 @@ class AccessLeakScanner
       scan_ops_session_keys(body, ctx, add)
       scan_privilege_keys(body, add)
       scan_privilege_log_rows(body, ctx, add)
+      scan_harvest(body, ctx, row, add) # S5b, S5c
       scan_ops_foothold_views(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
@@ -544,9 +730,20 @@ class AccessLeakScanner
       note_feed_served(body, ctx)
       scan_feed(body, ctx, add)
       scan_credentials(body, add)
+      scan_crack(body, ctx, row, add)
+      scan_facts(body, ctx, row, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
+      # S8b first: it judges the row and answers the body the second-step rules see (the own-phone code, number choices and flag a
+      # desk's re-enrolment earned taken out of a copy; a lock-form answer is never one). The lock rules (S8c) come after it, so they
+      # never call an earned own-phone secret a leak, and judge a lock-form answer whole.
+      body = scan_helpdesk(body, row, add)
+      scan_lock_steps(body, row, add) # S8c lock second step
+      scan_tag_rule(body, row, ctx, add) # hardening U1b: 3.3, the tag refutation rule (both rule sets use it)
+      scan_mfa(body, row, add)
+      note_network_swept(body, ctx, row)
     end
+    mfa_finish_scan
     findings
   end
 
@@ -564,6 +761,13 @@ class AccessLeakScanner
     secret_values.each { |v| out = out.gsub(v, '[withheld]') if v.length >= 3 }
     out
   end
+
+  # S8a (feature A22): the second-step rules' text, kept apart so a merge of other rules touches no line of these
+  MFA_RULE_TEXT = {
+    'mfa_secret' => 'a one-time code, match number, number choices, device secret or habit key outside the one answer the server gives ' \
+                    'the holder of the device or phone (GET mfa/device, GET mfa/phone), in the shape the controller sends, or a second-step answer of a shape the controller never sends',
+    'mfa_session' => 'a session answer at a PC that asks for a second step, when that step was not passed in the run (and the account is not exempt, the way in is not a token, invite, claim or technique, and the session is not the account\'s own locked one)'
+  }.freeze
 
   RULE_TEXT = {
     'password' => 'an NPC password in a response',
@@ -595,8 +799,23 @@ class AccessLeakScanner
     'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
     'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
     'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
-    'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)'
-  }.freeze
+    'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)',
+    **HelpdeskLeakRules::RULE_TEXT,
+    'mfa_secret' => MFA_RULE_TEXT['mfa_secret'],
+    'mfa_session' => MFA_RULE_TEXT['mfa_session'],
+    'crack_key' => 'a key the browser never gets from the cracker (the recipe, the difficulty, the earned-fact and cracking state) or a misplaced or unearned crackFacts',
+    'crack_row' => 'a hash row outside a GET /keyring answer, or with a key or value the server\'s row does not have (a password, routes, connectsTo), or a malformed readyInSeconds map',
+    'crack_answer' => 'a POST /crack answer that is not exactly the shape of its status or refusal (a running answer carries only the wait)',
+    'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
+    'ops_tag' => 'a recorder pc tag on a 200 PC-route row that names no sign-in PC of the scenario, a PC that does not admit the account that signed in, or a PC other than the one the answer names (a lock answer or an `mfaRequired` answer pcId, a remote sign-in host label); and a tagged sign-in that the first answer about its PC refutes (another account shown, or no session while its deadline has not passed), or that another PC\'s desktop shows by a keyboard password where the run holds the account at no PC but the tagged one',
+    'harvest_key' => 'a cached-account or account-kind key in a response (cachedAccounts, cachedAt, harvestedAccounts, accountKind, localTo, accountOnly, or creds.domain), or a hashId outside a POST /harvest_credentials answer',
+    'harvest_row' => 'a POST /harvest_credentials answer that is not exactly the server\'s shape (a refusal with rows, a row with a key, a password or a picture an account-only account has not)',
+    'harvest_unearned' => 'a collect answer or row at a PC with no admin session earned there in the run (a keyboard sign-in, or a proved relay administrator), for an account that PC does not declare (a borrow-gated account needs a borrow "done" answer earlier in the capture and the game\'s own cachedAt record: a game row from before cachedAt reads as no borrow), or whose hashId is not that PC\'s hash record',
+    'harvest_hash' => 'a hash row whose proof is harvested listed in a GET /keyring answer before a collect answer named its hashId',
+    'account_only' => 'an account-only account\'s room entry, tile, display name or username before the answer that earns it (a typed sign-in for the display name, a credited collect row or its hash row for both)',
+    'relay_admin' => 'a relay session shown with admin unless the scenario holds an assist invite for that account at that PC, marks the account creds.admin true, the PC admits it, and the game agrees',
+    'fact_unearned' => "an intel fact's entry, label or text before the answer that grants it (the entry only in the bootstrap's social.intelFacts after the grant, the top-level facts of an inventory answer, the entry of a grant_fact reward or the facts of a give_item reward, in the server's own shape), or any entry of a fact the game has not earned"
+  }.merge(LockStepLeakRules::LOCK_STEP_RULE_TEXT).freeze # S8c lock second step
 
   private
 
@@ -982,17 +1201,25 @@ class AccessLeakScanner
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
+      status: row['status'],
+      mfa_verify_strict: method == 'POST' && path.match?(%r{/games/[^/]+/mfa/verify\z}),
       logout: method == 'POST' && path.end_with?('/logout'),
       lock_session: method == 'POST' && path.end_with?('/lock_session'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
       keyring: method == 'GET' && path.end_with?('/keyring'),
+      # S7 crack rules: the exact game route (the older rules above keep their own looser matching)
+      crack: method == 'POST' && path.match?(%r{\A(?:/break_escape)?/games/\d+/crack\z}),
+      crack_keyring_route: method == 'GET' && path.match?(%r{\A(?:/break_escape)?/games/\d+/keyring\z}),
+      crack_keyring: method == 'GET' && row['status'].is_a?(Integer) && row['status'] == 200 && path.match?(%r{\A(?:/break_escape)?/games/\d+/keyring\z}),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
       ops_check: method == 'POST' && path.end_with?('/network/check'),
       ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
       ops_technique: method == 'POST' && path.end_with?('/network/technique'),
       inventory_add: ops_inventory_add_id(row, method, path),
       network_view: method == 'GET' && path.end_with?('/network'),
-      log_rows: method == 'GET' && path.end_with?('/log_rows')
+      log_rows: method == 'GET' && path.end_with?('/log_rows'),
+      harvest: method == 'POST' && path.match?(%r{\A(?:/break_escape)?/games/\d+/harvest_credentials\z}), # S5b
+      log_rows_ok: method == 'GET' && path.end_with?('/log_rows') && row['status'].is_a?(Integer) && row['status'] == 200
     }
   end
 
@@ -1019,12 +1246,14 @@ class AccessLeakScanner
     # there is that NPC's own (carry-in m3): the `source` label alone exempts nothing. A
     # registry-sourced entry is never exempted, so a password on one is still flagged.
     keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
+    cracked_paths = ctx[:crack_keyring] ? crack_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
         next if share_clue?(password, str, holder, ctx, json_path, legit)
         next if keyring_capture_paths && owners.include?(keyring_capture_paths[json_path])
+        next if cracked_paths && owners.include?(cracked_paths[json_path])
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
@@ -1655,7 +1884,7 @@ class AccessLeakScanner
         value.each do |pc|
           add.call('lockout_unrecorded', "npc:#{m[1]}/#{pc}", safe_path(path)) unless Array(lockout_records[m[1]]).include?(pc.to_s)
         end
-      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login]
+      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login] && !mfa_verify_lockout_proved?(body, hash, json_path, ctx)
         # Review R1 m4: a lockout answer belongs to a check answer or a sign-in answer only
         add.call('lockout_list', 'lockedOut', safe_path(path))
       elsif value == true && ctx[:npc_frustration] && @game
@@ -1676,6 +1905,33 @@ class AccessLeakScanner
 
       add.call('lockout_list', 'lockout_key', safe_path("#{json_path}.[lockout key]"))
     end
+  end
+
+  # S8a playtest 3: the lock a run's own wrong second-step codes reach. `POST mfa/verify` answers 422 with the four-key body
+  # a `login` lockout answer has (Game#login_locked_out_answer) only when the failure count of the step's account at the
+  # step's PC reaches `maxAttempts`. Credited only when the capture shows exactly one open code step (the answer names no
+  # PC or account) and exactly `maxAttempts` less one wrong-code answers for that account at that PC since its last pass.
+  # A lock reached through wrong passwords too (their answers name no PC), no open step, two open steps, another body,
+  # route, verb or status stays a finding.
+  MFA_VERIFY_LOCK_KEYS = %w[attemptsLeft lockedOut message success].freeze
+
+  def mfa_verify_lockout_proved?(body, hash, json_path, ctx, row = ctx[:row])
+    return false unless @game && ctx[:mfa_verify_strict] && ctx[:status] == 422 && json_path == '$' && hash.equal?(body)
+    return false unless hash.keys.sort == MFA_VERIFY_LOCK_KEYS
+    return false unless hash['success'] == false && hash['lockedOut'] == true && hash['attemptsLeft'] == 0 && hash['message'] == BreakEscape::Game::LOGIN_LOCKED_OUT
+
+    open = (@mfa_pending || {}).select { |_pc, rec| rec[:kind] == 'code' }
+    # hardening U1b (P8 b): a tagged refusal is the open code step at the PC the tag names; no tag, no narrowing (as before)
+    tag = row.is_a?(Hash) ? row_pc_tag(row) : nil
+    open = open.select { |pc, _rec| pc == tag } if tag
+    return false unless open.size == 1
+
+    pc, rec = open.first
+    pair = [pc, rec[:npc]]
+    return false if (@mfa_wrong_unknown || Set.new).include?(pair) || !@priv_pcs.key?(pc)
+
+    max = @game.login_max_attempts(@priv_pcs[pc])
+    max && (@mfa_wrong || {})[pair].to_i == max - 1
   end
 
   # Review R1 M1: GET /scenario's top-level lockoutPcs, PC ids where the game holds a lockout
@@ -2002,6 +2258,11 @@ class AccessLeakScanner
       # served that name by the open. Only that owner is dropped; every other owner of the string, any
       # other cell or event, and a share not yet opened stays a finding. A /network listing is no open.
       earned = earned_share_owners(body, json_path, str) if ctx[:log_rows]
+      # A NET_SWEEP row's LOCATION cell holds the name of a network this run swept earlier (a 200 POST /network/scan
+      # answer said so): the browser was served that name by the sweep. Only that owner is dropped.
+      if ctx[:log_rows_ok] && (swept = swept_network_owners(body, json_path, str)).any?
+        earned = (earned || []) + swept
+      end
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
@@ -2028,6 +2289,29 @@ class AccessLeakScanner
       res = resources[id]
       res.is_a?(Hash) && res['name'].is_a?(String) && res['name'].strip == str.to_s.strip
     end.map { |id| "resource:#{id}" }
+  end
+
+  # The `network:<id>` owners a NET_SWEEP row's LOCATION cell may carry: swept earlier in this capture, name equal.
+  def swept_network_owners(body, json_path, str)
+    match = json_path.to_s.match(/\A\$\.rows\[(\d+)\]\.where\z/)
+    return [] unless match && body.is_a?(Hash) && body['rows'].is_a?(Array)
+
+    row = body['rows'][match[1].to_i]
+    return [] unless row.is_a?(Hash) && row['event'] == 'NET_SWEEP' && row['where'].equal?(str)
+
+    networks = @data['networks'].is_a?(Hash) ? @data['networks'] : {}
+    @networks_swept.select do |id|
+      net = networks[id]
+      net.is_a?(Hash) && net['name'].is_a?(String) && net['name'] == str.to_s
+    end.map { |id| "network:#{id}" }
+  end
+
+  # Notes a 200 POST /network/scan answer of a sweep: success true, the network's id, swept true.
+  def note_network_swept(body, ctx, row)
+    return unless ctx[:ops_scan] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
+
+    net = body['network']
+    @networks_swept << net['id'] if net.is_a?(Hash) && net['swept'] == true && net['id'].is_a?(String)
   end
 
   # Notes a successful GET /container/<share or an item in it> answer: that share is opened for this run.
@@ -2263,10 +2547,12 @@ class AccessLeakScanner
     @ops_answer_pc = nil
     @priv_signin_pc = nil
     note_privilege_ends(body, ctx, row)
+    note_relay_mark(body, ctx) # S5b, S5c: before the read of a desktop answer is judged
     note_privilege_read(body, ctx, row)
     return unless body.is_a?(Hash)
 
     note_privilege_signin(body, ctx, row)
+    note_relay_mark(body, ctx) # a sign-in takes the mark of its PCs back first, then a proved relay sign-in sets it
     note_ops_technique_steps(body, ctx, row)
     if ctx[:ops_scan] && body['success'] == true
       @ops_earned << "sweep:#{body['network']['id']}" if body['network'].is_a?(Hash) && body['network']['swept'] == true
@@ -2594,7 +2880,9 @@ class AccessLeakScanner
     @priv_resumable.delete(pc)
     @priv_deadlines.delete(pc)
     @priv_logout_pending.delete(pc)
+    @priv_relay_held.delete(pc) # S5bc R2-SCANNER3: a technique session replaces a relay one, and a host row lists it
     @priv_kinds[pc] = priv_kind_of(session)
+    @priv_keyboard.delete(pc)
     @ops_earned.delete_if { |step| step.start_with?("through:#{pc}:") || step == "admin:#{pc}" }
     @ops_earned << "through:#{pc}:#{session['footholdId']}" if session['footholdId'].is_a?(String)
     @ops_earned << "admin:#{pc}" if session['access'] == 'admin'
@@ -2719,9 +3007,12 @@ class AccessLeakScanner
 
       level = hash['access']
       scalar = !level.is_a?(Hash) && !level.is_a?(Array)
-      add.call('ops_string', 'ops:key:access', '$') if scalar && (level != 'admin' || owner.nil? || !@ops_earned.include?("admin:#{owner}"))
-      # R4-2a: the server never gives a claim or a relay session admin, wherever the answer shows one
-      add.call('ops_string', 'ops:key:access', '$') if level == 'admin' && (hash['via'] == 'claim' || hash['relay'] == true)
+      # S5 ruling B: a relay session has the relayed account's rights, so admin on a relay is allowed when (and only when)
+      # relay_admin_proved? holds; it earns no step (a relay never feeds a step up), so it is not judged against `admin:<pc>`
+      relay_proved = level == 'admin' && hash['relay'] == true && relay_admin_proved?(hash, ctx)
+      add.call('ops_string', 'ops:key:access', '$') if scalar && !relay_proved && (level != 'admin' || owner.nil? || !@ops_earned.include?("admin:#{owner}"))
+      # R4-2a: the server never gives a claim admin, and a relay admin only as relay_admin_proved? says, wherever the answer shows one
+      add.call('ops_string', 'ops:key:access', '$') if level == 'admin' && (hash['via'] == 'claim' || (hash['relay'] == true && !relay_proved))
     end
   end
 
@@ -2828,8 +3119,9 @@ class AccessLeakScanner
     npc_id = body['npcId'].to_s
     npc = @priv_npcs[npc_id]
     admitting = @priv_pcs.select { |_, pc| npc && BreakEscape::CredentialModel.pc_admits_account?(pc, npc) }.keys
-    tag = row['login'].is_a?(Hash) ? row['login']['pcId'] : nil
-    return [[tag], true] if tag.is_a?(String) && @priv_pcs.key?(tag)
+    state, tag = pc_tag_state(body, row)
+    return [[tag], true] if state == :accepted
+    return [admitting, false] if state == :rejected # the tag earns nothing and never narrows a take-back (an ops_tag finding is raised)
 
     label = body['host']
     if label.is_a?(String)
@@ -2917,8 +3209,11 @@ class AccessLeakScanner
 
   # The PCs a successful POST /logout row ends: the one a `--logout` entry names for THIS row if the run holds that account
   # there, else every PC (fail closed).
-  def priv_logout_pcs(row)
+  def priv_logout_pcs(row, body = nil)
     @priv_logout_count += 1
+    state, tag = pc_tag_state(body, row)
+    return [tag] if state == :accepted # P3: the recorder's tag names the PC; null or a rejected tag ends every PC
+
     @priv_logouts.each do |key, pc|
       account, kind, value = key
       this_row = kind == :n ? value == @priv_logout_count : value == row['t']
@@ -2956,11 +3251,15 @@ class AccessLeakScanner
     @priv_signin_pending = { account: body['npcId'], pc: @priv_last_named } if @priv_last_named && body['via'] == 'password' && !body['remote']
     pcs.each do |pc|
       @ops_earned.delete("admin:#{pc}")
+      drop_relay_mark(pc)
       @priv_deadlines.delete(pc)
       @priv_resumable.delete(pc)
       @priv_kinds.delete(pc)
+      @priv_keyboard.delete(pc)
       @priv_logout_pending.delete(pc)
+      @priv_relay_held.delete(pc)
       exact ? @ops_session_accounts[pc] = body['npcId'] : @ops_session_accounts.delete(pc)
+      @priv_relay_held[pc] = body['npcId'] if exact && body['relay'] == true
     end
     return unless exact && @priv_admins.include?(body['npcId']) && %w[password credential].include?(body['via']) && body['relay'] != true
 
@@ -2969,6 +3268,7 @@ class AccessLeakScanner
 
     @ops_earned << "admin:#{pcs.first}"
     @priv_kinds[pcs.first] = priv_kind_of(body)
+    @priv_keyboard[pcs.first] = true if body['remote'] != true && !body.key?('footholdId') && body['relay'] != true
     # a token's deadline is the answer's row time plus `expiresInS` (R3 check 2, rule 1): the step is gone after it
     seconds = body['expiresInS']
     at = priv_row_time(row)
@@ -2992,9 +3292,12 @@ class AccessLeakScanner
 
     status = row['status'].to_i
     ok = status == 200 && body['success'] == true
-    end_priv_session(priv_logout_pcs(row)) if ok && ctx[:logout]
+    end_priv_session(priv_logout_pcs(row, body)) if ok && ctx[:logout]
     # a lock answer that names no PC ends every PC (fail closed)
-    end_priv_session(body['pcId'].is_a?(String) ? [body['pcId']] : @priv_pcs.keys) if ok && ctx[:lock_session] && body['locked'] == true
+    if ok && ctx[:lock_session] && body['locked'] == true
+      state, tag = pc_tag_state(body, row)
+      end_priv_session(state == :accepted ? [tag] : (body['pcId'].is_a?(String) ? [body['pcId']] : @priv_pcs.keys))
+    end
     end_priv_session(Array(body['endedPcIds'])) if status == 200
     if ctx[:container] && status == 403
       pc = ctx[:container]
@@ -3030,7 +3333,7 @@ class AccessLeakScanner
     account = @ops_session_accounts[pc]
     return unless account
 
-    @priv_resumable[pc] = { account: account, step: @ops_earned.include?("admin:#{pc}"), deadline: @priv_deadlines[pc], kind: @priv_kinds[pc] }
+    @priv_resumable[pc] = { account: account, step: @ops_earned.include?("admin:#{pc}"), deadline: @priv_deadlines[pc], kind: @priv_kinds[pc], keyboard: @priv_keyboard[pc] }
   end
 
   # What kind of session an answer shows (R4-2): its `via` and whether it is a relay. A host row never lists a relay.
@@ -3040,9 +3343,11 @@ class AccessLeakScanner
 
   # The step is gone for good and nothing of it may be resumed (the session became another kind, or another session replaced it).
   def lose_priv_step(pc)
+    @priv_relay_held.delete(pc) # S5bc R2-SCANNER3
     @ops_earned.delete("admin:#{pc}")
     @priv_deadlines.delete(pc)
     @priv_kinds.delete(pc)
+    @priv_keyboard.delete(pc)
     @priv_resumable.delete(pc)
   end
 
@@ -3061,6 +3366,7 @@ class AccessLeakScanner
     return unless @priv_pcs.key?(pc)
 
     session = body['session']
+    drop_relay_mark(pc) unless keep_relay_mark?(pc, session) # S5b, S5c
     held = @ops_session_accounts[pc]
     earlier = @priv_resumable[pc]
     if !session.is_a?(Hash) || session['locked'] == true
@@ -3096,6 +3402,7 @@ class AccessLeakScanner
     @ops_earned.delete("admin:#{pc}")
     @priv_deadlines.delete(pc)
     @priv_kinds.delete(pc)
+    @priv_keyboard.delete(pc)
   end
 
   # A resume restores the step only when every one of these holds (R4 check 3): the row is not past the token deadline of the
@@ -3113,11 +3420,13 @@ class AccessLeakScanner
 
     @priv_used << [:resume, key]
     @priv_resumable.delete(pc)
+    @priv_relay_held.delete(pc) # S5bc R2-SCANNER3
     @ops_session_accounts[pc] = saved[:account]
     return unless saved[:step] && session['access'] == 'admin'
 
     @ops_earned << "admin:#{pc}"
     @priv_kinds[pc] = saved[:kind] if saved[:kind]
+    @priv_keyboard[pc] = true if saved[:keyboard]
     @priv_deadlines[pc] = saved[:deadline] if saved[:deadline]
   end
 
@@ -3142,7 +3451,9 @@ class AccessLeakScanner
 
       held = @ops_session_accounts[pc]
       session = hash['session']
-      if !session.is_a?(Hash)
+      if !session.is_a?(Hash) && held && @priv_relay_held[pc] == held
+        next # S5bc R1: the server never lists a relay session in a host row, so no session there says nothing about it
+      elsif !session.is_a?(Hash)
         shown = held && (@priv_npcs.dig(held, 'displayName') || held)
         hash['responding'] == false && hash['heldAs'].is_a?(String) && hash['heldAs'] == shown ? downgrade_priv_step(pc) : end_priv_session([pc])
       elsif session['locked'] == true
@@ -3215,9 +3526,12 @@ class AccessLeakScanner
       next unless pc.is_a?(String) && @priv_pcs.key?(pc)
 
       @ops_earned.delete("admin:#{pc}")
+      drop_relay_mark(pc)
+      @priv_relay_held.delete(pc)
       @ops_session_accounts.delete(pc)
       @priv_deadlines.delete(pc)
       @priv_kinds.delete(pc)
+      @priv_keyboard.delete(pc)
       @priv_resumable.delete(pc) unless keep_resumable
       @priv_signin_pending = nil if @priv_signin_pending && @priv_signin_pending[:pc] == pc
     end
@@ -3255,11 +3569,24 @@ class AccessLeakScanner
     @priv_pcs.each_key { |pc| @ops_earned << "admin_read:#{profile}@#{pc}" if priv_admin_opens?(acl, pc) }
   end
 
-  # Is `admin:<pc>` earned at a PC (the given one, or any) whose owner the list admits?
+  # Is an admin session earned at a PC (the given one, or any) whose owner, or any account cached there now, the list admits?
+  # R1-L3: since unit 08 an admin at a PC reaches the profile of every account cached there now (`admin_present_accounts`: the
+  # owner, then a start candidate always, a borrow candidate only once its borrow is proved as the collect proves it). The
+  # admin session is the S5a step or a proved relay administrator (the same reach, ruling B).
   def priv_admin_opens?(acl, pc_id)
     (pc_id ? [pc_id] : @priv_pcs.keys).any? do |pc|
-      @ops_earned.include?("admin:#{pc}") && (owner = priv_owner(pc)) && priv_acl_admits?(acl, owner)
+      (@ops_earned.include?("admin:#{pc}") || @hv_relay.key?(pc)) && priv_admin_reach(pc).any? { |id| priv_acl_admits?(acl, id) }
     end
+  end
+
+  # The account ids an admin session at the PC reaches: its owner, then the accounts cached there now.
+  def priv_admin_reach(pc)
+    owner = priv_owner(pc)
+    reach = owner ? [owner] : []
+    @hv_candidates.each do |npc, entries|
+      entries.each { |declared, after| reach << npc if declared == pc && (after.nil? || harvest_borrowed?(pc, npc)) }
+    end
+    reach
   end
 
   # May this container answer hold the profile's items? `container` is a PC id (the desktop) or a folder id.
@@ -3302,6 +3629,140 @@ class AccessLeakScanner
       earned = pc ? @ops_earned.count { |step| step.match?(/\Aadmin_read:.+@#{Regexp.escape(pc)}\z/) } : 0
       add.call('log_row', "log:admin_read:#{pc || 'unknown'}", "$.rows[#{i}]") if seen[pc] > earned
     end
+    scan_admin_act_log_rows(body, add)
+  end
+
+  # S5bc review R2-L2: a CRED_COLLECT or USB_OVERRIDE row is written only by the act it names, so each row (and each repeat of a
+  # merged `OK xN` row) must be matched by one recorded act in the capture, earlier than the answer that shows it:
+  # - CRED_COLLECT: a credited collect answer (a 200 whose `harvested` rows were all credited) at that PC under that account,
+  #   with `count: N` equal to the rows it added (`@hv_acts[[:collect, pc, account, N]]`);
+  # - USB_OVERRIDE: a 200 `{ "success": true }` POST /inventory answer whose `inv` tag is a remove of a storage or HID device
+  #   the PC's policy would have refused, used on an object whose plant PC held an admin session then
+  #   (`@hv_acts[[:plant, pc, account, device]]`); a row with no tag, or another tag, earns nothing.
+  # A row whose `where` names no PC of the scenario (or two), an unreadable `result` or `detail`, or an account the capture does not
+  # show is unearned (fail closed). Each answer counts its own rows (a log answer is a snapshot, so a later one repeats the earlier).
+  # Limit: a collect or plant recorded in an earlier capture file is not known, so its row is flagged.
+  ADMIN_ACT_EVENTS = %w[CRED_COLLECT USB_OVERRIDE].freeze
+
+  def scan_admin_act_log_rows(body, add)
+    used = Hash.new(0)
+    Array(body['rows']).each_with_index do |row, i|
+      next unless row.is_a?(Hash) && ADMIN_ACT_EVENTS.include?(row['event'])
+
+      pcs = @priv_pcs.select { |_, pc| pc['name'] == row['where'] }.keys
+      pc = pcs.size == 1 ? pcs.first : nil
+      key = pc ? admin_act_key(row, pc) : nil
+      repeats = admin_act_repeats(row['result'])
+      ok = !key.nil? && !repeats.nil?
+      if ok
+        used[key] += repeats
+        ok = used[key] <= @hv_acts[key]
+      end
+      add.call('log_row', "log:#{row['event'].downcase}:#{pc || 'unknown'}", "$.rows[#{i}]") unless ok
+    end
+  end
+
+  def admin_act_repeats(result)
+    return nil unless result.is_a?(String)
+
+    match = result.match(/\AOK(?: x(\d+))?\z/)
+    match ? (match[1] ? match[1].to_i : 1) : nil
+  end
+
+  def admin_act_key(row, pc)
+    account = row['as']
+    return nil unless account.is_a?(String)
+
+    account = account.strip.downcase
+    if row['event'] == 'CRED_COLLECT'
+      count = row['detail'].is_a?(String) ? row['detail'].match(/\Acount: ([1-9]\d*)\z/) : nil
+      count ? [:collect, pc, account, count[1].to_i] : nil
+    else
+      device = row['detail'].is_a?(String) ? row['detail'].match(/\Adevice: (storage|hid)\z/) : nil
+      device ? [:plant, pc, account, device[1]] : nil
+    end
+  end
+
+  # The username of the account the capture holds at the PC now (keyboard step or proved relay), lower case, else nil.
+  def admin_act_account(pc)
+    id = @hv_relay[pc] || @ops_session_accounts[pc]
+    name = id && @priv_npcs[id]&.dig('creds', 'username')
+    name.is_a?(String) ? name.strip.downcase : nil
+  end
+
+  def note_admin_collect(pc, count)
+    account = admin_act_account(pc)
+    @hv_acts[[:collect, pc, account, count]] += 1 if account && count.positive?
+  end
+
+  # A 200 `{ "success": true }` POST /inventory answer tagged as a remove of a device on an object whose plant PC holds an admin
+  # session now (a needsSession grant takes only the keyboard step, as the server's keyboard_or_session_admin? does).
+  def note_usb_plant(body, row)
+    return note_usb_implant(body, row) if row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/network/implant')
+    return unless row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/inventory')
+    return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash)
+
+    inv = row['inv']
+    # S5bc R2-SCANNER1: an item given back to the tray can be planted again
+    @hv_held << inv['itemId'] if inv.is_a?(Hash) && inv['action'] == 'add' && inv['itemId'].is_a?(String)
+    # S5bc R4-SCANNER1: every 200 remove of a held device takes it out of the held set, whatever object it names (or none)
+    held = inv.is_a?(Hash) && inv['action'] == 'remove' && inv['itemId'].is_a?(String) && body['success'] == true ? @hv_held.delete?(inv['itemId']) : nil
+    return unless body.keys == ['success'] && body['success'] == true
+    return unless inv.is_a?(Hash) && inv['action'] == 'remove' && inv['itemId'].is_a?(String) && inv['usedOn'].is_a?(String)
+
+    obj = scenario_object(inv['usedOn'])
+    item = scenario_item(inv['itemId'])
+    return unless obj && item && %w[storage hid].include?(item['usbClass']) && BreakEscape::AccessWork.plant_refused?(@data, obj, item)
+
+    grant = BreakEscape::CaptureModel.session_grant_pc(obj)
+    pc = grant.presence || (@priv_pcs.key?(obj['id'].to_s) ? obj['id'].to_s : BreakEscape::CaptureModel.port_pc(obj))
+    return unless pc && @priv_pcs.key?(pc)
+    # S5bc R2-SCANNER1: the server answers 200 to a remove of an item that is not held and writes no row: only the first
+    # plant of a device (since it was last added) can have written one
+    return unless held
+    return unless grant.present? ? @ops_earned.include?("admin:#{pc}") : harvest_pc_admin?(pc)
+
+    account = admin_act_account(pc)
+    @hv_acts[[:plant, pc, account, item['usbClass']]] += 1 if account
+  end
+
+  # S5bc R1 (playtest 173): a 200 POST /network/implant answer that names the device it took (`consumedId`) and the PC it was
+  # planted at (`foothold.sourceId`) is a plant too, as the server writes the same USB_OVERRIDE row for it. Credited only for a
+  # storage or hid device the PC's policy refuses, and only while the KEYBOARD admin step is held at that PC (a relay, a
+  # foothold or a technique session never earns it, as the server's keyboard_admin? takes only the keyboard's). An answer
+  # that names no held device or no PC (the dropped shape) earns nothing.
+  def note_usb_implant(body, row)
+    return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
+    return unless body['consumedId'].is_a?(String) && body['foothold'].is_a?(Hash) && body['foothold']['sourceId'].is_a?(String)
+    return if body['already'] == true # S5bc R2-SCANNER1: the retry answer consumes nothing and writes no row
+
+    held = @hv_held.delete?(body['consumedId']) # R3-SCANNER1, R4-SCANNER1: taken out of the held set at any PC
+    pc = body['foothold']['sourceId']
+    return unless @priv_pcs.key?(pc)
+    return unless held # only a device the capture shows held can have been taken
+    # R2-SCANNER2: the keyboard step only (a technique session's admin step answers needs_console and writes no row)
+    return unless @ops_earned.include?("admin:#{pc}") && %w[password credential].include?(@priv_kinds[pc]&.first) && @priv_kinds[pc][1] == false && @priv_keyboard[pc]
+
+    item = scenario_item(body['consumedId'])
+    return unless item && %w[storage hid].include?(item['usbClass']) && BreakEscape::AccessWork.plant_refused?(@data, @priv_pcs[pc], item)
+
+    account = admin_act_account(pc)
+    @hv_acts[[:plant, pc, account, item['usbClass']]] += 1 if account
+  end
+
+  def scenario_object(id)
+    Array(@data['rooms'].is_a?(Hash) ? @data['rooms'].values : []).each do |room|
+      found = Array(room.is_a?(Hash) ? room['objects'] : nil).find { |o| o.is_a?(Hash) && o['id'].to_s == id }
+      return found if found
+    end
+    nil
+  end
+
+  # The first hash of the scenario that carries this id and a usbClass (a held or placed device).
+  def scenario_item(id)
+    found = nil
+    walk_hashes(@data, '$') { |hash, _| found ||= hash if hash['id'].to_s == id && hash['usbClass'].is_a?(String) }
+    found
   end
 
   # ---- ops log reader L2a: GET /log_rows (OPS_LOG_ROWS_PLAN.md section 7) --------------------
@@ -3426,7 +3887,2231 @@ class AccessLeakScanner
     strings.any? { |secret| s == secret || (secret.length >= 20 && s.include?(secret)) }
   end
 
+  # ---- hash records and the cracker (S7) ----------------------------------------------------------
+
+  CRACK_NEVER_KEYS = %w[crack passwordPattern passwordDifficulty earnedFacts crackRuns crackStarted crackedAccounts].freeze
+  CRACK_CREDENTIAL_KEYS = %w[kind account token source proof].freeze
+  CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted heldItem].freeze
+  CRACK_ROW_STATUSES = %w[ready running infeasible cracked].freeze
+  CRACK_ACCOUNT_KEYS = %w[npcId username displayName].freeze
+  CRACK_ENTRY_KEYS = %w[id kind source account label password gainedAt forThisPc accepted].freeze
+  CRACK_TOKEN = /\A(?:[A-HJ-NP-Z2-9]{4}-){5}[A-HJ-NP-Z2-9]{4}\z/.freeze
+  CRACK_REFUSALS = { 'bad_request' => 400, 'not_found' => 404, 'no_recipe' => 422, 'fact_not_held' => 422 }.freeze
+  CRACK_MAX_WAIT = 600
+  # The two one-key answers of the app's own handlers that can reach POST /crack: a Pundit refusal and a CSRF failure.
+  CRACK_APP_ERRORS = { 'Not authorized' => 403, 'invalid_authenticity_token' => 422 }.freeze
+
+  CRACK_GRANTING_CLASSES = %w[common guessable reused].freeze
+  CRACK_WAIT_SLACK_S = 2 # row `t` is the arrival of the answer (H3)
+
+  # Hash records of the scenario (with the class and grade the server resolves for each), and each NPC's own password.
+  # Read once.
+  def collect_crack
+    @crack_hash_accounts = Set.new
+    @crack_hash_ids = Set.new
+    @crack_records = []
+    BreakEscape::CredentialModel.registry(@data).each do |id, entry|
+      next unless entry['kind'] == 'hash'
+
+      @crack_hash_ids << id.to_s
+      @crack_hash_accounts << entry['account'] if entry['account'].is_a?(String)
+      npc = BreakEscape::CredentialModel.account_npc(@data, entry['account'])
+      @crack_records << { id: id.to_s, entry: entry, account: entry['account'], npc: npc, klass: crack_record_class(entry, npc),
+                          resolved: npc ? BreakEscape::CrackDifficulty.resolve(entry, npc) : nil }
+    end
+    @crack_npc_password = {}
+    @passwords.each { |password, owners| owners.each { |id| @crack_npc_password[id] = password } }
+    waits = @crack_records.filter_map { |r| r[:resolved] && r[:resolved][:salted] ? r[:resolved][:crack_seconds] : nil }
+    @crack_max_wait = [waits.max || 0, CRACK_MAX_WAIT].min
+    facts = @crack_records.select { |r| r[:klass] == 'guessable' }.map { |r| Array(r[:entry].dig('crack', 'facts')).length }
+    @crack_max_facts = [facts.max || 0, 4].min
+  end
+
+  GAME_METHODS_CRACK = %i[credential_proof_holds? earned_fact_ids crack_token password_held_for? player_state].freeze
+  GAME_METHODS_FACTS = %i[earned_fact_ids].freeze
+
+  # R2-L5: given a game, the proof, fact, token and held-partner checks need these public methods. A game that lacks one is an
+  # error (the CLI stops and prints no clean result), never a check that quietly passes everything. Only the checks the
+  # scenario can reach are required: hash records need the crack set, award facts the fact set.
+  def require_game_methods
+    return unless @game
+
+    require_harvest_game_methods # S5b, S5c
+
+    needed = []
+    needed |= GAME_METHODS_CRACK unless @crack_records.empty?
+    needed |= GAME_METHODS_FACTS unless @fact_entries.empty?
+    missing = needed.reject { |m| @game.respond_to?(m) }
+    raise ArgumentError, "the game given to the leak scanner lacks #{missing.join(', ')}: a check would be skipped" unless missing.empty?
+  end
+
+  # OpsCracking#crack_class: crack.password, else the NPC's habits.password, for an NPC with a password and a grade that
+  # resolves; nil otherwise.
+  def crack_record_class(entry, npc)
+    return nil unless entry.is_a?(Hash) && npc.is_a?(Hash)
+    return nil unless BreakEscape::CredentialModel.present_string?(npc.dig('creds', 'password'))
+    return nil unless BreakEscape::CrackDifficulty.resolve(entry, npc)
+
+    crack = entry['crack']
+    written = crack.is_a?(Hash) ? crack['password'] : nil
+    habits = npc['habits']
+    klass = written || (habits.is_a?(Hash) ? habits['password'] : nil)
+    %w[strong guessable reused common].include?(klass) ? klass : nil
+  end
+
+  # Earned set: a 200 POST /crack answer of the exact cracked shape names accounts (all or none), and only if the
+  # server could have given it (see crack_grant). A well formed 200 running answer is one credit for a later salted grant.
+  def note_crack_earned(body, ctx, row)
+    @crack_last_grant = nil
+    return unless ctx[:crack] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body, row)
+
+    return note_crack_earned_tagged(body, row) if @tags_on
+
+    case body['status']
+    when 'running'
+      @crack_running_credits += 1
+      @crack_running_seen = true
+    when 'nomatch' then @crack_runs_seen = true if body['runs'] == 1
+    when 'infeasible' then @crack_infeasible_seen = true
+    end
+    @crack_last_grant = crack_cracked_accounts(body, row)
+    @crack_earned.merge(@crack_last_grant) if @crack_last_grant
+  end
+
+  # H1 to H4 (hardening U2): the same bookkeeping per hash id, the id being the row's `hash` tag. A row with no usable tag
+  # earns nothing and changes no record's state. A `nomatch` or `cracked` row ends the id's current run.
+  def crack_state(id)
+    @crack_by_id[id] ||= { credits: 0, running_seen: false, runs_seen: false, infeasible_seen: false, run_start: nil }
+  end
+
+  def note_crack_earned_tagged(body, row)
+    id = crack_row_tag(row)
+    return unless id
+
+    state = crack_state(id)
+    case body['status']
+    when 'running'
+      state[:credits] += 1
+      state[:running_seen] = true
+      state[:run_start] ||= { t: capture_time(row), ready: body['readyInSeconds'] }
+    when 'nomatch'
+      state[:runs_seen] = true if body['runs'] == 1
+      state[:run_start] = nil
+    when 'infeasible' then state[:infeasible_seen] = true
+    when 'cracked'
+      @crack_last_grant = crack_cracked_accounts(body, row)
+      @crack_earned.merge(@crack_last_grant) if @crack_last_grant
+      state[:run_start] = nil
+    end
+  end
+
+  # A per-record flag: the tagged id's in a tagged run, the run-wide one otherwise.
+  def crack_flag(id, key)
+    return !!(@crack_by_id[id] && @crack_by_id[id][key]) if @tags_on
+
+    instance_variable_get({ running_seen: :@crack_running_seen, runs_seen: :@crack_runs_seen, infeasible_seen: :@crack_infeasible_seen }.fetch(key))
+  end
+
+  # The accounts a cracked answer grants, or nil unless the whole answer is well formed and the server could have given it.
+  def crack_cracked_accounts(body, row)
+    return nil unless body['status'] == 'cracked' && body.key?('accountId')
+
+    account = body['accountId']
+    accounts = body['credentialIds'].map { |cid| cid.delete_suffix('.cracked') }
+    return nil unless accounts.include?(account) && accounts.uniq.length == accounts.length
+
+    crack_grant(account, accounts, row) ? accounts : nil
+  end
+
+  # OpsCracking#run_crack! and #crack_grant!: a record of the named account that is held, has a class that can be cracked
+  # (never strong), has its recipe met as far as the game shows (all the facts of a guessable record earned; a reused
+  # record's equal-password account already held), and either is unsalted (a direct hit grants at once) or follows a
+  # running answer (a salted hit is granted only by a post after a stored run). More than one account is a batch: only an
+  # unsalted direct hit batches, only to accounts with an equal password and a held unsalted record of their own.
+  def crack_grant(account, accounts, row)
+    candidates = crack_held_records(account).select { |r| crack_recipe_met?(r) }
+    if @tags_on
+      # H1: the tagged record, which must be one of this account's own
+      tag = crack_row_tag(row)
+      candidates = candidates.select { |r| r[:id] == tag }
+    end
+    return false if candidates.empty?
+
+    if accounts.length > 1
+      password = @crack_npc_password[account]
+      return false unless candidates.any? { |r| !r[:resolved][:salted] }
+
+      return (accounts - [account]).all? do |other|
+        @crack_npc_password[other] == password && crack_held_records(other).any? { |r| !r[:resolved][:salted] }
+      end
+    end
+    return true if candidates.any? { |r| !r[:resolved][:salted] }
+    return crack_grant_tagged_salted(candidates.first, row) if @tags_on
+    return false if @crack_running_credits < 1
+
+    @crack_running_credits -= 1
+    true
+  end
+
+  # H2, H3: a salted grant spends its own record's credit, and only once the current run's wait is over (row `t` is the answer's
+  # arrival, so a 2 second tolerance). No current run, an unreadable time or an unreadable wait earns nothing.
+  def crack_grant_tagged_salted(record, row)
+    state = @crack_by_id[record[:id]]
+    return false unless state && state[:credits] >= 1 && state[:run_start]
+
+    start = state[:run_start]
+    now = capture_time(row)
+    return false unless now && start[:t] && start[:ready].is_a?(Integer) && now >= start[:t] + start[:ready] - CRACK_WAIT_SLACK_S
+
+    state[:credits] -= 1
+    true
+  end
+
+  def crack_held_records(npc_id)
+    return [] unless @crack_npc_password[npc_id]
+
+    @crack_records.select do |r|
+      r[:account] == npc_id && r[:resolved] && crack_record_held?(r)
+    end
+  end
+
+  def crack_record_held?(record)
+    return true unless @game
+
+    @game.credential_proof_holds?(record[:id], record[:entry])
+  end
+
+  def crack_recipe_met?(record)
+    return false unless CRACK_GRANTING_CLASSES.include?(record[:klass])
+
+    case record[:klass]
+    when 'guessable'
+      return true unless @game
+
+      (Array(record[:entry].dig('crack', 'facts')).map(&:to_s) - Array(@game.earned_fact_ids).map(&:to_s)).empty?
+    when 'reused'
+      password = @crack_npc_password[record[:account]]
+      @crack_npc_password.any? do |other, pw|
+        other != record[:account] && pw == password && (@crack_earned.include?(other) || crack_held_elsewhere?(other))
+      end
+    else true
+    end
+  end
+
+  # The game holds this account's password by a route other than a crack (a capture, a registry password entry).
+  def crack_held_elsewhere?(npc_id)
+    return false unless @game
+
+    state = @game.player_state
+    cracked = state.is_a?(Hash) ? Array(state['crackedAccounts']) : []
+    @game.password_held_for?(npc_id) && !cracked.include?(npc_id)
+  end
+
+  # The exact keys and value ranges of each 200 answer of POST /crack.
+  def crack_answer_shape_ok?(body, row)
+    return false unless body['success'] == true
+
+    tag = @tags_on ? crack_row_tag(row) : nil
+    tagged = tag && @crack_records.find { |r| r[:id] == tag }
+
+    keys = body.keys.sort
+    int = ->(v, range) { v.is_a?(Integer) && range.cover?(v) }
+    case body['status']
+    when 'cracked'
+      return keys == %w[status success] unless body.key?('accountId') || body.key?('credentialIds')
+
+      keys == %w[accountId credentialIds status success] && body['accountId'].is_a?(String) && !body['accountId'].empty? &&
+        body['credentialIds'].is_a?(Array) && body['credentialIds'].length.between?(1, 64) &&
+        body['credentialIds'].all? { |c| c.is_a?(String) && c.end_with?('.cracked') && c.length > '.cracked'.length }
+    when 'running'
+      max = tagged ? (crack_waiting_record?(tagged) && crack_record_held?(tagged) ? [tagged[:resolved][:crack_seconds], CRACK_MAX_WAIT].min : -1) : crack_held_max_wait
+      keys == %w[readyInSeconds status success] && int.call(body['readyInSeconds'], 0..max)
+    when 'nomatch'
+      keys == %w[status success] ||
+        (keys == %w[runs status success] && body['runs'] == 1 && (@tags_on ? crack_tagged_strong?(tagged) : crack_held_class?('strong')))
+    when 'infeasible'
+      keys == %w[runs status success] && body['runs'] == 2 &&
+        (@tags_on ? crack_tagged_strong?(tagged) && crack_flag(tag, :runs_seen) : crack_held_class?('strong') && @crack_runs_seen)
+    when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..crack_held_max_facts)
+    else false
+    end
+  end
+
+  # R2-L3: the server answers `running` only for a held salted record of a crackable class, `needMoreFacts` only for a held
+  # guessable one and `runs` only for a held strong one. Without a game every record counts as held.
+  def crack_waiting_record?(record)
+    record[:resolved] && record[:resolved][:salted] && CRACK_GRANTING_CLASSES.include?(record[:klass])
+  end
+
+  def crack_held_max_wait
+    waits = @crack_records.select { |r| crack_waiting_record?(r) && crack_record_held?(r) }.map { |r| r[:resolved][:crack_seconds] }
+    [waits.compact.max || 0, CRACK_MAX_WAIT].min
+  end
+
+  def crack_held_max_facts
+    facts = @crack_records.select { |r| r[:resolved] && r[:klass] == 'guessable' && crack_record_held?(r) }
+                          .map { |r| Array(r[:entry].dig('crack', 'facts')).length }
+    [facts.max || 0, 4].min
+  end
+
+  # Tagged runs: the tagged record itself is a held strong one (no tag, or an unknown id, is not).
+  def crack_tagged_strong?(record)
+    !record.nil? && !record[:resolved].nil? && record[:klass] == 'strong' && crack_record_held?(record)
+  end
+
+  def crack_held_class?(klass)
+    @crack_records.any? { |r| r[:resolved] && r[:klass] == klass && crack_record_held?(r) }
+  end
+
+  def crack_refusal_shape_ok?(body, http)
+    body['success'] == false && body.keys.sort == %w[reason success] && CRACK_REFUSALS[body['reason']] == http
+  end
+
+  # { JSON path => npc id } for the `password` of each cracked keyring entry that passes the full check, so
+  # scan_passwords can let that NPC's own value through there, and only there.
+  def crack_password_paths(body)
+    entries = keyring_entries_in(body)
+    return {} if entries.nil?
+
+    paths = {}
+    entries.each_with_index do |entry, i|
+      npc_id = crack_entry_account(entry)
+      paths["$.entries[#{i}].password"] = npc_id if npc_id
+    end
+    paths
+  end
+
+  # The account of a well formed, earned cracked entry (the server's row, its own password), else nil.
+  def crack_entry_account(entry)
+    return nil unless entry.is_a?(Hash) && entry['source'] == 'cracked'
+    return nil unless (entry.keys - CRACK_ENTRY_KEYS).empty? && entry['kind'] == 'password'
+
+    id = entry['id']
+    return nil unless id.is_a?(String) && id.end_with?('.cracked')
+
+    npc_id = id.delete_suffix('.cracked')
+    return nil unless @crack_earned.include?(npc_id) && entry['label'] == 'Cracked' && crack_scope_keys_ok?(entry)
+    return nil unless entry['account'] == crack_account_block(BreakEscape::CredentialModel.account_npc(@data, npc_id))
+
+    password = entry['password']
+    password.is_a?(String) && password == @crack_npc_password[npc_id] ? npc_id : nil
+  end
+
+  def scan_crack(body, ctx, row, add)
+    scan_crack_keys(body, ctx, add)
+    scan_crack_answer(body, ctx, row, add)
+    scan_crack_rows(body, ctx, add)
+    scan_crack_entries(body, ctx, add)
+  end
+
+  def scan_crack_keys(body, ctx, add)
+    each_key_path(body) do |key, json_path|
+      add.call('crack_key', "crack:key:#{key}", safe_path(json_path)) if CRACK_NEVER_KEYS.include?(key.to_s)
+    end
+    recipe_route = ctx[:keyring] || ctx[:crack] || ctx[:crack_keyring_route]
+    walk_hashes(body, '$') do |hash, json_path|
+      add.call('crack_key', 'crack:key:difficulty', safe_path("#{json_path}.difficulty")) if hash.key?('difficulty') && !crack_lock_difficulty?(hash, recipe_route)
+      credential_shaped = hash['kind'].is_a?(String) || hash['account'].is_a?(Hash) || hash.key?('proof')
+      add.call('crack_key', 'crack:key:facts', safe_path("#{json_path}.facts")) if hash.key?('facts') && (credential_shaped || recipe_route)
+      add.call('crack_key', 'crack:key:crackFacts', safe_path("#{json_path}.crackFacts")) if hash.key?('crackFacts') && !crack_facts_ok?(body, hash, json_path, ctx)
+    end
+  end
+
+  # The one public use of `difficulty`: a door or object lock, told by a string lockType and none of a credential's keys,
+  # and never on the keyring or crack routes (every shipped lock with a difficulty has a string lockType).
+  def crack_lock_difficulty?(hash, recipe_route)
+    !recipe_route && hash['lockType'].is_a?(String) && (hash.keys & CRACK_CREDENTIAL_KEYS).empty?
+  end
+
+  # crackFacts: the top-level list of a keyring answer that lists a hash row; known fact ids, bare, no repeats,
+  # and (given the game) earned.
+  def crack_facts_ok?(body, hash, json_path, ctx)
+    return false unless ctx[:crack_keyring] && json_path == '$' && hash.equal?(body)
+
+    entries = keyring_entries_in(body)
+    list = hash['crackFacts']
+    return false unless entries && entries.any? { |e| e.is_a?(Hash) && e['kind'] == 'hash' }
+    return false unless list.is_a?(Array) && list.all? { |f| f.is_a?(String) } && list.uniq.length == list.length
+
+    known = @data.dig('social', 'intelFacts')
+    return false unless known.is_a?(Hash) && list.all? { |f| !f.start_with?('se_intel_') && known.key?(f) }
+    return true unless @game
+
+    (list - Array(@game.earned_fact_ids)).empty?
+  end
+
+  # Every JSON object answered by POST /crack is judged: the shape of its 200 status, one of the route's four refusals, or
+  # one of the two exact one-key errors the app's own handlers give (Pundit 403, CSRF 422). A body that is not JSON
+  # (an HTML error page, kept as bodyText) on a non-200 stays out.
+  def scan_crack_answer(body, ctx, row, add)
+    return unless ctx[:crack]
+
+    http = row['status']
+    return add.call('crack_answer', 'crack:answer', '$') unless http.is_a?(Integer)
+    return if http != 200 && body.is_a?(String)
+
+    ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body, row) : crack_refusal_shape_ok?(body, http) || crack_app_error_ok?(body, http))
+    add.call('crack_answer', 'crack:answer', '$') unless ok
+    # R2-L2: a well formed cracked answer for an account the server must not grant is a finding by itself
+    return unless ok && http == 200 && body['status'] == 'cracked' && body.key?('accountId') && @crack_last_grant.nil?
+
+    add.call('crack_unearned', "crack:answer:#{body['accountId']}", '$')
+  end
+
+  def crack_app_error_ok?(body, http)
+    body.keys == ['error'] && CRACK_APP_ERRORS[body['error']] == http
+  end
+
+  def scan_crack_rows(body, ctx, add)
+    elements = {}
+    entries = ctx[:crack_keyring] ? keyring_entries_in(body) : nil
+    entries&.each_with_index { |e, i| elements["$.entries[#{i}]"] = e }
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash['kind'] == 'hash'
+
+      %w[password routes connectsTo].each do |key|
+        add.call('crack_row', "crack:row:#{key}", safe_path("#{json_path}.#{key}")) if hash.key?(key)
+      end
+      add.call('crack_row', 'crack:row', safe_path(json_path)) unless elements[json_path].equal?(hash) && crack_row_ok?(hash)
+    end
+    scan_crack_waits(body, ctx, add)
+  end
+
+  # A hash row is the server's row (OpsCracking#hash_keyring_entry): the registry record's own values, nothing free.
+  def crack_row_ok?(row)
+    return false unless (row.keys - CRACK_ROW_KEYS).empty? && row['source'] == 'registry' && row['id'].is_a?(String)
+
+    record = @crack_records.find { |r| r[:id] == row['id'] }
+    return false unless record && record[:resolved] && CRACK_ROW_STATUSES.include?(row['status'])
+    return false unless row['label'] == crack_record_label(record[:entry]) && row['kind'] == 'hash'
+    return false unless row['account'] == crack_account_block(record[:npc]) && row['salted'] == record[:resolved][:salted]
+    return false unless crack_token_ok?(row['token'], record) && crack_scope_keys_ok?(row)
+    return false if row.key?('heldItem') && !crack_held_item_ok?(row['heldItem'], record[:entry])
+    return false if row['status'] == 'cracked' && !crack_account_granted?(record[:account])
+    return false if row['status'] == 'infeasible' && !(record[:klass] == 'strong' && crack_flag(record[:id], :infeasible_seen))
+
+    wait = row['readyInSeconds']
+    return !row.key?('readyInSeconds') unless row['status'] == 'running'
+
+    # R2-L4: running only for a salted record of a crackable class, within its own wait, after a running answer
+    crack_waiting_record?(record) && crack_flag(record[:id], :running_seen) && wait.is_a?(Integer) && wait.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
+  end
+
+  # R1-A1: heldItem names the file the record's held proof needs, and the capture shows the player holding it.
+  def crack_held_item_ok?(item, entry)
+    BreakEscape::CredentialModel.proof_kind(entry['proof']) == 'held' && item.is_a?(String) &&
+      item == entry.dig('proof', 'held') && @mfa_taken.include?(item)
+  end
+
+  # The token shape; given a game that can say it, the token it would show for this record (Game#crack_token is pure).
+  def crack_token_ok?(token, record)
+    return false unless token.is_a?(String) && token.match?(CRACK_TOKEN)
+    return true unless @game
+
+    token == @game.crack_token(record[:id], record[:entry], record[:npc])
+  end
+
+  # gainedAt, forThisPc and accepted, when present: an Integer and two booleans.
+  def crack_scope_keys_ok?(hash)
+    (!hash.key?('gainedAt') || hash['gainedAt'].is_a?(Integer)) &&
+      %w[forThisPc accepted].all? { |k| !hash.key?(k) || [true, false].include?(hash[k]) }
+  end
+
+  # OpsCracking credential_label: the record's own label, else its held item's name, else empty.
+  def crack_record_label(entry)
+    return entry['label'] if BreakEscape::CredentialModel.present_string?(entry['label'])
+
+    definition = BreakEscape::CredentialModel.item_definition(@data, entry.dig('proof', 'held'))
+    definition.is_a?(Hash) && BreakEscape::CredentialModel.present_string?(definition['name']) ? definition['name'] : ''
+  end
+
+  # CredentialKeyring#account_block.
+  def crack_account_block(npc)
+    return nil unless npc.is_a?(Hash)
+
+    { 'npcId' => npc['id'], 'username' => npc.dig('creds', 'username'), 'displayName' => npc['displayName'] || npc['id'] }
+  end
+
+  # A row may say cracked only for an account a cracked answer granted in this scan, or one the game holds by another route.
+  def crack_account_granted?(npc_id)
+    @crack_earned.include?(npc_id) || crack_held_elsewhere?(npc_id)
+  end
+
+  def crack_wait_ok?(id, seconds)
+    record = @crack_records.find { |r| r[:id] == id }
+    !record.nil? && crack_waiting_record?(record) && crack_record_held?(record) && crack_flag(record[:id], :running_seen) &&
+      seconds.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
+  end
+
+  # The keyring `unchanged` answer's readyInSeconds map: whole seconds for registry hash ids only.
+  def scan_crack_waits(body, ctx, add)
+    return unless ctx[:crack_keyring_route] && body.is_a?(Hash) && body.key?('readyInSeconds')
+
+    waits = body['readyInSeconds']
+    # The server sends the map only on its `unchanged` answer (no entries), and only for rows it lists: proof holds.
+    ok = ctx[:crack_keyring] && body['unchanged'] == true && !body.key?('entries') && waits.is_a?(Hash) && waits.all? do |id, v|
+      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && crack_wait_ok?(id.to_s, v)
+    end
+    add.call('crack_row', 'crack:row:readyInSeconds', '$.readyInSeconds') unless ok
+  end
+
+  # A `source: "cracked"` hash anywhere: only an earned, well formed entry of a GET /keyring answer passes.
+  def scan_crack_entries(body, ctx, add)
+    entries = ctx[:crack_keyring] ? keyring_entries_in(body) : nil
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash['source'] == 'cracked'
+
+      listed = entries&.each_with_index&.any? { |e, i| e.equal?(hash) && json_path == "$.entries[#{i}]" }
+      next if listed && crack_entry_account(hash)
+
+      add.call('crack_unearned', "crack:entry:#{hash['id'].is_a?(String) ? hash['id'] : '?'}", safe_path(json_path))
+    end
+  end
+
+
+  # ---- award facts (S7 review R2-L1) ---------------------------------------------------------------
+
+  # The facts an item (revealsFacts) or a flag reward (grant_fact) awards are withheld from the bootstrap until earned
+  # (EarnedFacts#withhold_unearned_facts!) and sent with the answer that earns them: the inventory answer's top-level
+  # `facts`, a grant_fact reward's `entry`, a give_item reward's `facts`. A reload then holds the entry in the bootstrap's
+  # social.intelFacts. Feed facts keep their own rules (scan_feed) and are left out here, so nothing is reported twice.
+  # Given a game, a fact it has not earned is a finding wherever its entry, label or text sits; without one the scanner
+  # cannot tell earned from unearned, so only the place, the shape and the order are judged.
+  def collect_facts
+    @fact_entries = {} # id => { entry: the server's entry (notes stripped), text:, label: }
+    @fact_item_ids = Set.new
+    @fact_grant_ids = Set.new
+    @fact_start_ids = Set.new
+    @fact_reward_labels = Hash.new { |h, k| h[k] = Set.new } # fact id => the authored `label` of its grant_fact rewards (room data ships them)
+    facts = @data.dig('social', 'intelFacts')
+    return unless facts.is_a?(Hash)
+
+    grant = lambda do |r|
+      next unless r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String)
+
+      @fact_grant_ids << r['fact']
+      @fact_reward_labels[r['fact']] << r['label'] if r['label'].is_a?(String)
+    end
+    walk = lambda do |node, key|
+      case node
+      when Hash
+        # the hash form of flagRewards, { "<flag>": { type: grant_fact, ... } }, as EarnedFacts reads it
+        node.each_value { |r| grant.call(r) } if key == 'flagRewards'
+        node.each { |k, v| walk.call(v, k) }
+      when Array
+        node.each { |f| @fact_item_ids << f if key == 'revealsFacts' && f.is_a?(String) && !f.empty? }
+        node.each { |r| grant.call(r) } if key == 'flagRewards'
+        node.each { |v| walk.call(v, key) }
+      end
+    end
+    walk.call(@data.except('social'), nil)
+    Array(@data['startItemsInInventory']).each do |item|
+      next unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      Array(data['revealsFacts']).grep(String).each { |f| @fact_start_ids << f }
+    end
+    feed = Set.new(BreakEscape::AccessWork.feed_facts(@data)) | @feed_fact_ids
+    (@fact_item_ids | @fact_grant_ids).each do |id|
+      next if feed.include?(id) || !facts[id].is_a?(Hash)
+
+      entry = Marshal.load(Marshal.dump(facts[id]))
+      BreakEscape::AuthorNotes.strip_notes!(entry, BreakEscape::ScenarioSchema.at('#/definitions/socialIntelFact'))
+      @fact_entries[id] = { entry: entry, text: entry['text'], label: entry['label'] }
+    end
+    @fact_start_ids &= @fact_entries.keys.to_set
+  end
+
+  # { json path of an entry the server sends in this answer => fact id } for the three places that carry one, and the
+  # bootstrap's own, each only for the exact entry the scenario holds and only on a 200 answer.
+  def fact_places(body, ctx, row)
+    places = {}
+    return places unless body.is_a?(Hash) && row['status'].is_a?(Integer) && row['status'] == 200
+
+    route = ctx[:route]
+    if route.start_with?('POST ') && route.end_with?('/inventory') && body['facts'].is_a?(Hash)
+      body['facts'].each { |id, e| places["$.facts.#{id}"] = [id, :item] if fact_entry_ok?(id, e, @fact_item_ids) }
+    end
+    if route.start_with?('POST ') && (route.end_with?('/flags') || route.end_with?('/unlock')) && body['rewards'].is_a?(Array)
+      body['rewards'].each_with_index do |r, i|
+        next unless r.is_a?(Hash)
+
+        id = r['fact']
+        places["$.rewards[#{i}].entry"] = [id, :grant] if r['type'] == 'grant_fact' && id.is_a?(String) && fact_entry_ok?(id, r['entry'], @fact_grant_ids)
+        next unless r['type'] == 'give_item' && r['facts'].is_a?(Hash)
+
+        r['facts'].each { |fid, e| places["$.rewards[#{i}].facts.#{fid}"] = [fid, :item] if fact_entry_ok?(fid, e, @fact_item_ids) }
+      end
+    end
+    if ctx[:scenario] && body.dig('social', 'intelFacts').is_a?(Hash)
+      body['social']['intelFacts'].each do |id, e|
+        places["$.social.intelFacts.#{id}"] = [id, :bootstrap] if @fact_granted.include?(id) && fact_entry_ok?(id, e, @fact_entries.keys)
+      end
+    end
+    places
+  end
+
+  # The room data ships a flag reward's own authored label (`...flagRewards[i].label`); when it reads the same as the fact's
+  # label it is that authored string, not the withheld entry. Only the label, only at that key, only the reward's own text,
+  # and only when that label does not hold the fact's text (a label with the text inside a longer sentence is a finding).
+  def fact_reward_label_place?(id, str, json_path)
+    text = @fact_entries[id][:text]
+    json_path.match?(/\.flagRewards\[\d+\]\.label\z/) && @fact_reward_labels[id].include?(str) &&
+      !(text.is_a?(String) && !text.empty? && str.include?(text))
+  end
+
+  def fact_entry_ok?(id, entry, sources)
+    known = @fact_entries[id]
+    id.is_a?(String) && known && sources.include?(id) && fact_earned_by_game?(id) && entry == known[:entry]
+  end
+
+  def fact_earned_by_game?(id)
+    @fact_game_earned.nil? || @fact_game_earned.include?(id)
+  end
+
+  def scan_facts(body, ctx, row, add)
+    return if @fact_entries.empty?
+
+    places = fact_places(body, ctx, row)
+    granted_now = places.values.reject { |_id, kind| kind == :bootstrap }.map(&:first).to_set
+    walk_hashes(body, '$') do |hash, json_path|
+      hash.each do |k, v|
+        next unless @fact_entries.key?(k) && v.is_a?(Hash) && (v.key?('label') || v.key?('text'))
+
+        path = "#{json_path}.#{k}"
+        add.call('fact_unearned', "fact:#{k}", safe_path(path)) unless places.key?(path)
+      end
+    end
+    each_string(body) do |str, json_path, _owner|
+      next if places.keys.any? { |p| json_path == p || json_path.start_with?("#{p}.") || json_path.start_with?("#{p}[") }
+
+      @fact_entries.each do |id, f|
+        hit = (f[:text].is_a?(String) && content_match?(str, [f[:text]])) ||
+              (f[:label].is_a?(String) && !f[:label].empty? && str.strip == f[:label] && !@public_strings.include?(f[:label]))
+        next unless hit
+        next if fact_reward_label_place?(id, str, json_path)
+        next if fact_earned_by_game?(id) && (@fact_granted.include?(id) || granted_now.include?(id))
+
+        add.call('fact_unearned', "fact:#{id}", safe_path(json_path))
+      end
+    end
+    @fact_granted.merge(granted_now)
+  end
+
   def safe_path(json_path)
     redact(json_path)
+  end
+
+  # ---- multi-factor sign-in, S8a (feature A22, unit 23) -------------------------------------------------------------
+  #
+  # Every rule here is structural and fails closed: a value is allowed only in the exact answer the server gives for a
+  # thing the run earned, and where the proof is missing, ambiguous or malformed the value is a finding.
+  #
+  # mfa_secret
+  #   - the keys approvesPrompts, promptPatience, mfaPending, mfaAccounts, mfaPrompts anywhere, and `mfa` inside a `creds`
+  #     object;
+  #   - a `code` key (only in a scenario that authors a code device; one whose value is not six digits, however spaced, is an
+  #     authored field and not a code, except at the root of an mfa/device answer) anywhere but the root of a 200 GET mfa/device?item_id= answer whose item the run took
+  #     (a 200 POST /inventory add answer tagged with that item id, or a start item, and not removed since), whose keys are exactly deviceId, displayName,
+  #     npcId, code, secondsLeft and used, whose deviceId is the item asked for, whose npcId is that device's authored owner,
+  #     whose code is six digits and whose secondsLeft is 1 to 60;
+  #   - a `numbers` key (only where a policy asks for number matching) anywhere but an entry of the `requests` list of a 200 GET mfa/phone?npc_id= answer whose phone
+  #     (type phone_friendface, authored owner = that npc_id) the run took, for a PC where an earlier `mfaRequired` answer
+  #     opened a step for that owner, with exactly three different whole numbers 10 to 99 (only for number matching), and
+  #     an entry whose other keys are exactly pcId, host, username and n, each matching the scenario;
+  #   - a `number` key (the one right number) in a hash of a sign-in or mfa answer or one that holds `mfaRequired` or `mfa`,
+  #     except the root of the 200 POST login answer { success: false, mfaRequired: true, mfa: 'push_number_match', pcId,
+  #     npcId, number } for a PC and account the scenario makes a number-matching step;
+  #   - an `mfaRequired` answer of any other shape or route, or for a PC and account that owe no such step.
+  # mfa_session
+  #   - a session answer (POST login success, a pass answer of POST mfa/verify, mfa/prompt or mfa/approve, a session in the
+  #     bootstrap `sessions`) for an account at a PC that asks it for a second step, when the step was not passed in the run:
+  #     a pass answer needs one open step for that account (named by an earlier `mfaRequired` answer, narrowed by the answer's
+  #     host label), the route that matches its kind (verify for a code, prompt with approvedBy owner for push, approve
+  #     with approvedBy player and a taken phone for push and number matching) and a status of 200. A login success needs
+  #     the PC to be named (the row's `pc` tag, or in an untagged capture the answer's host label or a `--signin` name) or every PC that could be it to be free of a
+  #     step; an unnamed answer that could be at a PC that owes a step is a finding. The way in is exempt only when the
+  #     answer says it was a claim, a token or an assist invite (relay) the scenario's registry holds for that account at a PC the
+  #     answer could be about (a technique session only in the bootstrap `sessions`; `relay: true` alone, a saved connection
+  #     and a technique answer on a sign-in are not exempt); an account with creds.mfa false is exempt. An account's own locked
+  #     session is unlocked with no step (as the server does) once per lock, after a pass answer earned that session and a 200
+  #     lock_session answer locked it. Every successful sign-in answer, a logout and an `endedPcIds` entry take the earned
+  #     session back. In a tagged capture the sign-in row's `pc` tag places it (and a sign-out or lock row's tag
+  #     names the PC it ends; a tag the answer's `pcId` contradicts is an `ops_tag` finding). A sign-in answer an UNTAGGED capture
+  #     cannot place at a PC is named like the privilege rules' ones (`--untagged` only): `--signin <account>@<pc>#<n>` (or `@<row time>`) names the PC of ONE sign-in success,
+  #     `--logout` that of ONE sign-out; the PC must admit the account, a name is used by one row only, a name that a later
+  #     answer refutes, that no desktop row confirms or that matches no row exits 2, and a named sign-in at a step PC still needs the step or a real unlock.
+  #     (`--resume` has nothing to restore here: no answer ends an earned session by a power cut.)
+  MFA_NEVER_KEYS = %w[approvesPrompts promptPatience mfaPending mfaAccounts mfaPrompts].freeze
+  MFA_DEVICE_KEYS = %w[code deviceId displayName npcId secondsLeft used].freeze
+  MFA_PHONE_ENTRY_KEYS = %w[host n pcId username].freeze
+  MFA_REQUIRED_KEYS = %w[mfa mfaRequired npcId pcId success].freeze
+  MFA_NUMBER_RANGE = (10..99).freeze
+  MFA_EXEMPT_KINDS = %w[token assist_invite].freeze
+  MFA_PUSH_KINDS = %w[push push_number_match].freeze
+  MFA_ROUTE_NAMES = 'mfa/[a-z]+|login|inventory|lock_session|logout|scenario'
+
+  def mfa_begin_scan
+    @mfa_wrong = Hash.new(0)  # [PC id, account id] => wrong-code answers since the last pass (counted with exactly one open code step)
+    @mfa_wrong_unknown = Set.new # [PC id, account id] pairs a wrong-code answer could belong to, with two code steps open
+    @mfa_pending = {}     # PC id => { npc:, kind:, number: }, opened by an `mfaRequired` answer, closed by a pass answer
+    @mfa_held = {}        # PC id => account id, a session a second step earned in this run
+    @mfa_locked = Set.new # PC ids whose earned session a 200 lock_session answer locked (used up by the one unlock)
+    @mfa_at = {}          # PC id => account id the run holds there: a sign-in placed at that PC or a passed step
+    @mfa_passed = Set.new # R3-5: [PC id, account id] of every step a pass answer closed in the run, never undone
+    @mfa_placed = {}      # R3-2: PC id => account id a confirmed name placed there; only a sign-out or sign-in the scanner can place ends it
+    @mfa_logout_placed = false
+    @mfa_taken = Set.new  # item ids a 200 POST /inventory add answer took (a remove row gives back), and the start items
+    @mfa_phone_owners = Set.new # accounts whose phone the run ever took (their owner never approves after)
+    @mfa_signin_counts = Hash.new(0)
+    @mfa_logout_count = 0
+    @mfa_used = Set.new   # [:signin | :logout, key] of the --signin and --logout entries these rules used
+    @mfa_confirm = nil    # R2-L1: the one `--signin` name a sign-in used, until a desktop row confirms it
+    @mfa_row_strict = false
+    @mfa_logout_pending = {}
+    @mfa_row_pcs = nil
+    @mfa_row_clear = nil
+    @mfa_unlocked_pc = nil
+    Array(@data['startItemsInInventory']).each { |i| @mfa_taken << i['id'] if i.is_a?(Hash) && i['id'].is_a?(String) }
+    authored = BreakEscape::MfaModel.each_authored_item(@data).map { |e| e[:item] }.select { |i| i['id'].is_a?(String) }
+    @mfa_devices = authored.select { |i| i['type'] == BreakEscape::MfaModel::CODE_DEVICE }.to_h { |i| [i['id'], i] }
+    @mfa_phones = authored.select { |i| i['type'] == 'phone_friendface' }.to_h { |i| [i['id'], i] }
+    @mfa_taken.each { |id| @mfa_phone_owners << @mfa_phones[id]['owner'] if @mfa_phones[id] }
+    # the session rules run only for a scenario in which some PC asks some account for a second step
+    @mfa_active = @priv_pcs.keys.product(@priv_npcs.keys).any? { |pc, npc| mfa_kind_at(pc, npc) != 'none' }
+    # a second-step code exists only where a code device is authored, the three choices only where a policy matches numbers
+    @mfa_borrow_authored = mfa_workaround_authored?(@data, 'borrow_session')
+    @mfa_code_possible = !@mfa_devices.empty?
+    @mfa_authored_codes = Set.new(mfa_collect_codes(@data))
+    policies = @data['policies']
+    @mfa_numbers_possible = policies.is_a?(Hash) && policies.values.any? { |p| BreakEscape::MfaModel.kind(p) == 'push_number_match' }
+  end
+
+  # One response row: judges it, then lets it earn what it proves (so a row never proves itself).
+  def scan_mfa(body, row, add)
+    info = mfa_route(row)
+    @mfa_row_pcs = @mfa_row_clear = @mfa_unlocked_pc = @mfa_token_pc = nil
+    mfa_confirm_step(body, info) if @mfa_active
+    return unless body.is_a?(Hash) || body.is_a?(Array)
+
+    if @mfa_active && body.is_a?(Hash)
+      mfa_check_named(body, info)
+      mfa_place_signin(body, info, row)
+    end
+    device = mfa_device_answer_ok?(body, info)
+    phone = mfa_phone_entries_ok(body, info)
+    required = mfa_required_answer_ok?(body, info, row)
+    mfa_judge_keys(body, info, device, phone, required, add)
+    mfa_judge_required(body, required, add)
+    mfa_judge_sessions(body, info, row, add) if @mfa_active
+    mfa_note_row(body, info, row, required)
+  end
+
+  # The strict route is the one the server answers; the loose one (an optional `.json` and a trailing slash) is judged but
+  # earns nothing. A path and a query field that disagree name no query.
+  def mfa_route(row)
+    full = row['path'].to_s
+    path, inline = full.split('?', 2)
+    path = path.to_s
+    query = if row['query'].is_a?(String) then inline.nil? || inline == row['query'] ? row['query'] : 'conflict'
+    else inline.to_s
+    end
+    route = path[%r{/games/[^/]+/(#{MFA_ROUTE_NAMES})\z}, 1]
+    loose = route ? nil : path[%r{/games/[^/]+/(#{MFA_ROUTE_NAMES})(?:\.json)?/?\z}, 1]
+    { method: row['method'].to_s.upcase, path: path, query: query, ok: row['status'].is_a?(Integer) && row['status'] == 200,
+      route: route, loose: loose, container: path[%r{/games/[^/]+/container/([^/]+)\z}, 1] }
+  end
+
+  def mfa_route_name(info)
+    info[:route] || info[:loose]
+  end
+
+  # The PC the recorder's `pc` tag names on this row (the request's own word), or nil.
+  def mfa_row_pc_tag(row)
+    row_pc_tag(row)
+  end
+
+  # ---- the recorder's tags (hardening U1a) ----------------------------------------------------------------------------------
+  # `@tags_on` is true for a tagged run only (set by scan after the mode check). Every reader returns nil when it is false, so
+  # an untagged capture is judged exactly as before.
+
+  # The id the row's `pc` tag names, as written (a string), or nil: no tag, `null`, or tags off.
+  def row_pc_tag_raw(row)
+    return nil unless @tags_on && row.is_a?(Hash) && row['pc'].is_a?(Hash)
+
+    id = row['pc']['pcId']
+    id.is_a?(String) && !id.empty? ? id : nil
+  end
+
+  # The PC the row's `pc` tag names when it is a sign-in PC of the scenario, else nil.
+  def row_pc_tag(row)
+    id = row_pc_tag_raw(row)
+    id && @priv_pcs.key?(id) ? id : nil
+  end
+
+  # The record id the row's `hash` tag names, or nil (read by the crack rules).
+  def row_hash_tag(row)
+    return nil unless @tags_on && row.is_a?(Hash) && row['hash'].is_a?(Hash)
+
+    id = row['hash']['hashId']
+    id.is_a?(String) && !id.empty? ? id : nil
+  end
+
+  # The crack rules' reader: the row's `hash` tag when it names a registry hash record, else nil (null and unknown ids earn nothing).
+  def crack_row_tag(row)
+    id = row_hash_tag(row)
+    id && @crack_hash_ids.include?(id) ? id : nil
+  end
+
+  # What a 200 PC-route row's tag is worth, with the answer in hand: [:none, nil] (no tag, null, tags off, not a 200 row),
+  # [:accepted, pc id] or [:rejected, nil]. A tag is rejected when it names no sign-in PC of the scenario, when on a successful
+  # sign-in the PC does not admit the answer's account or the answer's host label names another PC, or when a lock answer's
+  # `pcId` names another PC. A rejected tag earns nothing and ends and takes back what an unnamed row would (never less).
+  def pc_tag_state(body, row)
+    tag = row_pc_tag_raw(row)
+    return [:none, nil] unless tag && row['status'].is_a?(Integer) && row['status'] == 200
+    return [:rejected, nil] unless @priv_pcs.key?(tag)
+
+    if body.is_a?(Hash)
+      case self.class.tag_route_name(row)
+      when 'login', 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+        # an `mfaRequired` answer or a step answer that names its PC must name the tagged one (hardening U1b)
+        return [:rejected, nil] if body['pcId'].is_a?(String) && body['pcId'] != tag
+        if body['success'] == true && body['npcId'].is_a?(String)
+          npc = @priv_npcs[body['npcId']]
+          return [:rejected, nil] unless npc && BreakEscape::CredentialModel.pc_admits_account?(@priv_pcs[tag], npc)
+
+          # R1-m2: a remote sign-in's host label must be the tagged PC's own label; a shared or unknown label fails closed
+          label = body['host']
+          if label.is_a?(String)
+            pc = @priv_pcs[tag]
+            own = pc.is_a?(Hash) ? (pc['host'].presence || pc['name']) : nil
+            return [:rejected, nil] unless own == label
+          end
+        end
+      when 'lock_session'
+        return [:rejected, nil] if body['pcId'].is_a?(String) && body['pcId'] != tag
+      end
+    end
+    [:accepted, tag]
+  end
+
+  # 3.3: a 200 PC-route row whose tag is rejected is an `ops_tag` finding (rule, route, line and owner, never a value).
+  def scan_tags(body, row, add)
+    return unless @tags_on && self.class.tag_route_kind(row) == :pc
+
+    state, = pc_tag_state(body, row)
+    add.call('ops_tag', "tag:#{self.class.tag_route_name(row)}", '$') if state == :rejected
+  end
+
+  # ---- the tag refutation rule (hardening U1b, brief 3.3) ---------------------------------------------------------------------
+  #
+  # A tag is the request's own word, so another PC's desktop says nothing against it. It is refuted only by the answers about the
+  # tagged PC itself, inside the window a tagged sign-in opens, and by one cross-PC case. State (`tag_begin_scan`), all kept here
+  # and never read by an earn rule:
+  # - `@tg_win`, the one open window: { pc:, account:, deadline:, route:, pc_spent:, cross_spent: }. Only a 200 `success: true`
+  #   answer with `npcId` that completes a sign-in (a POST login, or a step that passes) at an accepted tag opens it. It closes at
+  #   the first of: another POST sign-in, sign-out, lock or step answer (any status, or a body lost), an end at the tagged PC (a
+  #   200 `endedPcIds` naming it, a lock, a 403 desktop, a session of the same account locked, a sessions map showing no session
+  #   there, a passed deadline), a later answer about the tagged PC after its first one, the capture's end.
+  # - the tagged-PC check, spent on the first answer about the tagged PC: another account shown (a desktop or a sessions map)
+  #   refutes; a 200 desktop with no session refutes only while the sign-in's own deadline (row `t` plus `expiresInS` of a token) has
+  #   not come within 2 s of passing (row `t` is arrival), and never when the deadline is unreadable; a sessions map with no session
+  #   at the tagged PC is always an end (the bootstrap ends and hides claim and relay sessions, so an honest reload shows it).
+  # - the cross-PC check, spent on the first desktop row of any PC: a 200 desktop of another PC showing the same account by a
+  #   keyboard password refutes when `@tg_present` does not hold the account at that PC now (and its holder is not unknown).
+  # - `@tg_present` (PC id => accounts) over-counts on purpose: it adds on every sign-in answer, desktop or session the capture
+  #   shows, and removes only on an answer that names the PC and shows the account gone (a tagged logout, a lock, `endedPcIds`, a
+  #   desktop or sessions map showing the PC with another account or none). A 403, a downgrade, an untagged or unnamed end and a
+  #   passed deadline remove nothing. `@tg_unknown` (PC ids): a lost sign-in or step body, or a session-bearing answer naming no
+  #   account, marks the PCs it could be about until a 200 desktop or sessions map shows the PC's holder.
+  TAG_SIGNIN_ROUTES = %w[login mfa/verify mfa/prompt mfa/approve].freeze
+
+  def tag_begin_scan
+    @tg_win = nil
+    @tg_present = {}
+    @tg_unknown = Set.new
+  end
+
+  # A lost body: it closes the window (a POST PC route is any other sign-in, sign-out, lock or step), and a sign-in or step row
+  # could have put any account at its PC (every PC when it names none).
+  def tag_note_bodyless(row)
+    return unless @tags_on && self.class.tag_route_kind(row) == :pc
+
+    @tg_win = nil
+    return unless TAG_SIGNIN_ROUTES.include?(self.class.tag_route_name(row))
+
+    tag = row_pc_tag(row)
+    (tag ? [tag] : @priv_pcs.keys).each { |pc| @tg_unknown << pc }
+  end
+
+  def scan_tag_rule(body, row, ctx, add)
+    return unless @tags_on
+
+    route = self.class.tag_route_kind(row) == :pc ? self.class.tag_route_name(row) : nil
+    ok = row['status'].is_a?(Integer) && row['status'] == 200
+    hash = body.is_a?(Hash) ? body : nil
+    at = priv_row_time(row)
+    @tg_win = nil if @tg_win && @tg_win[:deadline] && at && at > @tg_win[:deadline] # a passed deadline is an end
+    @tg_win = nil if route # any other sign-in, sign-out, lock or step answer closes it
+    tag_judge_window(hash, row, ctx, ok, at, add) if @tg_win && hash
+    tag_open_window(hash, row, route, ok, at) if route && ok && hash
+    tag_update_present(hash, row, ctx, route, ok) if ok && hash
+  end
+
+  # The desktop answer's PC when this row is the desktop of a sign-in PC (any status), else nil.
+  def tag_desktop_pc(ctx)
+    ctx[:container].is_a?(String) && @priv_pcs.key?(ctx[:container]) ? ctx[:container] : nil
+  end
+
+  def tag_judge_window(hash, row, ctx, ok, at, add)
+    win = @tg_win
+    if ok && hash['endedPcIds'].is_a?(Array) && hash['endedPcIds'].include?(win[:pc])
+      @tg_win = nil # an end at the tagged PC
+      return
+    end
+    desktop = tag_desktop_pc(ctx)
+    sessions = ok && ctx[:scenario] && hash['sessions'].is_a?(Hash) ? hash['sessions'] : nil
+    if desktop && !win[:cross_spent]
+      win[:cross_spent] = true
+      tag_cross_check(win, desktop, hash, ok, add)
+    end
+    if desktop == win[:pc]
+      tag_check_tagged_desktop(win, hash, row, ok, at, add)
+    elsif sessions
+      tag_check_tagged_map(win, sessions, add)
+    end
+  end
+
+  def tag_refute(win, add, json_path)
+    add.call('ops_tag', "tag:#{win[:route]}", safe_path(json_path))
+    @tg_win = nil
+  end
+
+  # First desktop row of any PC: another PC's desktop showing the account by a keyboard password, where the present map does not
+  # hold the account now and the PC's holder is known, says the tag was moved.
+  def tag_cross_check(win, desktop, hash, ok, add)
+    return unless ok && desktop != win[:pc]
+
+    session = hash['session']
+    return unless session.is_a?(Hash) && session['npcId'] == win[:account] && session['via'] == 'password' &&
+                  !session['remote'] && session['relay'] != true && session['locked'] != true
+    return if @tg_unknown.include?(desktop) || (@tg_present[desktop] || Set.new).include?(win[:account])
+
+    tag_refute(win, add, '$.session')
+  end
+
+  def tag_check_tagged_desktop(win, hash, row, ok, at, add)
+    if row['status'].is_a?(Integer) && row['status'] == 403
+      @tg_win = nil # a refused desktop is an end
+      return
+    end
+    return unless ok
+
+    session = hash['session']
+    first = !win[:pc_spent]
+    win[:pc_spent] = true
+    if session.is_a?(Hash) && session['npcId'].is_a?(String)
+      if session['npcId'] != win[:account]
+        first ? tag_refute(win, add, '$.session') : (@tg_win = nil)
+      elsif session['locked'] == true
+        @tg_win = nil
+      end
+    elsif first && tag_deadline_unpassed?(win, at)
+      tag_refute(win, add, '$.session')
+    else
+      @tg_win = nil # no session after the deadline, or at it (within the 2 s tolerance), or later in the window: an end
+    end
+  end
+
+  # "No session" refutes only while the sign-in's own deadline has not come within 2 s: a sign-in with no deadline has none to
+  # pass; one with a deadline needs a readable row time before it.
+  def tag_deadline_unpassed?(win, at)
+    return true unless win[:deadline]
+
+    !at.nil? && at < win[:deadline] - 2
+  end
+
+  def tag_check_tagged_map(win, sessions, add)
+    held = sessions[win[:pc]]
+    first = !win[:pc_spent]
+    win[:pc_spent] = true
+    if held.is_a?(Hash) && held['npcId'].is_a?(String)
+      if held['npcId'] != win[:account]
+        first ? tag_refute(win, add, "$.sessions.#{win[:pc]}") : (@tg_win = nil)
+      elsif held['locked'] == true
+        @tg_win = nil
+      end
+    else
+      @tg_win = nil # R5-1: a sessions map with no session at the tagged PC is an end, never a refutation
+    end
+  end
+
+  # R5-m1: only a 200 `success: true` answer naming an account that completes a sign-in, at an accepted tag, opens a window.
+  def tag_open_window(hash, row, route, ok, at)
+    return unless ok && TAG_SIGNIN_ROUTES.include?(route) && hash['success'] == true && hash['npcId'].is_a?(String)
+
+    state, tag = pc_tag_state(hash, row)
+    return unless state == :accepted
+
+    seconds = hash['expiresInS']
+    deadline = at && hash['kind'] == 'token' && seconds.is_a?(Numeric) && seconds.positive? ? at + seconds : nil
+    @tg_win = { pc: tag, account: hash['npcId'], deadline: deadline, route: route, pc_spent: false, cross_spent: false }
+  end
+
+  def tag_present_add(pcs, account)
+    pcs.each { |pc| (@tg_present[pc] ||= Set.new) << account }
+  end
+
+  # What a 200 answer shows about a PC's holder: the PC's accounts become exactly the one shown (none when no session), and a
+  # holder that is shown is no longer unknown. A session with no readable account leaves the map and marks the PC unknown.
+  def tag_present_shows(pc, session)
+    if session.is_a?(Hash) && session['npcId'].is_a?(String)
+      @tg_present[pc] = Set.new([session['npcId']])
+      @tg_unknown.delete(pc)
+    elsif session.is_a?(Hash)
+      @tg_unknown << pc
+    else
+      @tg_present[pc] = Set.new
+      @tg_unknown.delete(pc)
+    end
+  end
+
+  def tag_update_present(hash, row, ctx, route, ok)
+    if hash['endedPcIds'].is_a?(Array)
+      hash['endedPcIds'].each { |pc| @tg_present[pc] = Set.new if pc.is_a?(String) && @priv_pcs.key?(pc) }
+    end
+    account = hash['npcId'].is_a?(String) ? hash['npcId'] : nil
+    case route
+    when 'login', 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+      return unless account && (hash['success'] == true || (route == 'login' && hash['mfaRequired'] == true))
+
+      state, tag = pc_tag_state(hash, row)
+      tag_present_add(state == :accepted ? [tag] : mfa_admitting_pcs(account), account)
+    when 'logout'
+      state, tag = pc_tag_state(hash, row)
+      @tg_present[tag] = Set.new if hash['success'] == true && state == :accepted
+    when 'lock_session'
+      state, tag = pc_tag_state(hash, row)
+      pc = hash['pcId'].is_a?(String) ? hash['pcId'] : (state == :accepted ? tag : nil)
+      @tg_present[pc] = Set.new if hash['locked'] == true && pc && @priv_pcs.key?(pc)
+    when nil
+      desktop = tag_desktop_pc(ctx)
+      if desktop
+        tag_present_shows(desktop, hash['session'])
+      elsif ctx[:scenario] && hash['sessions'].is_a?(Hash)
+        @priv_pcs.each_key { |pc| tag_present_shows(pc, hash['sessions'][pc]) }
+      elsif hash['session'].is_a?(Hash) && !ctx[:container]
+        tag_note_foreign_session(hash['session'])
+      end
+    end
+  end
+
+  # A 200 answer of another route holding a `session`: it is at the PC its host label names, else at any PC.
+  def tag_note_foreign_session(session)
+    label = session['host']
+    pc = label.is_a?(String) ? @ops_host_by_label[label] : nil
+    pcs = @priv_pcs.key?(pc) ? [pc] : @priv_pcs.keys
+    if session['npcId'].is_a?(String)
+      tag_present_add(pcs, session['npcId'])
+    else
+      pcs.each { |p| @tg_unknown << p }
+    end
+  end
+
+  # hardening U1b: the PC a second-step row is placed at by its tag, or nil. On a 200 row the tag counts only when pc_tag_state
+  # accepts it (a rejected tag narrows nothing); a refused row (a wrong code, a cancel at 422) has no answer to check it against,
+  # so a tag naming a sign-in PC of the scenario places it, as before.
+  def mfa_tag_for(body, row)
+    raw = row_pc_tag(row)
+    return nil unless raw
+    return raw unless row['status'].is_a?(Integer) && row['status'] == 200
+
+    state, tag = pc_tag_state(body, row)
+    state == :accepted ? tag : nil
+  end
+
+  # A pass answer whose tag was rejected earned nothing and took no step: the step it may have closed stays unproved, so every
+  # step open for its account is closed and the account's sessions at the PCs that admit it are taken back (the unnamed take-back).
+  def mfa_take_back_rejected_pass(body, row)
+    return unless pc_tag_state(body, row).first == :rejected && body['npcId'].is_a?(String)
+
+    @mfa_pending.delete_if { |_pc, rec| rec[:npc] == body['npcId'] }
+    admitting = mfa_admitting_pcs(body['npcId'])
+    mfa_end_pcs(admitting)
+    mfa_unplace(admitting)
+  end
+
+  # The value of a query's only parameter, or nil (a second parameter, a bad escape: nothing is earned).
+  def mfa_query_value(info, name)
+    pairs = URI.decode_www_form(info[:query].to_s)
+    pairs.size == 1 && pairs.first.first == name && !pairs.first.last.empty? ? pairs.first.last : nil
+  rescue ArgumentError
+    nil
+  end
+
+  def mfa_walk(node, path = '$', parent_key = nil, &block)
+    case node
+    when Array then node.each_with_index { |v, i| mfa_walk(v, "#{path}[#{i}]", parent_key, &block) }
+    when Hash
+      yield node, path, parent_key
+      node.each { |k, v| mfa_walk(v, "#{path}.#{k}", k, &block) }
+    end
+  end
+
+  def mfa_npc(id)
+    id.is_a?(String) ? @priv_npcs[id] : nil
+  end
+
+  # The step kind an account owes at a PC, or 'none': as Game#mfa_step_for reads the scenario (and the PC admits the account).
+  def mfa_kind_at(pc_id, npc_id)
+    pc = pc_id.is_a?(String) ? @priv_pcs[pc_id] : nil
+    npc = mfa_npc(npc_id)
+    return 'none' unless pc && npc && BreakEscape::MfaModel.enrolled?(npc)
+    return 'none' unless BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
+
+    kind = BreakEscape::MfaModel.kind(BreakEscape::CredentialModel.policy_for(@data, pc))
+    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil? && !hd_reenrolled?(npc['id']) # S8b: a re-enrolled account owes a code step with no authored device
+
+    kind
+  end
+
+  def mfa_host_label(pc)
+    label = pc['host'].is_a?(String) && !pc['host'].empty? ? pc['host'] : pc['name']
+    label.is_a?(String) ? label : nil
+  end
+
+  def mfa_phone_taken?(owner)
+    @mfa_phones.values.any? { |p| p['owner'] == owner && @mfa_taken.include?(p['id']) }
+  end
+
+  # The 200 GET mfa/device answer a held, taken device gives, in the shape Game#mfa_device_answer sends.
+  def mfa_device_answer_ok?(body, info)
+    return false unless info[:method] == 'GET' && info[:route] == 'mfa/device' && info[:ok] && body.is_a?(Hash)
+
+    id = mfa_query_value(info, 'item_id')
+    device = id && @mfa_devices[id]
+    return false unless device && @mfa_taken.include?(id) && body.keys.sort == MFA_DEVICE_KEYS
+
+    owner = device['owner']
+    npc = mfa_npc(owner)
+    shown = npc ? (npc['displayName'] || npc['id']) : owner
+    body['deviceId'] == id && owner.is_a?(String) && body['npcId'] == owner && body['displayName'] == shown &&
+      body['code'].is_a?(String) && body['code'].match?(/\A\d{6}\z/) &&
+      body['secondsLeft'].is_a?(Integer) && (1..BreakEscape::MfaModel::STEP_SECONDS).cover?(body['secondsLeft']) &&
+      [true, false].include?(body['used'])
+  end
+
+  # The entries (by identity) of a 200 GET mfa/phone answer that may carry `numbers`; none unless the whole answer is in shape.
+  def mfa_phone_entries_ok(body, info)
+    return [] unless info[:method] == 'GET' && info[:route] == 'mfa/phone' && info[:ok] && body.is_a?(Hash)
+    return [] unless body.keys == ['requests'] && body['requests'].is_a?(Array)
+
+    owner = mfa_query_value(info, 'npc_id')
+    npc = mfa_npc(owner)
+    return [] unless npc && npc['creds'].is_a?(Hash) && mfa_phone_taken?(owner)
+
+    body['requests'].all? { |e| mfa_phone_entry_ok?(e, owner, npc) } ? body['requests'] : []
+  end
+
+  def mfa_phone_entry_ok?(entry, owner, npc)
+    return false unless entry.is_a?(Hash)
+
+    keys = entry.keys.sort
+    return false unless keys == MFA_PHONE_ENTRY_KEYS || keys == (MFA_PHONE_ENTRY_KEYS + ['numbers']).sort
+
+    pc = entry['pcId'].is_a?(String) ? @priv_pcs[entry['pcId']] : nil
+    kind = mfa_kind_at(entry['pcId'], owner)
+    open = pc ? @mfa_pending[entry['pcId']] : nil
+    return false unless open && open[:npc] == owner && open[:kind] == kind && MFA_PUSH_KINDS.include?(kind)
+    return false unless entry['host'] == mfa_host_label(pc) && entry['username'] == npc['creds']['username']
+    return false unless entry['n'].is_a?(Integer) && entry['n'].between?(0, BreakEscape::MfaModel::MAX_PROMPTS)
+    return !entry.key?('numbers') unless kind == 'push_number_match'
+
+    nums = entry['numbers']
+    # R1-L10: the choices hold the number the sign-in showed
+    nums.is_a?(Array) && nums.size == 3 && nums.uniq.size == 3 && nums.all? { |n| n.is_a?(Integer) && MFA_NUMBER_RANGE.cover?(n) } &&
+      nums.include?(open[:number])
+  end
+
+  # The 200 POST login answer of an opened second step, in the shape Game#issue_mfa_challenge! sends: the root of body, for the
+  # PC the row's tag names when it has one.
+  def mfa_required_answer_ok?(body, info, row = {})
+    return false unless body.is_a?(Hash) && body['mfaRequired'] == true
+    return false unless info[:method] == 'POST' && info[:route] == 'login' && info[:ok]
+
+    # a tagged run reports a tag that disagrees with the answer's `pcId` once, as an `ops_tag` finding (pc_tag_state, scan_tags);
+    # the older rule's own mismatch finding is for untagged runs
+    tag = @tags_on ? nil : mfa_row_pc_tag(row)
+    return false if tag && tag != body['pcId']
+
+    kind = mfa_kind_at(body['pcId'], body['npcId'])
+    return false if kind == 'none' || body['success'] != false || body['mfa'] != kind
+
+    expected = MFA_REQUIRED_KEYS + (kind == 'push_number_match' ? ['number'] : [])
+    return false unless body.keys.sort == expected.sort
+
+    kind != 'push_number_match' || (body['number'].is_a?(Integer) && MFA_NUMBER_RANGE.cover?(body['number']))
+  end
+
+  # R2-L7: inside a scenario that has a code device, a `code` value passes only when it is one the scenario authors (a
+  # warranty's "W-03") and is not six digits however spaced; every other value under a `code` key is a finding.
+  def mfa_authored_code?(value)
+    return false unless value.is_a?(String) || value.is_a?(Integer)
+
+    @mfa_authored_codes.include?(value) && !value.to_s.delete(" \t-").match?(/\d{6}/)
+  end
+
+  def mfa_collect_codes(node, found = [])
+    case node
+    when Hash then node.each { |k, v| k == 'code' && (v.is_a?(String) || v.is_a?(Integer)) ? found << v : mfa_collect_codes(v, found) }
+    when Array then node.each { |v| mfa_collect_codes(v, found) }
+    end
+    found
+  end
+
+  def mfa_judge_keys(body, info, device, phone, required, add)
+    in_mfa_route = mfa_route_name(info).to_s.start_with?('mfa/') || mfa_route_name(info) == 'login'
+    mfa_walk(body) do |hash, path, parent_key|
+      hash.each_key do |key|
+        at = safe_path("#{path}.#{key}")
+        if MFA_NEVER_KEYS.include?(key)
+          add.call('mfa_secret', "mfa:key:#{key}", at)
+        elsif key == 'mfa' && parent_key == 'creds'
+          add.call('mfa_secret', 'mfa:key:creds.mfa', at)
+        elsif key == 'code' && @mfa_code_possible && !(device && hash.equal?(body)) &&
+              ((hash.equal?(body) && mfa_route_name(info) == 'mfa/device') || !mfa_authored_code?(hash[key]))
+          add.call('mfa_secret', 'mfa:key:code', at)
+        elsif key == 'numbers' && @mfa_numbers_possible && phone.none? { |entry| entry.equal?(hash) } && !ls_placed?(hash)
+          add.call('mfa_secret', 'mfa:key:numbers', at)
+        elsif key == 'number' && (in_mfa_route || hash.key?('mfaRequired') || hash.key?('mfa')) && !(required && hash.equal?(body))
+          add.call('mfa_secret', 'mfa:key:number', at)
+        end
+      end
+    end
+  end
+
+  def mfa_judge_required(body, required, add)
+    mfa_walk(body) do |hash, path, _parent|
+      next unless hash.key?('mfaRequired')
+      next if required && hash.equal?(body)
+
+      add.call('mfa_secret', 'mfa:answer:mfaRequired', safe_path("#{path}.mfaRequired"))
+    end
+  end
+
+  # ---- sessions ----
+
+  # A way in the server gives at a step PC without the step: the claim (an unlocked screen, never judged by a password), a
+  # token (a session a foothold proof opened) and a relay session of an assist invite, the last two only when the scenario's
+  # registry holds a credential of that kind for that account at a PC the answer could be about. `relay: true` on its own, a
+  # saved connection and a technique answer on a sign-in are not (the server refuses a saved connection at a step PC).
+  def mfa_exempt_credential?(hash, npc, pcs)
+    kind = hash['kind']
+    return false unless npc && hash['via'] == 'credential' && MFA_EXEMPT_KINDS.include?(kind)
+    return false if kind == 'assist_invite' && hash['relay'] != true
+
+    BreakEscape::CredentialModel.registry(@data).each_value.any? do |entry|
+      entry['kind'] == kind && BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') == npc &&
+        pcs.include?(entry['connectsTo'].to_s)
+    end
+  end
+
+  # R2-L4: a claim is the server's answer for the owner of a PC (an unlocked screen the owner left), or for a guest an NPC's
+  # borrow left there. So it is exempt only for an account that owns a PC the answer could be about, or when the scenario
+  # authors a borrow_session workaround at all; any other account's `via: claim` is its own word.
+  def mfa_claim_exempt?(hash, npc, pcs)
+    return false unless npc && hash['via'] == 'claim'
+
+    @mfa_borrow_authored || pcs.any? { |pc| @priv_pcs[pc].is_a?(Hash) && @priv_pcs[pc]['owner'] == npc }
+  end
+
+  def mfa_workaround_authored?(node, kind)
+    case node
+    when Hash then node['do'] == kind || node.each_value.any? { |v| mfa_workaround_authored?(v, kind) }
+    when Array then node.any? { |v| mfa_workaround_authored?(v, kind) }
+    else false
+    end
+  end
+
+  def mfa_session_hash?(hash)
+    hash['npcId'].is_a?(String) && hash.key?('via')
+  end
+
+  # The PCs that owe the account (or, when it cannot be read, any account) a step.
+  def mfa_owing_pcs(pcs, npc)
+    accounts = mfa_npc(npc) ? [npc] : @priv_npcs.keys
+    pcs.select { |pc| accounts.any? { |account| mfa_kind_at(pc, account) != 'none' } }
+  end
+
+  def mfa_judge_sessions(body, info, row, add)
+    return unless body.is_a?(Hash)
+
+    # R1-L4, R2-L3: a session-shaped success answer is judged whatever its method or route; the sign-in, the three pass routes
+    # and the bootstrap have their own judgement, every other answer is judged as one the scanner cannot place
+    case mfa_route_name(info)
+    when 'login'
+      if info[:method] == 'POST' && body['success'] == true then mfa_judge_login(body, add)
+      else mfa_judge_unplaced(body, row, add)
+      end
+    when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+      # S8c: a pass the lock rules placed is a lock's, not a PC's session
+      mfa_judge_pass(body, info, row, add) if body['success'] == true && !ls_placed?(body)
+    when 'scenario'
+      if info[:method] == 'GET' then mfa_judge_bootstrap(body, add)
+      else mfa_judge_unplaced(body, row, add)
+      end
+    else
+      mfa_judge_unplaced(body, row, add)
+      mfa_judge_desktop_session(body, info, add)
+      # a session nested under `session` (the shape of a technique answer); a desktop's own `session` is judged only above
+      nested = body['session']
+      mfa_judge_unplaced(nested.merge('success' => true), row, add) if !info[:container] && nested.is_a?(Hash) && nested['npcId'].is_a?(String) && nested.key?('via')
+    end
+  end
+
+  # R3-5: a desktop showing a keyboard password session at a PC that asks the account for a step, for an account that never
+  # passed a step there in the run (a sign-out does not undo "ever passed"), is a session no step earned.
+  def mfa_judge_desktop_session(body, info, add)
+    pc = info[:container]
+    session = body['session']
+    return unless info[:ok] && info[:method] == 'GET' && @priv_pcs.key?(pc) && session.is_a?(Hash)
+
+    npc = session['npcId']
+    return unless npc.is_a?(String) && mfa_npc(npc) && session['via'] == 'password' && !session['remote']
+    return if mfa_kind_at(pc, npc) == 'none' || @mfa_passed.include?([pc, npc])
+
+    add.call('mfa_session', "mfa:session:#{npc}", '$.session')
+  end
+
+  # Placing a sign-in success on the PCs it could be about, once per row: the row's `login` tag, else the answer's host
+  # label, else the caller's `--signin` entry for THIS row (account, PC, and the row's order among that account's sign-ins or
+  # its time), else every PC. A named PC must admit the account (else ArgumentError), and is used by ONE row only.
+  def mfa_place_signin(body, info, row)
+    return unless body['success'] == true && info[:method] == 'POST' && mfa_route_name(info) == 'login'
+
+    npc = body['npcId'].is_a?(String) ? body['npcId'] : nil
+    @mfa_signin_counts[npc] += 1 if npc
+    # R2-L6: only the answer the server gives (the strict route, status 200) uses a name up or writes down where the run sits
+    @mfa_row_strict = !info[:route].nil? && info[:ok]
+    state, tag = pc_tag_state(body, row)
+    label = body['host']
+    if state == :accepted
+      # hardening U1b: a tagged sign-in is placed at its tag, as a confirmed name is
+      @mfa_row_pcs = @mfa_row_clear = [tag]
+      @mfa_placed[tag] = npc if @mfa_row_strict && npc
+    elsif state == :rejected
+      # a rejected tag earns nothing and never narrows a take-back: placed as an unnamed row with no host label
+      @mfa_row_pcs = @priv_pcs.keys
+      @mfa_row_clear = npc && mfa_npc(npc) ? mfa_admitting_pcs(npc) : @priv_pcs.keys
+    elsif label.is_a?(String)
+      @mfa_row_pcs = @mfa_row_clear = [@ops_host_by_label[label]].compact.select { |pc| @priv_pcs.key?(pc) }
+    elsif @mfa_row_strict && (named = mfa_named_signin(npc, row, body))
+      @mfa_row_pcs = @mfa_row_clear = [named]
+    else
+      @mfa_row_pcs = @priv_pcs.keys
+      @mfa_row_clear = npc && mfa_npc(npc) ? mfa_admitting_pcs(npc) : @priv_pcs.keys
+    end
+  end
+
+  def mfa_admitting_pcs(npc_id)
+    npc = @priv_npcs[npc_id]
+    @priv_pcs.select { |_, pc| npc && BreakEscape::CredentialModel.pc_admits_account?(pc, npc) }.keys
+  end
+
+  def mfa_named_signin(npc, row, body)
+    return nil unless npc
+
+    key = [[npc, :n, @mfa_signin_counts[npc]], (row['t'].is_a?(String) ? [npc, :t, row['t']] : nil)].compact
+                                                                                                      .find { |k| @priv_named.key?(k) && !@mfa_used.include?([:signin, k]) }
+    return nil unless key
+
+    named = @priv_named[key]
+    admitting = mfa_admitting_pcs(npc)
+    unless admitting.include?(named)
+      raise ArgumentError, "sign-in entry #{priv_entry_text(key, named)}: #{named} does not admit #{npc} (it admits: #{admitting.join(', ').then { |l| l.empty? ? 'no PC' : l }})"
+    end
+
+    @mfa_used << [:signin, key]
+    mfa_arm_confirm(key, named, npc, body)
+    named
+  end
+
+  # R2-L1, R2-L2: a `--signin` name is only a claim. It stands only when the first desktop row of a PC that follows this
+  # sign-in answer is the named PC, showing the named account signed in by a keyboard password there. Armed here, resolved
+  # by `mfa_confirm_step`; a name the capture never confirms ends the scan with an error that names it.
+  def mfa_arm_confirm(key, pc, npc, body)
+    @mfa_confirm = nil if @mfa_confirm && mfa_unconfirmed!("another name was armed (#{@mfa_row_ref}) before a desktop row followed it")
+    @mfa_confirm = { account: npc, pc: pc, text: priv_entry_text(key, pc), ref: @mfa_row_ref,
+                     prior: @mfa_at[pc] == npc || @mfa_placed[pc] == npc, locked: @mfa_locked.include?(pc) }
+    return if body['via'] == 'password' && !body['remote']
+
+    mfa_unconfirmed!("the sign-in answer is not a keyboard password sign-in (via #{body['via'].inspect}#{body['remote'] ? ', remote' : ''}), so no desktop can confirm it")
+  end
+
+  def mfa_unconfirmed!(why)
+    pending = @mfa_confirm
+    @mfa_confirm = nil
+    raise ArgumentError, "sign-in entry #{pending[:text]}: named, unconfirmed (the sign-in answer is at #{pending[:ref]}): #{why}. " \
+                         'Give the capture up to the desktop of the PC that followed the sign-in'
+  end
+
+  # What a row does to the name waiting for its desktop: the first desktop row of a PC confirms or refutes it; the same
+  # account signing in again, a pass for it, any sign-out, or the scan ending first leaves it unconfirmed.
+  def mfa_confirm_step(body, info)
+    pending = @mfa_confirm
+    return unless pending
+
+    if info[:container] && @priv_pcs.key?(info[:container])
+      mfa_unconfirmed!("the first row on a desktop path that followed it is not a GET (#{info[:method]})") unless info[:method] == 'GET'
+      mfa_confirm_desktop(pending, body, info)
+    elsif info[:method] == 'POST' && mfa_route_name(info) == 'logout'
+      mfa_unconfirmed!('a sign-out came before any desktop row')
+    elsif body.is_a?(Hash) && body['success'] == true && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info)) && !ls_placed?(body)
+      mfa_unconfirmed!("another sign-in or step passed (#{body['npcId'].inspect}) before any desktop row")
+    end
+  end
+
+  def mfa_confirm_desktop(pending, body, info)
+    shown = info[:container]
+    session = body.is_a?(Hash) ? body['session'] : nil
+    mfa_unconfirmed!("the first desktop row after it has status #{info[:ok] ? 200 : 'other than 200'} and is unreadable or shows no session") unless info[:ok] && session.is_a?(Hash)
+    mfa_unconfirmed!("the first desktop that followed is #{shown}, not #{pending[:pc]}") unless shown == pending[:pc]
+    mfa_unconfirmed!("the desktop of #{shown} shows a relayed session, which the server never sends for a keyboard sign-in") if session['relay']
+    unless session['npcId'] == pending[:account] && session['via'] == 'password' && !session['remote']
+      mfa_unconfirmed!("the desktop of #{shown} shows #{session['npcId'].inspect} (via #{session['via'].inspect}), not #{pending[:account]} signed in by a password")
+    end
+    if pending[:prior] && !pending[:locked] && mfa_kind_at(shown, pending[:account]) == 'none'
+      mfa_unconfirmed!("the run already held #{pending[:account]} at #{shown} before this sign-in, so the desktop cannot be told from the earlier session's")
+    end
+    @mfa_placed[shown] = pending[:account]
+    @mfa_confirm = nil
+  end
+
+  # A row with no readable body (the recorder lost it): it cannot confirm a name, and a sign-in or step answer among them
+  # cannot be placed, so every session the run earned is taken back.
+  def mfa_note_bodyless(row)
+    return unless @mfa_active
+
+    info = mfa_route(row)
+    mfa_confirm_step(nil, info)
+    return unless info[:method] == 'POST' && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+
+    mfa_end_pcs(@priv_pcs.keys)
+  end
+
+  def mfa_finish_scan
+    return unless @mfa_active
+
+    mfa_unconfirmed!('the capture ends before a desktop row followed it') if @mfa_confirm
+    pc, account = @mfa_logout_pending.first
+    return unless pc
+
+    raise ArgumentError, "logout entry #{account}@#{pc}: named, unconfirmed: no later answer listed #{pc}'s session. Give the capture up to an answer that lists it"
+  end
+
+  # A name the tester gave is not taken on trust once a later answer shows otherwise (the privilege rules' R4-5 and R4-7).
+  def mfa_check_named(body, info)
+    return unless info[:ok]
+
+    @mfa_logout_pending.keys.each do |pc|
+      account = @mfa_logout_pending[pc]
+      shown = nil
+      if info[:container] == pc
+        shown = body['session'].is_a?(Hash) && body['session']['npcId'] == account
+      elsif info[:route] == 'scenario' && info[:method] == 'GET' && body['sessions'].is_a?(Hash)
+        held = body['sessions'][pc]
+        shown = held.is_a?(Hash) && held['npcId'] == account
+      end
+      next if shown.nil?
+      raise ArgumentError, "logout entry #{account}@#{pc}: the next answer that lists #{pc}'s session still shows #{account} there, so the sign-out was not at #{pc}" if shown
+
+      @mfa_logout_pending.delete(pc)
+    end
+  end
+
+  # One session-shaped Hash judged for the PCs it could be about. `mode` :login (an unlock is allowed once a lock marked the
+  # earned session), :bootstrap (a session the run earned at that PC, or a technique one) or :other (an answer the scanner
+  # cannot place: as a bootstrap session, with no earned credit).
+  def mfa_judge_session_hash(hash, pcs, mode, add, json_path)
+    npc = hash['npcId'].is_a?(String) && mfa_npc(hash['npcId']) ? hash['npcId'] : nil
+    owing = mfa_owing_pcs(pcs, npc)
+    return if owing.empty? && !pcs.empty?
+    return if mfa_claim_exempt?(hash, npc, pcs)
+
+    if mfa_exempt_credential?(hash, npc, pcs)
+      # R2-L8: a token session over a foothold is the account's own session at that PC (the server unlocks it with no step
+      # after a lock), so a token sign-in placed at exactly one PC that owes the step is held like a passed step
+      @mfa_token_pc = pcs.first if mode == :login && hash['kind'] == 'token' && pcs.size == 1 && owing.include?(pcs.first)
+      return
+    end
+    return if mode != :login && hash['via'] == 'technique'
+
+    if npc && owing.size == 1
+      return if mode == :bootstrap && @mfa_held[owing.first] == npc
+      return (@mfa_unlocked_pc = owing.first) if mode == :login && @mfa_held[owing.first] == npc && @mfa_locked.include?(owing.first)
+    end
+    add.call('mfa_session', "mfa:session:#{npc || 'unknown'}", json_path)
+  end
+
+  def mfa_judge_login(body, add)
+    mfa_judge_session_hash(body, @mfa_row_pcs || @priv_pcs.keys, :login, add, '$')
+  end
+
+  # A session-shaped success answer on a path that is none of the routes the scanner reads.
+  def mfa_judge_unplaced(body, row, add)
+    return unless body['success'] == true && body['npcId'].is_a?(String) && body.key?('via')
+
+    label = body['host']
+    tag = mfa_tag_for(body, row)
+    pcs = if tag then [tag]
+    elsif label.is_a?(String) then [@ops_host_by_label[label]].compact.select { |pc| @priv_pcs.key?(pc) }
+    else @priv_pcs.keys
+    end
+    mfa_judge_session_hash(body, pcs, :other, add, '$')
+  end
+
+  # The one PC whose open step this pass answer closes, or nil when the answer or the proof is not in shape.
+  def mfa_pass_pc(body, info, row = {})
+    npc = body['npcId']
+    return nil unless info[:route].to_s.start_with?('mfa/') && mfa_session_hash?(body) && mfa_npc(npc) && info[:ok] && info[:method] == 'POST' && body['via'] == 'password'
+
+    route = info[:route].split('/').last
+    open = @mfa_pending.select { |_pc, rec| rec[:npc] == npc }
+    label = body['host']
+    open = open.select { |pc, _| @ops_host_by_label[label] == pc } if label.is_a?(String)
+    return nil if pc_tag_state(body, row).first == :rejected # a rejected tag earns nothing
+
+    tag = mfa_tag_for(body, row)
+    open = open.select { |pc, _| pc == tag } if tag
+    return nil unless open.size == 1
+
+    pc, rec = open.first
+    good =
+      case route
+      when 'verify' then rec[:kind] == 'code' && !body.key?('approvedBy')
+      when 'prompt' then rec[:kind] == 'push' && body['approvedBy'] == 'owner' && mfa_owner_may_approve?(npc)
+      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && ((body['approvedBy'] == 'player' && mfa_phone_taken?(npc)) || hd_own_approval?(body, info, pc, npc))
+      end
+    good ? pc : nil
+  end
+
+  # The owner approves only an account whose habit is not `never`, and never once the run has taken the owner's phone (the
+  # server answers waiting or nobody).
+  def mfa_owner_may_approve?(npc_id)
+    BreakEscape::MfaModel.prompt_habit(@priv_npcs[npc_id], @data) != 'never' && !@mfa_phone_owners.include?(npc_id)
+  end
+
+  def mfa_judge_pass(body, info, row, add)
+    return if mfa_pass_pc(body, info, row)
+
+    add.call('mfa_session', "mfa:session:#{body['npcId'].is_a?(String) ? body['npcId'] : 'unknown'}", '$')
+  end
+
+  def mfa_judge_bootstrap(body, add)
+    sessions = body['sessions']
+    return unless sessions.is_a?(Hash)
+
+    sessions.each do |pc, held|
+      next unless held.is_a?(Hash)
+
+      mfa_judge_session_hash(held, [pc.to_s], :bootstrap, add, safe_path("$.sessions.#{pc}"))
+    end
+  end
+
+  # What a row proves for the rows after it.
+  def mfa_note_row(body, info, row, required)
+    if info[:ok] && body.is_a?(Hash) && body['endedPcIds'].is_a?(Array)
+      mfa_end_pcs(body['endedPcIds'])
+      mfa_unplace(body['endedPcIds'])
+    end
+    case mfa_route_name(info)
+    when 'inventory' then mfa_note_inventory(body, info, row)
+    when 'login'
+      @mfa_pending[body['pcId']] = { npc: body['npcId'], kind: body['mfa'], number: body['number'] } if required
+      mfa_note_signin(body) if @mfa_row_pcs
+    when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+      return unless body.is_a?(Hash)
+      return if ls_placed?(body) # S8c (R1-SCANNER1): an answer the lock rules placed earns, counts and closes nothing for a PC step
+
+      # R2-L6: closing is the safe direction, so a cancel, expiry or lockout closes on the loose route and at any status; only
+      # a pass answer on the strict route earns
+      mfa_count_wrong_code(body, info, row)
+      if body['success'] == true
+        pc = mfa_pass_pc(body, info, row)
+        return mfa_take_back_rejected_pass(body, row) unless pc
+
+        @mfa_wrong.delete([pc, body['npcId']])
+        @mfa_wrong_unknown.delete([pc, body['npcId']])
+        @mfa_pending.delete(pc)
+        @mfa_passed << [pc, body['npcId']]
+        @mfa_held[pc] = @mfa_at[pc] = body['npcId']
+        @mfa_locked.delete(pc)
+      elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
+        # R1-L6, R1-L11: the answer names no PC, so it closes every open step of the kind the route handles (that PC alone
+        # when the row's tag names one)
+        kinds = mfa_route_name(info) == 'mfa/verify' ? %w[code] : MFA_PUSH_KINDS
+        tag = mfa_tag_for(body, row)
+        @mfa_pending.delete_if { |pc, rec| kinds.include?(rec[:kind]) && (tag.nil? || pc == tag) }
+      end
+    when 'lock_session'
+      @mfa_locked << body['pcId'] if info[:route] && info[:ok] && body.is_a?(Hash) && body['success'] == true && body['locked'] == true && body['pcId'].is_a?(String)
+    when 'logout' then mfa_note_logout(body, info, row)
+    when nil then mfa_note_foreign_session(body, info)
+    end
+  end
+
+  # A wrong-code answer (422 on the strict route, `mfaIncorrect` with an `attemptsLeft`: the expiring one counts too) belongs to
+  # the one open code step; with two open the pairs are unknown, and stay so until a pass answer for the pair.
+  def mfa_count_wrong_code(body, info, row)
+    return unless info[:route] == 'mfa/verify' && info[:method] == 'POST' && row['status'] == 422 && body['mfaIncorrect'] == true && body['attemptsLeft'].is_a?(Integer)
+
+    tag = mfa_tag_for(body, row)
+    open = @mfa_pending.select { |pc, rec| rec[:kind] == 'code' && (tag.nil? || pc == tag) }
+    if open.size == 1
+      pc, rec = open.first
+      @mfa_wrong[[pc, rec[:npc]]] += 1
+    else
+      @mfa_pending.each { |pc, rec| @mfa_wrong_unknown << [pc, rec[:npc]] if rec[:kind] == 'code' }
+    end
+  end
+
+  # R2-L5: a 200 answer on a route these rules do not read (a technique answer) that holds a `session` replaces the session at
+  # the PC its host label names (at every PC when the label names none): the earned session and its lock are taken back.
+  def mfa_note_foreign_session(body, info)
+    session = body.is_a?(Hash) ? body['session'] : nil
+    return unless info[:ok] && !info[:container] && session.is_a?(Hash)
+
+    label = session['host']
+    pc = label.is_a?(String) ? @ops_host_by_label[label] : nil
+    mfa_end_pcs(@priv_pcs.key?(pc) ? [pc] : @priv_pcs.keys)
+  end
+
+  # R3-2: what a confirmed name placed is ended only by an answer that names the PC, never by an unnamed sign-out.
+  def mfa_unplace(pcs)
+    Array(pcs).each { |pc| @mfa_placed.delete(pc) if pc.is_a?(String) }
+  end
+
+  def mfa_end_pcs(pcs)
+    Array(pcs).each do |pc|
+      next unless pc.is_a?(String)
+
+      @mfa_held.delete(pc)
+      @mfa_locked.delete(pc)
+      @mfa_at.delete(pc)
+    end
+  end
+
+  # Any successful sign-in answer replaces the session at the PC it names (every PC it could be when unnamed): the earned
+  # session and its lock go, except the one unlock, which uses the lock mark up and leaves the account's session held.
+  def mfa_note_signin(body)
+    pcs = @mfa_row_clear || []
+    npc = body['npcId']
+    pcs.each do |pc|
+      if pc == @mfa_unlocked_pc
+        @mfa_locked.delete(pc)
+        @mfa_passed << [pc, npc] if @mfa_row_strict && npc.is_a?(String) # R4-L1: the unlock is the account's own session, held and locked
+      else
+        @mfa_held.delete(pc)
+        @mfa_locked.delete(pc)
+        @mfa_at.delete(pc)
+      end
+    end
+    mfa_unplace(pcs) if pcs.size == 1 && @mfa_placed[pcs.first] != npc
+    @mfa_held[@mfa_token_pc] = npc if @mfa_row_strict && @mfa_token_pc && pcs.include?(@mfa_token_pc) && npc.is_a?(String)
+    @mfa_at[pcs.first] = npc if @mfa_row_strict && @mfa_row_pcs.size == 1 && pcs.size == 1 && npc.is_a?(String) && @mfa_unlocked_pc != pcs.first
+  end
+
+  def mfa_note_inventory(body, info, row)
+    return unless info[:route] && info[:ok]
+
+    inv = row['inv']
+    action = inv.is_a?(Hash) ? inv['action'] : nil
+    id = inv.is_a?(Hash) && inv['itemId'].is_a?(String) ? inv['itemId'] : nil
+    if action == 'add' && id
+      return unless body.is_a?(Hash) && body['success'] == true
+
+      @mfa_taken << id
+      @mfa_phone_owners << @mfa_phones[id]['owner'] if @mfa_phones[id]
+    elsif %w[remove hide].include?(action) && id
+      # R2-A1: a successful hide takes its item out of the tray too (hide_device!); a refused one is not an ok row
+      @mfa_taken.delete(id)
+    elsif !inv.is_a?(Hash) || %w[remove hide].include?(action)
+      # R1-L5: a remove row the recorder could not read (or one naming no item) takes every device and phone back;
+      # R2-A1: and every file a held proof needs, so a later heldItem is a finding until a new tagged add shows it held
+      @mfa_taken.subtract(@mfa_devices.keys + @mfa_phones.keys + crack_held_files)
+    end
+  end
+
+  # R2-A1: the item ids the crack records' held proofs name.
+  def crack_held_files
+    Array(@crack_records).filter_map { |r| r[:entry].dig('proof', 'held') if r[:entry].is_a?(Hash) && r[:entry]['proof'].is_a?(Hash) }.grep(String)
+  end
+
+  # R1-L9: a logout takes the earned sessions back: the row's tag names one PC, a `--logout` entry names the PC of ONE
+  # successful sign-out (the run holding that account there), else every PC.
+  def mfa_note_logout(body, info, row)
+    ok = info[:ok] && body.is_a?(Hash) && body['success'] == true
+    pcs = ok ? mfa_logout_pcs(row, body) : @priv_pcs.keys
+    mfa_end_pcs(pcs)
+    mfa_unplace(pcs) if ok && @mfa_logout_placed
+  end
+
+  def mfa_logout_pcs(row, body = nil)
+    @mfa_logout_count += 1
+    @mfa_logout_placed = true
+    tag = mfa_tag_for(body, row)
+    return [tag] if tag
+
+    @priv_logouts.each do |key, pc|
+      account, kind, value = key
+      this_row = kind == :n ? value == @mfa_logout_count : value == row['t']
+      next unless this_row && @mfa_at[pc] == account && !@mfa_used.include?([:logout, key])
+
+      @mfa_used << [:logout, key]
+      @mfa_logout_pending[pc] = account
+      return [pc]
+    end
+    @mfa_logout_placed = false
+    @priv_pcs.keys
+  end
+
+  # ---- S5b, S5c, ruling B: cached accounts, account-only accounts, relay admin (unit 15) -------------------------------------
+  #
+  # What the rules assume of the server (each one is an assumption the review should check; S5bc review R1 changed several):
+  # - the collect 200 is exactly `{ success, pcId, harvested, held, keyringRev }` (`pcId` is the PC id the request named, not
+  #   secret); rows are exactly `{ npcId, displayName, username, portrait, avatar, hashId }` with the account's own values;
+  #   every refusal is one of the closed list HARVEST_REFUSALS; `harvested` is a subset of `held`, one row per account;
+  # - a row is credited only at the PC `pcId` names, when that PC declares the account, an admin step (the S5a `admin:<pc>`) or
+  #   a proved relay administrator mark is earned there now, and (for a borrow-gated account) a 200 borrow "done" answer named
+  #   that PC earlier in the capture AND the game's own `cachedAt` holds the pair; no game: not credited;
+  # - a proved typed sign-in earns an account-only account's display name and username; a keyring sign-in the name only; a
+  #   collect row or a registry keyring row of the account earns both;
+  # - a keyring hash row is the registry entry's id, and its account's name and username come with it;
+  # - a relay admin is shown only in the relay sign-in answer or that PC's desktop answer, as `via: credential`, `kind:
+  #   assist_invite`, `relay: true`, `host`, never with `remote`, `footholdId`, `fromPcId` or `locked`.
+  # Known limits, both failing closed (R1-L15): a keyring row of a harvested hash is flagged when its collect is in an earlier
+  # capture file or when the collect answer's body was lost (as S7 does for a cracked entry): the finding is correct for the
+  # capture, do not look for a loosening. Two borrowers handed a run at one PC share the "done" proof of that PC (the answer names
+  # the PC, not the borrower; R2-L8 narrows it to the NPCs a POST /npc_frustration run handed a borrow there first); the game's
+  # `cachedAt` floor separates them only by end state. A relay administrator desktop is flagged when its relay sign-in, or the
+  # keyring answer that listed the invite, is in an earlier capture file (R2-L1); a CRED_COLLECT or USB_OVERRIDE row is flagged when
+  # its collect or plant is in an earlier capture file (R2-L2). R2-L7 not built: a list of cached accounts under another key (a hash
+  # of five of the six row keys) is not seen, because an honest sign-in answer of an NPC with a portrait and an avatar holds the
+  # same five (`login_session_answer`), and an exemption is not allowed.
+  HARVEST_NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
+  HARVEST_ANSWER_KEYS = %w[success pcId harvested held keyringRev].freeze
+  # The real server's keyring rev is six hex characters (`keyring_rev`); unit 23 found the rule asking for an integer.
+  HARVEST_REV_FORMAT = /\A[0-9a-f]{6}\z/.freeze
+  HARVEST_ROW_KEYS = %w[npcId displayName username portrait avatar hashId].freeze
+  GAME_METHODS_HARVEST = %i[player_state].freeze
+
+  def collect_harvest
+    @hv_candidates = Hash.new { |h, k| h[k] = [] } # npc id => [[pc id, after]]
+    @priv_pcs.each do |pc_id, pc|
+      BreakEscape::CachedAccounts.candidates(pc).each do |c|
+        npc = @priv_npcs[c['npc']] # R1-L12: only an NPC of the scenario that holds a username is an account
+        @hv_candidates[c['npc']] << [pc_id, c['after']] if npc && npc.dig('creds', 'username').is_a?(String) && !npc.dig('creds', 'username').empty?
+      end
+    end
+    @hv_hash_ids = Set.new # registry hash records whose proof is harvested
+    @hv_hash_account = {}  # every registry hash record id => its account id
+    BreakEscape::CredentialModel.registry(@data).each do |id, entry|
+      next unless entry.is_a?(Hash) && entry['kind'] == 'hash'
+
+      @hv_hash_account[id.to_s] = entry['account']
+      @hv_hash_ids << id.to_s if BreakEscape::CredentialModel.proof_kind(entry['proof']) == 'harvested'
+    end
+    @hv_registry_account = {} # R2-L6: every registry record id => the npc id of its account
+    BreakEscape::CredentialModel.registry(@data).each do |id, entry|
+      @hv_registry_account[id.to_s] = BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') if entry.is_a?(Hash)
+    end
+    @hv_pair_strings = {}  # R2-L5: the pair string of every declared candidate => its owner
+    @hv_candidates.each do |npc, entries|
+      entries.each do |pc, _after|
+        pair = BreakEscape::CachedAccounts.pair(pc, npc)
+        @hv_pair_strings[pair] = "pair:#{pc}|#{npc}" if pair
+      end
+    end
+    @hv_hash_words = {}    # R2-L5: harvested hash record id => [whole-word pattern of the id, its authored label, its token or nil]
+    registry = BreakEscape::CredentialModel.registry(@data)
+    @hv_hash_ids.each do |id|
+      entry = registry[id] || registry[id.to_sym]
+      next unless entry.is_a?(Hash)
+
+      token = begin
+        npc = @priv_npcs[@hv_registry_account[id]]
+        @game.respond_to?(:crack_token) && npc ? @game.crack_token(id, entry, npc) : nil
+      rescue StandardError
+        nil
+      end
+      @hv_hash_words[id] = [Regexp.new("(?<![A-Za-z0-9_])#{Regexp.escape(id)}(?![A-Za-z0-9_])"), entry['label'].is_a?(String) ? entry['label'] : nil, token.is_a?(String) ? token : nil]
+    end
+    @hv_account_only = {}  # account-only npc id => { name:, user: }
+    @priv_npcs.each do |id, npc|
+      next unless BreakEscape::AccessIdentities.account_only?(npc)
+
+      creds = npc['creds'].is_a?(Hash) ? npc['creds'] : {}
+      @hv_account_only[id] = { name: (npc['displayName'].is_a?(String) ? npc['displayName'] : nil),
+                               user: (creds['username'].is_a?(String) ? creds['username'] : nil) }
+    end
+    check_account_only_words
+    @hv_borrow_used = @hv_candidates.values.flatten(1).any? { |_, after| after == 'borrow' }
+    @hv_relay_possible = BreakEscape::CredentialModel.registry(@data).any? { |_, e| e.is_a?(Hash) && e['kind'] == 'assist_invite' }
+  end
+
+  # R1-L9: the account-only rule matches the account's words in every answer, so a scan whose words are ordinary would be noise
+  # (an account-only `admin` flags every `access: "admin"`): refused here, as S7 refuses a game without readers. A display name or
+  # username equal (any case) to another account's, or to a word of the answers the scanner already knows, is refused.
+  HARVEST_ANSWER_WORDS = %w[admin user password credential claim technique registry capture cracked hash ready running local domain].freeze
+
+  # R2-L3: since JSON keys are read as strings of the answer, the refused list is built from what the scanner knows: every key
+  # it pins on an answer, a few ordinary words, and the scenario's own PC names and hosts, room names and log titles (whole, any case).
+  HARVEST_PLAIN_WORDS = %w[guest ok true false null storage hid device count profile error message reason status success session].freeze
+  HARVEST_SESSION_WORDS = %w[npcId username displayName via portrait kind label access relay host route remote locked].freeze
+
+  def harvest_refused_words
+    keys = HARVEST_ANSWER_KEYS + HARVEST_ROW_KEYS + RELAY_FORBIDDEN_KEYS + HARVEST_SESSION_WORDS + OPS_SESSION_KEYS + LOG_ANSWER_KEYS +
+           LOG_ROW_KEYS.flatten + CRACK_ROW_KEYS + CRACK_ACCOUNT_KEYS + CRACK_ENTRY_KEYS + CRACK_CREDENTIAL_KEYS + KEYRING_CAPTURE_KEYS
+    known = HARVEST_ANSWER_WORDS + HARVEST_PLAIN_WORDS + keys
+    names = @priv_pcs.values.flat_map { |pc| [pc['name'], pc['host']] }
+    names += @data['rooms'].is_a?(Hash) ? @data['rooms'].values.map { |room| room.is_a?(Hash) ? room['name'] : nil } : []
+    names += @data['logSources'].is_a?(Hash) ? @data['logSources'].values.map { |src| src.is_a?(Hash) ? src['title'] : nil } : []
+    (known + names).select { |w| w.is_a?(String) && !w.strip.empty? }.map { |w| w.strip.downcase }.to_set
+  end
+
+  def check_account_only_words
+    refused = harvest_refused_words
+    @hv_account_only.each do |id, words|
+      mine = [words[:name], words[:user]].compact.map { |w| w.strip.downcase }
+      others = @priv_npcs.reject { |other, _| other == id }.flat_map { |_, n| [n['displayName'], n.dig('creds', 'username'), n['id']] }
+                         .select { |w| w.is_a?(String) }.map(&:downcase)
+      clash = mine.find { |w| refused.include?(w) || others.include?(w) }
+      next unless clash
+
+      raise ArgumentError, "account-only NPC #{id} has a display name or username that is also another account's or a word the answers carry " \
+                           "(#{refused.include?(clash) ? 'answer word, key, PC, room or log name' : 'another account'}: #{clash}): the scan would flag honest answers; rename it"
+    end
+  end
+
+  def harvest_begin_scan
+    @hv_served_hashes = Set.new # hash record ids a credited collect row named
+    @hv_name_earned = Set.new   # account-only ids whose display name has been earned
+    @hv_user_earned = Set.new   # account-only ids whose username has been earned
+    # S5bc R3-SCANNER1: ids of devices the capture shows held (a start item, or a 200 inventory add), until a plant takes them.
+    # Limit: a device taken in an earlier capture file is not held here, so a plant of it is flagged.
+    @hv_held = Set.new(Array(@data['startItemsInInventory']).filter_map { |i| i['id'] if i.is_a?(Hash) && i['id'].is_a?(String) })
+    @hv_acts = Hash.new(0)      # R2-L2: [:collect, pc, account, count] / [:plant, pc, account, device] => acts the capture shows so far
+    @hv_relay = {}              # PC id => account id of a proved relay administrator session (R1-L1)
+    @hv_relay_signed = {}       # R2-L1: PC id => account id of a proved relay SIGN-IN answer still standing (a desktop keeps the mark only on it)
+    @hv_relay_pending = Set.new # R2-L1: [account id, label] of a proved relay sign-in whose label two PCs share (its desktop takes it)
+    @hv_invite_listed = Set.new # R2-L1: registry ids of assist invites a 200 GET /keyring listed with the proof held (never taken back)
+    @hv_body = nil
+    @hv_borrow_seen = Set.new   # PC ids a 200 POST /npc_workaround borrow "done" answer named so far (R1-L7)
+    @hv_borrow_handed = Hash.new { |h, k| h[k] = Set.new } # R2-L8: PC id => NPC ids a 200 POST /npc_frustration run handed a borrow at that PC so far
+    @hv_borrow_done = Hash.new { |h, k| h[k] = Set.new }   # R2-L8: PC id => NPC ids handed a borrow there when a done answer named the PC
+  end
+
+  # A scan needs these readers on the game it was given: the borrow record, and the game's own admin-at-PC check.
+  def require_harvest_game_methods
+    needed = @hv_borrow_used ? GAME_METHODS_HARVEST.reject { |m| @game.respond_to?(m) } : []
+    needed << :account_admin_at? if @hv_relay_possible && !@game.respond_to?(:account_admin_at?, true)
+    needed << :credential_proof_holds? if @hv_relay_possible && !@game.respond_to?(:credential_proof_holds?, true)
+    return if needed.empty?
+
+    raise ArgumentError, "the game given to the leak scanner lacks #{needed.join(', ')}: a check would be skipped"
+  end
+
+  def scan_harvest(body, ctx, row, add)
+    note_borrow_handed(body, ctx, row)
+    note_harvest_borrow(body, ctx, row)
+    note_usb_plant(body, row)
+    scan_harvest_keys(body, ctx, add)
+    judge_harvest_answer(body, ctx, row, add) if ctx[:harvest]
+    note_harvest_keyring(body, ctx, add)
+    scan_harvest_strings(body, add)
+    note_harvest_login(body, ctx, row)
+    scan_account_only(body, ctx, add) unless @hv_account_only.empty?
+  end
+
+  # The never-list keys, anywhere. `domain` is shown on a PC object; only `creds.domain` is withheld.
+  def scan_harvest_keys(body, ctx, add)
+    walk_hashes(body, '$') do |hash, path|
+      HARVEST_NEVER_KEYS.each { |key| add.call('harvest_key', "key:#{key}", safe_path("#{path}.#{key}")) if hash.key?(key) }
+      add.call('harvest_key', 'key:creds.domain', safe_path("#{path}.creds.domain")) if hash['creds'].is_a?(Hash) && hash['creds'].key?('domain')
+      add.call('harvest_key', 'key:hashId', safe_path("#{path}.hashId")) if hash.key?('hashId') && !ctx[:harvest]
+    end
+  end
+
+  # R1-L6: every answer of the route is judged against the server's closed list. A 200 is the collect itself (judged below);
+  # a refusal is exactly its own body. A body that is not parsed (text) is not judged.
+  HARVEST_REFUSALS = {
+    400 => [{ 'success' => false, 'reason' => 'bad_request' }],
+    403 => [{ 'success' => false, 'reason' => 'not_reachable' }],
+    422 => [{ 'success' => false, 'reason' => 'locked' }, { 'success' => false, 'reason' => 'not_admin' }]
+  }.freeze
+
+  def harvest_refusal_ok?(status, body)
+    return false unless body.is_a?(Hash)
+    return body.keys == ['error'] && body['error'].is_a?(String) && body['error'].match?(/\AContainer not found: [^\n]{1,40}\z/) if status == 404 # R2-L4
+
+    Array(HARVEST_REFUSALS[status]).include?(body)
+  end
+
+  def judge_harvest_answer(body, ctx, row, add)
+    return unless body.is_a?(Hash) || body.is_a?(Array)
+
+    failed = false
+    outer = add
+    add = lambda do |*args|
+      failed = true
+      outer.call(*args)
+    end
+
+    status = row['status']
+    unless status.is_a?(Integer) && status == 200
+      add.call('harvest_row', 'refusal', '$') unless status.is_a?(Integer) && harvest_refusal_ok?(status, body)
+      return
+    end
+    unless body.is_a?(Hash) && body.keys.sort == HARVEST_ANSWER_KEYS.sort && body['success'] == true && body['keyringRev'].is_a?(String) && body['keyringRev'].match?(HARVEST_REV_FORMAT) &&
+           body['pcId'].is_a?(String) && @priv_pcs.key?(body['pcId'])
+      add.call('harvest_row', 'answer', '$')
+      return
+    end
+    pc = body['pcId']
+    # R1-L11: a collect 200 is credited only when the capture shows an admin session at the PC it names, rows or no rows
+    # (a row is flagged on its own, so the answer is named only when it holds none)
+    add.call('harvest_unearned', 'answer', '$') if !harvest_pc_admin?(pc) && body['harvested'].blank? && body['held'].blank?
+    lists = %w[harvested held].to_h do |list|
+      rows = body[list]
+      add.call('harvest_row', "answer:#{list}", safe_path("$.#{list}")) unless rows.is_a?(Array)
+      [list, rows.is_a?(Array) ? rows : []]
+    end
+    lists.each do |list, rows|
+      rows.each_with_index { |entry, i| judge_harvest_row(entry, safe_path("$.#{list}[#{i}]"), pc, add) }
+      ids = rows.filter_map { |entry| entry['npcId'] if entry.is_a?(Hash) }
+      add.call('harvest_row', "list:#{list}", safe_path("$.#{list}")) if ids.uniq.size != ids.size
+    end
+    # R1-L12: the server builds `harvested` as a subset of `held`
+    held_ids = lists['held'].filter_map { |entry| entry['npcId'] if entry.is_a?(Hash) }
+    add.call('harvest_row', 'list:subset', '$.harvested') unless lists['harvested'].all? { |entry| entry.is_a?(Hash) && held_ids.include?(entry['npcId']) }
+    # R2-L2: a collect whose rows were all credited is the act a CRED_COLLECT row shows
+    note_admin_collect(pc, lists['harvested'].size) unless failed || lists['harvested'].empty?
+  end
+
+  def judge_harvest_row(entry, path, pc, add)
+    unless entry.is_a?(Hash) && entry.keys.sort == HARVEST_ROW_KEYS.sort && harvest_row_values_ok?(entry)
+      add.call('harvest_row', 'row', path)
+      return
+    end
+    npc = entry['npcId']
+    record = harvest_credited?(npc, pc) ? BreakEscape::CachedAccounts.hash_record_id(@data, pc, npc) : :none
+    unless record != :none && record == entry['hashId']
+      add.call('harvest_unearned', "account:#{npc}", path)
+      return
+    end
+    unless harvest_row_matches_npc?(entry)
+      add.call('harvest_row', "values:#{npc}", path)
+      return
+    end
+    @hv_served_hashes << entry['hashId'] if entry['hashId']
+    return unless @hv_account_only.key?(npc)
+
+    @hv_name_earned << npc
+    @hv_user_earned << npc
+    add.call('harvest_row', "account:#{npc}", path) unless entry['portrait'].nil? && entry['avatar'].nil?
+  end
+
+  # R1-L8: the values of a credited row are the account's own, as the server builds them (`harvested_rows`): the display
+  # name (or the id), the username, the avatar string or nil, the talk portrait; an account-only account shows neither picture.
+  def harvest_row_matches_npc?(entry)
+    npc = @priv_npcs[entry['npcId']]
+    return false unless npc
+
+    only = @hv_account_only.key?(entry['npcId'])
+    avatar = only || !npc['avatar'].is_a?(String) ? nil : npc['avatar']
+    portrait = only ? nil : BreakEscape::Game.npc_talk_portrait(npc)
+    entry['displayName'] == (npc['displayName'] || npc['id']) && entry['username'] == npc.dig('creds', 'username') &&
+      entry['avatar'] == avatar && entry['portrait'] == portrait
+  end
+
+  def harvest_row_values_ok?(entry)
+    %w[npcId displayName username].all? { |k| entry[k].is_a?(String) } && %w[portrait avatar hashId].all? { |k| entry[k].nil? || entry[k].is_a?(String) }
+  end
+
+  # Is an admin session earned at this PC now (the S5a step)?
+  def harvest_pc_admin?(pc)
+    @ops_earned.include?("admin:#{pc}") || @hv_relay.key?(pc)
+  end
+
+  # The PC declares the account (a start candidate, or a borrow candidate whose borrow is recorded), and an admin session is
+  # earned there now.
+  def harvest_credited?(npc, pc)
+    return false unless npc.is_a?(String) && pc.is_a?(String) && harvest_pc_admin?(pc)
+
+    @hv_candidates[npc].any? { |declared, after| declared == pc && (after.nil? || harvest_borrowed?(pc, npc)) }
+  end
+
+  # R1-L7: a borrow-gated account is credited at a PC only after a 200 borrow "done" answer named that PC earlier in the
+  # scan (the capture's order proof), AND the game's own record holds the pair (the floor: the answer does not name the
+  # borrower, so the end state says which borrower it was).
+  def note_harvest_borrow(body, ctx, row)
+    return unless ctx[:npc_workaround] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash)
+    return unless body['pcId'].is_a?(String) && @priv_pcs.key?(body['pcId']) && [true, false].include?(body['guest']) && !body.key?('hasPostit')
+
+    @hv_borrow_seen << body['pcId']
+    @hv_borrow_done[body['pcId']].merge(@hv_borrow_handed[body['pcId']])
+  end
+
+  # R2-L8: the answer that hands an NPC its run names the NPC and the PC (`answers[].npcId`, `run: { do: "borrow_session", pc }`).
+  # A done answer credits only the NPCs handed a borrow at its PC before it. Limit: two NPCs handed a borrow at one PC, one done answer.
+  def note_borrow_handed(body, ctx, row)
+    return unless ctx[:npc_frustration] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['answers'].is_a?(Array)
+
+    body['answers'].each do |answer|
+      run = answer.is_a?(Hash) ? answer['run'] : nil
+      next unless run.is_a?(Hash) && run['do'] == 'borrow_session' && answer['npcId'].is_a?(String) && run['pc'].is_a?(String) && @priv_pcs.key?(run['pc'])
+
+      @hv_borrow_handed[run['pc']] << answer['npcId']
+    end
+  end
+
+  def harvest_borrowed?(pc_id, npc_id)
+    return false unless @hv_borrow_seen.include?(pc_id) && @hv_borrow_done[pc_id].include?(npc_id)
+    return false unless @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash)
+
+    at = @game.player_state['cachedAt']
+    pair = BreakEscape::CachedAccounts.pair(pc_id, npc_id)
+    at.is_a?(Array) && !pair.nil? && at.include?(pair)
+  end
+
+  # A keyring hash row of a harvested record before a credited collect named it is a finding; one of an account-only account
+  # earns that account's name and username (the registry row is judged by the older rules).
+  # R2-L5: a pair string of a declared candidate is never in an answer; the id, authored label or token of a harvested hash record is
+  # not either until a credited collect row has named it (the collect answer that serves the row is judged first, so it is clean).
+  def scan_harvest_strings(body, add)
+    return if @hv_pair_strings.empty? && @hv_hash_words.empty?
+
+    texts = []
+    each_string(body) { |str, path, _owner| texts << [str, path] }
+    walk_hashes(body, '$') { |hash, path| hash.each_key { |key| texts << [key.to_s, path] } }
+    texts.each do |str, path|
+      @hv_pair_strings.each { |pair, owner| add.call('harvest_key', owner, safe_path(path)) if str.include?(pair) }
+      @hv_hash_words.each do |id, (pattern, label, token)|
+        next if @hv_served_hashes.include?(id)
+
+        # two records of one password (the same shared administrator at two desks) have one token: once either is served it is known
+        token = nil if token && @hv_served_hashes.any? { |other| @hv_hash_words[other] && @hv_hash_words[other][2] == token }
+        add.call('harvest_hash', "credential:#{id}", safe_path(path)) if str.match?(pattern) || (label && str.strip == label) || (token && str.include?(token))
+      end
+    end
+  end
+
+  def note_harvest_keyring(body, ctx, add)
+    entries = keyring_entries_in(body)
+    return if entries.nil?
+
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry'
+
+      id = entry['id'].to_s
+      if @hv_hash_account.key?(id) && @hv_hash_ids.include?(id) && !@hv_served_hashes.include?(id)
+        add.call('harvest_hash', "credential:#{id}", "$.entries[#{i}]")
+        next
+      end
+      # R2-L6: a row earns an account-only account's words only as a 200 GET /keyring row of a registry record the game holds
+      # the proof of, whose account is that account (an unheld or unknown record is reported by the older rules and earns nothing)
+      account = @hv_registry_account[id]
+      next unless ctx[:crack_keyring] && @hv_account_only.key?(account) && credential_proof_held_ids&.include?(id) && harvest_row_account(entry) == account
+
+      @hv_name_earned << account
+      @hv_user_earned << account
+    end
+  end
+
+  # R1-L2: a registry keyring row of any kind whose `account` block is exactly an account-only account's (S7's shape) earns both.
+  def harvest_row_account(entry)
+    block = entry['account']
+    return nil unless block.is_a?(Hash) && block['npcId'].is_a?(String) && @hv_account_only.key?(block['npcId'])
+
+    block == crack_account_block(@priv_npcs[block['npcId']]) ? block['npcId'] : nil
+  end
+
+  # R1-L2 (decided by the owner): a proved typed sign-in success (200, `success: true`, `via: "password"`, not a relay) earns that
+  # account's display name AND username: the server answers so only when the typed username and password both matched, and the
+  # player supplied the username. A keyring sign-in (`via: "credential"`) earns the name only.
+  def note_harvest_login(body, ctx, row)
+    return unless ctx[:login] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
+    return unless @hv_account_only.key?(body['npcId']) && %w[password credential].include?(body['via'])
+
+    @hv_name_earned << body['npcId']
+    @hv_user_earned << body['npcId'] if body['via'] == 'password' && body['relay'] != true
+  end
+
+  def scan_account_only(body, ctx, add)
+    walk_records(body, '$', false) do |rec, path|
+      add.call('account_only', "npc:#{rec['id']}/entry", safe_path(path)) if @hv_account_only.key?(rec['id'])
+    end
+    walk_hashes(body, '$') do |hash, path|
+      tiles = hash['loginAccounts']
+      list = (tiles.is_a?(Array) ? tiles : []) + (ctx[:login_accounts] && hash.equal?(body) && body['accounts'].is_a?(Array) ? body['accounts'] : [])
+      list.each do |tile|
+        next unless tile.is_a?(Hash)
+
+        # R1-L13: a tile is any hash with a string value that is an account-only id, under whatever key
+        id = tile.values.find { |v| v.is_a?(String) && @hv_account_only.key?(v) }
+        add.call('account_only', "npc:#{id}/tile", safe_path("#{path}.loginAccounts")) if id
+      end
+      # R1-L13: a JSON key is a string of the answer too
+      hash.each_key { |key| harvest_judge_string(key.to_s, safe_path(path), add) }
+    end
+    each_string(body) { |str, path, _owner| harvest_judge_string(str, safe_path(path), add) }
+  end
+
+  def harvest_judge_string(str, path, add)
+    @hv_account_only.each do |id, words|
+      add.call('account_only', "npc:#{id}/name", path) if !@hv_name_earned.include?(id) && harvest_word?(str, words[:name])
+      # R1-L10: the server shows the username normalised (stripped, lower case) in a log row, so it is matched in any case
+      add.call('account_only', "npc:#{id}/username", path) if !@hv_user_earned.include?(id) && harvest_word?(str, words[:user], ignore_case: true)
+    end
+  end
+
+  def harvest_word?(str, word, ignore_case: false)
+    return false unless word.is_a?(String) && !word.empty?
+
+    str.match?(Regexp.new("(?<![A-Za-z0-9_])#{Regexp.escape(word)}(?![A-Za-z0-9_])", ignore_case ? Regexp::IGNORECASE : 0))
+  end
+
+  # Ruling B (R4-2a split): a relay session of an administrator account at a PC that admits it is admin. Allowed only when
+  # the answer is where the server shows a relay (R1-L4): the 200 relay sign-in answer (the body itself) or the 200 desktop
+  # answer of that PC (`session`, with the PC the container id names and the label that PC carries); the session carries no
+  # `remote`, `footholdId`, `fromPcId` or `locked`; the scenario's registry holds an assist invite for that account connecting
+  # to that PC whose proof the GAME says holds (R1-L5); the scenario marks the account `creds.admin: true`; the PC admits it;
+  # and the GAME's own account_admin_at? agrees. With no game to read, any doubt about the PC, or a missing piece, it is not
+  # allowed.
+  RELAY_FORBIDDEN_KEYS = %w[remote footholdId fromPcId locked].freeze
+
+  def relay_admin_proved?(hash, ctx)
+    !relay_admin_pc(hash, ctx).nil?
+  end
+
+  # The PC a proved relay session is at, else nil.
+  def relay_admin_pc(hash, ctx)
+    return nil unless hash.is_a?(Hash) && hash['via'] == 'credential' && hash['kind'] == 'assist_invite' && hash['npcId'].is_a?(String)
+    return nil unless @game.respond_to?(:account_admin_at?, true) && @game.respond_to?(:credential_proof_holds?, true)
+    return nil unless ctx[:status].is_a?(Integer) && ctx[:status] == 200 && RELAY_FORBIDDEN_KEYS.none? { |key| hash[key] }
+
+    pc_id = relay_session_pc(hash, ctx)
+    pc = pc_id && @priv_pcs[pc_id]
+    npc = @priv_npcs[hash['npcId']]
+    return nil unless pc && npc && npc.dig('creds', 'admin') == true
+    return nil unless BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
+
+    invited = BreakEscape::CredentialModel.registry(@data).any? do |id, entry|
+      entry.is_a?(Hash) && entry['kind'] == 'assist_invite' && entry['connectsTo'].to_s == pc_id &&
+        BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') == npc['id'] &&
+        @hv_invite_listed.include?(id.to_s) && @game.send(:credential_proof_holds?, id, entry) == true
+    end
+    return nil unless invited && @game.send(:account_admin_at?, npc, pc) == true
+    # R2-L1: a desktop answer proves nothing by itself: a relay sign-in of this account at this PC must stand earlier
+    # (or be pending under the label the PCs share)
+    return nil if ctx[:container] && !(@hv_relay_signed[pc_id] == npc['id'] || @hv_relay_pending.include?([npc['id'], hash['host']]))
+
+    pc_id
+  end
+
+  # R1-L4, R1-L14: the relay sign-in answer names its PC by a label no other PC shares; a desktop answer names it by the
+  # container id, and the label it carries must be that PC's own.
+  def relay_session_pc(hash, ctx)
+    label = hash['host']
+    return nil unless label.is_a?(String) && @hv_body.is_a?(Hash)
+
+    if ctx[:login] && hash.equal?(@hv_body) && @hv_body['success'] == true
+      @ops_host_by_label[label]
+    elsif ctx[:container] && hash.equal?(@hv_body['session'])
+      pc = @priv_pcs[ctx[:container]]
+      own = pc.is_a?(Hash) ? (pc['host'].presence || pc['name']) : nil
+      own == label ? ctx[:container] : nil
+    end
+  end
+
+  # R1-L1: a proved relay administrator session is the mark `@hv_relay[pc] = account` (never the `admin:<pc>` step, which keyboard-only
+  # allowances read). It opens what an admin session opens for the collect and the profile reach, and is taken back wherever the
+  # admin step is (end_priv_session), by a later sign-in that could be about the PC, by a desktop answer of the PC that does not show
+  # the same relay admin, and by a bootstrap.
+  def note_relay_mark(body, ctx)
+    if ctx[:scenario]
+      @hv_relay.clear
+      @hv_relay_signed.clear
+      @hv_relay_pending.clear
+    end
+    return unless body.is_a?(Hash)
+
+    note_invite_listed(body, ctx)
+    session = ctx[:login] ? body : (ctx[:container] ? body['session'] : nil)
+    return unless session.is_a?(Hash) && session['relay'] == true && session['access'] == 'admin'
+
+    pc = relay_admin_pc(session, ctx)
+    if pc
+      @hv_relay[pc] = session['npcId']
+      if ctx[:login]
+        @hv_relay_signed[pc] = session['npcId']
+      else # the desktop that took a pending sign-in (shared label) now stands on it
+        @hv_relay_signed[pc] = session['npcId']
+        @hv_relay_pending.delete([session['npcId'], session['host']])
+      end
+    elsif ctx[:login] && hash_relay_label_shared?(session['host']) && session['npcId'].is_a?(String)
+      @hv_relay_pending << [session['npcId'], session['host']] if relay_invite_listed?(session['npcId'], nil) && relay_admin_shape?(session, ctx)
+    end
+  end
+
+  # R2-L1: the mark and the sign-in it stands on go together, wherever the mark is taken back.
+  def drop_relay_mark(pc)
+    @hv_relay.delete(pc)
+    @hv_relay_signed.delete(pc)
+  end
+
+  # R2-L1: a 200 GET /keyring that lists an assist invite whose proof the game holds proves the player held the invite then.
+  def note_invite_listed(body, ctx)
+    return unless ctx[:crack_keyring]
+
+    held = credential_proof_held_ids
+    return if held.nil?
+
+    Array(keyring_entries_in(body)).each do |entry|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry' && entry['kind'] == 'assist_invite'
+
+      id = entry['id'].to_s
+      @hv_invite_listed << id if held.include?(id)
+    end
+  end
+
+  # A sign-in label that more than one PC carries (the sign-in answer names no PC then).
+  def hash_relay_label_shared?(label)
+    return false unless label.is_a?(String)
+
+    @priv_pcs.count { |_, pc| (pc['host'].presence || pc['name']) == label } > 1
+  end
+
+  # An invite of the account (for the PC, or any PC when nil) listed earlier by the keyring with the proof held.
+  def relay_invite_listed?(npc_id, pc_id)
+    BreakEscape::CredentialModel.registry(@data).any? do |id, entry|
+      entry.is_a?(Hash) && entry['kind'] == 'assist_invite' && (pc_id.nil? || entry['connectsTo'].to_s == pc_id) &&
+        BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') == npc_id && @hv_invite_listed.include?(id.to_s)
+    end
+  end
+
+  # The shape and scenario checks of a relay admin session that do not need its PC: the invite's proof, `creds.admin`.
+  def relay_admin_shape?(hash, ctx)
+    return false unless hash.is_a?(Hash) && hash['via'] == 'credential' && hash['kind'] == 'assist_invite' && hash['npcId'].is_a?(String)
+    return false unless @game.respond_to?(:account_admin_at?, true) && @game.respond_to?(:credential_proof_holds?, true)
+
+    ctx[:status].is_a?(Integer) && ctx[:status] == 200 && RELAY_FORBIDDEN_KEYS.none? { |key| hash[key] } && @priv_npcs[hash['npcId']]&.dig('creds', 'admin') == true
+  end
+
+  # a desktop answer of the PC: the mark stays only when it shows the same relay admin
+  def keep_relay_mark?(pc, session)
+    held = @hv_relay[pc]
+    held && session.is_a?(Hash) && session['relay'] == true && session['access'] == 'admin' && session['npcId'] == held
   end
 end

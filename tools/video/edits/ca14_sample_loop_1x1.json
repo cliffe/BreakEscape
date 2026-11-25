@@ -1,0 +1,68 @@
+{
+ "mission": "ca14",
+ "kind": "preview",
+ "theme": "ca",
+ "fps": 30,
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "beat": {
+  "bpm": 91.62,
+  "period": 0.6549,
+  "offset": 0
+ },
+ "id": "ca14_sample_loop_1x1",
+ "title": "ca14 sample A: card loop 1:1 (silent, no text)",
+ "sample": "A card loop",
+ "length": 5.6,
+ "music": {
+  "none": true
+ },
+ "vo": [],
+ "shots": [
+  {
+   "id": "pin_loop",
+   "type": "gameplay",
+   "duration": 5.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_attack_run_narrow.trimmed.mkv",
+    "in": 14.0,
+    "out": 19.6
+   },
+   "audio": {
+    "gain_db": -60
+   },
+   "seat": "full",
+   "framing": {
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.15
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": false,
+    "1:1": false
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "SAMPLE A: one continuous Friendface browser action (two Pin clicks, 'Noted' lines appear). No cards, no text added. Loop: render, then 0.4 s xfade of the end into the opening frames (PREVIEW_SAMPLES.md). Start has no pins, end has two, so the crossfade covers a state change (no take window has matching ends). CA: spoilers not an issue (owner)"
+   }
+  }
+ ]
+}

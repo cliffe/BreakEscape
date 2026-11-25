@@ -1,0 +1,10 @@
+[head|Module: ]training/web/sample_check
+[head|Title: ]Sample check on web
+[head|Target: ]print01, port 80, web
+[head|References:]
+  TRN-0000-0001
+  TRN-0000-0002
+[head|Finding: ]f2
+[head|Status: ]Confirmed
+[head|Risk: ]Out of date Medium
+[head|Summary: ]Summary for f2.
