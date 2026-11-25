@@ -11,21 +11,21 @@
     "fps": 30,
     "length": 71.57,
     "music": {
-        "track": "PeaceFolk/Guitar Motif.mp3",
-        "analysis": "guitar_motif_75.json",
-        "start": 95.545,
+        "track": "PeaceFolk/Quietly Cinematic.mp3",
+        "analysis": "quietly_cinematic_75.json",
+        "start": 95.742,
         "length": 71.57,
         "gain_db": -5,
         "fade_in": 0,
         "fade_out": 2.5,
         "alternatives": [
-            "PeaceFolk/Gently Decaying Again.mp3 @25.061",
-            "PeaceFolk/Quiet Reflection.mp3 @24.016"
+            "PeaceFolk/Quietly Cinematic.mp3 @29.82",
+            "PeaceFolk/Quiet Reflection.mp3 @49.296"
         ]
     },
     "beat": {
-        "bpm": 95.0,
-        "period": 0.6316,
+        "bpm": 91.02,
+        "period": 0.6592,
         "offset": 0
     },
     "duck": {

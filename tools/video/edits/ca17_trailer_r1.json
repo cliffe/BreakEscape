@@ -6,26 +6,26 @@
     "script": {
         "heading": "ca17 trailer script (Acceptable use)",
         "owner_card": "none yet",
-        "brief": "See docs/video/scripts/ca17_trailer_script.md, docs/video/takes_ca17.md and tmp/handover/ca0/HANDOVER_edit_ca17.md. Marks from the 25 Nov takes; Sulafat_v2 VO. DEFAULTS the owner can change: (1) music PeaceFolk Guitar Motif from 95.545 s as ca10 and ca13 (ca17 has no track of its own; its scenario plays the PeaceFolk playlist); (2) room uses t06 (Chidi walks to the machine) not t02; (3) framing: integer scale (owner rule 25 Nov), all crops 2x; t05b list 9:16 and 1:1 crop the list column, card crops the pane; t04b 9:16 and 1:1 crop to the card at 2x with bin patches P1 and P2 (#f4f6f6); (4) Nilesh's game bar is cropped out (16:9 and 1:1 at 2x above y 850; 9:16 at 2x needs 960 px so a black patch covers y 850-1080) and captions carry the lines; (5) v9 kept although 'depot' repeats in Fatima's line; (6) total 70.11 s; (7) the key-fake inbox row stays visible. Chips: SERVICE DESK, TRAINING ROOM, \"CAN I?\" CARDS, INBOX."
+        "brief": "See docs/video/scripts/ca17_trailer_script.md, docs/video/takes_ca17.md and tmp/handover/ca0/HANDOVER_edit_ca17.md. Marks from the 25 Nov takes; Sulafat_v2 VO. DEFAULTS the owner can change: (1) music PeaceFolk Gently Decaying from 66.314 s (own track; calm, matter-of-fact bed for a policy topic); (2) room uses t06 (Chidi walks to the machine) not t02; (3) framing: integer scale (owner rule 25 Nov), all crops 2x; t05b list 9:16 and 1:1 crop the list column, card crops the pane; t04b 9:16 and 1:1 crop to the card at 2x with bin patches P1 and P2 (#f4f6f6); (4) Nilesh's game bar is cropped out (16:9 and 1:1 at 2x above y 850; 9:16 at 2x needs 960 px so a black patch covers y 850-1080) and captions carry the lines; (5) v9 kept although 'depot' repeats in Fatima's line; (6) total 70.11 s; (7) the key-fake inbox row stays visible. Chips: SERVICE DESK, TRAINING ROOM, \"CAN I?\" CARDS, INBOX."
     },
     "fps": 30,
     "length": 70.11,
     "music": {
-        "track": "PeaceFolk/Guitar Motif.mp3",
-        "analysis": "guitar_motif_75.json",
-        "start": 95.545,
+        "track": "PeaceFolk/Gently Decaying.mp3",
+        "analysis": "gently_decaying_75.json",
+        "start": 66.314,
         "length": 70.11,
         "gain_db": -5,
         "fade_in": 0,
         "fade_out": 2.5,
         "alternatives": [
-            "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window)",
-            "PeaceFolk/Quiet Reflection.mp3 @24.016 (used by ca05)"
+            "PeaceFolk/Gently Decaying.mp3 @60.862",
+            "PeaceFolk/Gently Decaying Again.mp3 @64.356"
         ]
     },
     "beat": {
-        "bpm": 95.0,
-        "period": 0.6316,
+        "bpm": 88.04,
+        "period": 0.6815,
         "offset": 0
     },
     "duck": {
@@ -67,7 +67,7 @@
             "seat": {
                 "seat": "full",
                 "chip": "SERVICE DESK",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -125,7 +125,7 @@
             "ca": {
                 "title": "Acceptable use",
                 "company": "Tarrowby Logistics",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "duration": 5.4
         },
@@ -155,7 +155,7 @@
             "seat": {
                 "seat": "full",
                 "chip": "TRAINING ROOM",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -201,7 +201,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "\"CAN I?\" CARDS",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -270,7 +270,7 @@
             "seat": {
                 "seat": "full",
                 "chip": "SERVICE DESK",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -351,7 +351,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "\"CAN I?\" CARDS",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -397,7 +397,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "\"CAN I?\" CARDS",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -443,7 +443,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "\"CAN I?\" CARDS",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -489,7 +489,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "\"CAN I?\" CARDS",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -535,7 +535,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "\"CAN I?\" CARDS",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -581,7 +581,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "\"CAN I?\" CARDS",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -627,7 +627,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "INBOX",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -673,7 +673,7 @@
             "seat": {
                 "seat": "defend",
                 "chip": "INBOX",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
@@ -721,7 +721,7 @@
             "seat": {
                 "seat": "full",
                 "chip": "TRAINING ROOM",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {

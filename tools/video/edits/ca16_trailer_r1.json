@@ -6,26 +6,26 @@
     "script": {
         "heading": "ca16 trailer script (insider risk)",
         "owner_card": "none yet",
-        "brief": "See docs/video/scripts/ca16_trailer_script.md and tmp/handover/ca0/HANDOVER_edit_ca16.md. Model ca13 and ca15. Marks from the 25 Nov takes (trimmed seconds); Sulafat_v2 VO. DEFAULTS the owner can change: (1) PeaceFolk Guitar Motif from 95.545 s as ca13; (2) t04b is 9:16 at integer 1x (zoom 0.5625) with bars (header bar 724 px, no retake); (3) hook out 16.35, led_page 4.4 s; (4) Brief panel's 170 px gap kept; (5) the 'hard week' concern chip kept; (6) Hana line 2 hidden by a #0f152a patch (wide x 850 y 348 548x60; narrow x 958 y 576 226x184); (7) Darren cutaway DROPPED: the 9:16 and 1:1 previews show black bands at the room edge, so topic is the Brief panel alone, 4.1 s; (8) stripe #6b4c9a from awareness BRAND_SET.md (quayholt_insurance). Chips: THE TRAINING ROOM, QUAYHOLT BRIEF, YOUR CALLS, YOUR TURN, RAISE A CONCERN, A LEAVER'S WEEK."
+        "brief": "See docs/video/scripts/ca16_trailer_script.md and tmp/handover/ca0/HANDOVER_edit_ca16.md. Model ca13 and ca15. Marks from the 25 Nov takes (trimmed seconds); Sulafat_v2 VO. DEFAULTS the owner can change: (1) PeaceFolk Quiet Reflection from 52.667 s (own track, its soft pulse and a resolved ending suit a wellbeing concern); (2) t04b is 9:16 at integer 1x (zoom 0.5625) with bars (header bar 724 px, no retake); (3) hook out 16.35, led_page 4.4 s; (4) Brief panel's 170 px gap kept; (5) the 'hard week' concern chip kept; (6) Hana line 2 hidden by a #0f152a patch (wide x 850 y 348 548x60; narrow x 958 y 576 226x184); (7) Darren cutaway DROPPED: the 9:16 and 1:1 previews show black bands at the room edge, so topic is the Brief panel alone, 4.1 s; (8) stripe #6b4c9a from awareness BRAND_SET.md (quayholt_insurance). Chips: THE TRAINING ROOM, QUAYHOLT BRIEF, YOUR CALLS, YOUR TURN, RAISE A CONCERN, A LEAVER'S WEEK."
     },
     "fps": 30,
     "length": 72.1,
     "music": {
-        "track": "PeaceFolk/Guitar Motif.mp3",
-        "analysis": "guitar_motif_75.json",
-        "start": 95.545,
+        "track": "PeaceFolk/Quiet Reflection.mp3",
+        "analysis": "quiet_reflection_75.json",
+        "start": 52.667,
         "length": 72.1,
         "gain_db": -5,
         "fade_in": 0,
         "fade_out": 2.5,
         "alternatives": [
-            "PeaceFolk/Gently Decaying Again.mp3 @25.061",
-            "PeaceFolk/Quiet Reflection.mp3 @24.016"
+            "PeaceFolk/Quiet Reflection.mp3 @74.576",
+            "PeaceFolk/Gently Decaying.mp3 @66.314"
         ]
     },
     "beat": {
-        "bpm": 95.0,
-        "period": 0.6316,
+        "bpm": 142.4,
+        "period": 0.4213,
         "offset": 0
     },
     "duck": {
@@ -538,8 +538,8 @@
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.42,
-                    "zoom": 2
+                    "cy": 0.5,
+                    "zoom": 1
                 }
             }
         },
