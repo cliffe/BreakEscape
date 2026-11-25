@@ -215,13 +215,20 @@ class AccessLeakScannerTagsModeTest < ActiveSupport::TestCase
   # with or without a --resume entry (the tags do not reach a resumed session, and the map keeps the account at B)
   [['admin', 'deskadmin', 'desk_a', 'desk_b', 'admin'], ['non-admin', 'priya', 'bay_pc', 'sam_pc', nil]].each do |kind, who, a, b, access|
     [false, true].each do |resume|
-      test "T6e (privilege rules): #{kind} account, #{resume ? 'with' : 'without'} a --resume entry, is clean" do
+      test "T6e (privilege rules): #{kind} account, #{resume ? 'with' : 'without'} a --resume entry, is clean#{' (a no-op entry)' if resume && access.nil?}" do
         rows = [priv_signin(1, b, who, access: access), priv_desktop(2, b, who, access: access),
                 priv_desktop(3, b, nil, status: 403),
                 priv_signin(4, a, who, access: access), priv_desktop(5, b, who, access: access)]
         opts = resume ? { resumes: ["#{who}@#{b}@#{rows.last['t']}"] } : {}
         scanner, findings = scan(rows, **opts)
         assert_empty tag_rules(findings), "#{kind} resume=#{resume}"
+        if resume && access.nil?
+          # a resume restores only a held administrator step, so for a non-admin account the entry is the no-op case: it matches
+          # nothing and the CLI would refuse it as unused (exit 2); the findings are the same as without it
+          assert_equal ["#{who}@#{b}@#{rows.last['t']} (--resume)"], scanner.unused_entries
+        else
+          assert_empty scanner.unused_entries, "#{kind} resume=#{resume}"
+        end
       end
     end
   end
@@ -412,6 +419,22 @@ class AccessLeakScannerTagsModeTest < ActiveSupport::TestCase
     assert_equal [[1, 'ops_tag', 'tag:login']], tag_rules(findings)
     assert_empty held(scanner).compact
     assert_empty earned(scanner)
+  end
+
+  # R1-m2: the host label of a remote sign-in must be the tagged PC's own label; an unknown label (named by no PC) fails closed too
+  test 'R1-m2: a remote sign-in whose host label is no PC label is a finding, earns nothing and holds nothing' do
+    remote = real(59)
+    remote['pc'] = pc('bay_pc')
+    remote['body'] = remote['body'].merge('host' => 'NOSUCH01')
+    scanner, findings = scan([remote])
+    assert_equal [[1, 'ops_tag', 'tag:login']], tag_rules(findings)
+    assert_empty held(scanner).compact
+    assert_empty earned(scanner)
+    # with no label at all the tag stands
+    remote['body'] = remote['body'].merge('host' => nil)
+    scanner, findings = scan([remote])
+    assert_empty findings
+    assert_equal 'adel', held(scanner)['bay_pc']
   end
 
   test 'a second-step route row with an unknown PC tag is a finding too; a good tag is not' do
