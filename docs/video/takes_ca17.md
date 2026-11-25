@@ -25,7 +25,40 @@ Dry-run only, no recording yet. Keyless server on :3454 from worktree b-ca-trail
 
 ## Recorded marks
 
-(empty: not recorded)
+### Captures (26 Nov, serial, display :147, keyless server :3456, `BE_SPRITE=female_office_worker_v2`)
+
+Run as `tools/video/takes/run-take.sh ca17_acceptable_use_defend <take> "<flags>" "--hide-hud --zoom-step 1"`. The short key `ca17` does not resolve: `scenarios/` holds only `ca17_acceptable_use_defend`, and `mission.sh` drops `_defend` folders for ca keys, so the full id is needed. Takes are in `~/video-takes-local/ca17/takes/` (`video_out/ca17/takes` symlinked, gitignored). Sidecars are drafts (`_draft:true`); Step 6 was not in this brief.
+
+**Dry runs** (scratch footage, same tooling):
+- t05b_inbox_narrow: pass first run, 15.54 s, 0.56% dropped, residual +12 / -13 ms.
+- t07_chidi_machine_follow: failed first run with "entry state wrong: kit_quiet is not true". The script was right and the brief's flags were empty; the table says `--set kit_quiet=true`. Second run with that flag passed (35.10 s, 0.27%). No script edit was needed, and no `checkSprite`/`spriteCheck` slip: `_ca17.mjs` gets `checkSprite` through the ca14 re-export chain, and the `player-sprite` mark logged in both takes.
+
+**Recorded takes** (all pass first attempt, no retries, full frame):
+
+| take | length (s) | drop % | residual A/V start / end (ms) | /tts | contact sheet and notes |
+|---|---|---|---|---|---|
+| t01_nilesh_talk | 21.77 | 0.42 | -4 / +3 | 1 request, 200 audio/mpeg, 109,317 bytes (N1) | Portrait and subtitle bar from about 10 s. The bar prints the whole four-sentence line; the edit crops it. Not checked for stance (no seated NPC). |
+| t02_room_wide | 9.60 | 0.85 | +5 / -5 | none (quiet by design) | Depot office, Fatima and Chidi at the table. Nothing on screen gives away an answer. Player sprite `female_office_worker_v2`. Drop is close to the 1% gate. |
+| t04_sort_cards | 35.80 | 0.26 | +2 / -3 | none | Sort drill, card text only. Answers and feedback are hidden by CSS. |
+| t04b_sort_narrow | 35.64 | 0.27 | +14 / -14 | none | Same at 560 px. |
+| t05_inbox | 15.80 | 0.56 | +20 / -20 | none | Kiosk inbox. **Spoiler check still open at full size:** the list row "Join Tuesday's review, install R..." is on screen in the list hold. Too small to read on the sheet. |
+| t05b_inbox_narrow | 15.60 | 0.56 | +5 / -5 | none | Same at 760 px narrow card. Same open spoiler check. |
+| t06_room_end | 53.20 | 0.06 | +3 / -4 | Fatima's bark: 200 audio/mpeg, 13,413 bytes, `spoken: true` at 28.8 s | Voiced run (`T06_VOICE=1`). **The spoken line is "Depot's heaving today.", not "Need some water."** The script takes whatever Fatima says in the game, and this game gave the depot line. The v9 cut note needs checking against it. Chidi never speaks. |
+| t07_chidi_machine_follow | 35.34 | 0.27 | -3 / +3 | none | Chidi walks to the drinks machine and back under the follow camera. Standing and walking, not seated. Player sprite `female_office_worker_v2`. |
+
+Residuals are the constant-offset-corrected values from `check.json`. All eight are under the 33 ms gate, and all eight dropped under 1%.
+
+**Checks against frames:**
+- Contact sheets were viewed for all eight takes. They are thumbnails, so text and stance were not confirmed at full size for any take.
+- Seated NPCs: none of the eight takes shows a scenario NPC meant to sit as standing. This is unverified at full size for t02 and t06, where Fatima and Chidi should be at the table.
+- On-screen text that gives an answer: none seen on the sheets. The sort-card text (t04, t04b) is the card wording only.
+
+**Open items:**
+- t05 and t05b: decide whether the list hold keeps "Join Tuesday's review, install R..." on screen. A full-size frame is needed before the edit.
+- t06: check the v9 cut ("Out in the depot, the day goes on.") against "Depot's heaving today." The 25 Nov note expected "Need some water."
+- Full-size frame checks for t02, t06 and t07 (stance, the table, the 1% drop on t02).
+- Sidecars need Step 6.
+- Keyless server (PID stopped at the end) and Xvfb :147 are stopped with the rest of the run.
 
 ## Movement shots (25 Nov)
 
