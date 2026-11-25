@@ -31,6 +31,19 @@
 # give the capture up to the desktop that followed the sign-in. A `--logout` name stands only when a later answer lists that PC's session.
 # A row holding a `login` tag is refused (exit 2): the recorder writes none.
 #
+# Capture modes (scanner hardening, recorder 1.0.21 and later). The recorder tags each PC-route POST row (`pc`) and each
+# POST /crack row (`hash`) with the id the request named. A file whose tag-bearing rows all carry their tag is TAGGED; one whose
+# rows carry none is UNTAGGED (a capture from before 1.0.21); a file mixing the two, a tag on the wrong kind of row, a tag value
+# that is not `null` or exactly { "pcId": <1 to 200 character string> } (`hashId` for `hash`), or a tag of a different mode than
+# another file of the run is refused (exit 2). The default mode is TAGGED (tags required): an untagged capture that holds any
+# tag-bearing row is refused, and the message says to record again or pass `--untagged`.
+#   --untagged   judge an untagged capture by the old rules (tags are absent). A tagged file given with it is refused (exit 2).
+# Which entries go with which mode:
+#   --signin, --logout   untagged captures only, so only with `--untagged`. A tagged capture places them by its own tags, so
+#                        either option beside a tagged file is refused (exit 2): a name can never sit beside a tag.
+#   --resume             both modes: the tags do not reach a resumed session.
+# Stripping the tags by hand gains nothing: a hand-stripped file is refused without `--untagged`.
+#
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
 # game's own scenario data on the server, so the tester never sees them, and no output line
@@ -76,9 +89,11 @@
 require_relative 'lib/access_leak_scanner'
 
 args = ARGV.dup
-usage = 'usage: access-leak-check.rb [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
+usage = 'usage: access-leak-check.rb [--untagged] [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
         '[--resume <account id>@<pc id>@<row time>]... [--logout <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... <game_id> <responses.jsonl> [more.jsonl ...] ' \
         '(n counts every successful POST /login answer of the account in the log, remote and relay ones too; in a second-step scenario a --signin name must be confirmed by the desktop row that follows, else exit 2; a capture with a `login` tag is refused, exit 2)'
+untagged = !args.delete('--untagged').nil?
+args.delete('--untagged') while args.include?('--untagged')
 signins = []
 resumes = []
 logouts = []
@@ -147,14 +162,15 @@ if game_problem
   exit 2
 end
 
-tag_problem = AccessLeakScanner.hand_tag_problem(per_file)
+tag_mode = untagged ? :absent : :required
+tag_problem = AccessLeakScanner.tag_problem(per_file, tag_mode)
 if tag_problem
-  warn "capture files edited by hand: #{tag_problem}"
+  warn "capture files refused: #{tag_problem}"
   exit 2
 end
 
 begin
-  findings = scanner.scan(lines, signins: signins, resumes: resumes, logouts: logouts)
+  findings = scanner.scan(lines, signins: signins, resumes: resumes, logouts: logouts, tags: tag_mode)
 rescue ArgumentError => e
   warn e.message
   exit 2
