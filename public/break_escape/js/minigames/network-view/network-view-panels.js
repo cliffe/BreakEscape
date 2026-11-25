@@ -655,6 +655,7 @@ export class PanelsRenderer {
             return `<li class="network-technique${on ? ' network-technique-selected' : ''}" data-technique="${escapeHtml(t.id)}" data-selected="${on ? 'true' : 'false'}" draggable="true">`
                 + `<button type="button" class="minigame-button network-row-action network-technique-select" data-action="select-technique" aria-pressed="${on ? 'true' : 'false'}">${escapeHtml(t.name)}</button>`
                 + (t.summary ? `<span class="network-technique-summary">${escapeHtml(t.summary)}</span>` : '')
+                + `<span class="network-technique-type">Type: ${escapeHtml(t.id)}</span>`
                 + (t.worksOn ? `<span class="network-technique-works">${escapeHtml(t.worksOn)}</span>` : '')
                 + '</li>';
         }).join('');

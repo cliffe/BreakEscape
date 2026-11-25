@@ -407,7 +407,7 @@ function techniqueLines(view, scene) {
     if (!cards.length) return [];
     const out = [[span(TECHNIQUES_HEADING, 'head')]];
     out.push(...tableLines(TECHNIQUE_HEAD, cards.map(t => [t.name, t.worksOn]), '  '));
-    for (const t of cards) if (t.summary) out.push([span(`  ${t.name}: `, 'note'), span(t.summary)]);
+    for (const t of cards) out.push([span(`  ${t.name}: `, 'note'), span(`${t.summary ? `${t.summary} ` : ''}Type: use ${t.id} on <finding>`)]);
     const g = scene?.lastGrant;
     if (g) out.push(joinSpans([span(sessionGrantText(g.host, g.who), 'ok'), accessTag({ access: g.access }) ? span(accessTag({ access: g.access }), 'ok') : null]));
     return out;
