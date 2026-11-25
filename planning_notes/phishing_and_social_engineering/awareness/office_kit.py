@@ -727,21 +727,68 @@ def _insert_after(d, after_key, items):
     return out
 
 
+def merge_list(old, new, owned, ident):
+    """Merge a kit's `new` records into the shell's `old` list without moving anything: a record `owned`
+    by the kit stays where it is (replaced by the kit's current copy with the same `ident`; dropped when
+    the kit no longer produces it), a hand-written record stays where it is, and kit records the shell
+    has not got yet go last. The server keys eventMappings by index, so existing ones must never move."""
+    pending = {}
+    for n in new:
+        pending.setdefault(ident(n), []).append(n)
+    used = set()
+    out = []
+    for o in old:
+        if not owned(o):
+            out.append(o)
+            continue
+        q = pending.get(ident(o))
+        if q:
+            n = q.pop(0)
+            used.add(id(n))
+            out.append(n)
+    return out + [n for n in new if id(n) not in used]
+
+
+def merge_dict(old, new, owned_key):
+    """merge_list for a dict: kit-owned keys keep their position (new value), others stay, new keys go last."""
+    out = {}
+    for k, v in old.items():
+        if not owned_key(k):
+            out[k] = v
+        elif k in new:
+            out[k] = new[k]
+    for k, v in new.items():
+        if k not in out:
+            out[k] = v
+    return out
+
+
+def map_ident(m):
+    return _map_id(m)
+
+
+def member_ident(m):
+    return m.get('id')
+
+
 def apply_kit(sc, kit, row, host_id=None):
     """The shell with the kit's content applied (a new dict). Tier none returns an unchanged copy.
     Old kit-owned members are removed first, so applying twice gives the same result."""
     if not active(row):
         return copy.deepcopy(sc)
+    orig = copy.deepcopy(sc)
     out = strip_kit(sc, host_id)
     prefix, state_global = shell_ids(out, row)
     b = build(kit, row, prefix, state_global)
     tr = out['rooms']['training_room']
-    tr['npcs'] = tr['npcs'] + b['npcs']
-    tr['objects'] = tr['objects'] + b['objects']
+    otr = orig['rooms']['training_room']
+    tr['npcs'] = merge_list(otr['npcs'], b['npcs'], is_kit_member, member_ident)
+    tr['objects'] = merge_list(otr.get('objects', []), b['objects'], is_kit_member, member_ident)
     host = _find_host(out, host_id)
+    ohost = _find_host(orig, host_id)
     if b['mappings'] or 'eventMappings' in host:       # a convention row has none: add no empty list
-        host['eventMappings'] = host.get('eventMappings', []) + b['mappings']
-    out['globalVariables'].update(b['globals'])
+        host['eventMappings'] = merge_list(ohost.get('eventMappings', []), b['mappings'], is_kit_mapping, map_ident)
+    out['globalVariables'] = merge_dict(orig.get('globalVariables', {}), b['globals'], lambda k: k.startswith('kit_'))
     top = [(k, v) for k, v in b['scenario'].items() if k == 'npcThoughts']
     out = _insert_after(out, 'disableAttacks', top)
     after = []
@@ -749,22 +796,24 @@ def apply_kit(sc, kit, row, host_id=None):
         if k == 'npcThoughts':
             continue
         if k == 'chatter' and isinstance(out.get('chatter'), dict):
-            out['chatter'] = {**out['chatter'], **v}      # the shell's own pools stay; the kit adds its kit_ ones
+            # the shell's own pools stay; the kit's kit_ ones keep their place, new ones go last
+            out['chatter'] = merge_dict(orig.get('chatter') or {}, v, lambda k: str(k).startswith('kit_'))
         else:
             after.append((k, v))
     after.extend(shell_flags(row).items())
     if b['timers']:
         if 'timers' in out:
-            out['timers'] = out['timers'] + b['timers']
+            out['timers'] = merge_list(orig.get('timers', []), b['timers'],
+                                       lambda t: str(t.get('id', '')).startswith('kit_'), member_ident)
         else:
             after.append(('timers', b['timers']))
     for key in KIT_KEYED:
         if key in b:
             cur = out.get(key)
             if isinstance(cur, dict):
-                out[key] = {**cur, **b[key]}
+                out[key] = merge_dict(orig.get(key) or {}, b[key], lambda k: str(k).startswith('kit_'))
             elif isinstance(cur, list):
-                out[key] = cur + b[key]
+                out[key] = merge_list(orig.get(key) or [], b[key], is_kit_member, member_ident)
             else:
                 after.append((key, b[key]))
     out = _insert_after(out, 'globalVariables', after)
@@ -774,7 +823,8 @@ def apply_kit(sc, kit, row, host_id=None):
         oc = key_outcome(out)
         if oc is None:
             raise ValueError(f"{row['id']}: keyMessage needs a triage set with an outcome")
-        oc['messageGlobals'] = {**oc.get('messageGlobals', {}), **b['messageGlobals']}
+        oc['messageGlobals'] = merge_dict(key_outcome(orig).get('messageGlobals') or {}, b['messageGlobals'],
+                                          lambda k: str(key_outcome(orig)['messageGlobals'][k]).startswith('kit_'))
     if b.get('messageCaughtVerdicts'):
         oc = key_outcome(out)
         oc['messageCaughtVerdicts'] = {**oc.get('messageCaughtVerdicts', {}), **b['messageCaughtVerdicts']}

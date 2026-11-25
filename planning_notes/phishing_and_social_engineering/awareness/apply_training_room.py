@@ -356,17 +356,29 @@ def _rebuild(text, start, pieces, pad, close_pad):
     return text[:start] + body + text[end:]
 
 
-def _splice_object(text, start, drop, add, after=None):
+def _splice_object(text, start, drop, add, after=None, in_place=False):
     """Object at `start`: drop members whose key satisfies `drop`, add (key, value) pairs `add` right
-    after the kept member `after` (else at the end). Kept members keep their own text. Returns new text."""
+    after the kept member `after` (else at the end). Kept members keep their own text. Returns new text.
+    With `in_place`, a dropped member the pairs `add` also hold stays where it is (its value replaced when
+    it differs) and only the other pairs are added: office_kit.merge_dict on the text."""
     kept, olds = [], []
     first_key = None
     after_at = None
-    for key, ks, vs, ve in _members_full(text, start):
+    adding = dict(add)
+    members = list(_members_full(text, start))
+    close_pad0 = _line_indent(text, start)
+    close_pad0 = close_pad0[:len(close_pad0) - len(close_pad0.lstrip())]
+    pad0 = _line_indent(text, members[0][1]) if members and '\n' in text[start:members[0][1]] else close_pad0 + '  '
+    if in_place:
+        add = [(k, v) for k, v in add if not any(k == mk and drop(mk) for mk, _, _, _ in members)]
+    for key, ks, vs, ve in members:
         first_key = ks if first_key is None else first_key
         s = text[ks:ve]
         olds.append(s)
-        if not drop(key):
+        if in_place and drop(key) and key in adding:
+            kept.append(s if json.loads(text[vs:ve]) == adding[key]
+                        else json.dumps(key) + ': ' + _indented(adding[key], len(pad0)))
+        elif not drop(key):
             kept.append(s)
             if key == after:
                 after_at = len(kept)
@@ -383,21 +395,40 @@ def _splice_object(text, start, drop, add, after=None):
     return _rebuild(text, start, pieces, pad, close_pad)
 
 
-def _splice_array(text, start, drop, add):
-    """Array at `start`: drop elements satisfying `drop(parsed)`, append the values in `add`."""
+def _splice_array(text, start, drop, add, ident=None):
+    """Array at `start`: drop elements satisfying `drop(parsed)`, append the values in `add`. With `ident`,
+    a dropped element the kit's `add` also holds (same ident, matched in order) stays where it is, its text
+    replaced only when the value differs, and only the other values are appended: office_kit.merge_list."""
     kept, olds = [], []
     first = None
-    for a, b in _elements(text, start):
+    pending = {}
+    if ident:
+        for n in add:
+            pending.setdefault(ident(n), []).append(n)
+    used = set()
+    elems = list(_elements(text, start))
+    ind0 = _line_indent(text, start)
+    ind0 = ind0[:len(ind0) - len(ind0.lstrip())]
+    pad0 = _line_indent(text, elems[0][0]) if elems else ind0 + '  '
+    pad0 = pad0[:len(pad0) - len(pad0.lstrip())] if elems and pad0.strip() else pad0
+    for a, b in elems:
         first = a if first is None else first
         s = text[a:b]
         olds.append(s)
-        if not drop(json.loads(s)):
+        p = json.loads(s)
+        if drop(p):
+            q = pending.get(ident(p)) if ident else None
+            if q:
+                n = q.pop(0)
+                used.add(id(n))
+                kept.append(s if p == n else _indented(n, len(pad0)))
+        else:
             kept.append(s)
     ind = _line_indent(text, start)
     close_pad = ind[:len(ind) - len(ind.lstrip())]
     pad = _line_indent(text, first) if first is not None else close_pad + '  '
     pad = pad[:len(pad) - len(pad.lstrip())] if first is not None and pad.strip() else pad
-    fresh = [_indented(v, len(pad)) for v in add]
+    fresh = [_indented(v, len(pad)) for v in add if id(v) not in used]
     pieces = kept + fresh
     if pieces == olds:
         return text
@@ -457,7 +488,7 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     em = _try_member(text, ha, 'eventMappings')
     cur = json.loads(text[em[0]:em[1]]) if em else []
     if em and not (cur and all(office_kit.is_kit_mapping(m) for m in cur)):
-        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'])
+        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'], office_kit.map_ident)
     elif not b['mappings'] and not em:
         pass     # the convention form (ca00) has no kit host mappings: add no empty list
     else:
@@ -468,9 +499,9 @@ def kit_text(text, kit, row, shell, allow_drop=False):
         text = _splice_object(text, ha, lambda k: False, [('eventMappings', b['mappings'])])
     # room npcs and objects
     tr = _training_room(text)
-    text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'])
+    text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'], office_kit.member_ident)
     tr = _training_room(text)
-    text = _splice_array(text, _member(text, tr, 'objects')[0], is_kit, b['objects'])
+    text = _splice_array(text, _member(text, tr, 'objects')[0], is_kit, b['objects'], office_kit.member_ident)
     # social.awarenessEpisode.stepAway
     social = _member(text, _root(text), 'social')[0]
     epa = _member(text, social, 'awarenessEpisode')[0]
@@ -501,12 +532,12 @@ def kit_text(text, kit, row, shell, allow_drop=False):
                                   [('messageCaughtVerdicts', mcv)] if mcv else [])
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
-    text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()))
+    text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()), in_place=True)
     # top-level keys, in the same places as office_kit.apply_kit: npcThoughts after disableAttacks;
     # officePresets, chatter, timers, resources and roles after globalVariables
     tl = _try_member(text, _root(text), 'timers')
     if tl:
-        text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'])
+        text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'], office_kit.member_ident)
         tl = _try_member(text, _root(text), 'timers')
         if json.loads(text[tl[0]:tl[1]]) == []:
             text = _splice_object(text, _root(text), lambda k: k == 'timers', [])
@@ -514,7 +545,7 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     ch = _try_member(text, _root(text), 'chatter')
     ch_own = bool(ch) and any(not str(k).startswith('kit_') for k in json.loads(text[ch[0]:ch[1]]))
     if ch and ch_own:    # the shell's own pools stay; only the kit_ keys are replaced
-        text = _splice_object(text, ch[0], lambda k: k.startswith('kit_'), list(b['scenario']['chatter'].items()))
+        text = _splice_object(text, ch[0], lambda k: k.startswith('kit_'), list(b['scenario']['chatter'].items()), in_place=True)
     adds = []
     for k, v in b['scenario'].items():
         if k != 'npcThoughts' and not (k == 'chatter' and ch_own):
@@ -528,9 +559,9 @@ def kit_text(text, kit, row, shell, allow_drop=False):
         mem = _try_member(text, _root(text), key)
         if mem:
             if text[mem[0]] == '{':
-                text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), list(b.get(key, {}).items()))
+                text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), list(b.get(key, {}).items()), in_place=True)
             else:
-                text = _splice_array(text, mem[0], is_kit, b.get(key, []))
+                text = _splice_array(text, mem[0], is_kit, b.get(key, []), office_kit.member_ident)
             mem = _try_member(text, _root(text), key)
             if not json.loads(text[mem[0]:mem[1]]):
                 text = _splice_object(text, _root(text), lambda k, key=key: k == key, [])
