@@ -69,6 +69,10 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # the reset entry (plain, scoped) are accepted; nothing else is. (8) After a credited first password grant the server clears the
 # account's wrong-code count; the scanner cannot clear its own, so a lock answer for an account that had wrong codes before its
 # grant is reported even when honest, until a pass answer for that pair removes the mark (the stricter side: a lock the server could not give is reported too).
+# (9) Device in use (S8c): a code on `mfa/device` for a re-enrolled owner is excused only while the lock rules hold a fresh `code` gate
+# for that owner in the same game (same age test as the server, `ls_fresh?`). The lock rules drop a gate on a `codeLocked: true` answer,
+# but the server keeps the record, so an honest device read after `codeLocked` on a re-enrolled owner's lock is reported (the stricter
+# side; it needs a re-enrolment and a closed account, and no shipped beat does either).
 #
 # The main scanner is touched in seven places (S8c merges keep all of them): the require, the include, the `helpdesk_begin_scan`
 # call, the `scan_helpdesk` call just before `scan_mfa`, the rule text table, `mfa_kind_at` (`hd_reenrolled?`) and the approve
@@ -684,11 +688,27 @@ module HelpdeskLeakRules
     case minfo[:route]
     when 'mfa/device'
       owners = hd_query_values(minfo, 'item_id').map { |item| @mfa_devices[item] ? @mfa_devices[item]['owner'] : body['npcId'] }
-      add.call('helpdesk_secret', 'helpdesk:old:code', '$.code') if body.key?('code') && owners.any? { |owner| hd_reenrolled?(owner) }
+      if body.key?('code') && owners.any? { |owner| hd_reenrolled?(owner) && !hd_live_code_gate?(minfo, owner) }
+        add.call('helpdesk_secret', 'helpdesk:old:code', '$.code')
+      end
     when 'mfa/phone'
       owners = hd_query_values(minfo, 'npc_id')
       add.call('helpdesk_secret', 'helpdesk:old:phone', '$.requests') if body.key?('requests') && owners.any? { |owner| hd_reenrolled?(owner) }
     end
+  end
+
+  # Device-in-use excuse: the server shows a re-enrolled owner's old device while a live unpassed `code` lock step names that owner.
+  # True only when the lock rules hold, for the row's own game, a fresh `code` gate for this owner. Read-only: it never selects a
+  # game (scan_helpdesk runs before scan_lock_steps for the same row) and fails closed (no lock rules, no time, no game, no gate).
+  def hd_live_code_gate?(minfo, owner)
+    return false unless @ls_active && @ls_games.is_a?(Hash) && owner.is_a?(String)
+
+    game = minfo[:path].to_s[%r{/games/([^/]+)/}, 1]
+    gates = game && @ls_games[game] && @ls_games[game][:gates]
+    now = ls_time(@hd_row)
+    return false unless gates.is_a?(Hash) && now
+
+    gates.values.any? { |g| g[:kind] == 'code' && g[:npc] == owner && ls_fresh?(g, now) }
   end
 
   # A GET mfa/phone with an `own` query: judged here whatever the status; only the canonical 403 and an earned list pass.
