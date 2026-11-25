@@ -250,6 +250,12 @@ function tableLines(head, rows, indent = '') {
         });
         const kept = out.filter(s => s.text !== '');
         while (kept.length && kept[kept.length - 1].text.trim() === '') kept.pop();
+        // A row whose last cell is empty must not end in the padding of the cell before it.
+        if (kept.length) {
+            const last = kept[kept.length - 1];
+            const trimmed = last.text.replace(/\s+$/, '');
+            if (trimmed !== last.text) kept[kept.length - 1] = { ...last, text: trimmed };
+        }
         return kept;
     };
     return [build(head, 'head'), ...rows.map(r => build(r))];

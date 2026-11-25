@@ -457,13 +457,15 @@ function assertCells(lines, label) {
     const rows = cellLines(lines);
     assert.ok(rows.length >= 2, `${label}: a head and a row`);
     const cells = rows.map(l => l.filter(s => s.w !== undefined));
-    for (const r of cells) {
+    rows.forEach((l, ri) => {
+        const r = cells[ri];
         for (const s of r) {
+            const lastOfLine = l[l.length - 1] === s; // R2-1: the last span of a row keeps no trailing space
             assert.ok(Number.isInteger(s.w) && s.w >= 1 && s.w <= 80, `${label}: w ${s.w}`);
-            assert.ok(s.text.endsWith(' ') && !s.text.endsWith('  ') && !/ {2}/.test(s.text), `${label}: one space in ${JSON.stringify(s.text)}`);
+            assert.ok((lastOfLine ? !s.text.endsWith(' ') : s.text.endsWith(' ') && !s.text.endsWith('  ')) && !/ {2}/.test(s.text), `${label}: one space in ${JSON.stringify(s.text)}`);
             assert.ok(s.w >= s.text.length + 1 || s.w === 80, `${label}: w holds the value and a gap`);
         }
-    }
+    });
     // each run of table lines (a table) has one width per column
     let runFirst = null;
     lines.forEach((l, i) => {
@@ -532,4 +534,12 @@ test('R1-B1: a last cell keeps the space between its spans, and a table keeps it
     assert.equal(svc[0].text, ' ');
     const hostHead = fl.find(l => l.some(s => s.text.trim() === 'HOST' || s.text.trim() === 'NAME'));
     if (hostHead) assert.equal(hostHead[0].w, 2);
+});
+
+test('R2-1: a row whose last cell is empty keeps no trailing space', () => {
+    const hs = FMT.formatListing(viewOf('host_states'), {});
+    for (const line of hs) {
+        const text = line.map(s => s.text).join('');
+        assert.equal(text, text.replace(/\s+$/, ''), `trailing space in ${JSON.stringify(text)}`);
+    }
 });

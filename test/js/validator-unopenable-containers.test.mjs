@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const skip = spawnSync('ruby', ['--version']).status !== 0 && 'ruby not found';
@@ -77,4 +78,31 @@ test('R1-B3: a nested briefcase with no locked key warns', { skip }, () => {
     const out = check([cabinet({ locked: false, contents: [{ id: 'br', type: 'briefcase', name: 'Case', takeable: true, contents: [item] }] })]);
     assert.equal(out.length, 1, out.join('\n'));
     assert.ok(out[0].includes('contents[0]') && out[0].includes('(Case)'), out[0]);
+});
+
+test('R2-2: every type interactions.js dispatches to its own screen is in OWN_SCREEN_TYPES', { skip }, () => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(OWN_SCREEN_TYPES)`;
+    const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    const listed = new Set(JSON.parse(r.stdout.trim().split('\n').pop()));
+    for (const t of ['cms_terminal', 'warranty_checklist', 'shredder', 'flag-station', 'network_segmentation_map',
+        'sis_config_panel', 'ops_log_terminal', 'workstation', 'notepad', 'siem_dashboard', 'case-file', 'rogue-ap']) {
+        assert.ok(listed.has(t), `${t} listed`);
+    }
+    for (const t of ['mail_terminal', 'keycard', 'rfid_cloner', 'briefcase', 'folder']) assert.ok(!listed.has(t), `${t} not listed`);
+    // independent derivation: every `type === 'x'` between the workstation and lockpick branches
+    const src = readFileSync(join(root, 'public/break_escape/js/systems/interactions.js'), 'utf8');
+    const seg = src.slice(src.search(/scenarioData\.type === ["']workstation["']/), src.search(/scenarioData\.type === ["']lockpick["']/));
+    const inventoryOnly = new Set(['ble_scanner', 'bluetooth_scanner', 'fingerprint_kit', 'rfid_cloner', 'keycard']);
+    for (const m of seg.matchAll(/scenarioData\.type === ["']([^"']+)["']/g)) {
+        if (!inventoryOnly.has(m[1])) assert.ok(listed.has(m[1]), `${m[1]} dispatches to a screen but is not listed`);
+    }
+    const reg = readFileSync(join(root, 'public/break_escape/js/systems/minigame-registry.js'), 'utf8');
+    for (const m of reg.match(/const BUILT_IN = \{[\s\S]*?\n\};/)[0].matchAll(/^\s*'([^']+)':\s*\{/gm)) {
+        if (m[1] !== 'mail_terminal') assert.ok(listed.has(m[1]), `registry type ${m[1]} not listed`);
+    }
+    const out = check([{ id: 'c', type: 'cms_terminal', name: 'CMS', contents: [item] }]);
+    assert.equal(out.length, 1);
+    assert.ok(out[0].includes('opens its own screen'), out[0]);
 });

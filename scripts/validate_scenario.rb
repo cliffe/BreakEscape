@@ -2751,11 +2751,33 @@ end
 # means to be open must say `"locked": false`. Seven types already raise an error for this in
 # check_common_issues; they are skipped here so no object gets two lines.
 UNOPENABLE_ERROR_TYPES = %w[briefcase bag bag1 suitcase safe pc bin1].freeze
-# Types interactions.js sends to their own screen before it reaches the container branch, so their
-# `contents` are never shown whatever `locked` says.
-OWN_SCREEN_TYPES = %w[siem_dashboard scada_historian log_filter_terminal drug_library_terminal backup_recovery
-                      ncsc_brief forensic_data_platform coverage_decision_form network_architecture
-                      infusion_pump command_board].freeze
+# Types that open their own screen, so their `contents` are never shown whatever `locked` says. Derived from the client code, not listed by hand: the object types systems/interactions.js sends to
+# their own screen (the dispatch block from the workstation branch up to the lockpick branch) and the
+# keys of systems/minigame-registry.js, minus mail_terminal (its screen comes after the container branch)
+# and the inventory-only tools that are not placed in rooms.
+OWN_SCREEN_SOURCE_DIR = File.expand_path('../public/break_escape/js/systems', __dir__)
+OWN_SCREEN_INVENTORY_ONLY = %w[ble_scanner bluetooth_scanner fingerprint_kit rfid_cloner keycard].freeze
+
+def derive_own_screen_types(dir = OWN_SCREEN_SOURCE_DIR)
+  types = []
+  inter = File.join(dir, 'interactions.js')
+  if File.exist?(inter)
+    src = File.read(inter)
+    from = src.index(/scenarioData\.type === ["']workstation["']/)
+    upto = src.index(/scenarioData\.type === ["']lockpick["']/)
+    if from && upto && upto > from
+      types += src[from...upto].scan(/scenarioData\.type === ["']([^"']+)["']/).flatten
+    end
+  end
+  reg = File.join(dir, 'minigame-registry.js')
+  if File.exist?(reg)
+    block = File.read(reg)[/const BUILT_IN = \{(.*?)^\};/m, 1].to_s
+    types += block.scan(/^\s*'([^']+)':\s*\{/).flatten
+  end
+  (types - %w[mail_terminal] - OWN_SCREEN_INVENTORY_ONLY).uniq.freeze
+end
+
+OWN_SCREEN_TYPES = derive_own_screen_types
 
 def check_unopenable_containers(json_data)
   issues = []
