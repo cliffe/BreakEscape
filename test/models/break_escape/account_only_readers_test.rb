@@ -10,7 +10,9 @@ module BreakEscape
     include Engine.routes.url_helpers
 
     MANIFEST = Engine.root.join('test/models/account_only_readers.yml')
-    LOOP_PATTERN = /\[['"]npcs['"]\]|scenario_room_npcs|dig\([^)]*['"]npcs['"]/
+    # Direct readers of a room's npcs and the indirect ones (R1-SERVER7): the account lists, one-NPC lookups and
+    # room NPC lists each reach the same records through a helper.
+    LOOP_PATTERN = /\[['"]npcs['"]\]|scenario_room_npcs|dig\([^)]*['"]npcs['"]|account_npcs|scenario_room_npc\b|scenario_npc_records|room_npcs|room_npc_list/
 
     def scenario
       data = AccessModelScenario.routes_scenario
@@ -89,7 +91,9 @@ module BreakEscape
       assert_includes @game.account_npcs.map { |n| n['id'] }, 'deskadmin'
       assert_equal 'deskadmin', @game.account_for_username('deskadmin')['id']
       assert_includes Game.scenario_room_npcs(@game.scenario_data).map { |n| n['id'] }, 'labadmin'
-      assert_includes @game.scenario_npc_ids, 'deskadmin'
+      # R1-SERVER4: the ids the game can have in a room leave the account out (a sync entry for it is dropped as an invented id's is)
+      refute_includes @game.scenario_npc_ids, 'deskadmin'
+      assert_includes @game.scenario_npc_ids, 'len'
     end
 
     test 'the manifest matches the source: no missing and no stale entry, skips name account_only?' do

@@ -44,10 +44,10 @@ module BreakEscape
       data
     end
 
-    def build(scenario = port_scenario)
+    def build(scenario = port_scenario, stick = STICK)
       build_network_game({ 'encounteredNPCs' => %w[sam lena ian jake], 'footholds' => KS.office_foothold,
                            'unlockedRooms' => NetworkRequests::OPEN_ROOMS + ['finance_office'],
-                           'inventory' => [STICK.dup] }, scenario)
+                           'inventory' => [stick.dup] }, scenario)
     end
 
     def game
@@ -141,6 +141,19 @@ module BreakEscape
       assert game.keyboard_admin?('sam_pc')
       row = assert_planted('dock_sam', 'sam_pc')
       assert_equal({ 'account' => 'sokafor' }, row['as'])
+    end
+
+    test 'the override covers a keystroke (hid class) device too, and is refused without the admin session' do
+      hid = STICK.merge('usbClass' => 'hid', 'name' => 'Keystroke injector')
+      build(port_scenario, hid)
+      assert_refused 'dock_sam', 'no session'
+      build(port_scenario, hid)
+      sign_in_sam
+      body = plant('dock_sam')
+      assert body['success'], body.to_s
+      assert_equal [{ 'item' => 'kit_stick', 'on' => 'dock_sam' }], planted
+      assert_equal [{ 'device' => 'hid' }], usb_rows.map { |r| r['detail'] }
+      assert_equal({ 'kind' => 'pc', 'id' => 'sam_pc' }, usb_rows.first['where'])
     end
 
     test 'a remote admin at the named PC plants the stick' do
