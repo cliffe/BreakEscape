@@ -11,6 +11,7 @@ import { FIXTURE_DIR, mount, unchangedCases, imp } from './support/network-view-
 
 const NV = 'minigames/network-view/';
 const { TerminalRenderer } = await imp(`${NV}network-view-terminal.js`);
+const { viewHasOps } = await imp(`${NV}network-view-minigame.js`);
 const choice = await imp(`${NV}skin-choice.js`);
 
 let mounts = 0;
@@ -36,7 +37,8 @@ test('the stored pick, the scenario default and a press all name the Terminal', 
 });
 
 test('every saved view with no ops block draws as saved, with no switch and no Terminal', async () => {
-    const cases = unchangedCases();
+    // The ops showcase fixtures do carry an ops block (network.cli); network-view-panels-same.test.mjs pins their DOM
+    const cases = unchangedCases().filter(c => !viewHasOps(c.body.footholds.find(f => f.id === c.footholdId) || c.body.footholds[0]));
     assert.ok(cases.length > 0);
     const before = built();
     const mountsBefore = mounts;
