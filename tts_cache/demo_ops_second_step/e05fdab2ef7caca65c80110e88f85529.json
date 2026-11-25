@@ -1,0 +1,13 @@
+{
+  "key": "e05fdab2ef7caca65c80110e88f85529",
+  "npc": "ama_owusu",
+  "text": "Keep Yusuf's phone on you, and ask the line for an approval reset for him.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:42:03Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "cd397e8cf00b0d9e5d7d3b8893ab14f0",
+  "npc": "gwen_pritchard",
+  "text": "Friday drinks again?",
+  "voice": "Vindemiatrix",
+  "style": "Records manager at Merrin & Sallow, in her 50s, dry and exact, fond of a tidy filing system. Speak with a consistent Welsh-influenced British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:08:26Z"
+}

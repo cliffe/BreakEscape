@@ -1,0 +1,13 @@
+{
+  "key": "00676e928858cca8ba311ad75631c5f8",
+  "npc": "thandiwe_moyo",
+  "text": "Strong one today?",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:12:12Z"
+}

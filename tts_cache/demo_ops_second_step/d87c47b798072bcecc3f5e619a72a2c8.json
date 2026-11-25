@@ -1,0 +1,13 @@
+{
+  "key": "d87c47b798072bcecc3f5e619a72a2c8",
+  "npc": "gwen_pritchard",
+  "text": "A code can be copied. A request to my phone is meant to be harder.",
+  "voice": "Vindemiatrix",
+  "style": "Records manager at Merrin & Sallow, in her 50s, dry and exact, fond of a tidy filing system. Speak with a consistent Welsh-influenced British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:50:11Z"
+}

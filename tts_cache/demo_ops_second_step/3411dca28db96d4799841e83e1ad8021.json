@@ -1,0 +1,13 @@
+{
+  "key": "3411dca28db96d4799841e83e1ad8021",
+  "npc": "ama_owusu",
+  "text": "Darren's badge on his desk has his staff number. His manager is on the kitchen board.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:41:31Z"
+}

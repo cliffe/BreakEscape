@@ -1,0 +1,13 @@
+{
+  "key": "33883a693bc30a1b48abbf210e462517",
+  "npc": "niamh_doherty",
+  "text": "Whose birthday is it?",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, covering reception today. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:01:17Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e1a8796fa6287a8c1d21d8abe9785ae8",
+  "npc": "priya_nair",
+  "text": "Go on, just a small slice.",
+  "voice": "Leda",
+  "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:15:40Z"
+}

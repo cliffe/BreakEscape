@@ -1,0 +1,13 @@
+{
+  "key": "b951ee6db5772c7dd4f1d9eb54264b21",
+  "npc": "priya_nair",
+  "text": "Friday drinks again?",
+  "voice": "Leda",
+  "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:14:26Z"
+}
