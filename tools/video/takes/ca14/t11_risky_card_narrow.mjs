@@ -12,11 +12,17 @@ export async function setup(page, bridge) {
   const st = (await bridge.getState()).globals || {};
   let s = st.episode_e14_social_media_state;
   if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = null; } }
-  const done = (s && s.done) || [];
-  if (!['brief', 'osint', 'write', 'flip'].every(k => done.includes(k)) || done.includes('defend')
-      || !(s.drill && s.drill.done) || !(s.privacy && s.privacy.done) || st.episode_e14_social_media_defend_complete === true) {
-    throw new Error('entry state wrong: need done=[brief,osint,write,flip] (not defend), drill.done and privacy.done seeded, defend not complete; got ' + JSON.stringify({ s, complete: st.episode_e14_social_media_defend_complete }));
+  // The client global for an object seed reads "[object Object]" (seen in dry runs 25 Nov), so the done list and the drill and
+  // privacy flags cannot be read here. Refuse on what can be read (defend not complete, and a parseable state that is wrong);
+  // the run itself refuses unless the kiosk offers "Open the phone", which only the seeded state gives.
+  if (s && typeof s === 'object') {
+    const done = s.done || [];
+    if (!['brief', 'osint', 'write', 'flip'].every(k => done.includes(k)) || done.includes('defend')
+        || !(s.drill && s.drill.done) || !(s.privacy && s.privacy.done)) {
+      throw new Error('entry state wrong: need done=[brief,osint,write,flip] (not defend), drill.done and privacy.done seeded; got ' + JSON.stringify(s));
+    }
   }
+  if (st.episode_e14_social_media_defend_complete === true) throw new Error('entry state wrong: defend already complete');
   await addCss(page, HIDE_CSS);
   await addCss(page, NARROW_INBOX_CSS(560));
   await sleep(400);
