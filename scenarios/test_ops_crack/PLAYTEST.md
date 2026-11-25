@@ -25,7 +25,7 @@ Give the leak check every capture file of the game, one by one, oldest first.
 
 ## Layout
 
-- You start holding the `capture_log` (`holds.captures: true`). Its **Hashes** section lists every hash row, and its Crack button (Open on a running row, Finish at 0) is the only way to the cracker. Opening it closes the log; reopen the log from the inventory afterwards.
+- You start holding the `capture_log` (`holds.captures: true`). Its **Hashes** section lists every hash row, and its Crack button (Open on a running row, Finish at 0) opens the cracker. Two more ways open it: the Crack button on the "Hash collected" toast (only when that toast names exactly one new hash), and the held hash file in the tray (its menu offers Crack, Open or Finish, by the same state; none once the hash is cracked or infeasible). Neither opens over another screen: with one up, a toast says "Close this screen first. The cracker also opens from your capture log." Opening from the log closes the log; reopen it from the inventory afterwards.
 - `lobby` (start): the lobby sign `sign_lobby` (it shows the flag text `flag{crack_floor_year}` for beat 4, and nothing about any recipe); the drop box `kit_dropbox`; the wall port `office_port` (network `office_lan`, foothold `jack_office_port`); the cabinet `lobby_cabinet` (not locked) with the card `card_factory`;
   the reception notes `desk_notes` (takeable; gives one fact); the public terminal `friendface_terminal`; the flag station `records_station` (flag `flag{crack_floor_year}`, reward: one fact);
   the poster `it_poster`; the audit reader `audit_log_pc` (source `crack_audit`). Doors: north to `bay`, east to `store`.
@@ -37,17 +37,19 @@ Give the leak check every capture file of the game, one by one, oldest first.
 ## Beats
 
 1. **Start.** Open the capture log: the Hashes section is not listed (no hash held). `verify-run.rb`: nothing held.
-2. **First hash.** Take the drop box, plug it into `office_port`, join the network, open the share, take Dana's file. Toast "Hash collected"; a hash row in the log's Hashes section with the username, a token, the Salted marker, status Ready and a Crack button. No password anywhere in the capture.
-3. **Missing facts.** Open the cracker for Dana (Crack button on the row): no chips, and Crack can still be pressed with nothing picked. Take the reception notes: one chip. Crack with it: "2 facts still missing", no wait.
+2. **First hash.** Take the drop box, plug it into `office_port`, join the network, open the share, take Dana's file. Toast "Hash collected" with a Crack button (take a screenshot of it); a hash row in the log's Hashes section with the username, a token, the Salted marker, status Ready and a Crack button. No password anywhere in the capture.
+3. **Missing facts.** Open the cracker for Dana from the toast's Crack button (press it before the toast goes; if it has gone, use the Crack button on the log row): no chips, and Crack can still be pressed with nothing picked. Take the reception notes: one chip. Crack with it: "2 facts still missing", no wait.
 4. **Earn the rest.** Walk into the bay and wait for Dana's post on the terminal (about 30 s after the bay loads); read the flag text on the lobby sign and submit it at the station. Three chips in the cracker. There is no intel board in this scenario: the facts show only as chips in the cracker.
-5. **A wrong pick costs a wait.** Pick two of the three and Crack: a 10 s progress bar, then "No match". The capture shows `running` with no hint of the verdict. The picks are cleared after "No match", so pick all three again for the next beat.
+5. **A wrong pick costs a wait.** Pick two of the three and Crack: a 10 s progress bar, then, with no press, "The wait is over. Fetching the result..." and then "No match" (the scene finishes by itself once; the Finish button is only a retry, and after a failed automatic post the line reads "The result did not arrive. Press Finish to try again.", which is a unit test, not played here). The capture shows `running` with no hint of the verdict. The picks are cleared after "No match", so pick all three again for the next beat.
 6. **The right pick.** Pick all three: the wait, then "Cracked" with the password; the hash row (Hashes section) reads Cracked, and a Cracked password row appears in the Sign-ins section.
-7. **Reuse.** Take Farah's file and Crack with no pick: a 60 s wait, then Cracked (Dana's equal password is held). Reload during the wait: the countdown resumes from the server's time.
+7. **Reuse.** Take Farah's file, close the log and click `farah_record.dat` in the tray: its menu offers Crack (screenshot); choose it. Crack with no pick: a 60 s wait, then Cracked (Dana's equal password is held). Reload during the wait: the countdown resumes from the server's time.
 8. **Common, and the batch.** Take the spare desk login's file. Open the cabinet, take the card, sweep the network, scan `desk_panel`, check its service, confirm the finding and use the card: the administrator's hash row appears with the SAME token as the spare desk login's, neither marked Salted. Crack either: both read Cracked at once.
-9. **The real path.** Sign in at Eli's PC: the administrator's tile reads "Cracked" and nothing is filled in, so type the password read from the capture log's Sign-ins section; the taskbar shows Administrator.
-10. **Strong is a dead end.** Open Eli's profile and its folder, take the file. Crack: "No match"; again: the infeasible line, and the Crack button goes from the log row (in the scene it stays, disabled).
+9. **The real path.** Sign in at Eli's PC: the administrator's tile reads "Cracked". Click it: the password field is filled with the cracked password; do not type it. Press the sign-in button; the taskbar shows Administrator. A tile for an account with no cracked row fills nothing. A captured password for the same account, if held, wins over the cracked one.
+10. **Strong is a dead end.** Open Eli's profile and its folder, take the file. Crack: "No match"; again: the infeasible line, and the Crack button goes from the log row (in the scene it stays, disabled). The file in the tray no longer offers Crack.
 11. **Checks.** Run the leak check over every capture file, oldest first; `verify-run.rb` shows four accounts cracked and Eli's record infeasible; the audit reader shows the share, technique, profile and sign-in rows and nothing for any crack.
 
 ```bash
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --ops-log
 ```
+
+**Earned secrets.** A cracked password that the sign-in screen fills is earned: the player's own work produced it, so the filled value counts. A password typed from a guide or read out of a document is not earned, and a run that types one has not played beat 9.
