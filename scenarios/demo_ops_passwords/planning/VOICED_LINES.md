@@ -1,6 +1,6 @@
 # demo_ops_passwords: voiced lines (text only)
 
-Regenerated after the tour's round 1 fixes from `BreakEscape::TtsLineExtractor` (`bin/rails runner tools/video/scout/dump-lines.rb demo_ops_passwords <out.json>`), so it lists exactly what the batch would voice: each NPC's ink, Ama's event barks, the NPC chatter pools and the scenario's shared chatter pools (spoken by any NPC; listed under the NPC the extractor files them for). No audio exists yet. Word caps: 30 face to face (every line here is face to face). No line prints a variable, and none names a password, a fact value or a code. Choices the player picks are not voiced. `printer_svc` has no `voice` block and is not voiced. Feed posts are text, listed at the end for the record.
+Regenerated after the tour's final line edits (round 2) from `BreakEscape::TtsLineExtractor` (`bin/rails runner tools/video/scout/dump-lines.rb demo_ops_passwords <out.json>`), so it lists exactly what the batch would voice: each NPC's ink, Ama's event barks, the NPC chatter pools and the scenario's shared chatter pools (spoken by any NPC; listed under the NPC the extractor files them for). No audio exists yet. Word caps: 30 face to face (every line here is face to face). No line prints a variable, and none names a password, a fact value or a code. Choices the player picks are not voiced. `printer_svc` has no `voice` block and is not voiced. Feed posts are text, listed at the end for the record.
 
 ## ama_owusu (129 lines, voice Autonoe)
 
@@ -37,7 +37,7 @@ Regenerated after the tour's round 1 fixes from `BreakEscape::TtsLineExtractor` 
 | 29 | ink whats_next | Collect at the hot desk again, as Graham, then tell me. And ask me to switch Jun's PC back on, or he'll keep coming back. | 25 |
 | 30 | ink whats_next | Crack one of the records you collected. A weak one falls at once. Then tell me. | 16 |
 | 31 | ink whats_next | Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then try it at Delphine's PC. | 23 |
-| 32 | ink whats_next | Ask me to send them for coffee. Sign out first if you're still in as Graham, then type the name and password under Other user. | 25 |
+| 32 | ink whats_next | Ask me to send them for coffee, then type the name and password under Other user. | 16 |
 | 33 | ink whats_next | Now sign out at Julian's PC and try the shared desk account there. See what the sign-in screen says, then tell me. | 22 |
 | 34 | ink whats_next | You've done the hands-on part. Tell me to call it a day. | 12 |
 | 35 | ink whats_next | Open the sign-in log terminal in the IT room. Find your own rows, then flag the night-time failure. | 18 |
@@ -74,11 +74,11 @@ Regenerated after the tour's round 1 fixes from `BreakEscape::TtsLineExtractor` 
 | 66 | ink lever_day_refused | Take your time. Ask me what's next if you're not sure. | 11 |
 | 67 | ink recap | Nothing to look back on yet. Have a go first. | 10 |
 | 68 | ink recap | That's all of it so far. Ask for the short version at the end. | 14 |
-| 69 | ink recap | Borrowing left Jun's account on the hot desk. A PC remembers whoever signs in. | 14 |
-| 70 | ink recap | Both overrides left a row in the log. An administrator can get round a rule, but not quietly. | 18 |
-| 71 | ink recap | A domain account works on any PC in the domain. A local one stays on its own few desks. | 19 |
+| 69 | ink recap | Borrowing left Jun's account on the hot desk. | 8 |
+| 70 | ink recap | Each override left a row in the log. An administrator can get round a rule, but not quietly. | 18 |
+| 71 | ink recap | A local account isn't part of the domain, so only the desks it was made on know it. | 18 |
 | 72 | ink recap | One shared desk password would open every desk it covers. That's why it must not be weak. | 17 |
-| 73 | ink recap | A remembered record falls like any other. A weak one goes at once. | 13 |
+| 73 | ink recap | A remembered record cracks like any other. | 7 |
 | 74 | ink recap | The hot desk still held Niamh's record from when she'd used it. | 12 |
 | 75 | ink recap | Jun couldn't work, so he borrowed a PC and left it signed in. | 13 |
 | 76 | ink recap | An administrator can collect what a PC remembers. | 8 |

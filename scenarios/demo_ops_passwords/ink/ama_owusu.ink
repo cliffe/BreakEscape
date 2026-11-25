@@ -212,7 +212,7 @@ What can I help with?
         # speaker:npc
         Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then try it at Delphine's PC.
         # speaker:npc
-        Ask me to send them for coffee. Sign out first if you're still in as Graham, then type the name and password under Other user.
+        Ask me to send them for coffee, then type the name and password under Other user.
     - not local_refused_done:
         # speaker:npc
         Now sign out at Julian's PC and try the shared desk account there. See what the sign-in screen says, then tell me.
@@ -487,19 +487,19 @@ Graham stays. Ask him about the log.
     ~ recapped_after_borrow = true
     ~ said = said + 1
     # speaker:npc
-    Borrowing left Jun's account on the hot desk. A PC remembers whoever signs in.
+    Borrowing left Jun's account on the hot desk.
 }
 { said < 2 and stick_override_done and not recapped_stick:
     ~ recapped_stick = true
     ~ said = said + 1
     # speaker:npc
-    Both overrides left a row in the log. An administrator can get round a rule, but not quietly.
+    Each override left a row in the log. An administrator can get round a rule, but not quietly.
 }
 { said < 2 and local_refused_done and not recapped_refused:
     ~ recapped_refused = true
     ~ said = said + 1
     # speaker:npc
-    A domain account works on any PC in the domain. A local one stays on its own few desks.
+    A local account isn't part of the domain, so only the desks it was made on know it.
 }
 { said < 2 and local_account_done and not recapped_local:
     ~ recapped_local = true
@@ -511,7 +511,7 @@ Graham stays. Ask him about the log.
     ~ recapped_crack_cached = true
     ~ said = said + 1
     # speaker:npc
-    A remembered record falls like any other. A weak one goes at once.
+    A remembered record cracks like any other.
 }
 { said < 2 and collect_hot_desk_done and not recapped_collect_hot_desk:
     ~ recapped_collect_hot_desk = true
