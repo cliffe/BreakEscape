@@ -96,7 +96,7 @@ flowchart TD
   weak_file_server_storage_update_lag["File server<br/>storage :445<br/>unpatched / high"]
   weak_printer_host_admin_page_factory_login["Office printer<br/>Admin page :80<br/>default_creds / high"]
   server_room("Server room")
-  log_network_log[("Network log<br/>net_link_up, net_link_down, share_folder_opened, network_swept, host_scanned, service_checked, finding_confirmed, technique_used, technique_refused")]
+  log_network_log[("Network log<br/>net_link_up, net_link_down, share_folder_opened, network_swept, host_scanned, service_checked, finding_confirmed, technique_used, technique_refused, signin_ok")]
   reader_network_log_pc{"Network log PC<br/>(log reader)"}
   cred_print_admin{"Agnieszka Duda saved connection<br/>(aduda)"}
   tech_factory_accounts{"Factory accounts"}
@@ -248,7 +248,7 @@ flowchart TD
   weak_file_server_storage_update_lag["File server<br/>storage :445<br/>unpatched / high"]
   weak_printer_host_admin_page_factory_login["Office printer<br/>Admin page :80<br/>default_creds / high"]
   server_room("Server room")
-  log_network_log[("Network log<br/>net_link_up, net_link_down, share_folder_opened, network_swept, host_scanned, service_checked, finding_confirmed, technique_used, technique_refused")]
+  log_network_log[("Network log<br/>net_link_up, net_link_down, share_folder_opened, network_swept, host_scanned, service_checked, finding_confirmed, technique_used, technique_refused, signin_ok")]
   reader_network_log_pc{"Network log PC<br/>(log reader)"}
   cred_print_admin{"Agnieszka Duda saved connection<br/>(aduda)"}
   tech_factory_accounts{"Factory accounts"}

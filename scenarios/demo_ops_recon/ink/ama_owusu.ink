@@ -63,7 +63,7 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
     -> short_version
 + [I'll have a look round.]
     # speaker:npc
-    Go on. I'll be here.
+    I'll be here.
     # exit_conversation
     -> END
 
@@ -73,9 +73,11 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         # speaker:npc
         Find the hot desk and its network port. Plug the drop box in while Jun is away from it.
         # speaker:npc
-        Jun goes for coffee now and then, or I can send him and Chidi. Be off the port before he's back.
+        Jun goes for coffee now and then, or I can send him and Chidi.
         # speaker:npc
         If Jun comes back while you're at his port, he'll ask what you're doing.
+        # speaker:npc
+        If you'd rather not wait, the kitchen has a spare port too, and nobody watches it.
     - not sweep_done:
         # speaker:npc
         Open the drop box in your inventory and sweep the office network. See what answers.
@@ -83,6 +85,10 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         # speaker:npc
         Scan the printer to see what it runs.
     - not confirm_both_done:
+        { printer_off:
+            # speaker:npc
+            Switch the printer back on at its wall socket first.
+        }
         # speaker:npc
         Check the printer's admin page. It reports two weaknesses. Test both to see which is real.
         { not printer_off:
@@ -94,7 +100,7 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         There's a technique card in the printer cupboard. Use it on the weakness that's real.
     - not remote_signin_done:
         # speaker:npc
-        Open the sign-in control on Agnieszka's PC row and connect with the printer's saved link.
+        Now sign in to Agnieszka's PC from the network view, with the printer's saved link.
     - not terminal_view_done:
         # speaker:npc
         Now try the file server the same way, in the Terminal view. Same moves, typed.
@@ -133,9 +139,11 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
 === lever_coffee ===
 ~ coffee_call = coffee_call + 1
 # speaker:npc
-Right. A coffee run. Chidi and Jun will head for the machine.
-# speaker:npc
-Anyone still at the hot desk port when Jun comes back gets caught.
+Right, a coffee run. Chidi and Jun will head for the machine.
+{ not plug_in_done:
+    # speaker:npc
+    Jun's desk will be empty for a bit.
+}
 -> hub
 
 === lever_lunch ===
@@ -161,7 +169,7 @@ Lunch, then. Staff drift off their desks, Jun included. They only go the once.
 ~ temp midday_done = confirm_both_done and use_card_done and remote_signin_done and seen_file_server
 { not skip_day and not (morning_done and midday_done):
     # speaker:npc
-    Not yet. Some of the day's steps are still undone, and staff won't be back once they've gone home.
+    Not yet. There's still work to do, and once they've gone home they won't be back.
     { not plug_in_done:
         # speaker:npc
         You haven't plugged the drop box in.
@@ -180,7 +188,7 @@ Lunch, then. Staff drift off their desks, Jun included. They only go the once.
     }
     { not use_card_done:
         # speaker:npc
-        You haven't used the card on the real one.
+        You haven't used the card on the printer's real weakness.
     }
     { not remote_signin_done:
         # speaker:npc
@@ -221,7 +229,7 @@ Seen what you wanted? Once they've gone home, it's just Zainab and Graham.
 Good. What did the file server say?
 + [It named the product and its version.]
     # speaker:npc
-    That's the banner. It tells you what to look up before you guess.
+    That's the banner. On a real network, that's what you'd look up before you guess.
     -> terminal_ticked
 + [It listed the same findings, with addresses.]
     # speaker:npc
@@ -234,7 +242,7 @@ Good. What did the file server say?
 
 === terminal_ticked ===
 # speaker:npc
-Same findings, same names, printed the way a console prints them. Its scan came back as a table, lined up in columns.
+It prints like a real console, with the scan as a table, but the products and names are made up.
 # speaker:npc
 Switch to Panels and back again. The Terminal keeps its log for as long as the view is open.
 #complete_task:terminal_view
@@ -250,6 +258,10 @@ Which part?
     -> recap_midday
 + { open_share_done or read_log_done or unplug_done } [The evening.]
     -> recap_evening
++ [Never mind.]
+    # speaker:npc
+    Right.
+    -> hub
 
 === recap_morning ===
 # speaker:npc
@@ -271,11 +283,11 @@ The drop box on the port gave you a foothold. No password needed, only a free ca
 }
 { use_card_done:
     # speaker:npc
-    The card turned the printer's factory account into a saved link to Agnieszka's PC.
+    The card got in through the printer's factory account, and the printer had a saved link to Agnieszka's PC.
 }
 { remote_signin_done:
     # speaker:npc
-    The saved connection was as good as a password. Keep that in mind when a printer stores one.
+    A saved link is as good as a password, so anything that stores one is worth guarding.
 }
 { terminal_view_done:
     # speaker:npc
@@ -304,7 +316,7 @@ One cable shows a lot. Sweep the network, then scan each machine.
 # speaker:npc
 Reported weaknesses are only reports. Test each one before you trust it.
 # speaker:npc
-A technique fits one kind of weakness, and some need a user session first.
+A technique fits one kind of weakness, and a saved link works like a password.
 # speaker:npc
 Everything you did is in the network log. That's how defenders find you.
 -> hub

@@ -391,6 +391,11 @@ module BreakEscape
       granted(PRINTER_REAL, 'card_factory')
       post game_path('login'), params: { pc_id: 'agnieszka_pc', credential: 'print_admin', foothold: FOOT }, as: :json
       assert_response :success, response.body
+      # Tour R1 M1: the saved-link sign-in is in the log the player reads at R8 (method and route only)
+      signin = rows('signin_ok')
+      assert_equal 1, signin.size
+      assert_equal({ 'kind' => 'pc', 'id' => 'agnieszka_pc' }, signin.first['where'])
+      assert_equal({ 'method' => 'credential', 'route' => 'foothold' }, signin.first['detail'])
       post game_path('inventory'), params: { action_type: 'add', source_npc_id: 'zainab_hussain',
                                              item: { type: 'technique_card', id: 'card_update_gap', name: 'Technique card: known update gap' } }, as: :json
       granted(UPDATE, 'card_update_gap')
@@ -428,13 +433,18 @@ module BreakEscape
         assert_equal 'globalVars.open_share_done === true', un['condition'], jack
         assert_equal({ 'unplug_done' => true }, un['setGlobal'], jack)
       end
-      { 'kitchen_jack' => true, 'hotdesk_jack' => false }.each do |jack, value|
+      { 'kitchen_jack' => [true, 'kitchen_used', 'hotdesk_used'], 'hotdesk_jack' => [false, 'hotdesk_used', 'kitchen_used'] }.each do |jack, (value, used, other)|
         track = maps.select { |m| m['eventPattern'] == "network_foothold_gained:#{jack}" && m['setGlobal']&.key?('box_at_kitchen') }
         assert_equal 1, track.size, jack
-        assert_equal({ 'box_at_kitchen' => value }, track.first['setGlobal'])
+        assert_equal({ 'box_at_kitchen' => value, used => true }, track.first['setGlobal'])
         refute track.first['onceOnly'], 'the position mappings must not be once-only'
+        # Tour R1 m3: moving the box to the other jack later does not tick or bark the plug-in again. The guard reads
+        # the other jack's global, never plug_in_done, which this mapping sets (a bark would be dropped as stale)
+        tick = maps.find { |m| m['eventPattern'] == "network_foothold_gained:#{jack}" && m['completeTask'] == 'plug_in' }
+        assert_equal "globalVars.#{other} !== true", tick['condition'], jack
       end
-      %w[remote_signin_done unplug_done box_at_kitchen].each { |g| assert_equal false, scenario['globalVariables'][g], g }
+      assert_includes scenario['logSources'][LOG]['events'], 'signin_ok'
+      %w[remote_signin_done unplug_done box_at_kitchen hotdesk_used kitchen_used].each { |g| assert_equal false, scenario['globalVariables'][g], g }
       ink = File.read(File.expand_path('../../../scenarios/demo_ops_recon/ink/ama_owusu.ink', __dir__))
       %w[remote_signin_done unplug_done box_at_kitchen].each { |g| assert_match(/^VAR #{g} = false$/, ink) }
     end
@@ -456,7 +466,7 @@ module BreakEscape
 
     test 'tour: Ama refuses the evening until the morning and midday beats are done, and the voices name Merrin & Sallow only' do
       ink = File.read(File.expand_path('../../../scenarios/demo_ops_recon/ink/ama_owusu.ink', __dir__))
-      assert_includes ink, 'Not yet. Some of the day'
+      assert_includes ink, "Not yet. There's still work to do"
       assert_includes ink, '[Skip them and call it a day anyway.]'
       assert_equal true, scenario['ttsPregenerateChatter']
       voices = scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.map { |n| n.dig('voice', 'style') }.compact

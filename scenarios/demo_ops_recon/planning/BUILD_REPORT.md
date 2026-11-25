@@ -128,3 +128,30 @@ Ink compiles (6 of 6); validator 0 errors, 26 warnings (the 24 listed before plu
 - The plan's gate says "the list of undone beats"; a single line cannot hold seven optional fragments without many voiced variants, so each undone beat is its own fixed line.
 - The two wiring warnings above are unavoidable with the plan's appended position mappings.
 - `plug_in` still ticks on the first plug-in only; `box_at_kitchen` is what tracks later moves, as planned.
+
+## Tour round 1 fixes (2026-11-25)
+
+Acting on `TOUR_IMPL_REVIEW_R1.md`, `TOUR_DIALOGUE_REVIEW_R1.md` and tour playtest 1 (game 287, `/data/tmp/scratch/tour-recon-playtest-1/RESULTS.md`).
+
+### Implementation review
+- M1: `signin_ok` added to `network_log`'s events (option a), so the R5c saved-link sign-in is a `SIGN_IN` row (method `credential`, route `foothold`; no secret) and "Every move you made is in that log" is true. The R8c probe test now asserts the row; the shape test asserts the event is listed.
+- M2: PLAYTEST's guided path rewritten with the exact current lines and the measured times; run tables updated (R1b, R2, R3, R5b, R5c, R6, R7c, R8a, R8c now a task beat, R8d); ten tasks, not eight. Run B's R6c and the guided R6c are now the same step (telling Ama). Setup uses `new-game.rb`, as the playtest did.
+- m1: "Switch the printer back on at its wall socket first." heads the `confirm_both` pointer while the printer is off.
+- m2: the R8 log bark is split into two disjoint mappings: with the box still in, it ends "Last thing, unplug the box."; after an unplug, the same line without it. The R7c share bark keeps its `read_log_done` guard: its last sentence ("Now see Graham for the log") would be false after the log is read, and the evening recap carries the lesson.
+- m3: the plug-in tick and bark at each jack now need the other jack never used (`kitchen_used` / `hotdesk_used`, set by the position mappings). Not `plug_in_done` as the review suggested: the validator (V3b) warns that a bark whose condition reads a global its own mapping sets is dropped as stale. Two globals declared, false.
+- m4: the playtest's measured waits are in PLAYTEST. The coffee window was short (expected 28.8 s), so the office coffee machine's `useSeconds` goes from the preset's 12 to 30, and the R1 pointer names the kitchen port as the no-wait way in. Live check (game 297, :3070, after the fixes): Jun away 38 s (expected 34.8 s, was 28.8 s); the R1 pointer and coffee-lever lines read exactly as written; leak check over the capture: no leaks.
+- m5: covered by tour playtest 1 (R7a to R8c all clicked; ten of ten ticks). The R3b printer-off bark is still unseen live.
+- m6: the self-report is noted under "Known limits" in PLAYTEST. No Terminal-only signal exists to key on.
+
+### Dialogue review
+- M1, M2: `:224` and the `terminal_ticked` line rewritten as given ("... On a real network, that's what you'd look up before you guess." and "It prints like a real console, with the scan as a table, but the products and names are made up.").
+- M3: "Be off the port before he's back." and the coffee-lever warning cut; the lever says "Right, a coffee run. ..." and, before the plug-in, "Jun's desk will be empty for a bit."
+- m1 to m12: all taken as given, including the task title and board ("saved link"), the recap "Never mind." choice and the short version's third line. The exit is now "I'll be here." (the mild P11 note).
+
+### Playtest lost points not fixed here (engine, not this scenario)
+- Sign in on Agnieszka's row shows a password field before the saved link; the pointer and PLAYTEST now say to pick the saved link.
+- Clicking a selected card or finding deselects it; tick toasts show only after the view closes; the Terminal can open with msf-style lines; a user session on the file server shows "Desktop is empty"; door pathing for the harness. Noted in PLAYTEST.
+- Zainab leaves about 1.4 s after "Call it a day", not 8 s: her caffeine is already low. PLAYTEST now says "within a few seconds".
+
+### Checks
+Ink compiles (6 of 6; only Ama's changed; tagdiff shows the intended structure changes only: two conditionals, the recap's "Never mind." choice); loopcheck clean; validator 0 errors, 26 warnings (same count as before); dialoguelint totals none; mapping drift 0; graph regenerated; `demo_ops_recon_scenario_test.rb` 24 runs, 428 assertions, 0 failures (the whole-run leak scan finds nothing; the run uses no hand-made `login` tag); `tts_mission_lines_test.rb` 6 runs, 0 failures; `bin/ops-golden-compare` 45 runs, 0 failures.
