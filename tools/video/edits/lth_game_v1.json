@@ -1630,15 +1630,15 @@
   {
    "id": "S32_field_guide",
    "type": "gameplay",
-   "duration": 1.5,
+   "duration": 1.26,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "lth_gap2_field_guide.trimmed.mkv",
-    "in": 17.5,
-    "out": 19.0
+    "in": 17.8,
+    "out": 19.06
    },
    "framing": {
     "16:9": {
@@ -1666,15 +1666,15 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "GAP-2 real take: field guide open, title readable (16.2 to 19 s); 9:16 and 1:1 crop to the text column"
+    "note": "GAP-2 real take: field guide open, title readable (17.8 to 19 s, after the item toast clears); 9:16 and 1:1 crop to the text column"
    },
    "placeholder": false,
-   "note": "GAP-2 real take: field guide open, title readable (16.2 to 19 s); 9:16 and 1:1 crop to the text column"
+   "note": "GAP-2 real take: field guide open, title readable (17.8 to 19 s, after the item toast clears); 9:16 and 1:1 crop to the text column"
   },
   {
    "id": "S33_irina",
    "type": "gameplay",
-   "duration": 5.8,
+   "duration": 6.04,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1682,7 +1682,7 @@
    "source": {
     "file": "m06_t12_irina_badges.trimmed.mkv",
     "in": 23.9,
-    "out": 29.7
+    "out": 29.94
    },
    "framing": {
     "16:9": {
