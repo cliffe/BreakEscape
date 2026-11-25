@@ -242,6 +242,17 @@ export function toastDuration(type, duration) {
     return duration;
 }
 
+// A toast that carries an action button (the "Crack" button on "Hash collected") stays at least this
+// long, so the player can reach the button (playtest: it faded twice before it could be pressed). It
+// still waits while the pointer is over it or focus is inside it. A duration of 0 (until closed) is kept.
+export const ACTION_TOAST_MIN_MS = 12000;
+
+export function actionToastDuration(duration, options = {}) {
+    const d = Number(duration);
+    if (validToastAction(options) && Number.isFinite(d) && d > 0 && d < ACTION_TOAST_MIN_MS) return ACTION_TOAST_MIN_MS;
+    return duration;
+}
+
 // Show a notification instead of using alert()
 // The title and message are plain text (textContent) by default: callers pass scenario
 // names, observations, task titles and server text, none of which may become markup.
@@ -255,6 +266,7 @@ export function toastDuration(type, duration) {
 // for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
     duration = toastDuration(type, duration);
+    duration = actionToastDuration(duration, options);
     if (shouldHoldNotification(type, anyPanelOpen() || panelExpected())) {
         // Toasts still waiting for a place go into the hold first, so they stay ahead of
         // this one: a workstation popup (CyberChef, a lab sheet) holds toasts without

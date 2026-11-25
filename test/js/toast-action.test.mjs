@@ -115,3 +115,30 @@ test('the stylesheet gives the button pointer events and a focus style', () => {
   assert.match(rule, /pointer-events: auto/);
   assert.match(css, /\.notification-action:focus-visible/);
 });
+
+test('follow-up A: an action toast stays at least 12 s; plain toasts keep their time', () => {
+  const win = page();
+  assert.equal(N.ACTION_TOAST_MIN_MS, 12000);
+  const el = N.showNotification('Hash collected', 'info', '', 5000, { action: { label: 'Crack', onPress() {} } });
+  tick(11_500);
+  assert.ok(el.isConnected && !el._toast.closing, 'still up and pressable at 11.5 s');
+  tick(1_500);
+  assert.ok(!document.body.contains(el) || el._toast.closing, 'gone after the 12 s');
+  const plain = N.showNotification('Plain toast', 'info', '', 3000);
+  tick(4_000);
+  assert.ok(!document.body.contains(plain) || plain._toast.closing, 'a plain 3 s toast is not lengthened');
+  assert.equal(N.actionToastDuration(0, { action: { label: 'Go', onPress() {} } }), 0, 'until closed is kept');
+  assert.equal(N.actionToastDuration(20000, { action: { label: 'Go', onPress() {} } }), 20000, 'a longer time is kept');
+  assert.equal(N.actionToastDuration(5000, { action: { label: '', onPress() {} } }), 5000, 'an invalid action changes nothing');
+  done(win);
+});
+
+test('follow-up A: an action toast does not fade while its button has focus', () => {
+  const win = page();
+  const el = N.showNotification('Hash collected', 'info', '', 5000, { action: { label: 'Crack', onPress() {} } });
+  tick(500);
+  el.querySelector('.notification-action').dispatchEvent(new win.FocusEvent('focusin', { bubbles: true }));
+  tick(60_000);
+  assert.ok(el.isConnected && !el._toast.closing, 'held open by focus long past 12 s');
+  done(win);
+});
