@@ -536,6 +536,7 @@ class AccessLeakScanner
     @priv_signin_counts = Hash.new(0)
     @priv_deadlines = {}
     @priv_resumable = {}
+    @priv_relay_held = {}     # S5bc R1: pc => account id of a relay sign-in held there (a host row never lists a relay)
     @priv_kinds = {}          # pc => [via, relay] of the session that earned the held admin step (R4-2)
     @priv_logout_pending = {} # pc => account a named --logout ended, until an answer lists that PC's session state (R4-5)
     @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
@@ -3121,7 +3122,9 @@ class AccessLeakScanner
       @priv_resumable.delete(pc)
       @priv_kinds.delete(pc)
       @priv_logout_pending.delete(pc)
+      @priv_relay_held.delete(pc)
       exact ? @ops_session_accounts[pc] = body['npcId'] : @ops_session_accounts.delete(pc)
+      @priv_relay_held[pc] = body['npcId'] if exact && body['relay'] == true
     end
     return unless exact && @priv_admins.include?(body['npcId']) && %w[password credential].include?(body['via']) && body['relay'] != true
 
@@ -3304,7 +3307,9 @@ class AccessLeakScanner
 
       held = @ops_session_accounts[pc]
       session = hash['session']
-      if !session.is_a?(Hash)
+      if !session.is_a?(Hash) && held && @priv_relay_held[pc] == held
+        next # S5bc R1: the server never lists a relay session in a host row, so no session there says nothing about it
+      elsif !session.is_a?(Hash)
         shown = held && (@priv_npcs.dig(held, 'displayName') || held)
         hash['responding'] == false && hash['heldAs'].is_a?(String) && hash['heldAs'] == shown ? downgrade_priv_step(pc) : end_priv_session([pc])
       elsif session['locked'] == true
@@ -3378,6 +3383,7 @@ class AccessLeakScanner
 
       @ops_earned.delete("admin:#{pc}")
       drop_relay_mark(pc)
+      @priv_relay_held.delete(pc)
       @ops_session_accounts.delete(pc)
       @priv_deadlines.delete(pc)
       @priv_kinds.delete(pc)
@@ -3547,6 +3553,7 @@ class AccessLeakScanner
   # A 200 `{ "success": true }` POST /inventory answer tagged as a remove of a device on an object whose plant PC holds an admin
   # session now (a needsSession grant takes only the keyboard step, as the server's keyboard_or_session_admin? does).
   def note_usb_plant(body, row)
+    return note_usb_implant(body, row) if row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/network/implant')
     return unless row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/inventory')
     return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body.keys == ['success'] && body['success'] == true
 
@@ -3561,6 +3568,25 @@ class AccessLeakScanner
     pc = grant.presence || (@priv_pcs.key?(obj['id'].to_s) ? obj['id'].to_s : BreakEscape::CaptureModel.port_pc(obj))
     return unless pc && @priv_pcs.key?(pc)
     return unless grant.present? ? @ops_earned.include?("admin:#{pc}") : harvest_pc_admin?(pc)
+
+    account = admin_act_account(pc)
+    @hv_acts[[:plant, pc, account, item['usbClass']]] += 1 if account
+  end
+
+  # S5bc R1 (playtest 173): a 200 POST /network/implant answer that names the device it took (`consumedId`) and the PC it was
+  # planted at (`foothold.sourceId`) is a plant too, as the server writes the same USB_OVERRIDE row for it. Credited only for a
+  # storage or hid device the PC's policy refuses, and only while the KEYBOARD admin step is held at that PC (a relay, a
+  # foothold or a technique session never earns it, as the server's keyboard_admin? takes only the keyboard's). An answer
+  # that names no held device or no PC (the dropped shape) earns nothing.
+  def note_usb_implant(body, row)
+    return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
+    return unless body['consumedId'].is_a?(String) && body['foothold'].is_a?(Hash) && body['foothold']['sourceId'].is_a?(String)
+
+    pc = body['foothold']['sourceId']
+    return unless @priv_pcs.key?(pc) && @ops_earned.include?("admin:#{pc}")
+
+    item = scenario_item(body['consumedId'])
+    return unless item && %w[storage hid].include?(item['usbClass']) && BreakEscape::AccessWork.plant_refused?(@data, @priv_pcs[pc], item)
 
     account = admin_act_account(pc)
     @hv_acts[[:plant, pc, account, item['usbClass']]] += 1 if account
