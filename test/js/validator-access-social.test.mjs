@@ -287,6 +287,39 @@ test('phone: owner must name the NPC holding it, which has a phone; one each; si
     assertHas(errors(issues(s)), 'only the player\'s own phone');
 });
 
+// Ops showcase: the documented shape (docs/ACCESS_AND_NETWORKS.md, "Ways to hold a device"; NPC
+// left-behind items, npc-needs.js leftBehindItems): an owned phone that is a room object and that
+// its owner leaves behind on a desk (leftBehindChance, with its revealOnGlobal), no itemsHeld entry.
+test('phone: an owned phone left behind on a desk (room object, leftBehindChance, revealOnGlobal) is accepted', { skip }, () => {
+    const s = clean(); delete jake(s).itemsHeld;
+    s.rooms.lobby.objects.push({ type: 'phone_friendface', id: 'jake_phone', name: "Jake's phone", takeable: true, owner: 'jake',
+        leftBehindChance: 0.5, revealOnGlobal: 'jake_phone_left' });
+    const list = issues(s);
+    assertLacks(errors(list), "is not in jake's itemsHeld");
+    assertLacks(errors(list), 'posts from a phone');
+    assert.deepEqual(errors(list), []);
+});
+
+test('phone: every other owned phone placed as a room object is still refused', { skip }, () => {
+    const base = () => { const s = clean(); delete jake(s).itemsHeld; return s; };
+    const phone = extra => ({ type: 'phone_friendface', id: 'jake_phone', name: "Jake's phone", takeable: true, owner: 'jake', ...extra });
+    // no leftBehindChance at all
+    let s = base(); s.rooms.lobby.objects.push(phone({}));
+    assertHas(errors(issues(s)), "is not in jake's itemsHeld");
+    // leftBehindChance of zero never leaves it behind
+    s = base(); s.rooms.lobby.objects.push(phone({ leftBehindChance: 0, revealOnGlobal: 'g' }));
+    assertHas(errors(issues(s)), "is not in jake's itemsHeld");
+    // no revealOnGlobal: the engine never treats it as a left-behind slot
+    s = base(); s.rooms.lobby.objects.push(phone({ leftBehindChance: 0.5 }));
+    assertHas(errors(issues(s)), "is not in jake's itemsHeld");
+    // inside a container: the engine looks only at room objects
+    s = base(); s.rooms.lobby.objects.push({ id: 'drawer', type: 'safe', name: 'Drawer', contents: [phone({ leftBehindChance: 0.5, revealOnGlobal: 'g' })] });
+    assertHas(errors(issues(s)), "is not in jake's itemsHeld");
+    // the left-behind shape does not excuse a bad owner
+    s = base(); s.rooms.lobby.objects.push(phone({ owner: 'nobody', leftBehindChance: 0.5, revealOnGlobal: 'g' }));
+    assertHas(errors(issues(s)), "owner 'nobody' names no room NPC");
+});
+
 test('phone: the player\'s own phone may be anywhere; its site must be a social site', { skip }, () => {
     let s = clean(); s.startItemsInInventory = [{ type: 'phone_friendface', id: 'mine', name: 'Your phone' }];
     assert.deepEqual(errors(issues(s)), []);

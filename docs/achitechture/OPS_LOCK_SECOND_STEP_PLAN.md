@@ -840,7 +840,7 @@ name-matching finder is never used here. With a lock as subject, in order:
 `POST /mfa/verify` for a lock compares against the owner's `code_device` item id, never
 `own:<npcId>`. `GET /mfa/device` also answers when no policy declares a kind but a lock carries
 `kind: "code"`. The lock subject kind registers with the MFA plan's `device_in_use?(npc_id)`,
-true when any `code` lock names that owner, so a sign-in re-enrolment never blanks a device a
+true while a live, unpassed `code` lock record names that owner, so a sign-in re-enrolment never blanks a device a
 lock still needs. All are inside the game lock and `no-store`.
 
 ## 7. What reaches the browser, and what never does

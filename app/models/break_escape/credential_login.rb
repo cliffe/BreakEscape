@@ -80,6 +80,19 @@ module BreakEscape
       # 8b. A session token that has run out (K5, section 10)
       return { status: :unprocessable_entity, body: { success: false, expired: true } } if kind == 'token' && token_expired?(cred_id)
 
+      # 8c. A kind that stands in for the typed password still owes the second step (S8a): nothing
+      # is written, counted or logged, and the answer names the typed sign-in
+      if CredentialModel::KINDS.dig(kind, :password) == true && mfa_step_for(pc, npc) != 'none'
+        return { status: :unprocessable_entity, body: { success: false, typeToSignIn: 'second_step' } }
+      end
+
+      # 8d. A saved connection made before a desk reset the password is not the new password
+      # (S8b): until the new one has been typed at any PC, the answer names the typed sign-in;
+      # nothing is written, counted or logged. Tokens and assist invites are untouched.
+      if CredentialModel::KINDS.dig(kind, :password) == true && password_reset_untyped?(npc['id'])
+        return { status: :unprocessable_entity, body: { success: false, typeToSignIn: 'password_changed' } }
+      end
+
       # 9. Write the session (3.8); a replaced session prunes, and the answer names what ended
       relay = route[:relay] == true
       from = relay ? nil : route[:from]
@@ -179,6 +192,13 @@ module BreakEscape
     end
 
     private
+
+    # True when a desk has reset this account's password and the new one has not yet been typed.
+    # Reads the stored key directly so a game with no desk is neither read into nor written.
+    def password_reset_untyped?(npc_id)
+      entry = player_state['accountResets'].is_a?(Hash) ? player_state['accountResets'][npc_id.to_s] : nil
+      entry.is_a?(Hash) && entry['password'] == true && entry['typed'] != true
+    end
 
     # The registry entry for a credential the player may use now, or nil (step 2): a well-formed
     # id naming a built connecting kind whose proof holds. A password id is typed, never posted.

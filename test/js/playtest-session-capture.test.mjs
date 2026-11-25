@@ -8,14 +8,14 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const require = createRequire(import.meta.url);
 const scripts = join(root, '.claude/skills/playtest-scenario/scripts');
-const { createResponseCapture, inventoryTag } = require(join(scripts, 'response-capture.js'));
+const { createResponseCapture, inventoryTag, pcTag, hashTag } = require(join(scripts, 'response-capture.js'));
 
 const ORIGIN = 'http://127.0.0.1:3001';
 
@@ -259,4 +259,132 @@ test('inventoryTag declines a URL query that names hidden_in or hiddenIn', () =>
   for (const q of ['?hidden_in=x', '?a=1&hiddenIn=x']) {
     assert.equal(inventoryTag(hideReq({ action_type: 'hide', item: { id: 'kit' }, hidden_in: 'pot_a' }), new URL('http://h/inventory' + q)), null);
   }
+});
+
+// ---- C2: pc and hash tags ----
+// Answer bodies are real rows from the fixtures. No crack answer exists as a fixture row, so the
+// crack rows reuse a login answer body; the tag never depends on the answer.
+const fixtureRows = (name) => readFileSync(join(root, 'test/fixtures/files', name), 'utf8').trim().split('\n').map(l => JSON.parse(l));
+const privRows = fixtureRows('ops_privilege_browser_run_1.jsonl');
+const mfaRows = fixtureRows('ops_mfa_real_capture_rows.jsonl');
+const answerOf = (rows, suffix) => rows.find(r => r.method === 'POST' && r.path.endsWith(suffix)).body;
+const G = '/break_escape/games/7';
+const PC_ROUTES = [
+  ['/login', answerOf(privRows, '/login')],
+  ['/logout', answerOf(privRows, '/logout')],
+  ['/lock_session', answerOf(privRows, '/lock_session')],
+  ['/mfa/verify', answerOf(mfaRows, '/mfa/verify')],
+  ['/mfa/prompt', answerOf(mfaRows, '/mfa/verify')], // no prompt row in the fixtures
+  ['/mfa/approve', answerOf(mfaRows, '/mfa/verify')] // no approve row in the fixtures
+];
+const CRACK_ANSWER = answerOf(privRows, '/login');
+
+async function one(path, opts) {
+  const { file, cap } = fresh();
+  cap.onResponse(res(G + path, opts));
+  await cap.flush();
+  return { row: lines(file)[0], file };
+}
+
+test('C2 each PC route gets pc: { pcId }', async () => {
+  for (const [route, body] of PC_ROUTES) {
+    const { row } = await one(route, { method: 'POST', body, postData: JSON.stringify({ pc_id: 'jake_pc', username: 'u' }) });
+    assert.deepEqual(row.pc, { pcId: 'jake_pc' }, route);
+    assert.ok(!('hash' in row), route);
+  }
+});
+
+test('C2 POST /crack gets hash: { hashId }', async () => {
+  const { row } = await one('/crack', { method: 'POST', body: CRACK_ANSWER, postData: JSON.stringify({ hash_id: 'h1', facts: { a: 1 } }) });
+  assert.deepEqual(row.hash, { hashId: 'h1' });
+  assert.ok(!('pc' in row));
+});
+
+test('C2 nothing but the id is written', async () => {
+  const { file } = await one('/login', { method: 'POST', body: { success: true }, postData: JSON.stringify({ pc_id: 'p1', username: 'MARKUSER', password: 'MARKPASS', credential: { k: 'MARKCRED' }, number: 424242, facts: ['MARKFACT'] }) });
+  const text = readFileSync(file, 'utf8');
+  for (const m of ['MARKUSER', 'MARKPASS', 'MARKCRED', '424242', 'MARKFACT']) assert.ok(!text.includes(m), m);
+  const c = await one('/crack', { method: 'POST', body: { success: true }, postData: JSON.stringify({ hash_id: 'h1', facts: ['MARKFACT'], password: 'MARKPASS' }) });
+  const t2 = readFileSync(c.file, 'utf8');
+  assert.ok(!t2.includes('MARKFACT') && !t2.includes('MARKPASS'));
+});
+
+const BAD_BODIES = [
+  ['postData null', null], ['empty', ''], ['form-encoded', 'pc_id=x&hash_id=y'],
+  ['JSON string', '"x"'], ['JSON null', 'null'], ['array', '[{"pc_id":"x","hash_id":"x"}]'],
+  ['throwing', () => { throw new Error('gone'); }],
+  ['missing id', '{}'], ['empty id', '{"pc_id":"","hash_id":""}'],
+  ['number id', '{"pc_id":5,"hash_id":5}'], ['object id', '{"pc_id":{"a":"b"},"hash_id":{"a":"b"}}'],
+  ['201 chars', JSON.stringify({ pc_id: 'a'.repeat(201), hash_id: 'a'.repeat(201) })],
+  ['target_type', '{"pc_id":"x","target_type":"npc"}'], ['target_id', '{"pc_id":"x","target_id":"t"}']
+];
+
+test('C2 unreadable requests give null with the key present', async () => {
+  for (const [name, pd] of BAD_BODIES) {
+    const a = await one('/login', { method: 'POST', postData: pd });
+    assert.ok('pc' in a.row && a.row.pc === null, 'pc ' + name);
+    if (name === 'target_type' || name === 'target_id') continue;
+    const b = await one('/crack', { method: 'POST', postData: pd });
+    assert.ok('hash' in b.row && b.row.hash === null, 'hash ' + name);
+  }
+  const edge = await one('/login', { method: 'POST', postData: JSON.stringify({ pc_id: 'a'.repeat(200) }) });
+  assert.deepEqual(edge.row.pc, { pcId: 'a'.repeat(200) });
+});
+
+test('C2 a query naming the field declines; an unrelated one does not', async () => {
+  const pd = JSON.stringify({ pc_id: 'p', hash_id: 'h' });
+  for (const q of ['?pc_id=x', '?x=1;pc_id=y', '?target_type=a', '?target_id=a', '?pc%5Fid=x']) {
+    assert.equal((await one('/login' + q, { method: 'POST', postData: pd })).row.pc, null, q);
+  }
+  assert.equal((await one('/crack?hash_id=z', { method: 'POST', postData: pd })).row.hash, null);
+  assert.equal((await one('/crack?x=1;hash_id=z', { method: 'POST', postData: pd })).row.hash, null);
+  assert.deepEqual((await one('/login?x=1', { method: 'POST', postData: pd })).row.pc, { pcId: 'p' });
+  assert.deepEqual((await one('/crack?pc_id=1', { method: 'POST', postData: pd })).row.hash, { hashId: 'h' });
+});
+
+test('C2 other rows carry neither key, and inv and npcId are kept', async () => {
+  const pd = JSON.stringify({ pc_id: 'p', hash_id: 'h', npc_id: 'n', action_type: 'add', item: { id: 'i' } });
+  const cases = [
+    ['/login', { method: 'GET' }], ['/logout', { method: 'GET' }], ['/lock_session', { method: 'GET' }],
+    ['/crack', { method: 'GET' }], ['/mfa/verify', { method: 'GET' }],
+    ['/login_accounts?pc_id=x', { method: 'GET' }], ['/mfa/device', { method: 'GET' }], ['/mfa/phone', { method: 'GET' }],
+    ['/mfa/device', { method: 'POST' }], ['/unlock', { method: 'POST' }], ['/login_accounts', { method: 'POST' }]
+  ];
+  for (const [path, o] of cases) {
+    const { row } = await one(path, { ...o, postData: pd });
+    assert.ok(!('pc' in row) && !('hash' in row), o.method + ' ' + path);
+  }
+  const inv = (await one('/inventory', { method: 'POST', postData: pd })).row;
+  assert.deepEqual(inv.inv, { action: 'add', itemId: 'i', usedOn: null });
+  assert.ok(!('pc' in inv) && !('hash' in inv));
+  const fp = (await one('/feed_post', { method: 'POST', postData: pd })).row;
+  assert.equal(fp.npcId, 'n');
+  assert.ok(!('pc' in fp) && !('hash' in fp));
+});
+
+test('C2 no row ever carries a login key; the tag functions never throw', async () => {
+  for (const [route] of PC_ROUTES) {
+    const { row } = await one(route, { method: 'POST', postData: JSON.stringify({ pc_id: 'p', login: { pcId: 'x' } }) });
+    assert.ok(!('login' in row), route);
+  }
+  assert.equal(pcTag({ postData() { throw new Error('x'); } }), null);
+  assert.equal(hashTag({ postData() { throw new Error('x'); } }, { search: '?%' }), null);
+});
+
+// R1-C2: the Rails tag tests (recorder_tags_scanner_*_test.rb) read their `pc` and `hash` tags from this fixture, a capture the
+// recorder itself wrote. This test rebuilds it and fails if the recorder's output no longer matches the file.
+// To refresh after a recorder change: UPDATE_RECORDER_TAGS=1 bin/test-js test/js/playtest-session-capture.test.mjs
+test('R1-C2 the recorder tag fixture is what the recorder writes', async () => {
+  const PCS = ['code_pc1', 'plain_pc', 'bay_pc', 'store_pc', 'lobby_cabinet'];
+  const HASHES = ['dana_hash', 'farah_hash', 'sparedesk_hash', 'eli_hash'];
+  const { file, cap } = fresh();
+  for (const id of PCS) cap.onResponse(res(G + '/login', { method: 'POST', body: CRACK_ANSWER, postData: JSON.stringify({ pc_id: id }) }));
+  for (const id of HASHES) cap.onResponse(res(G + '/crack', { method: 'POST', body: CRACK_ANSWER, postData: JSON.stringify({ hash_id: id, facts: [] }) }));
+  await cap.flush();
+  const rows = lines(file).map(({ pc, hash }) => (pc ? { pc } : { hash }));
+  assert.equal(rows.length, PCS.length + HASHES.length);
+  const text = rows.map(r => JSON.stringify(r)).join('\n') + '\n';
+  const path = join(root, 'test/fixtures/files/recorder_tag_rows.jsonl');
+  if (process.env.UPDATE_RECORDER_TAGS) writeFileSync(path, text);
+  assert.equal(readFileSync(path, 'utf8'), text);
 });

@@ -83,3 +83,10 @@ Known gap left as the reviewer described it: the smoke covers the first 2.5 s of
 
 - shell-x runs once per train, started in the background beside the Rails suite (`shellx.txt`, a `shell-x exit` line in the summary, RED on failure). The batch sets `SHELL_X_SEPARATE=1`, which makes `test/js/shell-x-check.test.mjs` skip with that reason instead of failing the merge-batch guard. Only train-check.sh sets it.
 - The JS batch runs `-j ${TRAIN_CHECK_JS_JOBS:-8}` instead of `-j 3`. The machine has 32 cores but other sessions share it and free memory can be low, so lower the setting when the load is high. bin/test-js retries the known fixture-resolution race, which more workers make more likely.
+
+## Shared lock on any git (follow-up C1, 2026-11-24)
+
+- `train-check.sh` used `git rev-parse --path-format=absolute --git-common-dir`, which git 2.25 does not understand (it echoes the flag and exits 0), so the lock fell back to `/tmp/tests.lock` and trains ran unlocked, and `BUNDLE_PATH` became `/vendor/bundle`. A new shell function `main_checkout` runs `rev-parse --git-common-dir`, prefixes the worktree path when the answer is relative, takes `pwd` of it and returns its parent. It works for a worktree, the main checkout, old git and new git.
+- It fails closed: if git fails or the result is not a directory, the script prints `cannot work out the main checkout from <worktree>: set TESTS_LOCK` to stderr and exits 2 (also for the `BUNDLE_PATH` default). `TESTS_LOCK=<path>` is used as given; `TESTS_LOCK=none` keeps its warning.
+- Dry mode: `TRAIN_CHECK_PRINT_LOCK=1` prints `TESTS_LOCK=...` and `BUNDLE_PATH=...` (or `(unset)`) and exits 0 before any lock, server or test.
+- Test: `test/js/train-check-lock-path.test.mjs` (real script, throwaway git repository, a `git` shim only for the newer-git and failing-git cases). Putting `--path-format=absolute` back makes it fail.

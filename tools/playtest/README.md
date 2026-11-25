@@ -36,6 +36,8 @@ Helpers for driving the game through the dev-only `window.__test` bridge. See `d
 
   The script prints `HEAD_START=...` with what it applied. Confirm with `verify-run.rb <game_id>` (current room, unlocked rooms, inventory) or, in the browser, `brief` / `state` after `bootstrap`. Not covered: NPC conversation state, ink variables, door states beyond unlocked rooms. Set the globals the scenario's own gates read, and check the objectives the run starts with.
 
+- `access-leak-check.rb` — the leak check over `--capture-responses` files (see its header). A capture recorded by 1.0.21 or later carries `pc` and `hash` tags and takes no `--signin` or `--logout`; a capture from before that holds none and needs `--untagged` (with its `--signin`/`--logout` entries); `--resume` works in both.
+
 - `session-start.sh` / `cmd.sh` / `session-stop.sh` — keep one browser open across many tool calls and drive it a command at a time.
 
   ```bash
@@ -45,6 +47,10 @@ Helpers for driving the game through the dev-only `window.__test` bridge. See `d
   tools/playtest/cmd.sh 1047 '{"cmd":"brief"}'
   tools/playtest/session-stop.sh 1047
   ```
+
+  `session-start.sh` opens the Network view in Panels unless told otherwise: with no `--net-skin` it adds `net_skin=gui` to the URL
+  (a URL that already carries a `net_skin=` value is left alone). `--net-skin cli` opens the Terminal, and `--net-skin default` adds
+  nothing, so the page follows the stored pick and then the scenario's own default. Any other value is an error. The server never sees it.
 
   The session tag is the game id. Each session gets its own `pipes-<tag>/` and
   `<tag>.pid`, both gitignored — there is no need to copy these scripts per run.

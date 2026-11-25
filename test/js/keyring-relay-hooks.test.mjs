@@ -25,7 +25,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); };
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('config.js', 'export const getApiBase = () => "/api";\nexport const getCsrfToken = () => "t";\n');
-for (const rel of ['systems/keyring.js', 'systems/pc-sessions.js', 'utils/sync-before-fetch.js', 'systems/npc-events.js', 'utils/remote-host-text.js', 'api-client.js']) copy(rel);
+for (const rel of ['systems/keyring.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js', 'systems/npc-events.js', 'utils/remote-host-text.js', 'api-client.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;

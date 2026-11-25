@@ -1,0 +1,2 @@
+[head|Starting Nmap against 10.20.30.0/24]
+Nmap done: 256 IP addresses (0 hosts up) scanned

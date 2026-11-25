@@ -1,0 +1,101 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "desk_pc",
+          "kind": "pc",
+          "name": "Desk PC",
+          "host": "LAB-01",
+          "sprite": "pc_desktop",
+          "headless": false,
+          "remoteSignIn": true
+        },
+        {
+          "id": "kiosk_pc",
+          "kind": "pc",
+          "name": "Kiosk",
+          "host": "LAB-02",
+          "sprite": "pc_desktop",
+          "headless": false,
+          "remoteSignIn": false
+        },
+        {
+          "id": "old_pc",
+          "kind": "pc",
+          "name": "Old PC",
+          "host": "LAB-03",
+          "sprite": "pc_desktop",
+          "headless": false,
+          "remoteSignIn": true,
+          "responding": false
+        }
+      ],
+      "networks": [
+        {
+          "id": "lab_net",
+          "name": "Lab network",
+          "route": "up",
+          "via": null,
+          "hosts": [
+            {
+              "id": "desk_pc",
+              "kind": "pc",
+              "name": "Desk PC",
+              "host": "LAB-01",
+              "sprite": "pc_desktop",
+              "headless": false,
+              "remoteSignIn": true
+            },
+            {
+              "id": "kiosk_pc",
+              "kind": "pc",
+              "name": "Kiosk",
+              "host": "LAB-02",
+              "sprite": "pc_desktop",
+              "headless": false,
+              "remoteSignIn": false
+            },
+            {
+              "id": "old_pc",
+              "kind": "pc",
+              "name": "Old PC",
+              "host": "LAB-03",
+              "sprite": "pc_desktop",
+              "headless": false,
+              "remoteSignIn": true,
+              "responding": false
+            }
+          ]
+        },
+        {
+          "id": "far_net",
+          "name": "Far network",
+          "route": "down",
+          "via": {
+            "hostId": "desk_pc",
+            "host": "LAB-01"
+          },
+          "hosts": [
+            {
+              "id": "far_pc",
+              "kind": "pc",
+              "name": "Far PC",
+              "host": "FAR-01"
+            }
+          ],
+          "swept": false
+        }
+      ]
+    }
+  ]
+}

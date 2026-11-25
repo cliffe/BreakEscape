@@ -432,7 +432,7 @@ if complete_opts.any? || flag_opts.any?
         case r['type']
         when 'give_item'
           item = Array(station['itemsHeld']).find { |i| i['type'] == r['item_type'] || i['name'] == r['item_name'] }
-          if item then g.add_inventory_item!(item); applied << "give_item #{item['type']}" else applied << 'give_item: item not found in station' end
+          if item then g.add_inventory_item!(item, fact_source: true); applied << "give_item #{item['type']}" else applied << 'give_item: item not found in station' end
         when 'unlock_door'
           room = r['target_room'] || r['room_id']
           g.unlock_room!(room) if room
@@ -449,6 +449,9 @@ if complete_opts.any? || flag_opts.any?
         when 'unlock_object'
           oid = RewardKeys.unlock_object_id(r)
           oid ? (g.unlock_object!(oid); applied << "unlock_object #{oid}") : applied << 'unlock_object: no id in reward'
+        when 'grant_fact'
+          added = g.stamp_earned_facts!([r['fact']])
+          applied << "grant_fact #{r['fact']}#{added.empty? ? ' (not a known fact)' : ''}"
         else
           applied << "#{r['type']} (client-only, not applied)"
         end

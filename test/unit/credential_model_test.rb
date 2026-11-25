@@ -6,12 +6,13 @@ require 'test_helper'
 class CredentialModelTest < ActiveSupport::TestCase
   CM = BreakEscape::CredentialModel
 
-  test 'kinds built in phase 1 (token from K5), hash not yet' do
+  test 'kinds built in phase 1 (token from K5), hash from S7' do
     assert CM.kind_built?('password')
     assert CM.kind_built?('saved_connection')
     assert CM.kind_built?('assist_invite')
     assert CM.kind_built?('token')
-    refute CM.kind_built?('hash')
+    assert CM.kind_built?('hash')
+    refute CM.connecting?('hash')
     refute CM.kind_built?('nonsense')
   end
 

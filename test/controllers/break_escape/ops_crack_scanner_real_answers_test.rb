@@ -1,0 +1,172 @@
+require 'test_helper'
+require_relative 'ops_crack_scenario_test'
+require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
+
+module BreakEscape
+  # Ops S7 fix (leak scanner review R1-L14): the whole-run test of scenarios/test_ops_crack, with every request and its
+  # answer recorded and then scanned with the real game. Honest play must give 0 findings, so a later change to the scanner
+  # (or to an answer) that flags it fails here. Then one mutation of the real capture per scanner rule must be a finding.
+  class OpsCrackScannerRealAnswersTest < OpsCrackScenarioTest
+    def self.runnable_methods
+      super.grep(/whole_run/)
+    end
+
+    def captured
+      @captured ||= []
+    end
+
+    %i[get post patch put delete].each do |verb|
+      define_method(verb) do |*args, **opts, &blk|
+        result = super(*args, **opts, &blk)
+        text = response.body.to_s
+        parsed = begin
+          JSON.parse(text)
+        rescue JSON::ParserError
+          nil
+        end
+        row = { 'method' => request.request_method, 'path' => request.path, 'status' => response.status }
+        row[parsed.nil? ? 'bodyText' : 'body'] = parsed.nil? ? text : parsed
+        tag_inventory_row(row, opts[:params])
+        captured << row
+        result
+      end
+    end
+
+    # The recorder's tag on a POST /inventory row (response-capture.js): the action and the item id, no body.
+    def tag_inventory_row(row, params)
+      return unless row['method'] == 'POST' && row['path'].end_with?('/inventory')
+
+      p = (params || {}).with_indifferent_access
+      row['inv'] = { 'action' => p[:action_type], 'itemId' => p.dig(:item, :id), 'usedOn' => nil }
+    end
+
+    def scan_capture(rows)
+      lines = rows.each_with_index.map { |r, i| ['capture.jsonl', i + 1, r] }
+      AccessLeakScanner.new(scenario, game: Game.find(@game.id)).scan(lines)
+    end
+
+    def crack_rows
+      captured.select { |r| r['path'].end_with?('/crack') && r['method'] == 'POST' }
+    end
+
+    teardown do
+      next unless @game && captured.any?
+
+      found = scan_capture(captured)
+      assert_empty found.map { |f| [f.line, f.rule, f.owner, f.route] }, 'honest play must give no finding'
+      assert_operator captured.size, :>, 40
+      assert_operator crack_rows.size, :>=, 9
+      shapes = crack_rows.map { |r| r['body'].is_a?(Hash) ? (r['body']['status'] || r['body']['reason']) : nil }.uniq.compact.sort
+      assert_equal %w[cracked infeasible needMoreFacts nomatch running], shapes
+
+      mutations.each do |name, rule, rows|
+        assert_includes scan_capture(rows).map(&:rule), rule, "mutation #{name} must be a finding of #{rule}"
+      end
+    end
+
+    def deep(rows)
+      Marshal.load(Marshal.dump(rows))
+    end
+
+    def mutations
+      first_running = captured.index { |r| r['method'] == 'POST' && r['path'].end_with?('/crack') && r['body'].is_a?(Hash) && r['body']['status'] == 'running' }
+      first_cracked = captured.index { |r| r['method'] == 'POST' && r['path'].end_with?('/crack') && r['body'].is_a?(Hash) && r['body']['status'] == 'cracked' }
+      last_keyring = captured.rindex { |r| r['method'] == 'GET' && r['path'].end_with?('/keyring') && r['body'].is_a?(Hash) && r['body']['entries'] }
+      assert first_running && first_cracked && last_keyring
+      out = []
+
+      rows = deep(captured)
+      rows[first_running]['body']['hit'] = false
+      out << ['a running answer with a hit word', 'crack_answer', rows]
+
+      rows = deep(captured)
+      rows.delete_at(first_running)
+      rows.delete_if { |r| r['method'] == 'POST' && r['path'].end_with?('/crack') && r['body'].is_a?(Hash) && r['body']['status'] == 'running' }
+      out << ['no running answer before a salted crack', 'crack_unearned', rows]
+
+      rows = deep(captured)
+      rows[last_keyring]['body']['entries'].find { |e| e['kind'] == 'hash' }['token'] = 'AAAA-AAAA-AAAA-AAAA-AAAA-AAAA'
+      out << ['a forged token on a hash row', 'crack_row', rows]
+
+      rows = deep(captured)
+      rows[last_keyring]['body']['entries'].find { |e| e['kind'] == 'hash' }['label'] = 'guessable: dana_pet'
+      out << ['a recipe in a hash row label', 'crack_row', rows]
+
+      rows = deep(captured)
+      rows[last_keyring]['body']['entries'].find { |e| e['source'] == 'cracked' }['account']['username'] = 'someone_else'
+      out << ['a cracked entry for another username', 'crack_unearned', rows]
+
+      rows = deep(captured)
+      rows[last_keyring]['body']['entries'] << { 'id' => 'eli.cracked', 'kind' => 'password', 'source' => 'cracked', 'label' => 'Cracked',
+                                                 'password' => PASSWORDS['eli'],
+                                                 'account' => { 'npcId' => 'eli', 'username' => 'ebrandt', 'displayName' => 'Eli Brandt' } }
+      out << ['eli (strong) as a cracked entry', 'crack_unearned', rows]
+
+      rows = deep(captured)
+      rows[first_cracked]['path'] = '/evil/crack'
+      out << ['the cracked answer on another route', 'crack_unearned', rows]
+
+      rows = deep(captured)
+      rows[last_keyring]['body']['crack'] = { 'password' => 'strong' }
+      out << ['a recipe key in the keyring answer', 'crack_key', rows]
+
+      # R2-L1: an item fact's entry put into the very first answer (the bootstrap), before the take that earns it
+      rows = deep(captured)
+      entry = scenario.dig('social', 'intelFacts', 'dana_pet')
+      rows.unshift({ 'method' => 'GET', 'path' => rows.first['path'].sub(%r{/games/(\d+)/.*\z}, '/games/\\1/scenario'), 'status' => 200,
+                     'body' => { 'social' => { 'intelFacts' => { 'dana_pet' => entry } } } })
+      out << ['an unearned fact entry in the bootstrap', 'fact_unearned', rows]
+      out.concat(held_item_mutations)
+    end
+
+    # R1-A1: heldItem on a hash row is accepted only for a held proof, the record's own file, shown taken and not removed.
+    def held_item_mutations
+      out = []
+      hash_keyring = lambda do |r, &blk|
+        r['method'] == 'GET' && r['path'].end_with?('/keyring') && r['body'].is_a?(Hash) && Array(r['body']['entries']).any?(&blk)
+      end
+      add_dana = captured.index { |r| r['inv'].is_a?(Hash) && r['inv']['itemId'] == 'dana_file' }
+      first_dana_row = captured.index { |r| hash_keyring.call(r) { |e| e['id'] == 'dana_hash' } }
+      assert add_dana && first_dana_row && add_dana < first_dana_row, 'dana_file is shown taken before its hash row'
+
+      rows = deep(captured)
+      rows[first_dana_row]['body']['entries'].find { |e| e['id'] == 'dana_hash' }['heldItem'] = 'farah_file'
+      out << ['heldItem naming another file', 'crack_row', rows]
+
+      # R2-A2: at the last keyring row both files are held, so only the `item == proof.held` clause refuses this
+      add_farah = captured.index { |r| r['inv'].is_a?(Hash) && r['inv']['action'] == 'add' && r['inv']['itemId'] == 'farah_file' }
+      last_dana = captured.rindex { |r| hash_keyring.call(r) { |e| e['id'] == 'dana_hash' && e['heldItem'] == 'dana_file' } }
+      assert add_farah && last_dana && add_farah < last_dana, 'farah_file is also held at the last dana_hash row'
+      rows = deep(captured)
+      rows[last_dana]['body']['entries'].find { |e| e['id'] == 'dana_hash' }['heldItem'] = 'farah_file'
+      out << ['heldItem naming another held file', 'crack_row', rows]
+
+      # R2-A1: a remove the recorder could not read, a remove naming no item, and a successful hide each lose the file
+      [['an unreadable remove', nil],
+       ['a remove naming no item', { 'action' => 'remove', 'itemId' => nil, 'usedOn' => nil }],
+       ['a successful hide', { 'action' => 'hide', 'itemId' => 'dana_file', 'hiddenIn' => 'plant1' }]].each do |name, inv|
+        rows = deep(captured)
+        rows.insert(first_dana_row + 1, { 'method' => 'POST', 'path' => rows[add_dana]['path'], 'status' => 200,
+                                          'body' => { 'success' => true }, 'inv' => inv })
+        out << ["heldItem after #{name}", 'crack_row', rows]
+      end
+
+      rows = deep(captured)
+      rows[add_dana]['inv'] = { 'action' => 'add', 'itemId' => 'something_else', 'usedOn' => nil }
+      out << ['heldItem for a file the capture never shows taken', 'crack_row', rows]
+
+      rows = deep(captured)
+      rows.insert(first_dana_row, { 'method' => 'POST', 'path' => rows[add_dana]['path'], 'status' => 200,
+                                    'body' => { 'success' => true },
+                                    'inv' => { 'action' => 'remove', 'itemId' => 'dana_file', 'usedOn' => nil } })
+      out << ['heldItem after the file was removed', 'crack_row', rows]
+
+      rows = deep(captured)
+      admin = rows.index { |r| hash_keyring.call(r) { |e| e['kind'] == 'hash' && !e.key?('heldItem') } }
+      assert admin, 'a hash row with no heldItem (technique card) is in the capture'
+      rows[admin]['body']['entries'].find { |e| e['kind'] == 'hash' && !e.key?('heldItem') }['heldItem'] = 'dana_file'
+      out << ['heldItem on a technique card row', 'crack_row', rows]
+      out
+    end
+  end
+end

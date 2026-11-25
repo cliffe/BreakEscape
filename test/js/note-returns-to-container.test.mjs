@@ -38,7 +38,7 @@ for (const rel of ['utils/escape-html.js', 'utils/more-below.js', 'utils/compute
     'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js', 'utils/remote-host-text.js', 'utils/compromise-bolt.js',
     'utils/sync-before-fetch.js', 'utils/note-markdown.js', 'utils/test-state-text.js',
     'minigames/container/container-item-image.js', 'minigames/framework/base-minigame.js',
-    'minigames/container/container-minigame.js', 'systems/pc-sessions.js',
+    'minigames/container/container-minigame.js', 'minigames/container/cached-accounts-panel.js', 'minigames/network-view/ops-model.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js',
     'minigames/framework/minigame-manager.js', 'minigames/notes/notes-minigame.js',
     'systems/test-bridge/minigames.js', 'systems/test-bridge/input.js', 'utils/overlay-open.js']) copy(rel);
 put('systems/test-bridge/log.js', 'export const logAction = () => {};\n');

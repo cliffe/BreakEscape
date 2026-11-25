@@ -492,8 +492,8 @@ def network_ops_check_weakness_grants(json_data, rec, registry, credentials, gra
         unless proof.is_a?(Hash) && proof['technique_card'] == rec[:finding_id]
           err.call("#{where}: credential '#{cid[0, 40]}' must have proof { \"technique_card\": \"#{fid}\" } so that the two name each other")
         end
-        err.call("#{where}: credential '#{cid[0, 40]}' is of kind '#{entry['kind'].to_s[0, 40]}'; a granted credential must be of kind saved_connection") unless entry['kind'] == 'saved_connection'
-        network_ops_check_granted_use(json_data, where, cid, entry, err)
+        err.call("#{where}: credential '#{cid[0, 40]}' is of kind '#{entry['kind'].to_s[0, 40]}'; a granted credential must be of kind saved_connection or hash") unless %w[saved_connection hash].include?(entry['kind'])
+        network_ops_check_granted_use(json_data, where, cid, entry, err) unless entry['kind'] == 'hash'
       end
     end
     if weakness.key?('fixedIf') && needs.empty?

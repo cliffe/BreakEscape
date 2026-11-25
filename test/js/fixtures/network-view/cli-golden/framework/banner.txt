@@ -1,0 +1,2 @@
+[head|Metasploit Framework console]
+[note|Type help for the console's commands.]

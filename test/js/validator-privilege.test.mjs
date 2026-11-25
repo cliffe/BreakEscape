@@ -148,26 +148,23 @@ test('(c) the same PC twice does not warn', { skip }, () => {
     assert.deepEqual(warnings(issues(sc)).filter(s => s.includes('needsSession')), []);
 });
 
-// Not built yet: one fixed line each, an error.
-test('S5b fields are errors: cachedAccounts and a harvested proof', { skip }, () => {
+// S5b is built (unit 10): its fields are no longer "not built yet" (the checks are in
+// validator-privilege-cached.test.mjs).
+test('S5b fields are no longer errors: cachedAccounts and a harvested proof', { skip }, () => {
     const sc = base();
     objects(sc)[0].cachedAccounts = [{ npc: 'kemi' }];
-    sc.credentials = { c1: { kind: 'password', account: 'kemi', proof: { harvested: 'desk_pc' } } };
-    const out = errors(issues(sc));
-    assertHas(out, '"cachedAccounts" is not built yet (privilege plan stage S5b)');
-    assertHas(out, '"harvested" is not built yet (privilege plan stage S5b)');
+    sc.credentials = { c1: { kind: 'hash', account: 'kemi', proof: { harvested: 'desk_pc' } } };
+    assert.ok(!has(issues(sc), 'is not built yet (privilege plan stage S5b)'));
 });
 
-test('S5c fields are errors: accountKind, localTo, domain on creds, accountOnly, domain on a sign-in PC', { skip }, () => {
+// S5c is built (unit 18): its fields are no longer "not built yet" (the checks are in
+// validator-privilege-kinds.test.mjs).
+test('S5c fields are no longer errors: accountKind, localTo, domain, accountOnly', { skip }, () => {
     const sc = base();
     Object.assign(npc(sc, 'omar').creds, { accountKind: 'local', localTo: ['desk_pc'], domain: 'HQ' });
     npc(sc, 'omar').accountOnly = true;
     objects(sc)[0].domain = 'HQ';
-    const out = errors(issues(sc));
-    for (const f of ['creds."accountKind"', 'creds."localTo"', 'creds."domain"', '"accountOnly"']) {
-        assertHas(out, f + ' is not built yet (privilege plan stage S5c)');
-    }
-    assertHas(out, 'objects[0]: "domain" is not built yet (privilege plan stage S5c)');
+    assert.ok(!has(issues(sc), 'is not built yet (privilege plan stage S5c)'));
 });
 
 test('creds.admin must be a boolean in the schema', { skip }, () => {

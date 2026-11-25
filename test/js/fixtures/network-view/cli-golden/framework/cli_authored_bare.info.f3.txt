@@ -1,0 +1,7 @@
+[head|Module: ]training/filehold/link_setting
+[head|Title: ]Storage link setting left open
+[head|Target: ]files01 (10.20.0.10), port 445, filehold
+[head|Finding: ]f3
+[head|Status: ]Unconfirmed
+[head|Risk: ]Misconfigured Medium
+[head|Summary: ]A setting on the storage service was left open.

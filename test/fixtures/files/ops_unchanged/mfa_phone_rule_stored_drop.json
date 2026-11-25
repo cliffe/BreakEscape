@@ -1,0 +1,794 @@
+{
+  "name": "mfa_phone_rule_stored_drop",
+  "description": "S8a unit 01: pickup of a stored NPC phone drop, refused then allowed after a knock-out record, before any S8a engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_brief": "Slice 9.2 C test scenario",
+    "startRoom": "lobby",
+    "policies": {
+      "no_social": {
+        "social": "blocked"
+      },
+      "lax": {
+        "social": "allowed"
+      }
+    },
+    "globalVariables": {},
+    "social": {
+      "intelFacts": {
+        "jake_office": {
+          "label": "Office",
+          "subject": "jake",
+          "text": "Jake Brooks works in the finance office."
+        },
+        "jake_pet_name": {
+          "label": "Pet",
+          "subject": "jake",
+          "text": "Jake Brooks has a dog called Biscuit."
+        },
+        "jake_wedding_year": {
+          "label": "Year",
+          "subject": "jake",
+          "text": "Jake Brooks married in 1998."
+        }
+      },
+      "osint": {
+        "sites": [
+          {
+            "id": "friendface",
+            "type": "social",
+            "name": "Friendface",
+            "profiles": [
+              {
+                "person": "jake",
+                "name": "Jake Brooks",
+                "posts": [
+                  {
+                    "id": "jake_authored",
+                    "text": "Finance office, third floor.",
+                    "fact": "jake_office"
+                  }
+                ]
+              },
+              {
+                "person": "lena",
+                "name": "Lena Fox",
+                "posts": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "rooms": {
+      "lobby": {
+        "type": "room_reception",
+        "connections": {
+          "north": "office"
+        },
+        "objects": [],
+        "npcs": []
+      },
+      "office": {
+        "type": "room_office",
+        "connections": {
+          "south": "lobby"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "jake_pc",
+            "name": "jake_pc",
+            "locked": true,
+            "lockType": "login",
+            "affordance": {
+              "satisfies": "work",
+              "useSeconds": 5
+            },
+            "policy": "no_social"
+          },
+          {
+            "type": "pc",
+            "id": "lena_pc",
+            "name": "lena_pc",
+            "locked": true,
+            "lockType": "login",
+            "affordance": {
+              "satisfies": "work",
+              "useSeconds": 5
+            },
+            "policy": "lax"
+          },
+          {
+            "type": "pc",
+            "id": "omar_pc",
+            "name": "omar_pc",
+            "locked": true,
+            "lockType": "login",
+            "affordance": {
+              "satisfies": "work",
+              "useSeconds": 5
+            }
+          },
+          {
+            "type": "pc",
+            "id": "nia_pc",
+            "name": "nia_pc",
+            "locked": true,
+            "lockType": "login",
+            "affordance": {
+              "satisfies": "work",
+              "useSeconds": 5
+            }
+          }
+        ],
+        "npcs": [
+          {
+            "id": "jake",
+            "displayName": "Jake",
+            "npcType": "person",
+            "needsHome": "jake_pc",
+            "needsDeferMin": 0.5,
+            "needs": {
+              "social_media": {
+                "decayPerMin": 60,
+                "urgentAt": 40,
+                "initial": 50
+              }
+            },
+            "feed": {
+              "site": "friendface",
+              "person": "jake",
+              "posts": [
+                {
+                  "id": "jake_post_1",
+                  "text": "Biscuit turns 5 today! Best boy in the whole office.",
+                  "fact": "jake_pet_name",
+                  "date": "Monday",
+                  "deliberate": true
+                },
+                {
+                  "id": "jake_post_2",
+                  "text": "Twenty years since we got married in 1998, and still laughing.",
+                  "fact": "jake_wedding_year"
+                },
+                {
+                  "id": "jake_post_3",
+                  "text": "Back from Crete, three hundred emails waiting for me..."
+                }
+              ]
+            },
+            "itemsHeld": [
+              {
+                "type": "phone_friendface",
+                "id": "jake_phone",
+                "name": "Jake's phone",
+                "takeable": true,
+                "owner": "jake"
+              }
+            ],
+            "eventMappings": [
+              {
+                "eventPattern": "global_variable_changed:lend_phone",
+                "action": "give_item:phone_friendface"
+              }
+            ]
+          },
+          {
+            "id": "lena",
+            "displayName": "Lena",
+            "npcType": "person",
+            "needsHome": "lena_pc",
+            "needsDeferMin": 0.5,
+            "needs": {
+              "social_media": {
+                "decayPerMin": 60,
+                "urgentAt": 40,
+                "initial": 50
+              }
+            },
+            "feed": {
+              "site": "friendface",
+              "person": "lena",
+              "posts": [
+                {
+                  "id": "lena_post_1",
+                  "text": "Lena Fox is running the charity five kilometre race on Sunday."
+                }
+              ]
+            },
+            "itemsHeld": [
+              {
+                "type": "phone_friendface",
+                "id": "lena_phone",
+                "name": "Lena's phone",
+                "takeable": true,
+                "owner": "lena"
+              }
+            ]
+          },
+          {
+            "id": "omar",
+            "displayName": "Omar",
+            "npcType": "person",
+            "needsHome": "omar_pc",
+            "needsDeferMin": 0.5,
+            "feed": {
+              "site": "friendface",
+              "person": "omar",
+              "posts": [
+                {
+                  "id": "omar_post_1",
+                  "text": "Omar never posts this one."
+                }
+              ]
+            }
+          },
+          {
+            "id": "nia",
+            "displayName": "Nia",
+            "npcType": "person",
+            "needsHome": "nia_pc",
+            "needsDeferMin": 0.5,
+            "needs": {
+              "social_media": {
+                "decayPerMin": 60,
+                "urgentAt": 40,
+                "initial": 50
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "office",
+    "unlockedRooms": [
+      "lobby",
+      "office"
+    ],
+    "encounteredNPCs": [
+      "jake",
+      "lena",
+      "omar",
+      "nia"
+    ],
+    "room_states": {
+      "office": {
+        "objects_added": [
+          {
+            "type": "phone_friendface",
+            "id": "lena_phone",
+            "name": "Lena's phone",
+            "takeable": true,
+            "owner": "lena",
+            "x": 64,
+            "y": 96
+          }
+        ],
+        "objects_removed": [],
+        "object_states": {},
+        "npc_states": {}
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "pickup_stored_unoffered",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "phone_friendface",
+          "id": "lena_phone",
+          "name": "Lena's phone"
+        }
+      }
+    },
+    {
+      "id": "pickup_stored_unoffered_sourced",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "phone_friendface",
+          "id": "lena_phone",
+          "name": "Lena's phone"
+        },
+        "source_npc_id": "lena"
+      }
+    },
+    {
+      "id": "knock_out_lena",
+      "method": "POST",
+      "path": "update_room",
+      "params": {
+        "roomId": "office",
+        "actionType": "update_npc_state",
+        "data": {
+          "npcId": "lena",
+          "stateChanges": {
+            "isKO": true,
+            "currentHP": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "pickup_stored_after_knock_out",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "phone_friendface",
+          "id": "lena_phone",
+          "name": "Lena's phone"
+        }
+      }
+    },
+    {
+      "id": "room_office_after",
+      "method": "GET",
+      "path": "room/office"
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "north": "office"
+              },
+              "hasPresentNpc": false,
+              "locked": false
+            },
+            "office": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "osint": {
+              "sites": [
+                {
+                  "id": "friendface",
+                  "name": "Friendface",
+                  "type": "social",
+                  "profiles": [
+                    {
+                      "name": "Jake Brooks",
+                      "posts": [
+                        {
+                          "id": "jake_authored",
+                          "fact": "jake_office",
+                          "text": "Finance office, third floor."
+                        }
+                      ],
+                      "person": "jake"
+                    },
+                    {
+                      "name": "Lena Fox",
+                      "posts": [],
+                      "person": "lena"
+                    }
+                  ]
+                }
+              ]
+            },
+            "intelFacts": {
+              "jake_office": {
+                "text": "Jake Brooks works in the finance office.",
+                "label": "Office",
+                "subject": "jake"
+              }
+            }
+          },
+          "policies": {
+            "lax": {
+              "social": "allowed"
+            },
+            "no_social": {
+              "social": "blocked"
+            }
+          },
+          "startRoom": "lobby",
+          "formatVersion": 3,
+          "scenario_brief": "Slice 9.2 C test scenario",
+          "globalVariables": {},
+          "characterSprites": [
+            "hacker"
+          ],
+          "savedCurrentRoom": "office",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": []
+        }
+      },
+      {
+        "id": "pickup_stored_unoffered",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "NPC does not give this item: lena"
+        }
+      },
+      {
+        "id": "pickup_stored_unoffered_sourced",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "NPC does not give this item: lena"
+        }
+      },
+      {
+        "id": "knock_out_lena",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "pickup_stored_after_knock_out",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "room_office_after",
+        "status": 200,
+        "body": {
+          "room_id": "office",
+          "room": {
+            "npcs": [
+              {
+                "id": "jake",
+                "needs": {
+                  "social_media": {
+                    "initial": 50,
+                    "urgentAt": 40,
+                    "decayPerMin": 60
+                  }
+                },
+                "npcType": "person",
+                "itemsHeld": [
+                  {
+                    "id": "jake_phone",
+                    "name": "Jake's phone",
+                    "type": "phone_friendface",
+                    "owner": "jake",
+                    "takeable": true
+                  }
+                ],
+                "needsHome": "jake_pc",
+                "displayName": "Jake",
+                "eventMappings": [
+                  {
+                    "action": "give_item:phone_friendface",
+                    "eventPattern": "global_variable_changed:lend_phone"
+                  }
+                ],
+                "needsDeferMin": 0.5,
+                "hasFeed": true
+              },
+              {
+                "id": "lena",
+                "needs": {
+                  "social_media": {
+                    "initial": 50,
+                    "urgentAt": 40,
+                    "decayPerMin": 60
+                  }
+                },
+                "npcType": "person",
+                "itemsHeld": [],
+                "needsHome": "lena_pc",
+                "displayName": "Lena",
+                "needsDeferMin": 0.5,
+                "isKO": true,
+                "currentHP": 0,
+                "phone": false,
+                "hasFeed": true
+              },
+              {
+                "id": "omar",
+                "npcType": "person",
+                "needsHome": "omar_pc",
+                "displayName": "Omar",
+                "needsDeferMin": 0.5
+              },
+              {
+                "id": "nia",
+                "needs": {
+                  "social_media": {
+                    "initial": 50,
+                    "urgentAt": 40,
+                    "decayPerMin": 60
+                  }
+                },
+                "npcType": "person",
+                "needsHome": "nia_pc",
+                "displayName": "Nia",
+                "needsDeferMin": 0.5
+              }
+            ],
+            "type": "room_office",
+            "objects": [
+              {
+                "id": "jake_pc",
+                "name": "jake_pc",
+                "type": "pc",
+                "locked": true,
+                "policy": "no_social",
+                "lockType": "login",
+                "affordance": {
+                  "satisfies": "work",
+                  "useSeconds": 5
+                },
+                "hasContents": true,
+                "loginAccounts": []
+              },
+              {
+                "id": "lena_pc",
+                "name": "lena_pc",
+                "type": "pc",
+                "locked": true,
+                "policy": "lax",
+                "lockType": "login",
+                "affordance": {
+                  "satisfies": "work",
+                  "useSeconds": 5
+                },
+                "hasContents": true,
+                "loginAccounts": []
+              },
+              {
+                "id": "omar_pc",
+                "name": "omar_pc",
+                "type": "pc",
+                "locked": true,
+                "lockType": "login",
+                "affordance": {
+                  "satisfies": "work",
+                  "useSeconds": 5
+                },
+                "hasContents": true,
+                "loginAccounts": []
+              },
+              {
+                "id": "nia_pc",
+                "name": "nia_pc",
+                "type": "pc",
+                "locked": true,
+                "lockType": "login",
+                "affordance": {
+                  "satisfies": "work",
+                  "useSeconds": 5
+                },
+                "hasContents": true,
+                "loginAccounts": []
+              }
+            ],
+            "connections": {
+              "south": "lobby"
+            }
+          }
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "north": "office"
+              },
+              "hasPresentNpc": false,
+              "locked": false
+            },
+            "office": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "osint": {
+              "sites": [
+                {
+                  "id": "friendface",
+                  "name": "Friendface",
+                  "type": "social",
+                  "profiles": [
+                    {
+                      "name": "Jake Brooks",
+                      "posts": [
+                        {
+                          "id": "jake_authored",
+                          "fact": "jake_office",
+                          "text": "Finance office, third floor."
+                        }
+                      ],
+                      "person": "jake"
+                    },
+                    {
+                      "name": "Lena Fox",
+                      "posts": [],
+                      "person": "lena"
+                    }
+                  ]
+                }
+              ]
+            },
+            "intelFacts": {
+              "jake_office": {
+                "text": "Jake Brooks works in the finance office.",
+                "label": "Office",
+                "subject": "jake"
+              }
+            }
+          },
+          "policies": {
+            "lax": {
+              "social": "allowed"
+            },
+            "no_social": {
+              "social": "blocked"
+            }
+          },
+          "startRoom": "lobby",
+          "formatVersion": 3,
+          "scenario_brief": "Slice 9.2 C test scenario",
+          "globalVariables": {},
+          "characterSprites": [
+            "hacker"
+          ],
+          "savedCurrentRoom": "office",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "x": 64,
+              "y": 96,
+              "id": "lena_phone",
+              "name": "Lena's phone",
+              "type": "phone_friendface",
+              "owner": "lena",
+              "takeable": true
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {},
+      "footholds": {},
+      "inventory": [
+        {
+          "x": 64,
+          "y": 96,
+          "id": "lena_phone",
+          "name": "Lena's phone",
+          "type": "phone_friendface",
+          "owner": "lena",
+          "takeable": true
+        }
+      ],
+      "pinDusted": {},
+      "copiedItems": [],
+      "currentRoom": "office",
+      "opsFindings": {},
+      "phonesTaken": [
+        "lena"
+      ],
+      "room_states": {
+        "office": {
+          "npc_states": {
+            "lena": {
+              "isKO": true,
+              "currentHP": 0
+            }
+          },
+          "object_states": {},
+          "objects_added": [
+            {
+              "x": 64,
+              "y": 96,
+              "id": "lena_phone",
+              "name": "Lena's phone",
+              "type": "phone_friendface",
+              "owner": "lena",
+              "takeable": true
+            }
+          ],
+          "objects_removed": []
+        }
+      },
+      "signedInPcs": [],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "unlockedRooms": [
+        "lobby",
+        "office"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "jake",
+        "lena",
+        "omar",
+        "nia"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

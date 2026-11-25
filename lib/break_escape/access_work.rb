@@ -1394,7 +1394,7 @@ module BreakEscape
     def locked_out_at?(npc, st, lockouts)
       return false unless lockouts.is_a?(Array) && AccessIdentities.account?(npc)
 
-      key = "#{st['id']}|#{AccessIdentities.normalise_username(npc.dig('creds', 'username'))}"
+      key = AccessIdentities.lockout_key(st['id'], npc.dig('creds', 'username'))
       lockouts.include?(key)
     end
 

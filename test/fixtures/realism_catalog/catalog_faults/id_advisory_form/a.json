@@ -1,0 +1,16 @@
+{
+  "entries": {
+    "cve_0000_11111": {
+      "title": "Quillmark gateway sample note",
+      "module": "auxiliary/gather/quillmark/sample_note",
+      "script": "quillmark-sample",
+      "advisories": [
+        "CVE-0000-11111"
+      ],
+      "output": [
+        "State: sample state line.",
+        "Disclosed: 0000-01-01."
+      ]
+    }
+  }
+}

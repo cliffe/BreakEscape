@@ -483,6 +483,12 @@ export default class PersonChatConversation {
                 window.gameAlert('Failed to unlock door', 'error', 'Error', 3000);
             }
         } catch (error) {
+            // A cancelled second step shows nothing but the cancel rule: a denial or an expiry gets
+            // the reject tone and "Not approved." once, the player's own X nothing (S8c)
+            if (error?.body?.reason === 'second_step_cancelled') {
+                try { window.lockStep?.cancelFeedback?.(error); } catch (e) { /* feedback must not break the conversation */ }
+                return;
+            }
             console.error('NPC unlock error:', error);
             window.gameAlert('Failed to unlock door', 'error', 'Error', 3000);
         }

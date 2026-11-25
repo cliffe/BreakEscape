@@ -26,7 +26,7 @@ module BreakEscape
     }.freeze
 
     # Keys allowed in `habits` that are not habits.
-    PARAMETERS = %w[passwordPattern].freeze
+    PARAMETERS = %w[passwordPattern passwordDifficulty].freeze
 
     # writesDown and password are in no preset (section 3).
     PRESETS = {
@@ -39,10 +39,11 @@ module BreakEscape
 
     LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
 
+    # MFA plan S8a: approvesPrompts and promptPatience are read raw by MfaModel, not expanded.
     # Step 8c: the office-life habit sub-blocks that live in `habits` but are not awareness
     # habits (they are not in HABITS or PARAMETERS). `authored`/`expanded` ignore them, so
     # `expand!` carries an authored one across the awareness expansion unchanged.
-    FOLDED = %w[screen print usb].freeze
+    FOLDED = %w[screen print usb approvesPrompts promptPatience].freeze
 
     def level?(value)
       value.is_a?(String) && LEVELS.include?(value)
@@ -53,7 +54,7 @@ module BreakEscape
     end
 
     def valid_parameter?(name, value)
-      name == 'passwordPattern' && value.is_a?(String) && !value.empty?
+      PARAMETERS.include?(name) && value.is_a?(String) && !value.empty?
     end
 
     # [level, source] where source is :own or "role:<name>"; [nil, nil] when none.
@@ -133,6 +134,7 @@ module BreakEscape
       # NPC's fill never changes what another NPC's expansion reads.
       plans = entries.filter_map do |entry|
         npc = entry[:npc]
+        next if AccessIdentities.account_only?(npc) # S5c: no person, no habits
         next if npc.key?('habits') && !npc['habits'].is_a?(Hash)
 
         habits = expanded(npc, scenario)

@@ -85,8 +85,11 @@ export function isTriggerMinigameTag(tag) {
     return String(tag).split(':')[0].trim().toLowerCase() === TAG_NAME;
 }
 
-/** Tags whose minigame waits for its line to be shown: trigger_minigame and clone_keycard. */
-export const DEFERRED_LAUNCH_TAGS = [TAG_NAME, 'clone_keycard'];
+/**
+ * Tags whose minigame waits for its line to be shown: trigger_minigame, clone_keycard and
+ * helpdesk_request (the IT request form; chat-helpers.js hands it to request() as a helpdesk_form).
+ */
+export const DEFERRED_LAUNCH_TAGS = [TAG_NAME, 'clone_keycard', 'helpdesk_request'];
 
 export function isDeferredLaunchTag(tag) {
     return DEFERRED_LAUNCH_TAGS.includes(String(tag).split(':')[0].trim().toLowerCase());

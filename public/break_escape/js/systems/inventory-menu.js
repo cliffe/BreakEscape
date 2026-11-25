@@ -9,8 +9,11 @@
  *   droppable, no triggerOnInteract    "Drop here", "Examine"
  *   droppable consumable (coffee, kit) "Eat" (or "Drink", "Use"), "Drop here", "Examine"
  *   droppable consumable that is an NPC magnet (pizza, cake): "Drop here", "Eat", "Examine"
+ *   droppable and locked               "Unlock" first (it opens the lock: pad, then any second step), then the rest
  *   droppable with triggerOnInteract   "Use" (useLabel overrides the word), "Drop here", "Examine"
  *   wearable, not droppable, with text "Put on" or "Take off", "Examine"
+ *   hash file (S7-2)                   "Crack", "Open" or "Finish" (by the hash's state), "Drop here"
+ *                                      when droppable, "Examine"; none once cracked or infeasible
  *   saved connection (keyring K3b)     "Connect", "Drop here" when droppable, "Examine";
  *                                      with nothing to read and not droppable, the click is Connect
  *   everything else                    no menu: the click does what it did before
@@ -28,7 +31,8 @@
  * The entries name actions; the tray (openInventoryItemMenu) maps them onto
  * the existing functions: "Use" is handleObjectInteraction (the trigger branch
  * runs first, as a click did), "Drop here" is dropInventoryItem (item-drop.js),
- * "Examine" is examineHeldItem (examine.js).
+ * "Examine" is examineHeldItem (examine.js), "Unlock" is handleUnlock(item, 'item')
+ * (never "Use": handleObjectInteraction drops a held droppable item).
  *
  * Only pure helpers and the menu overlay are imported, so this file can be
  * tested in node.
@@ -95,6 +99,13 @@ export function inventoryMenuFor(sprite, ctx = {}) {
 
     const items = ctx.inventoryItems ?? (typeof window !== 'undefined' ? window.inventory?.items : undefined);
     const ctxWindow = ctx.window ?? (typeof window !== 'undefined' ? window : {});
+    const crack = crackMenuEntry(sprite, ctxWindow);
+    if (crack) {
+        const out = [crack];
+        if (isDroppableInventoryItem(sprite, items)) out.push(dropEntry(ctx));
+        out.push({ id: 'examine', label: 'Examine' });
+        return out;
+    }
     const connect = connectMenuEntry(sprite, ctxWindow);
     if (connect) {
         const droppable = isDroppableInventoryItem(sprite, items);
@@ -117,6 +128,16 @@ export function inventoryMenuFor(sprite, ctx = {}) {
 
     const drop = dropEntry(ctx);
     const entries = [];
+    // A locked droppable (a carried briefcase): its tray click is the menu, and no other entry reaches
+    // the lock (handleObjectInteraction would drop it), so the first entry unlocks it (S8c R1-CLIENT1)
+    // (a flag lock has no pad: its station is reached from the room, so the tray offers no "Unlock" for it).
+    // Once opened, the same container is reopened by "Open", which takes the path a non-droppable container's
+    // tray click takes (handleUnlock, server-checked) because the click here would drop it (S8c R2-CLIENT4)
+    if (data.locked === true) {
+        if (data.lockType !== 'flag') entries.push({ id: 'unlock', label: 'Unlock' });
+    } else if (Array.isArray(data.contents) ? data.contents.length > 0 : data.hasContents === true) {
+        entries.push({ id: 'open', label: 'Open' });
+    }
     // A wearable's first entry puts it on or takes it off (wearables.js); "Use" maps to the
     // click, which interactions.js routes to the wearable before any triggerOnInteract
     if (wearLabel) {
@@ -162,6 +183,24 @@ export function connectMenuEntry(sprite, w = typeof window !== 'undefined' ? win
     return { id: 'connect', label: 'Connect' };
 }
 
+/**
+ * The Crack entry for a held hash file (S7-2), or null: the log row's own words, "Crack" when
+ * ready, "Open" while time is left, "Finish" at 0 s. A cracked or infeasible hash has none.
+ */
+export function crackMenuEntry(sprite, w = typeof window !== 'undefined' ? window : {}) {
+    const kr = w?.keyring;
+    const row = kr?.hashEntryFor?.(sprite?.scenarioData?.id);
+    if (!row) return null;
+    if (row.status === 'ready') return { id: 'crack', label: 'Crack' };
+    if (row.status === 'running') {
+        const left = kr.crackSecondsLeft?.(row.id);
+        const label = Number.isFinite(left) ? (left > 0 ? 'Open' : 'Finish')
+            : (Number.isFinite(row.readyInSeconds) && row.readyInSeconds > 0 ? 'Open' : 'Finish');
+        return { id: 'crack', label };
+    }
+    return null;
+}
+
 /** A click on this tray item is Connect itself: a saved connection with no menu (nothing to read, not droppable). */
 export function trayClickIsConnect(sprite, ctx = {}) {
     const w = ctx.window ?? (typeof window !== 'undefined' ? window : {});
@@ -198,7 +237,7 @@ export function inventoryMenuIcon(id, el) {
     if (id === 'drop') return { src: `${menuIconsBase()}/menu-drop.png`, width: 64, height: 64 };
     if (id === 'examine') return { src: `${menuIconsBase()}/menu-examine.png`, width: 64, height: 64 };
     // Connect (keyring K3b) shows the item's own picture, as Use does
-    if ((id !== 'use' && id !== 'connect') || !el?.src) return undefined;
+    if ((id !== 'use' && id !== 'connect' && id !== 'crack' && id !== 'unlock' && id !== 'open') || !el?.src) return undefined;
     const w = el.naturalWidth || 0;
     const h = el.naturalHeight || 0;
     if (!(w > 0 && h > 0)) return { src: el.src };
@@ -245,6 +284,9 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
     const blockedNow = deps.dropBlockedReason ?? (() => dropBlockedReason(w));
     const actions = {
         use: () => w.handleObjectInteraction?.(el),
+        // A locked droppable: the pad and any second step, never the click (which would drop it)
+        unlock: () => w.handleUnlock?.(el, 'item'),
+        open: () => w.handleUnlock?.(el, 'item'),
         drop: () => {
             // A worn item under unseenOnly is not dropped in front of anyone (wearables.js)
             const reason = blockedNow() || (w.wearables?.isWorn?.(el, w) ? w.wearables.changeRefusal?.(el.scenarioData, 'drop', w) : null);
@@ -257,7 +299,9 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
         },
         examine: () => w.examineHeldItem?.(el),
         // Keyring K3b (plan 8.2): the entry is greyed while one runs, and connect() ignores a second
-        connect: () => w.keyring?.connect?.(el)
+        connect: () => w.keyring?.connect?.(el),
+        // S7-2: the cracker for the hash this file proves
+        crack: () => { const row = w.keyring?.hashEntryFor?.(el.scenarioData?.id); if (row) w.keyring.openCracker?.(row.id); }
     };
     // A click with no pointer position (el.click(), a key on the focused item) reports
     // 0,0: place the menu over the item's slot instead of in the corner

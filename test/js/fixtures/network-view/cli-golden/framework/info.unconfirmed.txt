@@ -1,0 +1,7 @@
+[head|Module: ]auxiliary/scanner/web/default_creds_f1
+[head|Title: ]Default login High on web
+[head|Target: ]print01, port 80, web
+[head|Finding: ]f1
+[head|Status: ]Unconfirmed
+[head|Risk: ]Default login High
+[head|Summary: ]Summary for f1.

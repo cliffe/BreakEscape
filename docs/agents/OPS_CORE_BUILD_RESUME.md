@@ -321,6 +321,129 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   retaken, not yet published.
 
 
+## Update 2026-11-25 (read this first; the 2026-11-24 section below it is now history)
+
+### Landed on main (all pushed; main head `0402ed2be`)
+
+| Stage | Branch | Gem version |
+|---|---|---|
+| S8b (helpdesk) | `ops-helpdesk` | 1.0.19 |
+| S8c (second-step locks) | `ops-lock2` | 1.0.20 |
+| Follow-ups (tracks A to C) and the showcase scenarios | `ops-follow1` and the showcase branches | 1.0.21 |
+| S5b and S5c (cached accounts, collect, domains) | `ops-priv2` | 1.0.22 |
+
+The showcases on main are `demo_ops_recon`, `demo_ops_passwords` and `demo_ops_second_step` (with the S8b and S8c appends). The S5b/S5c append for the passwords showcase is still in fix (below).
+
+### Branches in flight
+
+| Branch | Worktree | State |
+|---|---|---|
+| `ops-follow2` | `/data/be-ops-follow` | Device-in-use wiring done and reviewed clean. Cleanup tooling in review. The code fob sprite is blocked on a PixelLab API key from the owner. |
+| `ops-hardening` | `/data/be-ops-skin` | Scanner hardening that reads the recorder tags (PC tags on sign-in, sign-out and resume rows; hash ids on crack rows). In build. |
+| `ops-showcase-s5` | `/data/be-ops-logs` | The passwords showcase's S5b/S5c append. In fix after a playtest: "Send them to lunch" set its flag but no staff went. A fixer replays it, then fixes the six review minors and measures the real borrow timing; then a fresh Haiku playtest and a Sonnet delta review. |
+
+### Decisions taken by the orchestrator since 2026-11-24 (the owner may overturn any)
+
+- The desk never resets an account-only or local account (answered as an unknown name); the validator errors on a desk recovery for one.
+- The recon showcase carries no realism text.
+- Action toasts stay up for at least 12 seconds.
+- A playtester may copy a visible value into the game's own field.
+- Showcase day-end refusal: it no longer offers its own way round.
+- Device-in-use live-record rule: a planted device is in use, and a second add is refused `DEVICE_IN_USE`.
+- S8c route-room limit: the scanner takes a door's route room from the station's own room only for a room object of type `flag-station`, as the server does (R5-1).
+- Empty-room scanner allowance: opening a locked room with no objects and no NPCs is not judged.
+
+### Incidents and the rules they left
+
+- Three test-lock deadlocks came from wrapping lock-taking commands in `flock`. `bin/ops-golden-compare` and `bin/rails app:ops:unchanged:capture` take the shared lock themselves: never wrap them, and never run them inside a subshell that holds the lock.
+- Messaging a builder that runs inside a workflow starts a duplicate. Never do it; a finished agent that reports twice is stopped.
+- A flaky `AssociationTypeMismatch` in tests was fixed by caching the class in the test.
+- A keyring fixture depended on the checkout's random secret, so it passed only in the tree that recorded it. It is now recorded under a fixed key (`519373198`).
+- A Haiku playtester tried the cracker when told not to, and the auto-mode classifier refused it. Briefs now forbid opening the cracker; the cracker beats run on opus48.
+
+### Recorded limits per landed stage
+
+- S8b: 14 limits (a late grant after the 15 s timeout, a full desk, the stop rule's dependence on playtest order, `;` queries). See `docs/agents/ops_core_build/reviews/S8b_R4_delta.md`, "Recorded limits".
+- S8c: two minor fail-open scanner edges and the emptied briefcase offering "Open" once. See `docs/agents/ops_core_build/reviews/S8c_R5_final.md` (R5-1 to R5-3).
+- S5b/S5c: 17 limits, mostly fail-closed; R2-L7 (a cached-accounts list under another key) fails open. See `docs/agents/ops_core_build/reviews/S5bc_R5_final.md`, "Final list of recorded limits", and `S5bc_desk_rule_review.md` for the desk rule.
+- Follow-ups and showcases: limits are in the notes beside each scenario.
+
+### What is next
+
+1. Land `ops-follow2` (cleanup tooling review, train, merge) and ask the owner for the PixelLab key.
+2. Land `ops-hardening`, then `ops-showcase-s5` after its playtest and delta review.
+3. Land each by the procedure above (merge main in, train with `TESTS_LOCK` set, `--ff-only`, push, bump the gem in both repos).
+4. Then the final screenshot review and the card art for `technique_card.png`.
+
+## Update 2026-11-24 (read this first; the sections above are history)
+
+### Landed on main (all pushed; gem 1.0.18 in both repos)
+
+Core N13, N14, N15 (S1 to S3), the log plan L1a, L1b, L2a, L2b and L3, the post-landing tidy of S2 and S3, then S5a
+(privilege and accounts, merge `7adc7062c`), S6 (`ops-skin`), S8a (`ops-mfa`) and S7 (`ops-crack`, last fixes
+`cb7ba4466`). The gem bump to 1.0.18 is `2d9e963c8`. Main is the base of the follow-up branch.
+
+### Open stage branches (not yet landed)
+
+| Stage | Branch | Worktree | Ports | Round now | Open findings |
+|---|---|---|---|---|---|
+| S5b and S5c (cached accounts, collect, domains) | `ops-priv2` | `/data/be-ops-logs` | 3014-3016 | scanner R2 and client R1 reviewed; R2-L1 and R2-L2 fixed (`df61c632b`, `beb18da47`) | scanner R2 had 2 majors (both fixed, unconfirmed) and 6 minors; client R1 had 3 majors and 8 minors: check that each has a fix commit before the delta round. Beat 16 (a borrow) is not reachable by clicking; the relay step-up card was not checked |
+| S8b (helpdesk, H1 and H2) | `ops-helpdesk` | `/data/be-ops-build` | 3011-3013 | R3 done, playtest 2 done; R3 core fixes `a56f443ae` unconfirmed | core R3 had 1 major (fixed, unconfirmed) and 3 minors; scanner R3 has 3 minors open (the `;` form of an owner named twice among them); the audit log's fourth FAIL row is explained (beat 5's old-password refusal merged into beat 1's row by the ops log), PLAYTEST says so |
+| S8c (second-step locks, G1 to G4) | `ops-lock2` | `/data/be-ops-skin` | 3017-3018 | R2 done (server 0B 0M 8m, client 0B 1M 7m, scanner 0B 2M 3m); client R2 fixes in (`341406b26`, `2980e7105`) | scanner majors open: the room half of the lock-below-a-closed-container rule is not done, and gated room NPCs raise a new false alarm; the server minors are open; then the delta round |
+
+Train tree: `/data/be-ops-core` (detached), port 3021. Follow-up tree `/data/be-ops-follow`: ports 3022-3024. Never 3000, 3001, 3002, 3085, 3086.
+
+Each needs: finish the open fixes, a delta review, a Haiku playtest, merge main in, a train, landing as below.
+
+### Follow-up tracks (worktree `/data/be-ops-follow`, branch `ops-follow1`, from main `2d9e963c8`)
+
+The owner's decisions are in the scratchpad file `FOLLOWUP_DECISIONS.md`; they are settled, do not reopen.
+- Track A (S7 cracker): a cracked password fills on the sign-in screen; the cracker also opens from a hash file and the "Hash collected" toast; keep the auto-finish but make its words truthful.
+- Track B (S6 view and validator): Terminal available for the life of the view; one span per cell; the whole verb shown for the move that ends a trip; playtest tools default to the Panels view; catalog rules (a script must not mirror an advisory id, advisories frozen once a shipped scenario links them, wider telltale words, tidy nicknames in docs); a validator warning for a container a player cannot open. Real advisory ids and module paths live only in `config/break_escape/realism_catalog/*.json` (append-only).
+- Track C (tooling): fix `tools/playtest/train-check.sh` lock detection so it works on old and new git (keep `TESTS_LOCK` as an override); the recorder writes PC tags on sign-in, sign-out and resume rows and hash ids on crack rows (the owner approved editing the recorder under `.claude/skills/playtest-scenario/` for this).
+- Held back on purpose: the scanner hardening that reads those tags (a later stage, after the recorder tags, because three stages still change the scanner on other branches; this track must not touch `access_leak_scanner.rb`); the `tools/wt-clean.sh` fix (not approved); the code device sprite (needs the art pipeline and the owner's pick).
+
+### Landing procedure now
+
+1. Merge main into the stage branch (merge, never rebase).
+2. Train the merged hash with `TESTS_LOCK=/home/deploy/BreakEscape/tmp/tests.lock` set explicitly (the script cannot find it on this machine's git). It must end green apart from the known JS baseline files.
+3. In `/home/deploy/BreakEscape`: `git merge --ff-only` the trained hash, then push.
+4. Bump the gem in both repos (`bump-version` skill) and push.
+Never wrap `bin/ops-golden-compare` in `flock`. One train at a time.
+
+### Disk rules
+
+The root volume is nearly full (it has filled once and cut off two builders). Bulk scratch (anything over about 20 MB: captures, screenshots, run output) goes under `/data/tmp/scratch/<unit>/`, deleted afterwards. Never copy or clone the repository. Empty `test/dummy/log/*.log` before a train. Builder rules are in `BUILDER_RULES.md` (scratchpad): explicit-path commits, no amend, no `git add -A`, tests on the shared lock.
+
+### Model routing (AGENTS.md "Choosing a model")
+
+Opus 5.5 for planning, design and first reviews. Sonnet for fixers, clear builds and delta reviews from round 4 or after a clean Opus round; a delta that touches what the server serves, access checks or secrets goes to Opus. Haiku for scripted playtests and retrieval. Every builder gets the 150k-token handover line. Never send a message to a builder running inside a workflow: it starts a second copy. A finished agent that sends its report twice is stopped.
+
+### Decisions taken by the orchestrator on reviewers' owner questions (the owner may overturn any)
+
+The owner's own answers (decisions form, 2026-11-24) include: S5A-1 an admin session at a governed PC can override the USB policy through its port (`portOf`, built in S5bc unit 11); S5A-2 a relayed session has the relayed account's rights (unit 02); S5A-3 a validator warning for unopenable containers (follow-up Track B). The orchestrator then decided:
+
+- S8c: a carried locked container gets an "Unlock" entry in the inventory tray menu (rather than making the briefcase not droppable).
+- S8c: the answer that opens a gated lock names it (`targetType`, `targetId`), for gated locks only.
+- S8c: G4 (refusing a hand-built request for a carried container that has left the player) is in force for gated scenarios only; inert elsewhere, so shipped scenarios are unchanged.
+- S8c: a pane that passes on its first answer says nothing extra; the lock opening is the feedback.
+- S8c scanner: the open of a locked room with no objects and no NPCs is not judged (nothing in it to protect); a prompt or approve refusal accepts any push-kind gate (judged sound in R2).
+- S8c and S8b scanners: telling a cancelled PC step from a cancelled lock step, and the stop rule's dependence on playtest order, wait for the recorder tags (Track C) and the later scanner hardening stage.
+- S8b: the reset password appears at once as a "Reset" entry in the capture log's Sign-ins list and fills on the sign-in screen.
+- S8b: unknown usernames behave exactly as real accounts; try entries lapse after five quiet minutes, a live entry is never dropped, the cap is per desk, and a full desk judges nobody (R3-CORE1).
+- S8b: sticky notes and overheard logins keep giving the old password after a reset; it is refused at sign-in. An account's old cracked entry stays listed after a reset and is refused likewise.
+- S8b: a form send that gets no answer times out after 15 seconds; Close and Send work again.
+- S8b scanner: the helpdesk rules may only make the S8a rules stricter (turn checking on, mark pairs unknown), never excuse an answer.
+- S5bc scanner: a proved typed sign-in success earns that account's username; nothing else does. The server adds `pcId` to the collect answer.
+- S8a scanner: a sign-out then sign-in at one PC with no reload cannot be cleared by entries until the recorder tags the PC (Track C, then the hardening stage).
+
+### Recorded limits each stage will land with
+
+- S5b/S5c: two borrowers at one PC share the done proof; admin log rows are earned by any earlier admin session at that PC (no timing); a harvested hash row is flagged when its collect is in an earlier capture file or its body was lost.
+- S8b: Close is held until the desk answers (a request that never answers keeps the form open); the stop rule depends on playtest order.
+- S8c: the test bridge's tray hint still lists only "Drop here" and "Examine", and the carried-item click listener is a pinned copy of two lines of `inventory.js`; the takeable-object limit above.
+- S8a (landed): the sign-out and sign-in scanner limit above.
+
 ## Waiting on the user
 
 - Nothing yet. Later: card art for `technique_card.png`; the final screenshot review.
