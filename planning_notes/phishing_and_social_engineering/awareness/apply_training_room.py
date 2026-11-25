@@ -376,7 +376,7 @@ def _splice_object(text, start, drop, add, after=None, in_place=False):
         s = text[ks:ve]
         olds.append(s)
         if in_place and drop(key) and key in adding:
-            kept.append(s if json.loads(text[vs:ve]) == adding[key]
+            kept.append(s if json.dumps(json.loads(text[vs:ve])) == json.dumps(adding[key])
                         else json.dumps(key) + ': ' + _indented(adding[key], len(pad0)))
         elif not drop(key):
             kept.append(s)
@@ -421,7 +421,7 @@ def _splice_array(text, start, drop, add, ident=None):
             if q:
                 n = q.pop(0)
                 used.add(id(n))
-                kept.append(s if p == n else _indented(n, len(pad0)))
+                kept.append(s if json.dumps(p) == json.dumps(n) else _indented(n, len(pad0)))
         else:
             kept.append(s)
     ind = _line_indent(text, start)
