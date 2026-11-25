@@ -59,3 +59,31 @@ Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/c
 | t09_anjali_cooler (new) | step-away flags, kit_ca10_out not set | `followNpc(kit_anjali_rao)`; `triggerNeed(thirst, 5)`; she walks from (7.4,8.3) to the cooler (tile 8.2,5.6, drinks 20 s); `followPlayer` | follow-start, left-post, at-cooler, follow-end | hook (her chat is the current hook: this is a movement lead-in) | Trip not observed in the survey (estimated 40 s unforced); forced trip not proved here, only the ca13 equivalent. The cooler chatter never fires for a lone drinker (see Hook decision). After Look up, a `patrolOverride` sends her back to (7.4,8.3): a trip in progress ends with a walk home, a second movement shot (unproven) |
 
 Dry run 25 Nov (step-away flags, headless, BE_DRY=1): PASS on attempt 3, game 13377. Attempts 1 and 2 (games 13375, 13376) stopped at the post check: Anjali stood at (245,233) on both fresh games, not at the surveyed (237,266). The take now uses her settled start position as her post (settle, 8 s limit) and logs `post-set`. Attempt 3: she walks from (245,233) 1.7 s after the thirst trigger, stops at (269,213) 1.1 s later, about 35 px short of the cooler tile (262,179), waits about 23 s and is back at (245,233). Camera: 102 samples while following, scroll start (-236,-38), end (-288,-72), range 21 by 20, back on the player at the end. The trip is a short step, not a walk to the cooler: check the cooler point before recording. Frames not looked at.
+
+## t09 swap: Darren replaces Anjali (25 Nov)
+
+`t09_anjali_cooler` is replaced by `t09_darren_cooler` (old script in `tmp/delete/ca10_t09_anjali_cooler.mjs`). Reason: Anjali settles at (245,233), about 30 px from the cooler's use point (262,219), so her drink trip is a step. The only other ca10 NPC with needs is Darren Price (thirst, `needsHome` `kit_ca10_pc`); Niamh has none. Darren's post is (100,185), 170 px or more from the use point.
+
+Dry runs (headless, step-away flags, `BE_DRY=1`, keyless :3456, fresh game each): PASS on both, games 13440 and 13441. Post (100,185) both times; walk-start (131,204) and (128,201); arrival (269,213) and (271,213), 9 and 11 px from the use point; trip 171 and 173 px; back on the post (100,185); camera followed 118 and 120 samples (scroll range x 157 and 159, y 29), then back on the player; no errors. The script accepts arrival only within 48 px of the use point, so a mid-route pause cannot count as arrival (the ca06 t10 failure), and it requires a trip of at least 120 px. Take ids in the "Movement shots" table above that read `t09_anjali_cooler` now mean `t09_darren_cooler`. Run before pressing Look up: after `kit_ca10_out` Darren is in the D1 scene.
+
+## Capture 25 Nov
+
+Real captures, 1920x1080 30 fps, display :147, keyless server :3456, `BE_SPRITE=female_office_worker_v2` (every take logged `player-sprite` = that key), flags as in the seeds above (step-away for t01, t07, t07b, t07c, t09; defend for t04, t05, t05b; none for t02, t02b, t03, t03b), `--hide-hud --zoom-step 1`. Footage in `~/video-takes-local/ca10/takes/` (not in git), each file `<id>.trimmed.mkv` with `.trimmed.markers.json`, `.check.json`, `.contact.jpg`. All 13 passed the check (both slates found, A/V offset corrected as a constant, `fullFrame` true, no problems). Marks are in trimmed seconds. t05 run A is `CA10_LIST_ONLY=1` (list held), run B is the full take with the card; both renamed `_runA` and `_runB` straight after each run. Sidecars are still drafts. No frames were looked at beyond the check's own first-frame test; marks come from the scripts.
+
+| take (file) | length s | drop % | A/V offset start/end ms | key marks (trimmed s) |
+|---|---|---|---|---|
+| t09_darren_cooler | 34.17 | 0.09 | -52 / -40 | walk-start 2.88, arrive 5.63 at (272,213), 12 px from the use point, trip 174 px, return-start 28.31, back 31.53 at (100,185), cam 121 samples, scroll range 160 by 31, back on player 33.72 |
+| t01_anjali_hook | 10.30 | 0.27 | -40 / -37 | hook_start 2.47, portrait up 3.73, hook_end 8.59, chat-closed 9.04, end 9.84 |
+| t07_darren_prompt | 10.80 | 0.26 | -62 / -48 | kiosk-open 2.89, look_up 3.90, bubble 5.49, d1_start 5.58, d1_end 10.20, end 10.33 |
+| t07b_lookup_panel | 7.04 | 0.37 | -30 / -45 | kiosk-open 2.75, panel 3.36, hold-end 6.56 |
+| t07c_lookup_panel_narrow | 7.07 | 0.36 | -43 / -47 | as t07b |
+| t04_niamh_flip | 18.90 | 0.48 | -85 / -62 | n1_start 9.30, portrait up 10.62, n1_end 17.22, chat-closed 17.66, end 18.46 |
+| t02_attack_run | 58.60 | 0.16 | -88 / -90 | start 4.16, browser-open 5.81, note-fernside 9.40, note-portal 12.95, browser-closed 15.69, builder-open 16.71, scored 28.35, attached 29.91, mail-open 30.97, compose 33.33, slot1 37.02, slot2 39.83, pretext-set 41.40, send 43.73, landed 43.77, reply-in 50.80, done 51.37, reply-open 53.67, flip-up 55.34, end 58.14 |
+| t02b_attack_run_narrow | 58.14 | 0.17 | -93 / -93 | as t02 |
+| t03_fake_check_builder | 15.04 | 0.58 | -62 / -70 | builder-open 2.12, host 6.17, pretext 7.85, urgency 9.51, step 11.56, hold-end 14.56 |
+| t03b_fake_check_builder_narrow | 15.10 | 0.19 | -40 / -35 | as t03 |
+| t05_pages_list_runA | 15.30 | 0.57 | -75 / -82 | kiosk-open 2.94, intro 5.53, list 6.84, list held to 14.84 (8.0 s) |
+| t05_pages_list_runB | 17.17 | 0.17 | -53 / -37 | kiosk-open 2.97, intro 5.53, list 6.84, row_open 10.21, card 11.72, card-held 16.73 |
+| t05b_pages_list_narrow | 17.14 | 0.52 | -77 / -62 | as t05 run B |
+
+Findings: the t09 swap passed first time on the real capture. Anjali's t01 hook mark: hook_start is 2.47 but the portrait is up at 3.73, so cut from hook_start - 0.3 as the hook decision says and check the portrait frame. The t02 reply arrives 7.0 s after send (reply-in 50.80 vs send 43.73), over the 6 s limit noted for the lands variant; use the default lands cut.
