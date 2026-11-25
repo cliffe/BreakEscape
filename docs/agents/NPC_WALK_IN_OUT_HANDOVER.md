@@ -103,3 +103,11 @@ Stage A agent stopped at the context limit before writing any code. This note ha
 - A hidden NPC's `update` never runs (`npc-behavior.js:951`), so the walk tick must live in the manager.
 - A `goToAndStay` issued by needs or a script mid-walk replaces `_moveOnArrive`. The walk then sees no arrival and must end on its timeout fallback.
 - Ports 3026 and 3027 only. Never run `db:` tasks.
+
+## B2 status (data-side checks, done)
+- `scripts/validate_scenario.rb`: `check_npc_walk` (shape, unknown keys, speed/timeoutMs, both-in-one, phone NPC, setVisible/patrolOverride clash, far room exists and is connected, gate `openFor` lacks the NPC = ERROR, locked non-gate = WARN, tiles outside the room's tilemap = ERROR, `walkIn.to` differs from `position` = WARN) and `check_npc_pop`, both wired into the common-issues run. Not checked: a tile "on a wall" (no wall data in the validator).
+- Pop check level: INFO (`POP_CHECK_LEVEL = :info`). Over all 205 scenarios it hits 95 NPCs, 91 outside the known four (m09 `archive_guard`, m10 `monitor_guard`, `farah_guard`, ca12 `kit_camila_ospina`); m10 alone has 63. To go WARN later, narrow the heuristic or clear the audit list, then set `:warn`. It never produces a red error.
+- Validator before/after over every scenario (`--no-graph --no-lint --skip-ink --no-known-failures`): 20 error lines, 1787 warning lines both times, per-scenario counts identical.
+- `scenario-schema.json` (`walkIn`, `walkOut` beside `setPatrolSpeed`), `validate_office_life.rb` (`walks` hint), `owner_claim.rb` (`scripted_move` for walkIn/walkOut) plus two cases in `test/unit/owner_claim_test.rb`, `test/js/npc-walk-validator.test.mjs` (16 tests).
+- Not done here (other stages): scenario conversions, README_scenario_design.md, IDEAS_BACKLOG audit list (the 91 NPCs; list is reproducible by running the validator and grepping "pop check").
+- Run Rails tests from a worktree with `BUNDLE_PATH=<main checkout>/vendor/bundle`.

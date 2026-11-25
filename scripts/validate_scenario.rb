@@ -3279,6 +3279,214 @@ def check_revoke_card_globals(json_data)
   issues
 end
 
+# ---------------------------------------------------------------------------------------------
+# NPC walk-in / walk-out (docs/agents/NPC_WALK_IN_OUT_PLAN.md sections 2 and 8)
+#
+# An eventMapping may carry `walkIn` or `walkOut` in place of `setVisible`:
+#   walkIn:  true | { from: <roomId>|"offscreen"|{room,x,y}, to: {x,y}, speed, timeoutMs }
+#   walkOut: true | { to: <roomId>|"offscreen"|{room,x,y}, speed, timeoutMs }
+# This check validates their shape, the rooms they name and the tiles they use. The "pop" check
+# (a visible NPC shown or hidden in place by setVisible) lives in check_npc_pop below.
+WALK_IN_KEYS = %w[from to speed timeoutMs].freeze
+WALK_OUT_KEYS = %w[to speed timeoutMs].freeze
+
+def walk_event_mappings(npc)
+  maps = npc['eventMappings']
+  maps = maps.values if maps.is_a?(Hash)
+  maps.is_a?(Array) ? maps : []
+end
+
+def walk_room_connections(room)
+  return [] unless room.is_a?(Hash) && room['connections'].is_a?(Hash)
+
+  room['connections'].values.flatten.compact.map(&:to_s)
+end
+
+# The gate on the door between two rooms, from either room's `doors` list, or nil.
+def walk_door_gate(rooms, a, b)
+  [[a, b], [b, a]].each do |here, there|
+    doors = rooms.dig(here, 'doors')
+    next unless doors.is_a?(Array)
+
+    doors.each do |d|
+      return d['gate'] if d.is_a?(Hash) && d['connectedRoom'].to_s == there.to_s && d['gate'].is_a?(Hash)
+    end
+  end
+  nil
+end
+
+def check_npc_walk(json_data, repo_root = nil)
+  issues = []
+  rooms = json_data['rooms']
+  return issues unless rooms.is_a?(Hash)
+
+  repo_root ||= File.expand_path('..', __dir__)
+  type_map = geom_type_to_tilemap(repo_root)
+  dim_cache = {}
+  dims_of = lambda do |room_id|
+    room = rooms[room_id]
+    room.is_a?(Hash) && room['type'] ? geom_room_dimensions(room['type'], type_map, repo_root, dim_cache) : nil
+  end
+  tile_ok = ->(t) { t.is_a?(Hash) && t['x'].is_a?(Numeric) && t['y'].is_a?(Numeric) }
+
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+    room['npcs'].each_with_index do |npc, nidx|
+      next unless npc.is_a?(Hash)
+
+      walk_event_mappings(npc).each_with_index do |m, idx|
+        next unless m.is_a?(Hash) && (m.key?('walkIn') || m.key?('walkOut'))
+
+        mp = "rooms/#{room_id}/npcs[#{nidx}]/eventMappings[#{idx}]"
+        if npc['npcType'] == 'phone'
+          issues << "❌ ERROR: '#{mp}' uses walkIn/walkOut on a phone NPC. Phone NPCs have no sprite to walk; remove it."
+        end
+        if m.key?('walkIn') && m.key?('walkOut')
+          issues << "❌ ERROR: '#{mp}' has both walkIn and walkOut. Use one mapping for each direction."
+        end
+        %w[setVisible patrolOverride].each do |other|
+          next unless m.key?(other)
+
+          issues << "❌ ERROR: '#{mp}' has walkIn/walkOut and #{other}. walkIn/walkOut replace #{other == 'setVisible' ? 'setVisible' : 'a patrolOverride to the door'} " \
+                    "in the same mapping; keep only one."
+        end
+
+        # [field, allowed keys, rooms the far end may name]
+        [['walkIn', WALK_IN_KEYS], ['walkOut', WALK_OUT_KEYS]].each do |field, allowed|
+          next unless m.key?(field)
+
+          cfg = m[field]
+          fp = "#{mp}/#{field}"
+          next if cfg == true
+
+          unless cfg.is_a?(Hash)
+            issues << "❌ ERROR: '#{fp}' must be true or an object (#{allowed.join(', ')})."
+            next
+          end
+          (cfg.keys - allowed).each do |k|
+            issues << "❌ ERROR: '#{fp}' has unknown key '#{k}'. Allowed: #{allowed.join(', ')}."
+          end
+          if cfg.key?('speed') && (!cfg['speed'].is_a?(Numeric) || cfg['speed'] <= 0)
+            issues << "❌ ERROR: '#{fp}/speed' must be a positive number (pixels per second)."
+          end
+          if cfg.key?('timeoutMs') && (!cfg['timeoutMs'].is_a?(Numeric) || cfg['timeoutMs'] <= 0)
+            issues << "❌ ERROR: '#{fp}/timeoutMs' must be a positive number (milliseconds)."
+          end
+
+          # The walk's own-room destination tile (walkIn only)
+          if field == 'walkIn' && cfg.key?('to')
+            if !tile_ok.call(cfg['to'])
+              issues << "❌ ERROR: '#{fp}/to' must be a tile {x: number, y: number} in the NPC's own room."
+            else
+              d = dims_of.call(room_id)
+              if d && (cfg['to']['x'] < 0 || cfg['to']['y'] < 0 || cfg['to']['x'] >= d[:w_tiles] || cfg['to']['y'] >= d[:h_tiles])
+                issues << "❌ ERROR: '#{fp}/to' (#{cfg['to']['x']}, #{cfg['to']['y']}) is outside room '#{room_id}' " \
+                          "(#{d[:w_tiles]}x#{d[:h_tiles]} tiles)."
+              end
+              pos = npc['position']
+              if pos.is_a?(Hash) && (pos['x'] != cfg['to']['x'] || pos['y'] != cfg['to']['y'])
+                issues << "⚠️ WARNING: '#{fp}/to' differs from the NPC's position (#{pos['x']}, #{pos['y']}). " \
+                          "A reload puts the NPC at its position, not at 'to'."
+              end
+            end
+          end
+
+          # The far end: walkIn.from, walkOut.to
+          far_key = field == 'walkIn' ? 'from' : 'to'
+          next if field == 'walkIn' && !cfg.key?('from')
+          next if field == 'walkOut' && !cfg.key?('to')
+
+          far = cfg[far_key]
+          fa = "#{fp}/#{far_key}"
+          next if far == 'offscreen'
+
+          far_room = nil
+          if far.is_a?(String)
+            far_room = far
+          elsif far.is_a?(Hash)
+            far_room = far['room'].to_s
+            if !tile_ok.call(far) || far['room'].to_s.empty?
+              issues << "❌ ERROR: '#{fa}' as an object must be {room: roomId, x: number, y: number}."
+              next
+            end
+            d = dims_of.call(far_room)
+            if d && (far['x'] < 0 || far['y'] < 0 || far['x'] >= d[:w_tiles] || far['y'] >= d[:h_tiles])
+              issues << "❌ ERROR: '#{fa}' tile (#{far['x']}, #{far['y']}) is outside room '#{far_room}' " \
+                        "(#{d[:w_tiles]}x#{d[:h_tiles]} tiles)."
+            end
+          else
+            issues << "❌ ERROR: '#{fa}' must be a room id, \"offscreen\" or {room, x, y}."
+            next
+          end
+
+          if !rooms.key?(far_room)
+            issues << "❌ ERROR: '#{fa}' names room '#{far_room}', which does not exist."
+          elsif far_room != room_id
+            if !walk_room_connections(room).include?(far_room) && !walk_room_connections(rooms[far_room]).include?(room_id)
+              issues << "❌ ERROR: '#{fa}' names room '#{far_room}', which is not connected to the NPC's room '#{room_id}'. " \
+                        "Name a room beside it, or \"offscreen\"."
+            else
+              gate = walk_door_gate(rooms, room_id, far_room)
+              if gate
+                unless Array(gate['openFor']).map(&:to_s).include?(npc['id'].to_s)
+                  issues << "❌ ERROR: '#{fa}' goes through the gate to '#{far_room}', whose openFor does not list '#{npc['id']}'. " \
+                            "The walk would wait at the gate until it times out."
+                end
+              elsif rooms[far_room].is_a?(Hash) && rooms[far_room]['locked']
+                issues << "⚠️ WARNING: '#{fa}' names '#{far_room}', which is locked and not a gate. " \
+                          "The NPC will fade at the doorway instead of walking through."
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  issues
+end
+
+# The "pop" check: a visible NPC shown or hidden in place by setVisible in mid-scene. Patterns
+# (all on a person NPC, in a mapping without walkIn/walkOut):
+#   - setVisible on room_entered:<the NPC's own room> (the player sees the NPC blink in or out)
+#   - setVisible with a bark or a conversation in the same mapping (it speaks as it appears)
+#   - setVisible false on npc_arrived:<self> (walk to the door, then vanish)
+# POP_CHECK_LEVEL was chosen by running the check over every scenario on 2026-11-25
+# (docs/agents/NPC_WALK_IN_OUT_HANDOVER.md "B2 status"): the hits outside the known cases set it.
+POP_CHECK_LEVEL = :info
+POP_CHECK_KNOWN = %w[archive_guard monitor_guard farah_guard kit_camila_ospina].freeze
+
+def check_npc_pop(json_data)
+  issues = []
+  rooms = json_data['rooms']
+  return issues unless rooms.is_a?(Hash)
+
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+    room['npcs'].each_with_index do |npc, nidx|
+      next unless npc.is_a?(Hash) && npc['npcType'] != 'phone'
+
+      walk_event_mappings(npc).each_with_index do |m, idx|
+        next unless m.is_a?(Hash) && m.key?('setVisible') && !m.key?('walkIn') && !m.key?('walkOut')
+        next if m['_comment'].to_s.start_with?('Retired') && m['condition'].to_s.include?('retired_')
+
+        pattern = m['eventPattern'].to_s
+        why = []
+        why << "it is on room_entered:#{room_id}, the NPC's own room" if pattern == "room_entered:#{room_id}"
+        why << 'it also has a bark or conversation' if m['bark'] || m['conversationMode']
+        why << 'it hides the NPC on its own arrival' if m['setVisible'] == false && pattern == "npc_arrived:#{npc['id']}"
+        next if why.empty?
+
+        msg = "'rooms/#{room_id}/npcs[#{nidx}]/eventMappings[#{idx}]' (#{npc['id']}) shows or hides a visible NPC in place " \
+              "with setVisible: #{why.join('; ')}. The NPC will pop; use walkIn/walkOut."
+        issues << (POP_CHECK_LEVEL == :warn ? "⚠️ WARNING: pop check: #{msg}" : "ℹ️ INFO: pop check: #{msg}")
+      end
+    end
+  end
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -9088,6 +9296,8 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   common_issues = []
   run = ->(name, &blk) { common_issues.concat(report.run_check('common', name, &blk)) }
   run.call('check_common_issues') { check_common_issues(json_data, valid_item_types) }
+  run.call('check_npc_walk') { check_npc_walk(json_data, repo_root) }
+  run.call('check_npc_pop') { check_npc_pop(json_data) }
   run.call('check_references') { check_references(json_data, repo_root) }
   run.call('check_room_types') { check_room_types(json_data, repo_root) }
   run.call('check_lock_credentials') { check_lock_credentials(json_data) }
