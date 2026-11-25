@@ -2746,6 +2746,50 @@ def check_dispenses_containers(json_data)
   issues
 end
 
+# A container with contents and no `locked` key, and a nested container the player cannot open.
+# The client reads a missing `locked` as a key lock (unlock-system.js), so a container that
+# means to be open must say `"locked": false`. Seven types already raise an error for this in
+# check_common_issues; they are skipped here so no object gets two lines.
+UNOPENABLE_ERROR_TYPES = %w[briefcase bag bag1 suitcase safe pc bin1].freeze
+
+def check_unopenable_containers(json_data)
+  issues = []
+  label = lambda do |obj|
+    obj['name'] ? " (#{obj['name']})" : ''
+  end
+  walk = lambda do |obj, path, nested|
+    return unless obj.is_a?(Hash)
+    contents = obj['contents']
+    if contents.is_a?(Array) && !contents.empty?
+      exempt = UNOPENABLE_ERROR_TYPES.include?(obj['type']) ||
+               (obj['type'] == 'pc' && obj['lockType'] == 'login') || obj['type'] == 'usb'
+      if !exempt && !obj.key?('locked')
+        issues << "⚠️ WARNING: '#{path}'#{label.call(obj)} has contents but no 'locked' key. The game reads a missing " \
+                  "'locked' as a key lock, so the player may be unable to open it. Add \"locked\": false, or \"locked\": true with a lock type."
+      end
+      # Neither the container window (isInteractiveItem: a locked item, or an unlocked folder)
+      # nor the take path (takeable items go to the inventory and open from there) opens it.
+      if nested && obj['locked'] != true && obj['type'] != 'folder' && obj['takeable'] != true &&
+         obj['type'] != 'usb' && !(obj['type'] == 'pc' && obj['lockType'] == 'login')
+        issues << "⚠️ WARNING: '#{path}'#{label.call(obj)} is a nested container (type '#{obj['type']}') with contents that the " \
+                  "player cannot open: it is not locked, not a folder and not takeable, so its icon does nothing. Make it a folder, lock it, or make it takeable."
+      end
+      contents.each_with_index { |c, i| walk.call(c, "#{path}/contents[#{i}]", true) }
+    end
+  end
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+    Array(room['objects']).each_with_index { |o, i| walk.call(o, "rooms/#{room_id}/objects[#{i}]", false) }
+  end
+  if json_data['accountProfiles'].is_a?(Hash)
+    json_data['accountProfiles'].each do |id, profile|
+      next unless profile.is_a?(Hash) && profile['contents'].is_a?(Array)
+      profile['contents'].each_with_index { |c, i| walk.call(c, "accountProfiles/#{id}/contents[#{i}]", true) }
+    end
+  end
+  issues
+end
+
 def check_npc_held_containers(json_data)
   issues = []
   npcs = []
@@ -9098,6 +9142,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_pin_locks') { check_pin_locks(json_data) }
   run.call('check_combination_cryptex_locks') { check_combination_cryptex_locks(json_data) }
   run.call('check_dispenses_containers') { check_dispenses_containers(json_data) }
+  run.call('check_unopenable_containers') { check_unopenable_containers(json_data) }
   run.call('check_npc_held_containers') { check_npc_held_containers(json_data) }
   run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
   run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }
