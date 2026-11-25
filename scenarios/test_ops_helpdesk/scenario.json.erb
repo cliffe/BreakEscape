@@ -1,0 +1,744 @@
+{
+  "scenario_brief": "TEST: Ops helpdesk recovery\n\nA test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front office with a PC that has an IT request form on its desktop, an identity desk and an audit terminal; a service desk with an IT desk and a push-approval PC; a records room with a PC that locks after three wrong tries, a PC that asks for a code, a staff file and a code device. Nothing to solve.",
+  "endGoal": "Test only: ask each desk for a reset and compare what each rule lets through.",
+  "startRoom": "front_office",
+  "startPosition": {
+    "x": 7,
+    "y": 7
+  },
+  "npcNeedsSeed": "test_ops_helpdesk",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+  "networks": {
+    "office_lan": {
+      "name": "Office network",
+      "discovery": "scan"
+    }
+  },
+  "policies": {
+    "strict": {
+      "maxAttempts": 3,
+      "remote": "allowed"
+    },
+    "vault": {
+      "mfa": "code",
+      "remote": "allowed"
+    },
+    "ops": {
+      "mfa": "push",
+      "remote": "allowed"
+    },
+    "front": {
+      "remote": "allowed",
+      "maxAttempts": 5
+    }
+  },
+  "credentials": {
+    "tess_saved": {
+      "kind": "saved_connection",
+      "account": "tess",
+      "connectsTo": "records_pc",
+      "label": "Records PC saved connection",
+      "proof": {
+        "held": "tess_saved_file"
+      }
+    }
+  },
+  "logSources": {
+    "helpdesk_audit": {
+      "title": "Helpdesk and sign-in audit",
+      "events": [
+        "signin_ok",
+        "signin_fail",
+        "signin_lockout",
+        "signin_refused",
+        "session_end",
+        "session_lock",
+        "mfa_challenge",
+        "mfa_code_ok",
+        "mfa_code_wrong",
+        "mfa_code_locked",
+        "mfa_expired",
+        "mfa_prompt_sent",
+        "mfa_prompt_approved",
+        "mfa_prompt_denied",
+        "helpdesk_request",
+        "account_password_reset",
+        "account_mfa_reenrolled"
+      ]
+    }
+  },
+  "helpdesks": {
+    "it_desk": {
+      "npc": "ria",
+      "verify": "questions",
+      "questions": [
+        "staff_no",
+        "manager"
+      ],
+      "minCorrect": 2,
+      "maxTries": 3,
+      "resets": [
+        "password",
+        "mfa"
+      ],
+      "questionLabels": {
+        "staff_no": "Staff number",
+        "manager": "Line manager"
+      }
+    },
+    "id_desk": {
+      "npc": "omar",
+      "verify": "callback",
+      "resets": [
+        "mfa"
+      ]
+    }
+  },
+  "social": {
+    "characters": {
+      "it_line": {
+        "displayName": "IT service line",
+        "channels": {
+          "person": "it_line",
+          "phone": "it_line"
+        },
+        "influence": {
+          "global": "it_line_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "it_line_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "it_line_reported",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "osint": {
+      "sites": [
+        {
+          "id": "friendface",
+          "type": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "profiles": [
+            {
+              "person": "nell",
+              "name": "Nell Brook",
+              "bio": "Records team.",
+              "posts": [
+                {
+                  "id": "nell_team_post",
+                  "text": "Two new starters on the team this month: Tess Ama in Records, Wim Duarte on the service desk. I am Nell Brook, Tess's line manager; Pia Hart looks after Wim."
+                }
+              ]
+            },
+            {
+              "person": "pia",
+              "name": "Pia Hart",
+              "bio": "Service desk.",
+              "posts": [
+                {
+                  "id": "pia_authored",
+                  "text": "Rota for the week is on the board."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "pretextNpcs": [
+      {
+        "character": "it_line",
+        "callId": "it_line_call",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "full",
+          "showTechniqueNames": "live"
+        },
+        "asks": {
+          "reset_request": {
+            "pressure": 0,
+            "floor": -30,
+            "verification": [],
+            "helpdesk": "it_desk"
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {},
+          "walked_away": {}
+        },
+        "tells": {
+          "ask": {
+            "accepted": "The desk put the form through.",
+            "pending": "The desk wants one more check.",
+            "refused": "The desk will not do that on this line."
+          },
+          "bands": {
+            "calm": "The desk is relaxed.",
+            "wary": "The desk has slowed down.",
+            "refusing": "The desk has stopped helping."
+          }
+        }
+      }
+    ]
+  },
+  "startItemsInInventory": [
+    {
+      "type": "capture_log",
+      "id": "capture_log",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": { "captures": true, "items": false },
+      "observations": "Your engagement device: every sign-in you have captured or found, and the PINs, footholds and findings you record."
+    },
+    {
+      "type": "text_file",
+      "id": "tess_saved_file",
+      "name": "Records PC.rdp",
+      "takeable": true,
+      "readable": true,
+      "credential": "tess_saved",
+      "text": "A saved connection to the records PC. Open it from your inventory and choose Connect.",
+      "observations": "A saved connection file you were given."
+    },
+    {
+      "type": "phone",
+      "id": "staff_line_phone",
+      "name": "Your phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": [
+        "it_line"
+      ],
+      "observations": "Your own phone. One contact: the IT service line."
+    },
+    {
+      "type": "phone_friendface",
+      "id": "staff_phone",
+      "name": "Your feed phone",
+      "takeable": true,
+      "observations": "Your own mobile, signed in to Friendface."
+    }
+  ],
+  "globalVariables": {
+    "se_osint_state": {},
+    "helpdesk_it_desk_result": "",
+    "helpdesk_id_desk_result": "",
+    "it_line_influence": 0,
+    "pretext_it_line_call_state": {},
+    "pretext_it_line_call_outcome": "",
+    "pretext_it_line_call_lowest": 0,
+    "pretext_it_line_call_reports": 0,
+    "it_line_latched": "",
+    "it_line_reported": false
+  },
+  "gameClock": {
+    "start": "Tue 08:30",
+    "rate": 1
+  },
+  "objectives": [
+    {
+      "aimId": "helpdesk_beats",
+      "title": "Try each way of asking a desk",
+      "description": "Test only. Nothing here ticks by itself.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "h1_asked",
+          "title": "Ask a desk for a reset",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "front_office": {
+      "type": "room_office",
+      "door_sign": "Front Office",
+      "network": "office_lan",
+      "connections": {
+        "north": "service_desk",
+        "east": "records"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "front_pc",
+          "name": "Front PC",
+          "host": "FRT01",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": {
+            "people": [
+              "sam"
+            ]
+          },
+          "policy": "front",
+          "observations": "A desk PC at the front. A tag on the monitor reads Sam.",
+          "owner": "sam",
+          "contents": [
+            {
+              "type": "helpdesk_form",
+              "id": "front_form",
+              "name": "IT request form",
+              "desk": "it_desk"
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "note_sam",
+          "name": "Note: Sam's login",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Sam's login: s.okoro / Okoro-Front-26",
+          "observations": "A note stuck beside the front PC."
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "audit_log_pc",
+          "name": "Audit log terminal",
+          "position": {
+            "x": 7,
+            "y": 4
+          },
+          "takeable": false,
+          "observations": "A terminal showing the building's helpdesk and sign-in audit log.",
+          "minigameData": {
+            "logSource": "helpdesk_audit"
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_front",
+          "name": "Sign: Start here",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Helpdesk test. The service desk is north, the records room east. The IT desk is Ria's in the service desk; the identity desk is Omar's here. Logins are on the notes beside each PC.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam Okoro",
+          "npcType": "person",
+          "position": {
+            "x": 4,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/sam.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "creds": {
+            "username": "s.okoro",
+            "password": "Okoro-Front-26"
+          }
+        },
+        {
+          "id": "omar",
+          "displayName": "Omar Stack",
+          "npcType": "person",
+          "position": {
+            "x": 6,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/omar.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "it"
+        },
+        {
+          "id": "it_line",
+          "displayName": "IT service line",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "callId": "it_line_call",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/it_line.json",
+          "currentKnot": "start"
+        }
+      ]
+    },
+    "service_desk": {
+      "type": "room_office",
+      "door_sign": "Service Desk",
+      "network": "office_lan",
+      "connections": {
+        "south": "front_office"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ops_pc",
+          "name": "Operations PC",
+          "host": "OPS01",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": {
+            "people": [
+              "wim"
+            ]
+          },
+          "policy": "ops",
+          "observations": "A desk PC at the service desk. A tag on the monitor reads Wim.",
+          "owner": "wim"
+        },
+        {
+          "type": "notes1",
+          "id": "note_wim",
+          "name": "Note: Wim's login",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Wim's login: w.duarte / Duarte-Signal-72",
+          "observations": "A note under the monitor."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ria",
+          "displayName": "Ria Vance",
+          "npcType": "person",
+          "position": {
+            "x": 6,
+            "y": 5
+          },
+          "spriteSheet": "female_telecom_v2",
+          "spriteTalk": "assets/characters/female_telecom_talk.png",
+          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/ria.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "it",
+          "eventMappings": [
+            {
+              "eventPattern": "helpdesk_answered:it_desk",
+              "bark": "Next, please."
+            }
+          ]
+        },
+        {
+          "id": "wim",
+          "displayName": "Wim Duarte",
+          "npcType": "person",
+          "position": {
+            "x": 4,
+            "y": 6
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/wim.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "creds": {
+            "username": "w.duarte",
+            "password": "Duarte-Signal-72",
+            "recovery": {
+              "staff_no": "40612",
+              "manager": "Pia Hart"
+            }
+          },
+          "awareness": "high"
+        }
+      ]
+    },
+    "records": {
+      "type": "room_servers",
+      "door_sign": "Records",
+      "network": "office_lan",
+      "connections": {
+        "west": "front_office"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "records_pc",
+          "name": "Records PC",
+          "host": "REC01",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": {
+            "people": [
+              "tess",
+              "ugo"
+            ]
+          },
+          "policy": "strict",
+          "observations": "A desk PC in the records room. A tag on the monitor reads Tess.",
+          "owner": "tess"
+        },
+        {
+          "type": "pc",
+          "id": "vault_pc",
+          "name": "Vault PC",
+          "host": "VLT01",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 6,
+            "y": 4
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": {
+            "people": [
+              "vera"
+            ]
+          },
+          "policy": "vault",
+          "observations": "A desk PC in the records room. A tag on the monitor reads Vera.",
+          "owner": "vera"
+        },
+        {
+          "type": "notes1",
+          "id": "note_tess",
+          "name": "Note: Tess's login",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Tess's login: t.ama / Ambergate-Tess-27",
+          "observations": "A note under the monitor."
+        },
+        {
+          "type": "notes1",
+          "id": "note_ugo",
+          "name": "Note: Ugo's login",
+          "position": {
+            "x": 5,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ugo's login: u.reyes / Reyes-Harbour-14",
+          "observations": "A note under the shelf."
+        },
+        {
+          "type": "notes1",
+          "id": "note_vera",
+          "name": "Note: Vera's login",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Vera's login: v.holt / Holtwell-Vera-35",
+          "observations": "A note on the rack."
+        },
+        {
+          "type": "notes1",
+          "id": "staff_file",
+          "name": "Staff file",
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Records staff file. New starters on file: Tess Ama (t.ama), staff number 40517; Wim Duarte (w.duarte), staff number 40612. Also on the team: Ugo Reyes (u.reyes), Vera Holt (v.holt), Sam Okoro (s.okoro).",
+          "observations": "A staff file left open on the desk."
+        },
+        {
+          "type": "code_device",
+          "id": "vera_device",
+          "name": "Code device",
+          "owner": "vera",
+          "position": {
+            "x": 7,
+            "y": 6
+          },
+          "takeable": true,
+          "observations": "A small code generator with a name label on the back."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "tess",
+          "displayName": "Tess Ama",
+          "npcType": "person",
+          "position": {
+            "x": 4,
+            "y": 6
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/tess.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "creds": {
+            "username": "t.ama",
+            "password": "Ambergate-Tess-27",
+            "resetPassword": "Cobalt-Fenwick-58",
+            "recovery": {
+              "staff_no": "40517",
+              "manager": "Nell Brook"
+            }
+          }
+        },
+        {
+          "id": "ugo",
+          "displayName": "Ugo Reyes",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/ugo.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "creds": {
+            "username": "u.reyes",
+            "password": "Reyes-Harbour-14",
+            "resetPassword": "Lantern-Quay-63",
+            "recovery": {
+              "staff_no": "40233",
+              "manager": "Ruth Mace"
+            }
+          }
+        },
+        {
+          "id": "vera",
+          "displayName": "Vera Holt",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_ops_helpdesk/ink/vera.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "creds": {
+            "username": "v.holt",
+            "password": "Holtwell-Vera-35",
+            "recovery": {
+              "staff_no": "40388",
+              "manager": "Ruth Mace"
+            }
+          },
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "vera_phone",
+              "name": "Vera's phone",
+              "owner": "vera",
+              "takeable": true,
+              "observations": "Vera's mobile."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

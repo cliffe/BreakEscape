@@ -1,0 +1,2007 @@
+{
+  "name": "lock_ceo_exfil_locks",
+  "description": "S8c unit 01: password, pin, key, bluetooth and lockpick locks of ceo_exfil, objects and doors, with the Tablet Device carried, before any S8c engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_brief": "Hi! You are a cyber investigator tasked with uncovering evidence of corporate espionage. Anonymous tips suggest the CEO has been selling company secrets, but you need proof.",
+    "startRoom": "reception",
+    "startItemsInInventory": [
+      {
+        "type": "phone",
+        "name": "Your Phone",
+        "takeable": true,
+        "phoneId": "player_phone",
+        "npcIds": [
+          "neye_eve",
+          "gossip_girl",
+          "helper_npc"
+        ],
+        "observations": "Your personal phone with some interesting contacts"
+      },
+      {
+        "type": "workstation",
+        "name": "Crypto Analysis Station",
+        "takeable": true,
+        "observations": "A powerful workstation for cryptographic analysis"
+      },
+      {
+        "type": "lockpick",
+        "name": "Lock Pick Kit",
+        "takeable": true,
+        "observations": "A professional lock picking kit with various picks and tension wrenches"
+      }
+    ],
+    "rooms": {
+      "reception": {
+        "type": "room_reception",
+        "connections": {
+          "north": "office1"
+        },
+        "npcs": [
+          {
+            "id": "neye_eve",
+            "displayName": "Neye Eve",
+            "storyPath": "scenarios/ink/neye-eve.json",
+            "avatar": "assets/npc/avatars/npc_adversary.png",
+            "phoneId": "player_phone",
+            "currentKnot": "start",
+            "npcType": "phone"
+          },
+          {
+            "id": "gossip_girl",
+            "displayName": "Gossip Girl",
+            "storyPath": "scenarios/ink/gossip-girl.json",
+            "avatar": "assets/npc/avatars/npc_neutral.png",
+            "phoneId": "player_phone",
+            "currentKnot": "start",
+            "npcType": "phone",
+            "timedMessages": [
+              {
+                "delay": 5000,
+                "message": "Hey! 👋 Got any juicy gossip for me today?",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "id": "helper_npc",
+            "displayName": "Helpful Contact",
+            "storyPath": "scenarios/ink/helper-npc.json",
+            "avatar": "assets/npc/avatars/npc_helper.png",
+            "phoneId": "player_phone",
+            "currentKnot": "start",
+            "npcType": "phone",
+            "unlockable": [
+              "secure_vault",
+              "ceo"
+            ],
+            "eventMappings": [
+              {
+                "eventPattern": "item_picked_up:lockpick",
+                "targetKnot": "on_lockpick_pickup",
+                "onceOnly": true,
+                "cooldown": 0
+              },
+              {
+                "eventPattern": "minigame_completed",
+                "targetKnot": "on_lockpick_success",
+                "condition": "data.minigameName && data.minigameName.includes('Lockpick')",
+                "cooldown": 10000
+              },
+              {
+                "eventPattern": "minigame_failed",
+                "targetKnot": "on_lockpick_failed",
+                "condition": "data.minigameName && data.minigameName.includes('Lockpick')",
+                "cooldown": 15000
+              },
+              {
+                "eventPattern": "door_unlocked",
+                "targetKnot": "on_door_unlocked",
+                "cooldown": 8000
+              },
+              {
+                "eventPattern": "door_unlock_attempt",
+                "targetKnot": "on_door_attempt",
+                "cooldown": 12000
+              },
+              {
+                "eventPattern": "object_interacted",
+                "targetKnot": "on_ceo_desk_interact",
+                "condition": "data.objectType === 'desk_ceo'",
+                "cooldown": 10000
+              },
+              {
+                "eventPattern": "item_picked_up:*",
+                "targetKnot": "on_item_found",
+                "cooldown": 20000
+              },
+              {
+                "eventPattern": "room_entered",
+                "targetKnot": "on_room_entered",
+                "cooldown": 45000,
+                "maxTriggers": 3
+              },
+              {
+                "eventPattern": "room_discovered",
+                "targetKnot": "on_room_discovered",
+                "cooldown": 15000,
+                "maxTriggers": 5
+              },
+              {
+                "eventPattern": "room_entered:ceo",
+                "targetKnot": "on_ceo_office_entered",
+                "onceOnly": true
+              }
+            ]
+          }
+        ],
+        "objects": [
+          {
+            "type": "phone",
+            "name": "Reception Phone",
+            "takeable": false,
+            "readable": true,
+            "voice": "Hi, this is the IT Team. Security breach detected in server room. Changed access code to 4829.",
+            "sender": "IT Team",
+            "timestamp": "2:15 AM",
+            "observations": "The reception phone's message light is blinking urgently"
+          },
+          {
+            "type": "notes",
+            "name": "Security Log",
+            "takeable": true,
+            "readable": true,
+            "text": "Unusual after-hours access detected:\n- CEO office: 11:30 PM\n- Server room: 2:15 AM\n- CEO office again: 3:45 AM",
+            "observations": "A concerning security log from last night"
+          },
+          {
+            "type": "pc",
+            "name": "Reception Computer",
+            "takeable": false,
+            "lockType": "password",
+            "passwordHint": "Optional hint text",
+            "showHint": true,
+            "showKeyboard": true,
+            "maxAttempts": 3,
+            "locked": true,
+            "requires": "secret123",
+            "observations": "The reception's computer, currently locked",
+            "postitNote": "Password: secret123",
+            "showPostit": true,
+            "contents": [
+              {
+                "type": "text_file",
+                "name": "Private",
+                "takeable": false,
+                "readable": true,
+                "text": "Closet keypad code: 7391 - Must move evidence to safe before audit"
+              }
+            ]
+          },
+          {
+            "type": "tablet",
+            "name": "Tablet Device",
+            "takeable": true,
+            "locked": true,
+            "lockType": "bluetooth",
+            "requires": "bluetooth",
+            "mac": "00:11:22:33:44:55",
+            "observations": "A locked tablet device that requires Bluetooth pairing"
+          },
+          {
+            "type": "bluetooth_scanner",
+            "name": "Bluetooth Scanner",
+            "takeable": true,
+            "observations": "A device for detecting nearby Bluetooth signals",
+            "canScanBluetooth": true
+          },
+          {
+            "type": "key",
+            "name": "Office Key",
+            "takeable": true,
+            "opens_lock": "office1_key",
+            "keyPins": [
+              65,
+              25,
+              65,
+              25
+            ],
+            "observations": "A key to access the office areas"
+          },
+          {
+            "type": "pin-cracker",
+            "name": "PIN Cracker",
+            "takeable": true,
+            "observations": "A sophisticated device that clamps over a four-digit keypad. After each wrong code it lights green for a right digit in the right place and amber for a right digit in the wrong place. While it is fitted the keypad cannot lock you out, and your earlier guesses stay on screen."
+          },
+          {
+            "type": "safe",
+            "name": "Reception Safe",
+            "takeable": false,
+            "locked": true,
+            "lockType": "pin",
+            "requires": "9573",
+            "observations": "A small wall safe behind the reception desk. Looks like it needs a 4-digit code.",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "IT Access Credentials",
+                "takeable": true,
+                "readable": true,
+                "text": "Emergency IT Admin Credentials:\nUsername: admin\nPassword: ITsecure2024\n\nServer Room Backup Code: 4829\nCEO Office Alarm Override: 1337",
+                "observations": "Sensitive IT credentials that could be very useful"
+              }
+            ]
+          }
+        ]
+      },
+      "office1": {
+        "type": "room_office",
+        "locked": true,
+        "lockType": "key",
+        "requires": "office1_key",
+        "keyPins": [
+          65,
+          25,
+          65,
+          25
+        ],
+        "difficulty": "easy",
+        "door_sign": "4A Hot Desks",
+        "connections": {
+          "north": [
+            "office2",
+            "office3"
+          ],
+          "south": "reception"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "name": "Office Computer",
+            "takeable": false,
+            "hasFingerprint": true,
+            "fingerprintOwner": "ceo",
+            "fingerprintDifficulty": "medium",
+            "observations": "A computer with a cybersecurity alert on screen. There might be fingerprints on the keyboard."
+          },
+          {
+            "type": "notes",
+            "name": "IT Memo",
+            "takeable": true,
+            "readable": true,
+            "text": "URGENT: Multiple unauthorized access attempts detected from CEO's office IP address",
+            "observations": "A concerning IT department memo"
+          },
+          {
+            "type": "fingerprint_kit",
+            "name": "Fingerprint Kit",
+            "takeable": true,
+            "observations": "A kit used for collecting fingerprints from surfaces"
+          }
+        ]
+      },
+      "office2": {
+        "type": "room_office",
+        "connections": {
+          "north": "ceo",
+          "south": "office1"
+        },
+        "objects": [
+          {
+            "id": "office2_computer",
+            "type": "pc",
+            "name": "Office Computer",
+            "takeable": false,
+            "lockType": "password",
+            "requires": "office2024",
+            "showKeyboard": true,
+            "maxAttempts": 3,
+            "locked": true,
+            "postitNote": "Password: office2024",
+            "showPostit": true,
+            "observations": "A standard office computer with a sticky note on the monitor"
+          },
+          {
+            "type": "notes",
+            "name": "Shredded Document",
+            "takeable": true,
+            "readable": true,
+            "text": "Partially readable: '...offshore account...transfer complete...delete all traces...'",
+            "observations": "A partially shredded document that someone failed to dispose of properly"
+          },
+          {
+            "type": "key",
+            "name": "CEO Office Key",
+            "takeable": true,
+            "opens_lock": "ceo_office_key",
+            "keyPins": [
+              25,
+              45,
+              65,
+              75
+            ],
+            "observations": "A spare key to the CEO's office, carelessly left behind"
+          }
+        ]
+      },
+      "office3": {
+        "type": "room_office",
+        "connections": {
+          "north": "server1",
+          "south": "office1"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "name": "IT Staff Computer",
+            "takeable": false,
+            "requires": "bluetooth",
+            "lockType": "bluetooth",
+            "mac": "00:11:22:33:44:55",
+            "observations": "An IT staff computer showing network security logs"
+          },
+          {
+            "type": "notes",
+            "name": "Network Logs",
+            "takeable": true,
+            "readable": true,
+            "text": "Large data transfers detected to unknown external IPs - All originating from CEO's office",
+            "observations": "Suspicious network activity logs"
+          }
+        ]
+      },
+      "ceo": {
+        "type": "room_ceo",
+        "connections": {
+          "north": "closet",
+          "south": "office2"
+        },
+        "locked": true,
+        "lockType": "key",
+        "requires": "ceo_office_key",
+        "keyPins": [
+          25,
+          45,
+          65,
+          75
+        ],
+        "difficulty": "easy",
+        "objects": [
+          {
+            "type": "pc",
+            "name": "CEO Computer",
+            "takeable": false,
+            "lockType": "password",
+            "requires": "ceo2024",
+            "showKeyboard": true,
+            "maxAttempts": 3,
+            "locked": true,
+            "postitNote": "Password: ceo2024",
+            "showPostit": true,
+            "observations": "The CEO's laptop, still warm - recently used. A sticky note is attached to the screen."
+          },
+          {
+            "type": "suitcase",
+            "name": "CEO Briefcase",
+            "takeable": false,
+            "locked": true,
+            "lockType": "key",
+            "requires": "briefcase_key",
+            "keyPins": [
+              45,
+              35,
+              25,
+              55
+            ],
+            "difficulty": "medium",
+            "observations": "An expensive leather briefcase with a sturdy lock",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Private Note",
+                "takeable": true,
+                "readable": true,
+                "text": "Closet keypad code: 7391 - Must move evidence to safe before audit",
+                "observations": "A hastily written note on expensive paper"
+              },
+              {
+                "type": "key",
+                "name": "Safe Key",
+                "takeable": true,
+                "opens_lock": "safe_key",
+                "keyPins": [
+                  52,
+                  29,
+                  44,
+                  37
+                ],
+                "observations": "A heavy-duty safe key hidden behind server equipment"
+              }
+            ]
+          },
+          {
+            "type": "phone",
+            "name": "CEO Phone",
+            "takeable": false,
+            "readable": true,
+            "text": "Recent calls: 'Offshore Bank', 'Unknown', 'Data Buyer'",
+            "sender": "Call Log",
+            "timestamp": "Last 24 hours",
+            "observations": "The CEO's phone shows suspicious recent calls"
+          }
+        ]
+      },
+      "closet": {
+        "type": "room_closet",
+        "connections": {
+          "south": "ceo"
+        },
+        "locked": true,
+        "lockType": "pin",
+        "requires": "7391",
+        "objects": [
+          {
+            "type": "safe",
+            "name": "Hidden Safe",
+            "takeable": false,
+            "locked": true,
+            "lockType": "key",
+            "requires": "safe_key",
+            "keyPins": [
+              52,
+              29,
+              44,
+              37
+            ],
+            "difficulty": "hard",
+            "observations": "A well-hidden wall safe behind a painting",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Incriminating Documents",
+                "takeable": true,
+                "readable": true,
+                "text": "Contract for sale of proprietary technology\nBank transfers from competing companies\nDetails of upcoming corporate espionage operations",
+                "observations": "A folder containing damning evidence of corporate espionage. Congratulations! You've recovered the incriminating documents. flag{ceo_exfil_flag}"
+              }
+            ]
+          }
+        ]
+      },
+      "server1": {
+        "type": "room_servers",
+        "connections": {
+          "south": "office3"
+        },
+        "locked": true,
+        "lockType": "pin",
+        "requires": "4829",
+        "objects": [
+          {
+            "type": "pc",
+            "name": "Server Terminal",
+            "takeable": false,
+            "observations": "The main server terminal showing massive data exfiltration"
+          },
+          {
+            "type": "key",
+            "name": "Briefcase Key",
+            "takeable": true,
+            "opens_lock": "briefcase_key",
+            "keyPins": [
+              45,
+              35,
+              25,
+              55
+            ],
+            "observations": "A small key labeled 'Personal - Do Not Copy'"
+          }
+        ]
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "reception",
+    "unlockedRooms": [
+      "reception"
+    ],
+    "encounteredNPCs": [
+      "neye_eve",
+      "gossip_girl",
+      "helper_npc"
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "room_reception",
+      "method": "GET",
+      "path": "room/reception"
+    },
+    {
+      "id": "pc_container_locked",
+      "method": "GET",
+      "path": "container/reception_pc_2"
+    },
+    {
+      "id": "pc_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "reception_pc_2",
+        "method": "password",
+        "attempt": "nope"
+      }
+    },
+    {
+      "id": "pc_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "reception_pc_2",
+        "method": "password",
+        "attempt": "secret123"
+      }
+    },
+    {
+      "id": "pc_container_open",
+      "method": "GET",
+      "path": "container/reception_pc_2"
+    },
+    {
+      "id": "safe_container_locked",
+      "method": "GET",
+      "path": "container/reception_safe_7"
+    },
+    {
+      "id": "safe_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "reception_safe_7",
+        "method": "pin",
+        "attempt": "0000"
+      }
+    },
+    {
+      "id": "safe_wrong_method",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "reception_safe_7",
+        "method": "password",
+        "attempt": "9573"
+      }
+    },
+    {
+      "id": "safe_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "reception_safe_7",
+        "method": "pin",
+        "attempt": "9573"
+      }
+    },
+    {
+      "id": "safe_container_open",
+      "method": "GET",
+      "path": "container/reception_safe_7"
+    },
+    {
+      "id": "tablet_wrong_method",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "reception_tablet_3",
+        "method": "pin",
+        "attempt": "1234"
+      }
+    },
+    {
+      "id": "take_tablet_locked",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "tablet",
+          "name": "Tablet Device",
+          "takeable": true,
+          "id": "reception_tablet_3"
+        }
+      }
+    },
+    {
+      "id": "tablet_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "reception_tablet_3",
+        "method": "bluetooth"
+      }
+    },
+    {
+      "id": "take_tablet_open",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "tablet",
+          "name": "Tablet Device",
+          "takeable": true,
+          "id": "reception_tablet_3"
+        }
+      }
+    },
+    {
+      "id": "office1_key_missing",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "office1",
+        "method": "key"
+      }
+    },
+    {
+      "id": "office1_wrong_method",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "office1",
+        "method": "pin",
+        "attempt": "1234"
+      }
+    },
+    {
+      "id": "take_office_key",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "key",
+          "name": "Office Key",
+          "takeable": true,
+          "opens_lock": "office1_key",
+          "keyPins": [
+            65,
+            25,
+            65,
+            25
+          ],
+          "id": "reception_key_5"
+        }
+      }
+    },
+    {
+      "id": "office1_key_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "office1",
+        "method": "key"
+      }
+    },
+    {
+      "id": "room_office1",
+      "method": "GET",
+      "path": "room/office1"
+    },
+    {
+      "id": "ceo_key_missing",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "ceo",
+        "method": "key"
+      }
+    },
+    {
+      "id": "ceo_lockpick",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "ceo",
+        "method": "lockpick"
+      }
+    },
+    {
+      "id": "closet_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "closet",
+        "method": "pin",
+        "attempt": "0000"
+      }
+    },
+    {
+      "id": "closet_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "closet",
+        "method": "pin",
+        "attempt": "7391"
+      }
+    },
+    {
+      "id": "server1_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "server1",
+        "method": "pin",
+        "attempt": "1111"
+      }
+    },
+    {
+      "id": "server1_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "server1",
+        "method": "pin",
+        "attempt": "4829"
+      }
+    },
+    {
+      "id": "ceo_pc_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "ceo_pc_0",
+        "method": "password",
+        "attempt": "x"
+      }
+    },
+    {
+      "id": "suitcase_key_missing",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "ceo_suitcase_1",
+        "method": "key"
+      }
+    },
+    {
+      "id": "suitcase_lockpick",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "ceo_suitcase_1",
+        "method": "lockpick"
+      }
+    },
+    {
+      "id": "room_ceo",
+      "method": "GET",
+      "path": "room/ceo"
+    },
+    {
+      "id": "bluetooth_pc_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "office3_pc_0",
+        "method": "bluetooth"
+      }
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "ceo": {
+              "type": "room_ceo",
+              "connections": {
+                "north": "closet",
+                "south": "office2"
+              },
+              "locked": true,
+              "lockType": "key",
+              "difficulty": "easy",
+              "keyPins": [
+                25,
+                45,
+                65,
+                75
+              ]
+            },
+            "closet": {
+              "type": "room_closet",
+              "connections": {
+                "south": "ceo"
+              },
+              "locked": true,
+              "lockType": "pin",
+              "pinLength": 4
+            },
+            "office1": {
+              "type": "room_office",
+              "connections": {
+                "north": [
+                  "office2",
+                  "office3"
+                ],
+                "south": "reception"
+              },
+              "locked": true,
+              "lockType": "key",
+              "difficulty": "easy",
+              "door_sign": "4A Hot Desks",
+              "keyPins": [
+                65,
+                25,
+                65,
+                25
+              ]
+            },
+            "office2": {
+              "type": "room_office",
+              "connections": {
+                "north": "ceo",
+                "south": "office1"
+              }
+            },
+            "office3": {
+              "type": "room_office",
+              "connections": {
+                "north": "server1",
+                "south": "office1"
+              }
+            },
+            "server1": {
+              "type": "room_servers",
+              "connections": {
+                "south": "office3"
+              },
+              "locked": true,
+              "lockType": "pin",
+              "pinLength": 4
+            },
+            "reception": {
+              "type": "room_reception",
+              "connections": {
+                "north": "office1"
+              },
+              "hasPresentNpc": false,
+              "locked": false
+            }
+          },
+          "startRoom": "reception",
+          "formatVersion": 3,
+          "scenario_brief": "Hi! You are a cyber investigator tasked with uncovering evidence of corporate espionage. Anonymous tips suggest the CEO has been selling company secrets, but you need proof.",
+          "characterSprites": [],
+          "savedCurrentRoom": "reception",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "name": "Your Phone",
+              "type": "phone",
+              "npcIds": [
+                "neye_eve",
+                "gossip_girl",
+                "helper_npc"
+              ],
+              "phoneId": "player_phone",
+              "takeable": true,
+              "observations": "Your personal phone with some interesting contacts"
+            },
+            {
+              "name": "Crypto Analysis Station",
+              "type": "workstation",
+              "takeable": true,
+              "observations": "A powerful workstation for cryptographic analysis"
+            },
+            {
+              "name": "Lock Pick Kit",
+              "type": "lockpick",
+              "takeable": true,
+              "observations": "A professional lock picking kit with various picks and tension wrenches"
+            }
+          ]
+        }
+      },
+      {
+        "id": "room_reception",
+        "status": 200,
+        "body": {
+          "room_id": "reception",
+          "room": {
+            "npcs": [
+              {
+                "id": "neye_eve",
+                "avatar": "assets/npc/avatars/npc_adversary.png",
+                "npcType": "phone",
+                "phoneId": "player_phone",
+                "storyPath": "scenarios/ink/neye-eve.json",
+                "currentKnot": "start",
+                "displayName": "Neye Eve"
+              },
+              {
+                "id": "gossip_girl",
+                "avatar": "assets/npc/avatars/npc_neutral.png",
+                "npcType": "phone",
+                "phoneId": "player_phone",
+                "storyPath": "scenarios/ink/gossip-girl.json",
+                "currentKnot": "start",
+                "displayName": "Gossip Girl",
+                "timedMessages": [
+                  {
+                    "type": "text",
+                    "delay": 5000,
+                    "message": "Hey! 👋 Got any juicy gossip for me today?"
+                  }
+                ]
+              },
+              {
+                "id": "helper_npc",
+                "avatar": "assets/npc/avatars/npc_helper.png",
+                "npcType": "phone",
+                "phoneId": "player_phone",
+                "storyPath": "scenarios/ink/helper-npc.json",
+                "unlockable": [
+                  "secure_vault",
+                  "ceo"
+                ],
+                "currentKnot": "start",
+                "displayName": "Helpful Contact",
+                "eventMappings": [
+                  {
+                    "cooldown": 0,
+                    "onceOnly": true,
+                    "targetKnot": "on_lockpick_pickup",
+                    "eventPattern": "item_picked_up:lockpick"
+                  },
+                  {
+                    "cooldown": 10000,
+                    "condition": "data.minigameName && data.minigameName.includes('Lockpick')",
+                    "targetKnot": "on_lockpick_success",
+                    "eventPattern": "minigame_completed"
+                  },
+                  {
+                    "cooldown": 15000,
+                    "condition": "data.minigameName && data.minigameName.includes('Lockpick')",
+                    "targetKnot": "on_lockpick_failed",
+                    "eventPattern": "minigame_failed"
+                  },
+                  {
+                    "cooldown": 8000,
+                    "targetKnot": "on_door_unlocked",
+                    "eventPattern": "door_unlocked"
+                  },
+                  {
+                    "cooldown": 12000,
+                    "targetKnot": "on_door_attempt",
+                    "eventPattern": "door_unlock_attempt"
+                  },
+                  {
+                    "cooldown": 10000,
+                    "condition": "data.objectType === 'desk_ceo'",
+                    "targetKnot": "on_ceo_desk_interact",
+                    "eventPattern": "object_interacted"
+                  },
+                  {
+                    "cooldown": 20000,
+                    "targetKnot": "on_item_found",
+                    "eventPattern": "item_picked_up:*"
+                  },
+                  {
+                    "cooldown": 45000,
+                    "targetKnot": "on_room_entered",
+                    "maxTriggers": 3,
+                    "eventPattern": "room_entered"
+                  },
+                  {
+                    "cooldown": 15000,
+                    "targetKnot": "on_room_discovered",
+                    "maxTriggers": 5,
+                    "eventPattern": "room_discovered"
+                  },
+                  {
+                    "onceOnly": true,
+                    "targetKnot": "on_ceo_office_entered",
+                    "eventPattern": "room_entered:ceo"
+                  }
+                ]
+              }
+            ],
+            "type": "room_reception",
+            "objects": [
+              {
+                "id": "reception_phone_0",
+                "name": "Reception Phone",
+                "type": "phone",
+                "voice": "Hi, this is the IT Team. Security breach detected in server room. Changed access code to 4829.",
+                "sender": "IT Team",
+                "readable": true,
+                "takeable": false,
+                "timestamp": "2:15 AM",
+                "observations": "The reception phone's message light is blinking urgently"
+              },
+              {
+                "id": "reception_notes_1",
+                "name": "Security Log",
+                "text": "Unusual after-hours access detected:\n- CEO office: 11:30 PM\n- Server room: 2:15 AM\n- CEO office again: 3:45 AM",
+                "type": "notes",
+                "readable": true,
+                "takeable": true,
+                "observations": "A concerning security log from last night"
+              },
+              {
+                "id": "reception_pc_2",
+                "name": "Reception Computer",
+                "type": "pc",
+                "locked": true,
+                "lockType": "password",
+                "showHint": true,
+                "takeable": false,
+                "postitNote": "Password: secret123",
+                "showPostit": true,
+                "maxAttempts": 3,
+                "observations": "The reception's computer, currently locked",
+                "passwordHint": "Optional hint text",
+                "showKeyboard": true,
+                "hasContents": true
+              },
+              {
+                "id": "reception_tablet_3",
+                "mac": "00:11:22:33:44:55",
+                "name": "Tablet Device",
+                "type": "tablet",
+                "locked": true,
+                "lockType": "bluetooth",
+                "requires": "bluetooth",
+                "takeable": true,
+                "observations": "A locked tablet device that requires Bluetooth pairing"
+              },
+              {
+                "id": "reception_bluetooth_scanner_4",
+                "name": "Bluetooth Scanner",
+                "type": "bluetooth_scanner",
+                "takeable": true,
+                "observations": "A device for detecting nearby Bluetooth signals",
+                "canScanBluetooth": true
+              },
+              {
+                "id": "reception_key_5",
+                "name": "Office Key",
+                "type": "key",
+                "keyPins": [
+                  65,
+                  25,
+                  65,
+                  25
+                ],
+                "takeable": true,
+                "opens_lock": "office1_key",
+                "observations": "A key to access the office areas"
+              },
+              {
+                "id": "reception_pin-cracker_6",
+                "name": "PIN Cracker",
+                "type": "pin-cracker",
+                "takeable": true,
+                "observations": "A sophisticated device that clamps over a four-digit keypad. After each wrong code it lights green for a right digit in the right place and amber for a right digit in the wrong place. While it is fitted the keypad cannot lock you out, and your earlier guesses stay on screen."
+              },
+              {
+                "id": "reception_safe_7",
+                "name": "Reception Safe",
+                "type": "safe",
+                "locked": true,
+                "lockType": "pin",
+                "takeable": false,
+                "observations": "A small wall safe behind the reception desk. Looks like it needs a 4-digit code.",
+                "pinLength": 4,
+                "hasContents": true
+              }
+            ],
+            "connections": {
+              "north": "office1"
+            }
+          }
+        }
+      },
+      {
+        "id": "pc_container_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: reception_pc_2"
+        }
+      },
+      {
+        "id": "pc_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "pc_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "reception_pc_2_content_0",
+              "name": "Private",
+              "text": "Closet keypad code: 7391 - Must move evidence to safe before audit",
+              "type": "text_file",
+              "readable": true,
+              "takeable": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "pc_container_open",
+        "status": 200,
+        "body": {
+          "container_id": "reception_pc_2",
+          "contents": [
+            {
+              "id": "reception_pc_2_content_0",
+              "name": "Private",
+              "text": "Closet keypad code: 7391 - Must move evidence to safe before audit",
+              "type": "text_file",
+              "readable": true,
+              "takeable": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "safe_container_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: reception_safe_7"
+        }
+      },
+      {
+        "id": "safe_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "safe_wrong_method",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "safe_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "reception_safe_7_content_0",
+              "name": "IT Access Credentials",
+              "text": "Emergency IT Admin Credentials:\nUsername: admin\nPassword: ITsecure2024\n\nServer Room Backup Code: 4829\nCEO Office Alarm Override: 1337",
+              "type": "notes",
+              "readable": true,
+              "takeable": true,
+              "observations": "Sensitive IT credentials that could be very useful"
+            }
+          ]
+        }
+      },
+      {
+        "id": "safe_container_open",
+        "status": 200,
+        "body": {
+          "container_id": "reception_safe_7",
+          "contents": [
+            {
+              "id": "reception_safe_7_content_0",
+              "name": "IT Access Credentials",
+              "text": "Emergency IT Admin Credentials:\nUsername: admin\nPassword: ITsecure2024\n\nServer Room Backup Code: 4829\nCEO Office Alarm Override: 1337",
+              "type": "notes",
+              "readable": true,
+              "takeable": true,
+              "observations": "Sensitive IT credentials that could be very useful"
+            }
+          ]
+        }
+      },
+      {
+        "id": "tablet_wrong_method",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "take_tablet_locked",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "tablet_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object"
+        }
+      },
+      {
+        "id": "take_tablet_open",
+        "status": 200,
+        "body": {
+          "success": true,
+          "already": true
+        }
+      },
+      {
+        "id": "office1_key_missing",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "office1_wrong_method",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "take_office_key",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "office1_key_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "door",
+          "roomData": {
+            "type": "room_office",
+            "locked": true,
+            "keyPins": [
+              65,
+              25,
+              65,
+              25
+            ],
+            "objects": [
+              {
+                "id": "office1_pc_0",
+                "name": "Office Computer",
+                "type": "pc",
+                "takeable": false,
+                "observations": "A computer with a cybersecurity alert on screen. There might be fingerprints on the keyboard.",
+                "hasFingerprint": true,
+                "fingerprintOwner": "ceo",
+                "fingerprintDifficulty": "medium"
+              },
+              {
+                "id": "office1_notes_1",
+                "name": "IT Memo",
+                "text": "URGENT: Multiple unauthorized access attempts detected from CEO's office IP address",
+                "type": "notes",
+                "readable": true,
+                "takeable": true,
+                "observations": "A concerning IT department memo"
+              },
+              {
+                "id": "office1_fingerprint_kit_2",
+                "name": "Fingerprint Kit",
+                "type": "fingerprint_kit",
+                "takeable": true,
+                "observations": "A kit used for collecting fingerprints from surfaces"
+              }
+            ],
+            "lockType": "key",
+            "door_sign": "4A Hot Desks",
+            "difficulty": "easy",
+            "connections": {
+              "north": [
+                "office2",
+                "office3"
+              ],
+              "south": "reception"
+            }
+          }
+        }
+      },
+      {
+        "id": "room_office1",
+        "status": 200,
+        "body": {
+          "room_id": "office1",
+          "room": {
+            "type": "room_office",
+            "locked": true,
+            "keyPins": [
+              65,
+              25,
+              65,
+              25
+            ],
+            "objects": [
+              {
+                "id": "office1_pc_0",
+                "name": "Office Computer",
+                "type": "pc",
+                "takeable": false,
+                "observations": "A computer with a cybersecurity alert on screen. There might be fingerprints on the keyboard.",
+                "hasFingerprint": true,
+                "fingerprintOwner": "ceo",
+                "fingerprintDifficulty": "medium"
+              },
+              {
+                "id": "office1_notes_1",
+                "name": "IT Memo",
+                "text": "URGENT: Multiple unauthorized access attempts detected from CEO's office IP address",
+                "type": "notes",
+                "readable": true,
+                "takeable": true,
+                "observations": "A concerning IT department memo"
+              },
+              {
+                "id": "office1_fingerprint_kit_2",
+                "name": "Fingerprint Kit",
+                "type": "fingerprint_kit",
+                "takeable": true,
+                "observations": "A kit used for collecting fingerprints from surfaces"
+              }
+            ],
+            "lockType": "key",
+            "door_sign": "4A Hot Desks",
+            "difficulty": "easy",
+            "connections": {
+              "north": [
+                "office2",
+                "office3"
+              ],
+              "south": "reception"
+            }
+          }
+        }
+      },
+      {
+        "id": "ceo_key_missing",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "ceo_lockpick",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "door",
+          "roomData": {
+            "type": "room_ceo",
+            "locked": true,
+            "keyPins": [
+              25,
+              45,
+              65,
+              75
+            ],
+            "objects": [
+              {
+                "id": "ceo_pc_0",
+                "name": "CEO Computer",
+                "type": "pc",
+                "locked": true,
+                "lockType": "password",
+                "takeable": false,
+                "postitNote": "Password: ceo2024",
+                "showPostit": true,
+                "maxAttempts": 3,
+                "observations": "The CEO's laptop, still warm - recently used. A sticky note is attached to the screen.",
+                "showKeyboard": true
+              },
+              {
+                "id": "ceo_suitcase_1",
+                "name": "CEO Briefcase",
+                "type": "suitcase",
+                "locked": true,
+                "keyPins": [
+                  45,
+                  35,
+                  25,
+                  55
+                ],
+                "lockType": "key",
+                "takeable": false,
+                "difficulty": "medium",
+                "observations": "An expensive leather briefcase with a sturdy lock",
+                "hasContents": true
+              },
+              {
+                "id": "ceo_phone_2",
+                "name": "CEO Phone",
+                "text": "Recent calls: 'Offshore Bank', 'Unknown', 'Data Buyer'",
+                "type": "phone",
+                "sender": "Call Log",
+                "readable": true,
+                "takeable": false,
+                "timestamp": "Last 24 hours",
+                "observations": "The CEO's phone shows suspicious recent calls"
+              }
+            ],
+            "lockType": "key",
+            "difficulty": "easy",
+            "connections": {
+              "north": "closet",
+              "south": "office2"
+            }
+          }
+        }
+      },
+      {
+        "id": "closet_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "closet_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "door",
+          "roomData": {
+            "type": "room_closet",
+            "locked": true,
+            "objects": [
+              {
+                "id": "closet_safe_0",
+                "name": "Hidden Safe",
+                "type": "safe",
+                "locked": true,
+                "keyPins": [
+                  52,
+                  29,
+                  44,
+                  37
+                ],
+                "lockType": "key",
+                "takeable": false,
+                "difficulty": "hard",
+                "observations": "A well-hidden wall safe behind a painting",
+                "hasContents": true
+              }
+            ],
+            "lockType": "pin",
+            "connections": {
+              "south": "ceo"
+            },
+            "pinLength": 4
+          }
+        }
+      },
+      {
+        "id": "server1_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "server1_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "door",
+          "roomData": {
+            "type": "room_servers",
+            "locked": true,
+            "objects": [
+              {
+                "id": "server1_pc_0",
+                "name": "Server Terminal",
+                "type": "pc",
+                "takeable": false,
+                "observations": "The main server terminal showing massive data exfiltration"
+              },
+              {
+                "id": "server1_key_1",
+                "name": "Briefcase Key",
+                "type": "key",
+                "keyPins": [
+                  45,
+                  35,
+                  25,
+                  55
+                ],
+                "takeable": true,
+                "opens_lock": "briefcase_key",
+                "observations": "A small key labeled 'Personal - Do Not Copy'"
+              }
+            ],
+            "lockType": "pin",
+            "connections": {
+              "south": "office3"
+            },
+            "pinLength": 4
+          }
+        }
+      },
+      {
+        "id": "ceo_pc_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "suitcase_key_missing",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "suitcase_lockpick",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "ceo_suitcase_1_content_0",
+              "name": "Private Note",
+              "text": "Closet keypad code: 7391 - Must move evidence to safe before audit",
+              "type": "notes",
+              "readable": true,
+              "takeable": true,
+              "observations": "A hastily written note on expensive paper"
+            },
+            {
+              "id": "ceo_suitcase_1_content_1",
+              "name": "Safe Key",
+              "type": "key",
+              "keyPins": [
+                52,
+                29,
+                44,
+                37
+              ],
+              "takeable": true,
+              "opens_lock": "safe_key",
+              "observations": "A heavy-duty safe key hidden behind server equipment"
+            }
+          ]
+        }
+      },
+      {
+        "id": "room_ceo",
+        "status": 200,
+        "body": {
+          "room_id": "ceo",
+          "room": {
+            "type": "room_ceo",
+            "locked": true,
+            "keyPins": [
+              25,
+              45,
+              65,
+              75
+            ],
+            "objects": [
+              {
+                "id": "ceo_pc_0",
+                "name": "CEO Computer",
+                "type": "pc",
+                "locked": true,
+                "lockType": "password",
+                "takeable": false,
+                "postitNote": "Password: ceo2024",
+                "showPostit": true,
+                "maxAttempts": 3,
+                "observations": "The CEO's laptop, still warm - recently used. A sticky note is attached to the screen.",
+                "showKeyboard": true
+              },
+              {
+                "id": "ceo_suitcase_1",
+                "name": "CEO Briefcase",
+                "type": "suitcase",
+                "locked": false,
+                "keyPins": [
+                  45,
+                  35,
+                  25,
+                  55
+                ],
+                "contents": [
+                  {
+                    "id": "ceo_suitcase_1_content_0",
+                    "name": "Private Note",
+                    "text": "Closet keypad code: 7391 - Must move evidence to safe before audit",
+                    "type": "notes",
+                    "readable": true,
+                    "takeable": true,
+                    "observations": "A hastily written note on expensive paper"
+                  },
+                  {
+                    "id": "ceo_suitcase_1_content_1",
+                    "name": "Safe Key",
+                    "type": "key",
+                    "keyPins": [
+                      52,
+                      29,
+                      44,
+                      37
+                    ],
+                    "takeable": true,
+                    "opens_lock": "safe_key",
+                    "observations": "A heavy-duty safe key hidden behind server equipment"
+                  }
+                ],
+                "lockType": "key",
+                "takeable": false,
+                "difficulty": "medium",
+                "observations": "An expensive leather briefcase with a sturdy lock"
+              },
+              {
+                "id": "ceo_phone_2",
+                "name": "CEO Phone",
+                "text": "Recent calls: 'Offshore Bank', 'Unknown', 'Data Buyer'",
+                "type": "phone",
+                "sender": "Call Log",
+                "readable": true,
+                "takeable": false,
+                "timestamp": "Last 24 hours",
+                "observations": "The CEO's phone shows suspicious recent calls"
+              }
+            ],
+            "lockType": "key",
+            "difficulty": "easy",
+            "connections": {
+              "north": "closet",
+              "south": "office2"
+            }
+          }
+        }
+      },
+      {
+        "id": "bluetooth_pc_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object"
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "ceo": {
+              "type": "room_ceo",
+              "connections": {
+                "north": "closet",
+                "south": "office2"
+              },
+              "locked": false,
+              "lockType": "key",
+              "difficulty": "easy",
+              "keyPins": [
+                25,
+                45,
+                65,
+                75
+              ]
+            },
+            "closet": {
+              "type": "room_closet",
+              "connections": {
+                "south": "ceo"
+              },
+              "locked": false,
+              "lockType": "pin",
+              "pinLength": 4
+            },
+            "office1": {
+              "type": "room_office",
+              "connections": {
+                "north": [
+                  "office2",
+                  "office3"
+                ],
+                "south": "reception"
+              },
+              "locked": false,
+              "lockType": "key",
+              "difficulty": "easy",
+              "door_sign": "4A Hot Desks",
+              "keyPins": [
+                65,
+                25,
+                65,
+                25
+              ]
+            },
+            "office2": {
+              "type": "room_office",
+              "connections": {
+                "north": "ceo",
+                "south": "office1"
+              }
+            },
+            "office3": {
+              "type": "room_office",
+              "connections": {
+                "north": "server1",
+                "south": "office1"
+              }
+            },
+            "server1": {
+              "type": "room_servers",
+              "connections": {
+                "south": "office3"
+              },
+              "locked": false,
+              "lockType": "pin",
+              "pinLength": 4
+            },
+            "reception": {
+              "type": "room_reception",
+              "connections": {
+                "north": "office1"
+              },
+              "hasPresentNpc": false,
+              "locked": false
+            }
+          },
+          "startRoom": "reception",
+          "formatVersion": 3,
+          "scenario_brief": "Hi! You are a cyber investigator tasked with uncovering evidence of corporate espionage. Anonymous tips suggest the CEO has been selling company secrets, but you need proof.",
+          "characterSprites": [],
+          "savedCurrentRoom": "reception",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "name": "Your Phone",
+              "type": "phone",
+              "npcIds": [
+                "neye_eve",
+                "gossip_girl",
+                "helper_npc"
+              ],
+              "phoneId": "player_phone",
+              "takeable": true,
+              "observations": "Your personal phone with some interesting contacts"
+            },
+            {
+              "name": "Crypto Analysis Station",
+              "type": "workstation",
+              "takeable": true,
+              "observations": "A powerful workstation for cryptographic analysis"
+            },
+            {
+              "name": "Lock Pick Kit",
+              "type": "lockpick",
+              "takeable": true,
+              "observations": "A professional lock picking kit with various picks and tension wrenches"
+            },
+            {
+              "id": "reception_tablet_3",
+              "mac": "00:11:22:33:44:55",
+              "name": "Tablet Device",
+              "type": "tablet",
+              "locked": true,
+              "lockType": "bluetooth",
+              "requires": "bluetooth",
+              "takeable": true,
+              "observations": "A locked tablet device that requires Bluetooth pairing"
+            },
+            {
+              "id": "reception_key_5",
+              "name": "Office Key",
+              "type": "key",
+              "keyPins": [
+                65,
+                25,
+                65,
+                25
+              ],
+              "takeable": true,
+              "opens_lock": "office1_key",
+              "observations": "A key to access the office areas"
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {},
+      "footholds": {},
+      "inventory": [
+        {
+          "name": "Your Phone",
+          "type": "phone",
+          "npcIds": [
+            "neye_eve",
+            "gossip_girl",
+            "helper_npc"
+          ],
+          "phoneId": "player_phone",
+          "takeable": true,
+          "observations": "Your personal phone with some interesting contacts"
+        },
+        {
+          "name": "Crypto Analysis Station",
+          "type": "workstation",
+          "takeable": true,
+          "observations": "A powerful workstation for cryptographic analysis"
+        },
+        {
+          "name": "Lock Pick Kit",
+          "type": "lockpick",
+          "takeable": true,
+          "observations": "A professional lock picking kit with various picks and tension wrenches"
+        },
+        {
+          "id": "reception_tablet_3",
+          "mac": "00:11:22:33:44:55",
+          "name": "Tablet Device",
+          "type": "tablet",
+          "locked": true,
+          "lockType": "bluetooth",
+          "requires": "bluetooth",
+          "takeable": true,
+          "observations": "A locked tablet device that requires Bluetooth pairing"
+        },
+        {
+          "id": "reception_key_5",
+          "name": "Office Key",
+          "type": "key",
+          "keyPins": [
+            65,
+            25,
+            65,
+            25
+          ],
+          "takeable": true,
+          "opens_lock": "office1_key",
+          "observations": "A key to access the office areas"
+        }
+      ],
+      "pinDusted": {},
+      "mfaPending": {},
+      "mfaPrompts": {},
+      "copiedItems": [],
+      "currentRoom": "reception",
+      "mfaAccounts": {},
+      "opsFindings": {},
+      "room_states": {},
+      "signedInPcs": [],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "unlockedRooms": [
+        "reception",
+        "office1",
+        "ceo",
+        "closet",
+        "server1"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "neye_eve",
+        "gossip_girl",
+        "helper_npc"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [
+        "reception_pc_2",
+        "reception_safe_7",
+        "reception_tablet_3",
+        "ceo_suitcase_1",
+        "office3_pc_0"
+      ],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

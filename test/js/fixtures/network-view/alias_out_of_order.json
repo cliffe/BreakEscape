@@ -1,0 +1,145 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "print01",
+          "kind": "device",
+          "name": "Second floor printer",
+          "sprite": "pnw_portable_printer1",
+          "scanned": true,
+          "services": [
+            {
+              "name": "web",
+              "label": "web",
+              "port": 80,
+              "product": "Brackley PrintPanel",
+              "version": "2.0"
+            }
+          ],
+          "findings": [
+            {
+              "id": "print01.web.k_ten",
+              "alias": "f10",
+              "hostId": "print01",
+              "service": "web",
+              "class": "default_creds",
+              "severity": "high",
+              "summary": "Summary for f10.",
+              "status": "confirmed",
+              "needs": []
+            },
+            {
+              "id": "print01.web.k_two",
+              "alias": "f2",
+              "hostId": "print01",
+              "service": "web",
+              "class": "unpatched",
+              "severity": "low",
+              "summary": "Summary for f2.",
+              "status": "unconfirmed"
+            },
+            {
+              "id": "print01.web.k_one",
+              "alias": "f1",
+              "hostId": "print01",
+              "service": "web",
+              "class": "default_creds",
+              "severity": "medium",
+              "summary": "Summary for f1.",
+              "status": "unconfirmed"
+            }
+          ]
+        }
+      ],
+      "networks": [
+        {
+          "id": "lab_net",
+          "name": "Lab network",
+          "route": "up",
+          "via": null,
+          "hosts": [
+            {
+              "id": "print01",
+              "kind": "device",
+              "name": "Second floor printer",
+              "sprite": "pnw_portable_printer1",
+              "scanned": true,
+              "services": [
+                {
+                  "name": "web",
+                  "label": "web",
+                  "port": 80,
+                  "product": "Brackley PrintPanel",
+                  "version": "2.0"
+                }
+              ],
+              "findings": [
+                {
+                  "id": "print01.web.k_ten",
+                  "alias": "f10",
+                  "hostId": "print01",
+                  "service": "web",
+                  "class": "default_creds",
+                  "severity": "high",
+                  "summary": "Summary for f10.",
+                  "status": "confirmed",
+                  "needs": []
+                },
+                {
+                  "id": "print01.web.k_two",
+                  "alias": "f2",
+                  "hostId": "print01",
+                  "service": "web",
+                  "class": "unpatched",
+                  "severity": "low",
+                  "summary": "Summary for f2.",
+                  "status": "unconfirmed"
+                },
+                {
+                  "id": "print01.web.k_one",
+                  "alias": "f1",
+                  "hostId": "print01",
+                  "service": "web",
+                  "class": "default_creds",
+                  "severity": "medium",
+                  "summary": "Summary for f1.",
+                  "status": "unconfirmed"
+                }
+              ]
+            }
+          ],
+          "swept": true,
+          "ops": true
+        }
+      ]
+    }
+  ],
+  "techniques": {
+    "phish": {
+      "name": "Phishing note",
+      "summary": "Phishing note: a note.",
+      "worksOn": {
+        "class": "default_creds"
+      },
+      "itemId": "card_phish"
+    },
+    "phish_sms": {
+      "name": "Text message note",
+      "summary": "Text message note: a note.",
+      "worksOn": {
+        "class": "unpatched"
+      },
+      "itemId": "card_phish_sms"
+    }
+  }
+}

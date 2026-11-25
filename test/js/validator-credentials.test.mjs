@@ -76,9 +76,9 @@ test('E: unknown kind', { skip }, () => {
     "has an unknown kind 'wat'");
 });
 
-test('E: a kind that is not built yet (hash)', { skip }, () => {
-  assertErr(issues(sc({ c1: { kind: 'hash', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'jack_jack1' } }, _j: PW_OK },
-    { objects: [PC(), JACK] })), "kind 'hash' is not supported until phase 3");
+test('I: every kind in the catalogue is built, so hash is accepted (no "not supported" or "unknown kind" error)', { skip }, () => {
+  const l = issues(sc({ c1: { kind: 'hash', account: 'lena', proof: { held: 'x' } } }));
+  assert.equal(l.filter(i => /not supported|unknown kind/.test(i)).length, 0, l.join('\n'));
 });
 
 test('E: account is not an account holder', { skip }, () => {

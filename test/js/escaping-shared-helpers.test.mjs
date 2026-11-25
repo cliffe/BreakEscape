@@ -69,7 +69,7 @@ test('one escape helper: the minigames that had local copies now import the shar
     const files = [
         'minigames/framework/base-minigame.js', 'minigames/network-architecture/network-architecture-minigame.js',
         'minigames/rfid/rfid-ui.js', 'minigames/ncsc-brief/ncsc-brief-minigame.js', 'minigames/text-file/text-file-minigame.js',
-        'minigames/ransomware-display/ransomware-display-minigame.js', 'minigames/network-view/network-view-minigame.js',
+        'minigames/ransomware-display/ransomware-display-minigame.js', 'minigames/network-view/network-view-minigame.js', 'minigames/network-view/network-view-panels.js',
         'minigames/alarm-panel/alarm-panel-minigame.js', 'minigames/container/container-minigame.js',
         'minigames/coverage-decision-form/coverage-decision-form-minigame.js', 'minigames/password/password-minigame.js',
         'minigames/esd-pushbutton/esd-pushbutton-minigame.js', 'minigames/sis-config-threshold/sis-config-threshold-minigame.js',

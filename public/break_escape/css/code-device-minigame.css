@@ -1,0 +1,91 @@
+/* Code device scene (ops layer S8a, unit 12). The small device frame (device-frame.css) with the
+   owner's headshot and name, six digits in VT323, and a bar that drains to the end of the window.
+   Classes are code-device-*. */
+
+.code-device {
+    position: relative;
+    width: 260px;
+    max-width: calc(100vw - 32px);
+    margin: 4vh auto;
+    padding: var(--device-frame-gap, 6px);
+    text-align: center;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+}
+
+.code-device-title-text {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: normal;
+    letter-spacing: 0.08em;
+    color: var(--device-palette-dim, #a3adbf);
+}
+
+.code-device-owner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 36px;
+    margin-bottom: 6px;
+}
+
+.code-device-headshot {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    image-rendering: pixelated;
+}
+
+.code-device-name {
+    font-size: 16px;
+    line-height: 20px;
+    color: var(--device-palette-text, #e6ebf2);
+    overflow-wrap: anywhere;
+}
+
+.code-device-digits {
+    min-height: 48px;
+    font-family: 'VT323', monospace;
+    font-size: 48px;
+    line-height: 48px;
+    letter-spacing: 0.18em;
+    color: var(--device-palette-accent, #ffd866);
+}
+
+.code-device-digits.code-device-used {
+    color: var(--device-palette-dim, #a3adbf);
+    text-decoration: line-through;
+}
+
+.code-device-note {
+    margin: 4px 0 0;
+    font-size: 16px;
+    line-height: 22px;
+    color: var(--device-palette-info, #9ee6ff);
+}
+
+.code-device-bar {
+    height: 8px;
+    margin: 10px 6px 4px;
+    background: var(--device-palette-button, #283246);
+    border: 1px solid var(--device-palette-edge, #8a96aa);
+}
+
+.code-device-bar-fill {
+    height: 100%;
+    width: 0;
+    background: var(--device-palette-accent, #ffd866);
+}
+
+/* Own phone (S8b unit 16): the player's phone shell in place of the small device frame; the same
+   stepped grey shell as the other in-game phones. */
+.code-device-phone {
+    background: #3a3d45;
+    border: 3px solid #1d1f24;
+    border-radius: 14px;
+    padding: 14px 10px 18px;
+}
+
+.code-device-phone .code-device-title-text {
+    color: #d8dce6;
+}

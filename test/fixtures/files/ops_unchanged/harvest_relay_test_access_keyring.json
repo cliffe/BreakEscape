@@ -1,0 +1,1463 @@
+{
+  "name": "harvest_test_access_keyring",
+  "description": "Ruling B: a relay sign-in over an assist invite and its desktop, keyring and folder answers, before the relay level changes.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_brief": "TEST: Credential keyring (K1)\n\nA test floor for the credential keyring (CREDENTIAL_KEYRING_PLAN.md, slice K1). Everything here is read by GET /keyring, the server-only answer that lists the credentials you have earned. Four proofs: take HB-FIN-02.rdp from the lobby (a held saved connection); sign in at Lena's PC in finance, east (a found password for Jake appears); read Ian's capture card in the comms room, north (his account is captured, with its value); plant the drop box in the comms port (a foothold-proof saved connection for Ian appears). K2 to K5 add the sign-in branch, the UI, the relay and tokens.",
+    "endGoal": "Test only: earn each K1 proof and watch GET /keyring fill.",
+    "startRoom": "lobby",
+    "startPosition": {
+      "x": 7,
+      "y": 7
+    },
+    "npcNeedsSeed": "test_access_keyring",
+    "npcWindupMs": 0,
+    "needsDebugOverlay": true,
+    "social": {
+      "captures": {
+        "revealSecret": true
+      }
+    },
+    "networks": {
+      "office_lan": {
+        "name": "Harbour office LAN"
+      },
+      "server_lan": {
+        "name": "Server network"
+      }
+    },
+    "networkLinks": [
+      [
+        "office_lan",
+        "server_lan"
+      ]
+    ],
+    "policies": {
+      "finance_desk": {
+        "remote": "allowed"
+      },
+      "pw_only": {
+        "remote": "allowed",
+        "accepts": [
+          "password"
+        ]
+      },
+      "jake_desk": {
+        "remote": "blocked",
+        "accepts": [
+          "password",
+          "assist_invite"
+        ]
+      }
+    },
+    "globalVariables": {
+      "capture_card_ian": false,
+      "capture_card_pin": false,
+      "jake_assist_given": false,
+      "jake_contract_read": false,
+      "jake_assist_armed": false,
+      "jake_ended_assist": false,
+      "jake_timer_ended_assist": false
+    },
+    "credentials": {
+      "lena_rdp": {
+        "kind": "saved_connection",
+        "account": "lena",
+        "connectsTo": "lena_pc",
+        "proof": {
+          "held": "lena_rdp_file"
+        }
+      },
+      "jake_pw_note": {
+        "kind": "password",
+        "account": "jake",
+        "proof": {
+          "session": "lena_pc"
+        },
+        "foundIn": "lena_passwords_txt"
+      },
+      "lena_rdp_gift": {
+        "kind": "saved_connection",
+        "account": "lena",
+        "connectsTo": "lena_pc",
+        "label": "HB-FIN-02 copy.rdp",
+        "proof": {
+          "held": "lena_rdp_gift"
+        }
+      },
+      "ops_rdp": {
+        "kind": "saved_connection",
+        "account": "ian",
+        "connectsTo": "ops_pc",
+        "label": "SV-OPS-01 admin.rdp",
+        "proof": {
+          "held": "ops_rdp_file"
+        }
+      },
+      "jake_assist": {
+        "kind": "assist_invite",
+        "account": "jake",
+        "connectsTo": "jake_pc",
+        "label": "Jake's assist code",
+        "proof": {
+          "held": "jake_assist_code"
+        },
+        "endsOnGlobal": "jake_ended_assist"
+      },
+      "ops_cookie": {
+        "kind": "saved_connection",
+        "account": "ian",
+        "connectsTo": "ops_pc",
+        "label": "SV-OPS-01.rdp",
+        "proof": {
+          "foothold": "jack_comms_port"
+        }
+      },
+      "lena_token": {
+        "kind": "token",
+        "account": "lena",
+        "connectsTo": "lena_pc",
+        "label": "HB-FIN-02 sign-in token",
+        "expiresMin": 4,
+        "proof": {
+          "foothold": "jack_comms_port"
+        }
+      }
+    },
+    "startItemsInInventory": [
+      {
+        "type": "capture_log",
+        "id": "capture_log",
+        "name": "Capture log",
+        "sprite": "laptop1",
+        "takeable": true,
+        "holds": {
+          "captures": true,
+          "items": false
+        },
+        "observations": "Your engagement device: every sign-in you have captured or found, and the PINs, footholds and findings you record."
+      }
+    ],
+    "objectives": [
+      {
+        "aimId": "keyring_beats",
+        "title": "Watch the keyring fill",
+        "description": "Test only. Each proof the server reads adds an entry to GET /keyring.",
+        "status": "active",
+        "order": 0,
+        "tasks": [
+          {
+            "taskId": "k1_held",
+            "title": "K1a: take HB-FIN-02.rdp (a held saved connection)",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "k1_session",
+            "title": "K1b: sign in at Lena's PC (Jake's found password appears)",
+            "type": "unlock_object",
+            "targetObject": "lena_pc",
+            "status": "active"
+          },
+          {
+            "taskId": "k1_capture",
+            "title": "K1c: read Ian's capture card (his account is captured)",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "k1_foothold",
+            "title": "K1d: plant the drop box in the comms port (a foothold proof)",
+            "type": "unlock_object",
+            "targetObject": "comms_port",
+            "status": "active"
+          },
+          {
+            "taskId": "k3c_contract",
+            "title": "K3c: read the vendor contract on Jake's PC (reachable only by remote assist)",
+            "type": "custom",
+            "status": "active"
+          }
+        ]
+      }
+    ],
+    "timers": [
+      {
+        "id": "jake_assist_timer",
+        "label": "Remote assist",
+        "condition": "!globalVars.jake_ended_assist",
+        "delayMs": 90000,
+        "startOnGlobal": "jake_assist_armed",
+        "setGlobal": {
+          "jake_ended_assist": true,
+          "jake_timer_ended_assist": true
+        },
+        "showCountdown": false
+      }
+    ],
+    "rooms": {
+      "lobby": {
+        "type": "room_reception",
+        "door_sign": "Lobby",
+        "connections": {
+          "north": "comms_room",
+          "east": "finance_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "kit_dropbox",
+            "name": "Network drop box",
+            "sprite": "drop_box1",
+            "position": {
+              "x": 8,
+              "y": 4
+            },
+            "takeable": true,
+            "rogueDevice": true,
+            "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+          },
+          {
+            "type": "text_file",
+            "id": "lena_rdp_file",
+            "name": "HB-FIN-02.rdp",
+            "position": {
+              "x": 6,
+              "y": 4
+            },
+            "takeable": true,
+            "readable": true,
+            "credential": "lena_rdp",
+            "text": "Saved connection to HB-FIN-02 (Lena Fox). Double-click to connect. (K1a: taking this lists the saved connection on your keyring.)",
+            "observations": "A saved remote-desktop connection file for HB-FIN-02."
+          },
+          {
+            "type": "notes",
+            "id": "capture_card_pin",
+            "name": "Capture card: stationery cupboard",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "observations": "A test card for the capture log: a PIN seen over a shoulder.",
+            "text": "CAPTURE CARD (test)\n\nReading this records the stationery cupboard keypad PIN, seen over a shoulder. It is a PIN, not an account's password, so it shows under Captures and not under Sign-ins.",
+            "triggerOnInteract": [
+              {
+                "type": "set_global",
+                "key": "capture_card_pin",
+                "value": true
+              }
+            ]
+          },
+          {
+            "type": "notes1",
+            "id": "sign_lobby",
+            "name": "Sign: Start here",
+            "position": {
+              "x": 4,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Four K1 proofs. Take HB-FIN-02.rdp here (K1a). Finance is east: sign in at Lena's PC (K1b). The comms room is north: read Ian's card (K1c) and plant the drop box in the wall port (K1d).\nGET /keyring lists what you have earned; it starts empty.",
+            "observations": "A sign on a stand by the front desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "pat",
+            "displayName": "Pat Doyle",
+            "npcType": "person",
+            "position": {
+              "x": 6,
+              "y": 7
+            },
+            "spriteSheet": "female_office_worker_v2",
+            "spriteTalk": "assets/characters/female_office_worker_talk.png",
+            "storyPath": "scenarios/test_access_keyring/ink/pat.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "reception",
+            "eventMappings": [
+              {
+                "eventPattern": "global_variable_changed:capture_card_pin",
+                "condition": "value === true",
+                "onceOnly": true,
+                "addCapture": {
+                  "targetId": "cupboard_pin",
+                  "roleLabel": "Harbour office, front desk",
+                  "kind": "credential",
+                  "address": "Stationery cupboard",
+                  "host": "Stationery cupboard keypad",
+                  "secret": "4471",
+                  "note": "Seen over a shoulder."
+                }
+              }
+            ]
+          },
+          {
+            "id": "lena",
+            "displayName": "Lena Fox",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 4
+            },
+            "spriteSheet": "female_blowse_v2",
+            "spriteTalk": "assets/characters/female_blowse_talk.png",
+            "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+            "storyPath": "scenarios/test_access_keyring/ink/lena.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "finance",
+            "creds": {
+              "username": "lfox",
+              "password": "Ledger-Lena-9"
+            },
+            "itemsHeld": [
+              {
+                "type": "text_file",
+                "id": "lena_rdp_gift",
+                "name": "HB-FIN-02 copy.rdp",
+                "takeable": true,
+                "droppable": true,
+                "credential": "lena_rdp_gift"
+              }
+            ],
+            "eventMappings": [
+              {
+                "eventPattern": "item_picked_up:text_file",
+                "condition": "data.itemId === 'lena_rdp_file'",
+                "onceOnly": true,
+                "completeTask": "k1_held"
+              },
+              {
+                "eventPattern": "global_variable_changed:jake_contract_read",
+                "condition": "value === true",
+                "onceOnly": true,
+                "completeTask": "k3c_contract",
+                "setGlobal": {
+                  "jake_assist_armed": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "comms_room": {
+        "type": "room_it",
+        "door_sign": "Comms room",
+        "connections": {
+          "south": "lobby"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "comms_port",
+            "name": "Spare wall port",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "networkJack": true,
+            "network": "office_lan",
+            "jackConfirm": "Plug the drop box into this port?",
+            "plantedSprite": "pi_cluster1",
+            "requiresItemHint": "A spare network port. Something small could be plugged in here.",
+            "observations": "A spare network port on the wall, with a patch cable tucked beside it."
+          },
+          {
+            "type": "pc",
+            "id": "ops_pc",
+            "name": "SV-OPS-01",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "host": "SV-OPS-01",
+            "network": "server_lan",
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "policy": "pw_only",
+            "access": {
+              "roles": [
+                "it"
+              ]
+            },
+            "observations": "A rack server on the server network. It takes a typed password only."
+          },
+          {
+            "type": "notes",
+            "id": "capture_note_ian",
+            "name": "Capture card: Ian",
+            "position": {
+              "x": 6,
+              "y": 6
+            },
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "observations": "A test card for the capture log.",
+            "text": "CAPTURE CARD (test)\n\nReading this records Ian's sign-in. With the drop box planted in the wall port, his account is captured and his password shows on the keyring (revealSecret is on).",
+            "triggerOnInteract": [
+              {
+                "type": "set_global",
+                "key": "capture_card_ian",
+                "value": true
+              }
+            ]
+          },
+          {
+            "type": "notes1",
+            "id": "sign_comms",
+            "name": "Sign: K1c and K1d",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "K1c: read Ian's capture card in this room; his account is captured and his password shows on the keyring.\nK1d: plant the drop box in this wall port. A saved connection for Ian (SV-OPS-01) then appears on the keyring, proved by the foothold.",
+            "observations": "A sign by the wall port."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "ian",
+            "displayName": "Ian Shaw",
+            "npcType": "person",
+            "position": {
+              "x": 4,
+              "y": 6
+            },
+            "spriteSheet": "male_nerd_v2",
+            "spriteTalk": "assets/characters/male_nerd_talk.png",
+            "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+            "storyPath": "scenarios/test_access_keyring/ink/ian.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "it",
+            "creds": {
+              "username": "ishaw",
+              "password": "Patchday!2026"
+            },
+            "captureProof": [
+              {
+                "planted": "kit_dropbox",
+                "on": "comms_port"
+              }
+            ],
+            "eventMappings": [
+              {
+                "eventPattern": "global_variable_changed:capture_card_ian",
+                "condition": "value === true",
+                "onceOnly": true,
+                "completeTask": "k1_capture",
+                "addCapture": {
+                  "targetId": "ian",
+                  "roleLabel": "Harbour office, IT",
+                  "kind": "credential",
+                  "address": "ishaw",
+                  "note": "Read off Ian's card in the comms room."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "finance_room": {
+        "type": "room_ceo",
+        "door_sign": "Finance",
+        "connections": {
+          "west": "lobby",
+          "east": "jake_office"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "lena_pc",
+            "name": "Lena's PC",
+            "position": {
+              "x": 6,
+              "y": 4
+            },
+            "host": "HB-FIN-02",
+            "network": "office_lan",
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "policy": "finance_desk",
+            "access": {
+              "people": [
+                "lena",
+                "jake"
+              ]
+            },
+            "postitNote": "Lena: lfox / Ledger-Lena-9",
+            "showPostit": true,
+            "observations": "Lena's workstation. Her sign-in is on a sticky note on the screen.",
+            "contents": [
+              {
+                "type": "text_file",
+                "id": "lena_passwords_txt",
+                "name": "passwords.txt",
+                "takeable": false,
+                "readable": true,
+                "text": "Shared sign-ins (do not circulate).\n\nJake: jbrooks / Vault-Jake-4\n\n(K1b: once you are signed in here, Jake's found password appears on your keyring.)",
+                "observations": "A plain-text file of shared sign-ins, left on Lena's desktop."
+              },
+              {
+                "type": "text_file",
+                "id": "ops_rdp_file",
+                "name": "SV-OPS-01 admin.rdp",
+                "takeable": true,
+                "droppable": true,
+                "credential": "ops_rdp"
+              }
+            ]
+          },
+          {
+            "type": "notes1",
+            "id": "sign_jake_door",
+            "name": "Sign: Jake's office",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "K3c. Jake's office is east. The door is locked and the key stays with Jake; he will not give it up.\nThrough the glass panel: a PC labelled HB-FIN-03. Its remote sign-in is off, so the only way onto it is the remote assist code Jake can be talked into giving (ask him on the helpdesk's behalf).",
+            "observations": "A laminated sign by the glass panel in Jake's office door. HB-FIN-03 shows through the glass."
+          },
+          {
+            "type": "notes1",
+            "id": "sign_finance",
+            "name": "Sign: K1b",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "K1b. Sign in at Lena's PC with the sticky note (lfox / Ledger-Lena-9). Her desktop holds passwords.txt.\nWith the session held here, GET /keyring lists Jake's password, found in passwords.txt (no value: you read the file).",
+            "observations": "A sign by Lena's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "jake",
+            "displayName": "Jake Brooks",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 6
+            },
+            "spriteSheet": "male_office_worker_v2",
+            "spriteTalk": "assets/characters/male_office_worker_talk.png",
+            "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+            "storyPath": "scenarios/test_access_keyring/ink/jake.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "finance",
+            "creds": {
+              "username": "jbrooks",
+              "password": "Vault-Jake-4"
+            },
+            "itemsHeld": [
+              {
+                "type": "text_file",
+                "id": "jake_assist_code",
+                "name": "Remote assist code",
+                "takeable": true,
+                "droppable": false,
+                "credential": "jake_assist",
+                "onPickup": {
+                  "setVariable": {
+                    "jake_assist_given": true
+                  }
+                },
+                "text": "Remote assist code from Jake Brooks (HB-FIN-03). Connect it from your inventory to join his session."
+              },
+              {
+                "type": "key",
+                "id": "jake_office_key",
+                "name": "Jake's office key",
+                "takeable": true,
+                "opens_lock": "jake_office_key",
+                "keyPins": [
+                  30,
+                  50,
+                  40,
+                  60
+                ],
+                "observations": "The key to Jake's office. Jake keeps it on him and never hands it over in this test."
+              }
+            ],
+            "eventMappings": [
+              {
+                "eventPattern": "global_variable_changed:jake_timer_ended_assist",
+                "condition": "value === true",
+                "onceOnly": true,
+                "bark": "I've ended that session. The helpdesk never calls me back."
+              }
+            ]
+          }
+        ]
+      },
+      "jake_office": {
+        "type": "room_ceo",
+        "door_sign": "Jake Brooks (HB-FIN-03)",
+        "locked": true,
+        "lockType": "key",
+        "requires": "jake_office_key",
+        "keyPins": [
+          30,
+          50,
+          40,
+          60
+        ],
+        "connections": {
+          "west": "finance_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "jake_pc",
+            "name": "Jake's PC",
+            "position": {
+              "x": 5,
+              "y": 4
+            },
+            "host": "HB-FIN-03",
+            "network": "office_lan",
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "policy": "jake_desk",
+            "access": {
+              "people": [
+                "jake"
+              ]
+            },
+            "observations": "Jake's workstation. Remote sign-in is off, and the room stays locked, so the only way on is his remote assist session.",
+            "contents": [
+              {
+                "type": "text_file",
+                "id": "vendor_contract",
+                "name": "vendor_contract.txt",
+                "takeable": false,
+                "readable": true,
+                "text": "Vendor contract, Harbour Supplies Ltd (draft).\n\nPayment terms 30 days. Renewal signed off by Jake Brooks.\n\n(K3c: only reachable over remote assist. Reading this completes the last task and starts the invite timer.)",
+                "observations": "A contract file on Jake's desktop.",
+                "onRead": {
+                  "setVariable": {
+                    "jake_contract_read": true
+                  }
+                }
+              },
+              {
+                "type": "folder",
+                "id": "jake_docs",
+                "name": "Documents",
+                "locked": false,
+                "contents": [
+                  {
+                    "type": "text_file",
+                    "id": "jake_docs_note",
+                    "name": "meeting_notes.txt",
+                    "takeable": false,
+                    "readable": true,
+                    "text": "Team meeting notes.\n\nAgenda: office move, printer rota, lunch order.",
+                    "observations": "A plain notes file in Jake's Documents folder."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "lobby",
+    "unlockedRooms": [
+      "lobby",
+      "comms_room",
+      "finance_room",
+      "jake_office"
+    ],
+    "encounteredNPCs": [
+      "pat",
+      "lena",
+      "ian",
+      "jake"
+    ],
+    "inventory": [
+      {
+        "id": "jake_assist_code",
+        "type": "text_file",
+        "name": "Remote assist code",
+        "credential": "jake_assist"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "keyring_plain",
+      "method": "GET",
+      "path": "keyring"
+    },
+    {
+      "id": "accounts_jake_pc_relay",
+      "method": "GET",
+      "path": "login_accounts",
+      "params": {
+        "pc_id": "jake_pc",
+        "relay": 1
+      }
+    },
+    {
+      "id": "relay_signin_jake_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "jake_pc",
+        "credential": "jake_assist",
+        "relay": true
+      }
+    },
+    {
+      "id": "desktop_jake_pc_relay",
+      "method": "GET",
+      "path": "container/jake_pc",
+      "params": {
+        "relay": 1
+      }
+    },
+    {
+      "id": "desktop_jake_pc_no_route",
+      "method": "GET",
+      "path": "container/jake_pc"
+    },
+    {
+      "id": "folder_jake_docs_relay",
+      "method": "GET",
+      "path": "container/jake_docs",
+      "params": {
+        "relay": 1
+      }
+    },
+    {
+      "id": "keyring_relay",
+      "method": "GET",
+      "path": "keyring",
+      "params": {
+        "relay": 1
+      }
+    },
+    {
+      "id": "relay_signin_again",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "jake_pc",
+        "credential": "jake_assist",
+        "relay": true
+      }
+    },
+    {
+      "id": "implant_refused_at_relay",
+      "method": "POST",
+      "path": "network/implant",
+      "params": {
+        "pc_id": "jake_pc",
+        "shape": "session"
+      }
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "finance_room",
+                "north": "comms_room"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "comms_room": {
+              "type": "room_it",
+              "connections": {
+                "south": "lobby"
+              },
+              "door_sign": "Comms room",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "jake_office": {
+              "type": "room_ceo",
+              "connections": {
+                "west": "finance_room"
+              },
+              "locked": false,
+              "lockType": "key",
+              "door_sign": "Jake Brooks (HB-FIN-03)",
+              "keyPins": [
+                30,
+                50,
+                40,
+                60
+              ]
+            },
+            "finance_room": {
+              "type": "room_ceo",
+              "connections": {
+                "east": "jake_office",
+                "west": "lobby"
+              },
+              "door_sign": "Finance",
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "captures": {
+              "revealSecret": true
+            }
+          },
+          "timers": [
+            {
+              "id": "jake_assist_timer",
+              "label": "Remote assist",
+              "delayMs": 90000,
+              "condition": "!globalVars.jake_ended_assist",
+              "setGlobal": {
+                "jake_ended_assist": true,
+                "jake_timer_ended_assist": true
+              },
+              "showCountdown": false,
+              "startOnGlobal": "jake_assist_armed"
+            }
+          ],
+          "endGoal": "Test only: earn each K1 proof and watch GET /keyring fill.",
+          "policies": {
+            "pw_only": {
+              "remote": "allowed",
+              "accepts": [
+                "password"
+              ]
+            },
+            "jake_desk": {
+              "remote": "blocked",
+              "accepts": [
+                "password",
+                "assist_invite"
+              ]
+            },
+            "finance_desk": {
+              "remote": "allowed"
+            }
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "keyring_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "K1a: take HB-FIN-02.rdp (a held saved connection)",
+                  "status": "active",
+                  "taskId": "k1_held"
+                },
+                {
+                  "type": "unlock_object",
+                  "title": "K1b: sign in at Lena's PC (Jake's found password appears)",
+                  "status": "active",
+                  "taskId": "k1_session",
+                  "targetObject": "lena_pc"
+                },
+                {
+                  "type": "custom",
+                  "title": "K1c: read Ian's capture card (his account is captured)",
+                  "status": "active",
+                  "taskId": "k1_capture"
+                },
+                {
+                  "type": "unlock_object",
+                  "title": "K1d: plant the drop box in the comms port (a foothold proof)",
+                  "status": "active",
+                  "taskId": "k1_foothold",
+                  "targetObject": "comms_port"
+                },
+                {
+                  "type": "custom",
+                  "title": "K3c: read the vendor contract on Jake's PC (reachable only by remote assist)",
+                  "status": "active",
+                  "taskId": "k3c_contract"
+                }
+              ],
+              "title": "Watch the keyring fill",
+              "status": "active",
+              "description": "Test only. Each proof the server reads adds an entry to GET /keyring."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_access_keyring",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Credential keyring (K1)\n\nA test floor for the credential keyring (CREDENTIAL_KEYRING_PLAN.md, slice K1). Everything here is read by GET /keyring, the server-only answer that lists the credentials you have earned. Four proofs: take HB-FIN-02.rdp from the lobby (a held saved connection); sign in at Lena's PC in finance, east (a found password for Jake appears); read Ian's capture card in the comms room, north (his account is captured, with its value); plant the drop box in the comms port (a foothold-proof saved connection for Ian appears). K2 to K5 add the sign-in branch, the UI, the relay and tokens.",
+          "globalVariables": {
+            "capture_card_ian": false,
+            "capture_card_pin": false,
+            "jake_assist_armed": false,
+            "jake_assist_given": false,
+            "jake_ended_assist": false,
+            "jake_contract_read": false,
+            "jake_timer_ended_assist": false
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "female_office_worker_v2",
+            "female_blowse_v2",
+            "male_nerd_v2",
+            "male_office_worker_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": true,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "jake_assist_code",
+              "name": "Remote assist code",
+              "type": "text_file"
+            }
+          ]
+        }
+      },
+      {
+        "id": "keyring_plain",
+        "status": 200,
+        "body": {
+          "rev": "99503c",
+          "entries": [
+            {
+              "id": "jake_assist",
+              "kind": "assist_invite",
+              "source": "registry",
+              "account": {
+                "npcId": "jake",
+                "username": "jbrooks",
+                "displayName": "Jake Brooks"
+              },
+              "label": "Jake's assist code",
+              "host": "HB-FIN-03",
+              "connectsTo": "jake_pc",
+              "how": "given",
+              "heldItem": "jake_assist_code",
+              "routes": [
+                {
+                  "relay": true
+                }
+              ],
+              "sessionHeld": false,
+              "targetOff": false,
+              "remoteBlocked": false,
+              "gainedAt": 1768478400000
+            }
+          ],
+          "captures": {}
+        }
+      },
+      {
+        "id": "accounts_jake_pc_relay",
+        "status": 200,
+        "body": {
+          "pc_id": "jake_pc",
+          "loginAccounts": [
+            {
+              "username": "jbrooks",
+              "displayName": "Jake Brooks",
+              "portrait": "assets/characters/male_office_worker_talk.png",
+              "avatar": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "relay_signin_jake_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "jake",
+          "username": "jbrooks",
+          "displayName": "Jake Brooks",
+          "via": "credential",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "kind": "assist_invite",
+          "label": "Jake's assist code",
+          "relay": true,
+          "host": "HB-FIN-03",
+          "route": {
+            "relay": true
+          }
+        }
+      },
+      {
+        "id": "desktop_jake_pc_relay",
+        "status": 200,
+        "body": {
+          "container_id": "jake_pc",
+          "contents": [
+            {
+              "id": "vendor_contract",
+              "name": "vendor_contract.txt",
+              "text": "Vendor contract, Harbour Supplies Ltd (draft).\n\nPayment terms 30 days. Renewal signed off by Jake Brooks.\n\n(K3c: only reachable over remote assist. Reading this completes the last task and starts the invite timer.)",
+              "type": "text_file",
+              "onRead": {
+                "setVariable": {
+                  "jake_contract_read": true
+                }
+              },
+              "readable": true,
+              "takeable": false,
+              "observations": "A contract file on Jake's desktop."
+            },
+            {
+              "id": "jake_docs",
+              "name": "Documents",
+              "type": "folder",
+              "locked": false,
+              "contents": [
+                {
+                  "id": "jake_docs_note",
+                  "name": "meeting_notes.txt",
+                  "text": "Team meeting notes.\n\nAgenda: office move, printer rota, lunch order.",
+                  "type": "text_file",
+                  "readable": true,
+                  "takeable": false,
+                  "observations": "A plain notes file in Jake's Documents folder."
+                }
+              ]
+            }
+          ],
+          "session": {
+            "npcId": "jake",
+            "username": "jbrooks",
+            "displayName": "Jake Brooks",
+            "via": "credential",
+            "portrait": "assets/characters/male_office_worker_talk.png",
+            "kind": "assist_invite",
+            "label": "Jake's assist code",
+            "relay": true,
+            "host": "HB-FIN-03"
+          }
+        }
+      },
+      {
+        "id": "desktop_jake_pc_no_route",
+        "status": 403,
+        "body": {
+          "error": "PC not reachable: jake_pc",
+          "reason": "unreachable"
+        }
+      },
+      {
+        "id": "folder_jake_docs_relay",
+        "status": 200,
+        "body": {
+          "container_id": "jake_docs",
+          "contents": [
+            {
+              "id": "jake_docs_note",
+              "name": "meeting_notes.txt",
+              "text": "Team meeting notes.\n\nAgenda: office move, printer rota, lunch order.",
+              "type": "text_file",
+              "readable": true,
+              "takeable": false,
+              "observations": "A plain notes file in Jake's Documents folder."
+            }
+          ]
+        }
+      },
+      {
+        "id": "keyring_relay",
+        "status": 200,
+        "body": {
+          "rev": "c6b996",
+          "entries": [
+            {
+              "id": "jake_assist",
+              "kind": "assist_invite",
+              "source": "registry",
+              "account": {
+                "npcId": "jake",
+                "username": "jbrooks",
+                "displayName": "Jake Brooks"
+              },
+              "label": "Jake's assist code",
+              "host": "HB-FIN-03",
+              "connectsTo": "jake_pc",
+              "how": "given",
+              "heldItem": "jake_assist_code",
+              "routes": [
+                {
+                  "relay": true
+                }
+              ],
+              "sessionHeld": true,
+              "targetOff": false,
+              "remoteBlocked": false,
+              "gainedAt": 1768478400000
+            }
+          ],
+          "captures": {}
+        }
+      },
+      {
+        "id": "relay_signin_again",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "jake",
+          "username": "jbrooks",
+          "displayName": "Jake Brooks",
+          "via": "credential",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "kind": "assist_invite",
+          "label": "Jake's assist code",
+          "relay": true,
+          "host": "HB-FIN-03",
+          "route": {
+            "relay": true
+          }
+        }
+      },
+      {
+        "id": "implant_refused_at_relay",
+        "status": 404,
+        "body": {
+          "success": false,
+          "reason": "no_action",
+          "error": "No such implant here"
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "finance_room",
+                "north": "comms_room"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "comms_room": {
+              "type": "room_it",
+              "connections": {
+                "south": "lobby"
+              },
+              "door_sign": "Comms room",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "jake_office": {
+              "type": "room_ceo",
+              "connections": {
+                "west": "finance_room"
+              },
+              "locked": false,
+              "lockType": "key",
+              "door_sign": "Jake Brooks (HB-FIN-03)",
+              "keyPins": [
+                30,
+                50,
+                40,
+                60
+              ]
+            },
+            "finance_room": {
+              "type": "room_ceo",
+              "connections": {
+                "east": "jake_office",
+                "west": "lobby"
+              },
+              "door_sign": "Finance",
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "captures": {
+              "revealSecret": true
+            }
+          },
+          "timers": [
+            {
+              "id": "jake_assist_timer",
+              "label": "Remote assist",
+              "delayMs": 90000,
+              "condition": "!globalVars.jake_ended_assist",
+              "setGlobal": {
+                "jake_ended_assist": true,
+                "jake_timer_ended_assist": true
+              },
+              "showCountdown": false,
+              "startOnGlobal": "jake_assist_armed"
+            }
+          ],
+          "endGoal": "Test only: earn each K1 proof and watch GET /keyring fill.",
+          "policies": {
+            "pw_only": {
+              "remote": "allowed",
+              "accepts": [
+                "password"
+              ]
+            },
+            "jake_desk": {
+              "remote": "blocked",
+              "accepts": [
+                "password",
+                "assist_invite"
+              ]
+            },
+            "finance_desk": {
+              "remote": "allowed"
+            }
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "keyring_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "K1a: take HB-FIN-02.rdp (a held saved connection)",
+                  "status": "active",
+                  "taskId": "k1_held"
+                },
+                {
+                  "type": "unlock_object",
+                  "title": "K1b: sign in at Lena's PC (Jake's found password appears)",
+                  "status": "active",
+                  "taskId": "k1_session",
+                  "targetObject": "lena_pc"
+                },
+                {
+                  "type": "custom",
+                  "title": "K1c: read Ian's capture card (his account is captured)",
+                  "status": "active",
+                  "taskId": "k1_capture"
+                },
+                {
+                  "type": "unlock_object",
+                  "title": "K1d: plant the drop box in the comms port (a foothold proof)",
+                  "status": "active",
+                  "taskId": "k1_foothold",
+                  "targetObject": "comms_port"
+                },
+                {
+                  "type": "custom",
+                  "title": "K3c: read the vendor contract on Jake's PC (reachable only by remote assist)",
+                  "status": "active",
+                  "taskId": "k3c_contract"
+                }
+              ],
+              "title": "Watch the keyring fill",
+              "status": "active",
+              "description": "Test only. Each proof the server reads adds an entry to GET /keyring."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_access_keyring",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Credential keyring (K1)\n\nA test floor for the credential keyring (CREDENTIAL_KEYRING_PLAN.md, slice K1). Everything here is read by GET /keyring, the server-only answer that lists the credentials you have earned. Four proofs: take HB-FIN-02.rdp from the lobby (a held saved connection); sign in at Lena's PC in finance, east (a found password for Jake appears); read Ian's capture card in the comms room, north (his account is captured, with its value); plant the drop box in the comms port (a foothold-proof saved connection for Ian appears). K2 to K5 add the sign-in branch, the UI, the relay and tokens.",
+          "globalVariables": {
+            "capture_card_ian": false,
+            "capture_card_pin": false,
+            "jake_assist_armed": false,
+            "jake_assist_given": false,
+            "jake_ended_assist": false,
+            "jake_contract_read": false,
+            "jake_timer_ended_assist": false
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "female_office_worker_v2",
+            "female_blowse_v2",
+            "male_nerd_v2",
+            "male_office_worker_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": true,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "jake_assist_code",
+              "name": "Remote assist code",
+              "type": "text_file"
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {},
+      "crackRuns": {},
+      "footholds": {},
+      "inventory": [
+        {
+          "id": "jake_assist_code",
+          "name": "Remote assist code",
+          "type": "text_file",
+          "credential": "jake_assist"
+        }
+      ],
+      "pinDusted": {},
+      "mfaPending": {},
+      "mfaPrompts": {},
+      "seCaptures": {},
+      "copiedItems": [],
+      "currentRoom": "lobby",
+      "earnedFacts": [],
+      "mfaAccounts": {},
+      "opsFindings": {},
+      "room_states": {},
+      "signedInPcs": [],
+      "crackStarted": {},
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {
+        "jake_assist": 1768478400000
+      },
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "unlockedRooms": [
+        "lobby",
+        "comms_room",
+        "finance_room",
+        "jake_office"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "crackedAccounts": [],
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "pat",
+        "lena",
+        "ian",
+        "jake"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {
+        "jake_ended_assist": [
+          "jake_assist"
+        ]
+      },
+      "flag_rewards_claimed": [],
+      "phishEvidenceMigrated": true
+    }
+  }
+}

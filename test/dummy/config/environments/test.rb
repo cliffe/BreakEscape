@@ -2,6 +2,8 @@ require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
   config.enable_reloading = false
+  # Rails 7.0 ignores enable_reloading (a 7.1 setting); cache_classes is what turns reloading off.
+  config.cache_classes = true
   config.eager_load = ENV["CI"].present?
   config.public_file_server.headers = { "Cache-Control" => "public, max-age=#{1.hour.to_i}" }
   config.consider_all_requests_local = true

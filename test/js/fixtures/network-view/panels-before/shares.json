@@ -1,0 +1,89 @@
+{
+  "variant": "shares",
+  "mountEvents": [
+    [
+      "network_viewed",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [],
+        "hostList": ""
+      }
+    ],
+    [
+      "network_viewed:lab_net",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [],
+        "hostList": ""
+      }
+    ]
+  ],
+  "controls": [
+    {
+      "index": 0,
+      "key": "open|open_share",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [
+          [
+            "startContainerMinigame",
+            "open_share",
+            true
+          ]
+        ],
+        "toasts": [],
+        "events": [
+          [
+            "network_host_opened",
+            {
+              "footholdId": "jack_a",
+              "hostId": "open_share",
+              "kind": "file_share"
+            }
+          ],
+          [
+            "network_host_opened:open_share",
+            {
+              "footholdId": "jack_a",
+              "hostId": "open_share",
+              "kind": "file_share"
+            }
+          ]
+        ]
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">File shares</li>\n                <li class=\"network-row network-row-resource network-row-wide\" data-resource-id=\"locked_share\" data-kind=\"file_share\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/m09_folder1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-resource-title\"><span class=\"network-row-word\">Locked-Share</span></span>\n                        <span class=\"network-row-name\">File share on <span class=\"network-row-hostname\">LAB-FS</span></span>\n                        <span class=\"network-row-note\">Needs an account with access. It opens from that account's desktop.</span></span>\n                    <span class=\"network-row-control\"><span class=\"network-row-locked\"><img class=\"network-row-padlock\" src=\"/break_escape/assets/icons/padlock_32.png\" alt=\"\"> Needs account</span></span>\n                </li>\n                <li class=\"network-row network-row-resource\" data-resource-id=\"open_share\" data-kind=\"file_share\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/m09_folder1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-resource-title\"><span class=\"network-row-word\">Open-Share</span></span>\n                        <span class=\"network-row-name\">File share on <span class=\"network-row-hostname\">LAB-FS</span></span></span>\n                    <span class=\"network-row-control\"><button type=\"button\" class=\"minigame-button network-row-action\" data-action=\"open\">Open</button></span>\n                </li><li class=\"network-row-group\">Printers and devices</li>\n                <li class=\"network-row network-row-resource\" data-resource-id=\"queue\" data-kind=\"printer\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/icons/npc-print.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-resource-title\"><span class=\"network-row-word\">Print</span> <span class=\"network-row-word\">queue</span></span>\n                        <span class=\"network-row-name\">Printer on <span class=\"network-row-hostname\">LAB-PRN</span></span></span>\n                    <span class=\"network-row-control\"><button type=\"button\" class=\"minigame-button network-row-action\" data-action=\"observe\">Look</button></span>\n                </li>\n                    </ul>\n                </div>\n                \n                \n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    },
+    {
+      "index": 1,
+      "key": "observe|queue",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [],
+        "toasts": [],
+        "events": [
+          [
+            "network_host_opened",
+            {
+              "footholdId": "jack_a",
+              "hostId": "queue",
+              "kind": "printer"
+            }
+          ],
+          [
+            "network_host_opened:queue",
+            {
+              "footholdId": "jack_a",
+              "hostId": "queue",
+              "kind": "printer"
+            }
+          ]
+        ]
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">File shares</li>\n                <li class=\"network-row network-row-resource network-row-wide\" data-resource-id=\"locked_share\" data-kind=\"file_share\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/m09_folder1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-resource-title\"><span class=\"network-row-word\">Locked-Share</span></span>\n                        <span class=\"network-row-name\">File share on <span class=\"network-row-hostname\">LAB-FS</span></span>\n                        <span class=\"network-row-note\">Needs an account with access. It opens from that account's desktop.</span></span>\n                    <span class=\"network-row-control\"><span class=\"network-row-locked\"><img class=\"network-row-padlock\" src=\"/break_escape/assets/icons/padlock_32.png\" alt=\"\"> Needs account</span></span>\n                </li>\n                <li class=\"network-row network-row-resource\" data-resource-id=\"open_share\" data-kind=\"file_share\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/m09_folder1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-resource-title\"><span class=\"network-row-word\">Open-Share</span></span>\n                        <span class=\"network-row-name\">File share on <span class=\"network-row-hostname\">LAB-FS</span></span></span>\n                    <span class=\"network-row-control\"><button type=\"button\" class=\"minigame-button network-row-action\" data-action=\"open\">Open</button></span>\n                </li><li class=\"network-row-group\">Printers and devices</li>\n                <li class=\"network-row network-row-resource\" data-resource-id=\"queue\" data-kind=\"printer\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/icons/npc-print.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-resource-title\"><span class=\"network-row-word\">Print</span> <span class=\"network-row-word\">queue</span></span>\n                        <span class=\"network-row-name\">Printer on <span class=\"network-row-hostname\">LAB-PRN</span></span></span>\n                    <span class=\"network-row-control\"><button type=\"button\" class=\"minigame-button network-row-action\" data-action=\"observe\">Look</button></span>\n                </li>\n                    </ul>\n                </div>\n                \n                \n                <div class=\"network-view-notice\" aria-live=\"polite\">Three pages wait.</div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    }
+  ]
+}

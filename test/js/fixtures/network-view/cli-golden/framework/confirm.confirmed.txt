@@ -1,0 +1,3 @@
+[ok|[+]] print01:80 - The target appears to be vulnerable.
+  f2  Confirmed
+[ok|  Admin login: yes]

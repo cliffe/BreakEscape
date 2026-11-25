@@ -1,0 +1,10 @@
+[prompt|$ ]nmap -sV files01
+[head|Starting Nmap against files01]
+[head|Nmap scan report for ][head|files01][head| (10.20.0.10)]
+[ok|Host is up.]
+[head|PORT ][head|STATE ][head|SERVICE ][head|VERSION]
+445/tcp open filehold Tarnwick FileHold 4.2
+[note|| id: ]storage
+[note||_banner: ]Tarnwick FileHold 4.2 file service ready
+[note|Service detection performed.]
+Nmap done: 1 IP address (1 host up) scanned

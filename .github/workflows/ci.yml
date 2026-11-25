@@ -49,6 +49,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the realism index history test needs every commit
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1

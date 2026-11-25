@@ -1,0 +1,101 @@
+{
+  "_": "Invented entries for test/unit/validate_realism_skin_test.rb. Products are invented; advisory ids use the year 0000.",
+  "entries": {
+    "skin_weak_one": {
+      "title": "Quillbox spool queue behind its published updates",
+      "module": "auxiliary/scanner/quillbox/queue_lag_check",
+      "script": "quillbox-queue-lag",
+      "advisories": ["CVE-0000-31001"],
+      "output": ["State: behind the published updates.", "Disclosed: 0000-02-01."]
+    },
+    "skin_weak_two": {
+      "title": "Quillbox spool queue reports an older line",
+      "module": "auxiliary/scanner/quillbox/line_age_check",
+      "script": "quillbox-line-age",
+      "advisories": ["CVE-0000-31002"],
+      "output": ["State: older line reported.", "Disclosed: 0000-03-09."]
+    },
+    "skin_weak_three": {
+      "title": "Marlowe relay setting left wide open",
+      "module": "auxiliary/scanner/marlowe/setting_scope_check",
+      "script": "marlowe-setting-scope",
+      "advisories": ["CVE-0000-31003"],
+      "output": ["State: a setting is wider than intended.", "Disclosed: 0000-04-17."]
+    },
+    "skin_look_one": {
+      "title": "Quillbox spool queue shows a stale marker",
+      "module": "auxiliary/scanner/quillbox/marker_age_check",
+      "script": "quillbox-marker-age",
+      "advisories": ["CVE-0000-31004"],
+      "output": ["State: a marker looks stale.", "Disclosed: 0000-05-23."]
+    },
+    "skin_look_wordy": {
+      "title": "Quillbox spool queue lists a closed gateway",
+      "module": "auxiliary/scanner/quillbox/gateway_list_check",
+      "script": "quillbox-gateway-list",
+      "advisories": ["CVE-0000-31005"],
+      "output": ["State: a gateway entry is listed.", "Disclosed: 0000-06-30."]
+    },
+    "skin_no_advisory": {
+      "title": "Marlowe relay timing note",
+      "module": "auxiliary/scanner/marlowe/timing_note_check",
+      "script": "marlowe-timing-note",
+      "output": ["State: timing note present.", "Disclosed: 0000-07-04."]
+    },
+    "skin_no_output": {
+      "title": "Marlowe relay carries an advisory only",
+      "module": "auxiliary/scanner/marlowe/advisory_only_check",
+      "script": "marlowe-advisory-only",
+      "advisories": ["CVE-0000-31006"]
+    },
+    "skin_two_advisories": {
+      "title": "Marlowe relay carries two advisories",
+      "module": "auxiliary/scanner/marlowe/pair_notes_check",
+      "script": "marlowe-pair-notes",
+      "advisories": ["CVE-0000-31007", "CVE-0000-31008"],
+      "output": ["State: two notes present.", "Disclosed: 0000-08-12."]
+    },
+    "skin_long_module": {
+      "title": "Marlowe relay with a longer module path",
+      "module": "auxiliary/scanner/marlowe/deep/long_path_check",
+      "script": "marlowe-long-path",
+      "advisories": ["CVE-0000-31009"],
+      "output": ["State: long path note.", "Disclosed: 0000-09-02."]
+    },
+    "skin_exploit_form": {
+      "title": "Marlowe relay with another module family",
+      "module": "exploit/marlowe/family_note_check/one",
+      "script": "marlowe-family-note",
+      "advisories": ["CVE-0000-31010"],
+      "output": ["State: family note present.", "Disclosed: 0000-10-21."]
+    },
+    "skin_version_off": {
+      "title": "Quillbox 9.9 spool queue note",
+      "module": "auxiliary/scanner/quillbox/version_note_check",
+      "script": "quillbox-version-note",
+      "advisories": ["CVE-0000-31011"],
+      "output": ["State: version note present.", "Disclosed: 0000-11-11."]
+    },
+    "skin_version_line": {
+      "title": "Quillbox spool queue release note",
+      "module": "auxiliary/scanner/quillbox/release_note_check",
+      "script": "quillbox-release-note",
+      "advisories": ["CVE-0000-31012"],
+      "output": ["Quillbox 9.9 reports an older line.", "Disclosed: 0000-12-01."]
+    },
+    "skin_keeps_secret": {
+      "title": "Marlowe relay stores a phrase, ember-lantern-2290",
+      "module": "auxiliary/scanner/marlowe/phrase_store_check",
+      "script": "marlowe-phrase-store",
+      "advisories": ["CVE-0000-31013"],
+      "output": ["State: phrase present.", "Disclosed: 0000-12-15."]
+    },
+    "skin_shared_word": {
+      "title": "Quillbox spool queue lists a gateway entry",
+      "module": "auxiliary/scanner/quillbox/gateway_entry_check",
+      "script": "quillbox-gateway-entry",
+      "advisories": ["CVE-0000-31014"],
+      "output": ["State: a gateway entry is listed.", "Disclosed: 0000-12-20."]
+    }
+  }
+}

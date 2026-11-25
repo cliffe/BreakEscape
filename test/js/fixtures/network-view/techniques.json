@@ -1,0 +1,163 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "web",
+          "kind": "device",
+          "name": "Web gateway",
+          "sprite": "pnw_portable_printer1",
+          "scanned": true,
+          "services": [
+            {
+              "name": "web",
+              "label": "web",
+              "port": 80,
+              "product": "Brackley PrintPanel",
+              "version": "2.0"
+            }
+          ],
+          "findings": [
+            {
+              "id": "web.web.factory_login",
+              "alias": "f1",
+              "hostId": "web",
+              "service": "web",
+              "class": "default_creds",
+              "severity": "high",
+              "summary": "Summary for f1.",
+              "status": "confirmed",
+              "needs": []
+            }
+          ]
+        },
+        {
+          "id": "web01",
+          "kind": "device",
+          "name": "Web gateway two",
+          "sprite": "pnw_portable_printer1",
+          "scanned": true,
+          "services": [
+            {
+              "name": "web",
+              "label": "web",
+              "port": 80,
+              "product": "Brackley PrintPanel",
+              "version": "2.0"
+            }
+          ],
+          "findings": [
+            {
+              "id": "web01.web.old_banner",
+              "alias": "f10",
+              "hostId": "web01",
+              "service": "web",
+              "class": "unpatched",
+              "severity": "high",
+              "summary": "Summary for f10.",
+              "status": "confirmed",
+              "needs": []
+            }
+          ]
+        }
+      ],
+      "networks": [
+        {
+          "id": "lab_net",
+          "name": "Lab network",
+          "route": "up",
+          "via": null,
+          "hosts": [
+            {
+              "id": "web",
+              "kind": "device",
+              "name": "Web gateway",
+              "sprite": "pnw_portable_printer1",
+              "scanned": true,
+              "services": [
+                {
+                  "name": "web",
+                  "label": "web",
+                  "port": 80,
+                  "product": "Brackley PrintPanel",
+                  "version": "2.0"
+                }
+              ],
+              "findings": [
+                {
+                  "id": "web.web.factory_login",
+                  "alias": "f1",
+                  "hostId": "web",
+                  "service": "web",
+                  "class": "default_creds",
+                  "severity": "high",
+                  "summary": "Summary for f1.",
+                  "status": "confirmed",
+                  "needs": []
+                }
+              ]
+            },
+            {
+              "id": "web01",
+              "kind": "device",
+              "name": "Web gateway two",
+              "sprite": "pnw_portable_printer1",
+              "scanned": true,
+              "services": [
+                {
+                  "name": "web",
+                  "label": "web",
+                  "port": 80,
+                  "product": "Brackley PrintPanel",
+                  "version": "2.0"
+                }
+              ],
+              "findings": [
+                {
+                  "id": "web01.web.old_banner",
+                  "alias": "f10",
+                  "hostId": "web01",
+                  "service": "web",
+                  "class": "unpatched",
+                  "severity": "high",
+                  "summary": "Summary for f10.",
+                  "status": "confirmed",
+                  "needs": []
+                }
+              ]
+            }
+          ],
+          "swept": true,
+          "ops": true
+        }
+      ]
+    }
+  ],
+  "techniques": {
+    "phish": {
+      "name": "Phishing note",
+      "summary": "Phishing note: a note.",
+      "worksOn": {
+        "class": "default_creds"
+      },
+      "itemId": "card_phish"
+    },
+    "phish_sms": {
+      "name": "Text message note",
+      "summary": "Text message note: a note.",
+      "worksOn": {
+        "class": "unpatched"
+      },
+      "itemId": "card_phish_sms"
+    }
+  }
+}

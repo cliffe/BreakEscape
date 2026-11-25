@@ -19,7 +19,7 @@ const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toStr
 
 globalThis.window = {};
 const { PcSessions, sessionLockable, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE, unplugEndedMessage, relayEndedMessage } =
-    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`)));
+    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`).split("'./helpdesk-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/helpdesk-client.js'), 'utf8'))}'`)));
 
 const ACCOUNTS = {
     sokafor: { password: 'right-sam', npcId: 'sam', displayName: 'Sam Okafor' },
@@ -1161,7 +1161,7 @@ test('openedOrder rises with each open of a desktop session (K4)', async () => {
 
 const { tokenExpiredEndedMessage: tokenEndedText } = await import(dataUrl(readFileSync(join(js, 'utils/remote-host-text.js'), 'utf8')));
 const { tokenExpiredEndedMessage: tokenEndedCopy } =
-    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`)));
+    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`).split("'./helpdesk-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/helpdesk-client.js'), 'utf8'))}'`)));
 
 const TOKEN_BODY = {
     success: true, npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'token',
@@ -1332,7 +1332,7 @@ test('a logout or sign-in answer naming tokenExpiredPcIds ends that token sessio
 });
 
 test('credentialRefusalReason maps expired:true to expired, after the other flags', async () => {
-    const { credentialRefusalReason } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`)));
+    const { credentialRefusalReason } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`).split("'./helpdesk-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/helpdesk-client.js'), 'utf8'))}'`)));
     assert.equal(credentialRefusalReason({ expired: true }), 'expired');
     assert.equal(credentialRefusalReason({ expired: true, wrongPc: true }), 'wrong_pc');
     assert.equal(credentialRefusalReason({}), 'no_longer_works');

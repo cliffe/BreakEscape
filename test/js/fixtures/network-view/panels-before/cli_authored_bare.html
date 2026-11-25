@@ -1,0 +1,61 @@
+
+            <div class="console-window console-subtitle-essential" data-console-window="">
+                <div class="console-titlebar">
+                    <div class="console-titles" title="Drop box: Office
+On Office network">
+                        <h2 class="console-title">Drop box: Office</h2>
+                        <div class="console-subtitle">On Office network</div>
+                    </div>
+                    <button class="minigame-close-button minigame-close-in-frame" id="minigame-close" aria-label="Close">×</button>
+                </div>
+                <div class="minigame-header" style="display:none"><h3></h3></div>
+                <div class="network-view-header"><div class="network-view-header-body">
+                    
+                    
+                    <p class="network-view-hint">You can unplug the box at its port (Office).</p></div></div><div class="minigame-game-container console-body pixel-scroll">
+            <div class="network-view network-view-jack">
+                
+                <div class="network-block network-block-own" data-network-id="office_lan">
+                    <h5 class="network-block-title">Reachable</h5>
+                    <ul class="network-view-rows">
+                    <li class="network-row-group">Computers</li>
+                <li class="network-row network-row-host network-row-scanned" data-host-id="files01" data-kind="pc">
+                    <img class="network-row-icon" src="/break_escape/assets/objects/pc_desktop.png" alt="">
+                    <span class="network-row-label"><span class="network-row-title"><span class="network-row-hostname">FILES01</span></span>
+                        <span class="network-row-name">File server</span></span>
+                    <span class="network-row-control"><button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button></span><ul class="network-service-tiles"><li class="network-service network-service-with-findings" data-service="storage"><span class="network-service-line">storage · 445 · Tarnwick FileHold 4.2</span><button type="button" class="minigame-button network-row-action network-check" data-action="check">Check</button><ul class="network-findings"><li class="network-finding network-finding-unconfirmed" data-finding="f1" data-status="unconfirmed" data-selected="false"><span class="network-finding-head"><button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="false">f1</button> <span class="network-finding-class">Out of date</span> <span class="network-finding-severity network-severity-high">High</span> <span class="network-finding-status">Unconfirmed</span></span><span class="network-finding-summary">The storage service is behind its published fixes.</span><button type="button" class="minigame-button network-row-action network-confirm" data-action="confirm">Confirm</button></li><li class="network-finding network-finding-unconfirmed" data-finding="f2" data-status="unconfirmed" data-selected="false"><span class="network-finding-head"><button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="false">f2</button> <span class="network-finding-class">Out of date</span> <span class="network-finding-severity network-severity-high">High</span> <span class="network-finding-status">Unconfirmed</span></span><span class="network-finding-summary">The service reports an older build number.</span><button type="button" class="minigame-button network-row-action network-confirm" data-action="confirm">Confirm</button></li><li class="network-finding network-finding-unconfirmed" data-finding="f3" data-status="unconfirmed" data-selected="false"><span class="network-finding-head"><button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="false">f3</button> <span class="network-finding-class">Misconfigured</span> <span class="network-finding-severity network-severity-medium">Medium</span> <span class="network-finding-status">Unconfirmed</span></span><span class="network-finding-summary">A setting on the storage service was left open.</span><button type="button" class="minigame-button network-row-action network-confirm" data-action="confirm">Confirm</button></li></ul></li></ul>
+                </li>
+                <li class="network-row network-row-host" data-host-id="records01" data-kind="pc">
+                    <img class="network-row-icon" src="/break_escape/assets/objects/pc_desktop.png" alt="">
+                    <span class="network-row-label"><span class="network-row-title"><span class="network-row-hostname">RECORDS01</span></span>
+                        <span class="network-row-name">Records server</span></span>
+                    <span class="network-row-control"><span class="network-row-off"><span class="network-row-word">Remote</span> <span class="network-row-word">sign-in</span> <span class="network-row-word">off</span></span></span><span class="network-row-control"><button type="button" class="minigame-button network-row-action network-scan" data-action="scan">Scan</button></span>
+                </li><li class="network-row-group">File shares</li>
+                <li class="network-row network-row-resource" data-resource-id="office_drop" data-kind="file_share">
+                    <img class="network-row-icon" src="/break_escape/assets/objects/m09_folder1.png" alt="">
+                    <span class="network-row-label"><span class="network-row-resource-title"><span class="network-row-word">Office-Drop</span></span>
+                        <span class="network-row-name">File share on <span class="network-row-hostname">OFFICE-FS</span></span></span>
+                    <span class="network-row-control"><button type="button" class="minigame-button network-row-action" data-action="open">Open</button></span>
+                </li><li class="network-row-group">Printers and devices</li>
+                <li class="network-row network-row-resource" data-resource-id="floor_printer" data-kind="printer">
+                    <img class="network-row-icon" src="/break_escape/assets/icons/npc-print.png" alt="">
+                    <span class="network-row-label"><span class="network-row-resource-title"><span class="network-row-word">Floor</span> <span class="network-row-word">print</span> <span class="network-row-word">queue</span></span>
+                        <span class="network-row-name">Printer on <span class="network-row-hostname">OFFICE-PRN</span></span></span>
+                    <span class="network-row-control"><button type="button" class="minigame-button network-row-action" data-action="observe">Look</button></span>
+                </li>
+                    </ul>
+                </div>
+                <div class="network-block network-block-up" data-network-id="guest_lan"><h5 class="network-block-title">Guest network, through FILES01</h5><ul class="network-view-rows"><li class="network-row-group">Devices</li>
+                <li class="network-row network-row-host network-row-device network-row-scanned" data-host-id="guest_cam01" data-kind="device">
+                    <img class="network-row-icon" src="/break_escape/assets/objects/cctv_camera1.png" alt="">
+                    <span class="network-row-label"><span class="network-row-title"><span class="network-row-hostname">Guest lounge camera</span></span>
+                        <span class="network-row-name"></span></span>
+                    <span class="network-row-control"></span><ul class="network-service-tiles"><li class="network-service network-service-with-findings" data-service="stream"><span class="network-service-line">stream · 554 · Tarnwick ViewLine 1.0</span><button type="button" class="minigame-button network-row-action network-check" data-action="check">Check</button><ul class="network-findings"><li class="network-finding network-finding-unconfirmed" data-finding="f4" data-status="unconfirmed" data-selected="false"><span class="network-finding-head"><button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="false">f4</button> <span class="network-finding-class">Default login</span> <span class="network-finding-severity network-severity-high">High</span> <span class="network-finding-status">Unconfirmed</span></span><span class="network-finding-summary">A factory account may still be accepted.</span><button type="button" class="minigame-button network-row-action network-confirm" data-action="confirm">Confirm</button></li></ul></li></ul>
+                </li></ul></div>
+                <div class="network-block network-techniques" data-techniques=""><h5 class="network-block-title">Techniques</h5><ul class="network-technique-list"><li class="network-technique" data-technique="settings_review" data-selected="false" draggable="true"><button type="button" class="minigame-button network-row-action network-technique-select" data-action="select-technique" aria-pressed="false">Settings review</button><span class="network-technique-summary">For a setting somebody left open by mistake.</span><span class="network-technique-works">Misconfigured</span></li><li class="network-technique" data-technique="update_notes" data-selected="false" draggable="true"><button type="button" class="minigame-button network-row-action network-technique-select" data-action="select-technique" aria-pressed="false">Update notes: FileHold 4.2</button><span class="network-technique-summary">For a service that has fallen behind its published fixes.</span><span class="network-technique-works">Out of date · Tarnwick FileHold · version 4.2</span></li></ul><div class="network-technique-use"><span class="network-technique-pick">Pick a finding, then a card.</span><button type="button" class="minigame-button network-row-action network-use" data-action="use" disabled="">Use</button></div></div>
+                <div class="network-view-notice" aria-live="polite"></div>
+            </div></div><div class="network-view-more" hidden="" aria-hidden="true"><span class="network-view-more-arrow"></span><span>More below</span></div>
+                <div class="minigame-message-container"></div>
+                
+            </div>
+        

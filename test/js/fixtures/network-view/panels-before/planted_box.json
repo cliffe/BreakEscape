@@ -1,0 +1,64 @@
+{
+  "variant": "planted_box",
+  "mountEvents": [
+    [
+      "network_viewed",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [
+          "desk_pc"
+        ],
+        "hostList": "desk_pc"
+      }
+    ],
+    [
+      "network_viewed:lab_net",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [
+          "desk_pc"
+        ],
+        "hostList": "desk_pc"
+      }
+    ]
+  ],
+  "controls": [
+    {
+      "index": 0,
+      "key": "sign-in|desk_pc",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [
+          [
+            "openRemoteSignIn",
+            "desk_pc",
+            "jack_a"
+          ]
+        ],
+        "toasts": [],
+        "events": [
+          [
+            "network_host_opened",
+            {
+              "footholdId": "jack_a",
+              "hostId": "desk_pc",
+              "kind": "pc"
+            }
+          ],
+          [
+            "network_host_opened:desk_pc",
+            {
+              "footholdId": "jack_a",
+              "hostId": "desk_pc",
+              "kind": "pc"
+            }
+          ]
+        ]
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab, Spare wall port\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab, Spare wall port</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab, Spare wall port).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Computers</li>\n                <li class=\"network-row network-row-host\" data-host-id=\"desk_pc\" data-kind=\"pc\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pc_desktop.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">LAB-01</span></span>\n                        <span class=\"network-row-name\">Desk PC</span></span>\n                    <span class=\"network-row-control\"><button type=\"button\" class=\"minigame-button network-row-action\" data-action=\"sign-in\">Sign in</button></span>\n                </li>\n                    </ul>\n                </div>\n                \n                \n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    }
+  ]
+}

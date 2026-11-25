@@ -46,6 +46,10 @@ Helpers for driving the game through the dev-only `window.__test` bridge. See `d
   tools/playtest/session-stop.sh 1047
   ```
 
+  `session-start.sh` opens the Network view in Panels unless told otherwise: with no `--net-skin` it adds `net_skin=gui` to the URL
+  (a URL that already carries a `net_skin=` value is left alone). `--net-skin cli` opens the Terminal, and `--net-skin default` adds
+  nothing, so the page follows the stored pick and then the scenario's own default. Any other value is an error. The server never sees it.
+
   The session tag is the game id. Each session gets its own `pipes-<tag>/` and
   `<tag>.pid`, both gitignored — there is no need to copy these scripts per run.
 

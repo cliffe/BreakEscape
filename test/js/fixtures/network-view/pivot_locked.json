@@ -1,0 +1,67 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "desk_pc",
+          "kind": "pc",
+          "name": "Desk PC",
+          "host": "LAB-01",
+          "sprite": "pc_desktop",
+          "headless": false,
+          "remoteSignIn": true
+        }
+      ],
+      "networks": [
+        {
+          "id": "lab_net",
+          "name": "Lab network",
+          "route": "up",
+          "via": null,
+          "hosts": [
+            {
+              "id": "desk_pc",
+              "kind": "pc",
+              "name": "Desk PC",
+              "host": "LAB-01",
+              "sprite": "pc_desktop",
+              "headless": false,
+              "remoteSignIn": true
+            }
+          ]
+        },
+        {
+          "id": "far_net",
+          "name": "Far network",
+          "route": "up",
+          "via": {
+            "hostId": "desk_pc",
+            "host": "LAB-01",
+            "locked": true
+          },
+          "hosts": [
+            {
+              "id": "far_pc",
+              "kind": "pc",
+              "name": "Far PC",
+              "host": "FAR-01",
+              "sprite": "pc_desktop",
+              "headless": false,
+              "remoteSignIn": true
+            }
+          ],
+          "swept": false
+        }
+      ]
+    }
+  ]
+}

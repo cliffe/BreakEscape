@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops multi-factor sign-in",
+  "description": "Test of the second sign-in step of the ops core (S8a, feature A22): a PC that asks for a six-digit code from the owner's code device, one that sends a request to the owner's phone (a careless owner approves after being pestered, a careful one never does), one that asks for a number to be matched on a held phone, and one with no second step. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 40,
+  "test_type": "ops_mfa",
+  "test_objective": "Prove a right password alone opens no session at a second-step PC, a code works once and only from a held device, a push is approved by a pestered owner and never by a careful one, a held phone approves, a number must be matched, tokens skip the step and saved connections do not, and no answer shows a code or a number early"
+}

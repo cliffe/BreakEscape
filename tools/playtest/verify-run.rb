@@ -34,7 +34,7 @@
 #
 # The access model section (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) prints what
 # the sign-in, card copy and file routes recorded: sessions, signedInPcs, serverClones,
-# copiedItems, loginFailures (a count per PC and username) and loginLockouts, and for
+# copiedItems, loginFailures (a count per PC and username) and loginLockouts (both cleared for an account by a granted password reset, see accountResets), and for
 # networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6) footholds, gainedFootholds, and remote
 # and foothold beside each session. The routes write these keys themselves, so no sync is
 # needed first. --access prints only that
@@ -44,6 +44,12 @@
 # and per source the stored rows (seq, event, as, where, result, n, detail, elapsedMs). It runs the
 # secret matcher the helper uses over every stored row, checks the 400-byte row, 300-row and 128 KB
 # ceilings and that seq ascends, and exits 1 on any failure. A hit is reported by key path, never value.
+#
+# S8a (feature A22, multi-factor sign-in): the access section adds three rows when the saved scenario has a policy that asks
+# for a second step, or the game holds any of the three server-owned keys. `mfaAccounts` is one entry per account: `started`
+# (second steps begun), `wrong` (wrong codes counted), `used` (yes when a code has been taken), `closed` (yes while its code
+# step is closed for five minutes). `mfaPrompts` is the CURRENT unanswered-prompt streak per owner (resets to 0 on approval), not a total; totals are in the ops log. `mfaPending` is one entry per sign-in PC:
+# `pending <kind>` or `pending none`. Words, counts and ids only: never a code, a number or a nonce.
 #
 # With it, a `habits` block (slice 9.1, ACCESS_MODEL_SLICE_9_1_PLAN.md step 6) of values only,
 # read from the game's saved scenario: one line per NPC with a habits object (its habits and
@@ -56,7 +62,9 @@
 # phases, npc_mutter topics, door_propped) found in the session log's drained event logs.
 require 'json'
 require_relative '../../lib/break_escape/access_identities'
+require_relative '../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative 'lib/flag_redaction'
+require_relative 'lib/helpdesk_leak_rules'
 
 count_tasks_flag = !ARGV.delete('--tasks').nil?
 show_flags = !ARGV.delete('--show-flags').nil?
@@ -72,7 +80,8 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings opsUsed].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings opsUsed
+                 crackedAccounts crackStarted crackRuns].freeze
 
 # A finding id as printed on the opsFindings and opsUsed lines and a session's `granted by`: author-chosen
 # words, dots and underscores, nothing longer than the log's foothold ids allow; anything else is left out.
@@ -86,6 +95,33 @@ def computed_level(game, pc_id)
   %w[admin user].include?(level) ? level : 'none'
 rescue StandardError
   'error'
+end
+
+# S7 (hash records and the cracker): one item per hash record as `<record id> <status word>` (ready, running Ns,
+# infeasible, cracked, or `not listed` when the record's proof does not hold or its grade does not resolve), then one
+# `cracked <account id>` per account in the server's crackedAccounts. Ids and words only: never a token, a password or
+# a recipe. nil when the scenario has no hash record and the game has no cracking state.
+def crack_items(ps, game)
+  records = begin
+    BreakEscape::CredentialModel.registry(game.scenario_data).select { |_, e| e['kind'] == 'hash' }.keys
+  rescue StandardError
+    []
+  end
+  cracked = ps['crackedAccounts'].is_a?(Array) ? ps['crackedAccounts'].select { |a| a.is_a?(String) && a.match?(OPS_ID) } : []
+  return nil if records.empty? && cracked.empty? && !(ps['crackStarted'].is_a?(Hash) && !ps['crackStarted'].empty?)
+
+  rows = begin
+    game.keyring_for_client[:entries].select { |e| e.is_a?(Hash) && e['kind'] == 'hash' }.to_h { |e| [e['id'], e] }
+  rescue StandardError
+    {}
+  end
+  items = records.select { |id| id.match?(OPS_ID) }.map do |id|
+    row = rows[id]
+    word = row ? row['status'].to_s : 'not listed'
+    wait = row && row['status'] == 'running' && row['readyInSeconds'].is_a?(Integer) ? " #{row['readyInSeconds']}s" : ''
+    "#{id} #{word.match?(/\A[a-z ]{1,16}\z/) ? word : '?'}#{wait}"
+  end
+  items + cracked.map { |a| "cracked #{a}" }
 end
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
@@ -179,11 +215,56 @@ def access_section(ps, game = nil)
       "#{id} #{e['shown'].length} [#{ids.join(' ')}]"
     end]
   ]
+  rows.concat(mfa_rows(ps, game))
+  rows.concat(HelpdeskLeakRules.verify_rows(ps, game))
+  crack = game ? crack_items(ps, game) : nil
+  rows << ['crack', crack] if crack
   lines = ['access model']
   rows.each do |name, items|
     lines << "  #{name.ljust(15)} #{items.length}#{items.empty? ? '' : ": #{items.join('; ')}"}"
   end
   lines
+end
+
+MFA_STATE_KEYS = %w[mfaAccounts mfaPrompts mfaPending].freeze
+
+# Whether the second-step rows print: the saved scenario asks for a step somewhere, or the game holds a key of the three.
+def mfa_shown?(ps, game)
+  return true if MFA_STATE_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
+
+  policies = game.respond_to?(:scenario_data) && game.scenario_data.is_a?(Hash) ? game.scenario_data['policies'] : nil
+  policies.is_a?(Hash) && policies.values.any? { |p| BreakEscape::MfaModel.kind(p) != 'none' }
+rescue StandardError
+  false
+end
+
+# S8a: the second-step rows (see the header). Every id is checked against OPS_ID and every count is a whole number, so a
+# stored value of another shape prints as a zero or is left out; the stored code windows, nonces and times never print.
+def mfa_rows(ps, game)
+  return [] unless mfa_shown?(ps, game)
+
+  hash = ->(v) { v.is_a?(Hash) ? v : {} }
+  whole = ->(v) { v.is_a?(Integer) && v.positive? ? v : 0 }
+  now = game.respond_to?(:mfa_now) ? game.mfa_now : Time.now.to_i
+  closed_for = BreakEscape::MfaModel::CODE_CLOSED_SECONDS
+  accounts = hash.call(ps['mfaAccounts']).select { |id, _| id.is_a?(String) && id.match?(OPS_ID) }.sort.map do |id, rec|
+    rec = hash.call(rec)
+    closed = rec['closedAt'].is_a?(Integer) && now - rec['closedAt'] < closed_for
+    "#{id} started #{whole.call(rec['started'])}, wrong #{whole.call(rec['wrong'])}, used #{rec['used'].is_a?(Integer) ? 'yes' : 'no'}, " \
+      "closed #{closed ? 'yes' : 'no'}"
+  end
+  prompts = hash.call(ps['mfaPrompts']).select { |id, _| id.is_a?(String) && id.match?(OPS_ID) }.sort.map { |id, n| "#{id} #{whole.call(n)}" }
+  pending = hash.call(ps['mfaPending'])
+  data = game.respond_to?(:scenario_data) && game.scenario_data.is_a?(Hash) ? game.scenario_data : {}
+  pcs = BreakEscape::AccessIdentities.room_objects(data).map { |e| e[:object] }.select { |o| BreakEscape::AccessIdentities.login_pc?(o) }
+                                      .map { |o| o['id'].to_s }
+  pcs |= pending.keys.select { |k| k.is_a?(String) }
+  pcs = pcs.select { |id| id.match?(OPS_ID) }.sort
+  waiting = pcs.map do |pc|
+    kind = hash.call(pending[pc])['kind']
+    "#{pc} pending #{%w[push push_number_match code].include?(kind) ? kind : 'none'}"
+  end
+  [['mfaAccounts', accounts], ['mfaPrompts', prompts], ['mfaPending', waiting]]
 end
 
 # Every gate door with a noHold in the saved scenario: [path, gate].
@@ -197,6 +278,10 @@ def no_hold_gates(data)
     end
   end
 end
+
+# Habit keys the habits line leaves out: screen/print/usb have their own part, and since S7 the password class, pattern
+# and grade are the cracking recipe (a blind tester's report must not carry them).
+HABITS_HIDDEN = %w[_comment screen print usb password passwordPattern passwordDifficulty].freeze
 
 # The habits block: values only, [] when no NPC in the saved scenario has a habits object
 # and no gate has a noHold.
@@ -212,7 +297,7 @@ def habits_section(g)
   owners = ai.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
   lines = ['habits']
   npcs.each do |npc|
-    values = npc['habits'].reject { |k, _| %w[_comment screen print usb].include?(k) }.map { |k, v| "#{k}=#{v}" }.join(' ')
+    values = npc['habits'].reject { |k, _| HABITS_HIDDEN.include?(k) }.map { |k, v| "#{k}=#{v}" }.join(' ')
     screen = npc.dig('habits', 'screen')
     habit = screen.nil? ? '-' : JSON.generate(screen)
     lines << "  npc #{npc['id'].to_s.ljust(14)} #{values}  habits.screen #{habit}"
@@ -366,7 +451,7 @@ puts "inventory       #{inv.length}: #{inv.join(', ')}"
 puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{FlagRedaction.list(flags, show: show_flags)}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
-if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
+if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? } || mfa_shown?(ps, g) || crack_items(ps, g) || HelpdeskLeakRules.shown?(ps, g)
   puts access_section(ps, g)
   puts habits_section(g)
 else

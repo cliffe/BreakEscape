@@ -481,6 +481,26 @@ which sets Phaser's `_limitRate` and checks the real step rate over `opts.window
 
 ---
 
+## Network view (`window.__test.network`)
+
+The network view has two skins, Panels (`gui`) and Terminal (`cli`). `systems/test-bridge/network.js`
+drives either one the way a player does: a click, a typed line plus Enter, or a press of the header
+switch. It never calls the server, the core's `perform` or a renderer to make a move, and it works the
+same in both skins. Address network-view controls by selector, label or `network.run`, never by number
+(a number would change with the skin).
+
+| Call | Does |
+|---|---|
+| `state()` | `{ skin, hasSwitch, footholdId, status, offers }`. Equal in both skins apart from `skin`. Each offer is `{ action, target, ids, label, title, command, pending }`. |
+| `run(offer, { path, timeoutMs })` | Performs one of `state().offers` with real input and resolves `{ ok, path, sent, answer }` (the server's answer). Paths: Panels `button` (the control) or `select` (a use: pick the card, pick the finding, press Use); Terminal `typed` (the offer's `command`) or `button` (the quick command, unfolding the strip first; a use takes the two presses). With no path: `select` for a use and `button` for the rest in Panels, `typed` in the Terminal. Rejects, clicking and sending nothing, when the path does not belong to the active skin, the offer is not in the list, or the offer is pending. Sign-in, open and look send no request of their own: `sent` is false and `answer` null. |
+| `skin()` | `'gui'`, `'cli'`, or null with no view open. |
+| `setSkin(name)` | Presses the header switch (`[data-skin-switch]`); sends nothing. Rejects on a view with no switch. |
+| `storePick(name)` | Writes the stored pick (`writePick`) and presses nothing; works with or without a view open. |
+| `log()` | The Terminal's log as lines; empty in Panels. |
+| `type(line)` | Types a line into the Terminal prompt and presses Enter (the key, then the form's submit, since a synthetic key does not submit a form). |
+
+**Choosing a skin for a run.** `tools/playtest/session-start.sh` opens the view in Panels unless told otherwise: with no `--net-skin` it adds `net_skin=gui` to the game URL (unless the URL already has a `net_skin=` value). `--net-skin gui|cli` adds that value instead, and `--net-skin default` adds nothing, so the run follows the stored pick and then the scenario's `networkView.defaultSkin`. A view with no switch stays Panels. The server never sees it. `tools/playtest/network-skin-parity.mjs` (new) is a runner that plays one sequence in three fresh games of `test_ops_skin` (one in Panels, one in the Terminal, one pressing the switch after every step) with `network.run`, and fails if the requests, the normalised answers or the saved game records differ. It needs a keyless server.
+
 ## Minigames
 
 All 43 minigames subclass `MinigameScene` (`minigames/framework/base-minigame.js`)

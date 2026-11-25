@@ -229,7 +229,11 @@ export class FingerprintReaderMinigame extends MinigameScene {
         });
         this.lastResult = result;
         this.scanning = false;
-        this.setResult(messageForOutcome(result, { sample, threshold: this.threshold, signText: this.signText }), result);
+        // A lock with a second step is not open yet: an accepted print says only that
+        const gated = this.isGated();
+        this.setResult(gated && result === 'accepted'
+            ? 'Print accepted.'
+            : messageForOutcome(result, { sample, threshold: this.threshold, signText: this.signText }), result);
 
         window.eventDispatcher?.emit('biometric_scan', {
             targetType: this.lockType,
@@ -244,15 +248,17 @@ export class FingerprintReaderMinigame extends MinigameScene {
             this.markSuccessPending();
             this.setLed('ok');
             window.playUISound?.('confirm');
-            window.gameAlert?.(`You unlocked the ${this.lockType} with ${sample.ownerName || sample.owner}'s fingerprint.`,
-                'success', 'Biometric Unlock Successful', 5000);
+            if (!gated) {
+                window.gameAlert?.(`You unlocked the ${this.lockType} with ${sample.ownerName || sample.owner}'s fingerprint.`,
+                    'success', 'Biometric Unlock Successful', 5000);
+            }
             this.after(prefersReducedMotion() ? 0 : ACCEPT_CLOSE_MS, () => {
                 // A container opens itself 500 ms after the unlock: toasts raised in between (the
                 // task that completes on the unlock) wait for it instead of flashing and replaying
                 // when it closes ("Task Complete" twice, m09 gate m1). Like the PIN and password locks.
                 // The contents arrive with the server's reply, so expectContainerAfterUnlock cannot
                 // see them yet: expect the panel for any non-door lock.
-                if (this.lockType !== 'door' && !this.lockable?.doorProperties) window.expectPanelWithin?.(1500);
+                if (!gated && this.lockType !== 'door' && !this.lockable?.doorProperties) window.expectPanelWithin?.(1500);
                 this.complete(true);
             });
             return;
@@ -265,6 +271,16 @@ export class FingerprintReaderMinigame extends MinigameScene {
         const chosen = this.cards.find(c => c.button.classList.contains('fpr-card-chosen'));
         chosen?.button.classList.add('fpr-card-rejected');
         chosen?.button.focus();
+    }
+
+    // The lock carries a second step (read off its data): nothing says "opened" before the final answer
+    isGated() {
+        const lockable = this.lockable;
+        if (lockable?.scenarioData?.secondStep) return true;
+        const props = lockable?.doorProperties;
+        if (!props) return false;
+        if (props.secondStep) return true;
+        return !!(props.connectedRoom && window.gameScenario?.rooms?.[props.connectedRoom]?.secondStep);
     }
 
     setResult(message, result) {
@@ -288,7 +304,7 @@ export class FingerprintReaderMinigame extends MinigameScene {
     // first (the hold's timer is cleared on close, so it could not be left to the timer)
     complete(success) {
         const accepted = this.accepted === true && this._successPending === true;
-        if (accepted && !this._acceptedFired && this.lockType !== 'door' && !this.lockable?.doorProperties) window.expectPanelWithin?.(1500);
+        if (accepted && !this._acceptedFired && !this.isGated() && this.lockType !== 'door' && !this.lockable?.doorProperties) window.expectPanelWithin?.(1500);
         super.complete(success);
         if (accepted && !this._acceptedFired) {
             this._acceptedFired = true;

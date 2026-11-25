@@ -1,0 +1,179 @@
+{
+  "_about": "S8b answer shapes (unit 04). Name -> { status, body, vary, guess }. Every key set is exact at every level. Values are equal except at the body paths in `vary` (there only the type must match). `guess` lists paths (or `status`) that the brief did not pin and the controller unit must CONFIRM against the real answer, then delete from `guess` (the owner of unit 04 makes the correction). Paths: dotted keys, array positions as [0]. Keys starting with an underscore are not entries.",
+  "helpdesk.granted_password": {
+    "status": 200,
+    "body": { "granted": true, "what": "password", "password": "Tern-Harbour-41", "lockoutPcIds": ["vault_pc"], "npcId": "sam", "deskId": "it_desk" },
+    "vary": ["body.password", "body.lockoutPcIds", "body.npcId", "body.deskId"],
+    "guess": []
+  },
+  "helpdesk.granted_mfa": {
+    "status": 200,
+    "body": { "granted": true, "what": "mfa", "npcId": "sam", "deskId": "it_desk" },
+    "vary": ["body.npcId", "body.deskId"],
+    "guess": []
+  },
+  "helpdesk.refused": {
+    "status": 422,
+    "body": { "reason": "refused", "triesLeft": 2 },
+    "vary": ["body.triesLeft"],
+    "guess": []
+  },
+  "helpdesk.refused_last": {
+    "status": 422,
+    "body": { "reason": "refused", "triesLeft": 0 },
+    "vary": [],
+    "guess": []
+  },
+  "helpdesk.blocked": {
+    "status": 422,
+    "body": { "reason": "blocked", "retryIn": 240 },
+    "vary": ["body.retryIn"],
+    "guess": []
+  },
+  "helpdesk.unavailable": {
+    "status": 422,
+    "body": { "reason": "unavailable" },
+    "vary": [],
+    "guess": []
+  },
+  "helpdesk.not_found": {
+    "status": 404,
+    "body": { "reason": "not_found" },
+    "vary": [],
+    "guess": []
+  },
+  "helpdesk.bad_request": {
+    "status": 400,
+    "body": { "reason": "bad_request" },
+    "vary": [],
+    "guess": []
+  },
+  "bootstrap.helpdesk_forms": {
+    "status": 200,
+    "body": {
+      "it_desk": {
+        "npc": "ria",
+        "resets": ["password", "mfa"],
+        "questionLabels": { "staff_no": "Staff number", "manager": "Line manager" }
+      }
+    },
+    "vary": [],
+    "guess": []
+  },
+  "keyring.reset_entry": {
+    "status": 200,
+    "body": {
+      "id": "vera.reset",
+      "kind": "password",
+      "source": "helpdesk",
+      "account": { "npcId": "vera", "username": "v.mbeki", "displayName": "Vera Mbeki" },
+      "label": "Reset",
+      "how": "issued",
+      "password": "Tern-Harbour-41"
+    },
+    "vary": ["body.id", "body.account.npcId", "body.account.username", "body.account.displayName", "body.password"],
+    "guess": []
+  },
+  "keyring.password_changed": {
+    "status": 422,
+    "body": { "success": false, "typeToSignIn": "password_changed" },
+    "vary": [],
+    "guess": []
+  },
+  "login.mfa_required_own_code": {
+    "status": 200,
+    "body": { "success": false, "mfaRequired": true, "mfa": "code", "pcId": "vault_pc", "npcId": "vera", "ownPhone": true },
+    "vary": ["body.pcId", "body.npcId"],
+    "guess": []
+  },
+  "login.mfa_required_own_push": {
+    "status": 200,
+    "body": { "success": false, "mfaRequired": true, "mfa": "push_number_match", "pcId": "ops_pc", "npcId": "wim", "number": 47, "ownPhone": true },
+    "vary": ["body.pcId", "body.npcId", "body.number"],
+    "guess": []
+  },
+  "login.mfa_required_own_plain_push": {
+    "status": 200,
+    "body": { "success": false, "mfaRequired": true, "mfa": "push", "pcId": "ops_pc", "npcId": "wim", "ownPhone": true },
+    "vary": ["body.pcId", "body.npcId"],
+    "guess": []
+  },
+  "device.own": {
+    "status": 200,
+    "body": { "deviceId": "own:vera", "displayName": "My phone", "npcId": "vera", "code": "482916", "secondsLeft": 17, "used": false },
+    "vary": ["body.deviceId", "body.npcId", "body.code", "body.secondsLeft"],
+    "guess": []
+  },
+  "device.own_used": {
+    "status": 200,
+    "body": { "deviceId": "own:vera", "displayName": "My phone", "npcId": "vera", "code": "482916", "secondsLeft": 9, "used": true },
+    "vary": ["body.deviceId", "body.npcId", "body.code", "body.secondsLeft"],
+    "guess": []
+  },
+  "device.unenrolled": {
+    "status": 200,
+    "body": { "deviceId": "vera_fob", "displayName": "Vera Mbeki", "npcId": "vera", "enrolled": false },
+    "vary": ["body.deviceId", "body.displayName", "body.npcId"],
+    "guess": []
+  },
+  "device.no_device": {
+    "status": 403,
+    "body": { "success": false, "error": "no such device" },
+    "vary": [],
+    "guess": []
+  },
+  "prompt.waiting_own": {
+    "status": 200,
+    "body": { "success": false, "approved": false, "promptsSent": 1, "waiting": "own_phone" },
+    "vary": ["body.promptsSent"],
+    "guess": []
+  },
+  "phone.own": {
+    "status": 200,
+    "body": { "requests": [{ "pcId": "ops_pc", "host": "Ops PC", "username": "w.dekker", "n": 1 }] },
+    "vary": ["body.requests[0].pcId", "body.requests[0].host", "body.requests[0].username", "body.requests[0].n"],
+    "guess": []
+  },
+  "phone.own_number_match": {
+    "status": 200,
+    "body": { "requests": [{ "pcId": "ops_pc", "host": "Ops PC", "username": "w.dekker", "n": 1, "numbers": [31, 47, 62] }] },
+    "vary": ["body.requests[0].pcId", "body.requests[0].host", "body.requests[0].username", "body.requests[0].n", "body.requests[0].numbers"],
+    "guess": []
+  },
+  "phone.no_phone": {
+    "status": 403,
+    "body": { "success": false, "error": "no such phone" },
+    "vary": [],
+    "guess": []
+  },
+  "approve.own_passed": {
+    "status": 200,
+    "body": { "success": true, "npcId": "wim", "username": "w.dekker", "displayName": "Wim Dekker", "via": "password", "approvedBy": "own_phone" },
+    "vary": ["body.npcId", "body.username", "body.displayName"],
+    "guess": []
+  },
+  "approve.own_passed_portrait": {
+    "status": 200,
+    "body": { "success": true, "npcId": "wim", "username": "w.dekker", "displayName": "Wim Dekker", "via": "password", "portrait": "assets/characters/male_telecom_talk.png", "approvedBy": "own_phone" },
+    "vary": ["body.npcId", "body.username", "body.displayName", "body.portrait"],
+    "guess": []
+  },
+  "approve.cancelled": {
+    "status": 422,
+    "body": { "success": false, "cancelled": true },
+    "vary": [],
+    "guess": []
+  },
+  "verify.own_passed_portrait": {
+    "status": 200,
+    "body": { "success": true, "npcId": "vera", "username": "v.mbeki", "displayName": "Vera Mbeki", "via": "password", "portrait": "assets/characters/female_blowse_talk.png" },
+    "vary": ["body.npcId", "body.username", "body.displayName", "body.portrait"],
+    "guess": []
+  },
+  "verify.own_passed": {
+    "status": 200,
+    "body": { "success": true, "npcId": "vera", "username": "v.mbeki", "displayName": "Vera Mbeki", "via": "password" },
+    "vary": ["body.npcId", "body.username", "body.displayName"],
+    "guess": []
+  }
+}
