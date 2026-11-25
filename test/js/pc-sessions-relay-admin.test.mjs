@@ -17,7 +17,7 @@ const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toStr
 
 globalThis.window = {};
 const { PcSessions } =
-    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`)));
+    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`).split("'./helpdesk-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/helpdesk-client.js'), 'utf8'))}'`)));
 
 const golden = JSON.parse(readFileSync(join(here, '../fixtures/files/ops_unchanged/harvest_relay_test_access_keyring.json'), 'utf8'));
 const relayBody = golden.expected.answers.find(a => a.id === 'relay_signin_jake_pc').body;

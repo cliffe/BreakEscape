@@ -13,7 +13,7 @@ const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toStr
 
 globalThis.window = {};
 const { PcSessions } =
-    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`)));
+    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`).split("'./helpdesk-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/helpdesk-client.js'), 'utf8'))}'`)));
 const { default: pcPolicy, portPc } = await import(dataUrl(readFileSync(join(js, 'systems/pc-policy.js'), 'utf8')));
 
 const ADMIN = { npcId: 'sam', username: 'sam', displayName: 'Sam', via: 'password', access: 'admin' };
