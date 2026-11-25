@@ -35,6 +35,19 @@ Seeds (`SEEDS` in `_ca18.mjs`):
 
 ## Recorded marks
 
+### Dry runs (26 Nov, no capture)
+
+Headed Chromium on Xvfb :147, keyless server :3456, no ffmpeg. The runner is a scratch script outside the repo: launchGame, title pass, `setup`, then the take, with each mark logged and a screenshot taken.
+
+| take | game | result | notes |
+|---|---|---|---|
+| t02b_attack_run_narrow | 13510 | pass, 44 marks, no page errors | pass_4: passphrase panel hidden, queued result row text blank. flip-up-narrow: heading and strip inside the 560 px panel |
+| t05b_lorna_reset_narrow | 13511 | pass, 30 marks | POST /tts 200 audio/mpeg, 28677 bytes. bubble-hidden-check: visible false, alpha 0. press to bubble 1.66 s, press to L1 audio 1.90 s, v10_clear ok at 0.46 s |
+| t06_delphine_sofa | 13512, 13513 | FAIL after 2 tries (1 script fix) | trip 144 to 145 px (minimum 120), arrive about (244,217). Return: try 1 settled on a pause at (165,134); the script now waits for the post. Try 2: she stops at (164,133) and stays, 28 px from the post (144,113), so the 24 px check fails. The post is her settled start point, which appears to be patrol and not her needsHome (tile 4.5,4.5 = 144,144). Open decision: take the post from the settle point, or widen the check to about 40 px. Not decided, not captured. |
+
+Not dry-run in this pass: t01, t03, t04, t04b, t05 (the 23 Nov dry runs predate the current code). Nothing recorded yet. `~/video-takes-local/ca18/takes` and the `video_out/ca18/takes` symlink do not exist yet.
+
+
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
 
