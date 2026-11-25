@@ -175,6 +175,21 @@ module BreakEscape
 
     teardown { travel_back }
 
+    # R1-SERVER1: the three PCs that cache the account-only accounts list them in `access.people`, so every
+    # room, desktop and container answer of the run proves the list never names an account-only id.
+    def beats_scenario
+      data = super
+      data['rooms'].each_value do |room|
+        Array(room['objects']).each do |o|
+          case o['id']
+          when 'desk_a', 'desk_b' then o['access']['people'] = %w[deskadmin adel]
+          when 'lab_pc' then o['access']['people'] = %w[labadmin adel]
+          end
+        end
+      end
+      data
+    end
+
     def keys_of(node, out = [])
       case node
       when Hash then node.each { |k, v| out << k.to_s; keys_of(v, out) }
@@ -193,7 +208,7 @@ module BreakEscape
       end
       put b_path('sync_state'), params: { playerState: {} }, as: :json
       list << ['sync', response.body, false]
-      %w[bay_pc hot_desk sam_pc store_pc].each do |pc|
+      %w[bay_pc hot_desk sam_pc store_pc desk_a desk_b lab_pc].each do |pc|
         get b_path("container/#{pc}"), as: :json
         list << ["container #{pc}", response.body, false]
         get b_path("container/#{pc}"), params: { relay: 1 }, as: :json

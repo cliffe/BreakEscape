@@ -6524,13 +6524,17 @@ module BreakEscape
     def scenario_npc_ids
       ids = Set.new
       if has_attribute?(:scenario_data)
-        scenario_npc_records.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) }
+        scenario_npc_records.each do |npc|
+          ids << npc['id'] if npc['id'].is_a?(String) && !AccessIdentities.account_only?(npc)
+        end
       else
         # sync_state's narrow load leaves scenario_data out; read just the ids:
         # room NPCs, and the headless records' ids (social.characters.*.channels.email
         # where the character has an emailRecord; see headless_npc_records)
         # (9.5-safe: no jsonpath; see narrow_room_npc_stubs)
-        narrow_room_npc_stubs.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? }
+        narrow_room_npc_stubs.each do |npc|
+          ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? && !AccessIdentities.account_only?(npc)
+        end
         social = self.class.where(id: id).pick(Arel.sql("scenario_data -> 'social'"))
         social = JSON.parse(social) if social.is_a?(String)
         self.class.headless_npc_records('social' => social).each do |rec|
@@ -7572,9 +7576,35 @@ module BreakEscape
       node
     end
 
+    # Ids of the scenario's account-only NPCs, built once per scenario copy (the filter below runs
+    # for every object of every answer).
+    def account_only_npc_ids
+      data = has_attribute?(:scenario_data) ? scenario_data : nil
+      return Set.new unless data.is_a?(Hash)
+
+      @account_only_ids_memo = nil unless @account_only_ids_memo && @account_only_ids_memo[0].equal?(data)
+      @account_only_ids_memo ||= [data, self.class.scenario_npc_records(data)
+                                          .select { |npc| AccessIdentities.account_only?(npc) }
+                                          .filter_map { |npc| npc['id'].to_s if npc['id'].is_a?(String) }.to_set]
+      @account_only_ids_memo[1]
+    end
+
+    # S5c: an access list that reaches the browser (an object's, a room's, an item's) never names an
+    # account with no person behind it. The `people` key stays; only those ids go.
+    def strip_account_only_people!(obj)
+      access = obj['access']
+      return unless access.is_a?(Hash) && access['people'].is_a?(Array)
+
+      hidden = account_only_npc_ids
+      return if hidden.empty?
+
+      access['people'] = access['people'].reject { |person| person.is_a?(String) && hidden.include?(person) }
+    end
+
     def filter_requires_and_contents_recursive(obj)
       case obj
       when Hash
+        strip_account_only_people!(obj)
         self.class.strip_puzzle_graph_keys!(obj)
         # A declared grant's contents are served from the held item, never shipped.
         # Deep, because this filter descends only into objects, npcs, contents and the
