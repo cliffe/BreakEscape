@@ -72,8 +72,8 @@ answer's target was the folder. A folder served by `/unlock` or `GET /container`
 - **Ian's drawer.** `interact` `ian_drawer`, wait about 2 s, then
   `{"cmd":"mg","action":"take","args":["Note: my sign-in"]}`; the note opens in the notepad (its text
   is in `getState`); close it once to return to the drawer, and again to leave.
-- **Toasts.** `{"cmd":"toasts"}` shows "Signed out" and "Locked out: This account is locked on this
-  PC." when they fire.
+- **Toasts.** `{"cmd":"toasts"}` shows "Signed out" when it fires. A lockout shows no toast: its message sits on
+  the sign-in screen's own line.
 
 ## Run A: S1 to S4, then a reload
 
@@ -201,10 +201,10 @@ Room: `lockout_room`, PC `lockout_pc` under `corp_default` (`maxAttempts: 5`).
 
 1. Read `sign_s7`. `interact` `lockout_pc`, choose Sam's tile, and submit five wrong passwords.
    Expect "4 attempts left", "3 attempts left", "2 attempts left", "1 attempt left", then "This
-   account is locked on this PC." and the screen closes (toast "Locked out").
-2. Open it again, choose Sam, submit his correct password: the same "This account is locked on this
+   account is locked on this PC." The screen stays open with the form disabled and no toast; close it with the X or Esc.
+2. Close the screen, open it again, choose Sam, submit his correct password: the same "This account is locked on this
    PC."
-3. Open it again, choose Other user, and type an invented username (for example `nobody`) with five
+3. Close the screen, open it again, choose Other user, and type an invented username (for example `nobody`) with five
    wrong passwords: exactly the same sequence, ending locked.
 4. Open it again, choose Ian's tile and submit his password: his desktop opens. Task `s7_lockout`
    complete. Close it.

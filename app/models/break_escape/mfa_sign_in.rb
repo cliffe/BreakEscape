@@ -69,8 +69,8 @@ module BreakEscape
 
     # GET /mfa/device: :not_found when no policy declares an mfa kind (or no such device),
     # :no_device unless the device is held, else what the device shows. A held device whose owner
-    # a desk has re-enrolled shows no code (the own phone does: mfa_own_device_answer). The only
-    # places a code reaches the browser.
+    # a desk has re-enrolled shows no code (the own phone does: mfa_own_device_answer), unless a live
+    # code lock step of that owner still needs it. The only places a code reaches the browser.
     def mfa_device_answer(item_id)
       return :not_found unless mfa_declared?
 
@@ -265,9 +265,9 @@ module BreakEscape
       player_state['accountResets'].is_a?(Hash)
     end
 
-    # S8c seam: a lock step that still names this owner's device
-    def device_in_use?(_npc_id)
-      false
+    # S8c: a live, unpassed `code` lock step names this owner: the old device's code is still needed there
+    def device_in_use?(npc_id)
+      live_lock_code_step?(npc_id)
     end
 
     # The waiting push requests of this owner's accounts at sign-in PCs, as the phone lists them

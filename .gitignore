@@ -76,3 +76,6 @@ tools/playtest/**/*.png
 /video_out/
 # new-game.rb sprite-swap markers (restore-sprite.rb deletes them)
 /tools/playtest/sprite-restore-*.txt
+
+# Per-machine cleanup settings (tools/clean.conf.example)
+/tools/clean.local.conf

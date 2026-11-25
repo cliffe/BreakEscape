@@ -74,7 +74,7 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 ### 3. Pestered owner (push, owner approves by habit)
 1. Wait for "Send again" to enable (2 seconds), click it. See "Requests sent: 2".
 2. Wait again, click "Send again" once more.
-- See: the third request is approved at once: the pane closes (the count never shows 3), the pad shows "Password accepted! Access granted.", then a toast "Correct password! The item is now unlocked." (title "Password Accepted"), then the PC opens listing "Records note" and "quarterly_export.zip".
+- See: the third request is approved at once: the pane closes (the count never shows 3), the pad shows "Password accepted! Access granted.", then the PC opens listing "Records note" and "quarterly_export.zip". The toast "Correct password! The item is now unlocked." (title "Password Accepted") shows when the container closes.
 - Server: `mfa_prompt_approved` (approver `owner`).
 - Bridge: `__test.lockStep.click('Send again')` twice, each after the wait above; then `S().open` is `false`.
 
@@ -103,7 +103,7 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 ### 7. Right number
 1. Click "quarterly_export.zip", type the password, press Enter, click "Check Gordon Pike's phone" (a new pane, a new request).
 2. Click the number the pane shows (read it from `S().text`, "Number: NN"; then `__test.lockStep.click('NN')`).
-- See: the pane closes; the pad shows "Password accepted! Access granted." and the toast "Correct password! The item is now unlocked."; the archive lists "export_summary.txt".
+- See: the pane closes; the pad shows "Password accepted! Access granted." and the archive lists "export_summary.txt". The toast "Correct password! The item is now unlocked." shows when the container closes, not at approval. Closing the archive view returns to the world, not to the PC; the close can take about 5 s in the bridge.
 
 ### 8. Code (code device, over a PIN pad)
 1. Click "Priya Nair", choose "Could I borrow your code device?". The inventory shows "Code device". End the chat.
@@ -111,7 +111,7 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 3. Click "Wall safe", type the PIN, press Enter.
 - See: `S()`: `kind: "code"`, `title: "Wall safe"`, `lines: ["Enter the code from Priya Nair's device."]`, a field `lock-step-code` (6 digits, label "Code:"), `controls`: X, "Read code", "Verify".
 4. Click "Read code": the strip shows six digits and "(N s left)", the seconds left in the current code window (a 60-second window, so N is anywhere from 1 to 60 depending on when you click, for example "8s left"; it counts down, and at 0 the strip says "That code has rolled over. Read it again.") and the button now reads "Use this code". Click "Use this code" (it fills the field, it does not submit). Click "Verify".
-- See: the pane closes; the pad shows "PIN Correct! Access Granted.", the toast "Correct PIN! The item is now unlocked." (title "PIN Accepted"), and the safe lists "Safe memo". Server: one `mfa_code_ok` row at `priya_safe`.
+- See: the pane closes; the pad shows "PIN Correct! Access Granted.", and the safe lists "Safe memo"; the toast "Correct PIN! The item is now unlocked." (title "PIN Accepted") shows when the container closes. Server: one `mfa_code_ok` row at `priya_safe`.
 - A wrong code shows "Incorrect code" and keeps the pane open; a used code "That code has been used. Wait for the next one."; an old one "That code has expired."; too many wrong codes "Too many wrong codes. Try again in N minutes." (or seconds).
 - Bridge: `__test.lockStep.click('Read code')`, `__test.lockStep.click('Use this code')`, `__test.lockStep.click('Verify')`. Or type it: `await __test.lockStep.type('<the six digits>', { enter: true })`.
 
@@ -119,7 +119,7 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 1. Click "Note: Staff locker code" and read it. Click "Staff locker", type the PIN, press Enter. Pane opens, "Requests sent: 1".
 2. Click the pane's X. See: silent (`__test.lockStep.close()`).
 3. Click "Staff locker", type the PIN again, press Enter. See: "Requests sent: 2" (a new request on the same record; within 2 seconds of the last the first line says "Wait a moment before sending another request." and no count shows until the next request goes out).
-4. Wait for "Send again", click it: the third request is approved. See: the pane closes; the pad shows "PIN Correct! Access Granted."; the locker lists "Locker memo".
+4. Wait for "Send again", click it: the third request is approved. See: the pane closes; the pad shows "PIN Correct! Access Granted."; the locker lists "Locker memo" (wait about 3 s after the approval before reading the locker; the pad holds about 2 s and the container then takes about 0.5 s to open). The success toast shows when the container closes.
 
 ### 10. Never passes
 1. Read "Note: Finance cabinet password". Click "Finance cabinet", type the password, press Enter.
@@ -145,7 +145,7 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 **13a.** (Gordon's phone must be in the inventory: beat 6 step 2 if it is a fresh game.) Click "Gordon Pike", choose "Could I take your briefcase?". See: "Gordon's briefcase" in the inventory, locked.
 **13b.** Click "Note: Briefcase code" and read it. Click the briefcase in the inventory tray: its menu opens with "Unlock", "Drop here" and "Examine". Choose "Unlock", type its PIN, press Enter. See: the pane: `title: "Gordon's briefcase"`, "A request was sent to Gordon Pike's phone.", "Requests sent: 1", and "Check Gordon Pike's phone". (Bridge: `await __test.openInventoryItem("Gordon's briefcase")`, then `await __test.inventoryAct("Gordon's briefcase", "Unlock")`.)
 **13c.** Click the pane's X. Open the briefcase's tray menu and choose "Drop here" (toast "Dropped Gordon's briefcase"). Click the briefcase on the floor: it is picked up (toast "Picked up Gordon's briefcase"); no PIN pad opens where it lies. Choose "Unlock" in the tray menu again, type the PIN, press Enter. See: "Requests sent: 2" (the count carries on from 13b).
-**13d.** Click "Check Gordon Pike's phone": a card named "Gordon's briefcase" with "Approve" and "Deny". Click "Approve" (`__test.lockStep.click('Approve')`). See: the pane closes, the pad shows "PIN Correct! Access Granted.", and the briefcase lists "Board minutes". If you close it with "Board minutes" still inside, its tray menu now offers "Open" first to reopen it.
+**13d.** Click "Check Gordon Pike's phone": a card named "Gordon's briefcase" with "Approve" and "Deny". Click "Approve" (`__test.lockStep.click('Approve')`). See: the pane closes, the pad shows "PIN Correct! Access Granted.", and the briefcase lists "Board minutes". The success toast shows when the briefcase closes. If you close it with "Board minutes" still inside, its tray menu now offers "Open" first to reopen it.
 **13e (fresh game).** Do 13a, then click "Courier box" and confirm "Put it in". See: the briefcase leaves the inventory; nothing in the tray or the room opens it.
 
 ## Not played in the browser

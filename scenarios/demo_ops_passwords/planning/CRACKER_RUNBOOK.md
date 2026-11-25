@@ -114,20 +114,27 @@ Screenshots: `{"cmd":"screenshot","path":"/data/tmp/scratch/crack-pw/beatNN.png"
 
 **Beat 9. Checks in the game.** `{"cmd":"sync"}`. Go to the IT room, `{"cmd":"moveToNear","id":"signin_log_pc"}`, `{"cmd":"interact","id":"signin_log_pc"}`, `getState`. Expect the title `Sign-in log`, the six seed rows (`Mon 17:32` to `Tue 08:09`, among them two `FAIL` rows at `Tue 02:10` and `Tue 02:12`) and one row for Delphine's sign-in (`SIGN_IN`, identity `darvanitis`, `Delphine's PC`, `OK`). There must be NO row for any crack, take or feed post. Screenshot `beat09.png`. Close.
 
+**Beat 10. Crack a collected cached hash (added with P-S5).** Graham's tile is Cracked from beat 6, so no typing. A record collected from a PC's cache is cracked by the same cracker; Niamh's falls at once with no pick, which is the lesson (a weak password falls whatever the PC).
+- `{"cmd":"mg","action":"close"}`, `{"cmd":"moveToNear","id":"hot_desk"}`, `{"cmd":"interact","id":"hot_desk"}`, `getState`. Expect the sign-in screen with the line `Domain: merrin`. If the toast `Someone's in the way.` shows, wait a few seconds and repeat.
+- `{"cmd":"mg","action":"clickText","args":["Graham Whitfield"]}`, `getState` (expect `Cracked password`, a `Password:` field filled), `{"cmd":"mg","action":"clickText","args":["Sign in"]}`, wait 2 s. The taskbar must show `Administrator`: `{"cmd":"eval","fn":"() => document.querySelector('.pc-taskbar-admin')?.textContent ?? null"}`. Screenshot `beat10.png`.
+- `{"cmd":"eval","fn":"() => window.__test.access.clickCollect()"}`, wait 1 s, `{"cmd":"eval","fn":"() => window.__test.access.cachedAccounts()"}`. Expect one row, `Niamh Doherty` (Jun's is cached only after his borrow, which this runbook does not make). A second `clickCollect()` leaves the line `Nothing new is cached here.`
+- `{"cmd":"eval","fn":"() => window.__test.access.clickCrack('niamh_cached_hot_desk')"}`, `{"cmd":"mg","action":"getState"}`. Expect the title `Cracker`, `Niamh Doherty / ndoherty / <token>` and no chip needed. `{"cmd":"mg","action":"clickControl","args":["Crack"]}`: expect `Cracked` at once, no countdown, with her username and password shown (write the password as `[redacted N chars]`). Screenshot `beat10a.png`. `{"cmd":"mg","action":"close"}`.
+- Then crack Jun's record? It does not exist yet (needs the borrow): not part of this runbook.
+
 Then stop the session (section 5) and run section 4.
 
 ## 4. Checks (after the session is stopped)
 
-Leak check over the capture file (one keyboard sign-in, named):
+Leak check over the capture file (two keyboard sign-ins, named: Delphine's in beat 8, Graham's at the hot desk in beat 10):
 
-    cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <ID> --signin delphine_arvanitis@delphine_pc#1 /data/tmp/scratch/crack-pw/responses-<ID>.jsonl > /data/tmp/scratch/crack-pw/leak-check-<ID>.txt 2>&1; echo "EXIT=$?"
+    cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <ID> --signin delphine_arvanitis@delphine_pc#1 --signin graham_whitfield@hot_desk#1 /data/tmp/scratch/crack-pw/responses-<ID>.jsonl > /data/tmp/scratch/crack-pw/leak-check-<ID>.txt 2>&1; echo "EXIT=$?"
 
 Known fault until the scanner is updated (do not fix it, record it): each `GET /keyring` answer holding a hash row gives a `crack_row` finding, `owner=crack:row`, `at=$.entries[N]`, because the server's row now carries a `heldItem` key (the held file's id) that the scanner's list `CRACK_ROW_KEYS` in `tools/playtest/lib/access_leak_scanner.rb` does not name. In the last run (game 175) all findings were of that one kind (12 findings, rules `crack_row` only). Record the count, the set of rule names, and whether any finding has another rule or a different owner: that would be a real finding.
 
     cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <ID> --ops-log > /data/tmp/scratch/crack-pw/verify-ops-log-<ID>.txt 2>&1; echo "EXIT=$?"
     cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <ID> --access > /data/tmp/scratch/crack-pw/verify-access-<ID>.txt 2>&1; echo "EXIT=$?"
 
-Expected: ops-log EXIT=0, `signin_log (1 rows` of ours (one `signin_ok` as `darvanitis` at `delphine_pc`), `ops log OK`, and no row for a crack. In the `--access` output: `crack  5` style line listing `delphine_hash cracked`, `graham_hash cracked`, `julian_hash infeasible` and `cracked delphine_arvanitis`, `cracked graham_whitfield`; no `cracked julian_sallow`.
+Expected: ops-log EXIT=0, `signin_log (3 rows` of ours (a `signin_ok` as `darvanitis` at `delphine_pc`, a `signin_ok` as `gwhitfield` at `hot_desk`, and one `credentials_harvested` with count 1), `ops log OK`, and no row for a crack. In the `--access` output: `crack  5` style line listing `delphine_hash cracked`, `graham_hash cracked`, `julian_hash infeasible` and `cracked delphine_arvanitis`, `cracked graham_whitfield`, `cracked niamh_doherty` (beat 10; the `crack` line then lists `niamh_cached_hot_desk cracked` as well); no `cracked julian_sallow`.
 
 ## 5. Stop
 
@@ -149,7 +156,7 @@ Expect `PORT3026_LINES=0`. If not, record which process holds the port. Do not k
 
 Write `/data/tmp/scratch/crack-pw/RESULTS.md` with these sections, in this order:
 1. Game id: `<ID>`. Commit hash: `git -C /data/be-ops-follow rev-parse --short HEAD`.
-2. Beat table: columns beat / PASS, FAIL or stopped / what was seen / screenshot file name. Nine rows (beat 3b counts inside beat 3).
+2. Beat table: columns beat / PASS, FAIL or stopped / what was seen / screenshot file name. Ten rows (beat 3b counts inside beat 3).
 3. Timings in seconds: Delphine's coffee absence (the `expectedAwayMs`), each countdown as shown.
 4. Leak check: EXIT code, the finding count, the rule names and the owners found (see section 4).
 5. Verify-run: the EXIT code and key lines from the `--ops-log` and `--access` outputs.

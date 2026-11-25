@@ -34,7 +34,7 @@
 #
 # The access model section (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) prints what
 # the sign-in, card copy and file routes recorded: sessions, signedInPcs, serverClones,
-# copiedItems, loginFailures (a count per PC and username) and loginLockouts, and for
+# copiedItems, loginFailures (a count per PC and username) and loginLockouts (both cleared for an account by a granted password reset, see accountResets), and for
 # networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6) footholds, gainedFootholds, and remote
 # and foothold beside each session. The routes write these keys themselves, so no sync is
 # needed first. --access prints only that
@@ -48,7 +48,7 @@
 # S8a (feature A22, multi-factor sign-in): the access section adds three rows when the saved scenario has a policy that asks
 # for a second step, or the game holds any of the three server-owned keys. `mfaAccounts` is one entry per account: `started`
 # (second steps begun), `wrong` (wrong codes counted), `used` (yes when a code has been taken), `closed` (yes while its code
-# step is closed for five minutes). `mfaPrompts` is the prompt count per owner. `mfaPending` is one entry per sign-in PC:
+# step is closed for five minutes). `mfaPrompts` is the CURRENT unanswered-prompt streak per owner (resets to 0 on approval), not a total; totals are in the ops log. `mfaPending` is one entry per sign-in PC:
 # `pending <kind>` or `pending none`. Words, counts and ids only: never a code, a number or a nonce.
 #
 # With it, a `habits` block (slice 9.1, ACCESS_MODEL_SLICE_9_1_PLAN.md step 6) of values only,

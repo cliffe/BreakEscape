@@ -153,7 +153,7 @@ The order is M15, M14, M16, M17. M15 comes first so that Gwen's phone is not yet
 
 A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16 (Anjali goes home with her fob). Gwen and Fatima have no evening mapping and stay.
 
-- Never ask for an approval reset for `dprice` (Darren): his answers are readable, so the desk would grant it, his approvals would then go to the player's own phone and a lock step never approves from an own-phone reset, which breaks M5 and M17.
+- Never ask for an approval reset for `dprice` (Darren): his answers are readable, so the desk would grant it, his approvals would then go to the player's own phone and a lock step never approves from an own-phone reset, which breaks M5 (Darren's PC sign-in); M17's case still asks Darren, since a lock step ignores the reset.
 
 ## Things a tester sees that are not faults
 
