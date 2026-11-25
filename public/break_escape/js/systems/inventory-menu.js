@@ -126,7 +126,7 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     // tray click takes (handleUnlock, server-checked) because the click here would drop it (S8c R2-CLIENT4)
     if (data.locked === true) {
         if (data.lockType !== 'flag') entries.push({ id: 'unlock', label: 'Unlock' });
-    } else if (Array.isArray(data.contents) || data.hasContents === true) {
+    } else if ((Array.isArray(data.contents) && data.contents.length > 0) || data.hasContents === true) {
         entries.push({ id: 'open', label: 'Open' });
     }
     // A wearable's first entry puts it on or takes it off (wearables.js); "Use" maps to the
