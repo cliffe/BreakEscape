@@ -102,7 +102,13 @@ module BreakEscape
           flunk "#{path}: #{e.message}"
         end
       end
-      assert_equal ['test_ops_lock_step'], gated
+      assert_equal %w[demo_ops_second_step test_ops_lock_step], gated.sort
+      # and the other half of the name: a gated lock with no id does raise
+      data = mixed
+      data['rooms'].values.each { |r| Array(r['objects']).each { |o| o.delete('id') if o['secondStep'] } }
+      start
+      raw('GET', 'scenario', {})
+      assert_raises(ArgumentError) { scan(data) }
     end
   end
 end

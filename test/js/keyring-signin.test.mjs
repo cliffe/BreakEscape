@@ -66,6 +66,7 @@ const { ApiClient: RealApiClient } = await imp('api-client.js');
 const text = await imp('utils/remote-host-text.js');
 const { credentialSessionLine, titleCredentialLabels, pcTaskbarModel, pcStartPanelHtml } = await imp('utils/pc-taskbar.js');
 
+const OPS_CRACK = JSON.parse(readFileSync(join(here, 'fixtures/ops_crack/answers.json'), 'utf8'));
 const q = (sel) => document.querySelector(sel);
 const visible = (el) => !!el && el.style.display !== 'none' && !el.hidden;
 const messageText = () => q('#signin-message').textContent;
@@ -948,7 +949,7 @@ test('S7 R2-2: a cracked password has its own tag, no file line, and its own tea
     const jake = merged.find(t => t.username === 'jjones');
     assert.deepEqual(jake.kinds, ['cracked']);
     assert.deepEqual(jake.found, [], 'never the "Type the password from" file line');
-    assert.equal(jake.keyPassword, null, 'the player types it from the capture log');
+    assert.equal(jake.keyPassword, null, 'an entry with no password fills nothing');
     const teach = text.teachLine('cracked', { displayName: 'Jake Jones' });
     assert.match(teach, /^A password can be worked out from a hash/);
     const mg = openRemote();
@@ -960,6 +961,42 @@ test('S7 R2-2: a cracked password has its own tag, no file line, and its own tea
     assert.equal(alerts.length, 1);
     assert.equal(alerts[0][0], teach);
     assert.doesNotMatch(alerts[0][0], /files/);
+});
+
+// A3 (S7-1): a cracked password fills like any held password. The row comes from the shared fixture.
+const CRACKED_ROW = OPS_CRACK.keyringCracked.entries.find(e => e.source === 'cracked');
+const CRACKED_USER = CRACKED_ROW.account.username;
+test('A3: a cracked password with a value fills the tile on both screens, kinds stay cracked', () => {
+    assert.ok(CRACKED_ROW.password);
+    const remote = mergeRemoteTiles({ picker: 'accounts', tiles: [{ username: CRACKED_USER }], captured: [], keyring: [CRACKED_ROW] });
+    assert.deepEqual(remote[0].kinds, ['cracked']);
+    assert.equal(remote[0].keyPassword, CRACKED_ROW.password);
+    assert.deepEqual(remote[0].found, []);
+    assert.deepEqual(remote[0].credentials, []);
+    const kb = mergeKeyboardTiles({ picker: 'accounts', tiles: [{ username: CRACKED_USER }], keyring: [CRACKED_ROW] });
+    assert.deepEqual(kb[0].kinds, ['cracked']);
+    assert.equal(kb[0].keyPassword, CRACKED_ROW.password);
+});
+
+test('A3: a captured value wins over a cracked one in either order', () => {
+    const cap = { id: 'c1', kind: 'password', source: 'capture', label: 'Seen', account: CRACKED_ROW.account, password: 'Seen-Value-1', accepted: true };
+    for (const keyring of [[CRACKED_ROW, cap], [cap, CRACKED_ROW]]) {
+        const t = mergeRemoteTiles({ picker: 'accounts', tiles: [{ username: CRACKED_USER }], captured: [], keyring });
+        assert.equal(t[0].keyPassword, 'Seen-Value-1');
+        assert.deepEqual([...t[0].kinds].sort(), ['captured', 'cracked']);
+        const k = mergeKeyboardTiles({ picker: 'accounts', tiles: [{ username: CRACKED_USER }], keyring });
+        assert.equal(k[0].keyPassword, 'Seen-Value-1');
+    }
+});
+
+test('A3: no password fills nothing, and an unlisted account is still dropped', () => {
+    const { password, ...bare } = CRACKED_ROW;
+    const t = mergeRemoteTiles({ picker: 'accounts', tiles: [{ username: CRACKED_USER }], captured: [], keyring: [bare, { ...CRACKED_ROW, password: '' }] });
+    assert.equal(t[0].keyPassword, null);
+    const dropped = mergeRemoteTiles({ picker: 'accounts', tiles: [{ username: 'someone_else' }], captured: [], keyring: [CRACKED_ROW] });
+    assert.deepEqual(dropped.map(x => x.username), ['someone_else']);
+    const dropKb = mergeKeyboardTiles({ picker: 'accounts', tiles: [{ username: 'someone_else' }], keyring: [CRACKED_ROW] });
+    assert.deepEqual(dropKb.map(x => x.username), ['someone_else']);
 });
 
 test('R3-CORE3: signing in with the reset password of a cracked account teaches no "cracked" lesson', async () => {

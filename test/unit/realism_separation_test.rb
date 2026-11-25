@@ -55,6 +55,17 @@ class RealismSeparationTest < ActiveSupport::TestCase
     assert_equal [], real_fragments(File.read(index))
   end
 
+  test 'the plan and the server review doc hold no listed nickname' do
+    docs = %w[docs/achitechture/OPS_REALISM_SKIN_PLAN.md docs/agents/ops_core_build/reviews/S6_server_R1.md]
+    problems = []
+    docs.each do |rel|
+      File.readlines(File.join(ROOT, rel), encoding: 'UTF-8').each_with_index do |line, i|
+        problems << "#{rel}:#{i + 1}" if nick_patterns.any? { |pat| line.match?(pat) }
+      end
+    end
+    assert_empty problems
+  end
+
   test 'the scan sees what it is meant to see (a made-up advisory id, a path and a nickname)' do
     assert_not_empty real_fragments('see cve-9999-0001 here')
     assert_not_empty real_fragments('uses exploit/spare/world/probe')

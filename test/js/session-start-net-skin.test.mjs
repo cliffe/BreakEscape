@@ -22,17 +22,38 @@ function run(...args) {
 
 const BASE = 'http://127.0.0.1:3401/break_escape/games/1047';
 
-test('without the option the arguments and the tag are as before', () => {
+test('without the option the URL gets net_skin=gui and the tag is as before', () => {
   const r = run('--url', BASE, '--speed', 'human');
   assert.equal(r.status, 0);
   assert.equal(r.tag, '1047');
-  assert.deepEqual(r.args, ['--url', BASE, '--speed', 'human']);
+  assert.deepEqual(r.args, ['--url', `${BASE}?net_skin=gui`, '--speed', 'human']);
+  assert.deepEqual(run('--url', `${BASE}?lang=en`).args, ['--url', `${BASE}?lang=en&net_skin=gui`]);
+  assert.deepEqual(run(`--url=${BASE}`).args, [`--url=${BASE}?net_skin=gui`]);
+  assert.deepEqual(run(`--url=${BASE}?lang=en`).args, [`--url=${BASE}?lang=en&net_skin=gui`]);
+});
+
+test('a URL that already has net_skin is handed on unchanged', () => {
+  const u = `${BASE}?net_skin=cli`;
+  assert.deepEqual(run('--url', u).args, ['--url', u]);
+  assert.deepEqual(run(`--url=${u}`).args, [`--url=${u}`]);
+  const v = `${BASE}?lang=en&net_skin=cli`;
+  assert.deepEqual(run('--url', v).args, ['--url', v]);
+});
+
+test('--net-skin default hands the URL on unchanged, removes the option, keeps the tag', () => {
+  for (const url of [BASE, `${BASE}?lang=en`]) {
+    const r = run('--url', url, '--net-skin', 'default');
+    assert.equal(r.status, 0);
+    assert.deepEqual(r.args, ['--url', url]);
+    assert.equal(r.tag, run('--url', url).tag);
+    assert.deepEqual(run(`--url=${url}`, '--net-skin=default').args, [`--url=${url}`]);
+  }
 });
 
 test('the tag is the same with and without the option, with and without a query', () => {
   for (const url of [BASE, `${BASE}/`, `${BASE}?lang=en`]) {
     const plain = run('--url', url);
-    for (const skin of ['gui', 'cli']) {
+    for (const skin of ['gui', 'cli', 'default']) {
       assert.equal(run('--url', url, '--net-skin', skin).tag, plain.tag);
       assert.equal(run('--net-skin', skin, '--url', url).tag, plain.tag);
       assert.equal(run(`--url=${url}`, `--net-skin=${skin}`).tag, plain.tag);

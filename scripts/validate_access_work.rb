@@ -56,6 +56,16 @@ module ValidateAccessWork
     end
     social_site = sites.values.any? { |site| site['type'] == 'social' }
     no_site_said = false
+    # The documented left-behind shape (docs/ACCESS_AND_NETWORKS.md, "Ways to hold a device"): an owned
+    # phone that is a room object (not in a container; the engine's leftBehindItems reads room objects
+    # only) with a leftBehindChance in (0, 1] and a revealOnGlobal (npc-needs.js isSlot), which its owner
+    # leaves on a desk. It starts on the desk, so it is not in itemsHeld.
+    room_level = (json_data['rooms'] || {}).values.flat_map { |r| r.is_a?(Hash) ? Array(r['objects']) : [] }
+    left_behind = lambda do |item|
+      chance = item['leftBehindChance']
+      item['owner'].is_a?(String) && room_level.any? { |r| r.equal?(item) } && chance.is_a?(Numeric) && chance > 0 && chance <= 1 &&
+        item['revealOnGlobal'].is_a?(String) && !item['revealOnGlobal'].empty?
+    end
     all_objects(json_data).each do |o|
       item = o[:obj]
       next if item['type'] != FRIENDFACE_PHONE
@@ -76,7 +86,7 @@ module ValidateAccessWork
       end
       if !owner.is_a?(String) || !npcs.key?(owner)
         err(issues, "Friendface phone '#{name}' owner '#{owner}' names no room NPC.")
-      elsif !held_by[owner].any? { |i| i.equal?(item) }
+      elsif !held_by[owner].any? { |i| i.equal?(item) } && !left_behind.call(item)
         err(issues, "Friendface phone '#{name}' is #{owner}'s but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
       elsif !AW.phone?(npcs[owner])
         err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
@@ -87,7 +97,7 @@ module ValidateAccessWork
       # Review R2 m2, R3 m1: the server hands an NPC's phone over only when its story or record
       # offers it (the same patterns, AccessWork.offers_item_text?); otherwise a KO drop does,
       # which is a valid route (q35), unless the NPC is koImmune and cannot be knocked out
-      if npcs.key?(owner) && !npc_offers_phone?(npcs[owner])
+      if npcs.key?(owner) && !left_behind.call(item) && !npc_offers_phone?(npcs[owner])
         if npcs[owner]['koImmune'] == true
           err(issues, "Friendface phone '#{name}' (#{owner}'s): no give_item:#{FRIENDFACE_PHONE} and no give_npc_inventory_items that " \
                       "includes it in #{owner}'s story or record, and #{owner} is koImmune, so the player can never obtain it.")
@@ -110,10 +120,12 @@ module ValidateAccessWork
                           .group_by { |i| i['id'] }.each do |id, list|
       err(issues, "Friendface phone id '#{id}' is used by #{list.size} phones: each phone needs its own id.") if list.size > 1
     end
+    left_phones = all_objects(json_data).map { |o| o[:obj] }.select { |i| i['type'] == FRIENDFACE_PHONE && left_behind.call(i) }
     npcs.each do |nid, npc|
       own = held_by[nid].select { |i| i['owner'] == nid }
+      own_phones = own + left_phones.select { |i| i['owner'] == nid }
       err(issues, "#{nid} holds #{own.size} Friendface phones of its own; an NPC carries one.") if own.size > 1
-      next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own.empty?
+      next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own_phones.empty?
 
       err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
                   "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"owner\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")

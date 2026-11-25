@@ -2,10 +2,11 @@
 # Start a playtest session in the background and expose it as a FIFO pair, so a
 # single long-lived browser can be driven one command per tool call.
 #
-#   tools/playtest/session-start.sh --url <URL> [--net-skin gui|cli] [--flags <XML>] [--speed human] ...
+#   tools/playtest/session-start.sh --url <URL> [--net-skin gui|cli|default] [--flags <XML>] [--speed human] ...
 #
 # Every argument is passed straight through to playtest-session.js, except --net-skin, which
-# adds net_skin=<value> to the URL. The session
+# adds net_skin=<value> to the URL (Panels, gui, when not given;
+# "default" adds nothing). The session
 # is keyed by the game id in the URL (falling back to the PID), giving each run
 # its own pipe directory so two sessions never cross wires.
 #

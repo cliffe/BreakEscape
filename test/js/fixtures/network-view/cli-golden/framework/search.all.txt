@@ -1,5 +1,5 @@
-[head|#  ][head|Name                                    ][head|Alias  ][head|Description]
-1  auxiliary/scanner/web/default_creds_f1  f1     Default login High on web
-2  auxiliary/scanner/web/unpatched_f2      f2     Out of date Medium on web
-3  auxiliary/scanner/web/unpatched_f3      f3     Out of date Low on web
-4  auxiliary/scanner/web/unpatched_f4      f4     Out of date Medium on web
+[head@3|# ][head@40|Name ][head@7|Alias ][head|Description]
+[@3|1 ][@40|auxiliary/scanner/web/default_creds_f1 ][@7|f1 ]Default login High on web
+[@3|2 ][@40|auxiliary/scanner/web/unpatched_f2 ][@7|f2 ]Out of date Medium on web
+[@3|3 ][@40|auxiliary/scanner/web/unpatched_f3 ][@7|f3 ]Out of date Low on web
+[@3|4 ][@40|auxiliary/scanner/web/unpatched_f4 ][@7|f4 ]Out of date Medium on web

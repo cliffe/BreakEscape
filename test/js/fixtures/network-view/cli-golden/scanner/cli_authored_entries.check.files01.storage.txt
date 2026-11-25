@@ -3,8 +3,8 @@
 [note|Running vuln scripts on 445/tcp (filehold)]
 [head|Nmap scan report for ][head|files01][head| (10.20.0.10)]
 [ok|Host is up.]
-[head|PORT      STATE   SERVICE]
-445/tcp   open    filehold
+[head|PORT ][head|STATE ][head|SERVICE]
+445/tcp open filehold
 [note|| ][head|filehold-update-lag:]
 [note||   ]Storage service behind its fixes
 [note|| ][note|IDs: ]TRN-0000-0101 TRN-0000-0102

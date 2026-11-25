@@ -3770,7 +3770,7 @@ class AccessLeakScanner
 
   CRACK_NEVER_KEYS = %w[crack passwordPattern passwordDifficulty earnedFacts crackRuns crackStarted crackedAccounts].freeze
   CRACK_CREDENTIAL_KEYS = %w[kind account token source proof].freeze
-  CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted].freeze
+  CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted heldItem].freeze
   CRACK_ROW_STATUSES = %w[ready running infeasible cracked].freeze
   CRACK_ACCOUNT_KEYS = %w[npcId username displayName].freeze
   CRACK_ENTRY_KEYS = %w[id kind source account label password gainedAt forThisPc accepted].freeze
@@ -4095,6 +4095,7 @@ class AccessLeakScanner
     return false unless row['label'] == crack_record_label(record[:entry]) && row['kind'] == 'hash'
     return false unless row['account'] == crack_account_block(record[:npc]) && row['salted'] == record[:resolved][:salted]
     return false unless crack_token_ok?(row['token'], record) && crack_scope_keys_ok?(row)
+    return false if row.key?('heldItem') && !crack_held_item_ok?(row['heldItem'], record[:entry])
     return false if row['status'] == 'cracked' && !crack_account_granted?(record[:account])
     return false if row['status'] == 'infeasible' && !(record[:klass] == 'strong' && @crack_infeasible_seen)
 
@@ -4103,6 +4104,12 @@ class AccessLeakScanner
 
     # R2-L4: running only for a salted record of a crackable class, within its own wait, after a running answer
     crack_waiting_record?(record) && @crack_running_seen && wait.is_a?(Integer) && wait.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
+  end
+
+  # R1-A1: heldItem names the file the record's held proof needs, and the capture shows the player holding it.
+  def crack_held_item_ok?(item, entry)
+    BreakEscape::CredentialModel.proof_kind(entry['proof']) == 'held' && item.is_a?(String) &&
+      item == entry.dig('proof', 'held') && @mfa_taken.include?(item)
   end
 
   # The token shape; given a game that can say it, the token it would show for this record (Game#crack_token is pure).
@@ -5014,12 +5021,19 @@ class AccessLeakScanner
 
       @mfa_taken << id
       @mfa_phone_owners << @mfa_phones[id]['owner'] if @mfa_phones[id]
-    elsif action == 'remove' && id
+    elsif %w[remove hide].include?(action) && id
+      # R2-A1: a successful hide takes its item out of the tray too (hide_device!); a refused one is not an ok row
       @mfa_taken.delete(id)
-    elsif !inv.is_a?(Hash) || action == 'remove'
-      # R1-L5: a remove row the recorder could not read (or one naming no item) takes every device and phone back
-      @mfa_taken.subtract(@mfa_devices.keys + @mfa_phones.keys)
+    elsif !inv.is_a?(Hash) || %w[remove hide].include?(action)
+      # R1-L5: a remove row the recorder could not read (or one naming no item) takes every device and phone back;
+      # R2-A1: and every file a held proof needs, so a later heldItem is a finding until a new tagged add shows it held
+      @mfa_taken.subtract(@mfa_devices.keys + @mfa_phones.keys + crack_held_files)
     end
+  end
+
+  # R2-A1: the item ids the crack records' held proofs name.
+  def crack_held_files
+    Array(@crack_records).filter_map { |r| r[:entry].dig('proof', 'held') if r[:entry].is_a?(Hash) && r[:entry]['proof'].is_a?(Hash) }.grep(String)
   end
 
   # R1-L9: a logout takes the earned sessions back: the row's tag names one PC, a `--logout` entry names the PC of ONE

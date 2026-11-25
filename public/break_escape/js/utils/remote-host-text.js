@@ -272,6 +272,9 @@ export const SOURCE_TAG_TEXT = Object.freeze({
 export const CRACK_BUTTON_TEXT = 'Crack';
 export const CRACK_OPEN_BUTTON_TEXT = 'Open';
 export const CRACK_FINISH_BUTTON_TEXT = 'Finish';
+// S7-2: the "Hash collected" toast's button, and the line when another screen is up
+export const CRACK_TOAST_ACTION_TEXT = 'Crack';
+export const CRACKER_BUSY_TEXT = 'Close this screen first. The cracker also opens from your capture log.';
 export const HASH_SALTED_TEXT = 'Salted';
 export const HASH_READY_TO_FINISH_TEXT = 'Ready to finish';
 /** A hash token as the server sends it (already in dashed groups of four; shown as is). */

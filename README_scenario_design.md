@@ -1504,7 +1504,7 @@ Each entry has exactly one of `to` (a post or reply id) and `toComplaint` (the o
 
 ### Container Objects
 
-Containers hold `contents` arrays of nested items. Every container with `contents` **must** declare `locked: true` or `locked: false`.
+Containers hold `contents` arrays of nested items. Every container with `contents` **must** declare `locked: true` or `locked: false`. The validator warns when any other container with contents has no `locked` key (the game reads a missing `locked` as a key lock), and when an unlocked, non-takeable container nested in another container's `contents` is not a `folder`, because its icon does nothing.
 
 | Type | Notes |
 |------|-------|

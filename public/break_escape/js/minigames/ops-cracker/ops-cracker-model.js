@@ -3,7 +3,8 @@
 //
 // The server decides every outcome. This module only turns what the server sent (a keyring hash
 // row, the earned fact ids in `crackFacts`, a `POST /crack` answer) into words and a request. It
-// never holds a password, never sees a recipe, and sends fact ids only: no label, no token.
+// It never holds a password, never sees a recipe, and sends fact ids only: no label, no token.
+// The scene finishes a wait by itself (one automatic post); Finish is a retry if that post fails.
 
 export const MAX_PICKS = 4;
 
@@ -11,7 +12,8 @@ export const MAX_PICKS = 4;
 export const STATUS_TEXT = Object.freeze({
     ready: 'Pick the facts you think it was built from, then press Crack.',
     running: 'Working on it...',
-    ready_to_finish: 'Ready to finish. Press Finish to see the result.',
+    fetching: 'The wait is over. Fetching the result...',
+    retry: 'The result did not arrive. Press Finish to try again.',
     nomatch: 'No match',
     infeasible: 'This one will not fall to guessing. Try another way in.',
     cracked: 'Cracked',
@@ -185,7 +187,7 @@ export function viewOf(state, nowMs = 0, refusalText = () => 'That did not work.
         message = state.refusal === 'not_found' ? STATUS_TEXT.not_found : refusalText(state.refusal);
         tone = 'warn';
     } else if (st === 'running') {
-        message = left === 0 ? STATUS_TEXT.ready_to_finish : `${STATUS_TEXT.running} ${left === null ? '' : `${left}s`}`.trim();
+        message = left === 0 ? ((!state.autoPosted || isBusy(state)) ? STATUS_TEXT.fetching : STATUS_TEXT.retry) : `${STATUS_TEXT.running} ${left === null ? '' : `${left}s`}`.trim();
     } else if (st === 'needMoreFacts') { message = missingText(a.missingCount); tone = 'warn'; }
     else if (st === 'nomatch') { message = STATUS_TEXT.nomatch; tone = 'warn'; }
     else if (st === 'infeasible') { message = STATUS_TEXT.infeasible; tone = 'warn'; }

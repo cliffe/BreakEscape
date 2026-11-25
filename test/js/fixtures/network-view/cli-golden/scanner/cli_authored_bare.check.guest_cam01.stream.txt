@@ -3,8 +3,8 @@
 [note|Running vuln scripts on 554/udp (viewline)]
 [head|Nmap scan report for ][head|guest_cam01][head| (10.40.0.4)]
 [ok|Host is up.]
-[head|PORT      STATE   SERVICE]
-554/udp   open    viewline
+[head|PORT ][head|STATE ][head|SERVICE]
+554/udp open viewline
 [note|| ][head|viewline-stock-account:]
 [note||   ]Stream account left at its default
 [note||     ][note|Finding: ]f4

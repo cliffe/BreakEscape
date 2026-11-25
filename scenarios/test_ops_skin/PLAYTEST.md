@@ -9,7 +9,8 @@ The scenario is for testing, not play. No sign, task title or brief names a host
 the browser only from `GET /network`, `POST /network/scan`, `/network/check` and `/network/confirm`, and a card's works-on line only once
 a card is held. Since unit 23 the scenario has `networkView.defaultSkin: "cli"`, authored `cli` fields (the office range, the file
 server's address and service, an open guest network with one camera) and a `realism` link on each finding. The look comes from
-`--net-skin`, then the stored pick, then that default (Terminal). Panels draws none of the authored text, so a Panels run proves only that
+`--net-skin`, then the stored pick, then that default (Terminal). A session started with no `--net-skin` now opens in Panels, so a run that
+wants the scenario default says `--net-skin default`. Panels draws none of the authored text, so a Panels run proves only that
 the authored fields change nothing the Panels look shows or the game records.
 
 **Not played in the browser.** No beat sends a forged, hand-built or replayed request. The request-level checks (the same 404 for a real and an
@@ -86,12 +87,12 @@ Objectives tick in order: sweep, scan, check, confirm, use.
 
 ## K3 beats: the authored fields and the default look
 
-D1 is run once, in its own fresh game and a fresh browser profile, with NO `--net-skin` value and no stored pick. The K3 checks are read in
+D1 is run once, in its own fresh game and a fresh browser profile, with `--net-skin default` (so the page adds no skin of its own) and no stored pick. The K3 checks are read in
 the Terminal run of T1 to T9 (and compared with the Panels run).
 
 | Beat | Action | Terminal shows | Panels shows | Server record |
 |---|---|---|---|---|
-| D1 | Fresh profile, no URL value. Plant the box and open the view. Press the header switch once. Reload. | The view opens in the Terminal (the scenario default). One press of the switch gives Panels and is stored; after the reload it opens in Panels. | The same rows and statuses as the Terminal had. | No request names a skin; unchanged by the switch. |
+| D1 | Fresh profile, session started with `--net-skin default`. Plant the box and open the view. Press the header switch once. Reload. | The view opens in the Terminal (the scenario default). One press of the switch gives Panels and is stored; after the reload it opens in Panels. | The same rows and statuses as the Terminal had. | No request names a skin; unchanged by the switch. |
 | K3a | At the first view, before the sweep. | The office range `10.20.0.0/24` in the sweep's start lines when the sweep runs, and in the heading of `show` (`Reachable (10.20.0.0/24)`); no host address, banner or finding text yet. | Nothing authored. | Foothold only. |
 | K3b | After the sweep. | `show` has an ADDRESS column and only `files01` has a value, `10.20.0.10`; `files01` printed with `10.20.0.10`; the printer, share and `records01` print their default lines. The camera and the guest range are NOT shown. | The same four rows, no address. | `opsDiscovered` holds the network. |
 | K3c | After the scan of `files01`. | The service line with the word `filehold` and its banner naming the product and version. No advisory or output line yet. | The service tile as before. | `files01` scanned. |
@@ -103,7 +104,7 @@ After the run, give the leak scanner the captured responses (`access-leak-check.
 The request-level serving checks are in `test/controllers/break_escape/network_realism_link_test.rb`; the stages are also pinned in
 `access_leak_scanner_ops_skin_real_test.rb`.
 
-## Switch beats (once, with no `--net-skin`, on `test_ops_scan`) and reruns
+## Switch beats (once, with `--net-skin default`, on `test_ops_scan`) and reruns
 
 W1 to W3 and the reruns of the older scenarios with a stored Terminal pick are the S6 brief's section 7; they use `test_ops_scan`
 and `test_access_networks`, not this scenario.

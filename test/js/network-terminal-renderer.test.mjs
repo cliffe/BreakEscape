@@ -492,3 +492,25 @@ test('R2-8: a held Tab key does not grow the log: the same matches line is writt
     for (let i = 0; i < 1000; i++) t.key('Tab');
     assert.equal(t.logText().length, after);
 });
+
+test('a span with a width is a cell (class and min-width); a plain line has neither', () => {
+    const t = setup(viewOf('swept_hosts'));
+    FMT.appendLine(t.log, [{ text: 'NAME ', w: 12, cls: 'head' }, { text: 'STATUS' }]);
+    FMT.appendLine(t.log, [{ text: 'plain words' }]);
+    FMT.appendLine(t.log, [{ text: 'bad ', w: 81 }, { text: 'x' }]);
+    t.draw();
+    const lines = [...t.root.querySelectorAll('.network-term-log .network-term-line-out')];
+    const cellLine = lines.find(l => l.textContent === 'NAME STATUS');
+    assert.ok(cellLine.classList.contains('network-term-row'));
+    const cell = cellLine.children[0];
+    assert.ok(cell.classList.contains('network-term-cell') && cell.classList.contains('head'));
+    assert.equal(cell.style.minWidth, '12ch');
+    assert.ok(!cellLine.children[1].classList.contains('network-term-cell'));
+    assert.equal(cellLine.children[1].style.minWidth, '');
+    const plain = lines.find(l => l.textContent === 'plain words');
+    assert.ok(!plain.classList.contains('network-term-row'));
+    assert.ok(!plain.children[0].classList.contains('network-term-cell') && plain.children[0].style.minWidth === '');
+    const bad = lines.find(l => l.textContent === 'bad x');
+    assert.ok(!bad.classList.contains('network-term-row'), 'a bad width never reaches a style');
+    assert.equal(bad.children[0].style.minWidth, '');
+});

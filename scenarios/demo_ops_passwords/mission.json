@@ -1,0 +1,9 @@
+{
+  "display_name": "Ops demo: passwords",
+  "description": "A box of old password records turns up in the bin at Merrin & Sallow. Earn facts from office life, crack what will crack, then see what an administrator's sign-in reaches that a user's does not.",
+  "difficulty_level": 2,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 15,
+  "test_type": "ops_demo",
+  "test_objective": "A guided demo of the stored-record cracker (guessable, reused, never), user and administrator sign-in, the administrator's profile reach, the USB policy and its override, and the sign-in log with an anomaly to flag, set inside office life that opens each window."
+}

@@ -118,5 +118,13 @@
   "shell_metacharacter_in_output": [
     "shell_metacharacter",
     "output/0"
+  ],
+  "script_mirrors_id": [
+    "script_mirrors_id",
+    "script"
+  ],
+  "index_content_changed": [
+    "index_content_changed",
+    "content"
   ]
 }

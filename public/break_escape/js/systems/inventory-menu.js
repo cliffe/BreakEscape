@@ -12,6 +12,8 @@
  *   droppable and locked               "Unlock" first (it opens the lock: pad, then any second step), then the rest
  *   droppable with triggerOnInteract   "Use" (useLabel overrides the word), "Drop here", "Examine"
  *   wearable, not droppable, with text "Put on" or "Take off", "Examine"
+ *   hash file (S7-2)                   "Crack", "Open" or "Finish" (by the hash's state), "Drop here"
+ *                                      when droppable, "Examine"; none once cracked or infeasible
  *   saved connection (keyring K3b)     "Connect", "Drop here" when droppable, "Examine";
  *                                      with nothing to read and not droppable, the click is Connect
  *   everything else                    no menu: the click does what it did before
@@ -97,6 +99,13 @@ export function inventoryMenuFor(sprite, ctx = {}) {
 
     const items = ctx.inventoryItems ?? (typeof window !== 'undefined' ? window.inventory?.items : undefined);
     const ctxWindow = ctx.window ?? (typeof window !== 'undefined' ? window : {});
+    const crack = crackMenuEntry(sprite, ctxWindow);
+    if (crack) {
+        const out = [crack];
+        if (isDroppableInventoryItem(sprite, items)) out.push(dropEntry(ctx));
+        out.push({ id: 'examine', label: 'Examine' });
+        return out;
+    }
     const connect = connectMenuEntry(sprite, ctxWindow);
     if (connect) {
         const droppable = isDroppableInventoryItem(sprite, items);
@@ -174,6 +183,24 @@ export function connectMenuEntry(sprite, w = typeof window !== 'undefined' ? win
     return { id: 'connect', label: 'Connect' };
 }
 
+/**
+ * The Crack entry for a held hash file (S7-2), or null: the log row's own words, "Crack" when
+ * ready, "Open" while time is left, "Finish" at 0 s. A cracked or infeasible hash has none.
+ */
+export function crackMenuEntry(sprite, w = typeof window !== 'undefined' ? window : {}) {
+    const kr = w?.keyring;
+    const row = kr?.hashEntryFor?.(sprite?.scenarioData?.id);
+    if (!row) return null;
+    if (row.status === 'ready') return { id: 'crack', label: 'Crack' };
+    if (row.status === 'running') {
+        const left = kr.crackSecondsLeft?.(row.id);
+        const label = Number.isFinite(left) ? (left > 0 ? 'Open' : 'Finish')
+            : (Number.isFinite(row.readyInSeconds) && row.readyInSeconds > 0 ? 'Open' : 'Finish');
+        return { id: 'crack', label };
+    }
+    return null;
+}
+
 /** A click on this tray item is Connect itself: a saved connection with no menu (nothing to read, not droppable). */
 export function trayClickIsConnect(sprite, ctx = {}) {
     const w = ctx.window ?? (typeof window !== 'undefined' ? window : {});
@@ -210,7 +237,7 @@ export function inventoryMenuIcon(id, el) {
     if (id === 'drop') return { src: `${menuIconsBase()}/menu-drop.png`, width: 64, height: 64 };
     if (id === 'examine') return { src: `${menuIconsBase()}/menu-examine.png`, width: 64, height: 64 };
     // Connect (keyring K3b) shows the item's own picture, as Use does
-    if ((id !== 'use' && id !== 'connect' && id !== 'unlock' && id !== 'open') || !el?.src) return undefined;
+    if ((id !== 'use' && id !== 'connect' && id !== 'crack' && id !== 'unlock' && id !== 'open') || !el?.src) return undefined;
     const w = el.naturalWidth || 0;
     const h = el.naturalHeight || 0;
     if (!(w > 0 && h > 0)) return { src: el.src };
@@ -272,7 +299,9 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
         },
         examine: () => w.examineHeldItem?.(el),
         // Keyring K3b (plan 8.2): the entry is greyed while one runs, and connect() ignores a second
-        connect: () => w.keyring?.connect?.(el)
+        connect: () => w.keyring?.connect?.(el),
+        // S7-2: the cracker for the hash this file proves
+        crack: () => { const row = w.keyring?.hashEntryFor?.(el.scenarioData?.id); if (row) w.keyring.openCracker?.(row.id); }
     };
     // A click with no pointer position (el.click(), a key on the focused item) reports
     // 0,0: place the menu over the item's slot instead of in the corner

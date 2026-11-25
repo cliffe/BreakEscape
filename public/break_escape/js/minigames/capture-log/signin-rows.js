@@ -264,7 +264,7 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
             row.valueState = got.valueState;
             row.valueTargetId = valueTargetId;
             row.use = row.value;
-            // A cracked password always shows in full: the player earned it, and this row has to type it
+            // A cracked password always shows in full: the player earned it (the sign-in screen fills it too)
             if (row.password?.source === 'cracked' && isStr(row.password.password)) {
                 row.value = row.password.password;
                 row.valueState = null;

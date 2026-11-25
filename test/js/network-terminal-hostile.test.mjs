@@ -209,7 +209,7 @@ function facts(h) {
             strip: root.querySelector('.network-term-list').textContent,
             other: [...root.querySelectorAll('.network-term-label, .network-term-mark, .network-term-fold')].map(e => e.textContent).join('')
         };
-        out.logShape = [...logEl.children].every(l => l.tagName === 'DIV' && l.className === 'network-term-line-out'
+        out.logShape = [...logEl.children].every(l => l.tagName === 'DIV' && (l.className === 'network-term-line-out' || l.className === 'network-term-line-out network-term-row')
             && [...l.children].every(c => c.tagName === 'SPAN' && c.children.length === 0));
     }
     return out;

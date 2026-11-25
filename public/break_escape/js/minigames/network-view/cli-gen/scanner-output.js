@@ -117,8 +117,15 @@ function reportLine(host, address) {
 
 function tableLines(header, rows) {
     const widths = header.map((h, i) => Math.max(h.length, ...rows.map(r => word(r[i]).length)));
-    const pad = (cells) => cells.map((c, i) => (i < cells.length - 1 ? word(c).padEnd(widths[i]) : word(c))).join('   ').trimEnd();
-    return [plain(pad(header), 'head'), ...rows.map(r => plain(pad(r)))];
+    const build = (cells, cls) => {
+        const out = cells.map((c, i) => {
+            if (i === cells.length - 1) return word(c) === '' ? null : span(word(c), cls);
+            return { ...span(`${word(c)} `, cls), w: Math.min(80, widths[i] + 2) };
+        });
+        while (out.length && !out[out.length - 1]) out.pop();
+        return out.filter(Boolean);
+    };
+    return [build(header, 'head'), ...rows.map(r => build(r))];
 }
 
 /** The lines for a refused or missing answer, or null when the answer is a success. */

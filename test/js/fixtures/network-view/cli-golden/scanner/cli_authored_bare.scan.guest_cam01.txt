@@ -2,8 +2,8 @@
 [head|Starting Nmap against guest_cam01]
 [head|Nmap scan report for ][head|guest_cam01][head| (10.40.0.4)]
 [ok|Host is up.]
-[head|PORT      STATE   SERVICE    VERSION]
-554/udp   open    viewline   Tarnwick ViewLine 1.0
+[head|PORT ][head|STATE ][head|SERVICE ][head|VERSION]
+554/udp open viewline Tarnwick ViewLine 1.0
 [note|| id: ]stream
 [note||_banner: ]Tarnwick ViewLine 1.0 stream ready
 [note|Service detection performed.]

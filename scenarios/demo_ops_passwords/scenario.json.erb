@@ -1,0 +1,886 @@
+{
+  "scenario_brief": "Ops demo: passwords. A box of old password records has turned up in the confidential-waste bin at Merrin & Sallow. Ama Owusu of Fenlow Managed IT hosts. Staff habits give you what you need: Delphine posts about her life on the office feed and keeps a photo on her desk, Graham reuses one password everywhere, Julian picks long random ones. Crack what will crack, sign in with it, and see what an administrator can reach on the partner's PC that an ordinary user cannot. Authorised practice in a fictional office; nothing to break for real.",
+  "endGoal": "Demo only: see which stored passwords fall to guessing, which never do, and what an administrator's sign-in opens.",
+  "startRoom": "office",
+  "startPosition": { "x": 5, "y": 6 },
+  "npcNeedsSeed": "demo_ops_passwords",
+  "npcWindupMs": 700,
+  "showPressingNeeds": true,
+  "officePresets": true,
+  "roomTone": true,
+  "disableAttacks": true,
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "defaultPolicy": "desk",
+
+  "policies": {
+    "desk": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" },
+    "partner": { "maxAttempts": null, "usb": "blocked", "remote": "allowed", "social": "allowed" }
+  },
+
+  "networks": {
+    "office_lan": { "name": "Merrin & Sallow office network" }
+  },
+
+  "chatter": {
+    "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"],
+    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Quiet one today, isn't it?", "Have you tried the new sandwich place?"],
+    "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
+    "grumble_gone": ["Missed it."],
+    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."]
+  },
+
+  "actionIcons": {
+    "upkeep": "icon:npc-upkeep"
+  },
+
+  "globalVariables": {
+    "se_osint_state": {},
+    "se_intel_delphine_dog_name": false,
+    "se_intel_delphine_dog_year": false,
+    "coffee_call": 0,
+    "ask_weekend": 0,
+    "act_midday": false,
+    "act_evening": false,
+    "office_coffee_off": false,
+    "kitchen_seen": false,
+    "it_room_seen": false,
+    "partner_office_seen": false,
+    "heard_exchange_cooler_chat": false,
+    "cake_servings": 2,
+    "earn_facts_done": false,
+    "get_records_done": false,
+    "crack_guessable_done": false,
+    "crack_reused_done": false,
+    "crack_strong_done": false,
+    "user_signin_done": false,
+    "usb_refused_done": false,
+    "admin_signin_done": false,
+    "profile_read_done": false,
+    "override_done": false,
+    "read_log_done": false
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "capture_log",
+      "id": "capture_log",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": { "captures": true },
+      "observations": "Your engagement device: it lists every hash and sign-in you collect, and opens the cracker."
+    },
+    {
+      "type": "usb",
+      "id": "kit_stick",
+      "name": "USB stick",
+      "sprite": "usb_bowl1",
+      "takeable": true,
+      "usbClass": "storage",
+      "observations": "A plain USB memory stick (storage)."
+    },
+    {
+      "type": "usb",
+      "id": "kit_badusb",
+      "name": "Keystroke device",
+      "sprite": "icon_deviceB",
+      "takeable": true,
+      "usbClass": "hid",
+      "observations": "Looks like a memory stick, but it presents itself to a PC as a keyboard and types on its own. It needs a desk you are already signed in at."
+    },
+    {
+      "type": "cake1",
+      "id": "cake",
+      "name": "Cake",
+      "takeable": true,
+      "droppable": true,
+      "observations": "A cake for the office. Choose Drop here in your inventory to put it out where people will see it.",
+      "affordance": {
+        "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 45, "servings": 2, "perPerson": 1 }
+      }
+    }
+  ],
+
+  "credentials": {
+    "delphine_hash": {
+      "kind": "hash",
+      "account": "delphine_arvanitis",
+      "label": "Stored record: Delphine",
+      "salted": false,
+      "proof": { "held": "delphine_record_file" },
+      "crack": { "password": "guessable", "facts": ["delphine_dog_name", "delphine_dog_year"], "difficulty": "medium" }
+    },
+    "graham_hash": {
+      "kind": "hash",
+      "account": "graham_whitfield",
+      "label": "Stored record: Graham",
+      "salted": true,
+      "crackSeconds": 20,
+      "proof": { "held": "graham_record_file" },
+      "crack": { "password": "reused" }
+    },
+    "julian_hash": {
+      "kind": "hash",
+      "account": "julian_sallow",
+      "label": "Stored record: Julian",
+      "proof": { "held": "julian_record_file" },
+      "crack": { "password": "strong" }
+    },
+    "printer_admin": {
+      "kind": "password",
+      "account": "printer_svc",
+      "proof": { "held": "printer_admin_note" },
+      "foundIn": "printer_admin_note"
+    }
+  },
+
+  "accountProfiles": {
+    "julian_profile": {
+      "for": { "people": ["julian_sallow"] },
+      "contents": [
+        {
+          "type": "folder",
+          "id": "julian_client_files",
+          "name": "Client files",
+          "takeable": false,
+          "locked": false,
+          "observations": "A folder of Julian's client files.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "julian_client_note",
+              "name": "Harrow Lane accounts.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Harrow Lane Dental: year-end accounts are with the partners for sign-off. Fee note to follow once the draft is approved.",
+              "observations": "A client note that only Julian, or an administrator, should be reading."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "social": {
+    "intelFacts": {
+      "delphine_dog_name": {
+        "label": "Delphine's dog",
+        "subject": "delphine_arvanitis",
+        "source": "delphine_photo",
+        "text": "Delphine's dog is called Pepper."
+      },
+      "delphine_dog_year": {
+        "label": "Delphine's dog's year",
+        "subject": "delphine_arvanitis",
+        "source": "delphine_post_1",
+        "text": "Delphine's dog came home in 2016."
+      }
+    },
+    "people": [
+      { "id": "delphine_arvanitis", "forms": { "first": "Delphine", "full": "Delphine Arvanitis" } },
+      { "id": "niamh_doherty", "forms": { "first": "Niamh", "full": "Niamh Doherty" } }
+    ],
+    "osint": {
+      "sites": [
+        {
+          "id": "office_feed",
+          "type": "social",
+          "name": "Office feed",
+          "url": "feed.merrinsallow.example",
+          "profiles": [
+            {
+              "person": "delphine_arvanitis",
+              "name": "Delphine Arvanitis",
+              "bio": "Front of house. Dog person.",
+              "posts": [
+                { "id": "delphine_authored", "text": "Reception is open, the kettle is on." }
+              ]
+            },
+            {
+              "person": "niamh_doherty",
+              "name": "Niamh Doherty",
+              "bio": "Accounts. Tea, mostly.",
+              "posts": [
+                { "id": "niamh_authored", "text": "Month end again. Send biscuits." }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "logSources": {
+    "signin_log": {
+      "title": "Sign-in log",
+      "events": ["signin_ok", "signin_fail", "signin_lockout", "session_end", "session_lock", "admin_profile_read", "usb_install_overridden"],
+      "seedRows": [
+        { "id": "s1", "at": "Mon 17:32", "event": "signin_ok", "as": "graham_whitfield", "where": { "kind": "pc", "id": "graham_pc" }, "result": "ok" },
+        { "id": "s2", "at": "Tue 02:10", "event": "signin_fail", "as": "administrator", "where": { "kind": "pc", "id": "graham_pc" }, "result": "fail" },
+        { "id": "s3", "at": "Tue 07:51", "event": "signin_ok", "as": "graham_whitfield", "where": { "kind": "pc", "id": "graham_pc" }, "result": "ok" },
+        { "id": "s4", "at": "Tue 08:01", "event": "signin_fail", "as": "delphine_arvanitis", "where": { "kind": "pc", "id": "delphine_pc" }, "result": "fail" },
+        { "id": "s5", "at": "Tue 08:02", "event": "signin_ok", "as": "delphine_arvanitis", "where": { "kind": "pc", "id": "delphine_pc" }, "result": "ok" },
+        { "id": "s6", "at": "Tue 08:09", "event": "signin_ok", "as": "jun_watanabe", "where": { "kind": "pc", "id": "jun_pc" }, "result": "ok" }
+      ]
+    }
+  },
+
+  "objectives": [
+    {
+      "aimId": "morning",
+      "title": "Morning: the facts",
+      "description": "Staff give things away without meaning to. Come back and tell Ama what you find, and she ticks it off.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "earn_facts", "title": "Learn two things about Delphine's life outside work", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "midday",
+      "title": "Midday: crack and sign in",
+      "description": "Lunch empties rooms. Take the stored records, crack what will crack, and use what you learn. Taking the records, sign-ins and the devices tick by themselves; tell Ama about each crack and the client files.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "get_records", "title": "Take the stored records from the confidential-waste bin", "type": "custom", "status": "active" },
+        { "taskId": "crack_guessable", "title": "Crack the record that falls to what you learnt", "type": "custom", "status": "active" },
+        { "taskId": "crack_reused", "title": "Crack the record whose password is used twice", "type": "custom", "status": "active" },
+        { "taskId": "crack_strong", "title": "Try the record that never falls", "type": "custom", "status": "active" },
+        { "taskId": "user_signin", "title": "Sign in at Delphine's PC with her password", "type": "custom", "status": "active" },
+        { "taskId": "usb_refused", "title": "Plug the stick into Delphine's desk and see what the office policy says", "type": "custom", "status": "active" },
+        { "taskId": "admin_signin", "title": "Sign in at the partner's PC as Graham, an administrator", "type": "custom", "status": "active" },
+        { "taskId": "profile_read", "title": "Open the partner's client files as Graham", "type": "custom", "status": "active" },
+        { "taskId": "override", "title": "Use the keystroke device at the partner's PC, signed in as Graham", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "evening",
+      "title": "Evening: the trail",
+      "description": "Home time for nearly everyone. Each task ticks when you have done it.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "read_log", "title": "Find your own trail in the sign-in log, and flag the night-time failure", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "network": "office_lan",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "ambient": "#8f96b0", "lights": [{ "x": 2.3, "y": 5.5, "color": "#ffd9a0", "radius": 70, "intensity": 0.8 }] }
+        ]
+      },
+      "connections": { "west": "kitchen", "east": "it_room", "north": "partner_office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "delphine_pc",
+          "name": "Delphine's PC",
+          "host": "MS-RECEP-01",
+          "sprite": "pc_desktop",
+          "owner": "delphine_arvanitis",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "people": ["delphine_arvanitis"], "roles": ["it"] },
+          "affordance": { "satisfies": "work", "useSeconds": 5 },
+          "observations": "Delphine's desk PC."
+        },
+        {
+          "type": "pc",
+          "id": "jun_pc",
+          "name": "Jun's PC",
+          "host": "MS-IT-02",
+          "sprite": "pc_desktop",
+          "owner": "jun_watanabe",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "people": ["jun_watanabe"], "roles": ["it"] },
+          "affordance": { "satisfies": "work", "useSeconds": 5 },
+          "observations": "Jun's desk PC."
+        },
+        {
+          "type": "laptop",
+          "id": "niamh_laptop",
+          "name": "Niamh's Laptop",
+          "takeable": false,
+          "observations": "Niamh's laptop, open on a month-end spreadsheet.",
+          "affordance": false
+        },
+        {
+          "type": "notes1",
+          "id": "delphine_photo",
+          "name": "Photo on Delphine's desk",
+          "position": { "x": 8.2, "y": 2.6 },
+          "takeable": true,
+          "readable": true,
+          "revealsFacts": ["delphine_dog_name"],
+          "text": "A framed photo of Delphine on a beach with a brown spaniel. The name tag on its collar is easy to read.",
+          "observations": "A framed photo on the front desk."
+        },
+        {
+          "type": "pc",
+          "id": "desk_usb_port",
+          "name": "USB port on Delphine's desk",
+          "sprite": "network_rack1",
+          "position": { "x": 6.4, "y": 2.6 },
+          "takeable": false,
+          "_comment": "Keep the confirm below although the client refuses first: its remove_item is what makes this port a plant target that the server's usb_refused check then refuses.",
+          "policy": "desk",
+          "observations": "A USB port on the desk, wired to the desk policy.",
+          "affordance": false,
+          "requiresItem": "kit_stick",
+          "requiresItemHint": "You would need a USB stick to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the stick into the desk port?",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "remove_item", "item": "kit_stick" },
+                { "type": "hint", "title": "Desk port", "message": "The stick is in the desk port." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "printer_cupboard",
+          "name": "Printer cupboard",
+          "position": { "x": 1.2, "y": 2.6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "The cupboard beside the printers. Paper, toner and a few notes.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "printer_admin_note",
+              "name": "Printer admin.txt",
+              "takeable": true,
+              "readable": true,
+              "credential": "printer_admin",
+              "text": "Printer admin sign-in, for whoever refills the toner.\nsvc_printer / Brindle-Copper-Gate-52",
+              "observations": "A note taped inside the cupboard door."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "it_poster",
+          "name": "IT poster",
+          "position": { "x": 4.2, "y": 1.2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "IT reminder from Fenlow: a pet's name followed by a year is not a password. Several of you are using exactly that.",
+          "observations": "An IT poster pinned to the wall."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "observations": "The office coffee station. One person at a time; anyone else waits in line.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee", "overhearRadius": 200 },
+          "offWhen": "office_coffee_off"
+        },
+        {
+          "type": "power_socket2",
+          "id": "office_coffee_socket",
+          "name": "Wall socket",
+          "position": { "x": 8.65625, "y": 7.0625 },
+          "spriteVariants": [{ "condition": "globalVars.office_coffee_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.office_coffee_off",
+              "text": "Switch off the coffee machine at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall. Anyone on their way to it turns back." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.office_coffee_off",
+              "text": "Switch the coffee machine back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched on at the wall. The next coffee run comes here again." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "notice_board1",
+          "id": "tour_notice",
+          "name": "Things to try",
+          "position": { "x": 8.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Morning:\n- Read what Delphine posts on the office feed in the kitchen.\n- Take the photo from her desk while she is away.\nMidday:\n- Look round the kitchen, the IT room and the partner's office, then ask Ama to send them to lunch.\n- Take the stored records from the bin in the IT room.\n- Crack them: one will, one will after a wait, one never will.\n- Sign in at Delphine's PC, then try the stick in her desk port.\n- Sign in at the partner's PC as Graham, an administrator, and open the client files.\n- Still signed in there, try the keystroke device in the socket beside the PC.\n- Tell Ama what you find as you go.\nEvening:\n- Call it a day, then read the sign-in log in the IT room."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ama_owusu",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": { "x": 5.5, "y": 4.5 },
+          "spriteSheet": "ama_owusu",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "storyPath": "scenarios/demo_ops_passwords/ink/ama_owusu.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Autonoe", "style": "Security lead at Fenlow Managed IT, the firm that looks after Merrin & Sallow's computers, in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "immovable": true },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
+            { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
+            { "eventPattern": "room_entered:it_room", "cooldown": 0, "setGlobal": { "it_room_seen": true } },
+            { "eventPattern": "room_entered:partner_office", "cooldown": 0, "setGlobal": { "partner_office_seen": true } },
+            { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId.includes('_record_file')", "cooldown": 0, "completeTask": "get_records", "setGlobal": { "get_records_done": true } },
+            { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
+            { "eventPattern": "npc_posted:delphine_arvanitis", "onceOnly": true, "cooldown": 0, "bark": "Delphine's posted on the office feed. Have a read." },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "onceOnly": true, "delayMs": 6000, "cooldown": 0, "bark": "Lunch. Graham's off to the kitchen, and Julian's gone to his client lunch." },
+            { "eventPattern": "pc_signed_in:delphine_pc", "condition": "data.username === 'darvanitis'", "cooldown": 0, "completeTask": "user_signin", "setGlobal": { "user_signin_done": true } },
+            { "eventPattern": "usb_refused:desk_usb_port", "cooldown": 0, "completeTask": "usb_refused", "setGlobal": { "usb_refused_done": true } },
+            { "eventPattern": "pc_signed_in:partner_pc", "condition": "data.username === 'gwhitfield'", "cooldown": 0, "completeTask": "admin_signin", "setGlobal": { "admin_signin_done": true } },
+            { "eventPattern": "network_foothold_gained", "onceOnly": true, "delayMs": 2500, "cooldown": 0, "completeTask": "override", "setGlobal": { "override_done": true }, "bark": "His PC blocks devices, but an administrator's session let it through. That window's the office network. Close it for today." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } }
+          ]
+        },
+        {
+          "id": "delphine_arvanitis",
+          "displayName": "Delphine Arvanitis",
+          "npcType": "person",
+          "position": { "x": 7, "y": 3 },
+          "spriteSheet": "delphine_arvanitis",
+          "spriteTalk": "assets/characters/delphine_arvanitis_talk.png",
+          "spriteVisemes": "assets/characters/delphine_arvanitis_visemes.png",
+          "storyPath": "scenarios/demo_ops_passwords/ink/delphine_arvanitis.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Despina", "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite, a little chatty. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "reception",
+          "creds": { "username": "darvanitis", "password": "Pepper2016" },
+          "habits": { "password": "guessable", "passwordPattern": "it_poster" },
+          "needsHome": "delphine_pc",
+          "needsDeferMin": 0.5,
+          "needsSpeed": 85,
+          "needs": {
+            "caffeine": { "decayPerMin": 25, "urgentAt": 40, "initial": 61 },
+            "social_media": { "decayPerMin": 60, "urgentAt": 40, "initial": 50 },
+            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 },
+            "hunger": { "decayPerMin": 5, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": { "coffee": ["Is that the last of the oat milk?", "I'll only be a minute."] },
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "delphine_arvanitis_phone",
+              "name": "Delphine's phone",
+              "takeable": true,
+              "owner": "delphine_arvanitis",
+              "observations": "Delphine's mobile, open on the office feed."
+            }
+          ],
+          "feed": {
+            "site": "office_feed",
+            "person": "delphine_arvanitis",
+            "order": "facts_first",
+            "posts": [
+              { "id": "delphine_post_1", "text": "Ten years since the best decision of my life. Our dog came home in 2016 and has run the house ever since.", "fact": "delphine_dog_year", "date": "Tuesday" },
+              { "id": "delphine_post_2", "text": "Walked for two hours. Muddy paws on every chair in the house.", "date": "Tuesday" },
+              { "id": "delphine_post_3", "text": "Reception tip: the red folder is not a coaster.", "date": "Tuesday" }
+            ]
+          },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:ask_weekend", "cooldown": 0, "needs": { "set": { "social_media": 20 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "jun_watanabe",
+          "displayName": "Jun Watanabe",
+          "npcType": "person",
+          "position": { "x": 3, "y": 6 },
+          "spriteSheet": "jun_watanabe",
+          "spriteTalk": "assets/characters/jun_watanabe_talk.png",
+          "spriteVisemes": "assets/characters/jun_watanabe_visemes.png",
+          "storyPath": "scenarios/demo_ops_passwords/ink/jun_watanabe.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Puck", "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "jwatanabe", "password": "Marlow-Quarry-Tide-71" },
+          "habits": { "password": "strong" },
+          "needsHome": "jun_pc",
+          "needsDeferMin": 0.5,
+          "needsSpeed": 80,
+          "needs": {
+            "caffeine": { "decayPerMin": 10, "urgentAt": 40, "initial": 70 },
+            "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 },
+            "hunger": { "decayPerMin": 5, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": { "coffee": ["Third one today. Don't judge.", "Did you see that new rota?"] },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "npcType": "person",
+          "position": { "x": 1, "y": 5 },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "storyPath": "scenarios/demo_ops_passwords/ink/niamh_doherty.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Kore", "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "ndoherty", "password": "Cobalt-Fennel-Rook-38" },
+          "habits": { "password": "strong" },
+          "needsHome": "niamh_laptop",
+          "needsSpeed": 70,
+          "needs": {
+            "thirst": { "decayPerMin": 15, "urgentAt": 40, "initial": 80 },
+            "social": { "decayPerMin": 10, "urgentAt": 40, "initial": 70 },
+            "social_media": { "decayPerMin": 20, "urgentAt": 40, "initial": 60 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": { "cooler": ["Delphine's dog is on the feed again.", "Did you see the photo on her desk?"] },
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "niamh_doherty_phone",
+              "name": "Niamh's phone",
+              "takeable": true,
+              "owner": "niamh_doherty",
+              "observations": "Niamh's mobile, open on the office feed."
+            }
+          ],
+          "feed": {
+            "site": "office_feed",
+            "person": "niamh_doherty",
+            "posts": [
+              { "id": "niamh_post_1", "text": "Who ate my yoghurt? It had my name on it. Twice.", "date": "Tuesday" },
+              { "id": "niamh_post_2", "text": "Printer jammed again. I am not touching it.", "date": "Tuesday" }
+            ]
+          },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        }
+      ]
+    },
+
+    "kitchen": {
+      "type": "room_break",
+      "door_sign": "Kitchen",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "mode": "motion", "offAfter": 10 }
+        ]
+      },
+      "connections": { "east": "office" },
+      "objects": [
+        {
+          "type": "osint-workstation",
+          "id": "feed_kiosk",
+          "name": "Office feed tablet",
+          "position": { "x": 5, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "The break-room tablet, open on the office feed.",
+          "minigameData": { "siteIds": ["office_feed"] }
+        },
+        {
+          "type": "qdc_fridge1",
+          "id": "fridge",
+          "name": "Fridge",
+          "position": { "x": 1, "y": 2 },
+          "takeable": false,
+          "observations": "The office fridge. Mostly yoghurts with names on."
+        },
+        {
+          "type": "microwave1",
+          "id": "microwave",
+          "name": "Microwave",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "observations": "A microwave on the kitchen table."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "kitchen_coffee",
+          "name": "Kitchen Coffee Station",
+          "position": { "x": 3, "y": 8 },
+          "takeable": false,
+          "observations": "The kitchen coffee machine. It shares a fuse with the office one, so only one of them runs at a time.",
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "queue": { "cells": [{ "dx": 1, "dy": -1 }, { "dx": 2, "dy": -1 }] } },
+          "offWhen": { "office_coffee_off": false }
+        },
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 1, "y": 7 },
+          "takeable": false,
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "affordance": { "useSeconds": 40, "overhearRadius": 360 }
+        },
+        {
+          "type": "mugs_tray1",
+          "id": "washing_up_tray",
+          "name": "Washing-up Tray",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
+          "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        }
+      ],
+      "npcs": []
+    },
+
+    "it_room": {
+      "type": "room_it",
+      "door_sign": "IT room",
+      "network": "office_lan",
+      "connections": { "west": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "graham_pc",
+          "name": "Graham's PC",
+          "host": "MS-IT-01",
+          "sprite": "pc_desktop",
+          "owner": "graham_whitfield",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "affordance": { "satisfies": "work", "useSeconds": 5 },
+          "observations": "Graham's desk PC."
+        },
+        {
+          "type": "bin",
+          "id": "secure_bin",
+          "name": "Confidential-waste bin",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "The confidential-waste bin. It should have been collected last week.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "delphine_record_file",
+              "name": "delphine_record.dat",
+              "takeable": true,
+              "readable": false,
+              "credential": "delphine_hash",
+              "observations": "A stored account record. It is not readable as it stands."
+            },
+            {
+              "type": "text_file",
+              "id": "graham_record_file",
+              "name": "graham_record.dat",
+              "takeable": true,
+              "readable": false,
+              "credential": "graham_hash",
+              "observations": "A stored account record. It is not readable as it stands."
+            },
+            {
+              "type": "text_file",
+              "id": "julian_record_file",
+              "name": "julian_record.dat",
+              "takeable": true,
+              "readable": false,
+              "credential": "julian_hash",
+              "observations": "A stored account record. It is not readable as it stands."
+            }
+          ]
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "signin_log_pc",
+          "name": "Sign-in log terminal",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "observations": "A terminal showing the office sign-in log.",
+          "minigameData": {
+            "logSource": "signin_log",
+            "anomaly": { "rowId": "s2" },
+            "flagActionLabel": "Flag the odd sign-in",
+            "flagActions": [{ "type": "set_global", "key": "read_log_done", "value": true }],
+            "completionActions": [
+              { "type": "set_global", "key": "read_log_done", "value": true },
+              { "type": "complete_task", "taskId": "read_log" }
+            ]
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "npcType": "person",
+          "position": { "x": 4, "y": 4.5 },
+          "spriteSheet": "graham_whitfield",
+          "spriteTalk": "assets/characters/graham_whitfield_talk.png",
+          "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
+          "storyPath": "scenarios/demo_ops_passwords/ink/graham_whitfield.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Umbriel", "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind, a little tired of the same password questions. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "gwhitfield", "password": "Brindle-Copper-Gate-52", "admin": true },
+          "habits": { "password": "reused" },
+          "needsHome": "graham_pc",
+          "needsDeferMin": 0.5,
+          "needsSpeed": 85,
+          "needs": {
+            "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
+            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 72 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
+          },
+          "chatter": { "cooler": ["How's tricks, then?", "Nobody tells me anything up here."] },
+          "exchanges": [{ "with": "niamh_doherty", "knot": "exchange_cooler_chat", "topic": "cooler" }],
+          "eventMappings": [
+            { "eventPattern": "npc_left_post:niamh_doherty", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "fireOnlyWhenLoaded": true, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "room_entered:it_room", "condition": "globalVars.act_midday === true && globalVars.act_evening !== true", "cooldown": 900000, "needs": { "set": { "hunger": 20 } } }
+          ]
+        },
+        {
+          "id": "printer_svc",
+          "displayName": "Printer service",
+          "npcType": "person",
+          "position": { "x": 1.5, "y": 6 },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/demo_ops_passwords/ink/printer_svc.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "service",
+          "creds": { "username": "svc_printer", "password": "Brindle-Copper-Gate-52" }
+        }
+      ]
+    },
+
+    "partner_office": {
+      "type": "room_ceo",
+      "door_sign": "Partner's office",
+      "network": "office_lan",
+      "connections": { "south": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "partner_pc",
+          "name": "Julian's PC",
+          "host": "MS-PARTNER-01",
+          "sprite": "pc_desktop",
+          "owner": "julian_sallow",
+          "position": { "x": 5, "y": 3.5 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "policy": "partner",
+          "access": { "people": ["julian_sallow"], "roles": ["it"] },
+          "affordance": { "satisfies": "work", "useSeconds": 5 },
+          "observations": "The partner's PC. A tag on the monitor reads Julian."
+        },
+        {
+          "type": "pc",
+          "id": "partner_pc_socket",
+          "name": "USB socket by the partner's PC",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 3.5 },
+          "takeable": false,
+          "observations": "A spare USB socket on the desk. Useful only while you are signed in at the partner's PC.",
+          "affordance": false,
+          "requiresItem": "kit_badusb",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke device into the partner's PC? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "partner_pc", "needsSession": true, "needsHeld": "kit_badusb" }
+              ]
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "julian_sallow",
+          "displayName": "Julian Sallow",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "storyPath": "scenarios/demo_ops_passwords/ink/julian_sallow.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Rasalgethi", "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "partner",
+          "creds": { "username": "jsallow", "password": "Ferrous-Lantern-Quill-84" },
+          "habits": { "password": "strong" },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "delayMs": 3000, "cooldown": 0, "fireOnlyWhenLoaded": true, "setVisible": false },
+            { "eventPattern": "room_entered:partner_office", "condition": "globalVars.act_midday === true", "cooldown": 0, "setVisible": false }
+          ]
+        }
+      ]
+    }
+  }
+}

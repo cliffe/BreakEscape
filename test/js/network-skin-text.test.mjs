@@ -146,8 +146,9 @@ function added(before, after) {
 }
 
 const term = (h) => h.view().container.querySelector('.network-term');
+// A line of table cells is also tested as the one line the cells read as (a cell is a span of its own)
 const termLines = (h) => [...term(h).querySelectorAll('.network-term-log .network-term-line-out')]
-    .map(l => [...l.children].map(s => s.textContent));
+    .map(l => Object.assign([...l.children].map(s => s.textContent), { rowText: l.classList.contains('network-term-row') ? l.textContent : null }));
 const termStrip = (h) => piecesOf(term(h).querySelector('.network-term-list'));
 const panelsPieces = (h) => {
     // Panels' own header lines and the list; nothing of the window's title bar or the skin switch
@@ -338,6 +339,7 @@ function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, 
     terminal.lines.forEach((line, li) => line.forEach((text, i) => {
         const p = collapse(text);
         if (p === '' || covered[li][i]) return;
+        if (line.rowText !== null && line.rowText !== undefined && allowed(collapse(line.rowText))) return;
         if (!allowed(p)) problems.push(`${label}: Terminal span not in Panels: ${JSON.stringify(p)} (words: ${wrong(p).join(' ')}) (line ${JSON.stringify(line.join('|'))})`);
     }));
     if (counted) {

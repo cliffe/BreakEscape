@@ -104,6 +104,9 @@ module BreakEscape
         'status' => state[:status]
       }
       row['readyInSeconds'] = state[:ready_in_seconds] if state[:status] == 'running'
+      # The held file that proves it, by the same rule as a saved connection row (credential_keyring.rb, K3b).
+      held_item = CredentialModel.proof_kind(entry['proof']) == 'held' ? entry.dig('proof', 'held') : nil
+      row['heldItem'] = held_item if CredentialModel.present_string?(held_item)
       row
     end
 

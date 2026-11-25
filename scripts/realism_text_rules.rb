@@ -30,7 +30,7 @@ module RealismTextRules
   SYSTEM_DIRS = %w[bin boot dev etc home lib lib64 mnt opt proc root run sbin srv sys tmp usr var windows system32 users program].freeze
   DEFAULT_PASSWORDS = %w[admin administrator password passwd 123456 12345 1234 root toor guest letmein changeme default qwerty test user pass welcome secret].freeze
   ACCOUNT_WORDS = %w[admin administrator root user guest ops service svc backup test operator sa postgres oracle].freeze
-  TELLTALE = ['decoy', 'fake', 'false', 'bait', 'patched', 'not\s+vulnerable'].freeze
+  TELLTALE = ['decoy', 'fake', 'false', 'bait', 'patched', 'not\s+vulnerable', 'honeypot', 'bogus', 'dummy', 'spoof', 'phony', 'harmless', 'benign'].freeze
   WEAK_TELLTALE = %w[real true fixed safe].freeze
 
   # Words that make a line read as a step or a request (R1-S4). The list cannot be complete: a human review of
