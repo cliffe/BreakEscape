@@ -8,7 +8,7 @@
   "9:16": 0.6
  },
  "length": 30.0,
- "status": "v1 (25 Nov 2026): 30 s autoplay cut from the plan's table (900 frames); not rendered; cuts unsnapped. S40 window starts at the shot's in point (line 0.125 s in). Same placeholders as the main cut where S20 and S30 are used.",
+ "status": "v1 (25 Nov 2026): 30 s autoplay cut from the plan's table (900 frames); not rendered; cuts unsnapped. S40 window starts at the shot's in point (line 0.125 s in). Same placeholders as the main cut where S20 and S30 are used. | 25 Nov: gap takes wired (GAP-1 to GAP-4), console clips real; frame-checked in stills only.",
  "music": {
   "track": "SpyAction/Emerald Trigger.mp3",
   "analysis": "emerald_trigger_60.json",
@@ -269,29 +269,29 @@
     "type": "cut"
    },
    "source": {
-    "file": "m01_t14_cyberchef.trimmed.mkv",
-    "in": 6.97,
-    "out": 8.166
+    "file": "lth_gap4_rot13.trimmed.mkv",
+    "in": 9.5,
+    "out": 9.9
    },
    "framing": {
     "16:9": {
-     "cx": 0.725,
-     "cy": 0.385,
-     "zoom": 2
+     "cx": 0.7,
+     "cy": 0.495,
+     "zoom": 1.9
     },
     "9:16": {
-     "cx": 0.56,
-     "cy": 0.4,
-     "zoom": 1.5
+     "cx": 0.684,
+     "cy": 0.5,
+     "zoom": 1.0
     },
     "1:1": {
-     "cx": 0.56,
-     "cy": 0.36,
-     "zoom": 1.8
+     "cx": 0.734,
+     "cy": 0.5,
+     "zoom": 1.2
     }
    },
    "audio": {
-    "gain_db": -6
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -299,11 +299,10 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "GAP-4 required: Base64 decode at 200% zoom; fallback m01 t14_cyberchef 6.97-8.166 (frame-check input and output read together)"
+    "note": "GAP-4 real take: Base64 decode (neutral sample), input and output in one crop; result lands 9.65 s"
    },
-   "placeholder": true,
-   "placeholder_note": "GAP-4 required: Base64 decode at 200% zoom; fallback m01 t14_cyberchef 6.97-8.166 (frame-check input and output read together)",
-   "note": "GAP-4 required: Base64 decode at 200% zoom; fallback m01 t14_cyberchef 6.97-8.166 (frame-check input and output read together)"
+   "placeholder": false,
+   "note": "GAP-4 real take: Base64 decode (neutral sample), input and output in one crop; result lands 9.65 s"
   },
   {
    "id": "S23_vm_in_game",
@@ -399,7 +398,8 @@
     "keypad_partial": null,
     "note": "session output lands 0.9 s into the shot"
    },
-   "note": "session output lands 0.9 s into the shot"
+   "note": "session output lands 0.9 s into the shot",
+   "placeholder": false
   },
   {
    "id": "S30_flag_accepted",
@@ -411,24 +411,24 @@
    },
    "source": {
     "file": "lth_gap3_archive_key.trimmed.mkv",
-    "in": 0.0,
-    "out": 3.2
+    "in": 20.5,
+    "out": 21.6
    },
    "framing": {
     "16:9": {
-     "cx": 0.5,
+     "cx": 0.8333,
      "cy": 0.5,
-     "zoom": 1
+     "zoom": 3.0
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.833,
      "cy": 0.5,
-     "zoom": 0.5625
+     "zoom": 1.0
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cx": 0.83,
+     "cy": 0.621,
+     "zoom": 1.7
     }
    },
    "audio": {
@@ -440,11 +440,52 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "GAP-3 required: m01 ENTROPY archive key (input masked as bullets), cut before the contents screen, toast 'ENTROPY archive decryption key confirmed'; mask the access toast"
+    "note": "GAP-3 real take: HaX reaction toast 'ENTROPY archive decryption key confirmed' only; tight crop on the bottom-most toast, other HUD masked; no archive contents, no typed input"
    },
-   "placeholder": true,
-   "placeholder_note": "GAP-3 required: m01 ENTROPY archive key (input masked as bullets), cut before the contents screen, toast 'ENTROPY archive decryption key confirmed'; mask the access toast",
-   "note": "GAP-3 required: m01 ENTROPY archive key (input masked as bullets), cut before the contents screen, toast 'ENTROPY archive decryption key confirmed'; mask the access toast"
+   "placeholder": false,
+   "note": "GAP-3 real take: HaX reaction toast 'ENTROPY archive decryption key confirmed' only; tight crop on the bottom-most toast, other HUD masked; no archive contents, no typed input",
+   "masks": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 345,
+     "h": 560,
+     "color": "#000",
+     "note": "objectives panel (names a technique)"
+    },
+    {
+     "x": 590,
+     "y": 860,
+     "w": 740,
+     "h": 120,
+     "color": "#000",
+     "note": "bottom examine box (names a person and a host)"
+    },
+    {
+     "x": 1285,
+     "y": 0,
+     "w": 635,
+     "h": 354,
+     "color": "#000",
+     "note": "menu, Task Complete and Objective Updated toasts, Clear all"
+    },
+    {
+     "x": 1700,
+     "y": 975,
+     "w": 220,
+     "h": 105,
+     "color": "#000",
+     "note": "Block/Punch HUD"
+    },
+    {
+     "x": 0,
+     "y": 985,
+     "w": 450,
+     "h": 95,
+     "color": "#000",
+     "note": "portrait, hearts, inventory"
+    }
+   ]
   },
   {
    "id": "C5_card_help",
