@@ -30,3 +30,27 @@ Started 2026-11-25. Plan: `docs/agents/ops_core_build/SHOWCASE_TOUR_PLAN.md` 2.4
 - `test/controllers/break_escape/demo_ops_terminal_scenario_test.rb`: 15 runs, 0 failures, leak scan 0. `bin/ops-golden-compare`: 45 runs, 0 failures.
 - Graph regenerated for this scenario only.
 - Live check: see PLAYTEST.md "Measured seconds".
+
+## Tour round 1 fixes
+
+Inputs: `TOUR_IMPL_REVIEW_R1.md` (1 blocker, 1 major, 9 minors), `TOUR_DIALOGUE_REVIEW_R1.md` (3 majors, 13 minors), the round 1 guided playthrough (game 286, `/data/tmp/scratch/tour-terminal-playtest-1/RESULTS.md`).
+
+Implementation review:
+- B1: the whole-run test records no hand-made `login` tags. It passes no `signins:` either: tried first, both entries came back in `unused_entries`, because both sign-ins here are remote (token and relay) and their answers carry a `host` label, which the scanner places before it looks at an entry (`priv_signin_candidates`). The test now asserts the two answers' host labels and scans the untagged run with no entries.
+- M1: the Haiku playthrough has now played every beat live (all 12 ticked, timings in PLAYTEST "Measured seconds"). Still not played live: the way back (T3r). PLAYTEST says so; it needs a run that lets the token lapse before T3.
+- m1: the T12 pointer, task title and board say to click the box at its port and type the word; the bark now names the Terminal's rule, so it is true whichever way the box came out.
+- m2: "What's next?" names "another go" once the token has lapsed with T3 or T11 undone, then the spare token; the spare-port bark says to sign in with it; the spare-port line loses "before you used it".
+- m3: T3 says "Through the box, sign in ..." (the realism-skin rule refuses "From the Terminal" beside an action). T5 says "Type help to find the console's command" rather than naming the console's command: real tool names stay out of voiced lines and only in the realism catalog. It does name `use` and `info`, against dialogue m7, because the playthrough lost time on `info` with nothing selected.
+- m4: the three self-report tasks and the board say "tell Ama"; the first aim's description says which tasks tick on telling Ama; the remote aim's description says the owner ends the screen.
+- m5, m6: done (dialogue M3, m3).
+- m7: PLAYTEST no longer quotes the id prefix.
+- m8: PLAYTEST says the browser leak check after every beat covers the way back and T12.
+- m9: named the existing JS test (`keyring-token.test.mjs`, "8.1 an expired token is greyed ... and posts nothing"); no new test.
+
+Dialogue review: M1 to M3 and m1 to m12 as suggested, except where the playtest showed the line was untrue: Graham's two lines now say to Connect the code from the inventory (an assist code never shows on a sign-in screen: `keyring.js` CONNECT_KINDS), and T2 names `show` (the sweep prints no table). Zainab's card choice is gated on `confirm_all_done` (declared in her ink as the synced global). `console_ticked` says "Now confirm all three." only when T6 is not done, else nothing. m13 (the lint counts 0 lines for bare `# speaker:npc` lines) is a lint fix across the four showcases, not here; word counts were checked from the extractor (none over 30).
+
+Playtest: the six `credential_unheld` findings are all Zainab's token, from one leak check run after the unplug; the scanner judges against the game at check time, when the foothold is gone (item 5 above). PLAYTEST now says to run it after every beat. The double `exit` closing the view is engine behaviour, noted in the harness notes, not changed here.
+
+Validator: 0 errors, 2 warnings (the two office-life targets in another room); the two VAR/global sync notices are answered by a "Synced scenario global" comment on each VAR.
+
+Checks after the fixes: ink 4 compiled, 0 failed; validator 0 errors, 2 warnings; dialoguelint no findings (still blind, m13); `loopcheck.js` clean on all four; `check_mapping_index_drift.rb main` 0 failures; the scenario test 15 runs, 0 failures, 0 errors, whole-run leak scan 0; `bin/ops-golden-compare` 45 runs, 0 failures; graph regenerated (unchanged); `VOICED_LINES.md` regenerated from the extractor (81 lines, none over 30 words). Live on :3071 (game 295): Chidi's first meeting and new line, Ama's new T1 pointer.

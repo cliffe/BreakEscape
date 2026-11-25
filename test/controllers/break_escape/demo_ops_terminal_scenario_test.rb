@@ -405,7 +405,7 @@ module BreakEscape
       keyring
       rec
       token_in
-      rec('login' => { 'pcId' => 'backup_pc' })
+      rec
       implant
       rec
       ops_scan(FOOT, host_id: 'file_server')
@@ -432,7 +432,7 @@ module BreakEscape
       keyring
       rec
       post game_path('login'), params: { pc_id: 'graham_pc', credential: 'graham_assist', relay: true }, as: :json
-      rec('login' => { 'pcId' => 'graham_pc' })
+      rec
       get game_path('container/graham_pc'), params: { relay: 1 }, as: :json
       rec
       sync_globals('graham_assist_ended' => true)
@@ -447,8 +447,14 @@ module BreakEscape
       play_whole_run
       assert_operator @recorded.length, :>, 20
       lines = @recorded.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] }
-      found = AccessLeakScanner.new(scenario, game: fresh).scan(lines).map { |f| [f.line, f.rule, f.owner, f.route] }
+      # The recorder writes no login tag and none is added here. Both sign-ins are remote (the token and the relay), so each
+      # answer names its PC by its host label and the scanner places it from that; a `signins:` entry would go unused.
+      logins = @recorded.select { |r| r['method'] == 'POST' && r['path'].end_with?('/login') }
+      assert_equal %w[BACKUP-PC IT-PC], logins.map { |r| r['body']['host'] }
+      scanner = AccessLeakScanner.new(scenario, game: fresh)
+      found = scanner.scan(lines).map { |f| [f.line, f.rule, f.owner, f.route] }
       assert_equal [], found
+      assert_equal [], scanner.unused_entries
       raw = @recorded.to_json
       [ZAINAB.last, GRAHAM.last, 'Fernwick-Chi-3047'].each { |text| refute_includes raw, text }
       LINKS.values.each { |id| refute_includes raw, id }

@@ -4,6 +4,8 @@ VAR met_chidi = false
 
 === start ===
 { met_chidi:
+    # speaker:npc
+    Still here, still busy.
     -> hub
 }
 ~ met_chidi = true
@@ -12,8 +14,6 @@ Hiya. Can't stop long, I've a report due.
 -> hub
 
 === hub ===
-# speaker:npc
-Still here, still busy.
 - (choices)
 + [Is the network slow for you too?]
     # speaker:npc
@@ -21,7 +21,7 @@ Still here, still busy.
     -> choices
 + [What's the engineer doing in the server room?]
     # speaker:npc
-    Setting up remote support, I think. Zainab. She never stops for a chat.
+    Zainab, from Fenlow. She never stops for a chat.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

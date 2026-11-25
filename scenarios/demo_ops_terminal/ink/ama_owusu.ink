@@ -19,8 +19,8 @@ VAR keeps_log_done = false
 VAR relay_seen = false
 VAR shared_screen_done = false
 VAR graham_assist_ended = false
-VAR token_ran_out = false
-VAR token_expired_done = false
+VAR token_ran_out = false // Synced scenario global (the T10 mapping sets it too)
+VAR token_expired_done = false // Synced scenario global (the T10 mapping sets it too)
 VAR spare_port_offered = false
 VAR unplug_done = false
 VAR met_ama = false
@@ -54,7 +54,7 @@ This drop box is yours. I'll point out each step.
     -> token_out
 + { token_ran_out and not (use_token_done and needs_console_done) and not spare_port_offered } [Can I have another go?]
     -> spare_offer
-+ { plug_in_done } [What did that show?]
++ { sweep_done } [What did that show?]
     -> recap
 + [Give me the short version.]
     -> short_version
@@ -68,13 +68,19 @@ This drop box is yours. I'll point out each step.
 {
     - not plug_in_done:
         # speaker:npc
-        Plug the box into the server room port, by the rack. This time the view opens as a Terminal.
+        Plug the box into the server room port, by the rack. The view opens as a Terminal.
     - not sweep_done:
         # speaker:npc
-        Sweep the network, then look at the table it gives you.
+        Sweep the network, then show the hosts as a table.
+    - token_ran_out and not (use_token_done and needs_console_done) and not spare_port_offered:
+        # speaker:npc
+        Your token ran out before you'd finished with it. Ask me for another go.
+    - token_ran_out and not needs_console_done:
+        # speaker:npc
+        From the box on the spare port, sign in to the backup PC with the spare token. Then try the keystroke device.
     - not use_token_done:
         # speaker:npc
-        Zainab left a sign-in token for the backup PC. It's in your keyring now the box is in. Use it while it's fresh.
+        Through the box, sign in to the backup PC with Zainab's token while it's fresh. It's in your keyring.
     - not needs_console_done:
         # speaker:npc
         While the token's live, plug the keystroke device into the backup PC's socket.
@@ -83,7 +89,9 @@ This drop box is yours. I'll point out each step.
         Scan the file server, then check its storage service.
     - not console_done:
         # speaker:npc
-        Open the console and search, then ask for info on one finding. Then tell me.
+        Type help to find the console's command. Search there, choose a module with use, then ask for info.
+        # speaker:npc
+        Then tell me what it said.
     - not confirm_all_done:
         # speaker:npc
         Confirm all three. Only that tells them apart.
@@ -92,11 +100,11 @@ This drop box is yours. I'll point out each step.
         Ask Zainab for her card. Use it on the real update finding, then the tool roll card on the settings one.
     - not keeps_log_done:
         # speaker:npc
-        Switch to Panels and back. Your Terminal log is still there. Then tell me.
+        Switch to Panels and back, then tell me what happened to your Terminal log.
     - not shared_screen_done:
         { relay_seen:
             # speaker:npc
-            Keep his screen open, then ask me to have Graham end it.
+            Stay signed in to his screen, then ask me to have Graham end it.
         - else:
             # speaker:npc
             Ask Graham to share his screen.
@@ -106,7 +114,7 @@ This drop box is yours. I'll point out each step.
         Your token runs out six minutes after the box went in. When it shows greyed out in your keyring, tell me.
     - not unplug_done:
         # speaker:npc
-        To finish, unplug from the Terminal. Try a short form of the word first.
+        To finish, click the box at its port in the server room. In that Terminal, try a short form of unplug, then the whole word.
     - else:
         # speaker:npc
         That's the lot. Ask for the short version, or stay and look round.
@@ -116,7 +124,7 @@ This drop box is yours. I'll point out each step.
 === lever_coffee ===
 ~ coffee_call = coffee_call + 1
 # speaker:npc
-Right. A coffee run. Chidi will head for the machine.
+Right, I'll send Chidi for a coffee.
 -> hub
 
 === lever_end_screen ===
@@ -153,8 +161,10 @@ What did the console say?
 === console_ticked ===
 ~ console_done = true
 #complete_task:console
-# speaker:npc
-Search and info are a console's way of listing what exists. Testing is what tells you what's true.
+{ not confirm_all_done:
+    # speaker:npc
+    Now confirm all three.
+}
 -> hub
 
 === log_talk ===
@@ -181,7 +191,7 @@ The Terminal stays for as long as the view is open, with everything you typed.
 ~ spare_port_offered = true
 #set_global:spare_port_offered:true
 # speaker:npc
-If your token's greyed out before you used it, move the box to the spare port by the rack. Zainab left a second token for that one.
+Move the box to the spare port by the rack. Zainab left a second token for that one.
 -> hub
 
 === recap ===
@@ -216,7 +226,7 @@ Which part?
 }
 { confirm_all_done:
     # speaker:npc
-    Testing sorted two real findings from one false one.
+    Testing sorted two real findings from one false one, and the false one said why.
 }
 { step_up_done:
     # speaker:npc
@@ -231,7 +241,7 @@ Which part?
 }
 { token_expired_done:
     # speaker:npc
-    The token was good only for its clock.
+    The token worked only until its clock ran out.
 }
 { unplug_done:
     # speaker:npc
@@ -243,7 +253,7 @@ Which part?
 # speaker:npc
 A scanner's write-up is a report. Test each finding before you trust it.
 # speaker:npc
-A token, a shared screen and a saved link all work without a password, but each can run out or be ended.
+A token and a shared screen both work without a password, but a clock, the owner or an unplug can end them.
 # speaker:npc
 Some tools need a person at the keyboard. A remote session isn't one.
 -> hub

@@ -22,11 +22,11 @@ Go on, then.
     -> share_screen
 + { graham_assist_given } [Where do I use the code?]
     # speaker:npc
-    At my PC's sign-in, from your inventory. It shows you my screen for as long as I let it.
+    Connect it from your inventory. It shows you my screen for as long as I let it.
     -> choices
 + [What do you keep an eye on?]
     # speaker:npc
-    The network, mostly. The file server, the backup PC. Zainab's set up some remote support.
+    The network, mostly. The file server and the backup PC.
     -> choices
 + [I'll let you get on.]
     # speaker:npc
@@ -39,7 +39,7 @@ Go on, then.
 #set_global:graham_assist_given:true
 #give_item:text_file:graham_assist_code
 # speaker:npc
-Aye, go on. That's my assist code. Use it from your inventory at my PC's sign-in.
+Aye, go on. That's my assist code. Connect it from your inventory.
 # speaker:npc
 You'll see what I see. Don't be long.
 -> hub
