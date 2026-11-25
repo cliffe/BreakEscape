@@ -1,0 +1,805 @@
+{
+    "mission": "ca18",
+    "id": "ca18_trailer_r1_narrow",
+    "theme": "ca",
+    "title": "Cyber Aware ca18 trailer, round 1 (narrow-panel takes t02b, t04b and t05b; render 9:16 and 1:1 from this file)",
+    "script": {
+        "heading": "ca18 trailer script (password guessing at scale)",
+        "owner_card": "none yet",
+        "brief": "See docs/video/scripts/ca18_trailer_script.md and tmp/handover/ca0/HANDOVER_edit_ca18.md. Marks from the 25 Nov takes (trimmed-take seconds); Sulafat_v2 VO. Owner decisions (CA0, 25 Nov): t06_delphine_sofa dropped; spray stays 8.16 s (72.6 s total); topic is a static 1x framing (push-in barred); alerts verdict buttons covered by a patch in the panel colour #242c48 (36,44,72); lorna_end 6.24 s; t04b runs at 1x (9:16 zoom 0.5625 with bars); framing: integer scale (owner rule 25 Nov), no push-in, build split into two cuts at 2x; hook and flip framings previewed. Stripe is the course purple #6b4c9a (docs/video/CA_THEME_TWO_SEATS.md). Music is ca13's bed, copied (no ca18-specific choice exists). Chips: OPEN-SOURCE RESEARCH, PASSWORD GUESSER, YOUR INBOX, SECURITY ALERTS, THE TRAINING ROOM."
+    },
+    "fps": 30,
+    "length": 72.6,
+    "music": {
+        "track": "PeaceFolk/Guitar Motif.mp3",
+        "analysis": "guitar_motif_75.json",
+        "start": 95.545,
+        "length": 72.6,
+        "gain_db": -5,
+        "fade_in": 0,
+        "fade_out": 2.5,
+        "alternatives": [
+            "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window)",
+            "PeaceFolk/Quiet Reflection.mp3 @24.016 (used by ca05)"
+        ]
+    },
+    "beat": {
+        "bpm": 95.0,
+        "period": 0.6316,
+        "offset": 0
+    },
+    "duck": {
+        "db": -10,
+        "attack": 0.12,
+        "release": 0.3
+    },
+    "audio": {
+        "fade_ms": 8,
+        "target_lufs": -14,
+        "true_peak": -1.5
+    },
+    "shots": [
+        {
+            "id": "hook",
+            "type": "gameplay",
+            "duration": 3.6,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t01_ama_hook.trimmed.mkv",
+                "in": 9.995,
+                "out": 13.595
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t01 A2: speech 10.145-12.915, cut at 13.595 is before chat-closed 13.81; zoom 1.25 hides the game bar (y 940-1060) and the close x; burned caption with the speaker name | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.69,
+                    "cy": 0.29,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.69,
+                    "cy": 0.444,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.69,
+                    "cy": 0.29,
+                    "zoom": 2
+                }
+            },
+            "lines": [
+                {
+                    "start": 0.15,
+                    "end": 2.92,
+                    "speaker": "Ama Owusu",
+                    "text": "Attackers rarely pick one person and crack them."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-open",
+            "id": "open",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "title": "Password guessing at scale",
+                "company": "Merrin & Sallow Architects",
+                "stripe": "#6b4c9a"
+            },
+            "duration": 5.4
+        },
+        {
+            "id": "topic",
+            "type": "gameplay",
+            "duration": 7.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 6.75,
+                "out": 13.75
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "People page is static from 6.5 to about 13.6; yellow highlight starts about 13.9 so the shot ends before it; static at integer 1x (browser is 1095 px wide, does not fit at 2x); owner rule 25 Nov bars a push-in | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "OPEN-SOURCE RESEARCH",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "red_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "attack",
+            "duration": 3.0,
+            "join": {
+                "type": "cut"
+            },
+            "text": [
+                "You play the attacker"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Attack chapter card, title only | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            }
+        },
+        {
+            "id": "research",
+            "type": "gameplay",
+            "duration": 5.0,
+            "join": {
+                "type": "seam"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 13.95,
+                "out": 18.95
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "opens just after note-team 14.219 (wide), ends with the address-pattern line noted for about 0.95 s | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "OPEN-SOURCE RESEARCH",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "words",
+            "type": "gameplay",
+            "duration": 4.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 21.3,
+                "out": 25.3
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Projects noted 21.332, strapline noted 24.899 (wide) | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "OPEN-SOURCE RESEARCH",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "build",
+            "type": "gameplay",
+            "duration": 1.5,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 31.0,
+                "out": 32.5
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "guesser opens at the top (Who works here, five addresses, waiting) for 1.5 s; the auto-scroll (to 32.9) is cut out; passphrase panel and live log hidden by the take's CSS | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "PASSWORD GUESSER",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "build_count",
+            "type": "gameplay",
+            "duration": 3.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 33.0,
+                "out": 36.2
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "guesser scrolled to the foot: 'Try the next guess (N to go)' counter falling 19 to 8; second cut at the same 2x scale, lower crop | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "PASSWORD GUESSER",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.75,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "spray",
+            "type": "gameplay",
+            "duration": 8.16,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 44.12,
+                "out": 52.28
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "passes about 1.75 s each, result row (3 of 5 accounts opened) at 6.66 s wide / 6.51 s narrow; passphrase panel absent; longer than the script's 7.0 s (owner accepted a 72.6 s trailer) | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "PASSWORD GUESSER",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "flip",
+            "type": "gameplay",
+            "duration": 2.4,
+            "join": {
+                "type": "flip"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 59.95,
+                "out": 62.35
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "flip-up 59.398 wide; heading 'Now it's your inbox.'; body and aftermath hidden by CSS | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "YOUR INBOX",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.31,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "ama_flip",
+            "type": "gameplay",
+            "duration": 6.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03_ama_flip.trimmed.mkv",
+                "in": 24.76,
+                "out": 30.96
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t03 A6: speech 24.91-30.334, pause 27.54-27.76 is the cue split; chat closes 31.29; zoom 1.25 hides game bar and x; burned captions with the speaker name | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "YOUR INBOX",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.69,
+                    "cy": 0.29,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.69,
+                    "cy": 0.444,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.69,
+                    "cy": 0.29,
+                    "zoom": 2
+                }
+            },
+            "lines": [
+                {
+                    "start": 0.15,
+                    "end": 2.78,
+                    "speaker": "Ama Owusu",
+                    "text": "Now it's your seat, and the alerts are arriving,"
+                },
+                {
+                    "start": 3.0,
+                    "end": 5.57,
+                    "speaker": "Ama Owusu",
+                    "text": "some real, some fakes meant to finish the job."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "id": "blue_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "defend",
+            "duration": 2.4,
+            "join": {
+                "type": "seam"
+            },
+            "text": [
+                "You handle the security alerts"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Defend chapter card, title only | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            }
+        },
+        {
+            "id": "alerts",
+            "type": "gameplay",
+            "duration": 9.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04b_defend_list_narrow.trimmed.mkv",
+                "in": 7.09,
+                "out": 16.09
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "list held about 4.0 s, then the genuine 08:54 Fenlow card opens (card-open 10.902 wide / 11.092 narrow); verdict buttons sit under 'Hello,' in every framing so a patch in the panel colour (36,44,72, sampled from both takes) covers them from the card's first frame; t04b panel is 760 px so 9:16 and 1:1 run at 1x (9:16 zoom 0.5625 with bars), 16:9 at 2x | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "SECURITY ALERTS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.33,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "masks": [
+                {
+                    "x": 862,
+                    "y": 300,
+                    "w": 445,
+                    "h": 260,
+                    "from": 3.9,
+                    "color": "#242c48"
+                }
+            ]
+        },
+        {
+            "id": "lorna_end",
+            "type": "gameplay",
+            "duration": 6.24,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t05b_lorna_reset_narrow.trimmed.mkv",
+                "in": 3.32,
+                "out": 9.56
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "in = press minus 0.8 s; opens on the Look up panel then Lorna at her desk; L1 audio 2.0 s after the press; her bubble is hidden so the line is burned; room is off-centre so the window holds the panel (0.8 s) and the desk | CA: spoilers not an issue (owner); never on screen: passphrase panel, live log, flip body, fake lockout card, Lorna's L2"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.45,
+                    "cy": 0.55,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.43,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.43,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "lines": [
+                {
+                    "start": 2.99,
+                    "end": 5.98,
+                    "speaker": "Lorna",
+                    "text": "Fenlow have made me reset my password after this morning."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-close",
+            "id": "close",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "name": "Password guessing at scale",
+                "tagline": "Play the attack · Learn to stop it",
+                "hacktivity": "Hacktivity",
+                "cta": "Learn on Hacktivity.co.uk",
+                "layout": {
+                    "1:1": {
+                        "mark_y": 0.14
+                    }
+                },
+                "wordmark": [
+                    "HACKTIVITY",
+                    "CYBER AWARE"
+                ]
+            },
+            "duration": 5.5
+        }
+    ],
+    "vo": [
+        {
+            "id": "v1",
+            "start": 3.6,
+            "end": 8.712,
+            "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+            "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v1.mp3"
+        },
+        {
+            "id": "v1b",
+            "start": 9.2,
+            "end": 11.84,
+            "text": "This practice lists its staff online.",
+            "caption": "This practice lists\nits staff online.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v1b.mp3"
+        },
+        {
+            "id": "v1c",
+            "start": 12.09,
+            "end": 15.114,
+            "text": "This episode: password guessing at scale.",
+            "caption": "This episode: password\nguessing at scale.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v1c.mp3"
+        },
+        {
+            "id": "v2",
+            "start": 16.2,
+            "end": 18.6,
+            "text": "First, you play the attacker.",
+            "caption": "First, you play the attacker.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v2.mp3"
+        },
+        {
+            "id": "v3",
+            "start": 19.3,
+            "end": 23.092,
+            "text": "Their website gives the staff and the address pattern.",
+            "caption": "Their website gives the staff\nand the address pattern.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v3.mp3"
+        },
+        {
+            "id": "v3b",
+            "start": 24.2,
+            "end": 26.456,
+            "text": "Then the words the practice uses.",
+            "caption": "Then the words\nthe practice uses.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v3b.mp3"
+        },
+        {
+            "id": "v4",
+            "start": 28.2,
+            "end": 31.344,
+            "text": "Turn them into a staff list and a word list.",
+            "caption": "Turn them into a staff list\nand a word list.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v4.mp3"
+        },
+        {
+            "id": "v5",
+            "start": 32.9,
+            "end": 37.172,
+            "text": "Try one password on every account, so nothing locks.",
+            "caption": "Try one password on every\naccount, so nothing locks.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v5.mp3"
+        },
+        {
+            "id": "v6",
+            "start": 39.56,
+            "end": 40.712,
+            "text": "Some of them open.",
+            "caption": "Some of them open.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v6.mp3"
+        },
+        {
+            "id": "v7",
+            "start": 49.66,
+            "end": 51.268,
+            "text": "Defend the practice.",
+            "caption": "Defend the practice.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v7.mp3"
+        },
+        {
+            "id": "v8a",
+            "start": 52.06,
+            "end": 54.484,
+            "text": "Six alerts have landed in your inbox.",
+            "caption": "Six alerts have landed\nin your inbox.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v8a.mp3"
+        },
+        {
+            "id": "v8b",
+            "start": 56.66,
+            "end": 57.908,
+            "text": "Is this one real?",
+            "caption": "Is this one real?",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v8b.mp3"
+        },
+        {
+            "id": "v10",
+            "start": 61.56,
+            "end": 62.76,
+            "text": "At Lorna's desk.",
+            "caption": "At Lorna's desk.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v10.mp3"
+        },
+        {
+            "id": "v11",
+            "start": 67.3,
+            "end": 72.268,
+            "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+            "caption": "Play the attack, learn to\nstop it, on Hacktivity.co.uk.",
+            "file": "/home/cliffe/video-takes-local/ca18/vo/Sulafat_v2/trim/v11.mp3"
+        }
+    ]
+}
