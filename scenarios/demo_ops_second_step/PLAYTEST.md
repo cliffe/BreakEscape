@@ -182,7 +182,7 @@ The order is M15, M14, M16, M17, the same as "What's next?", the late aim and th
    - See: a pane "Records room": "A request was sent to Gwen Pritchard's phone." (Gwen never answers a request by habit: M15 has just shown it on the archive store, so it is not repeated here.)
    - Click "Check Gwen Pritchard's phone" in the pane: a card named "Records room" with "Approve" and "Deny". Click "Approve".
    - See: the pane closes and the door opens with the toast "Door opened with ..."; walk in: "Records safe". The task "Open the records room with its code and Gwen's approval" ticks.
-   - Server: `mfa_challenge`, several `mfa_prompt_sent` and one `mfa_prompt_approved` (approver `held_phone`) at the door `records_room`.
+   - Server: `mfa_challenge`, one `mfa_prompt_sent` (a single code entry, no resend) and one `mfa_prompt_approved` (approver `held_phone`) at the door `records_room`.
 3. **M16, the safe.** Click "Gwen's desk drawer" in the Office (it is not locked) and take "Note: records safe"; read it (the safe's PIN: record "from Gwen's drawer note"). Click Ama, "Send them for coffee." and wait for `npc_left_post:anjali_rao`; take "Anjali's code fob" from her desk. Go to the Records room, click "Records safe", type the PIN from the note, press Enter.
    - See: a pane "Records safe": "Enter the code from Anjali Rao's device." with a six-digit field and "Read code", "Verify". Type 000000 and Verify: "Incorrect code". Click "Read code": six digits and a countdown; click "Use this code", then "Verify".
    - See: the pane closes and the safe opens: "Safe papers". The task "Open the records safe with its code and Anjali's fob" ticks.
