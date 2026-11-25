@@ -51,7 +51,7 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
 
   def admin_signin(pc = 'profile_pc', npc = 'dana')
     row({ 'success' => true, 'npcId' => npc, 'username' => 'x', 'displayName' => 'x', 'via' => 'password' },
-        path: 'login', method: 'POST', extra: { 'login' => { 'pcId' => pc } })
+        path: 'login', method: 'POST', extra: { 'pc' => { 'pcId' => pc } })
   end
 
   def crow(npc, hash_id, extra = {})
@@ -69,8 +69,22 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     row(body, path: 'harvest_credentials', method: 'POST', status: status)
   end
 
+  PC_ROUTES = %w[login logout lock_session mfa/verify mfa/prompt mfa/approve].freeze
+
+  # A scan with a `pc` tag on any row is of a tagged capture: the recorder writes the key on every POST to a PC route,
+  # so every other such row carries `pc: null` (unplaced), and no row is placed by a name given by hand.
+  def tagged_run(rows)
+    return rows unless rows.any? { |r| r.is_a?(Hash) && r.key?('pc') }
+
+    rows.map do |r|
+      pc_route = r.is_a?(Hash) && r['method'] == 'POST' && PC_ROUTES.any? { |route| r['path'].to_s.end_with?("/#{route}") }
+      pc_route && !r.key?('pc') ? r.merge('pc' => nil) : r
+    end
+  end
+
   def scan(rows, scenario: data, game: nil, **options)
-    AccessLeakScanner.new(scenario, game: game).scan(rows.each_with_index.map { |r, i| ['r.jsonl', i + 1, r] }, **options)
+    options = { tags: :absent }.merge(options) if options[:signins] || options[:logouts]
+    AccessLeakScanner.new(scenario, game: game).scan(tagged_run(rows).each_with_index.map { |r, i| ['r.jsonl', i + 1, r] }, **options)
   end
 
   def rules(findings)

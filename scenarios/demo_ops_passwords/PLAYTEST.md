@@ -20,13 +20,13 @@ tools/playtest/session-start.sh --url <URL> --headless \
 tools/playtest/cmd.sh <game_id> '{"cmd":"bootstrap","tutorial":"decline","resume":"new"}'
 ```
 
-After each run read the server's record and run the leak check. A session resumed in a new browser writes a new capture file: give the leak check every capture file of the game, oldest first, named one by one (never a glob). Keyboard sign-ins must be named to the check (`--signin <npc id>@<pc id>#<n>`; the listing script in `scenarios/test_ops_privilege/PLAYTEST.md` "Setup" prints them).
+After each run read the server's record and run the leak check. A session resumed in a new browser writes a new capture file: give the leak check every capture file of the game, oldest first, named one by one (never a glob). The recorder tags each sign-in with its PC, so a new run's check takes no `--signin` or `--logout` (exit 2 if given). To check an older capture (made before recorder 1.0.21, no tags), pass `--untagged` and name its keyboard sign-ins (`--signin <npc id>@<pc id>#<n>`; the listing script in `scenarios/test_ops_privilege/PLAYTEST.md` "Setup" prints them).
 
 ```bash
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --ops-log
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> \
-  --signin <npc>@<pc>#<n> ... $S/responses-<game_id>.jsonl
+  $S/responses-<game_id>.jsonl
 ```
 
 Take a screenshot at every beat and write each finding as the run goes. Write every password as `[redacted N chars]`.
@@ -86,7 +86,7 @@ Fresh game.
 | P4b | Take the note from the printer cupboard in the office (`Printer admin.txt`) and read it. Press Crack on Graham's row again; wait out a second countdown. | "Cracked": the printer service account's password, already held, was the same. The row reads Cracked. Talk to Ama: "I cracked Graham's record." (she says one person used one password on two accounts). Do not take the note during the first countdown: that run's verdict is fixed when it starts. | none |
 | P5 | Press Crack on Julian's row, then again. | First "No match", then "This one will not fall to guessing. Try another way in." The row reads Not feasible and offers no Crack. Talk to Ama: "I tried Julian's record twice." | none |
 
-End of Run A: `{"cmd":"sync"}`, then the leak check (no `--signin` names are needed: no sign-in yet) and `verify-run.rb <game_id> --access --ops-log`: two accounts cracked, Julian's record infeasible (two runs).
+End of Run A: `{"cmd":"sync"}`, then the leak check and `verify-run.rb <game_id> --access --ops-log`: two accounts cracked, Julian's record infeasible (two runs).
 
 ## Run B: sign-ins, the administrator, the log (P6 to P9)
 
@@ -103,7 +103,7 @@ Fresh game, with the Run A records already taken and cracked by the same clicks 
 | P8b | Reload (`sync`, reload, bootstrap resume). `interact` `partner_pc`. | The desktop opens with the "Administrator" marker back and no sign-in screen. | `--access`: `level admin` again |
 | P9 | Talk to Ama: "Call it a day." Go to the IT room, talk to Graham ("What about the sign-in log?": he says someone tried his PC in the night). `interact` `signin_log_pc`. Find your own rows, open the Tue 02:10 row and flag it ("Flag the odd sign-in"). | Reader table with SIGN_IN, ADMIN_READ and USB_OVERRIDE rows beside the six seed rows (a failed sign-in shows as SIGN_IN with FAIL). To flag: `{"cmd":"mg","action":"clickSelector","args":["tr[data-row-id=\"s2\"]"]}`, then `button[data-action=\"flag\"]`, then `button[data-action=\"flag-confirm\"]` (the note reads FLAGGED). Flagging 02:10 ticks "Find your own trail in the sign-in log, and flag the night-time failure". Ama's "What did that show?" (offered once a fact or the records are held) recaps up to two beats per ask, newest first, each once; "Give me the short version." is the whole summary. Staff have gone home except Graham. | `--ops-log` ends `ops log OK` |
 
-End of run: `{"cmd":"sync"}`, the leak check (name every keyboard sign-in: Delphine at `delphine_pc`, Graham at `partner_pc`), `verify-run.rb <game_id> --access` and `--ops-log`.
+End of run: `{"cmd":"sync"}`, the leak check (no names: the tags place each sign-in), `verify-run.rb <game_id> --access` and `--ops-log`.
 
 ## Run D: what a PC remembers, the borrow and the shared desk account (P10 to P15; plan 6.5 and 6.6)
 
@@ -118,7 +118,7 @@ New rooms' objects: the office also holds the hot desk (`hot_desk`, no owner, a 
 | P14 | Click the partner's PC (not signed in there; sign out of Graham's session first with Start, "Sign out"), choose "Other user" and type the same name and password. | "This account can't sign in on this PC." The sign-in screen says "Domain: merrin" above the tiles (P15). No lockout is counted however many times it is tried. The account is refused at Graham's PC too. Talk to Ama: "I tried the shared desk account at Julian's PC." She says a local account stays on its own PCs. | `--ops-log`: a `signin_refused` row (read as SIGN_IN, DENIED, "kind: local") per try; no failed-sign-in row |
 | P15 | The text "Domain: merrin" on the sign-in screen of every PC and on the lock screen at Delphine's PC. | Seen at any PC's keyboard sign-in. A domain person (Graham, Jun, Niamh, Delphine, Julian) works on every PC that admitted them before. | none |
 
-End of Run D: the leak check names every keyboard sign-in with the account's own count (the Rails test names them the same way): Delphine at `delphine_pc` #1, Graham at `partner_pc` #1, then `gwhitfield` at `hot_desk` (#2 before the borrow if you collected before it, and #3 after it), the shared account at `delphine_pc` #1; and every sign-out made while another PC holds an administrator session needs a `--logout` entry (`deskadmin@delphine_pc#<n>`, `graham_whitfield@hot_desk#<n>`, where n is the number of the sign-out among all the successful logouts in the capture). The Rails test names these in `play_afternoon`. Then `verify-run.rb <game_id> --access` and `--ops-log`.
+End of Run D: on a new (tagged) run the leak check takes no `--signin` and no `--logout` entry; the recorder's tags place every sign-in and sign-out (the Rails test names them in `play_afternoon`; the names apply only to an older capture checked with `--untagged`). Then `verify-run.rb <game_id> --access` and `--ops-log`.
 
 ## Free play checks (any time, in either run)
 

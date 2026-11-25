@@ -30,10 +30,10 @@ Checks after each run:
 ```bash
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb --log $S/session-<game_id>.jsonl --access <game_id>
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb --ops-log <game_id>
-env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> <capture files, oldest first> --signin <account>@<pc>#<n> ...
+env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> <capture files, oldest first>
 ```
 
-`--signin <account>@<pc>#<n>` names a keyboard sign-in that the capture cannot place, and `n` counts every successful `POST /login` answer of that account in the capture, open-screen claims included (`via: claim`). Here only Niamh's kiosk sign-in is such a row: a second-step PC (Lorna, Darren, Anjali, Yusuf) earns its desktop through the step, not through a successful login answer, and Darren's open-screen peeks are claims, which the scanner already allows. Never name a claim row (naming one exits 2, "named, unconfirmed (via claim)"), and never name a second-step sign-in (it matches no row, exit 2). So give one entry, in Run C only: `--signin niamh_doherty@visitor_kiosk#1` (Niamh has no claims, so her sign-in is always her 1st). Runs A and B take no `--signin` entry. Expected: exit 0, "VERDICT: no leaks found." (The three playtest 2 captures all exit 0 this way.)
+The recorder tags each sign-in with its PC, so a new run's check takes no `--signin` and no `--logout` (exit 2 if given). Expected: exit 0, "VERDICT: no leaks found." in Runs A, B and C. To check an older capture (made before recorder 1.0.21, no tags), pass `--untagged` and give its one entry, in Run C only: `--signin niamh_doherty@visitor_kiosk#1` (`n` counts every successful `POST /login` answer of that account, open-screen claims included; Niamh has no claims, so her sign-in is her 1st; never name a claim row or a second-step sign-in, both exit 2). The three playtest 2 captures all exit 0 that way.
 
 Every run: a screenshot per beat, findings written as the run goes, and an **earned-secrets table**: for each secret used, the in-game place it was read from (never the secret itself). A "stuck" claim is checked by a Sonnet run before it counts.
 
@@ -123,7 +123,7 @@ A fresh game that first plays Run A's steps through M2 and M3 (printer off, Darr
 4. **M13, the desk says no.** After M11 and M12 (the stop counts by the typed username and a grant clears it, so never use `dprice` or `ydemir` here). Click Thandiwe, "I need a password reset.", username `leaston`, any two wrong answers: "The desk could not verify you. Tries left: 2." Send again twice more: "Tries left: 1.", then "Tries left: 0.". The next request says the desk is not taking requests for that account, with a time. The task "Get refused by the desk until it stops listening" ticks on that answer. The refusal never says whether the name exists: try `nobody.here` and compare the wording and the count.
    - Wait five minutes of real time and the desk listens to `leaston` again (optional).
 5. Click Ama, "What did that show?": three more lines (the two things about Darren anyone could read, the phone move, the desk that never said whether the name was real).
-6. Checks: `verify-run --access` shows Darren's password reset and Yusuf's step reset; `--ops-log` passes; the leak check exits 0, with no `--signin` entry.
+6. Checks: `verify-run --access` shows Darren's password reset and Yusuf's step reset; `--ops-log` passes; the leak check exits 0 with no entry.
 
 ## Run E: doors, a safe and a case (M14 to M17, added by S8c)
 
@@ -149,7 +149,7 @@ The order is M15, M14, M16, M17. M15 comes first so that Gwen's phone is not yet
    - Click the X. In the tray choose "Drop here" (toast "Dropped Darren's case"), click the case on the floor to pick it up again ("Picked up Darren's case"). Choose "Unlock" again: "Requests sent: 2" (the count carries on). Do that once more (drop, pick up, "Unlock") and press "Send again": the third request is approved at once, the pane closes and the case opens: "Case papers". The task "Carry Darren's case away until he approves opening it" ticks (it does not tick "Wear someone down until they approve a sign-in": that is Darren's PC only).
    - Server: three `mfa_prompt_sent` and one `mfa_prompt_approved` (approver `owner`) at the object `darren_case`.
 5. Click Ama, "What did that show?": four more lines (the phone and the door, the propped door, the fob and the safe, the case that travelled). "What's next?" names the next undone lock beat.
-6. Checks: `verify-run --access` and `--ops-log` pass (the log shows `door` and `object` rows beside the `pc` ones); the leak check exits 0 with no `--signin` entry. The Rails scan over the same routes reports nothing (see BUILD_REPORT).
+6. Checks: `verify-run --access` and `--ops-log` pass (the log shows `door` and `object` rows beside the `pc` ones); the leak check exits 0 with no entry. The Rails scan over the same routes reports nothing (see BUILD_REPORT).
 
 A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16 (Anjali goes home with her fob). Gwen and Fatima have no evening mapping and stay.
 

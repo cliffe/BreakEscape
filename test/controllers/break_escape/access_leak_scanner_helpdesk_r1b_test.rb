@@ -104,7 +104,7 @@ module BreakEscape
 
     def code_session_rows(data)
       body = { 'success' => true, 'npcId' => 'hana', 'username' => npc_of(data, 'hana')['creds']['username'], 'displayName' => npc_of(data, 'hana')['displayName'] || 'hana', 'via' => 'password' }
-      login = row('POST', 'login', { 'status' => 200, 'body' => body }, extra: { 'login' => { 'pcId' => 'code_pc1' } })
+      login = row('POST', 'login', { 'status' => 200, 'body' => body }, extra: { 'pc' => { 'pcId' => 'code_pc1' } })
       desktop = row('GET', 'container/code_pc1', { 'status' => 200, 'body' => { 'container_id' => 'code_pc1', 'contents' => [], 'session' => body.reject { |k, _| k == 'success' } } })
       [login, desktop]
     end
