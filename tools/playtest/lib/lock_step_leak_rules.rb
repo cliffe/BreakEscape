@@ -176,6 +176,7 @@ module LockStepLeakRules
     ls_collect_door_routes
     @ls_known_ids = Set.new # every id the scenario's rooms author or the server generates (objects, NPCs, what they hold), for R1-SCANNER5
     @ls_room_ids = {}       # room id => the ids of its objects (authored or generated), for the rooms an open of a door serves
+    @ls_k1_ids = {}         # R5-m2: @ls_room_ids less every id that is, or sits inside, a takeable or needsTag object at any depth
     rooms = @data['rooms'].is_a?(Hash) ? @data['rooms'] : {}
     rooms.each do |room_id, room|
       next unless room.is_a?(Hash)
@@ -188,6 +189,7 @@ module LockStepLeakRules
         o.is_a?(Hash) && (o['needsTag'] || o['takeable']) ? ls_server_ids(Array.new(i) + [o], room_id) : []
       end
       @ls_room_ids[room_id] = (objects - movable).to_set
+      @ls_k1_ids[room_id] = @ls_room_ids[room_id] & ls_fixed_ids(room['objects'], room_id).to_set
       @ls_known_ids.merge(objects + held)
     end
   end
@@ -202,6 +204,18 @@ module LockStepLeakRules
       id = o['id'].nil? ? (held ? "#{base}_held_#{i}" : "#{base}_#{o['type']}_#{i}") : o['id']
       ids = id.is_a?(String) && !id.empty? ? [id] : []
       ids + ls_server_content_ids(o['contents'], id)
+    end
+  end
+
+  # R5-m2: the ids (as the server stamps them) of the objects of a list that are not movable and sit in no movable object, at any depth.
+  # `parent_id` nil means the top level of a room (`base` is then the room id).
+  def ls_fixed_ids(list, base, parent_id = nil)
+    Array(list).each_with_index.flat_map do |o, i|
+      next [] unless o.is_a?(Hash)
+      next [] if o['needsTag'] || o['takeable']
+
+      id = o['id'].nil? ? (parent_id ? "#{parent_id}_content_#{i}" : "#{base}_#{o['type']}_#{i}") : o['id']
+      id.is_a?(String) && !id.empty? ? [id] + ls_fixed_ids(o['contents'], base, id) : []
     end
   end
 
@@ -232,7 +246,10 @@ module LockStepLeakRules
   # judged by room, as the server does.
   def ls_room_shut?(key)
     room = @ls_locks.dig(key, :room)
-    room.is_a?(String) && room != @data['startRoom'] && !@ls_rooms.include?(room) && !@ls_opened.include?("door:#{room}")
+    return false unless room.is_a?(String)
+    return true if @ls_route_shut.include?(room) # K1: a route room not yet proved promoted stays shut, whatever else was opened
+
+    room != @data['startRoom'] && !@ls_rooms.include?(room) && !@ls_opened.include?("door:#{room}")
   end
 
   # the server answers nothing for a lock below a closed container or inside a room not yet opened
@@ -246,6 +263,13 @@ module LockStepLeakRules
   def ls_note_rooms(root, info, add)
     return unless info[:ok]
 
+    # K1: `routeRoom: true` (the server marks a route room not yet promoted) never marks a room opened and un-marks one that was
+    if root.is_a?(Hash) && root['routeRoom'] == true
+      ls_note_route_room(root, info)
+      return
+    end
+    ls_note_route_proof(root, info)
+
     if info[:method] == 'GET' && (room = info[:path][%r{/games/[^/]+/room/([^/]+)\z}, 1])
       room = URI.decode_www_form_component(room)
       world = @data.dig('social', 'awarenessEpisode', 'world', 'room') if @data['social'].is_a?(Hash) && @data['social']['awarenessEpisode'].is_a?(Hash) && @data['social']['awarenessEpisode']['world'].is_a?(Hash)
@@ -258,6 +282,7 @@ module LockStepLeakRules
         nil # R4-2: an open that was already done proves nothing new, and a player drop can put ids of two rooms in one
       elsif rooms.size == 1
         @ls_rooms << rooms.first
+        @ls_route_shut.delete(rooms.first) # K1: a door open that proves the room re-opens it
       elsif rooms.size > 1
         add.call('lock_step_content', 'lockstep:room:mixed', '$')
       end
@@ -268,6 +293,48 @@ module LockStepLeakRules
       rooms = @ls_room_ids.select { |_room, room_ids| !(room_ids & ids).empty? }.keys
       @ls_rooms << root['roomId'] if rooms == [root['roomId']]
     end
+  end
+
+  # K1: an answer marked `routeRoom: true` (GET room, or the door open) names a route room that is not promoted: the room is shut, and
+  # stays so until a door open that proves it, or an object unlock that names an object of exactly that room (ls_note_route_proof).
+  def ls_note_route_room(root, info)
+    room = ls_route_room_of(root, info)
+    return unless room
+
+    @ls_rooms.delete(room)
+    @ls_route_shut << room
+  end
+
+  # The room a marked answer is of: the room a GET names, else the one room whose ids a door open lists, else the room of the door
+  # lock its echo names. Nil when none (nothing is proved, and nothing is un-marked).
+  def ls_route_room_of(root, info)
+    if (room = info[:path][%r{/games/[^/]+/room/([^/]+)\z}, 1])
+      return URI.decode_www_form_component(room)
+    end
+    return nil unless root['roomData'].is_a?(Hash)
+
+    ids = (ls_ids(root['roomData']['objects']) + ls_ids(root['roomData']['npcs'])).to_set
+    rooms = @ls_room_ids.select { |_room, room_ids| !(room_ids & ids).empty? }.keys
+    return rooms.first if rooms.size == 1
+
+    echo = ls_echo_key(root)
+    echo.is_a?(String) && @ls_locks[echo][:type] == 'door' ? @ls_locks[echo][:id] : nil
+  end
+
+  # K1: the one answer, other than a door open, that re-opens a route room marked shut: a 200 POST unlock of type object whose gated-lock
+  # echo names (`targetType` not door, `targetId` the lock's subject) an id of exactly one room, matched against that room's ids less
+  # every movable id at any depth (R5-m2). An object answer with no echo, or an id in no room or in two, proves nothing. Inert while no room
+  # is marked, so no answer without the key changes anything.
+  def ls_note_route_proof(root, info)
+    return if @ls_route_shut.empty? || !root.is_a?(Hash)
+    return unless info[:method] == 'POST' && info[:path].match?(%r{/games/[^/]+/unlock\z}) && root['success'] == true && root['type'] == 'object'
+    return unless root['targetType'].is_a?(String) && root['targetType'] != 'door' && root['targetId'].is_a?(String)
+
+    rooms = @ls_k1_ids.select { |_room, room_ids| room_ids.include?(root['targetId']) }.keys
+    return unless rooms.size == 1 && @ls_route_shut.include?(rooms.first)
+
+    @ls_route_shut.delete(rooms.first)
+    @ls_rooms << rooms.first
   end
 
   # The doors the scenario itself authors a way past the step for: a `prop_door` workaround of a room NPC, and an `unlock_door`
@@ -342,11 +409,12 @@ module LockStepLeakRules
   # Selects the proof of the game the row's path names (a gate in one game proves nothing in another).
   def ls_select_game(info)
     game = info ? info[:path].to_s[%r{/games/([^/]+)/}, 1] : nil
-    st = (@ls_games[game] ||= { gates: {}, passed: Set.new, opened: Set.new, rooms: Set.new })
+    st = (@ls_games[game] ||= { gates: {}, passed: Set.new, opened: Set.new, rooms: Set.new, route_shut: Set.new })
     @ls_gates = st[:gates]   # lock key => { at:, kind:, npc:, number: }: a gate answer not yet passed
     @ls_passed = st[:passed]
     @ls_opened = st[:opened]
     @ls_rooms = st[:rooms]   # room ids the player has opened, by what the capture served
+    @ls_route_shut = st[:route_shut] # K1: route rooms the server marked not promoted, shut until proved
   end
 
   # A 200 POST reset starts the game again: nothing earned before it stands.
@@ -357,6 +425,7 @@ module LockStepLeakRules
     @ls_passed.clear
     @ls_opened.clear
     @ls_rooms.clear
+    @ls_route_shut.clear
   end
 
   def ls_time(row)
@@ -423,7 +492,7 @@ module LockStepLeakRules
     ls_judge_contents(body, info, open_key || prop_key, open_reported, add)
     ls_judge_secrets(body, info, add, judged, open_key)
     ls_judge_unplaced(body, add, judged + reported)
-    ls_earn(earn, open_key, root, info)
+    ls_earn(earn, open_key, root, info, row)
     ls_earn_door_routes(root, info, prop_key)
     ls_note_rooms(root, info, add)
     @ls_placed = judged
@@ -617,7 +686,7 @@ module LockStepLeakRules
     echo = ls_echo_key(root)
     shape = root.reject { |k, _v| %w[targetType targetId].include?(k) }
     if echo.nil?
-      return if ls_pc_owns?(root, info)
+      return if ls_pc_owns?(root, info, row)
       return if ls_unnamed_shape?(shape) && ls_refusal_ok?(route, info, shape, row)
     elsif echo != :bad && !ls_hidden?(echo) && ls_refusal_ok?(route, info, shape, row) && ls_refusal_gate_ok?(route, shape, echo, ls_time(row))
       judged << root
@@ -644,11 +713,21 @@ module LockStepLeakRules
   # lock's with its echo dropped, so it is not the PC's (only the shapes of both forms alike, a cancel and a waiting prompt, can be).
   # R1-SCANNER8: and only a PC step of a kind this route serves can have given it (a code step answers on verify; a push step on
   # prompt and approve).
-  def ls_pc_owns?(root, info)
+  #
+  # P11: in a tagged run the row's `pc` tag names who sent the request, so the answer is a PC's only when that PC has an open step of a
+  # kind the route serves; a `null` tag (or one naming no PC of the scenario) is never a PC's, and an echo-less lock-form answer is then
+  # a finding. An untagged run keeps the rule above (any open step of that kind).
+  def ls_pc_owns?(root, info, row = nil)
     return false if @mfa_pending.empty? || !root.keys.all? { |k| LS_PC_REFUSAL_KEYS.include?(k) }
 
     served = info[:route].to_s == 'mfa/verify' ? %w[code] : LS_PUSH_KINDS
-    return false unless @mfa_pending.values.any? { |rec| served.include?(rec[:kind]) }
+    if @tags_on
+      pc = row ? row_pc_tag(row) : nil
+      rec = pc ? @mfa_pending[pc] : nil
+      return false unless rec && served.include?(rec[:kind])
+    else
+      return false unless @mfa_pending.values.any? { |rec| served.include?(rec[:kind]) }
+    end
 
     root.key?('message') || (root.keys & LS_PC_MESSAGE_KEYS).empty?
   end
@@ -902,7 +981,7 @@ module LockStepLeakRules
 
   # ---- what an answer proves for the answers after it ---------------------------------------------------------------
 
-  def ls_earn(earn, open_key, root, info)
+  def ls_earn(earn, open_key, root, info, row = nil)
     earn.each do |kind, key, value|
       case kind
       when :gate then @ls_gates[key] = value
@@ -923,7 +1002,7 @@ module LockStepLeakRules
     echo = ls_echo_key(root)
     if echo.is_a?(String)
       @ls_gates.delete(echo)
-    elsif !(echo.nil? && ls_pc_owns?(root, info))
+    elsif !(echo.nil? && ls_pc_owns?(root, info, row))
       kinds = LS_ROUTE_KINDS[info[:route].sub('mfa/', '')]
       @ls_gates.delete_if { |_k, g| kinds.include?(g[:kind]) }
     end
