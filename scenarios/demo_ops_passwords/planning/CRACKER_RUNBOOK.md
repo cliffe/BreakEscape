@@ -161,3 +161,13 @@ Write `/data/tmp/scratch/crack-pw/RESULTS.md` with these sections, in this order
 4. Leak check: EXIT code, the finding count, the rule names and the owners found (see section 4).
 5. Verify-run: the EXIT code and key lines from the `--ops-log` and `--access` outputs.
 6. Differences from PLAYTEST.md: list each one.
+
+## Tour additions (showcase tour U2, 2026-11-25)
+
+Beats and entry points the guided tour now sends the player to. Run them in this game state; every cracker rule above still holds.
+
+- **P4, from the held file.** Ama's pointer now says "crack Graham's record from the file in your inventory". After taking `graham_record.dat` and the printer note, open the file in the inventory tray: it offers Crack (the same cracker, salted, about 20 seconds). Press it before the note and the verdict is "No match" (fixed when the run starts); take the note and press again. Expect "The cracker finished by itself when the wait ran out" in Ama's follow-up (the tell-Ama choice "I cracked Graham's record.").
+- **P11a, from the toast.** After the hot desk collect (Graham signed in at `hot_desk`, "Cached accounts"), the toast "Hash collected" names one record (Niamh's) and has a Crack button. Press it: the cracker opens on that row; Niamh's falls at once with nothing picked. Then tell Ama "I collected at the hot desk." (answer: "One record, Niamh's. The toast has a Crack button when it names one record. Try it.").
+- **P11c, the second toast.** After Jun's borrow (lever "Switch Jun's PC off." after P11a), sign in again at the hot desk (the borrow displaced the first session), "Cached accounts": the toast names one record, Jun's (Niamh's was collected before). Its Crack button opens Jun's row; with no fact it says one fact is missing; with "Jun's cat" (from his feed post) it cracks. Tell Ama "I collected there again."
+- **When the borrow came first.** Collecting once after the borrow lists two records and the toast has no Crack button (it names two). Use the capture log rows instead.
+- Passwords are never written to RESULTS.md; write `[redacted N chars]`.

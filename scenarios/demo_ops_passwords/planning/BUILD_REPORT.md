@@ -125,3 +125,34 @@ Files: `scenario.json.erb`, `mission.json`, the ink of Ama, Jun and Graham (`.in
 - minor-4: no event can tick `local_refused`. `pc_signin_failed` carries only `pcId`, `reason` (`not_permitted`) and `attemptsLeft`: no account, no kind. The same reason is sent for the printer account and for any right password the PC does not admit, so a mapping would tick on refusals that teach nothing about local accounts. It stays told to Ama.
 - minor-5: the P15 case asserts `domain` unconditionally.
 - minor-6: record file id `desk_rounds_record_file`, credential key `desk_rounds_hash`.
+
+## Showcase tour U2 (2026-11-25)
+
+Plan: `docs/agents/ops_core_build/SHOWCASE_TOUR_PLAN.md` 2.5, 4.1 U2; review R4 applied (nothing in R4 touches this unit; section 5 already records the owner's answers of 2026-11-25 as decided, so no plan edit was needed).
+
+### Probes (asked before building; answers from code, not a browser run)
+
+1. Does Jun borrow the hot desk while the player holds a session there? Yes. `_borrowCandidate` (`systems/npc-needs.js:1866-1871`) needs only an on, visible, unclaimed, reachable PC; on sitting down the borrower's sign-in displaces the held session (`npc_sat_at`, `systems/pc-sessions.js:955`, "<Name> has signed in at this PC"). Signing out first is courtesy; P11c tells the player to sign in again.
+2. Dropped borrow: dropped only when not started within 60 s of the needs clock (`BORROW_START_MS`, `npc-needs.js:196`, `_tickBorrow` `:1929`). The workaround starts once per (npc, index, hand) (`npc-workarounds.js:26-28`); way back (written into PLAYTEST): switch Jun's PC on, then off again, or restart the showcase. Not tried live.
+3. Whether an ink-written global emits `global_variable_changed` only when declared: confirmed from R4 n1; the three new globals (`stick_override`, `stick_override_done`, `collect_after_borrow_done`) are declared in `globalVariables` and as ink VARs, and a Rails case asserts it.
+
+### What changed
+
+Scenario: aim order morning 0, midday 1, afternoon 2, evening 3; midday ends with `stick_override`; the afternoon aim runs `collect_partner`, `collect_hot_desk`, `see_borrow`, `collect_after_borrow`, `crack_cached`, `local_account`, `local_refused`; `desk_usb_port` gains `portOf: "delphine_pc"` and a `set_global stick_override` in its confirm; seven appended mappings on Ama (the `stick_override` tick and bark, and six barks on `global_variable_changed:<task>_done` with `data.oldValue !== true` and a stale-step condition, all onceOnly); `ttsPregenerateChatter`; voice blocks for Ama, Delphine, Julian. No existing mapping moved or changed (index drift: 0 failures for this scenario).
+Ink (`ama_owusu.ink` only): the day-end gate with "Skip them and call it a day anyway.", the P11a/P11c self-report knots (`tell_collect_hot_desk_late` ticks both beats when Jun borrowed first), the "Switch Jun's PC off." lever gated on the first collect, pointers for P4, P8b, P11, the printer aside, recaps for the two new beats, the P3, P4, P5, P12, P14 report-back lines replaced by the tour lines. tagdiff: only the additions above, plus the removal of one `#speaker:npc` tag (P14's second line was merged into the first); the hub's old collect and Jun lever choices are the two changed gates.
+
+### Checks
+
+Validator 0 errors, 27 warnings (the earlier 26 plus one suggestion: `stick_override` is both a task id and a global, kept on purpose because the plan names the global that way and the mapping, not a bare string, reads it); the rest are the reasons listed above. dialoguelint 0 ERROR, one CHECK `crowded-hub` on Ama's hub (now 22 choices, 20 conditional, was 14; kept: each choice appears only when it applies). `check_mapping_index_drift.rb main`: 0 failures for passwords (2 failures are in `demo_ops_recon`, unit U1's file). Rails: `demo_ops_passwords_scenario_test.rb` 52 runs, 0 failures, the whole-run leak scan 0 findings (one earlier run showed one failure in the last "scanner is not blind" case with an HTML error body, not reproduced in two reruns: treated as a shared-database clash with another builder's run). `bin/ops-golden-compare` passes. Graph regenerated.
+
+### Not done here
+
+- No live browser run: the new barks, the self-report knots, P8b in a browser and the measured seconds of Delphine's coffee, Graham's lunch and the borrow are for the draft playthrough (4.2). The Rails test covers the P8b request path and the shapes. Mission rows come from U6.
+- main was not merged first (a merge into the shared tree was refused by the permission check); main touched only this scenario's PLAYTEST by 18 lines, which the rewrite replaced. The orchestrator should merge main before the train.
+- `planning/VOICED_LINES.md` has a tour-changes section; the full list is regenerated from the extractor after sign-off (plan 3.3).
+
+### Where the plan was wrong or loose
+
+- 3.2 says Delphine "loses the light Mediterranean lilt"; the access tour's block for her has the same lilt, so only her role words changed.
+- Barks cannot sit on a mapping that ticks (a stale-step condition would also skip the tick), so they are separate mappings on the `<task>_done` globals, as recon does.
+- 2.5 says the P8b stick refusal event is unchanged; true, and `usb_refused` still ticks `usb_refused` only for a user or no session.

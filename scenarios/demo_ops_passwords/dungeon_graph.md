@@ -9,7 +9,7 @@ Ops demo: passwords. A box of old password records has turned up in the confiden
 | Metric | Value |
 |---|---|
 | Story aims | 4 |
-| Total tasks | 17 (0 optional) |
+| Total tasks | 19 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 6 |
 | AND-gate convergences | 0 |

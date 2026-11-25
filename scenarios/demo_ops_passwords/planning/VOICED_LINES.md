@@ -244,3 +244,48 @@ New spoken lines added by unit P-S5, numbered on from the table above. Nothing g
 |---|---|---|
 | jun_watanabe | jun_post_1 | Adopted a cat at the weekend. Biscuit has already claimed the good chair. |
 | jun_watanabe | jun_post_2 | Day three of finding the stationery cupboard. Still lost. |
+
+## Tour changes (showcase tour U2; text only, no audio generated)
+
+Regenerate the whole list from the extractor after the dialogue sign-off (plan 3.3); this section records what the tour added or changed. Every line is face to face (cap 30 words) and prints no variable.
+
+### Changed lines (old to new)
+
+| Source | Old | New |
+|---|---|---|
+| ink whats_next (P4) | Then crack Graham's record. It's salted, so every guess takes longer. Wait for it. | Then crack Graham's record from the file in your inventory. It's salted, so every guess takes longer. Wait for it. |
+| ink tell_crack_guessable (P3) | Her password was built from things she posts. Guessing was enough. | Her dog's name and the year it came home. Two facts she shared without a thought were enough. |
+| ink tell_crack_reused (P4) | One person, one password, two accounts. That's reuse. / Once you hold one, you hold the other. | The cracker finished by itself when the wait ran out, and said what it found. Graham's password was the printer account's too. / One person, one password, two accounts. That's reuse. |
+| ink tell_crack_strong (P5) | Julian's won't fall. Long and random beats guessing. | Long and random. The cracker gives up on it, and says so. |
+| ink tell_collect_hot_desk (P11a) | Jun's record only turned up because he borrowed the PC. Anyone who signs in leaves something behind. | One record, Niamh's. The toast has a Crack button when it names one record. Try it. |
+| ink tell_crack_cached (P12) | Same cracker, new source. A weak password falls whatever the PC. | A weak password falls whatever PC it came from. |
+| ink tell_local_refused (P14) | The sign-in screen names the domain. ... / So the shared account opens every desk it's on, and not Julian's. | Refused, with no lockout counted. Read the line above the tiles. It names the domain, and a local account isn't in it. |
+| ink whats_next (hot desk, was "Jun left the hot desk signed in. ...") | Jun left the hot desk signed in. Sign in there as Graham and use Cached accounts, then tell me. | Sign in at the hot desk as Graham and collect what it remembers. Then sign out, and tell me. |
+| ink whats_next (borrow) | Ask me to switch Jun's PC off, and watch where he goes. Do it before you call it a day. | Now ask me to switch Jun's PC off, and watch where he goes. Do it before you call it a day. |
+| ink whats_next (else) | That's everything. Look round as long as you like. | (same, then a second line below) |
+| voice, Ama | Security lead at Fenlow Managed IT, the firm that looks after Merrin & Sallow's computers ... | the shared office-life wording (Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT) ...) |
+| voice, Delphine | ... poised and polite, a little chatty ... | the access tour's role words (... poised and polite under a little pressure at the desk ...); accent unchanged: the tour gives the same light Mediterranean lilt |
+| voice, Julian | ... calm, measured and a little wry. | the access tour's (... a little wry; sits on planning panels.) |
+
+### New lines
+
+| Source | Line | Words |
+|---|---|---|
+| ink whats_next (P8b) | Ask me to send them for coffee, then sign in at Delphine's PC as Graham and try the stick in her port again. | 22 |
+| ink whats_next (P11c) | Collect at the hot desk again, then tell me. | 9 |
+| ink whats_next (else, aside) | Try the printer account anywhere. No PC lets it in. | 10 |
+| ink tell_collect_hot_desk_late (borrow first) | Two records this time, Niamh's and Jun's. He'd already borrowed it, so both were cached. No Crack button when a toast names two. | 24 |
+| ink tell_collect_after_borrow (P11c) | Now it remembers Jun as well. He signed in there, so it cached him. | 14 |
+| ink lever_day_end (gate) | Not yet. Some of the morning, midday and afternoon things are still undone, and staff won't be back once they've gone home. | 22 |
+| ink lever_day_refused | Take your time. Ask me what's next if you're not sure. | 11 |
+| ink recap (P11c) | Borrowing left Jun's account on the hot desk. A PC remembers whoever signs in. | 14 |
+| ink recap (P8b) | The policy blocks the stick for a user and lets an administrator through. The log keeps an override row. | 18 |
+| bark user_signin_done (P6) | Her tile said Cracked and filled the password in for you. A cracked password works like any you hold. And no Administrator on the taskbar. | 26 |
+| bark get_records_done (P1) | Three stored records, scrambled. None shows a password. Cracking is guessing, checked against them. | 14 |
+| bark usb_refused_done (P6b) | The desk policy refused the stick. That's a rule doing its job. | 11 |
+| bark admin_signin_done (P7) | Graham is an administrator, so this session is one. Look at the taskbar. | 13 |
+| bark stick_override (P8b) | Same stick, same port. Signed in as an administrator, the policy let it through, and the log keeps an override row. | 21 |
+| bark see_borrow_done (P11b) | His PC was down, so he borrowed the hot desk. That's a workaround, and it leaves something behind. | 18 |
+| bark local_account_done (P13) | A shared desk account, cracked like any other. It works on Delphine's PC. | 13 |
+
+`ttsPregenerateChatter` is now true, so the NPC and shared chatter pools above are in the later batch. The recap for P6b ("The desk policy refused the stick. That's a rule doing its job.") has the same text as the bark: one clip.

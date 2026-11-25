@@ -9,6 +9,7 @@
   "officePresets": true,
   "roomTone": true,
   "disableAttacks": true,
+  "ttsPregenerateChatter": true,
   "lighting": { "enabled": true, "defaultMode": "on" },
 
   "gameClock": { "start": "Tue 08:30", "rate": 1 },
@@ -72,7 +73,10 @@
     "collect_hot_desk_done": false,
     "crack_cached_done": false,
     "local_account_done": false,
-    "local_refused_done": false
+    "local_refused_done": false,
+    "stick_override": false,
+    "stick_override_done": false,
+    "collect_after_borrow_done": false
   },
 
   "resources": {
@@ -325,7 +329,8 @@
         { "taskId": "usb_refused", "title": "Plug the stick into Delphine's desk and see what the office policy says", "type": "custom", "status": "active" },
         { "taskId": "admin_signin", "title": "Sign in at the partner's PC as Graham, an administrator", "type": "custom", "status": "active" },
         { "taskId": "profile_read", "title": "Open the partner's client files as Graham", "type": "custom", "status": "active" },
-        { "taskId": "override", "title": "Use the keystroke device at the partner's PC, signed in as Graham", "type": "custom", "status": "active" }
+        { "taskId": "override", "title": "Use the keystroke device at the partner's PC, signed in as Graham", "type": "custom", "status": "active" },
+        { "taskId": "stick_override", "title": "Send them for coffee, sign in at Delphine's PC as Graham, and plug the stick into her desk port again", "type": "custom", "status": "active" }
       ]
     },
     {
@@ -333,7 +338,7 @@
       "title": "Evening: the trail",
       "description": "Home time for nearly everyone. Each task ticks when you have done it.",
       "status": "active",
-      "order": 2,
+      "order": 3,
       "tasks": [
         { "taskId": "read_log", "title": "Find your own trail in the sign-in log, and flag the night-time failure", "type": "custom", "status": "active" }
       ]
@@ -341,13 +346,14 @@
     {
       "aimId": "afternoon_cache",
       "title": "Afternoon: what a PC remembers",
-      "description": "Do this before you call it a day: Jun leaves with the others. Signing in, the borrow and the shared desk account tick by themselves; tell Ama about each collect, each crack and the refusal.",
+      "description": "Finish this before you call it a day: Jun leaves with the others. Signing in, the borrow and the shared desk account tick by themselves; tell Ama about each collect, each crack and the refusal.",
       "status": "active",
-      "order": 3,
+      "order": 2,
       "tasks": [
         { "taskId": "collect_partner", "title": "At the partner's PC as Graham, collect the accounts it remembers", "type": "custom", "status": "active" },
-        { "taskId": "see_borrow", "title": "Switch Jun's PC off and watch him borrow the hot desk", "type": "custom", "status": "active" },
         { "taskId": "collect_hot_desk", "title": "Sign in at the hot desk as Graham and collect what it remembers", "type": "custom", "status": "active" },
+        { "taskId": "see_borrow", "title": "Switch Jun's PC off and watch him borrow the hot desk", "type": "custom", "status": "active" },
+        { "taskId": "collect_after_borrow", "title": "Collect at the hot desk again, after the borrow", "type": "custom", "status": "active" },
         { "taskId": "crack_cached", "title": "Crack one of the records you collected", "type": "custom", "status": "active" },
         { "taskId": "local_account", "title": "Sign in at Delphine's PC with the shared desk account", "type": "custom", "status": "active" },
         { "taskId": "local_refused", "title": "Try the shared desk account at the partner's PC", "type": "custom", "status": "active" }
@@ -426,8 +432,9 @@
           "sprite": "network_rack1",
           "position": { "x": 6.4, "y": 2.6 },
           "takeable": false,
-          "_comment": "Keep the confirm below although the client refuses first: its remove_item is what makes this port a plant target that the server's usb_refused check then refuses.",
+          "_comment": "Keep the confirm below although the client refuses first: its remove_item is what makes this port a plant target that the server's usb_refused check then refuses. portOf: an administrator's session at Delphine's PC lets the stick through (tour P8b); set_global is what ticks stick_override.",
           "policy": "desk",
+          "portOf": "delphine_pc",
           "observations": "A USB port on the desk, wired to the desk policy.",
           "affordance": false,
           "requiresItem": "kit_stick",
@@ -440,6 +447,7 @@
               "cancelLabel": "Leave it",
               "onConfirm": [
                 { "type": "remove_item", "item": "kit_stick" },
+                { "type": "set_global", "key": "stick_override", "value": true },
                 { "type": "hint", "title": "Desk port", "message": "The stick is in the desk port." }
               ]
             }
@@ -595,7 +603,7 @@
           "storyPath": "scenarios/demo_ops_passwords/ink/ama_owusu.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Autonoe", "style": "Security lead at Fenlow Managed IT, the firm that looks after Merrin & Sallow's computers, in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Autonoe", "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "immovable": true },
           "eventMappings": [
             { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
@@ -615,7 +623,14 @@
             { "eventPattern": "pc_signed_in:hot_desk", "condition": "data.username === 'gwhitfield'", "cooldown": 0, "setGlobal": { "hot_desk_signin_done": true } },
             { "eventPattern": "pc_signed_in:delphine_pc", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } },
             { "eventPattern": "pc_signed_in:jun_pc", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } },
-            { "eventPattern": "pc_signed_in:hot_desk", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } }
+            { "eventPattern": "pc_signed_in:hot_desk", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } },
+            { "eventPattern": "global_variable_changed:stick_override", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "completeTask": "stick_override", "setGlobal": { "stick_override_done": true }, "bark": "Same stick, same port. Signed in as an administrator, the policy let it through, and the log keeps an override row." },
+            { "eventPattern": "global_variable_changed:get_records_done", "condition": "data.value === true && data.oldValue !== true && globalVars.crack_guessable_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Three stored records, scrambled. None shows a password. Cracking is guessing, checked against them." },
+            { "eventPattern": "global_variable_changed:user_signin_done", "condition": "data.value === true && data.oldValue !== true && globalVars.usb_refused_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Her tile said Cracked and filled the password in for you. A cracked password works like any you hold. And no Administrator on the taskbar." },
+            { "eventPattern": "global_variable_changed:usb_refused_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The desk policy refused the stick. That's a rule doing its job." },
+            { "eventPattern": "global_variable_changed:admin_signin_done", "condition": "data.value === true && data.oldValue !== true && globalVars.profile_read_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Graham is an administrator, so this session is one. Look at the taskbar." },
+            { "eventPattern": "global_variable_changed:see_borrow_done", "condition": "data.value === true && data.oldValue !== true && globalVars.collect_after_borrow_done !== true", "onceOnly": true, "cooldown": 0, "bark": "His PC was down, so he borrowed the hot desk. That's a workaround, and it leaves something behind." },
+            { "eventPattern": "global_variable_changed:local_account_done", "condition": "data.value === true && data.oldValue !== true && globalVars.local_refused_done !== true", "onceOnly": true, "cooldown": 0, "bark": "A shared desk account, cracked like any other. It works on Delphine's PC." }
           ]
         },
         {
@@ -629,7 +644,7 @@
           "storyPath": "scenarios/demo_ops_passwords/ink/delphine_arvanitis.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Despina", "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite, a little chatty. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Despina", "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "reception",
           "creds": { "username": "darvanitis", "password": "Pepper2016", "accountKind": "domain", "domain": "merrin" },
@@ -1084,7 +1099,7 @@
           "storyPath": "scenarios/demo_ops_passwords/ink/julian_sallow.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Rasalgethi", "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Rasalgethi", "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "partner",
           "creds": { "username": "jsallow", "password": "Ferrous-Lantern-Quill-84", "accountKind": "domain", "domain": "merrin" },
