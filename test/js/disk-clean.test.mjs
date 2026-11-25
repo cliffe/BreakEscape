@@ -116,7 +116,8 @@ function build() {
   ].join('\n'));
   env.CLEAN_CONF = conf;
   env.TMPDIR = T;
-  env.HOME = T;
+  mkdirSync(join(T, 'home'));
+  env.HOME = join(T, 'home');
   env.XDG_CONFIG_HOME = join(T, 'xdg');
   for (const n of ['foo-Ab3dE9', 'foo-abcdef', 'bar-Xy12Zz']) chmodSync(join(tmpr, n), 0o700);
   return { T, repo, ext, trains, scratch, tmpr, log, pt, env };
@@ -364,7 +365,7 @@ test('roots in Claude scratch, other checkouts, home links and /tmp are refused;
   mk(join(mine, 'old'), 5 * DAY);
   // another repo, and a home link target
   const other_repo = join(t.T, 'SecGen'); mkdirSync(join(other_repo, '.git'), { recursive: true }); mkdirSync(join(other_repo, 'sub'));
-  mkdirSync(join(t.T, 'videos')); symlinkSync(join(t.T, 'videos'), join(t.T, 'hv'));
+  mkdirSync(join(t.T, 'videos')); symlinkSync(join(t.T, 'videos'), join(t.env.HOME, 'hv'));
   mkdirSync(join(t.T, 'holder', 'proj1', '.git'), { recursive: true });
   const refuse = (root, extra = {}) => {
     const r = sh(join(t.repo, 'tools', 'safe-rm.sh'), ['--dry-run', `${other}/work`],
@@ -373,7 +374,7 @@ test('roots in Claude scratch, other checkouts, home links and /tmp are refused;
     assert.doesNotMatch(r.stdout, /WOULD/);
   };
   for (const root of ['/tmp', '/tmp/', C, join(C, 'proj'), join(C, 'proj', 'other'), other, `${other}/work`, `${mine}/..`,
-    other_repo, `${other_repo}/sub`, join(t.T, 'videos'), join(t.T, 'hv'), join(t.T, 'holder'), '/home', '/root', 'relative/dir']) refuse(root);
+    other_repo, `${other_repo}/sub`, join(t.T, 'videos'), join(t.env.HOME, 'hv'), join(t.T, 'holder'), '/home', '/root', 'relative/dir']) refuse(root);
   refuse(join(C, 'proj', 'mine', 'scratchpad'));            // own scratchpad not named
   refuse(join(C, 'proj', 'mine', 'scratchpad'), { CLEAN_OWN_SCRATCH: other });
   refuse(`${mine}/..`, { CLEAN_OWN_SCRATCH: mine });
@@ -453,4 +454,71 @@ test('minor fixes: nested worktree logs, stale in-use, relative roots, train glo
   age(`${t.ext}/wt-landed/tmp/in-use`, 3 * DAY);
   const wt = run(t, 'wt-clean.sh', []).stdout;
   assert.match(wt, /WOULD wt-landed/);
+});
+
+const safeRm = (t, args, env = {}) => sh(join(t.repo, 'tools', 'safe-rm.sh'), args, { env: { ...t.env, ...env }, cwd: t.T, check: false });
+const run2 = (t, script, args, env = {}) => sh(join(t.repo, 'tools', script), args, { env: { ...t.env, ...env }, cwd: t.T, check: false });
+
+test('R3 M1: a root inside HOME (or another home) is refused', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const home = t.env.HOME;
+  for (const d of ['.claude', '.claude/projects', '.config', '.ssh', '.local/share', 'plain']) {
+    mkdirSync(join(home, d), { recursive: true });
+    const r = safeRm(t, ['--dry-run', join(home, d, 'x')], { CLEAN_RM_ROOTS: join(home, d) });
+    assert.equal(r.status, 2, `${d}: ${r.stdout}${r.stderr}`);
+    assert.match(r.stderr, /HOME/);
+  }
+  assert.equal(safeRm(t, ['--dry-run', `${home}/.claude/x`], { CLEAN_SCRATCH_ROOTS: join(home, '.claude') }).status, 2);
+  mkdirSync(join(t.T, 'okroot', 'a'), { recursive: true });
+  assert.match(safeRm(t, ['--dry-run', `${t.T}/okroot/a`], { CLEAN_RM_ROOTS: `${t.T}/okroot` }).stdout, /WOULD rm/);
+});
+
+test('R3 minor 1: settings cannot set LC_ALL or locale', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const conf = join(t.T, 'loc.conf');
+  writeFileSync(conf, 'export LC_ALL=en_GB.UTF-8\nexport LANG=en_GB.UTF-8\nCLEAN_WT_MIN_AGE_HOURS=\uFF11\n');
+  const r = run2(t, 'wt-clean.sh', [], { CLEAN_CONF: conf });
+  assert.equal(r.status, 2, r.stdout + r.stderr);
+  assert.doesNotMatch(r.stderr, /syntax error/);
+  writeFileSync(conf, 'export LC_ALL=en_GB.UTF-8\n');
+  const out = sh('bash', ['-c', `. ${t.repo}/tools/clean-lib.sh; echo "[$LC_ALL]"`], { env: { ...t.env, CLEAN_CONF: conf }, cwd: t.T }).stdout;
+  assert.match(out, /\[C\]/);
+});
+
+test('R3 minor 2: internal variables are not read from the environment', async (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const real = join(t.T, 'busyroot');
+  mk(join(real, 'u1'), 5 * DAY);
+  const kid = spawn('sleep', ['300'], { cwd: join(real, 'u1') });
+  ctx.after(() => kid.kill('SIGKILL'));
+  await new Promise((r) => setTimeout(r, 300));
+  const r = safeRm(t, ['--dry-run', `${real}/u1`], { CLEAN_RM_ROOTS: real, CLEAN_CWDS: '' });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stdout, /REFUSED .*process/);
+  const env = { ...t.env, CLEAN_CONF_USED: '/x' };
+  delete env.CLEAN_CONF;
+  const d = sh(join(t.repo, 'tools', 'disk-clean.sh'), ['--apply', '--if-low', '1', '--category', 'train'], { env, cwd: t.T, check: false });
+  assert.match(d.stderr, /WARNING: no settings file/);
+  assert.equal(d.status, 1);
+  assert.match(d.stderr, /refusing --apply --if-low/);
+});
+
+test('R3 minor 3 and 4: trailing slash on a symlink; checkout deeper than a child', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const root = join(t.T, 'r3root');
+  mk(join(root, 'real'), 5 * DAY);
+  symlinkSync(join(root, 'real'), join(root, 'lnk'));
+  let r = safeRm(t, ['--dry-run', `${root}/lnk/`], { CLEAN_RM_ROOTS: root });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stdout, /symlink/);
+  assert.doesNotMatch(r.stdout, /WOULD rm/);
+  mkdirSync(join(root, 'c', 'd', 'e', '.git'), { recursive: true });
+  r = safeRm(t, ['--dry-run', `${root}/c`], { CLEAN_RM_ROOTS: root });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stdout, /git checkout/);
+  assert.ok(existsSync(`${root}/c/d/e/.git`));
 });

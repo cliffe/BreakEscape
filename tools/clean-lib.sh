@@ -29,14 +29,25 @@ CHECKOUT=$(realpath -e -- "$CHECKOUT")
 if [ -n "${CLEAN_CONF:-}" ] && [ ! -f "$CLEAN_CONF" ]; then
   echo "clean: CLEAN_CONF=$CLEAN_CONF does not exist" >&2; exit 1
 fi
-_clean_vars=$(compgen -v CLEAN_)
+# Only the documented settings come from the environment. Internal names never do
+# (CLEAN_CWDS would switch the busy check off, CLEAN_CONF_USED would hide the
+# no-settings warning), and CLEAN_OWN_SCRATCH only from the environment, never
+# from a shared settings file.
+_clean_vars=$(compgen -v CLEAN_ | grep -vxE 'CLEAN_(CWDS|RP|TALLY_OWNER|CONF_USED|APPLY|HOME|PROTECTED|ROOTS_RESOLVED|WORKTREES|WORKTREES_ALL|TOOLS_DIR)')
 _clean_env=; [ -n "$_clean_vars" ] && _clean_env=$(declare -p $_clean_vars 2>/dev/null)
-CLEAN_CONF_USED=
+_clean_own_env=${CLEAN_OWN_SCRATCH-}
+_clean_used=
 for _f in "${CLEAN_CONF:-}" "${XDG_CONFIG_HOME:-${HOME:-/nonexistent}/.config}/break-escape/clean.conf" "$CHECKOUT/tools/clean.local.conf" "$CLEAN_TOOLS_DIR/clean.local.conf"; do
-  if [ -n "$_f" ] && [ -f "$_f" ]; then . "$_f"; CLEAN_CONF_USED=$_f; break; fi
+  if [ -n "$_f" ] && [ -f "$_f" ]; then . "$_f"; _clean_used=$_f; break; fi
 done
 eval "$_clean_env"   # the environment beats the file
-unset _f _clean_vars _clean_env
+CLEAN_OWN_SCRATCH=$_clean_own_env
+unset CLEAN_CWDS CLEAN_RP CLEAN_TALLY_OWNER CLEAN_HOME CLEAN_PROTECTED CLEAN_ROOTS_RESOLVED CLEAN_WORKTREES CLEAN_WORKTREES_ALL
+CLEAN_CONF_USED=$_clean_used
+# The settings file may not change the locale (see the top of this file).
+unset LANG LANGUAGE "${!LC_@}"
+export LC_ALL=C
+unset _f _clean_vars _clean_env _clean_used _clean_own_env
 
 # --- defaults (see tools/clean.conf.example for what each key does) ---
 : "${CLEAN_MAIN_BRANCH=main}"
@@ -99,10 +110,10 @@ CLEAN_WORKTREES_ALL=$(git -C "$CHECKOUT" worktree list --porcelain | sed -n 's/^
   while IFS= read -r w; do [ -d "$w" ] && realpath -e -- "$w"; done)
 CLEAN_WORKTREES=$(grep -v '[[:space:]]' <<<"$CLEAN_WORKTREES_ALL")
 # Roots, resolved. A root must be absolute and may not be, contain, or lie inside:
-# /, $HOME, the checkout or any worktree, another git checkout (a .git in the root,
+# /, $HOME, /root or any user's home folder, the checkout or any worktree, another git checkout (a .git in the root,
 # above it, or in a direct child), the real target of a symlink in $HOME or a
 # CLEAN_SYMLINK_DIRS folder, or a CLEAN_PROTECT_EXTRA path. It may not be or contain
-# /tmp, /var/tmp, /root, another user's home folder, or anything under /tmp/claude-*
+# /tmp, /var/tmp or /home (it may lie inside them), or anything under /tmp/claude-*
 # (other sessions' scratch), except the one folder named in CLEAN_OWN_SCRATCH
 # (/tmp/claude-*/<project>/<session>/scratchpad) and what is inside it.
 _clean_own=
@@ -115,9 +126,13 @@ _clean_noroot=$(
   for _l in "$CLEAN_HOME"/* "$CLEAN_HOME"/.[!.]* $(for _d in $CLEAN_SYMLINK_DIRS; do printf '%s\n' "$_d"/* "$_d"/.[!.]*; done); do
     [ -L "$_l" ] && realpath -e -- "$_l" 2>/dev/null
   done
-  for _x in $CLEAN_PROTECT_EXTRA; do realpath -m -- "$_x"; done)
+  for _x in $CLEAN_PROTECT_EXTRA; do realpath -m -- "$_x"; done
+  # $HOME, /root and every home folder: a root may not lie inside them either
+  # (~/.claude, ~/.config, ~/.ssh ...).
+  [ "$CLEAN_HOME" != / ] && printf '%s\n' "$CLEAN_HOME"
+  for _x in /root /home/*; do [ -d "$_x" ] && realpath -e -- "$_x"; done)
 # Real paths a root may not be or contain (but may lie inside).
-_clean_noexact=$(for _x in /tmp /var/tmp /root /home /home/*; do [ -e "$_x" ] && realpath -e -- "$_x"; done)
+_clean_noexact=$(for _x in /tmp /var/tmp /home; do [ -e "$_x" ] && realpath -e -- "$_x"; done)
 CLEAN_ROOTS_RESOLVED=
 for _r in $CLEAN_SCRATCH_ROOTS $CLEAN_TRAIN_ROOTS $CLEAN_TMPDIR_ROOTS $CLEAN_RM_ROOTS; do
   case "$_r" in /*) ;; *) echo "clean: root $_r is not an absolute path" >&2; exit 2;; esac
@@ -133,7 +148,11 @@ for _r in $CLEAN_SCRATCH_ROOTS $CLEAN_TRAIN_ROOTS $CLEAN_TMPDIR_ROOTS $CLEAN_RM_
   while IFS= read -r _w; do
     [ -n "$_w" ] || continue
     case "$_w/" in "$_rr"/*) echo "clean: root $_r is, or contains, protected $_w" >&2; exit 2;; esac
-    case "$_rr/" in "$_w"/*) echo "clean: root $_r is inside protected $_w" >&2; exit 2;; esac
+    case "$_rr/" in "$_w"/*)
+      # only this session's named scratchpad may lie inside a home folder
+      if [ -n "$_clean_own" ] && case "$_rr/" in "$_clean_own"/*) true;; *) false;; esac; then :
+      else echo "clean: root $_r is inside protected $_w (\$HOME or a home folder)" >&2; exit 2; fi;;
+    esac
   done <<<"$_clean_noroot"
   while IFS= read -r _w; do
     [ -n "$_w" ] || continue
@@ -177,6 +196,7 @@ clean_say_refused() { echo "REFUSED   $1  ($2)"; }
 clean_guard() {
   local p=$1 r rr rp prot w inner ok=; shift; CLEAN_RP=
   case "$p" in /*) ;; *) clean_say_refused "$p" "not an absolute path" ; return 1;; esac
+  while [ "${#p}" -gt 1 ] && [ "${p%/}" != "$p" ]; do p=${p%/}; done   # link/ would hide the symlink
   case "$p/" in */./*|*/../*) clean_say_refused "$p" "has a . or .. component" ; return 1;; esac
   if [ -L "$p" ]; then clean_say_refused "$p" "is a symlink" ; return 1; fi
   if [ ! -e "$p" ]; then clean_say_refused "$p" "does not exist" ; return 1; fi
@@ -202,6 +222,9 @@ clean_guard() {
   done <<<"$CLEAN_WORKTREES_ALL"
   if [ -n "$inner" ] && [ "$ok" != "$inner" ]; then clean_say_refused "$p" "is inside protected worktree $inner"; return 1; fi
   if [ -e "$rp/.git" ]; then clean_say_refused "$p" "is a git checkout"; return 1; fi
+  if [ -d "$rp" ] && [ -n "$(find "$rp" -xdev -maxdepth 4 -name .git -print -quit 2>/dev/null)" ]; then
+    clean_say_refused "$p" "contains a git checkout"; return 1
+  fi
   CLEAN_RP=$rp
 }
 
