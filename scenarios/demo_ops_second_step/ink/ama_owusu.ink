@@ -31,6 +31,8 @@ VAR safe_step_done = false // Synced scenario global
 VAR case_step_done = false // Synced scenario global
 // met_ama is ink-local: the opening plays once, later talks open at the hub.
 VAR met_ama = false
+// skip_late: the player chose to end the day with the afternoon and late beats undone.
+VAR skip_late = false
 
 === start ===
 { met_ama:
@@ -136,14 +138,14 @@ What can I help with?
         Try Lorna's username at the desk, and answer wrongly until it stops listening.
     - not door_step_done:
         # speaker:npc
-        Facilities pinned two new door codes on the kitchen board. The records room also wants Gwen's approval.
+        Facilities pinned two new door codes on the facilities notice in the kitchen. The records room also wants Gwen's approval.
         # speaker:npc
         Send them for coffee, then take Gwen's phone from the office charger and approve.
     - not propped_done:
         # speaker:npc
         Fatima props the archive store door when the records index is down. Ask me to switch it off.
         # speaker:npc
-        Try that door first and close its pane with the X, or the prop has nothing to skip.
+        Try that door first, and don't approve it on Gwen's phone, or the prop has nothing to skip.
     - not safe_step_done:
         # speaker:npc
         Gwen keeps the records safe's code in her drawer. The safe also asks for a code from Anjali's fob.
@@ -227,6 +229,17 @@ Records index off. Let's see what Fatima does about it.
 -> END
 
 === lever_day_end ===
+{ not skip_late and not (reset_password_done and reenrol_done and desk_refuses_done and door_step_done and propped_done and safe_step_done and case_step_done):
+    # speaker:npc
+    Not yet. Some of the afternoon and late things are still undone, and staff won't be back once they've gone home.
+    + [Skip them and call it a day anyway.]
+        ~ skip_late = true
+        -> lever_day_end
+    + [Not yet.]
+        # speaker:npc
+        Take your time.
+        -> hub.choices
+}
 # speaker:npc
 Seen everything you wanted? Staff won't be back once they've gone home.
 + [Yes, call it a day.]

@@ -45,7 +45,7 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
 - **IT room** (east): Thandiwe Moyo, "Thandiwe's laptop", the "Approvals log terminal".
 - Ama's hub choices (all in her conversation; S8c adds "Switch the records index off."): "What's next?", "Could I have Lorna's sign-in?", "I read Anjali's note.", "Send them for coffee.", "Switch the printer off.", "Send them to lunch.", "Call it a day." (then "Yes, call it a day."), "What did that show?", "Give me the short version." The levers can be pressed in any order once the Kitchen has been opened; "Send them for coffee" can be pressed again and again. "Send them to lunch" fires once only.
 - Keep the Cake in the inventory until M5 is done: dropped in the Office it becomes a 12-second lunch for Darren, and his screen then stays open.
-- The objectives panel has three aims, Morning, Midday and Evening. Tasks tick on their own when a beat has happened; none gates anything.
+- The objectives panel has five aims, in order Morning, Midday, Afternoon (the helpdesk), Late (doors, safe, case) and Evening (the trail). The board and Ama's "What's next?" follow the same order, and "Call it a day." refuses with "Not yet..." until the seven afternoon and late tasks are done or the player chooses "Skip them and call it a day anyway." Tasks tick on their own when a beat has happened; none gates anything.
 
 ## Run A: the morning (M1 to M4, M8, M2 and M3 outage)
 
@@ -108,7 +108,7 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
 
 ## Run D: the helpdesk (M11 to M13, added by S8b)
 
-A fresh game, never "Call it a day" (the desk works in the evening too, but Darren's badge and Yusuf's sign-in need staff to take turns away from their desks). Open the Office and the Kitchen first, then press Ama's "Send them for coffee." so Darren's badge is on his desk. The form works wherever Thandiwe is: the desk needs only that she exists, has been met and is not knocked out, so M11 and M12 also work from the form on Darren's desktop.
+A fresh game that first plays Run A's steps through M2 and M3 (printer off, Darren's note, the overhear), because step 2 tries Darren's old note and step 3 signs in with the overheard password. Never use "Call it a day." here (the desk works in the evening too, but Darren's badge and Yusuf's sign-in need staff to take turns away from their desks). Open the Office and the Kitchen first, then press Ama's "Send them for coffee." so Darren's badge is on his desk. The form works wherever Thandiwe is: the desk needs only that she exists, has been met and is not knocked out, so M11 and M12 also work from the form on Darren's desktop.
 
 1. **Gather the answers (each from its place).** Meet Thandiwe in the IT room first (click her once). While Darren is away from his desk (coffee trip), click "Darren's ID badge", take it and open it from the inventory: his staff number (record "from Darren's badge"). In the Kitchen read the "Staff board": his line manager, and Yusuf's staff number (record "from the kitchen board"). Lorna's and Anjali's answers are written nowhere: the validator's four warnings say so, on purpose.
 2. **M11, a password reset.** Click Thandiwe and choose "I need a password reset.". The "IT request form" opens: type `dprice` as the username, "A password reset" under "Ask for", Darren's two answers (the number and the manager, in any case), click Send.
@@ -153,6 +153,8 @@ The order is M15, M14, M16, M17. M15 comes first so that Gwen's phone is not yet
 
 A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16 (Anjali goes home with her fob). Gwen and Fatima have no evening mapping and stay.
 
+- Never ask for an approval reset for `dprice` (Darren): his answers are readable, so the desk would grant it, his approvals would then go to the player's own phone and a lock step never approves from an own-phone reset, which breaks M5 and M17.
+
 ## Things a tester sees that are not faults
 
 - Toasts arrive late: "Picked up Lorna's sign-in card" and "Overheard: Yusuf Demir" can appear after the event they report, even after a sign-out, and the overheard toast repeats for each time Yusuf asks (the share repeats while the printer stays off).
@@ -172,3 +174,9 @@ A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16
 ## What to record
 
 Findings, the real number of seconds for each of: Darren's coffee trip, Darren's lunch, the printer outage to Darren's note, the outage to Yusuf's walk to Anjali (round 1 measured: coffee trip 15 to 35 s, outage to note 90 to 180 s, outage to Yusuf's walk about 40 s; lunch not yet measured); the first beat that could not be reached by clicking; any line that names a secret.
+
+## Harness notes (playtest 3 read-outs, checked against the code)
+
+- `lock` on a second-step door answering `no-answer` although the server accepted the code: a harness read-out quirk. A right PIN on such a door opens the second-step pane (a DOM overlay), not a result; the pad's bridge state shows no counter growth, no `isComplete` and no `result`, so `lock-outcome.js` `attemptStep` times out at 8 s as `no-answer`. Read the pane from the DOM (or `ops-log`/`verify-run`) instead of the `lock` reply.
+- Enter on the PIN pad not submitting through the bridge: a full-length entry auto-submits 300 ms after the last digit (`pin-minigame.js`, `handleKey`), and `handleEnter` ignores a second call while a check is pending or the entry is not full length. A synthetic Enter after typing the whole code is redundant, not a fault; typing the code is enough.
+- Darren's badge could be taken while he was at his desk: a click on a world object is not gated by the owner; the badge is only a left-behind item on a trip. Not a scenario fault.

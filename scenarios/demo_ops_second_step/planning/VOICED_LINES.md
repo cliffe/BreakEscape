@@ -29,6 +29,7 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); nothing here is gener
 | whats_next | Sign in while he's at lunch, and keep asking until he gives in. | 13 |
 | whats_next | Read the card at the visitor desk and sign in there. | 11 |
 | whats_next | Nearly done. Tell me when to call it a day. | 10 |
+| lever_day_end | Not yet. Some of the afternoon and late things are still undone, and staff won't be back once they've gone home. | 22 |
 | whats_next | Go and see Thandiwe in the IT room. She has the log. | 12 |
 | whats_next | That's the lot. Stay and look round as long as you like. | 12 |
 | give_lorna_card | Here's Lorna's sign-in. Use it at her desk when she's away. | 11 |
@@ -180,12 +181,12 @@ Nothing prints a variable or contains a password, staff number, manager name or 
 | NPC | Knot | Line | Words |
 |---|---|---|---|
 | thandiwe_moyo | reset_request | Fill in the form. Two answers off the file and I'll sort it. | 13 |
-| thandiwe_moyo | reset_verdict (granted) | That matches. The new password is on your form. | 9 |
+| thandiwe_moyo | reset_verdict (granted) | That matches. It is done: the form shows what changed. | 9 |
 | thandiwe_moyo | reset_verdict / reenrol_verdict (blocked) | I'm not taking any more requests for that one just now. | 11 |
 | thandiwe_moyo | reset_verdict / reenrol_verdict (refused) | That doesn't match what I have on file. | 8 |
 | thandiwe_moyo | reset_verdict / reenrol_verdict (other) | I can't do that one. | 5 |
 | thandiwe_moyo | reenrol_request | Same form. Pick the approval reset this time. | 8 |
-| thandiwe_moyo | reenrol_verdict (granted) | Done. Their approvals come to your phone now. | 8 |
+| thandiwe_moyo | reenrol_verdict (granted) | That matches. It is done: the form shows what changed. | 8 |
 | ama_owusu | whats_next | Thandiwe runs the IT desk. Ask her for a password reset. | 11 |
 | ama_owusu | whats_next | Darren's badge on his desk has his staff number. His manager is on the kitchen board. | 16 |
 | ama_owusu | whats_next | Ask Thandiwe for a sign-in approval reset, for Yusuf. | 9 |
@@ -203,10 +204,10 @@ Nothing prints a variable or contains a PIN, a code or a password. The three doo
 
 | NPC | Knot | Line | Words |
 |---|---|---|---|
-| ama_owusu | whats_next | Facilities pinned two new door codes on the kitchen board. The records room also wants Gwen's approval. | 18 |
+| ama_owusu | whats_next | Facilities pinned two new door codes on the facilities notice in the kitchen. The records room also wants Gwen's approval. | 18 |
 | ama_owusu | whats_next | Send them for coffee, then take Gwen's phone from the office charger and approve. | 14 |
 | ama_owusu | whats_next | Fatima props the archive store door when the records index is down. Ask me to switch it off. | 17 |
-| ama_owusu | whats_next | Try that door first and close its pane with the X, or the prop has nothing to skip. | 17 |
+| ama_owusu | whats_next | Try that door first, and don't approve it on Gwen's phone, or the prop has nothing to skip. | 17 |
 | ama_owusu | whats_next | Gwen keeps the records safe's code in her drawer. The safe also asks for a code from Anjali's fob. | 19 |
 | ama_owusu | whats_next | Darren's case is by the front desk, and its key is in his drawer. | 13 |
 | ama_owusu | whats_next | Carry it off, put it down, pick it up, and keep asking him. | 12 |

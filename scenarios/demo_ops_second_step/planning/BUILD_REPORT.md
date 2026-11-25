@@ -169,3 +169,9 @@ Each PIN (records room 5821, archive store 3074, safe 6419) appears twice in the
 ### Browser
 
 Every beat is reachable by clicking (the codes from the notice and the drawer note; Gwen's phone from the side table after the coffee lever; Anjali's fob after the same lever; the case key from Darren's drawer; the case by the front desk). Not played: see item 5.
+
+## Append fix R1 (F1 to F4)
+
+- F1: the "Things to try" board now runs Morning, Midday, Afternoon, Late, Evening (the Evening line ends "Do this last: staff go home"). Aim orders: `afternoon_helpdesk` 2, `late_locks` 3, `evening` 4 (array order unchanged, so the test's last-in-array assertion holds). Ama's "Call it a day." now refuses with a plain line while any of the seven afternoon and late tasks is undone; "Skip them and call it a day anyway." (ink-local `skip_late`) lifts the refusal.
+- F2: `darren_drawer` moved to (3.9, 4.0), 1.1 tiles from the badge. `side_table` (9.0, 4.3) and `gwen_phone` (9.0, 3.9) moved 1.3 tiles clear of the coffee socket (8.66, 6.06). Kept warning with its reason: `Side table` and `Gwen's phone` 13 px apart: the phone sits on the table's charger by design, and clicking either gives the same pick-up of the phone. Warnings now 35.
+- F3: Ama's M14 hint names "the facilities notice in the kitchen", her M15 hint says not to approve on Gwen's phone, Thandiwe's two verdict lines are true for either kind of grant (ticks unchanged). VOICED_LINES updated; the audio for these lines needs a top-up.
