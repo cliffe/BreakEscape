@@ -9,7 +9,8 @@
  * Returns the params the runner was started with, or null.
  */
 
-import { stateKey, readState, stepAwayHeld } from '../minigames/episode-runner/episode-model.js';
+import { stateKey, readState, stepAwayHeld, worldFor, writeKind, callOutcomeKey, resumeBeatFromState } from '../minigames/episode-runner/episode-model.js';
+import { writeGlobal } from './global-writer.js';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
@@ -38,6 +39,64 @@ export function installStepAwayHold(w = win()) {
 }
 
 if (typeof window !== 'undefined') installStepAwayHold(window);
+
+/**
+ * E2: settle a world hold left open by a reload. The hold's cap clock and watcher live in page
+ * memory, so after a reload nothing would end it until the learner opened the kiosk, and the
+ * beat's window mappings gated on the hold global would stay armed. On game load this writes the
+ * hold global true (one delta, then a sync) when the episode has a hold, its call's outcome is
+ * set, the learner is at the write stage and the hold global is falsy. It does not touch the stage
+ * state or open anything: the runner's own open completes the stage and flips. Returns true when
+ * it wrote. `write` is a test seam.
+ */
+export function settleHeldWorld(w = win(), write = writeGlobal) {
+    const episode = w.gameScenario?.social?.awarenessEpisode;
+    if (!episode || typeof episode !== 'object' || !episode.id) return false;
+    const hold = worldFor(episode)?.holdUntil;
+    if (!hold || writeKind(episode) !== 'call') return false;
+    const globals = w.gameState?.globalVariables;
+    if (!globals || globals[hold]) return false;
+    const outcome = globals[callOutcomeKey(episode.attack.callId)];
+    if (typeof outcome !== 'string' || !outcome) return false;
+    // the runner's own test (_settleCall): only a learner already at the write stage has made the call
+    if (readState(episode, globals[stateKey(episode.id)]).stage !== 'write') return false;
+    write(hold, true, { openChat: false });
+    w.stateSync?.sync?.();
+    return true;
+}
+
+if (typeof window !== 'undefined') window.settleHeldWorld = () => settleHeldWorld(window);
+if (typeof window !== 'undefined') window.startStepAwayWatchFromState = () => startStepAwayWatchFromState(window);
+
+/**
+ * E3: restart a resumeOnDone beat's watcher after a reload. The watcher's timer lives in page
+ * memory, so a reload between Look up and the done global would leave the learner out in the room
+ * with the kiosk never reopening. A pure function of the saved episode state: the watcher starts
+ * for a beat whose `<pickedKey>Via` is "lookup" (Look up picked, next stage not started) and for
+ * nothing else, whatever the done global says (a true one reopens after the grace). The spot did
+ * not survive the reload, so the return makes no move: a reload spawns the learner in the start
+ * room, which holds the kiosk. Dynamically imports the runner module (only when it starts).
+ * Returns the beat started, or null. `watch` is a test seam.
+ */
+export async function startStepAwayWatchFromState(w = win(), watch = null) {
+    const episode = w.gameScenario?.social?.awarenessEpisode;
+    if (!episode || typeof episode !== 'object' || !episode.id) return null;
+    const globals = w.gameState?.globalVariables;
+    const beat = resumeBeatFromState(episode, globals?.[stateKey(episode.id)]);
+    if (!beat) return null;
+    const run = watch ?? (await import('../minigames/episode-runner/episode-runner-minigame.js')).watchStepAway;
+    run({
+        episode, beat,
+        reopen: { title: episode.brand?.name || 'Exercise', episode, state: readState(episode, globals[stateKey(episode.id)]),
+            requiresKeyboardInput: true, disableClose: true, resume: true, suspended: false },
+        globals: () => win().gameState?.globalVariables || null,
+        now: () => Date.now(),
+        returnToSpot: null,
+        schedule: (fn, ms) => setTimeout(fn, ms),
+        clearScheduled: (h) => clearTimeout(h)
+    });
+    return beat;
+}
 
 export function startEpisodeRunner(lockable, options = {}) {
     const w = win();

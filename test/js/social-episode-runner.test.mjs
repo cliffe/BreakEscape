@@ -56,6 +56,7 @@ const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js
 const { EpisodeRunnerMinigame, defendCopy, defendSetKind, foldsResult, foldedHeadline, foldedWeakestNudge } = await load('minigames/episode-runner/episode-runner-minigame.js');
 const { startEpisodeRunner } = await load('systems/episode-starter.js');
 const M = await load('minigames/episode-runner/episode-model.js');
+const FlipView = await load('minigames/episode-runner/flip-view.js');
 window.MinigameFramework = FW;
 FW.init({ input: { mouse: { enabled: true }, keyboard: { enabled: true } } });
 
@@ -914,6 +915,41 @@ test('E3: the flip shows the call as the helpdesk took it; a call that missed sh
     openE3(e3Episode());
     assert.equal(calls.flip[0].call, null);
     assert.equal(calls.flip[0].missed, true);
+});
+
+test('E5: the runner hands the flip the live globals; a call flip (got_it or walked_away) shows the ByGlobal line', () => {
+    const FV = FlipView;
+    const byGlobal = [
+        { global: 'e5_tailgated', line: 'You walked in behind staff.', heading: 'How you got in' },
+        { global: 'e5_desk_pass', line: 'The desk said yes.' },
+        { global: 'e5_world_done', line: 'You never got past the lobby.', heading: 'The lobby held' }
+    ];
+    const run = (outcome, extra) => {
+        const base = e3Episode();
+        const ep = { ...base, strings: { flipDefenderLine: 'Neutral.', flipDefenderLineByGlobal: byGlobal } };
+        setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint', 'write', 'mfa'], sent: { kind: 'call', callId: CALL_ID, outcome } },
+            [`pretext_${CALL_ID}_state`]: session(), ...extra });
+        window.gameScenario.social.awarenessEpisode = ep;
+        // no params.globals: the runner falls back to window.gameState.globalVariables
+        openE3(ep);
+        assert.equal(epState().stage, 'flip');
+        const props = calls.flip[0];
+        assert.equal(props.globals, window.gameState.globalVariables, 'the live map, by reference');
+        const h = document.createElement('div');
+        document.body.appendChild(h);
+        FV.renderFlipView(h, { ...props, onContinue() {} });
+        return { text: h.querySelector('.aw-defender-line')?.textContent, heading: h.querySelector('h2, h3')?.textContent, missed: props.missed };
+    };
+    const got = run('got_it', { e5_desk_pass: true });
+    assert.equal(got.text, 'The desk said yes.');
+    assert.equal(got.missed, false);
+    const walked = run('walked_away', { e5_tailgated: true });
+    assert.equal(walked.missed, true, 'a walked_away call has nothing to replay');
+    assert.equal(walked.text, 'You walked in behind staff.', 'the missed path reads ByGlobal, not flipMissed');
+    assert.equal(walked.heading, 'How you got in');
+    const timeout = run('walked_away', { e5_world_done: true });
+    assert.equal(timeout.text, 'You never got past the lobby.');
+    assert.equal(timeout.heading, 'The lobby held');
 });
 
 test('E3: the defend stage is the role swap: the merged set (calls first) with the awareness skin', () => {

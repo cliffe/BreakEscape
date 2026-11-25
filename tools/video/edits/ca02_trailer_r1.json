@@ -1,0 +1,747 @@
+{
+  "mission": "ca02",
+  "id": "ca02_trailer_r1",
+  "theme": "ca",
+  "title": "Cyber Aware ca02 trailer, round 1 (16:9; 9:16 and 1:1 render from ca02_trailer_r1_narrow.json)",
+  "script": {
+    "heading": "ca02 trailer script (CV lures)",
+    "owner_card": "none yet",
+    "brief": "See docs/video/scripts/ca02_trailer_script.md and docs/video/takes_ca02.md (recorded 25 Nov). Model ca03/ca05 (attack-first). Marks from the 25 Nov takes (trimmed-take seconds, 0.6-1.9 s later than the dry-run windows); Sulafat_v2 VO; PeaceFolk Guitar Motif from 95.545 s (quiet bar 98.07 s = 2.5 s in, lift 100.60 s = 5.05 s in, lull 120.8-125.9 s = 25-30 s in). PROPOSAL: office_life (2.4 s, t09_zainab_drinks, silent) is not in the script; it sits between inbox and office, adds 2.4 s (72.5 s total). Dropped from the script: the Fatima-reply variant (lands stays on the panel). Shot chips: EMAIL BUILDER (the script's APPLICATION EMAIL BUILDER is 25 characters, over the 24 limit)."
+  },
+  "fps": 30,
+  "length": 72.5,
+  "music": {
+    "track": "PeaceFolk/Guitar Motif.mp3",
+    "analysis": "guitar_motif_75.json",
+    "start": 95.545,
+    "length": 72.5,
+    "gain_db": -5,
+    "fade_in": 0,
+    "fade_out": 2.5,
+    "alternatives": [
+      "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window)",
+      "PeaceFolk/Quiet Reflection.mp3 @24.016 (used by ca05)"
+    ]
+  },
+  "beat": {
+    "bpm": 95.0,
+    "period": 0.6316,
+    "offset": 0
+  },
+  "duck": {
+    "db": -10,
+    "attack": 0.12,
+    "release": 0.3
+  },
+  "audio": {
+    "fade_ms": 8,
+    "target_lufs": -14,
+    "true_peak": -1.5
+  },
+  "shots": [
+    {
+      "id": "hook",
+      "type": "gameplay",
+      "duration": 3.0,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t07_zainab_hook.trimmed.mkv",
+        "in": 3.65,
+        "out": 6.65
+      },
+      "audio": {
+        "gain_db": 0,
+        "dialogue": true,
+        "duck_music": true
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "t07_zainab_hook 25 Nov: portrait up 3.51, speech 4.00-6.488 (silencedetect -35 dB d 0.08), silence 6.488-6.83 so out 6.65 is 0.16 after the last word and before sentence 2 (6.83); in 3.65 = onset - 0.35, after portrait up; chat-closed 9.77; game bar (y from about 0.79) cropped out of every aspect, both sentences show only in the bar; Skip and X cropped; Zainab about x 0.65-0.88 | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "full",
+        "chip": "THE TRAINING ROOM",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.62,
+          "cy": 0.335,
+          "zoom": 1.5
+        },
+        "9:16": {
+          "cx": 0.78,
+          "cy": 0.385,
+          "zoom": 1.3
+        },
+        "1:1": {
+          "cx": 0.74,
+          "cy": 0.335,
+          "zoom": 1.5
+        }
+      },
+      "lines": [
+        {
+          "start": 0.35,
+          "end": 2.838,
+          "speaker": "Zainab",
+          "text": "Heard HR had a scare with an application."
+        }
+      ],
+      "caption": {
+        "16:9": true,
+        "9:16": true,
+        "1:1": true
+      },
+      "dialogue": true
+    },
+    {
+      "preset": "ca-open",
+      "id": "open",
+      "join": {
+        "type": "seam"
+      },
+      "ca": {
+        "title": "CV lures",
+        "company": "Tarrowby Logistics",
+        "stripe": "#3b5b8c"
+      },
+      "duration": 5.1
+    },
+    {
+      "id": "topic",
+      "type": "gameplay",
+      "duration": 7.1,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t05_inbox_list_runA.trimmed.mkv",
+        "in": 5.6,
+        "out": 12.7
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "t05 run A: list mark 5.46, take end 12.96; six rows, '0 of 6 sorted', nothing opened or hovered, cursor off the panel (frames at 6.5 and 10.0 checked in the capture); window 5.6-12.7 inside the take | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "defend",
+        "chip": "THE RECRUITMENT INBOX",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.47,
+          "zoom": 1.1
+        },
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.47,
+          "zoom": 0.6
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.47,
+          "zoom": 1.0
+        }
+      }
+    },
+    {
+      "id": "red_card",
+      "type": "card",
+      "style": "ca",
+      "chapter": "attack",
+      "duration": 3.0,
+      "join": {
+        "type": "cut"
+      },
+      "text": [
+        "You play the attacker"
+      ],
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+      }
+    },
+    {
+      "id": "research",
+      "type": "gameplay",
+      "duration": 4.8,
+      "join": {
+        "type": "seam"
+      },
+      "source": {
+        "file": "t02_attack_run.trimmed.mkv",
+        "in": 11.9,
+        "out": 16.7
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "careers page open then the vacancy noted; careers-open 12.44, note-vacancy 14.71, careers-noted frame 16.01, browser-closed 18.14, so the window ends 1.4 s before the browser closes; Our-people notes (8.2, 10.3) not in | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "attack",
+        "chip": "OPEN-SOURCE RESEARCH",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.48,
+          "cy": 0.5,
+          "zoom": 1.2
+        },
+        "9:16": {
+          "cx": 0.48,
+          "cy": 0.5,
+          "zoom": 0.57
+        },
+        "1:1": {
+          "cx": 0.48,
+          "cy": 0.5,
+          "zoom": 1.0
+        }
+      }
+    },
+    {
+      "id": "build",
+      "type": "gameplay",
+      "duration": 7.2,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t02_attack_run.trimmed.mkv",
+        "in": 28.2,
+        "out": 35.4
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "builder filling; slot1 27.71 before the window, slot2 31.40 (3.2 s in), ask 33.01, attach and counter 0 at 34.42 (6.2 s in), filled frame 35.53, to-line 36.49 and send 37.43 not in; red-flag reason lines hidden by CSS, counter kept | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "attack",
+        "chip": "EMAIL BUILDER",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.48,
+          "zoom": 1.1
+        },
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.48,
+          "zoom": 0.63
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.48,
+          "zoom": 1.1
+        }
+      }
+    },
+    {
+      "id": "lands",
+      "type": "gameplay",
+      "duration": 4.2,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t02_attack_run.trimmed.mkv",
+        "in": 35.9,
+        "out": 40.1
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "Send then the green result panel; to-line 36.49, send 37.43, panel from 37.45 (pattern-level ticks, no tell), reply row 43.65 not in (window ends 40.1) | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "attack",
+        "chip": "THE SEND",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.48,
+          "zoom": 1.1
+        },
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.48,
+          "zoom": 0.63
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.48,
+          "zoom": 1.1
+        }
+      }
+    },
+    {
+      "id": "flip",
+      "type": "gameplay",
+      "duration": 2.4,
+      "join": {
+        "type": "flip"
+      },
+      "source": {
+        "file": "t02_attack_run.trimmed.mkv",
+        "in": 44.6,
+        "out": 47.0
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "mail closes onto 'Now it lands on you'; mail-closed and flip-up 44.59, continue 47.67 not in (window ends 47.0); heading only, body small | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "defend",
+        "chip": "YOUR TURN",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.45,
+          "zoom": 1.3
+        },
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.45,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.45,
+          "zoom": 1.0
+        }
+      }
+    },
+    {
+      "id": "fatima_flip",
+      "type": "gameplay",
+      "duration": 8.4,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t04_fatima_flip.trimmed.mkv",
+        "in": 8.9,
+        "out": 17.3
+      },
+      "audio": {
+        "gain_db": 0,
+        "dialogue": true,
+        "duck_music": true
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "t04 F1: portrait up 8.69, speech 9.12-16.584 (silencedetect -35 dB d 0.08), sentence 1 ends 11.753, sentence 2 starts 11.925; in 8.9 = onset - 0.22, out 17.3 is 0.7 after the last word, chat-closed 17.72, choice menu never shown; split of sentence 2 (6.15 s in shot) is an ESTIMATE by word count (no pause measured above 0.08 s in 12.93-16.58), check on the render; game bar (y from 0.79), Skip and X cropped; Fatima about x 0.62-0.82 | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "defend",
+        "chip": "YOUR TURN",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.64,
+          "cy": 0.335,
+          "zoom": 1.5
+        },
+        "9:16": {
+          "cx": 0.72,
+          "cy": 0.385,
+          "zoom": 1.3
+        },
+        "1:1": {
+          "cx": 0.7,
+          "cy": 0.335,
+          "zoom": 1.5
+        }
+      },
+      "lines": [
+        {
+          "start": 0.22,
+          "end": 2.853,
+          "speaker": "Fatima",
+          "text": "Your application has gone to the recruitment inbox."
+        },
+        {
+          "start": 3.025,
+          "end": 6.15,
+          "speaker": "Fatima",
+          "text": "Now take the other seat at the kiosk and sort the inbox the way"
+        },
+        {
+          "start": 6.2,
+          "end": 7.684,
+          "speaker": "Fatima",
+          "text": "it would land on a normal day."
+        }
+      ],
+      "caption": {
+        "16:9": true,
+        "9:16": true,
+        "1:1": true
+      },
+      "dialogue": true
+    },
+    {
+      "id": "blue_card",
+      "type": "card",
+      "style": "ca",
+      "chapter": "defend",
+      "duration": 2.0,
+      "join": {
+        "type": "seam"
+      },
+      "text": [
+        "You sort the recruitment inbox"
+      ],
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+      }
+    },
+    {
+      "id": "inbox",
+      "type": "gameplay",
+      "duration": 11.8,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t05_inbox_list_runB.trimmed.mkv",
+        "in": 6.95,
+        "out": 18.75
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "t05 run B: list 5.90, card-open 10.75 (list held 3.8 s from 6.95), card text 11.26, take end 19.27; Tendai Shava card only; 16:9 zoom 2.0 cy 0.25 frames above the Trust, Report, Delete row (top at about y 0.503); nothing hovered or pressed; cursor off the Jordan Kerr row | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "defend",
+        "chip": "THE RECRUITMENT INBOX",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.25,
+          "zoom": 2.0
+        },
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.47,
+          "zoom": 0.72
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.47,
+          "zoom": 1.15
+        }
+      }
+    },
+    {
+      "id": "office_life",
+      "type": "gameplay",
+      "duration": 2.4,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t09_zainab_drinks.trimmed.mkv",
+        "in": 1.0,
+        "out": 3.4
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "PROPOSAL (no slot in the script): t09_zainab_drinks, Zainab stands (npc_stood 0.45), leaves her post 1.18 and walks to the drinks machine (arrives 3.63); camera follows her; take is silent (no speech); room small in frame, zoom 1.5 on the room, check the pan on the render | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "full",
+        "chip": "THE TRAINING ROOM",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.53,
+          "cy": 0.5,
+          "zoom": 1.5
+        },
+        "9:16": {
+          "cx": 0.53,
+          "cy": 0.5,
+          "zoom": 0.65
+        },
+        "1:1": {
+          "cx": 0.53,
+          "cy": 0.5,
+          "zoom": 1.1
+        }
+      }
+    },
+    {
+      "id": "office",
+      "type": "gameplay",
+      "duration": 5.6,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "t07_chidi_prompt.trimmed.mkv",
+        "in": 3.37,
+        "out": 8.97
+      },
+      "audio": {
+        "gain_db": 0,
+        "dialogue": true,
+        "duck_music": true
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "t07_chidi: panel-up 2.88, Look up pressed 4.40 (1.03 s into the shot), bubble 6.05, audio-start 6.28, speech 6.493-8.312 (silencedetect), bark 2 11.74 and its bubble 11.60 not in; in 3.37 = bark1_start - 2.8, out 8.97 = +2.8; the panel body says 'Look up from the kiosk...' (no tell) and is small at zoom 1.5; crop estimated from contact frames (room x 0.16-0.65, panel x 0.30-0.70), check on the render; world bubble shows the line | CA: spoilers not an issue (owner), no masks"
+      },
+      "seat": {
+        "seat": "full",
+        "chip": "THE TRAINING ROOM",
+        "stripe": "#3b5b8c"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.43,
+          "cy": 0.55,
+          "zoom": 1.5
+        },
+        "9:16": {
+          "cx": 0.43,
+          "cy": 0.5,
+          "zoom": 0.58
+        },
+        "1:1": {
+          "cx": 0.43,
+          "cy": 0.5,
+          "zoom": 1.0
+        }
+      },
+      "lines": [
+        {
+          "start": 3.123,
+          "end": 4.942,
+          "speaker": "Chidi",
+          "text": "Got a CV in for the driver job."
+        }
+      ],
+      "caption": {
+        "16:9": true,
+        "9:16": true,
+        "1:1": true
+      },
+      "dialogue": true
+    },
+    {
+      "preset": "ca-close",
+      "id": "close",
+      "join": {
+        "type": "seam"
+      },
+      "ca": {
+        "name": "CV lures",
+        "tagline": "Play the attack · Learn to stop it",
+        "hacktivity": "Hacktivity",
+        "cta": "Learn on Hacktivity.co.uk",
+        "layout": {
+          "1:1": {
+            "mark_y": 0.14
+          }
+        },
+        "wordmark": [
+          "HACKTIVITY",
+          "CYBER AWARE"
+        ]
+      },
+      "duration": 5.5
+    }
+  ],
+  "vo": [
+    {
+      "id": "v1",
+      "start": 3.12,
+      "end": 7.824,
+      "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+      "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v1.mp3"
+    },
+    {
+      "id": "v1b",
+      "start": 8.3,
+      "end": 11.684,
+      "text": "A recruiter opens CVs from strangers all day.",
+      "caption": "A recruiter opens CVs\nfrom strangers all day.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v1b.mp3"
+    },
+    {
+      "id": "v1c",
+      "start": 11.934,
+      "end": 14.934,
+      "text": "This episode: CVs used as bait.",
+      "caption": "This episode:\nCVs used as bait.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v1c.mp3"
+    },
+    {
+      "id": "v2",
+      "start": 15.4,
+      "end": 17.8,
+      "text": "First, you play the attacker.",
+      "caption": "First, you play the attacker.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v2.mp3"
+    },
+    {
+      "id": "v3",
+      "start": 18.4,
+      "end": 22.456,
+      "text": "Their careers page names the job and the manager.",
+      "caption": "Their careers page names\nthe job and the manager.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v3.mp3"
+    },
+    {
+      "id": "v4",
+      "start": 23.2,
+      "end": 25.0,
+      "text": "Apply for the job you found.",
+      "caption": "Apply for the job you found.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v4.mp3"
+    },
+    {
+      "id": "v4b",
+      "start": 25.25,
+      "end": 28.226,
+      "text": "Attach a CV that hides code.",
+      "caption": "Attach a CV that hides code.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v4b.mp3"
+    },
+    {
+      "id": "v5",
+      "start": 30.4,
+      "end": 33.328,
+      "text": "Email it to Fatima, the recruiter.",
+      "caption": "Email it to Fatima,\nthe recruiter.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v5.mp3"
+    },
+    {
+      "id": "v8a",
+      "start": 47.4,
+      "end": 49.728,
+      "text": "Six messages wait in the inbox.",
+      "caption": "Six messages wait\nin the inbox.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v8a.mp3"
+    },
+    {
+      "id": "v8b",
+      "start": 51.2,
+      "end": 53.624,
+      "text": "Some are real. Some are traps.",
+      "caption": "Some are real.\nSome are traps.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v8b.mp3"
+    },
+    {
+      "id": "v10",
+      "start": 53.874,
+      "end": 55.242,
+      "text": "Which would you open?",
+      "caption": "Which would you open?",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v10.mp3"
+    },
+    {
+      "id": "v10b",
+      "start": 61.6,
+      "end": 63.88,
+      "text": "Then, at the next desk.",
+      "caption": "Then, at the next desk.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v10b.mp3"
+    },
+    {
+      "id": "v11",
+      "start": 67.2,
+      "end": 72.168,
+      "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+      "caption": "Play the attack, learn to\nstop it, on Hacktivity.co.uk.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v11.mp3"
+    }
+  ]
+}

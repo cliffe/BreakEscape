@@ -9,12 +9,12 @@ You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack
 | Metric | Value |
 |---|---|
 | Story aims | 1 |
-| Total tasks | 1 (0 optional) |
+| Total tasks | 3 (2 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 0 |
 | AND-gate convergences | 0 |
-| Rooms | 0 |
-| Puzzle graph nodes / edges | 0 / 0 |
+| Rooms | 2 |
+| Puzzle graph nodes / edges | 3 / 2 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -69,10 +69,15 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
+  grant_ca15_session_note{"Session note: TL-OPS-04<br/>(granted)"}
   training_room("Training Room")
+  open_plan("Open-Plan Office")
 
+  training_room -.->|ca15_drop_used| grant_ca15_session_note
+  training_room --> open_plan
 
-  class training_room room
+  class grant_ca15_session_note item
+  class training_room,open_plan room
   class node_start start
 ```
 
@@ -129,12 +134,17 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  aim_shortcuts_aim{{"Sort the shortcuts"}}
+  grant_ca15_session_note{"Session note: TL-OPS-04<br/>(granted)"}
   training_room("Training Room")
+  open_plan("Open-Plan Office")
+  aim_shortcuts_aim{{"Sort the shortcuts"}}
 
+  training_room -.->|ca15_drop_used| grant_ca15_session_note
+  training_room --> open_plan
 
+  class grant_ca15_session_note item
+  class training_room,open_plan room
   class aim_shortcuts_aim aim
-  class training_room room
   class node_start start
 ```
 
@@ -164,9 +174,11 @@ flowchart TD
   node_start --> training_room
 
   training_room("Training Room")
+  open_plan("Open-Plan Office")
 
+  training_room --> open_plan
 
-  class training_room room
+  class training_room,open_plan room
   class node_start start
 ```
 
@@ -196,14 +208,42 @@ flowchart TD
   node_start --> training_room
 
   training_room("Training Room")
+  open_plan("Open-Plan Office")
   rc_training_kiosk_1{"Training kiosk"}
-  rc_npc_nilesh_solanki_2("Nilesh Solanki")
+  rc_kit_vending_2{"Drinks machine"}
+  rc_kit_ca15_stick_3{"Memory stick"}
+  rc_kit_ca15_lost_property_4{"Lost property"}
+  rc_npc_nilesh_solanki_5("Nilesh Solanki")
+  rc_ca15_red_stick_6{"Red-team stick"}
+  rc_npc_fatima_begum_7("Fatima Begum")
+  rc_npc_chidi_okeke_8("Chidi Okeke")
+  rc_ca15_ops_pc_9{"Joanne's PC"}
+  rc_ca15_desk_pc_2_10{"Niamh's PC"}
+  rc_ca15_kettle_11{"Kettle and mugs"}
+  rc_ca15_cooler_12{"Water cooler"}
+  rc_npc_joanne_pell_13("Joanne Pell")
+  rc_npc_niamh_doherty_14("Niamh Doherty")
+  rc_grant_ca15_session_note_15{"Session note: TL-OPS-04<br/>(granted)"}
 
+  training_room --> open_plan
   training_room --> rc_training_kiosk_1
-  training_room --> rc_npc_nilesh_solanki_2
+  training_room --> rc_kit_vending_2
+  training_room --> rc_kit_ca15_stick_3
+  training_room --> rc_kit_ca15_lost_property_4
+  training_room --> rc_npc_nilesh_solanki_5
+  rc_npc_nilesh_solanki_5 --> rc_ca15_red_stick_6
+  training_room --> rc_npc_fatima_begum_7
+  training_room --> rc_npc_chidi_okeke_8
+  open_plan --> rc_ca15_ops_pc_9
+  open_plan --> rc_ca15_desk_pc_2_10
+  open_plan --> rc_ca15_kettle_11
+  open_plan --> rc_ca15_cooler_12
+  open_plan --> rc_npc_joanne_pell_13
+  open_plan --> rc_npc_niamh_doherty_14
+  training_room -.-> rc_grant_ca15_session_note_15
 
-  class training_room room
-  class rc_training_kiosk_1 item
-  class rc_npc_nilesh_solanki_2 npc
+  class training_room,open_plan room
+  class rc_training_kiosk_1,rc_kit_vending_2,rc_kit_ca15_stick_3,rc_kit_ca15_lost_property_4,rc_ca15_red_stick_6,rc_ca15_ops_pc_9,rc_ca15_desk_pc_2_10,rc_ca15_kettle_11,rc_ca15_cooler_12,rc_grant_ca15_session_note_15 item
+  class rc_npc_nilesh_solanki_5,rc_npc_fatima_begum_7,rc_npc_chidi_okeke_8,rc_npc_joanne_pell_13,rc_npc_niamh_doherty_14 npc
   class node_start start
 ```
