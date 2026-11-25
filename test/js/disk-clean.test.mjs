@@ -7,9 +7,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   mkdtempSync, mkdirSync, writeFileSync, copyFileSync, chmodSync, symlinkSync,
-  existsSync, statSync, utimesSync, rmSync, realpathSync, readdirSync, lstatSync, readFileSync, appendFileSync,
+  existsSync, statSync, utimesSync, rmSync, realpathSync, readdirSync, lstatSync, readFileSync, appendFileSync, mkdtempSync as mkdt,
 } from 'node:fs';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -331,4 +331,126 @@ test('CLEAN_TALLY_FILE from outside is ignored', (ctx) => {
   writeFileSync(`${t.T}/victim`, 'keep\n');
   sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env: { ...t.env, CLEAN_TALLY_FILE: `${t.T}/victim` } });
   assert.equal(readFileSync(`${t.T}/victim`, 'utf8'), 'keep\n');
+});
+
+test('non-ASCII digits are refused as numbers, whatever the locale', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const keys = ['CLEAN_WT_MIN_AGE_HOURS', 'CLEAN_LOG_MAX_MB', 'CLEAN_LOG_IDLE_MIN', 'CLEAN_LOG_KEEP_MB', 'CLEAN_TRAIN_DAYS',
+    'CLEAN_TRAIN_KEEP_NEWEST', 'CLEAN_SCRATCH_DAYS', 'CLEAN_TMPDIR_DAYS', 'CLEAN_LOW_PCT'];
+  for (const k of keys) {
+    for (const bad of ['１', '³', '٣', '1１']) {
+      for (const script of ['disk-clean.sh', 'wt-clean.sh', 'safe-rm.sh']) {
+        const r = sh(join(t.repo, 'tools', script), script === 'safe-rm.sh' ? [`${t.scratch}/old`] : [],
+          { env: { ...t.env, LC_ALL: 'en_GB.UTF-8', [k]: bad }, check: false });
+        assert.equal(r.status, 2, `${script} ${k}=${bad}\n${r.stdout}${r.stderr}`);
+        assert.doesNotMatch(r.stdout, /WOULD|== /);
+      }
+    }
+  }
+  const r = sh(join(t.repo, 'tools', 'disk-clean.sh'), ['--if-low', '１'], { env: { ...t.env, LC_ALL: 'en_GB.UTF-8' }, check: false });
+  assert.equal(r.status, 2);
+  assert.ok(existsSync(`${t.scratch}/old`));
+});
+
+test('roots in Claude scratch, other checkouts, home links and /tmp are refused; own scratchpad is allowed when named', (ctx) => {
+  const t = build();
+  const C = realpathSync(mkdt('/tmp/claude-clean-test-'));
+  ctx.after(() => { rmSync(t.T, { recursive: true, force: true }); rmSync(C, { recursive: true, force: true }); });
+  const mine = join(C, 'proj', 'mine', 'scratchpad');
+  const other = join(C, 'proj', 'other', 'scratchpad');
+  mkdirSync(mine, { recursive: true }); mkdirSync(other, { recursive: true });
+  mk(join(other, 'work'), 5 * DAY);
+  mk(join(mine, 'old'), 5 * DAY);
+  // another repo, and a home link target
+  const other_repo = join(t.T, 'SecGen'); mkdirSync(join(other_repo, '.git'), { recursive: true }); mkdirSync(join(other_repo, 'sub'));
+  mkdirSync(join(t.T, 'videos')); symlinkSync(join(t.T, 'videos'), join(t.T, 'hv'));
+  mkdirSync(join(t.T, 'holder', 'proj1', '.git'), { recursive: true });
+  const refuse = (root, extra = {}) => {
+    const r = sh(join(t.repo, 'tools', 'safe-rm.sh'), ['--dry-run', `${other}/work`],
+      { env: { ...t.env, CLEAN_RM_ROOTS: root, ...extra }, check: false });
+    assert.equal(r.status, 2, `${root}\n${r.stdout}${r.stderr}`);
+    assert.doesNotMatch(r.stdout, /WOULD/);
+  };
+  for (const root of ['/tmp', '/tmp/', C, join(C, 'proj'), join(C, 'proj', 'other'), other, `${other}/work`, `${mine}/..`,
+    other_repo, `${other_repo}/sub`, join(t.T, 'videos'), join(t.T, 'hv'), join(t.T, 'holder'), '/home', '/root', 'relative/dir']) refuse(root);
+  refuse(join(C, 'proj', 'mine', 'scratchpad'));            // own scratchpad not named
+  refuse(join(C, 'proj', 'mine', 'scratchpad'), { CLEAN_OWN_SCRATCH: other });
+  refuse(`${mine}/..`, { CLEAN_OWN_SCRATCH: mine });
+  refuse(t.scratch, { CLEAN_PROTECT_EXTRA: t.scratch });
+  // named own scratchpad: allowed, and others stay out of reach
+  const env = { ...t.env, CLEAN_OWN_SCRATCH: mine, CLEAN_RM_ROOTS: mine };
+  const ok = sh(join(t.repo, 'tools', 'safe-rm.sh'), ['--dry-run', `${mine}/old`], { env });
+  assert.match(ok.stdout, /WOULD rm/);
+  const no = sh(join(t.repo, 'tools', 'safe-rm.sh'), ['--dry-run', `${other}/work`], { env, check: false });
+  assert.equal(no.status, 1);
+  assert.match(no.stdout, /REFUSED/);
+  // a checkout is never deleted even when a root is its parent
+  mkdirSync(join(t.T, 'plain', 'clone', '.git'), { recursive: true });
+  const r2 = sh(join(t.repo, 'tools', 'safe-rm.sh'), ['--dry-run', `${t.T}/plain/clone`],
+    { env: { ...t.env, CLEAN_RM_ROOTS: `${t.T}/plain` }, check: false });
+  assert.notEqual(r2.status, 0);
+  assert.ok(existsSync(`${t.T}/plain/clone/.git`));
+});
+
+test('busy check resolves symlinked roots and sees programs, and safe-rm uses it', async (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const real = join(t.T, 'realscratch');
+  for (const n of ['old1', 'old2', 'old3', 'old4']) mk(join(real, n), 5 * DAY);
+  mkdirSync(join(t.T, 'lk')); symlinkSync(real, join(t.T, 'lk', 'linkscratch'));
+  const kids = [];
+  ctx.after(() => kids.forEach((k) => k.kill('SIGKILL')));
+  kids.push(spawn('sleep', ['300'], { cwd: join(real, 'old1') }));
+  kids.push(spawn('tail', ['-f', join(real, 'old2', 'f')], { stdio: ['ignore', 'ignore', 'ignore'] }));
+  copyFileSync('/bin/sleep', join(real, 'old3', 'prog')); chmodSync(join(real, 'old3', 'prog'), 0o755);
+  age(join(real, 'old3'), 5 * DAY);
+  kids.push(spawn(join(real, 'old3', 'prog'), ['300'], { cwd: t.T }));
+  await new Promise((r) => setTimeout(r, 500));
+  const env = { ...t.env, CLEAN_SCRATCH_ROOTS: join(t.T, 'lk', 'linkscratch'), CLEAN_CATEGORIES: 'scratch' };
+  const out = sh(join(t.repo, 'tools', 'disk-clean.sh'), ['--category', 'scratch'], { env }).stdout;
+  for (const n of ['old1', 'old2', 'old3']) {
+    assert.match(out, new RegExp(`SKIP .*${n} \\(a process is working in it\\)`), n);
+    assert.doesNotMatch(out, new RegExp(`WOULD rm .*${n} `), n);
+  }
+  assert.match(out, /WOULD rm .*old4 /);
+  // safe-rm refuses a busy folder, and dry-run says so too
+  for (const args of [['--dry-run'], []]) {
+    const r = sh(join(t.repo, 'tools', 'safe-rm.sh'), [...args, `${real}/old1`, `${real}/old3`, `${real}/old4`],
+      { env: { ...t.env, CLEAN_RM_ROOTS: real }, check: false });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /REFUSED .*old1 .*process/);
+    assert.match(r.stdout, /REFUSED .*old3 .*process/);
+  }
+  assert.ok(existsSync(`${real}/old1/f`) && existsSync(`${real}/old3/prog`));
+  assert.ok(!existsSync(`${real}/old4`), 'idle folder removed by the second call');
+});
+
+test('minor fixes: nested worktree logs, stale in-use, relative roots, train glob, trim tmp beside log', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  // relative roots refused
+  let r = sh(join(t.repo, 'tools', 'safe-rm.sh'), ['--dry-run', `${t.scratch}/old`], { env: { ...t.env, CLEAN_RM_ROOTS: 'scratch' }, cwd: t.T, check: false });
+  assert.equal(r.status, 2);
+  // train glob: bare * or short prefix refused
+  for (const g of ['*', 't*', '*/x', '[0-9]*']) {
+    r = sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env: { ...t.env, CLEAN_TRAIN_GLOB: g }, check: false });
+    assert.equal(r.status, 2, g);
+  }
+  // nested worktree: its logs are trimmable with the worktree as the root
+  const nested = join(t.repo, '.claude', 'worktrees', 'nw');
+  git(t.repo, 'worktree', 'add', '-q', nested, '-b', 'nw');
+  mkdirSync(join(nested, 'log'), { recursive: true });
+  writeFileSync(join(nested, 'log', 'test.log'), Buffer.alloc(2 * 1048576, 65));
+  age(join(nested, 'log', 'test.log'), 3600);
+  const out = run(t, 'disk-clean.sh', ['--category', 'logs']).stdout;
+  assert.match(out, new RegExp(`WOULD (empty|trim) .*${nested}/log/test.log`), out);
+  // a stale in-use marker no longer keeps a landed worktree
+  const gd = git(`${t.ext}/wt-landed`, 'rev-parse', '--git-path', 'info/exclude');
+  appendFileSync(gd.startsWith('/') ? gd : `${t.ext}/wt-landed/${gd}`, 'tmp/\n');
+  mkdirSync(`${t.ext}/wt-landed/tmp`, { recursive: true });
+  writeFileSync(`${t.ext}/wt-landed/tmp/in-use`, 'x\n');
+  age(`${t.ext}/wt-landed/tmp/in-use`, 3 * DAY);
+  const wt = run(t, 'wt-clean.sh', []).stdout;
+  assert.match(wt, /WOULD wt-landed/);
 });

@@ -20,7 +20,7 @@
 . "$(dirname "${BASH_SOURCE[0]}")/clean-lib.sh"
 # Ignored paths that are safe to lose with the worktree, including the playtest
 # clutter a train's live check leaves (server logs, per-game flag XML, pipes).
-SAFE='^(\.bundle/|node_modules|log/|tmp/(cache|pids|sockets|storage)/|tmp/(restart|local_secret|development_secret)\.txt$|test/dummy/(log|tmp|storage)/|tmp/keyless-[0-9]+\.log$|(tmp/delete/|tools/playtest/)([^/]+-flags-game[0-9]+\.xml|[0-9]+\.pid)$|(tmp/delete/|tools/playtest/)pipes-[0-9]+/|.*__pycache__/|coverage/)'
+SAFE='^(\.bundle/|node_modules|log/|tmp/(cache|pids|sockets|storage)/|tmp/(restart|local_secret|development_secret)\.txt$|test/dummy/(log|tmp|storage)/|tmp/keyless-[0-9]+\.log$|tmp/in-use$|(tmp/delete/|tools/playtest/)([^/]+-flags-game[0-9]+\.xml|[0-9]+\.pid)$|(tmp/delete/|tools/playtest/)pipes-[0-9]+/|.*__pycache__/|coverage/)'
 case "${1:-}" in --apply) CLEAN_APPLY=1;; ""|--dry-run) ;; *) echo "usage: $0 [--apply]" >&2; exit 2;; esac
 cd "$CHECKOUT" || exit 1
 now=$(date +%s)
@@ -82,13 +82,15 @@ while read -r wt; do
   if [ "$CLEAN_APPLY" = 1 ]; then
     if git worktree remove --force "$wt" 2>/dev/null; then
       echo "REMOVED $n  $(clean_h "$kb")  $wt"; clean_tally "$vol" "$kb"
+      set -f
       for l in $links; do
         if [ -L "$l" ] && [ ! -e "$l" ]; then rm -f -- "$l" && echo "UNLINKED  $l (dangling link to $n)"; fi
       done
+      set +f
     else echo "FAIL  $n"; fi
   else
     echo "WOULD $n  $(clean_h "$kb")  $wt"; clean_tally "$vol" "$kb"
-    for l in $links; do echo "WOULD unlink $l (link to $n)"; done
+    set -f; for l in $links; do echo "WOULD unlink $l (link to $n)"; done; set +f
   fi
 done <<<"$CLEAN_WORKTREES"
 

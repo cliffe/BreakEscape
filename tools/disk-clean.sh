@@ -21,12 +21,13 @@
 #              for CLEAN_TMPDIR_DAYS
 # --if-low only acts when a volume it covers is at least PCT full (default
 # CLEAN_LOW_PCT), for a cron job or hook. A volume is covered when a configured
-# root or a candidate worktree (not the main checkout) is on it, so a full / does
+# root or any registered worktree except the main checkout is on it, so a full / does
 # not trigger a run that can only free space on /data. It refuses --apply when no
 # settings file was found.
 # Every deletion goes through clean_guard (tools/clean-lib.sh): real path inside
 # a configured root, no . or .., no symlinks, never /, $HOME, the checkout, a
-# worktree or a root itself. Settings: tools/clean.conf.example.
+# worktree, a git checkout or a root itself; folders a process is using (working
+# directory, open file, running program) are skipped. Settings: tools/clean.conf.example.
 . "$(dirname "${BASH_SOURCE[0]}")/clean-lib.sh"
 
 cats=; iflow=

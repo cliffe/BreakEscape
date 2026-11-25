@@ -9,6 +9,17 @@
 # keep-newest unless CLEAN_ALLOW_ZERO=1. Roots and the keep list take no globs and
 # no spaces; a root may not be or contain /, $HOME, the checkout or a worktree.
 # $CHECKOUT is the main checkout, found from git.
+# If both ~/.config/break-escape/clean.conf and tools/clean.local.conf exist, the
+# ~/.config one wins and the other is ignored.
+# Roots must be absolute and may not be, contain or lie inside: /, $HOME, /tmp,
+# /var/tmp, /root, /home or another user's home, the checkout, any worktree, any
+# other git checkout (a .git in or above the root or in a direct child), the real
+# target of a symlink in $HOME or CLEAN_SYMLINK_DIRS, a CLEAN_PROTECT_EXTRA path,
+# or anything under /tmp/claude-* (other sessions' scratch). The only exception is
+# this session's scratchpad: set CLEAN_OWN_SCRATCH=/tmp/claude-*/<project>/<session>/scratchpad
+# and list that folder (or one inside it) as a root. CLEAN_TRAIN_GLOB needs at
+# least 3 literal characters before any glob character.
+# Everything runs under LC_ALL=C, so only ASCII digits count as numbers.
 
 # Branch a worktree's HEAD must be in before it may be removed.
 #CLEAN_MAIN_BRANCH=main
@@ -40,6 +51,9 @@
 # mktemp folders (name-XXXXXX) in these roots untouched for N days.
 #CLEAN_TMPDIR_ROOTS=
 #CLEAN_TMPDIR_DAYS=2
+# Extra paths no root may be, contain or lie inside (space separated).
+#CLEAN_PROTECT_EXTRA=
+#CLEAN_OWN_SCRATCH=
 # Extra roots safe-rm may delete inside (it also accepts the roots above).
 #CLEAN_RM_ROOTS=
 # disk-clean --if-low acts only when a covered volume is at least this full (%).

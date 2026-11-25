@@ -12,6 +12,11 @@
 # each machine keeps its own (start from tools/clean.conf.example). It is sourced as shell, so only the machine's owner
 # writes it. List values are space separated; paths with spaces are not supported.
 
+# One locale for the whole tool: with a UTF-8 locale a bracket range like [0-9]
+# also matches digits such as fullwidth 1, which would pass the number check and
+# then break arithmetic. Under C only the ASCII digits are digits.
+export LC_ALL=C
+
 CLEAN_TOOLS_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 # The main checkout is the first entry of `git worktree list`, so a copy of these
 # tools inside any worktree finds the same checkout.
@@ -52,6 +57,8 @@ unset _f _clean_vars _clean_env
 : "${CLEAN_TMPDIR_ROOTS=}"
 : "${CLEAN_TMPDIR_DAYS=2}"
 : "${CLEAN_RM_ROOTS=}"
+: "${CLEAN_OWN_SCRATCH=}"
+: "${CLEAN_PROTECT_EXTRA=}"
 : "${CLEAN_LOW_PCT=90}"
 CLEAN_ALLOW_ZERO=${CLEAN_ALLOW_ZERO:-0}
 CLEAN_APPLY=0   # only a script's --apply flag turns this on, never the env or file
@@ -63,17 +70,23 @@ _clean_bad=0
 for _k in CLEAN_WT_MIN_AGE_HOURS CLEAN_LOG_MAX_MB CLEAN_LOG_IDLE_MIN CLEAN_LOG_KEEP_MB CLEAN_TRAIN_DAYS \
     CLEAN_TRAIN_KEEP_NEWEST CLEAN_SCRATCH_DAYS CLEAN_TMPDIR_DAYS CLEAN_LOW_PCT; do
   _v=${!_k}
-  if [[ ! $_v =~ ^(0|[1-9][0-9]{0,8})$ ]]; then echo "clean: $_k must be a whole number, got '$_v'" >&2; _clean_bad=1; continue; fi
+  if ! [[ $_v =~ ^(0|[1-9][0-9]{0,8})$ ]] || [[ $_v =~ [^0-9] ]]; then echo "clean: $_k must be a whole number, got '$_v'" >&2; _clean_bad=1; continue; fi
   case "$_k" in CLEAN_LOG_KEEP_MB) continue;; esac
   if [ "$_v" = 0 ] && [ "$CLEAN_ALLOW_ZERO" != 1 ]; then echo "clean: $_k=0 would switch a guard off (set CLEAN_ALLOW_ZERO=1 to allow)" >&2; _clean_bad=1; fi
 done
 if [ "$CLEAN_LOW_PCT" -gt 100 ] 2>/dev/null; then echo "clean: CLEAN_LOW_PCT must be 0 to 100" >&2; _clean_bad=1; fi
 # Roots and the keep list are space-separated words: no glob characters, and (for
 # roots) no whitespace inside a path, which a word list cannot hold.
-for _k in CLEAN_SCRATCH_ROOTS CLEAN_TRAIN_ROOTS CLEAN_TMPDIR_ROOTS CLEAN_RM_ROOTS CLEAN_KEEP CLEAN_SYMLINK_DIRS; do
+for _k in CLEAN_SCRATCH_ROOTS CLEAN_TRAIN_ROOTS CLEAN_TMPDIR_ROOTS CLEAN_RM_ROOTS CLEAN_KEEP CLEAN_SYMLINK_DIRS CLEAN_OWN_SCRATCH CLEAN_PROTECT_EXTRA; do
   case "${!_k}" in *[\*\?\[]*) echo "clean: $_k must not contain glob characters" >&2; _clean_bad=1;; esac
   case "${!_k}" in *$'\n'*|*$'\t'*) echo "clean: $_k must be space separated" >&2; _clean_bad=1;; esac
 done
+# The train glob needs a literal start (at least 3 characters before any glob
+# character) and no slash, so a bare * cannot select every folder in a root.
+case "$CLEAN_TRAIN_GLOB" in */*) echo "clean: CLEAN_TRAIN_GLOB must not contain a slash" >&2; _clean_bad=1;; esac
+_g=${CLEAN_TRAIN_GLOB%%[\*\?\[]*}
+[ "${#_g}" -ge 3 ] || { echo "clean: CLEAN_TRAIN_GLOB needs at least 3 literal characters before any glob character" >&2; _clean_bad=1; }
+unset _g
 case "$CLEAN_MAIN_BRANCH" in "") echo "clean: CLEAN_MAIN_BRANCH is empty" >&2; _clean_bad=1;; esac
 [ "$_clean_bad" = 0 ] || exit 2
 unset _k _v _clean_bad
@@ -85,9 +98,29 @@ CLEAN_HOME=$(realpath -m -- "${HOME:-/}")
 CLEAN_WORKTREES_ALL=$(git -C "$CHECKOUT" worktree list --porcelain | sed -n 's/^worktree //p' |
   while IFS= read -r w; do [ -d "$w" ] && realpath -e -- "$w"; done)
 CLEAN_WORKTREES=$(grep -v '[[:space:]]' <<<"$CLEAN_WORKTREES_ALL")
-# Roots, resolved. A root may not be, or contain, /, $HOME, the checkout or any worktree.
+# Roots, resolved. A root must be absolute and may not be, contain, or lie inside:
+# /, $HOME, the checkout or any worktree, another git checkout (a .git in the root,
+# above it, or in a direct child), the real target of a symlink in $HOME or a
+# CLEAN_SYMLINK_DIRS folder, or a CLEAN_PROTECT_EXTRA path. It may not be or contain
+# /tmp, /var/tmp, /root, another user's home folder, or anything under /tmp/claude-*
+# (other sessions' scratch), except the one folder named in CLEAN_OWN_SCRATCH
+# (/tmp/claude-*/<project>/<session>/scratchpad) and what is inside it.
+_clean_own=
+if [ -n "$CLEAN_OWN_SCRATCH" ]; then
+  _clean_own=$(realpath -m -- "$CLEAN_OWN_SCRATCH")
+  case "$_clean_own" in /tmp/claude-*/*/*/scratchpad) ;; *) echo "clean: CLEAN_OWN_SCRATCH must be /tmp/claude-*/<project>/<session>/scratchpad" >&2; exit 2;; esac
+fi
+# Real paths a root may not be, contain or lie inside (one per line).
+_clean_noroot=$(
+  for _l in "$CLEAN_HOME"/* "$CLEAN_HOME"/.[!.]* $(for _d in $CLEAN_SYMLINK_DIRS; do printf '%s\n' "$_d"/* "$_d"/.[!.]*; done); do
+    [ -L "$_l" ] && realpath -e -- "$_l" 2>/dev/null
+  done
+  for _x in $CLEAN_PROTECT_EXTRA; do realpath -m -- "$_x"; done)
+# Real paths a root may not be or contain (but may lie inside).
+_clean_noexact=$(for _x in /tmp /var/tmp /root /home /home/*; do [ -e "$_x" ] && realpath -e -- "$_x"; done)
 CLEAN_ROOTS_RESOLVED=
 for _r in $CLEAN_SCRATCH_ROOTS $CLEAN_TRAIN_ROOTS $CLEAN_TMPDIR_ROOTS $CLEAN_RM_ROOTS; do
+  case "$_r" in /*) ;; *) echo "clean: root $_r is not an absolute path" >&2; exit 2;; esac
   _rr=$(realpath -m -- "$_r")
   case "$_rr" in *[[:space:]]*) echo "clean: root $_r has whitespace in its path" >&2; exit 2;; esac
   case "$_rr" in /|"$CLEAN_HOME") echo "clean: root $_r is protected ($_rr)" >&2; exit 2;; esac
@@ -97,11 +130,42 @@ for _r in $CLEAN_SCRATCH_ROOTS $CLEAN_TRAIN_ROOTS $CLEAN_TMPDIR_ROOTS $CLEAN_RM_
     case "$_w/" in "$_rr"/*) echo "clean: root $_r contains protected worktree $_w" >&2; exit 2;; esac
     case "$_rr/" in "$_w"/*) echo "clean: root $_r is inside protected worktree $_w" >&2; exit 2;; esac
   done <<<"$CLEAN_WORKTREES_ALL"
+  while IFS= read -r _w; do
+    [ -n "$_w" ] || continue
+    case "$_w/" in "$_rr"/*) echo "clean: root $_r is, or contains, protected $_w" >&2; exit 2;; esac
+    case "$_rr/" in "$_w"/*) echo "clean: root $_r is inside protected $_w" >&2; exit 2;; esac
+  done <<<"$_clean_noroot"
+  while IFS= read -r _w; do
+    [ -n "$_w" ] || continue
+    case "$_w/" in "$_rr"/*) echo "clean: root $_r is, or contains, $_w" >&2; exit 2;; esac
+  done <<<"$_clean_noexact"
+  # Claude session scratch: only the one named scratchpad (and below it) is allowed.
+  case "$_rr/" in
+    /tmp/claude-*)
+      case "$_clean_own" in
+        "") echo "clean: root $_r is in Claude session scratch; name this session's scratchpad in CLEAN_OWN_SCRATCH" >&2; exit 2;;
+        *) case "$_rr/" in "$_clean_own"/*) ;; *) echo "clean: root $_r is in another Claude session's scratch" >&2; exit 2;; esac;;
+      esac;;
+  esac
+  for _c in /tmp/claude-*; do
+    [ -e "$_c" ] || continue
+    _c=$(realpath -m -- "$_c")
+    case "$_c/" in "$_rr"/*) echo "clean: root $_r contains Claude session scratch $_c" >&2; exit 2;; esac
+  done
+  # Another git checkout: .git in the root, any parent, or a direct child.
+  _d=$_rr
+  while [ -n "$_d" ] && [ "$_d" != / ]; do
+    [ -e "$_d/.git" ] && { echo "clean: root $_r is inside a git checkout ($_d)" >&2; exit 2; }
+    _d=${_d%/*}
+  done
+  for _c in "$_rr"/*/.git "$_rr"/.[!.]*/.git; do
+    [ -e "$_c" ] && { echo "clean: root $_r contains a git checkout (${_c%/.git})" >&2; exit 2; }
+  done
   CLEAN_ROOTS_RESOLVED="$CLEAN_ROOTS_RESOLVED $_rr"
 done
-unset _r _rr _w
+unset _r _rr _w _c _d _l _x _clean_own
 # Paths nothing may delete, nor delete anything containing them (one per line).
-CLEAN_PROTECTED=$(printf '%s\n' / "$CLEAN_HOME" "${HOME:-}" "$CLEAN_WORKTREES_ALL" ${CLEAN_ROOTS_RESOLVED})
+CLEAN_PROTECTED=$(printf '%s\n' / "$CLEAN_HOME" "${HOME:-}" "$CLEAN_WORKTREES_ALL" "$_clean_noroot" "$_clean_noexact" ${CLEAN_ROOTS_RESOLVED})
 
 clean_say_refused() { echo "REFUSED   $1  ($2)"; }
 
@@ -111,7 +175,7 @@ clean_say_refused() { echo "REFUSED   $1  ($2)"; }
 # the ROOTs (also resolved; a root of / or $HOME is ignored). It must not be, or
 # contain, a protected path, and not lie inside a worktree unless that is its root.
 clean_guard() {
-  local p=$1 r rr rp prot w ok=; shift; CLEAN_RP=
+  local p=$1 r rr rp prot w inner ok=; shift; CLEAN_RP=
   case "$p" in /*) ;; *) clean_say_refused "$p" "not an absolute path" ; return 1;; esac
   case "$p/" in */./*|*/../*) clean_say_refused "$p" "has a . or .. component" ; return 1;; esac
   if [ -L "$p" ]; then clean_say_refused "$p" "is a symlink" ; return 1; fi
@@ -129,10 +193,15 @@ clean_guard() {
     case "${prot%/}/" in "$rp"/*) clean_say_refused "$p" "is or contains protected $prot" ; return 1;; esac
   done <<<"$CLEAN_PROTECTED"
   # Inside a worktree or the checkout only when the caller made that worktree the root.
+  # The innermost worktree holding the path must be the root (a nested worktree
+  # under <checkout>/.claude/worktrees is inside the checkout too).
+  inner=
   while IFS= read -r w; do
     [ -n "$w" ] || continue
-    case "$rp" in "$w"/?*) [ "$ok" = "$w" ] || { clean_say_refused "$p" "is inside protected worktree $w"; return 1; };; esac
+    case "$rp" in "$w"/?*) [ "${#w}" -gt "${#inner}" ] && inner=$w;; esac
   done <<<"$CLEAN_WORKTREES_ALL"
+  if [ -n "$inner" ] && [ "$ok" != "$inner" ]; then clean_say_refused "$p" "is inside protected worktree $inner"; return 1; fi
+  if [ -e "$rp/.git" ]; then clean_say_refused "$p" "is a git checkout"; return 1; fi
   CLEAN_RP=$rp
 }
 
@@ -172,6 +241,7 @@ clean_rm_in_parent() {
 clean_rm() {
   local why=$1 p=$2 rp kb vol; shift 2
   clean_guard "$p" "$@" || return 1; rp=$CLEAN_RP
+  if clean_busy "$rp"; then clean_say_refused "$p" "a process is working in it or has a file there open"; return 1; fi
   kb=$(clean_kb "$rp"); vol=$(clean_vol "$rp")
   if [ "$CLEAN_APPLY" = 1 ]; then
     if clean_rm_in_parent "$rp"; then echo "REMOVED   $(clean_h "$kb")  $rp  ($why)"; clean_tally "$vol" "$kb"
@@ -203,7 +273,7 @@ clean_trim() {
   if [ "$CLEAN_APPLY" = 1 ]; then
     if [ "$keep" = 0 ]; then truncate -s 0 -- "$rp" && echo "EMPTIED   $(clean_h "$kb")  $rp  ($why)" && clean_tally "$vol" "$kb"
     else
-      tmp=$(mktemp "${TMPDIR:-/tmp}/clean-trim.XXXXXX") || return 1
+      tmp=$(mktemp "${rp%/*}/.clean-trim.XXXXXX") || return 1
       if tail -c $(( keep * 1048576 )) -- "$rp" > "$tmp" && cat -- "$tmp" > "$rp"; then
         echo "TRIMMED   $(clean_h "$kb")  $rp  ($why; last ${keep} MB kept)"; clean_tally "$vol" "$kb"
       else echo "FAIL      $rp  ($why)"; rm -f -- "$tmp"; return 1; fi
@@ -212,19 +282,27 @@ clean_trim() {
   else echo "WOULD $verb $(clean_h "$kb")  $rp  ($why)"; clean_tally "$vol" "$kb"; fi
 }
 
-# Process working directories and open files, read once per run: clean_busy DIR is
-# true when a process is working in DIR or below it or holds a file open there.
-# This script's own processes are left out (it runs from / or the checkout).
+# What processes are using, read once per run: working directories, open files,
+# the running program and mapped files (/proc/*/cwd, fd, exe, maps), all real
+# paths. clean_busy PATH resolves PATH first (a symlinked root gives a real path)
+# and is true when something uses PATH or anything below it. This script's own
+# processes are left out (it runs from / or the checkout). Reading is one find
+# and one cat, not a process per file.
 clean_read_cwds() {
-  local f
-  CLEAN_CWDS=$(for p in /proc/[0-9]*; do
-    case "${p#/proc/}" in "$$"|"$BASHPID") continue;; esac
-    readlink "$p/cwd" 2>/dev/null
-    for f in "$p"/fd/*; do readlink "$f" 2>/dev/null; done; done)
+  local me=$BASHPID
+  CLEAN_CWDS=$({
+    find /proc -mindepth 2 -maxdepth 3 -regextype posix-extended -regex '/proc/[0-9]+/(cwd|exe|fd/[0-9]+)' \
+      -printf '%p\t%l\n' 2>/dev/null |
+      awk -F'\t' -v a=$$ -v b="$me" '{split($1, x, "/"); if (x[3] == a || x[3] == b) next
+        t = $2; sub(/ \(deleted\)$/, "", t); if (t ~ /^\//) print t}'
+    cat /proc/[0-9]*/maps 2>/dev/null | awk '$6 ~ /^\// && !s[$6]++ {print $6}'
+  })
 }
 clean_busy() {
+  local d
+  d=$(realpath -m -- "$1" 2>/dev/null) || d=$1
   [ -n "${CLEAN_CWDS+x}" ] || clean_read_cwds
-  awk -v d="$1" '$0==d || index($0, d "/")==1 {f=1} END {exit !f}' <<<"$CLEAN_CWDS"
+  awk -v d="$d" '$0==d || index($0, d "/")==1 {f=1} END {exit !f}' <<<"$CLEAN_CWDS"
 }
 # clean_pid_alive FILE: the pid written in FILE is a running process.
 clean_pid_alive() {
