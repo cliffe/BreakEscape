@@ -151,7 +151,7 @@ for _r in $CLEAN_SCRATCH_ROOTS $CLEAN_TRAIN_ROOTS $CLEAN_TMPDIR_ROOTS $CLEAN_RM_
     case "$_rr/" in "$_w"/*)
       # only this session's named scratchpad may lie inside a home folder
       if [ -n "$_clean_own" ] && case "$_rr/" in "$_clean_own"/*) true;; *) false;; esac; then :
-      else echo "clean: root $_r is inside protected $_w (\$HOME or a home folder)" >&2; exit 2; fi;;
+      else echo "clean: root $_r is inside protected $_w (\$HOME, a home folder, a HOME link target or CLEAN_PROTECT_EXTRA)" >&2; exit 2; fi;;
     esac
   done <<<"$_clean_noroot"
   while IFS= read -r _w; do
