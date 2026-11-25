@@ -146,6 +146,9 @@ Counts: 0 blockers, 1 major, 4 minors.
 - **B9 docs** match the code, apart from the copied-text sentence (R1-B1).
 - **Tests run.** node over the 13 track B client test files (switch, grammar, format, renderer, scanner, framework,
   hostile, skin-text, session-start, unopenable-containers, defaults, provenance, parity): 313 pass, 0 fail.
+  Rails, under the shared lock: `validate_realism_catalog_test`, `realism_telltale_words_test`,
+  `realism_separation_test`, `validate_realism_skin_test` and `test/lib/realism_catalog_test`: 146 runs, 0 failures.
+  `bin/ops-golden-compare` at HEAD: 27 runs, 0 failures, exit 0.
 - **No exploit content, and no real identifier** added outside the catalog JSON. UK English.
 
 ## For the owner
