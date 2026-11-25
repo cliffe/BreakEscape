@@ -1027,11 +1027,15 @@ function openDoor(doorSprite, opts = {}) {
  * Closed doors do not block NPC bodies, so this is the open animation and the grid only:
  * no far-room load, no player transition, and door_opened_by_npc { roomId, connectedRoom,
  * direction, npcId } instead of door_opened.
+ * opts.passedByHook: the npc-walk door-pass hook (setNpcDoorPassHook) let this NPC through,
+ * so a locked door opens for it too; the lock state is left as it is. A gate still opens
+ * only through door-gates.js.
  * @returns {boolean} true if the door started opening
  */
-export function openDoorForNpc(doorSprite, npcId) {
+export function openDoorForNpc(doorSprite, npcId, opts = {}) {
     const props = doorSprite?.doorProperties;
-    if (!props || props.open || props.locked || doorSprite.active === false) return false;
+    if (!props || props.open || doorSprite.active === false) return false;
+    if (props.locked && !opts?.passedByHook) return false;
     if (window.doorGates?.isGate?.(doorSprite)) return false;   // gates open by proximity (door-gates.js)
     openDoor(doorSprite, { byNpc: npcId || true });
     return true;

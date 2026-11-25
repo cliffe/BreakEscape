@@ -130,3 +130,168 @@ test('_ensureWallCollidersFor adds each loaded room once', () => {
         assert.ok(b._routeWallRooms.has('hall') && b._routeWallRooms.has('dock'));
     } finally { window.rooms = prev; }
 });
+
+// ── Door-pass hook (setNpcDoorPassHook; CA0's gate rules) ───────────────────
+// Before the walker plans the locked-door fade it asks the hook; true (or a promise of true)
+// opens the door with openDoorForNpc(..., { passedByHook: true }). A throw, a rejection, a
+// non-true value or no answer in time is false. One hook at a time; never cached.
+
+const walkMod = await import('../../public/break_escape/js/systems/npc-walk.js');
+const { setNpcDoorPassHook, getNpcDoorPassHook, askDoorPassHook, DOOR_PASS_HOOK_TIMEOUT_MS } = walkMod;
+const { world, flush } = await import('./helpers/npc-walk-world.mjs');
+
+const settle = async (n = 6) => { for (let i = 0; i < n; i++) await flush(); };
+
+function withWarns(fn) {
+    const prev = console.warn;
+    const warns = [];
+    console.warn = (...a) => warns.push(a.map(String).join(' '));
+    return Promise.resolve().then(() => fn(warns)).finally(() => { console.warn = prev; setNpcDoorPassHook(null); });
+}
+
+// The stub world's hall->dock door, locked; the hook timeout is short so a hang test is quick
+function lockedWorld(extra = {}) {
+    const w = world({ locked: true, ...extra });
+    w.manager._walkEnv.hookTimeoutMs = 50;
+    return w;
+}
+
+test('door-pass hook: exposed on window.npcWalk; the timeout is about 2000 ms', () => {
+    assert.equal(typeof window.npcWalk?.setDoorPassHook, 'function');
+    assert.equal(window.npcWalk.setDoorPassHook, setNpcDoorPassHook);
+    assert.equal(DOOR_PASS_HOOK_TIMEOUT_MS, 2000);
+});
+
+test('door-pass hook: no hook keeps the current rule (locked door -> doorway fade, hook not asked)', async () => {
+    setNpcDoorPassHook(null);
+    const w = lockedWorld();
+    const b = w.addNpc('guard');
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await settle();
+    assert.deepEqual(w.opened, []);
+    assert.equal(b.moves.at(-1).opts.arrivalData.how, 'faded');
+    b.arrive();
+    assert.equal(await p, 'faded');
+});
+
+test('door-pass hook: true opens the locked door with passedByHook and the NPC walks in from the far room', async () => withWarns(async () => {
+    const calls = [];
+    setNpcDoorPassHook((info) => { calls.push(info); return true; });
+    const w = lockedWorld();
+    w.doorSprite.doorProperties.direction = 'east';
+    const b = w.addNpc('guard');
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await settle();
+    assert.deepEqual(calls, [{ roomId: 'hall', connectedRoom: 'dock', direction: 'east', npcId: 'guard' }]);
+    assert.deepEqual(w.opened, ['guard']);
+    assert.deepEqual(w.openedOpts, [{ passedByHook: true }]);
+    assert.equal(b.roomId, 'dock', 'spawned in the far room');
+    assert.equal(b.moves.at(-1).opts.arrivalData.how, 'walked');
+    b.arrive({ x: 160, y: 160 });
+    assert.equal(await p, 'walked');
+}));
+
+test('door-pass hook: a promise resolving true also passes (walk-out leaves through the locked door)', async () => withWarns(async () => {
+    setNpcDoorPassHook(() => new Promise(r => setTimeout(() => r(true), 5)));
+    const w = lockedWorld();
+    const b = w.addNpc('guard', { visible: true });
+    const p = w.manager.walkNPCOut('guard', { to: 'dock' });
+    await new Promise(r => setTimeout(r, 20));
+    await settle();
+    assert.deepEqual(w.openedOpts, [{ passedByHook: true }]);
+    assert.equal(w.manager.walks.get('guard').farRoom, 'dock');
+    assert.equal(w.manager.walks.get('guard').how, 'walked');
+    b.arrive({ x: 600, y: 160 });
+    assert.equal(await p, 'walked');
+}));
+
+for (const [label, hook] of [
+    ['throws', () => { throw new Error('boom'); }],
+    ['rejects', () => Promise.reject(new Error('no'))],
+    ['never settles', () => new Promise(() => {})],
+    ['resolves a truthy non-true value', () => Promise.resolve('yes')],
+    ['returns false', () => false]
+]) {
+    test(`door-pass hook that ${label} counts as false: today's doorway fade`, async () => withWarns(async () => {
+        setNpcDoorPassHook(hook);
+        const w = lockedWorld();
+        const b = w.addNpc('guard');
+        const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+        await new Promise(r => setTimeout(r, 80));   // past the 50 ms test timeout
+        await settle();
+        assert.deepEqual(w.opened, [], 'door not opened');
+        assert.equal(b.sprite.body.center.x, 320, 'at the doorway mouth');
+        assert.equal(b.moves.at(-1).opts.arrivalData.how, 'faded');
+        b.arrive();
+        assert.equal(await p, 'faded');
+    }));
+}
+
+test('askDoorPassHook: a hook that never settles is false after the timeout', async () => withWarns(async (warns) => {
+    setNpcDoorPassHook(() => new Promise(() => {}));
+    const t0 = Date.now();
+    assert.equal(await askDoorPassHook({ npcId: 'g' }, 40), false);
+    assert.ok(Date.now() - t0 >= 35);
+    assert.ok(warns.some(s => /no answer in 40 ms/.test(s)));
+}));
+
+test('door-pass hook: one at a time; a second registration replaces the first with a warning', async () => withWarns(async (warns) => {
+    const a = () => false;
+    const bHook = () => true;
+    setNpcDoorPassHook(a);
+    assert.equal(warns.length, 0);
+    setNpcDoorPassHook(a);
+    assert.equal(warns.length, 0, 'the same hook again does not warn');
+    setNpcDoorPassHook(bHook);
+    assert.equal(warns.length, 1);
+    assert.match(warns[0], /replacing/);
+    assert.equal(getNpcDoorPassHook(), bHook);
+    assert.equal(await askDoorPassHook({}), true, 'the second hook answers');
+    setNpcDoorPassHook(null);
+    assert.equal(getNpcDoorPassHook(), null);
+    assert.equal(warns.length, 1, 'clearing does not warn');
+    setNpcDoorPassHook('nope');
+    assert.equal(getNpcDoorPassHook(), null, 'a non-function is ignored');
+}));
+
+test('door-pass hook: never cached; each plan asks again and follows the new answer', async () => withWarns(async () => {
+    let answer = false;
+    let asked = 0;
+    setNpcDoorPassHook(() => { asked++; return answer; });
+    const w = lockedWorld();
+    const b = w.addNpc('guard');
+    const p1 = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await settle();
+    assert.equal(asked, 1);
+    b.arrive();
+    assert.equal(await p1, 'faded', 'first plan: shut');
+    // Out again (the hook is asked for the exit), then in again with the answer changed
+    answer = true;
+    const p2 = w.manager.walkNPCOut('guard', { to: 'dock' });
+    await settle();
+    assert.equal(asked, 2, 'asked again for the walk-out');
+    assert.deepEqual(w.openedOpts, [{ passedByHook: true }]);
+    b.arrive({ x: 600, y: 160 });
+    await p2;
+    answer = false;
+    w.opened.length = 0;
+    const p3 = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await settle();
+    assert.equal(asked, 3, 'asked a third time');
+    assert.deepEqual(w.opened, [], 'not opened on a no');
+    assert.equal(b.moves.at(-1).opts.arrivalData.how, 'faded');
+    b.arrive();
+    assert.equal(await p3, 'faded');
+}));
+
+test('a usable door never asks the hook', async () => withWarns(async () => {
+    let asked = 0;
+    setNpcDoorPassHook(() => { asked++; return false; });
+    const w = world();
+    const b = w.addNpc('guard');
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await settle();
+    assert.equal(asked, 0);
+    b.arrive({ x: 160, y: 160 });
+    assert.equal(await p, 'walked');
+}));

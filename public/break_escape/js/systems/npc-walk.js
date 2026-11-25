@@ -27,6 +27,61 @@ export const WALK_VIEW_MARGIN = TILE_SIZE;
 export const WALK_LOAD_WAIT_MS = 3000;
 const PLAYER_DOOR_PX = 2 * TILE_SIZE;   // never step out of the door the player stands in
 const DOOR_OPEN_PX = 1.5 * TILE_SIZE;   // a walker this close to a closed door opens it
+export const DOOR_PASS_HOOK_TIMEOUT_MS = 2000;
+
+// ── Door-pass hook (CA0: gate rules decide whether a walker may pass) ───────
+//
+// setNpcDoorPassHook(fn): before a walk plans the locked-door fade for a door on its route
+// (a locked door, or a gate without the NPC on openFor), it calls
+//   fn({ roomId, connectedRoom, direction, npcId })
+// true, or a promise that resolves true, makes the door passable: the walker opens it with
+// openDoorForNpc(sprite, npcId, { passedByHook: true }) and walks through. Anything else is
+// false (today's fade): a throw, a rejection, a non-true value or no answer within
+// DOOR_PASS_HOOK_TIMEOUT_MS. One hook at a time: a second registration replaces the first
+// with a console.warn; null clears it. The answer is never cached: every plan asks again.
+// Also on window.npcWalk.setDoorPassHook.
+
+let doorPassHook = null;
+
+export function setNpcDoorPassHook(fn) {
+    if (fn != null && typeof fn !== 'function') {
+        console.warn('⚠️ [npc-walk] setNpcDoorPassHook: not a function, ignored');
+        return;
+    }
+    if (fn && doorPassHook && doorPassHook !== fn) {
+        console.warn('⚠️ [npc-walk] setNpcDoorPassHook: a door-pass hook was already set; replacing it');
+    }
+    doorPassHook = fn || null;
+}
+
+export function getNpcDoorPassHook() { return doorPassHook; }
+
+/** Ask the hook about a door: resolves true only for true (or a promise of true) in time. */
+export function askDoorPassHook(info, timeoutMs = DOOR_PASS_HOOK_TIMEOUT_MS) {
+    const fn = doorPassHook;
+    if (!fn) return Promise.resolve(false);
+    let r;
+    try { r = fn(info); } catch (e) {
+        console.warn('⚠️ [npc-walk] door-pass hook threw; treating the door as shut', e);
+        return Promise.resolve(false);
+    }
+    if (r === true) return Promise.resolve(true);
+    if (!r || typeof r.then !== 'function') return Promise.resolve(false);
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            console.warn(`⚠️ [npc-walk] door-pass hook gave no answer in ${timeoutMs} ms; treating the door as shut`);
+            resolve(false);
+        }, timeoutMs);
+        Promise.resolve(r).then(
+            (v) => { clearTimeout(timer); resolve(v === true); },
+            (e) => { clearTimeout(timer); console.warn('⚠️ [npc-walk] door-pass hook rejected; treating the door as shut', e); resolve(false); }
+        );
+    });
+}
+
+if (typeof window !== 'undefined') {
+    window.npcWalk = Object.assign(window.npcWalk || {}, { setDoorPassHook: setNpcDoorPassHook });
+}
 
 // ── Pure helpers ────────────────────────────────────────────────────────────
 
@@ -175,7 +230,7 @@ function makeEnv(manager, env) {
         doorGates: () => w.doorGates || null,
         hostile: () => w.npcHostileSystem || null,
         loadRoom: (id) => w.loadRoom?.(id),
-        openDoorForNpc: (sprite, id) => w.openDoorForNpc?.(sprite, id),
+        openDoorForNpc: (sprite, id, o) => w.openDoorForNpc?.(sprite, id, o),
         requestSync: () => w.stateSync?.requestSoon?.(),
         now: () => Date.now(),
         wait: (ms) => new Promise(r => setTimeout(r, ms)),
@@ -260,6 +315,26 @@ export function installNpcWalk(manager, env = {}) {
         return doors.map(d => ({ ...d, props: d.props, mouth: snap(d.props.worldX, d.props.worldY) }));
     }
 
+    /**
+     * true: usable by the current rule; 'hook': the door-pass hook said yes (asked afresh on
+     * every plan, never cached); false: not usable, so the walk falls back to the fade.
+     */
+    async function doorPassable(w, d) {
+        if (doorUsable(d, w.id, E.doorGates())) return true;
+        if (!getNpcDoorPassHook()) return false;
+        const p = d.props || {};
+        const yes = await askDoorPassHook(
+            { roomId: p.roomId, connectedRoom: p.connectedRoom, direction: p.direction, npcId: w.id },
+            E.hookTimeoutMs ?? DOOR_PASS_HOOK_TIMEOUT_MS);
+        if (yes) log(`${w.id}: door-pass hook lets the walk through the door to ${d.far}`);
+        return yes ? 'hook' : false;
+    }
+
+    function openByHook(w, d) {
+        if (d.props?.open) return;
+        E.openDoorForNpc(d.sprite, w.id, { passedByHook: true });
+    }
+
     function startWalk(id, dir, opts, behavior) {
         let resolve;
         const promise = new Promise(r => { resolve = r; });
@@ -326,10 +401,13 @@ export function installNpcWalk(manager, env = {}) {
         let fallback = null;
         for (const d of doors) {
             if (!fallback) fallback = d;
-            if (!doorUsable(d, w.id, E.doorGates())) { log(`${w.id}: door to ${d.far} not usable (locked, or a gate without the NPC)`); continue; }
+            const pass = await doorPassable(w, d);
+            if (w.done) return null;
+            if (!pass) { log(`${w.id}: door to ${d.far} not usable (locked, or a gate without the NPC)`); continue; }
             const ok = await ensureLoaded(d.far);
             if (w.done) return null;
             if (!ok) { log(`${w.id}: ${d.far} did not load in ${WALK_LOAD_WAIT_MS} ms`); continue; }
+            if (pass === 'hook') openByHook(w, d);
             const p2 = E.pfm();
             const cell = bfsOutOfView({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), isOutOfView: outOfView });
             if (cell) return { ...cell, how: 'walked', farRoom: d.far, door: d };
@@ -464,10 +542,13 @@ export function installNpcWalk(manager, env = {}) {
         let fallback = null;
         for (const d of doors) {
             if (!fallback) fallback = d;
-            if (!doorUsable(d, w.id, E.doorGates())) continue;
+            const pass = await doorPassable(w, d);
+            if (w.done) return null;
+            if (!pass) continue;
             const ok = await ensureLoaded(d.far);
             if (w.done) return null;
             if (!ok) continue;
+            if (pass === 'hook') openByHook(w, d);
             const p2 = E.pfm();
             const cell = bfsOutOfView({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), isOutOfView: outOfView });
             if (cell) return { ...cell, how: 'walked', farRoom: d.far, door: d };
