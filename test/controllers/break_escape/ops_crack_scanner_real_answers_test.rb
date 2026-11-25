@@ -133,6 +133,24 @@ module BreakEscape
       rows[first_dana_row]['body']['entries'].find { |e| e['id'] == 'dana_hash' }['heldItem'] = 'farah_file'
       out << ['heldItem naming another file', 'crack_row', rows]
 
+      # R2-A2: at the last keyring row both files are held, so only the `item == proof.held` clause refuses this
+      add_farah = captured.index { |r| r['inv'].is_a?(Hash) && r['inv']['action'] == 'add' && r['inv']['itemId'] == 'farah_file' }
+      last_dana = captured.rindex { |r| hash_keyring.call(r) { |e| e['id'] == 'dana_hash' && e['heldItem'] == 'dana_file' } }
+      assert add_farah && last_dana && add_farah < last_dana, 'farah_file is also held at the last dana_hash row'
+      rows = deep(captured)
+      rows[last_dana]['body']['entries'].find { |e| e['id'] == 'dana_hash' }['heldItem'] = 'farah_file'
+      out << ['heldItem naming another held file', 'crack_row', rows]
+
+      # R2-A1: a remove the recorder could not read, a remove naming no item, and a successful hide each lose the file
+      [['an unreadable remove', nil],
+       ['a remove naming no item', { 'action' => 'remove', 'itemId' => nil, 'usedOn' => nil }],
+       ['a successful hide', { 'action' => 'hide', 'itemId' => 'dana_file', 'hiddenIn' => 'plant1' }]].each do |name, inv|
+        rows = deep(captured)
+        rows.insert(first_dana_row + 1, { 'method' => 'POST', 'path' => rows[add_dana]['path'], 'status' => 200,
+                                          'body' => { 'success' => true }, 'inv' => inv })
+        out << ["heldItem after #{name}", 'crack_row', rows]
+      end
+
       rows = deep(captured)
       rows[add_dana]['inv'] = { 'action' => 'add', 'itemId' => 'something_else', 'usedOn' => nil }
       out << ['heldItem for a file the capture never shows taken', 'crack_row', rows]

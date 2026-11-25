@@ -4819,12 +4819,19 @@ class AccessLeakScanner
 
       @mfa_taken << id
       @mfa_phone_owners << @mfa_phones[id]['owner'] if @mfa_phones[id]
-    elsif action == 'remove' && id
+    elsif %w[remove hide].include?(action) && id
+      # R2-A1: a successful hide takes its item out of the tray too (hide_device!); a refused one is not an ok row
       @mfa_taken.delete(id)
-    elsif !inv.is_a?(Hash) || action == 'remove'
-      # R1-L5: a remove row the recorder could not read (or one naming no item) takes every device and phone back
-      @mfa_taken.subtract(@mfa_devices.keys + @mfa_phones.keys)
+    elsif !inv.is_a?(Hash) || %w[remove hide].include?(action)
+      # R1-L5: a remove row the recorder could not read (or one naming no item) takes every device and phone back;
+      # R2-A1: and every file a held proof needs, so a later heldItem is a finding until a new tagged add shows it held
+      @mfa_taken.subtract(@mfa_devices.keys + @mfa_phones.keys + crack_held_files)
     end
+  end
+
+  # R2-A1: the item ids the crack records' held proofs name.
+  def crack_held_files
+    Array(@crack_records).filter_map { |r| r[:entry].dig('proof', 'held') if r[:entry].is_a?(Hash) && r[:entry]['proof'].is_a?(Hash) }.grep(String)
   end
 
   # R1-L9: a logout takes the earned sessions back: the row's tag names one PC, a `--logout` entry names the PC of ONE
