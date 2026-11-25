@@ -2,9 +2,9 @@
  "scenario": "ca00_first_play",
  "lists": {
   "host": [
-   null,
-   null,
-   null
+   {"k": null, "h": "7bc58dd1"},
+   {"k": null, "h": "08ad8871"},
+   {"k": null, "h": "4108a147"}
   ]
  }
 }

@@ -2,14 +2,14 @@
  "scenario": "ca08_after_the_click_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "e130100a"},
+   {"k": "quiet_on", "h": "dea2d809"},
+   {"k": "defend_done", "h": "30fed694"},
+   {"k": "caught", "h": "9bcd115b"},
+   {"k": "quiet_off_debrief", "h": "d8cdced9"}
   ],
   "npc:kit_darren_price": [
-   "chg_defend_done_knot_ca08_react"
+   {"k": "chg_defend_done_knot_ca08_react", "h": "8665a115"}
   ]
  }
 }

@@ -13,6 +13,7 @@ Adapted from gen_e3_e5_shells.py (P7-Y1). Differences from that script:
     (`awarenessEpisode._voicePanel`) as `strings.voicePanel`.
 
 Usage: gen_e2_e4_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
+Ledger: this script calls apply_kit with no ledger, so do not copy its output over a shipped shell; use apply_training_room.py --kit (it checks the shell against office_kits/ledger).
 """
 import copy
 import json

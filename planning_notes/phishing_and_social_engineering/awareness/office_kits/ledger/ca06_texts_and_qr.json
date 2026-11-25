@@ -2,35 +2,35 @@
  "scenario": "ca06_texts_and_qr",
  "lists": {
   "host": [
-   null,
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief",
-   "quiet_off_debrief_seen",
-   "step_away"
+   {"k": null, "h": "171a34c4"},
+   {"k": null, "h": "0fb2a8ea"},
+   {"k": "quiet_on", "h": "7932efaa"},
+   {"k": "attack_done", "h": "0a8a241e"},
+   {"k": "defend_done", "h": "aa53af8f"},
+   {"k": "caught", "h": "2e713084"},
+   {"k": "quiet_off_debrief", "h": "1b743849"},
+   {"k": "quiet_off_debrief_seen", "h": "b2da0d9b"},
+   {"k": "step_away", "h": "6c14851d"}
   ],
   "npc:kit_fatima_begum": [
-   "chg_ca06_out",
-   "chg_ca06_done"
+   {"k": "chg_ca06_out", "h": "01734bad"},
+   {"k": "chg_ca06_done", "h": "89184bbd"}
   ],
   "npc:kit_zainab_hussain": [
-   "chg_ca06_out",
-   "chg_ca06_out_2",
-   "chg_ca06_out_3",
-   "npc_arrived_zainab_hussain_sets_ca06_there",
-   "chg_ca06_there_knot_ca06_notice",
-   "chg_ca06_there_sets_ca06_asked",
-   "conversation_closed_zainab_hussain_sets_ca06_notice_choice",
-   "chg_ca06_notice_choice_sets_ca06_done",
-   "chg_ca06_notice_choice_sets_ca06_done_2",
-   "chg_ca06_done_sets_ca06_notice_choice",
-   "chg_ca06_done",
-   "chg_ca06_there_knot_ca06_notice~rearm",
-   "chg_ca06_there_sets_ca06_asked~rearm",
-   "chg_ca06_there_sets_ca06_asked~rearm_cue"
+   {"k": "chg_ca06_out", "h": "01734bad"},
+   {"k": "chg_ca06_out_2", "h": "ced315c5"},
+   {"k": "chg_ca06_out_3", "h": "f3ea5cbd"},
+   {"k": "npc_arrived_zainab_hussain_sets_ca06_there", "h": "53b4519f"},
+   {"k": "chg_ca06_there_knot_ca06_notice", "h": "55a0af10"},
+   {"k": "chg_ca06_there_sets_ca06_asked", "h": "f7f71d10"},
+   {"k": "conversation_closed_zainab_hussain_sets_ca06_notice_choice", "h": "055556cb"},
+   {"k": "chg_ca06_notice_choice_sets_ca06_done", "h": "a9441e04"},
+   {"k": "chg_ca06_notice_choice_sets_ca06_done_2", "h": "20e09f73"},
+   {"k": "chg_ca06_done_sets_ca06_notice_choice", "h": "feb3d8ec"},
+   {"k": "chg_ca06_done", "h": "89184bbd"},
+   {"k": "chg_ca06_there_knot_ca06_notice~rearm", "h": "78e9c259"},
+   {"k": "chg_ca06_there_sets_ca06_asked~rearm", "h": "f5f62546"},
+   {"k": "chg_ca06_there_sets_ca06_asked~rearm_cue", "h": "ac23ed4d"}
   ]
  }
 }

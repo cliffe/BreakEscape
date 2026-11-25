@@ -2,14 +2,14 @@
  "scenario": "ca20_remote_and_mobile_working_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "958ddaf1"},
+   {"k": "quiet_on", "h": "48a9cc8e"},
+   {"k": "defend_done", "h": "cb8e290b"},
+   {"k": "caught", "h": "1bd02b0b"},
+   {"k": "quiet_off_debrief", "h": "d9e1832a"}
   ],
   "npc:kit_chidi_okeke": [
-   "chg_defend_done_knot_ca20_react"
+   {"k": "chg_defend_done_knot_ca20_react", "h": "e627f564"}
   ]
  }
 }

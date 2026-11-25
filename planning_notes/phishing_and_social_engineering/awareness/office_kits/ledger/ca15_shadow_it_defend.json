@@ -2,14 +2,14 @@
  "scenario": "ca15_shadow_it_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "aa81b374"},
+   {"k": "quiet_on", "h": "3dc5128c"},
+   {"k": "defend_done", "h": "19bbc60c"},
+   {"k": "caught", "h": "6602c3ac"},
+   {"k": "quiet_off_debrief", "h": "d5fe5bc2"}
   ],
   "npc:kit_chidi_okeke": [
-   "chg_defend_done_knot_ca15_react"
+   {"k": "chg_defend_done_knot_ca15_react", "h": "10230b97"}
   ]
  }
 }

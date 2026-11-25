@@ -2,14 +2,14 @@
  "scenario": "ca16_insider_risk_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "b75134c9"},
+   {"k": "quiet_on", "h": "91ea524f"},
+   {"k": "defend_done", "h": "9e44f1f8"},
+   {"k": "caught", "h": "3a6c499d"},
+   {"k": "quiet_off_debrief", "h": "d6f448b1"}
   ],
   "npc:kit_darren_price": [
-   "chg_defend_done_knot_ca16_react"
+   {"k": "chg_defend_done_knot_ca16_react", "h": "416209c4"}
   ]
  }
 }

@@ -8,6 +8,7 @@ committed E1 shells rather than the script that made them:
   - the host's one-line ink is written here too, so a re-run rebuilds the whole folder.
 
 Usage: gen_e3_e5_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
+Ledger: this script calls apply_kit with no ledger, so do not copy its output over a shipped shell; use apply_training_room.py --kit (it checks the shell against office_kits/ledger).
 """
 import copy
 import json

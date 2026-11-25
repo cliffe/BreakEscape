@@ -2,14 +2,14 @@
  "scenario": "ca02_cv_lures_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "45bf2d67"},
+   {"k": "quiet_on", "h": "d1b6176e"},
+   {"k": "defend_done", "h": "debae945"},
+   {"k": "caught", "h": "0ce11663"},
+   {"k": "quiet_off_debrief", "h": "89acff5d"}
   ],
   "npc:kit_chidi_okeke": [
-   "chg_defend_done_knot_ca02_react"
+   {"k": "chg_defend_done_knot_ca02_react", "h": "1edba50e"}
   ]
  }
 }

@@ -2,14 +2,14 @@
  "scenario": "ca06_texts_and_qr_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "2364ed00"},
+   {"k": "quiet_on", "h": "4828bf15"},
+   {"k": "defend_done", "h": "bb8fd0b7"},
+   {"k": "caught", "h": "efd9ea50"},
+   {"k": "quiet_off_debrief", "h": "07c2ac79"}
   ],
   "npc:kit_zainab_hussain": [
-   "chg_defend_done_knot_ca06_react"
+   {"k": "chg_defend_done_knot_ca06_react", "h": "d608b317"}
   ]
  }
 }

@@ -2,37 +2,37 @@
  "scenario": "ca16_insider_risk",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief",
-   "quiet_off_debrief_seen",
-   "step_away"
+   {"k": null, "h": "77a737c1"},
+   {"k": "quiet_on", "h": "22f3d315"},
+   {"k": "attack_done", "h": "84227627"},
+   {"k": "defend_done", "h": "66965570"},
+   {"k": "caught", "h": "2934716c"},
+   {"k": "quiet_off_debrief", "h": "ac2d5b39"},
+   {"k": "quiet_off_debrief_seen", "h": "370175e7"},
+   {"k": "step_away", "h": "a31bf53c"}
   ],
   "npc:kit_darren_price": [
-   "chg_ca16_out",
-   "chg_ca16_done"
+   {"k": "chg_ca16_out", "h": "e265c4da"},
+   {"k": "chg_ca16_done", "h": "1b2563bb"}
   ],
   "npc:kit_niamh_doherty": [
-   "chg_ca16_out",
-   "chg_ca16_out_2",
-   "npc_use_failed_niamh_doherty_sets_ca16_signin_failed",
-   "chg_ca16_signin_failed",
-   "chg_ca16_signin_failed_2",
-   "npc_arrived_niamh_doherty_sets_ca16_there",
-   "chg_ca16_there_knot_ca16_signin",
-   "chg_ca16_there_sets_ca16_asked",
-   "conversation_closed_niamh_doherty_sets_ca16_signin_choice",
-   "chg_ca16_signin_choice",
-   "chg_ca16_signin_choice_sets_ca16_done",
-   "chg_ca16_done_sets_ca16_signin_choice",
-   "chg_ca16_done",
-   "chg_ca16_done_2",
-   "chg_ca16_there_knot_ca16_signin~rearm",
-   "chg_ca16_there_sets_ca16_asked~rearm",
-   "chg_ca16_there_sets_ca16_asked~rearm_cue"
+   {"k": "chg_ca16_out", "h": "071d1f46"},
+   {"k": "chg_ca16_out_2", "h": "5d61c450"},
+   {"k": "npc_use_failed_niamh_doherty_sets_ca16_signin_failed", "h": "54e67870"},
+   {"k": "chg_ca16_signin_failed", "h": "d30e82cf"},
+   {"k": "chg_ca16_signin_failed_2", "h": "c6ba76e7"},
+   {"k": "npc_arrived_niamh_doherty_sets_ca16_there", "h": "5b2d5324"},
+   {"k": "chg_ca16_there_knot_ca16_signin", "h": "d59b6925"},
+   {"k": "chg_ca16_there_sets_ca16_asked", "h": "6a0c1698"},
+   {"k": "conversation_closed_niamh_doherty_sets_ca16_signin_choice", "h": "105f9493"},
+   {"k": "chg_ca16_signin_choice", "h": "493acc8b"},
+   {"k": "chg_ca16_signin_choice_sets_ca16_done", "h": "edd770c5"},
+   {"k": "chg_ca16_done_sets_ca16_signin_choice", "h": "51da2eff"},
+   {"k": "chg_ca16_done", "h": "1b2563bb"},
+   {"k": "chg_ca16_done_2", "h": "f59a3027"},
+   {"k": "chg_ca16_there_knot_ca16_signin~rearm", "h": "a0d1e2c8"},
+   {"k": "chg_ca16_there_sets_ca16_asked~rearm", "h": "63dc536d"},
+   {"k": "chg_ca16_there_sets_ca16_asked~rearm_cue", "h": "b9f24cba"}
   ]
  }
 }

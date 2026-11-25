@@ -2,13 +2,13 @@
  "scenario": "ca04_exec_whaling",
  "lists": {
   "host": [
-   null,
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "a8831d3d"},
+   {"k": null, "h": "b39dd3f0"},
+   {"k": "quiet_on", "h": "25d5c609"},
+   {"k": "attack_done", "h": "3e2d6e1c"},
+   {"k": "defend_done", "h": "9fd002da"},
+   {"k": "caught", "h": "f74ff533"},
+   {"k": "quiet_off_debrief", "h": "5a4acd7c"}
   ]
  }
 }

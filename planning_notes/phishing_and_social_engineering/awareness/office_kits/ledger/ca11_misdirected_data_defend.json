@@ -2,14 +2,14 @@
  "scenario": "ca11_misdirected_data_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "0def9027"},
+   {"k": "quiet_on", "h": "369bdf6e"},
+   {"k": "defend_done", "h": "af4eaa33"},
+   {"k": "caught", "h": "c4db6b7c"},
+   {"k": "quiet_off_debrief", "h": "b0829a6b"}
   ],
   "npc:kit_yusuf_demir": [
-   "chg_defend_done_knot_ca11_react"
+   {"k": "chg_defend_done_knot_ca11_react", "h": "c88fbeb0"}
   ]
  }
 }

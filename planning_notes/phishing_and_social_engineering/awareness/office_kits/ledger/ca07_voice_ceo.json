@@ -2,35 +2,35 @@
  "scenario": "ca07_voice_ceo",
  "lists": {
   "host": [
-   null,
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief",
-   "quiet_off_debrief_seen",
-   "step_away",
-   "chg_ca07_call_choice"
+   {"k": null, "h": "c53b8f14"},
+   {"k": null, "h": "a14cacbe"},
+   {"k": "quiet_on", "h": "908ce938"},
+   {"k": "attack_done", "h": "ce1399f7"},
+   {"k": "defend_done", "h": "b86be27f"},
+   {"k": "caught", "h": "9b0d3eeb"},
+   {"k": "quiet_off_debrief", "h": "c4e8bcc0"},
+   {"k": "quiet_off_debrief_seen", "h": "a1c84a2a"},
+   {"k": "step_away", "h": "d77866cf"},
+   {"k": "chg_ca07_call_choice", "h": "53924af5"}
   ],
   "npc:kit_graham_whitfield": [
-   "chg_out_sets_ca07_there",
-   "chg_out",
-   "chg_ca07_there_knot_ca07_call",
-   "chg_ca07_there_sets_ca07_asked",
-   "conversation_closed_graham_whitfield_sets_ca07_call_choice",
-   "chg_ca07_call_choice_sets_ca07_moved",
-   "chg_ca07_call_choice_sets_ca07_done",
-   "chg_ca07_moved_sets_ca07_done",
-   "chg_ca07_done_sets_ca07_call_choice",
-   "chg_ca07_there_knot_ca07_call~rearm",
-   "chg_ca07_there_sets_ca07_asked~rearm",
-   "chg_ca07_there_sets_ca07_asked~rearm_cue"
+   {"k": "chg_out_sets_ca07_there", "h": "770fbd25"},
+   {"k": "chg_out", "h": "2c4fe339"},
+   {"k": "chg_ca07_there_knot_ca07_call", "h": "81cc1c2b"},
+   {"k": "chg_ca07_there_sets_ca07_asked", "h": "44193237"},
+   {"k": "conversation_closed_graham_whitfield_sets_ca07_call_choice", "h": "b1b47865"},
+   {"k": "chg_ca07_call_choice_sets_ca07_moved", "h": "9c46b0ac"},
+   {"k": "chg_ca07_call_choice_sets_ca07_done", "h": "e35a1f34"},
+   {"k": "chg_ca07_moved_sets_ca07_done", "h": "cd91251a"},
+   {"k": "chg_ca07_done_sets_ca07_call_choice", "h": "030596e5"},
+   {"k": "chg_ca07_there_knot_ca07_call~rearm", "h": "fae94b12"},
+   {"k": "chg_ca07_there_sets_ca07_asked~rearm", "h": "49da0d00"},
+   {"k": "chg_ca07_there_sets_ca07_asked~rearm_cue", "h": "e134a399"}
   ],
   "npc:kit_gwen_pritchard": [
-   "chg_out",
-   "chg_out_2",
-   "chg_ca07_done"
+   {"k": "chg_out", "h": "85a74b6e"},
+   {"k": "chg_out_2", "h": "866a6e77"},
+   {"k": "chg_ca07_done", "h": "14db6b59"}
   ]
  }
 }

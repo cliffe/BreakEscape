@@ -43,7 +43,9 @@ identity must not be guessed from content on each run. With a ledger the record 
 the kit no longer has is a drop (tail only), a new key is added last. No ledger: the keys are inferred once and
 stored. After a hand edit of a shell's mapping list (ledger out of step) run
        python3 apply_training_room.py [--repo <checkout>] --rebuild-ledger [shell ...]
-A --kit run writes a changed ledger to <outdir>/<shell>/kit_ledger.json: copy it with the shell.
+Each ledger entry is {"k": key-or-null, "h": 8-hex hash of the record as written, _kitKey stripped}; a kit record
+that no longer matches its hash, or a hand record that is a kit record, raises KitMergeError (run --rebuild-ledger
+after checking). A --kit run writes a changed ledger to <outdir>/<shell>/kit_ledger.json: copy it with the shell.
 
 The outdir is required: the tool never writes into scenarios/ (generate into scratch, diff, copy back what
 you mean to change). A shell holding hand-written kit content that the kit data would not write back is
@@ -631,6 +633,28 @@ def rebuild_ledgers(names=()):
         sys.exit(f'{bad} shell(s) without a ledger')
 
 
+def trash_dir():
+    return os.path.join(REPO, 'tmp', 'delete')
+
+
+def _retire_stale_ledgers(outdir):
+    """Move any kit_ledger.json left in outdir by an earlier run to tmp/delete/ (never removed), before this run
+    builds anything: a ledger is written only after a fully successful build, so a failed run leaves none that
+    could be copied over a good one."""
+    import glob
+    import time
+    for path in sorted(glob.glob(os.path.join(outdir, '*', 'kit_ledger.json'))):
+        trash = trash_dir()
+        os.makedirs(trash, exist_ok=True)
+        dest = os.path.join(trash, f"{time.strftime('%Y%m%d-%H%M%S')}_{os.path.basename(os.path.dirname(path))}_kit_ledger.json")
+        n = 0
+        while os.path.exists(dest):
+            n += 1
+            dest = f'{dest}.{n}'
+        os.replace(path, dest)
+        print('moved stale ledger', path, '->', dest, file=sys.stderr)
+
+
 def kit(outdir, allow_drop=()):
     """Splice the kit into every tiered row's shell, writing patched copies into outdir (required: the
     tool never writes into scenarios/). Every text is built (and every row checked) before any file is
@@ -639,6 +663,7 @@ def kit(outdir, allow_drop=()):
         sys.exit('--kit needs an output folder: apply_training_room.py --kit <outdir> [--allow-drop <shell>]... '
                  '(nothing is written into scenarios/)')
     allow_drop = set(allow_drop)
+    _retire_stale_ledgers(outdir)
     rows_all = office_kit.load_rows()
     fixtures = allow_drop & {r['id'] for r in rows_all if r.get('fixture')}
     if fixtures:

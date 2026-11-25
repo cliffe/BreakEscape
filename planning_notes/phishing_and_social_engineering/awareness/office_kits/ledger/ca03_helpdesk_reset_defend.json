@@ -2,14 +2,14 @@
  "scenario": "ca03_helpdesk_reset_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "4bfa84af"},
+   {"k": "quiet_on", "h": "bf903a97"},
+   {"k": "defend_done", "h": "a290028d"},
+   {"k": "caught", "h": "709d40ab"},
+   {"k": "quiet_off_debrief", "h": "3d785b6e"}
   ],
   "npc:kit_anjali_rao": [
-   "chg_defend_done_knot_ca03_react"
+   {"k": "chg_defend_done_knot_ca03_react", "h": "8b07c5f8"}
   ]
  }
 }

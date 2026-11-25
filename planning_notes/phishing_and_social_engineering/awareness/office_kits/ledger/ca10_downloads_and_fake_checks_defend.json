@@ -2,14 +2,14 @@
  "scenario": "ca10_downloads_and_fake_checks_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "c999fec8"},
+   {"k": "quiet_on", "h": "3023373a"},
+   {"k": "defend_done", "h": "a6a53216"},
+   {"k": "caught", "h": "7467259f"},
+   {"k": "quiet_off_debrief", "h": "bf3f9b3e"}
   ],
   "npc:kit_darren_price": [
-   "chg_defend_done_knot_ca10_react"
+   {"k": "chg_defend_done_knot_ca10_react", "h": "cc079f29"}
   ]
  }
 }

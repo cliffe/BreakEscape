@@ -2,27 +2,27 @@
  "scenario": "test_ca01_panel",
  "lists": {
   "host": [
-   null,
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief",
-   "quiet_off_debrief_seen",
-   "step_away",
-   "chg_chain_agn_there_sets_chain_done"
+   {"k": null, "h": "a2de4077"},
+   {"k": null, "h": "a8a7d6de"},
+   {"k": "quiet_on", "h": "dffdbba4"},
+   {"k": "attack_done", "h": "85cab95c"},
+   {"k": "defend_done", "h": "a5b78c33"},
+   {"k": "caught", "h": "dc6d8ac6"},
+   {"k": "quiet_off_debrief", "h": "cd25b97c"},
+   {"k": "quiet_off_debrief_seen", "h": "74a5a1e7"},
+   {"k": "step_away", "h": "ce20d685"},
+   {"k": "chg_chain_agn_there_sets_chain_done", "h": "0ab042b0"}
   ],
   "npc:kit_agnieszka_duda": [
-   "chg_out",
-   "chg_out_2",
-   "npc_arrived_agnieszka_duda_sets_chain_agn_there",
-   "chg_chain_agn_there",
-   "chg_chain_done"
+   {"k": "chg_out", "h": "9ec56f8a"},
+   {"k": "chg_out_2", "h": "a0276a23"},
+   {"k": "npc_arrived_agnieszka_duda_sets_chain_agn_there", "h": "771dbf9b"},
+   {"k": "chg_chain_agn_there", "h": "ec462a17"},
+   {"k": "chg_chain_done", "h": "cf986fae"}
   ],
   "npc:kit_gwen_pritchard": [
-   "chg_out",
-   "chg_chain_done"
+   {"k": "chg_out", "h": "9ec56f8a"},
+   {"k": "chg_chain_done", "h": "cf986fae"}
   ]
  }
 }

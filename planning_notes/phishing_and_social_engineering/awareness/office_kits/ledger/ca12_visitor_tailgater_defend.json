@@ -2,11 +2,11 @@
  "scenario": "ca12_visitor_tailgater_defend",
  "lists": {
   "host": [
-   null,
-   "quiet_on",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief"
+   {"k": null, "h": "d93aaaf3"},
+   {"k": "quiet_on", "h": "a4d9b2e1"},
+   {"k": "defend_done", "h": "a32741b1"},
+   {"k": "caught", "h": "606f7998"},
+   {"k": "quiet_off_debrief", "h": "d3821f7f"}
   ]
  }
 }

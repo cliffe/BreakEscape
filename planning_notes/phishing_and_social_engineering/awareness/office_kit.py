@@ -19,6 +19,7 @@ CLI (nothing writes into the repo):
   office_kit.py [--repo <checkout>] export <shell folder>   print the kit-owned members as JSON
 """
 import copy
+import hashlib
 import json
 import os
 import re
@@ -1020,30 +1021,58 @@ def ledger_path(sid, ledger_dir=None):
     return os.path.join(ledger_dir or LEDGER_DIR, f'{sid}.json')
 
 
+def record_hash(rec):
+    """Short content fingerprint of one record as written to the shell: sha256 of its canonical JSON (sorted
+    keys, compact separators, `_kitKey` stripped), first 8 hex digits."""
+    blob = json.dumps(strip_keys(rec), sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(blob.encode('utf-8')).hexdigest()[:8]
+
+
 def load_ledger(sid, ledger_dir=None):
-    """The shell's stored key ledger {'host': [key|None, ...], 'npc:<id>': [...]}, or None when it has none."""
+    """The shell's stored ledger {'host': [key|None, ...], 'npc:<id>': [...], '_hashes': {list: [h, ...]}}, or
+    None when it has none. `_hashes` is left out for an old key-only ledger (no content check then)."""
     path = ledger_path(sid, ledger_dir)
     if not os.path.exists(path):
         return None
     with open(path) as f:
         doc = json.load(f)
-    return doc['lists']
+    keys, hashes = {}, {}
+    for name, entries in doc['lists'].items():
+        keys[name] = [e['k'] if isinstance(e, dict) else e for e in entries]
+        if all(isinstance(e, dict) for e in entries):
+            hashes[name] = [e['h'] for e in entries]
+    if hashes and len(hashes) == len(keys):
+        keys['_hashes'] = hashes
+    return keys
 
 
 def ledger_text(sid, lists):
-    """Plain, sorted, one key per line, so a diff shows exactly which index changed."""
-    return json.dumps({'scenario': sid, 'lists': {k: lists[k] for k in sorted(lists)}}, indent=1) + '\n'
+    """Plain, sorted, one entry per line ({"k": key-or-null, "h": content hash}), so a diff shows exactly
+    which index changed."""
+    hashes = lists['_hashes']
+    out = ['{', f' "scenario": {json.dumps(sid)},', ' "lists": {']
+    names = sorted(k for k in lists if k != '_hashes')
+    for ni, name in enumerate(names):
+        if len(lists[name]) != len(hashes[name]):
+            raise KitMergeError(f"{sid} {name}: {len(lists[name])} ledger keys but {len(hashes[name])} hashes")
+        out.append(f'  {json.dumps(name)}: [')
+        for i, (k, h) in enumerate(zip(lists[name], hashes[name])):
+            out.append('   ' + json.dumps({'k': k, 'h': h}) + (',' if i < len(lists[name]) - 1 else ''))
+        out.append('  ]' + (',' if ni < len(names) - 1 else ''))
+    out += [' }', '}', '']
+    return '\n'.join(out)
 
 
 def save_ledger(sid, lists, ledger_dir=None, path=None):
     path = path or ledger_path(sid, ledger_dir)
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    text = ledger_text(sid, lists)      # built first: a failure writes nothing
     with open(path, 'w') as f:
-        f.write(ledger_text(sid, lists))
+        f.write(text)
     return path
 
 
-def _ledger_keys(old, ledger_list, new, label, sid):
+def _ledger_keys(old, ledger_list, new, label, sid, hashes=None):
     """The key of each record of the shell's `old` list, read from the stored ledger (no content matching):
     a str when the kit still writes that key, None for a hand record, ('orphan', i, key) when the kit no
     longer has the key (dropped, or renamed: a rename is a drop plus an insert)."""
@@ -1055,7 +1084,43 @@ def _ledger_keys(old, ledger_list, new, label, sid):
     if len(seen) != len(set(seen)):
         raise KitMergeError(f"{label}: the key ledger repeats a key; {resync}")
     kit_keys = {n[KEY] for n in new}
+    if hashes is not None:
+        _check_hashes(old, ledger_list, hashes, new, label, sid)
     return [None if k is None else k if k in kit_keys else ('orphan', i, k) for i, k in enumerate(ledger_list)]
+
+
+def _check_hashes(old, ledger_list, hashes, new, label, sid):
+    """The shell's records must still be the ones the ledger recorded (same length, same keys already
+    checked). Kit entries must hash to the stored h. Hand entries may have been edited, but must not be a
+    kit record: not one stored under a kit entry's h (a swap), nor one the kit builds now."""
+    fix = (f"shell edited by hand or out of step; run apply_training_room.py --rebuild-ledger {sid} "
+           f"after checking")
+    if len(hashes) != len(old):
+        raise KitMergeError(f"{label}: the key ledger holds {len(hashes)} hashes for {len(old)} records; {fix}")
+    now = [record_hash(o) for o in old]
+    kit_stored = {h for k, h in zip(ledger_list, hashes) if k is not None}
+    built = {n[KEY]: record_hash(n) for n in new}
+    for i, (k, h, cur) in enumerate(zip(ledger_list, hashes, now)):
+        if k is not None:
+            if cur != h:
+                raise KitMergeError(f"{label}: scenario {sid}, list {label.split(' ', 1)[1]}, index {i}, key {k!r}: "
+                                    f"the record no longer matches the ledger; {fix}")
+        elif cur in kit_stored:
+            raise KitMergeError(f"{label}: scenario {sid}, index {i} is a hand record in the ledger but holds a "
+                                f"stored kit record (a hand/kit swap); {fix}")
+        elif cur in built.values():
+            bk = next(b for b, bh in built.items() if bh == cur)
+            raise KitMergeError(f"{label}: scenario {sid}, index {i} is a hand record in the ledger but equals the "
+                                f"kit's record {bk!r}; {fix}")
+    have = set(ledger_list)
+    for key, bh in built.items():
+        if key in have:
+            continue
+        # A record whose ledger key the kit no longer builds is a rename or a drop: keyed_plan reports that.
+        at = [i for i, cur in enumerate(now) if cur == bh and (ledger_list[i] is None or ledger_list[i] in built)]
+        if at:
+            raise KitMergeError(f"{label}: scenario {sid}, key {key!r} is not in the ledger but its record is "
+                                f"already at index {at[0]}; appending it would duplicate it; {fix}")
 
 
 def _ledger_from_keys(keys):
@@ -1069,7 +1134,7 @@ def _ledger_after(keys, plan, new):
     return [keys[i] for op, i, _ in plan if op != 'add'] + [n[KEY] for n in new if n[KEY] not in used]
 
 
-def merge_keyed_mappings(old, new, label, candidate, orphan_ok, ledger_list=None, sid=''):
+def merge_keyed_mappings(old, new, label, candidate, orphan_ok, ledger_list=None, sid='', hashes=None):
     """Merge a kit's keyed `new` mappings into the shell's `old` list. Returns (merged list, plan, old keys,
     orphans, new ledger list); the position guard has already run. With `ledger_list` (the stored keys of
     the old records) no content is matched: the record at index i has the ledger's key. Without one the keys
@@ -1077,7 +1142,7 @@ def merge_keyed_mappings(old, new, label, candidate, orphan_ok, ledger_list=None
     if ledger_list is None:
         keys = match_mappings(old, new, candidate, orphan_ok, label)
     else:
-        keys = _ledger_keys(old, ledger_list, new, label, sid)
+        keys = _ledger_keys(old, ledger_list, new, label, sid, hashes)
     plan = keyed_plan(old, keys, new, label)
     merged = [old[i] if op == 'keep' else rec for op, i, rec in plan]
     check_positions(label, old, keys, merged, new)
@@ -1091,12 +1156,15 @@ def infer_ledger(orig, bk, sid, host_id=None):
     ohost = _find_host(orig, host_id)
     lists = {'host': _ledger_from_keys(match_mappings(
         ohost.get('eventMappings', []), bk['mappings'], is_kit_mapping, _strong_kit_mapping, f'{sid} host eventMappings'))}
+    hashes = {'host': [record_hash(m) for m in ohost.get('eventMappings', [])]}
     for n in orig['rooms']['training_room']['npcs']:
         if is_kit_member(n) and n.get('eventMappings'):
             nk = next((x for x in bk['npcs'] if x['id'] == n['id']), None)
             ml = nk.get('eventMappings', []) if nk else []
             lists[f"npc:{n['id']}"] = _ledger_from_keys(match_mappings(
                 n['eventMappings'], ml, lambda m: True, lambda m: True, f"{sid} npc {n['id']} eventMappings"))
+            hashes[f"npc:{n['id']}"] = [record_hash(m) for m in n['eventMappings']]
+    lists['_hashes'] = hashes
     return lists
 
 
@@ -1113,9 +1181,11 @@ def prepare(orig, bk, sid, host_id=None, ledger=None):
     old = ohost.get('eventMappings', [])
     host_label = f'{sid} host eventMappings'
     lget = (lambda k: ledger.get(k, [])) if ledger is not None else (lambda k: None)
+    hget = (lambda k: ledger['_hashes'].get(k, [])) if ledger is not None and '_hashes' in ledger else (lambda k: None)
     merged, plan, keys, orphans, new_led = merge_keyed_mappings(
-        old, bk['mappings'], host_label, is_kit_mapping, _strong_kit_mapping, lget('host'), sid)
+        old, bk['mappings'], host_label, is_kit_mapping, _strong_kit_mapping, lget('host'), sid, hget('host'))
     out_ledger = {'host': new_led}
+    out_hashes = {'host': [record_hash(m) for m in merged]}
     lost = [f"host mapping on {m.get('eventPattern')} setting {sorted(m.get('setGlobal') or {})}" for m in orphans]
     old_npcs = {n['id']: n for n in orig['rooms']['training_room']['npcs'] if is_kit_member(n)}
     npc_lists = {}
@@ -1125,20 +1195,24 @@ def prepare(orig, bk, sid, host_id=None, ledger=None):
         if o is None:
             if ml:
                 out_ledger[f"npc:{nk['id']}"] = [m[KEY] for m in ml]
+                out_hashes[f"npc:{nk['id']}"] = [record_hash(m) for m in ml]
             continue
         ol = o.get('eventMappings', [])
         if not ml and not ol:
             continue
         label = f"{sid} npc {nk['id']} eventMappings"
         nm, nplan, nkeys, norph, nled = merge_keyed_mappings(
-            ol, ml, label, lambda m: True, lambda m: True, lget(f"npc:{nk['id']}"), sid)
+            ol, ml, label, lambda m: True, lambda m: True, lget(f"npc:{nk['id']}"), sid,
+            hget(f"npc:{nk['id']}"))
         if nm:
             n['eventMappings'] = nm
             out_ledger[f"npc:{nk['id']}"] = nled
+            out_hashes[f"npc:{nk['id']}"] = [record_hash(m) for m in nm]
         else:
             n.pop('eventMappings', None)
         npc_lists[nk['id']] = (label, ol, nkeys, ml)
         lost += [f"npc {nk['id']} mapping on {m.get('eventPattern')}" for m in norph]
+    out_ledger['_hashes'] = out_hashes
     return types.SimpleNamespace(b=b, host_merged=merged, host_plan=plan, host_keys=keys, host_old=old,
                                  host_new=bk['mappings'], npc_lists=npc_lists, lost=lost, ledger=out_ledger)
 

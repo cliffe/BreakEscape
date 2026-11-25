@@ -2,35 +2,35 @@
  "scenario": "ca10_downloads_and_fake_checks",
  "lists": {
   "host": [
-   null,
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief",
-   "quiet_off_debrief_seen",
-   "step_away"
+   {"k": null, "h": "116a8b70"},
+   {"k": null, "h": "16e8cc78"},
+   {"k": "quiet_on", "h": "a165d7c8"},
+   {"k": "attack_done", "h": "cbef07c2"},
+   {"k": "defend_done", "h": "dc01d14c"},
+   {"k": "caught", "h": "43238b2b"},
+   {"k": "quiet_off_debrief", "h": "0c7592f5"},
+   {"k": "quiet_off_debrief_seen", "h": "b7f393e3"},
+   {"k": "step_away", "h": "65273a22"}
   ],
   "npc:kit_anjali_rao": [
-   "chg_out",
-   "chg_out_2",
-   "chg_ca10_check_choice",
-   "chg_ca10_done"
+   {"k": "chg_out", "h": "3ee89bbb"},
+   {"k": "chg_out_2", "h": "2ee471c3"},
+   {"k": "chg_ca10_check_choice", "h": "04bc9db4"},
+   {"k": "chg_ca10_done", "h": "3e4df779"}
   ],
   "npc:kit_darren_price": [
-   "chg_out_sets_ca10_there",
-   "chg_out",
-   "chg_ca10_there_knot_ca10_check",
-   "chg_ca10_there_sets_ca10_asked",
-   "conversation_closed_darren_price_sets_ca10_check_choice",
-   "chg_ca10_check_choice_sets_ca10_moved",
-   "chg_ca10_check_choice_sets_ca10_done",
-   "chg_ca10_moved_sets_ca10_done",
-   "chg_ca10_done_sets_ca10_check_choice",
-   "chg_ca10_there_knot_ca10_check~rearm",
-   "chg_ca10_there_sets_ca10_asked~rearm",
-   "chg_ca10_there_sets_ca10_asked~rearm_cue"
+   {"k": "chg_out_sets_ca10_there", "h": "42d86e95"},
+   {"k": "chg_out", "h": "43b2d4bd"},
+   {"k": "chg_ca10_there_knot_ca10_check", "h": "e3285489"},
+   {"k": "chg_ca10_there_sets_ca10_asked", "h": "4ee2a66a"},
+   {"k": "conversation_closed_darren_price_sets_ca10_check_choice", "h": "6ccee4dc"},
+   {"k": "chg_ca10_check_choice_sets_ca10_moved", "h": "c3fee3d6"},
+   {"k": "chg_ca10_check_choice_sets_ca10_done", "h": "85d5f800"},
+   {"k": "chg_ca10_moved_sets_ca10_done", "h": "7fde71b3"},
+   {"k": "chg_ca10_done_sets_ca10_check_choice", "h": "1553aacc"},
+   {"k": "chg_ca10_there_knot_ca10_check~rearm", "h": "770a14e1"},
+   {"k": "chg_ca10_there_sets_ca10_asked~rearm", "h": "819f3b3d"},
+   {"k": "chg_ca10_there_sets_ca10_asked~rearm_cue", "h": "729e9c32"}
   ]
  }
 }

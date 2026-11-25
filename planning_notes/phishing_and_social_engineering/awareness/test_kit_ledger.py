@@ -183,7 +183,8 @@ class R3Findings(LedgerBase):
         hand = {'eventPattern': 'global_variable_changed:kit_ca02_asked', 'condition': 'globalVars.kit_defend_done === true',
                 'onceOnly': True, 'setGlobal': {'hand_flag': True}}
         self.hosts(sc).append(hand)
-        led = {**self.ledger, 'host': self.ledger['host'] + [None]}
+        led = {**self.ledger, 'host': self.ledger['host'] + [None],
+               '_hashes': {**self.ledger['_hashes'], 'host': self.ledger['_hashes']['host'] + [ok.record_hash(hand)]}}
 
         def edit(bk):
             by_key(bk, 'chg_ca02_asked')['condition'] = by_key(bk, 'chg_ca02_asked')['condition'] + ' && true'
@@ -205,6 +206,7 @@ class OtherRules(LedgerBase):
         def add(bk):
             new = copy.deepcopy(by_key(bk, 'quiet_on'))
             new[ok.KEY] = 'late'
+            new['condition'] = 'data.value.late === 1'      # a copy of another record would be a duplicate
             bk['mappings'].insert(0, new)
         got, led = self.apply(add)
         self.assertEqual(led['host'], self.ledger['host'] + ['late'])
@@ -229,6 +231,92 @@ class OtherRules(LedgerBase):
         n = next(x for x in sc['rooms']['training_room']['npcs'] if x['id'] == nid)
         n['eventMappings'].append({'eventPattern': 'x', 'targetKnot': 'y'})
         self.refuses(None, sc=sc)
+
+
+class HashChecks(LedgerBase):
+    """R4 M1: a same-length drift between shell and ledger is caught by the per-record content hash."""
+
+    def swapped(self, i, j):
+        sc = copy.deepcopy(self.sc)
+        h = self.hosts(sc)
+        h[i], h[j] = h[j], h[i]
+        return sc
+
+    def test_a_hand_and_a_kit_record_swapped_in_the_shell_is_refused(self):
+        self.assertIsNone(self.ledger['host'][0])
+        self.assertIsNotNone(self.ledger['host'][2])
+        msg = self.refuses(None, sc=self.swapped(0, 2))
+        self.assertIn('--rebuild-ledger', msg)
+        self.assertIn('index', msg)
+
+    def test_null_in_the_ledger_where_the_kit_expects_caught_is_refused(self):
+        i = self.ledger['host'].index('caught')
+        led = copy.deepcopy(self.ledger)
+        led['host'][i] = None
+        msg = self.refuses(None, ledger=led)
+        self.assertIn(f'index {i}', msg)
+        self.assertIn('caught', msg)
+
+    def test_two_kit_records_swapped_in_the_shell_are_refused(self):
+        msg = self.refuses(None, sc=self.swapped(3, 4))
+        self.assertIn('index 3', msg)
+        self.assertIn('attack_done', msg)
+        self.assertIn('shell edited by hand or out of step', msg)
+
+    def test_two_ledger_entries_swapped_are_refused(self):
+        led = copy.deepcopy(self.ledger)
+        led['host'][3], led['host'][4] = led['host'][4], led['host'][3]
+        h = led['_hashes']['host']
+        h[3], h[4] = h[4], h[3]
+        self.refuses(None, ledger=led)
+
+    def test_a_hand_record_edited_by_hand_is_allowed_and_rehashed(self):
+        sc = copy.deepcopy(self.sc)
+        self.hosts(sc)[0]['condition'] = 'true'
+        got, led = self.apply(sc=sc)
+        self.assertEqual(self.hosts(got)[0]['condition'], 'true')
+        self.assertEqual(led['host'], self.ledger['host'])
+        self.assertNotEqual(led['_hashes']['host'][0], self.ledger['_hashes']['host'][0])
+        self.assertEqual(led['_hashes']['host'][1:], self.ledger['_hashes']['host'][1:])
+
+    def test_a_kit_record_missing_from_the_ledger_but_already_in_the_shell_is_refused(self):
+        led = copy.deepcopy(self.ledger)
+        i = led['host'].index('caught')
+        for lst in (led['host'], led['_hashes']['host']):
+            lst.pop(i)
+        sc = copy.deepcopy(self.sc)
+        self.hosts(sc).pop(i)
+        self.hosts(sc).insert(0, copy.deepcopy(self.hosts(self.sc)[i]))
+        led['host'].insert(0, None)
+        led['_hashes']['host'].insert(0, ok.record_hash(self.hosts(sc)[0]))
+        self.refuses(None, sc=sc, ledger=led)
+
+    def test_the_ledger_file_is_one_entry_per_line_and_round_trips(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = ok.save_ledger(self.sid, self.ledger, path=os.path.join(d, 'x.json'))
+            text = open(path).read()
+            self.assertIn('   {"k": "caught", "h": "', text)
+            self.assertEqual(text, open(ok.ledger_path(self.sid)).read())
+            with mock.patch.object(ok, 'LEDGER_DIR', d):
+                os.rename(path, ok.ledger_path(self.sid))
+                self.assertEqual(ok.load_ledger(self.sid), self.ledger)
+
+
+class StaleOutdirLedger(unittest.TestCase):
+    def test_a_stale_kit_ledger_is_moved_aside_before_a_run_and_a_failed_run_leaves_none(self):
+        with tempfile.TemporaryDirectory() as out, tempfile.TemporaryDirectory() as trash, \
+                mock.patch.object(atr, 'trash_dir', lambda: trash), mock.patch('sys.stderr'), mock.patch('sys.stdout'):
+            d = os.path.join(out, SID)
+            os.makedirs(d)
+            stale = os.path.join(d, 'kit_ledger.json')
+            with open(stale, 'w') as f:
+                f.write('{"stale": true}')
+            with mock.patch.object(atr, 'kit_text_ledger', side_effect=ok.KitMergeError('boom')):
+                with self.assertRaises(ok.KitMergeError):
+                    atr.kit(out)
+            self.assertFalse(os.path.exists(stale))
+            self.assertEqual(len(os.listdir(trash)), 1)
+            self.assertFalse(any('kit_ledger.json' in fs for _, _, fs in os.walk(out)))
 
 
 class RebuildAndBootstrap(unittest.TestCase):

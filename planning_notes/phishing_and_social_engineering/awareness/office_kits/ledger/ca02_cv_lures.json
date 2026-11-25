@@ -2,35 +2,35 @@
  "scenario": "ca02_cv_lures",
  "lists": {
   "host": [
-   null,
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief",
-   "quiet_off_debrief_seen",
-   "step_away",
-   "chg_ca02_cv_choice",
-   "chg_ca02_asked"
+   {"k": null, "h": "4a756763"},
+   {"k": null, "h": "ea24e03f"},
+   {"k": "quiet_on", "h": "d7eac052"},
+   {"k": "attack_done", "h": "5148dba1"},
+   {"k": "defend_done", "h": "20e6c854"},
+   {"k": "caught", "h": "68021166"},
+   {"k": "quiet_off_debrief", "h": "722b9793"},
+   {"k": "quiet_off_debrief_seen", "h": "6d6655e0"},
+   {"k": "step_away", "h": "0153bf2d"},
+   {"k": "chg_ca02_cv_choice", "h": "03beedb5"},
+   {"k": "chg_ca02_asked", "h": "116abc91"}
   ],
   "npc:kit_chidi_okeke": [
-   "chg_out_sets_ca02_there",
-   "chg_out",
-   "chg_ca02_there_knot_ca02_cv",
-   "chg_ca02_there_sets_ca02_asked",
-   "conversation_closed_chidi_okeke_sets_ca02_cv_choice",
-   "chg_ca02_cv_choice_sets_ca02_moved",
-   "chg_ca02_cv_choice_sets_ca02_done",
-   "chg_ca02_moved_sets_ca02_done",
-   "chg_ca02_done_sets_ca02_cv_choice",
-   "chg_ca02_there_knot_ca02_cv~rearm",
-   "chg_ca02_there_sets_ca02_asked~rearm",
-   "chg_ca02_there_sets_ca02_asked~rearm_cue"
+   {"k": "chg_out_sets_ca02_there", "h": "9d419d40"},
+   {"k": "chg_out", "h": "de418601"},
+   {"k": "chg_ca02_there_knot_ca02_cv", "h": "d963195a"},
+   {"k": "chg_ca02_there_sets_ca02_asked", "h": "4a1505bb"},
+   {"k": "conversation_closed_chidi_okeke_sets_ca02_cv_choice", "h": "6b8ce5b4"},
+   {"k": "chg_ca02_cv_choice_sets_ca02_moved", "h": "df970c3c"},
+   {"k": "chg_ca02_cv_choice_sets_ca02_done", "h": "70fc6de3"},
+   {"k": "chg_ca02_moved_sets_ca02_done", "h": "bc882c75"},
+   {"k": "chg_ca02_done_sets_ca02_cv_choice", "h": "7d51e8b2"},
+   {"k": "chg_ca02_there_knot_ca02_cv~rearm", "h": "5b072a4b"},
+   {"k": "chg_ca02_there_sets_ca02_asked~rearm", "h": "c223b574"},
+   {"k": "chg_ca02_there_sets_ca02_asked~rearm_cue", "h": "979efebe"}
   ],
   "npc:kit_zainab_hussain": [
-   "chg_out",
-   "chg_ca02_done"
+   {"k": "chg_out", "h": "2437d8a9"},
+   {"k": "chg_ca02_done", "h": "bf2df3d9"}
   ]
  }
 }

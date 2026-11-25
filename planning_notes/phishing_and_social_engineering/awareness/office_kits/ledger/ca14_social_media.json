@@ -2,40 +2,40 @@
  "scenario": "ca14_social_media",
  "lists": {
   "host": [
-   null,
-   null,
-   "quiet_on",
-   "attack_done",
-   "defend_done",
-   "caught",
-   "quiet_off_debrief",
-   "quiet_off_debrief_seen",
-   "step_away",
-   "object_interacted_sets_ca14_seen",
-   "object_interacted_sets_ca14_seen_2"
+   {"k": null, "h": "bc6a3e3f"},
+   {"k": null, "h": "a0ea522a"},
+   {"k": "quiet_on", "h": "e99d616a"},
+   {"k": "attack_done", "h": "566c7d9d"},
+   {"k": "defend_done", "h": "2cec5f28"},
+   {"k": "caught", "h": "9ae0cc0b"},
+   {"k": "quiet_off_debrief", "h": "31ecf91b"},
+   {"k": "quiet_off_debrief_seen", "h": "f017e59e"},
+   {"k": "step_away", "h": "737fe33c"},
+   {"k": "object_interacted_sets_ca14_seen", "h": "e63fe757"},
+   {"k": "object_interacted_sets_ca14_seen_2", "h": "72e7378c"}
   ],
   "npc:kit_delphine_arvanitis": [
-   "chg_out",
-   "chg_out_2",
-   "chg_ca14_photo_choice",
-   "chg_ca14_done",
-   "chg_ca14_seen",
-   "chg_ca14_done_2"
+   {"k": "chg_out", "h": "a5c2df75"},
+   {"k": "chg_out_2", "h": "aa680b00"},
+   {"k": "chg_ca14_photo_choice", "h": "9550e615"},
+   {"k": "chg_ca14_done", "h": "0f18dffc"},
+   {"k": "chg_ca14_seen", "h": "8306ecea"},
+   {"k": "chg_ca14_done_2", "h": "e5425a7f"}
   ],
   "npc:kit_lorna_easton": [
-   "chg_out_sets_ca14_there",
-   "chg_out",
-   "chg_ca14_there_knot_ca14_photo",
-   "chg_ca14_there_sets_ca14_asked",
-   "conversation_closed_lorna_easton_sets_ca14_photo_choice",
-   "chg_ca14_photo_choice_sets_ca14_moved",
-   "chg_ca14_photo_choice_sets_ca14_done",
-   "chg_ca14_moved_sets_ca14_done",
-   "chg_ca14_done_sets_ca14_photo_choice",
-   "conversation_closed_lorna_easton_sets_ca14_closed_unseen",
-   "chg_ca14_there_knot_ca14_photo~rearm",
-   "chg_ca14_there_sets_ca14_asked~rearm",
-   "chg_ca14_there_sets_ca14_asked~rearm_cue"
+   {"k": "chg_out_sets_ca14_there", "h": "c73ba795"},
+   {"k": "chg_out", "h": "9fdf38e6"},
+   {"k": "chg_ca14_there_knot_ca14_photo", "h": "c220a581"},
+   {"k": "chg_ca14_there_sets_ca14_asked", "h": "4ddcd313"},
+   {"k": "conversation_closed_lorna_easton_sets_ca14_photo_choice", "h": "c524f063"},
+   {"k": "chg_ca14_photo_choice_sets_ca14_moved", "h": "8eba6de5"},
+   {"k": "chg_ca14_photo_choice_sets_ca14_done", "h": "38911562"},
+   {"k": "chg_ca14_moved_sets_ca14_done", "h": "17825e59"},
+   {"k": "chg_ca14_done_sets_ca14_photo_choice", "h": "b9e1cfae"},
+   {"k": "conversation_closed_lorna_easton_sets_ca14_closed_unseen", "h": "9d7a831e"},
+   {"k": "chg_ca14_there_knot_ca14_photo~rearm", "h": "0e311869"},
+   {"k": "chg_ca14_there_sets_ca14_asked~rearm", "h": "b6e00e6f"},
+   {"k": "chg_ca14_there_sets_ca14_asked~rearm_cue", "h": "9caded28"}
   ]
  }
 }
