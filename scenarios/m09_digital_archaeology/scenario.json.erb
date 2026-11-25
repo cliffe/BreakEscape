@@ -1522,7 +1522,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "eventPattern": "global_variable_changed:tran_alerted",
               "condition": "value === true",
               "onceOnly": true,
-              "setVisible": true,
+              "walkIn": { "from": "loading_dock" },
               "conversationMode": "person-chat",
               "targetKnot": "start"
             },
