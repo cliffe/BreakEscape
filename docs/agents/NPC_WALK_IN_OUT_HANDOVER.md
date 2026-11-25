@@ -158,3 +158,12 @@ npc-walk.js: goTo() (approach closed door, open, then move), replanOut/onOutArri
 
 ### Live setup left behind
 Keyless server on :3026 (pid via tools/playtest/stop... `tools/playtest/stop-keyless-server.sh 3026`), session 13502 (`tools/playtest/session-stop.sh 13502`). Helper scripts in the scratchpad walkfix/: boot.sh GAME, c.sh, probe.js, dump.js, insp.js. Games 13499-13502 are mine (m09).
+
+## Test and case c pass (branch fix/npc-walk-live)
+
+- "Unable to deserialize cloned data" on npc-walk-gate/in-out/mappings is the `node --test` IPC bug the header of `bin/test-js` describes (emoji logs). Each file passes alone with plain `node <file>` (21, 18, 7 tests), so it is not a code failure. Use `bin/test-js` or `node <file>`, not `node --test`.
+- New `test/js/npc-walk-recovery.test.mjs` (17 tests): closed-door approach (+ `door_opened_by_npc`, locked door untouched, undefined `open` unchanged), walk-out re-plan, 4 re-plans then `faded`, never back into the room left, stall (walk-out re-plan; walk-in re-issue, other door, `faded`), `arriveWithin` 10, bridge `npcWalk`/`walk(direction, ms)`, makeEnv scene fallbacks, refused load, slow load. World helper gained `closed`, `annex`, a `door_opened_by_npc` emitting stub and `clock`/`loadDock`.
+- Case c cause: `GET /games/:id/room/walk_annex` answers 403 "Room not accessible" (`games_controller.rb:592`) for a room not in `unlockedRooms` (and not start, world or route room). Opening an unlocked door through the player unlocks it; a never-visited annex is not. `loadRoom` logs and resolves with no room, so the walk waited the full 3 s and doorway-faded. Checked live on :3026: 403 on a fresh game; on a game made with `--unlock walk_annex` the courier loads the annex, fires one `door_opened_by_npc`, walks in and reports `walked`.
+- Fixes: `ensureLoaded` (`npc-walk.js:294`) stops waiting as soon as `loadRoom` settles without the room (no 3 s dead time on a refusal); case c now needs `new-game.sh 281 --unlock walk_annex` (brief and proof script updated).
+- Open: a walk-in from a room the player never unlocked always doorway-fades (safe, but not a walk). Serving an unlocked, adjacent, never-visited room as a route room (served, not promoted, `record_npc_route_room!`) would let it walk; that is a server access change, so it is the owner's call. Real conversions (m09, m10) work only where the far room is already unlocked.
+- Suites: walk, door and npc JS files, 124 of 124 pass under `bin/test-js`. No Ruby touched.
