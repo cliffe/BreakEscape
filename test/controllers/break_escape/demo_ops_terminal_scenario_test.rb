@@ -356,6 +356,13 @@ module BreakEscape
 
     # ---- T12: the unplug ---------------------------------------------------------------------------
 
+    test 'T12: both unplug mappings need the console done, so moving the box to the spare port cannot tick it' do
+      maps = scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.flat_map { |n| Array(n['eventMappings']) }
+      unplugs = maps.select { |x| x['eventPattern'].to_s.start_with?('network_device_unplugged:') }
+      assert_equal %w[network_device_unplugged:rack_jack network_device_unplugged:spare_jack], unplugs.map { |x| x['eventPattern'] }.sort
+      unplugs.each { |x| assert_includes x['condition'], 'globalVars.needs_console_done === true', x['eventPattern'] }
+    end
+
     test 'T12: the unplug ends every session through the box and names the token session among them' do
       plugged
       token_in

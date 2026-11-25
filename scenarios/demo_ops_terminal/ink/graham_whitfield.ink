@@ -7,6 +7,8 @@ VAR met_graham = false
 
 === start ===
 { met_graham:
+    # speaker:npc
+    Go on, then.
     -> hub
 }
 ~ met_graham = true
@@ -15,8 +17,6 @@ Now then. You'll be the visitor Ama mentioned.
 -> hub
 
 === hub ===
-# speaker:npc
-Go on, then.
 - (choices)
 + { not graham_assist_given } [Could you share your screen with me?]
     -> share_screen

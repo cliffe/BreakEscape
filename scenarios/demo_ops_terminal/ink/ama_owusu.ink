@@ -89,9 +89,7 @@ This drop box is yours. I'll point out each step.
         Scan the file server, then check its storage service.
     - not console_done:
         # speaker:npc
-        Type help to find the console's command. Search there, choose a module with use, then ask for info.
-        # speaker:npc
-        Then tell me what it said.
+        Type help to find the console's command. Search there, choose a module with use and ask for info, then tell me what it said.
     - not confirm_all_done:
         # speaker:npc
         Confirm all three. Only that tells them apart.
@@ -207,7 +205,7 @@ Which part?
 === recap_in ===
 { sweep_done:
     # speaker:npc
-    The sweep listed the machines that answer, as a table.
+    Show listed the machines that answered the sweep, as a table.
 }
 { use_token_done:
     # speaker:npc

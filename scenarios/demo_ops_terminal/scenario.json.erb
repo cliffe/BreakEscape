@@ -256,8 +256,8 @@
             { "eventPattern": "pc_signed_out:backup_pc", "condition": "data.reason === 'token_expired'", "cooldown": 0, "completeTask": "token_expired", "setGlobal": { "token_ran_out": true, "token_expired_done": true }, "bark": "Tokens run out. The session ended on the clock, and the token won't open it again." },
 
             { "eventPattern": "network_foothold_gained:spare_jack", "onceOnly": true, "cooldown": 0, "bark": "The spare port. Its token's clock starts now. Sign in to the backup PC with the spare token." },
-            { "eventPattern": "network_device_unplugged:rack_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
-            { "eventPattern": "network_device_unplugged:spare_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
+            { "eventPattern": "network_device_unplugged:rack_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true && globalVars.needs_console_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
+            { "eventPattern": "network_device_unplugged:spare_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true && globalVars.needs_console_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
             { "eventPattern": "global_variable_changed:unplug_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "In the Terminal, unplugging needs the whole word, so a slip of the keys can't do it. It also ended every session through the box." }
           ]
         },
