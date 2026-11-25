@@ -5588,5 +5588,4 @@ class AccessLeakScanner
     held = @hv_relay[pc]
     held && session.is_a?(Hash) && session['relay'] == true && session['access'] == 'admin' && session['npcId'] == held
   end
-
 end

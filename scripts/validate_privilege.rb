@@ -498,7 +498,7 @@ def privilege_account_only(json_data, npcs, err, warn = nil)
   end
   return if only.empty?
 
-  privilege_account_only_names(json_data, only, npcs, err, warn || ->(_msg) {})
+  privilege_account_only_names(json_data, only, npcs, err, warn || ->(_msg) { })
   ai.sign_in_pcs(json_data).each do |entry|
     pc = entry[:object]
     owner = ai.owner_id(pc)
@@ -597,9 +597,9 @@ def privilege_l9_served_strings(json_data, only, names, warn)
 
         tail = if path.match?(/access\.people\[\d+\]\z/)
                  'the server strips it from every answer, so it does nothing here (authoring hint only)'
-               else
+        else
                  'and the browser is served it'
-               end
+        end
         warn.call("#{path.sub(/\A\./, "")[0, 80]}: authored text holds the account-only name '#{n[0, 40]}' as a whole word; #{tail}")
       end
     end
