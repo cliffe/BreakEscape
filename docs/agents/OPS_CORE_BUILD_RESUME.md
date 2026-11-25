@@ -321,6 +321,60 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   retaken, not yet published.
 
 
+## Update 2026-11-25 (read this first; the 2026-11-24 section below it is now history)
+
+### Landed on main (all pushed; main head `0402ed2be`)
+
+| Stage | Branch | Gem version |
+|---|---|---|
+| S8b (helpdesk) | `ops-helpdesk` | 1.0.19 |
+| S8c (second-step locks) | `ops-lock2` | 1.0.20 |
+| Follow-ups (tracks A to C) and the showcase scenarios | `ops-follow1` and the showcase branches | 1.0.21 |
+| S5b and S5c (cached accounts, collect, domains) | `ops-priv2` | 1.0.22 |
+
+The showcases on main are `demo_ops_recon`, `demo_ops_passwords` and `demo_ops_second_step` (with the S8b and S8c appends). The S5b/S5c append for the passwords showcase is still in fix (below).
+
+### Branches in flight
+
+| Branch | Worktree | State |
+|---|---|---|
+| `ops-follow2` | `/data/be-ops-follow` | Device-in-use wiring done and reviewed clean. Cleanup tooling in review. The code fob sprite is blocked on a PixelLab API key from the owner. |
+| `ops-hardening` | `/data/be-ops-skin` | Scanner hardening that reads the recorder tags (PC tags on sign-in, sign-out and resume rows; hash ids on crack rows). In build. |
+| `ops-showcase-s5` | `/data/be-ops-logs` | The passwords showcase's S5b/S5c append. In fix after a playtest: "Send them to lunch" set its flag but no staff went. A fixer replays it, then fixes the six review minors and measures the real borrow timing; then a fresh Haiku playtest and a Sonnet delta review. |
+
+### Decisions taken by the orchestrator since 2026-11-24 (the owner may overturn any)
+
+- The desk never resets an account-only or local account (answered as an unknown name); the validator errors on a desk recovery for one.
+- The recon showcase carries no realism text.
+- Action toasts stay up for at least 12 seconds.
+- A playtester may copy a visible value into the game's own field.
+- Showcase day-end refusal: it no longer offers its own way round.
+- Device-in-use live-record rule: a planted device is in use, and a second add is refused `DEVICE_IN_USE`.
+- S8c route-room limit: the scanner takes a door's route room from the station's own room only for a room object of type `flag-station`, as the server does (R5-1).
+- Empty-room scanner allowance: opening a locked room with no objects and no NPCs is not judged.
+
+### Incidents and the rules they left
+
+- Three test-lock deadlocks came from wrapping lock-taking commands in `flock`. `bin/ops-golden-compare` and `bin/rails app:ops:unchanged:capture` take the shared lock themselves: never wrap them, and never run them inside a subshell that holds the lock.
+- Messaging a builder that runs inside a workflow starts a duplicate. Never do it; a finished agent that reports twice is stopped.
+- A flaky `AssociationTypeMismatch` in tests was fixed by caching the class in the test.
+- A keyring fixture depended on the checkout's random secret, so it passed only in the tree that recorded it. It is now recorded under a fixed key (`519373198`).
+- A Haiku playtester tried the cracker when told not to, and the auto-mode classifier refused it. Briefs now forbid opening the cracker; the cracker beats run on opus48.
+
+### Recorded limits per landed stage
+
+- S8b: 14 limits (a late grant after the 15 s timeout, a full desk, the stop rule's dependence on playtest order, `;` queries). See `docs/agents/ops_core_build/reviews/S8b_R4_delta.md`, "Recorded limits".
+- S8c: two minor fail-open scanner edges and the emptied briefcase offering "Open" once. See `docs/agents/ops_core_build/reviews/S8c_R5_final.md` (R5-1 to R5-3).
+- S5b/S5c: 17 limits, mostly fail-closed; R2-L7 (a cached-accounts list under another key) fails open. See `docs/agents/ops_core_build/reviews/S5bc_R5_final.md`, "Final list of recorded limits", and `S5bc_desk_rule_review.md` for the desk rule.
+- Follow-ups and showcases: limits are in the notes beside each scenario.
+
+### What is next
+
+1. Land `ops-follow2` (cleanup tooling review, train, merge) and ask the owner for the PixelLab key.
+2. Land `ops-hardening`, then `ops-showcase-s5` after its playtest and delta review.
+3. Land each by the procedure above (merge main in, train with `TESTS_LOCK` set, `--ff-only`, push, bump the gem in both repos).
+4. Then the final screenshot review and the card art for `technique_card.png`.
+
 ## Update 2026-11-24 (read this first; the sections above are history)
 
 ### Landed on main (all pushed; gem 1.0.18 in both repos)
