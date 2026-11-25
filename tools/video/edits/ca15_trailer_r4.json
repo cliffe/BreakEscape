@@ -426,14 +426,14 @@
   {
    "id": "lab_drop",
    "type": "gameplay",
-   "duration": 5.452,
+   "duration": 4.252,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "lab_t10_usb_drop.trimmed.mkv",
-    "in": 14.448,
-    "out": 19.9
+    "in": 15.148,
+    "out": 19.4
    },
    "audio": {
     "gain_db": -8
@@ -458,13 +458,13 @@
      "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.46,
-     "cy": 0.62,
-     "zoom": 1.8
+     "cx": 0.48,
+     "cy": 0.64,
+     "zoom": 1.45
     },
     "1:1": {
      "cx": 0.47,
-     "cy": 0.62,
+     "cy": 0.63,
      "zoom": 2.0
     }
    },
@@ -472,6 +472,57 @@
     "9:16": false,
     "1:1": false
    }
+  },
+  {
+   "id": "lab_drop_hold",
+   "type": "gameplay",
+   "duration": 1.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "lab_t10_usb_drop.trimmed.mkv",
+    "in": 19.35,
+    "out": 20.55
+   },
+   "audio": {
+    "gain_db": -60
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Held frame of Sofia's bubble (19.35): the Objective Complete toast enters the crop at ~19.45, so the moving shot ends at 19.4 and this hold carries the bubble; two shots together are two music bars (5.452 s) | CA: spoilers fine (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "PHYSICAL PEN TEST LAB",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.62,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.48,
+     "cy": 0.64,
+     "zoom": 1.45
+    },
+    "1:1": {
+     "cx": 0.47,
+     "cy": 0.63,
+     "zoom": 2.0
+    }
+   },
+   "caption": {
+    "9:16": false,
+    "1:1": false
+   },
+   "freezeAt": 19.35
   },
   {
    "id": "flip",
