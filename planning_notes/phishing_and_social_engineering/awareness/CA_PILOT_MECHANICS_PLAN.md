@@ -4,7 +4,7 @@ Status: plan, 25 Nov 2026. No scenario or engine edits yet. Items marked **[chec
 
 Game: Cyber Aware (CA), the security-awareness course. Each episode is short. The attack half tells the attacker's side in the attacker's terms (the course's selling point), then the flip puts the learner in the defender's seat. Every playtest and quality pass on this work scores the CA fun/USP rubric, `/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/tmp/handover/ac0/CA_FUN_USP_RUBRIC.md` (13 heuristics F1-F6, O1-O4, A1, A2, P1; 0-3 each, evidence required; the defend twin weights O3 and F2 more).
 
-Scope: the attack halves of `scenarios/ca12_visitor_tailgater` and `scenarios/ca15_shadow_it`, the matching facts in their `_defend` twins, the kit data behind their kit-owned records, and five engine changes: E1 side-door gates with a live window, E2 the world hold, E3 step-away beats as a list, E4 actions on event mappings, E5 a flip line chosen by global. Together about 640-870 lines of engine and validator code (section 4 lists each). One further engine change, NPC walk-in and walk-out, comes from another session (VID1) and is an external dependency (section 0). Both trailers are re-shot around these beats, so on-screen movement is planned in from the start.
+Scope: the attack halves of `scenarios/ca12_visitor_tailgater` and `scenarios/ca15_shadow_it`, the matching facts in their `_defend` twins, the kit data behind their kit-owned records, and five engine changes: E1 side-door gates with a live window, E2 the world hold, E3 step-away beats as a list, E4 actions on event mappings, E5 a flip line chosen by global. Together about 540-760 lines of engine and validator code (section 4 lists each). One further engine change, NPC walk-in and walk-out, comes from another session (VID1) and is an external dependency (section 0). Both trailers are re-shot around these beats, so on-screen movement is planned in from the start.
 
 Paths are relative to the repo root. Engine paths are under `public/break_escape/js/`.
 
@@ -31,7 +31,7 @@ Another session (VID1, branch `feat/npc-walk-in-out`, plan `docs/agents/NPC_WALK
 - **Users here.** Camila's step-away arrival and exit in ca12 (1.6), and any other NPC that appears or leaves in our beats. As planned, Yusuf, Jun, Joanne and Niamh are present from room load and never shown or hidden. If implementation finds that one of them must come or go (Yusuf off shift outside the beat, for example), it uses the same fields.
 - **Camila and the gate.** Her crossing of the lobby-studio door relies on E1. Until E1 lands, VID1's code treats that door as an ordinary unlocked door. Once E1 is in, the gate is inert by the time of the step-away (its window closed at `ca12_world_done`), still opens for her through `openFor`, and never turns her back, wherever the learner stands.
 - **Files.** VID1 edits `doors.js` (a new `openDoorForNpc` only) and `scripts/validate_scenario.rb`, and does not touch `door-gates.js`. Our `doors.js` and validator edits (E1, E3, E4, E5) are written on top of theirs, after their branch is on main; E1's `door-gates.js` work has no overlap. `npc-manager.js` (E4) is a possible overlap with their mapping handling: agree the order with that session before E4 starts. The ca12 kit work (`office_kits/merrin_sallow.json`, the ca12 regen, the defend twin, `test_ca12_fallback`) stays in this plan.
-- Steps that need it (section 4) wait for it to land on main; nothing else does.
+- All engine work here waits for it to land on main (section 4, step 0), since E1 and E4 build on its `doors.js`, validator and mapping changes.
 
 ---
 
@@ -56,7 +56,7 @@ New flow (stages unchanged: `brief, osint, write, flip, defend, debrief`):
 
 Credit: walking into the studio while the world beat is live and `ca12_wearing_hivis` is true completes the optional task `slip_past_guard` by client mapping (best-effort; Yusuf's challenge is the NPC sanity check). It also sets one of two globals that pick the flip line: `ca12_tailgated` when the outcome was not `got_it` (nobody said yes), `ca12_desk_pass` when it was (Delphine opened the door). `creditOnPass` cannot be used: the secured room is the start room, which the server always counts as unlocked, so its route-room split never runs (`games_controller.rb:1272-1279`, `game.rb:143-149`, `game.rb:496-512`).
 
-Attacker framing (O1, O2): Jo speaks as the red team. At the first door opening her toast reads: "The desk is the first layer. The door is the second. Watch how long it stays open, and for whom." On a tailgate she says the hero line aloud (above): Jo has a voice in the awareness cast for this, as a bark on her own off-screen NPC record (1.7). If the owner turns the voice down, the same text shows as her toast. Stepping back when challenged is the brief's rule, so a withdrawal reads as tradecraft. Clues leave deduction: nothing names Jun or says when he passes.
+Attacker framing (O1, O2): Jo speaks as the red team. At the first door opening her toast reads: "The desk is the first layer. The door is the second. Watch how long it stays open, and for whom." On a tailgate she says the hero line aloud (above): Jo gets a TTS voice in the awareness cast for this, as a bark on her own off-screen NPC record (1.7). Stepping back when challenged is the brief's rule, so a withdrawal reads as tradecraft. Clues leave deduction: nothing names Jun or says when he passes.
 
 ### 1.2 Rooms and maps
 
@@ -79,14 +79,14 @@ Cast across the episode: Delphine Arvanitis (Greek-Cypriot British), Lorna Easto
 | `ca12_jun_watanabe` (new) | Jun Watanabe, `jun_watanabe` | Junior architect, the staff walker | At a free studio desk, seated or standing (visible during the kiosk stages, so he never appears from nowhere). On `ca12_runner_go` (set only on `walked_away`) he starts a `multiRoom` patrol: desk, out through the gate, Delphine's desk (drops post, 5 s dwell), back through the gate to his desk, 8 s dwell, repeat. Two gate openings per loop of about 30 s. Route action `useObject: ca12_badge_reader`, `useMs: 1500` on the lobby side for the visible badge tap. On `ca12_world_done`, a `patrolOverride` back to his desk and the loop stops. No needs. |
 | `delphine_reception` (existing) | Delphine Arvanitis, `delphine_arvanitis` | Pretext target | Static at the desk; on `got_it` a `patrolOverride` to her door tile (1.2), 8 s hold, then one return to the desk (a `ca12_delphine_at_door` scalar marks the trip, so arriving back at the desk does not send her out again). If the gate turns her back (no hi-vis), she walks straight back. |
 | `lorna_easton` (existing) | Lorna Easton, `lorna_easton` | Host, start room | Unchanged; carries the start-room global mappings. |
-| `ca12_jo` (new) | Jo, no sprite | Red-team lead, off screen | A voice on the learner's earpiece: no sprite, never placed in a room, never talked to. Carries one voiced bark (the tailgate line). **[check during implementation]** the form an off-screen voiced NPC takes in an existing CA or campaign shell (a phone-type NPC whose bark is voiced and shown as a toast); reuse it rather than adding engine code. If the owner says no to a voice, Jo's line shows as her toast instead and this record is not added. |
+| `ca12_jo` (new) | Jo, no sprite | Red-team lead, off screen | A voice on the learner's earpiece: no sprite, never placed in a room, never talked to. Carries one voiced bark (the tailgate line). **[check during implementation]** the form an off-screen voiced NPC takes in an existing CA or campaign shell (a phone-type NPC whose bark is voiced and shown as a toast); reuse it rather than adding engine code. |
 | `kit_camila_ospina` (kit) | Camila Ospina, `camila_ospina` | Step-away visitor | Kit edit (1.6): walks in from off screen through the lobby and the inert gate (`walkIn`), and walks out the same way (`walkOut`). |
 
 **[check during implementation]**
 - Both atlases have the stock six animations (the digest lists `yusuf_demir.png` and `jun_watanabe.png` with talk and viseme sheets); Jun's seated frames decide whether he sits at the desk or stands.
 - Whether `behavior.patrol` takes a start global and a stop action; if not, Jun's loop starts and stops through `patrolOverride` route mappings.
 - The `npc_arrived` payload (`owner`, `moveId`, `npc-behavior.js:3632-3639`) separates his desk-side arrival from his return to the post; the alerted mapping's condition also keeps a later arrival from reopening the challenge.
-- Jo's voice entry in VOICE_CAST (a new awareness-cast voice, owner default pending).
+- Jo's voice entry in VOICE_CAST (a new awareness-cast TTS voice, confirmed by the owner).
 - The VOICE_CAST bios for Yusuf and Jun do not tie them to another named employer in a way the new jobs contradict.
 
 ### 1.4 Engine pieces reused
@@ -193,7 +193,7 @@ EventMappings, appended last:
   1. Outcome `value === "got_it"`: bark "I'll get the door for you.", `patrolOverride` to her door tile, set `ca12_delphine_at_door` true.
   2. `npc_arrived:delphine_reception`, condition `globalVars.ca12_delphine_at_door`, `delayMs: 8000` (the condition is read again when it fires): `patrolOverride` back to the desk, set `ca12_delphine_at_door` false. Her arrival back at the desk finds the flag false and does nothing, so the trip runs once.
   3. `door_gate_guard_turned_back` naming her: `patrolOverride` straight back to the desk, set `ca12_delphine_at_door` false.
-- **Jo** (`ca12_jo`): `global_variable_changed:ca12_tailgated`, `value === true`, `onceOnly`, `barkDelay: 1800` (after Yusuf's pass bark): bark "The desk is one layer and the door is another. A uniform and a held door beat both." If the owner turns down Jo's voice, this mapping moves to Lorna as `actions: [hint]` with the same text.
+- **Jo** (`ca12_jo`): `global_variable_changed:ca12_tailgated`, `value === true`, `onceOnly`, `barkDelay: 1800` (after Yusuf's pass bark): bark "The desk is one layer and the door is another. A uniform and a held door beat both."
 - **Yusuf**:
   1. Sight, hi-vis: `player_in_view_near:ca12_yusuf_demir`, condition `globalVars.ca12_world_on && !globalVars.ca12_world_done && globalVars.ca12_wearing_hivis && !globalVars.ca12_guard_alerted && !globalVars.ca12_gate_open && globalVars.pretext_merrin_front_desk_outcome !== "got_it"`, cooldown 20 s: bark only, "Sorry, can I help you there? Deliveries go via the desk." No conversation; the beat carries on. A courier following Jun inside the hold is never challenged (the gate is open), and in `got_it` Delphine is vouching.
   2. Sight, no hi-vis: same event, condition world on, not done, `!globalVars.ca12_wearing_hivis`, cooldown 20 s: set `ca12_challenged`, `conversationMode: person-chat`, `targetKnot: challenge`.
@@ -229,7 +229,7 @@ Server-enforced items: none new. The studio badge stays where it is; `ca12_hivis
 | Jun | lobby chatter pool (40 chars max) | "Queue at the café was mad." / "Is the Harbour model back yet?" / "Post for the studio, Delphine?" |
 | Jo | bark, off screen, after a tailgate | "The desk is one layer and the door is another. A uniform and a held door beat both." |
 
-Delivery: Yusuf firm but professional throughout (`#delivery: polite, firm, unhurried` on the `challenge` knot); the hi-vis bark mild, a routine question. Jo quiet and pleased, a tester talking in the learner's ear (the bark's delivery field). Jo's voice is the owner's default pending confirmation; if it is declined, her line is shown text in the same place.
+Delivery: Yusuf firm but professional throughout (`#delivery: polite, firm, unhurried` on the `challenge` knot); the hi-vis bark mild, a routine question. Jo quiet and pleased, a tester talking in the learner's ear (the bark's delivery field).
 
 Shown text, not voiced: the brief's authorisation lines (1.1 step 1; if the brief is ever voiced, it is split into four utterances: the authorisation, the scope, the step-back rule and the letter); the kit bag's observation and confirm prompts; the authorisation letter; Jo's two toasts (first door opening, no vest); the four flip lines (1.7).
 
@@ -255,10 +255,10 @@ The new drop **follows the card sort** and comes before the flip. Reason: the so
 Flow:
 1. **Brief, then the card sort** (unchanged).
 2. **The red-team stick (new).** After the sort, the runner shows a panel (E3): "Nilesh has something for you. Look up from the kiosk; your place is saved." with **Look up** and **Carry on**. Look up closes the runner and emits `episode_world_beat`. Nilesh starts a person-chat (`red_stick` knot): he steps into the red-team host role, says the stick is a safe tracker booked in with IT that only reports who opened it (the exercise is sanctioned, as ca12's is), explains why it carries no label, gives `ca15_red_stick`, then walks to the open-plan doorway and back to the kiosk. Carry on instead skips the beat: the runner goes to the flip and the beat is closed (E3 writes `ca15_drop_done`).
-3. **The drop.** The learner walks into the new open-plan, opens the stick in the inventory and chooses Drop here. Where they drop it matters, and the rule is **near where people stop**: Joanne Pell notices a stick within 3 tiles of the spot where she next chooses what to do (her desk, the kettle, the water cooler). She does not notice it as she walks past (`npc-needs.js:1780-1787` scores interests at selection; `_carryCandidate` measures from where she stands, `:3185-3187`). A stick by the kettle is found; a stick in a far corner is not. That is the baiting lesson too: attackers leave bait where people pause.
+3. **The drop.** The learner walks into the new open-plan, opens the stick in the inventory and chooses Drop here. Where they drop it matters, and the rule is **near where people stop**: Joanne Pell notices a stick within 3 tiles of the spot where she next chooses what to do (her desk, the kettle, the water cooler; her ordinary needs take her between them, 2.3). She does not notice it as she walks past (`npc-needs.js:1780-1787` scores interests at selection; `_carryCandidate` measures from where she stands, `:3185-3187`). A stick by the kettle is found; a stick in a far corner is not. That is the baiting lesson too: attackers leave bait where people pause.
 4. **The find.** Joanne picks it up ("Someone's dropped a memory stick. Whose is this?"), walks back to her desk and plugs it in to find the owner ("I'll just plug it in and see whose it is."). The learner gets the payoff note in the inventory, and `watch_who_finds_it` ticks.
 5. **Timeout.** 90 s after the first drop, if Joanne has not picked it up, the beat ends: Nilesh's bark "Nobody bit. Corners don't get found.", and `ca15_drop_done` is set. A learner who picks the stick back up to move it gets the rest of those 90 s, not a fresh clock, and no second credit. If Joanne has picked it up, the timeout does not fire; a 30 s backstop after the pickup ends the beat if the use never lands. If the learner never drops it, Nilesh nudges once at 60 s, and the kiosk's waiting panel always offers Carry on (E3).
-6. **The beat closes, and the kiosk comes back.** However the beat ends (the use, the timeout, the backstop, or Carry on from the waiting panel), `ca15_drop_done` becomes true, and that one global closes it: Nilesh takes his stick back from the inventory or the floor (E4; "Nilesh has his stick back." shows when one was taken), and every drop mapping is gated off. On the use, the timeout and the backstop, the runner then reopens by itself at the flip, 3 s after the global lands and once no chat is open (E3 `resumeOnDone`), the same way ca12's hand-back ends. Nilesh's hub gains one line for a completed find: "Nobody was careless there. She was being kind, and that's what a drop relies on." (O2: the weakness is human and procedural, not a flaw in Joanne).
+6. **The beat closes, and the kiosk comes back.** However the beat ends (the use, the timeout, the backstop, or Carry on from the waiting panel), `ca15_drop_done` becomes true, and that one global closes it: Nilesh takes his stick back from the inventory or the floor (E4; "Nilesh has his stick back." shows unless Joanne found it), and every drop mapping is gated off. On the use, the timeout and the backstop, the runner then reopens by itself at the flip, 3 s after the global lands and once no chat is open (E3 `resumeOnDone`), the same way ca12's hand-back ends. Nilesh's hub gains one line for a completed find: "Nobody was careless there. She was being kind, and that's what a drop relies on." (O2: the weakness is human and procedural, not a flaw in Joanne).
 7. **Flip, defend, step-away, debrief** (unchanged). The post-defend step-away still runs, in the same run that used the drop (E3 keeps the two beats apart).
 
 Dropping the stick in the training room: nobody there has an interest in it, so it just lies there as a takeable object; Nilesh barks "Not in here. Try next door." and the learner picks it up again. No NPC return path is needed.
@@ -286,6 +286,8 @@ Cast across the episode: Nilesh Solanki (30s, Gujarati-British), Fatima Begum (3
 
 Joanne and Niamh are in the open-plan from the room's load; neither is shown or hidden.
 
+**Joanne is driven by the needs system, not a script.** She works at her PC and gets up for the kettle or the water cooler when an ordinary need comes due, so her walk and her stop happen as part of her day. She notices the stick from where that routine stops her (the selection point, 2.1 step 3). No mapping routes her to the stick, and no engine change for mid-walk noticing is made. For live proof, footage takes and route checks that cannot wait for the decay, a forced need trigger sends her on a trip at once: `triggerNeed(page, "ca15_joanne_pell", "caffeine", 10)` from `tools/video/takes/lib/camlib.mjs:112`, which sets the level through the same path as a mapping's `needs.set`. The shell itself never forces a need.
+
 Notes:
 - Pickup and use do not depend on `npcThoughts` (`npc-needs.js` carry and use paths never read it; it gates picture bubbles and action icons only). With `"npcThoughts": false` the learner sees no picture cue, so Joanne's voiced barks carry the beat.
 - Joanne's errands are needs, not print jobs: print errands are scored from `habits.print` and need a print-job source (`npc-needs.js:1788-1792`), which nothing in the open-plan supplies. The printer is dressing.
@@ -302,11 +304,13 @@ Notes:
 - `npc-needs.js` interests: notice within `noticeRadius` in `noticeRooms` from the selection point (`_carryCandidate` `:3185-3207`), `npc_picked_up:<id>` (`:3600`), use at the target whose `affordance.accepts` holds the tag, `npc_used:<targetId>` with `data.tag` (`:3768`), `consumeHeld` removes the carried stick through `RoomStateSync.consumeCarried`.
 - Target PC `ca15_ops_pc`: `affordance: { accepts: ["tag_ca15_stick"], useSeconds: 6, useFrom: { dx: 0, dy: 1.5 } }` (lab `usb_target_pc`, `:2307-2317`). No `usbClass` on the stick, so no USB-policy refusal applies.
 - The step-away panel, `STEP_AWAY_EVENT` and episode-state flags, generalised by E3.
-- Needs trips, chatter pools, `patrolOverride`, scenario timers, `give_item`.
+- Needs trips (Joanne's caffeine and thirst, which carry the whole find), chatter pools, `patrolOverride`, scenario timers, `give_item`. The needs `set` control (`npc-needs.js:1155`) is what `triggerNeed` uses for forced trips in proofs and takes.
+- E4 (1.5): mapping `actions` for Nilesh's take-back (`remove_item` from the inventory, `remove_world_item` from the floor, a `hint` toast), each action with its own `condition`.
+- The `watchCall` tick loop (`episode-runner-minigame.js:1388-1442`) as the model for E3's `resumeOnDone` watcher.
 
 ### 2.5 Engine change
 
-**E3. Step-away beats as a list.** About 150-200 lines in `minigames/episode-runner/episode-model.js` and `episode-runner-minigame.js`, plus 20-30 validator lines.
+**E3. Step-away beats as a list.** About 200-260 lines in `minigames/episode-runner/episode-model.js` and `episode-runner-minigame.js`, plus 25-35 validator lines.
 
 Why: the step-away panel works only after `defend` and only once `kit_defend_done` is true (`_stepAwayReady()`, `episode-runner-minigame.js:523-526`, reading `STEP_AWAY_READY_GLOBAL`, `episode-model.js:64`). `_lookUp` returns early unless ready (`:565`) and writes the single `stepAwayPicked` flag (`:567`, `:609-615`), after which the post-defend panel is skipped (`:416-418`); `_steppedAway` (`:565-566`) is one flag per runner. A second beat sharing those paths would leave Look up disabled after `mistake` and, once picked, would cancel ca15's post-defend step-away. World-play only runs on a call write stage (`worldFor`, `episode-model.js:569-579`). ca15 needs the learner in the world between `mistake` and `flip`, and again after `defend`.
 
@@ -316,7 +320,8 @@ Shape: `awarenessEpisode.stepAways`, a list of beats, each with its own ready gl
 "stepAways": [
   { "id": "red_stick", "after": "mistake", "event": "episode_world_beat",
     "readyGlobal": null, "doneGlobal": "ca15_drop_done",
-    "pickedKey": "worldBeatPicked", "strings": "worldBeat", "facilitated": false },
+    "pickedKey": "worldBeatPicked", "strings": "worldBeat", "facilitated": false,
+    "resumeOnDone": true },
   { "id": "found_stick", "after": "defend", "event": "episode_step_away",
     "readyGlobal": "kit_defend_done", "doneGlobal": null,
     "pickedKey": "stepAwayPicked", "strings": "stepAway" }
@@ -324,17 +329,20 @@ Shape: `awarenessEpisode.stepAways`, a list of beats, each with its own ready gl
 ```
 
 - **Legacy form.** `stepAway: true` normalises in `episode-model.js` to the single `found_stick`-shaped entry above (after `defend`, `episode_step_away`, ready on `kit_defend_done`, `stepAwayPicked`, strings `stepAway`). Every existing shell keeps working unchanged; a shell sets one form or the other, not both.
+- **The other readers of the step-away.** `stepAwayOn(episode)` is true for either form. `stepAwayHeld` (the rule that keeps the mission success screen off the room until the step-away has run, `episode-model.js:110-119`) and the post-defend panel condition (`episode-runner-minigame.js:412-418`) read the post-defend beat (the one whose `event` is `episode_step_away`) from the normalised list, never `stepAway === true`. That beat's done rule stays `stepAwayBeatLive` (the `kit_<ep>_out`/`kit_<ep>_done` pair, `episode-model.js:93-100`), so `found_stick` keeps `doneGlobal: null` and today's reopen. A beat after any other stage, such as `red_stick`, never holds the success screen.
 - **Per-beat paths.** `_stepAwayReady(beat)` is true when `readyGlobal` is null or truthy; `_lookUpButton(beat)`, `_lookUp(beat)` and `_markPicked(beat)` act on that beat only and write that beat's own `pickedKey`; `_steppedAway` becomes a per-beat set keyed by `id`.
-- **Panel order.** When a stage completes, the runner looks for a beat whose `after` is that stage and whose `pickedKey` is unset, and shows its panel in place of the next stage, with Look up and Carry on. Look up closes the runner and emits the beat's `event` once; Carry on goes straight to the next stage. Either stores the beat's `pickedKey: true` in the episode state (one boolean, once), so a reload before a pick shows the panel again.
+- **Panel order.** When a stage completes, the runner looks for a beat whose `after` is that stage and whose `pickedKey` is unset, and shows its panel in place of the next stage, with Look up and Carry on. For a beat after `mistake` this is a new path: the panel shows on the stage advance inside the open runner, the moment the sort completes, not on a reopen. The post-defend beat keeps today's path (the triage reopen). Look up closes the runner and emits the beat's `event` once; Carry on goes straight to the next stage. Either stores the beat's `pickedKey: true` in the episode state (one boolean, once), so a reload before a pick shows the panel again.
+- **Carry on closes the beat.** Carry on, from the first panel or from the waiting panel, on a beat with a `doneGlobal` writes that global true (one scalar, once, as a delta), so every scenario mapping gated on it disarms. On a beat without one it writes nothing new.
 - **Reopen.** After Look up, a reopen from the kiosk shows the waiting panel ("Still out there. Carry on whenever you like.", with Carry on) only while the beat's `doneGlobal` is set and still false; once it is true, or when the beat has no `doneGlobal`, the runner resumes at the next stage. The learner is never stuck.
+- **`resumeOnDone: true`** (optional, per beat). After Look up, a watcher built like `watchCall` polls the beat's `doneGlobal`. Once it is true and no minigame is open, it waits a 3 s grace (so a closing bark finishes) and reopens the runner at the next stage, the same automatic return as ca12's hand-back. It stops when the runner is opened by any other route (a kiosk click), since that open resumes at the next stage anyway. A chat open at the moment the global lands delays it until the chat closes. `watchCall` is started only when a call launches and is never restarted on load; the `resumeOnDone` watcher is also started at game load when the beat's `pickedKey` is true and its `doneGlobal` is still false, so a reload in the middle of the drop still ends with the automatic return. **[check during implementation]** the hook that runs at game load for the episode runner (where `_reemitDefendDone`'s load-time work or the step-away listeners register) and start the watcher there.
 - **Strings.** A beat's `strings` value is a prefix: the runner reads `strings[prefix]`, `strings[prefix + "Heading"]` and `strings[prefix + "Waiting"]`, so today's `strings.stepAway` keeps working.
 - Facilitated runs skip a beat whose `facilitated` is false; the legacy beat keeps today's facilitated behaviour.
-- Validator: `after` is a declared stage other than the last; each `after` appears once; `id` and `pickedKey` are unique; `readyGlobal` and `doneGlobal`, when set, are declared globals; only the beat after `defend` may use `episode_step_away`; `stepAway` and `stepAways` are not both set.
+- Validator: `after` is a declared stage other than the last; each `after` appears once; `id` and `pickedKey` are unique; `readyGlobal` and `doneGlobal`, when set, are declared globals; only the beat after `defend` may use `episode_step_away`; `stepAway` and `stepAways` are not both set; `resumeOnDone` needs a `doneGlobal`.
 - **[check during implementation]** whether the server validates episode-state keys (`games_controller.rb` episode-state update, the CA episode model); if it keeps an allow list, add `worldBeatPicked` there, with its test.
 
 Rejected alternatives: the drop at the brief (the learner would be inside the kiosk overlay when Joanne finds it, so they would miss the payoff); the drop as the sort's last card (still needs the runner to close mid-stage, and splits a card from its outcome); a separate `worldBeat` path beside the step-away (two copies of the panel, pick and reopen logic, each able to cancel the other through the shared flags).
 
-Not in scope: mid-walk noticing (an NPC spotting an item as she passes it). The drop is designed around the selection-point rule above; mid-walk noticing would be a separate engine change (see section 9).
+Not in scope: mid-walk noticing (an NPC spotting an item as she passes it). The owner has decided against it: Joanne's ordinary needs take her to her stop points, and she notices the stick from there (2.3). E3 adds nothing to the needs system.
 
 ### 2.6 JSON and ink changes
 
@@ -345,28 +353,31 @@ Scenario level:
 - Room `open_plan` (2.2); training-room `connections`.
 - Items:
   - `ca15_red_stick` (`droppable: true`, `takeable: true`, `needsTag: "tag_ca15_stick"`, sprite `usb_storage_swivel`, name "Red-team stick", observation "No label, no note. Leave it where staff stop for a minute."), held by Nilesh (`itemsHeld`) and given from ink with `#give_item`, so the server knows it and it cannot be forged.
-  - `ca15_session_note` (shown text: "Session note: TL-OPS-04. She opened a file to find the owner, and that was all it took. One kind click, and you're on their network."), in Joanne's `itemsHeld` and given by her `npc_used` mapping. Its mechanism (a file opened to find the owner) matches the defend twin's "The moment someone opens a file on that stick, it could run malware". The CA HUD's capture log is not used.
+  - `ca15_session_note` (shown text: "Session note: TL-OPS-04. She opened a file to find the owner, and our tracker reported home. A real stick would have run its payload right there."), in Joanne's `itemsHeld` and given by her `npc_used` mapping. Its mechanism (a file opened to find the owner) matches the defend twin's "The moment someone opens a file on that stick, it could run malware". The CA HUD's capture log is not used.
 - Objects: `ca15_ops_pc` (affordance above), the second PC, kettle, water cooler, printer and dressing.
 - Globals (scalar, monotonic): `ca15_drop_given`, `ca15_drop_dropped`, `ca15_drop_found`, `ca15_drop_used`, `ca15_drop_timeout`, `ca15_drop_nudge`, `ca15_drop_done`. The `ca15_drop_` prefix keeps clear of the kit's `kit_ca15_*` globals.
 - Objectives under `shortcuts_aim`: optional `drop_the_stick` ("Leave the red-team stick where someone will find it") and optional `watch_who_finds_it` ("Watch who picks it up"). Neither is in `concludeRequires`; `sort_shortcuts` still concludes the aim.
 - Timers:
-  - `ca15_drop_t_found`: `startOnGlobal: ca15_drop_dropped`, 90000 ms, condition `!globalVars.ca15_drop_found`, sets `ca15_drop_timeout` and `ca15_drop_done`.
-  - `ca15_drop_t_used`: `startOnGlobal: ca15_drop_found`, 30000 ms, condition `!globalVars.ca15_drop_used`, sets `ca15_drop_done` (no bark; a use that never lands).
-  - `ca15_drop_t_nudge`: `startOnGlobal: ca15_drop_given`, 60000 ms, condition `!globalVars.ca15_drop_dropped`, sets `ca15_drop_nudge`.
-- **The unfound stick is cleared.** On `ca15_drop_timeout`, a mapping removes the dropped object, so it cannot be found during Fatima's later set piece. **[check during implementation]** whether a mapping can remove a `player_drop` object. If not: Joanne's needs are suspended on `kit_ca15_out` (the mechanism the kit uses for its own staff) until `kit_ca15_done`, and her two mappings are gated on `!globalVars.ca15_drop_done` (below), so a late find gives nothing and says nothing.
+  - `ca15_drop_t_found`: `startOnGlobal: ca15_drop_dropped`, 90000 ms, condition `!globalVars.ca15_drop_found && !globalVars.ca15_drop_done`, sets `ca15_drop_timeout` and `ca15_drop_done`. It counts from the first drop: `ca15_drop_dropped` is set once, so a pickup and re-drop does not restart it.
+  - `ca15_drop_t_used`: `startOnGlobal: ca15_drop_found`, 30000 ms, condition `!globalVars.ca15_drop_used && !globalVars.ca15_drop_done`, sets `ca15_drop_done` (no bark; a use that never lands; E3's `resumeOnDone` still brings the kiosk back).
+  - `ca15_drop_t_nudge`: `startOnGlobal: ca15_drop_given`, 60000 ms, condition `!globalVars.ca15_drop_dropped && !globalVars.ca15_drop_done`, sets `ca15_drop_nudge`.
+- **The stick goes back on `ca15_drop_done`.** However the beat ends, Nilesh's mapping 7 (below) takes the stick back through E4: from the inventory if the learner holds it, and from the floor if it lies there unfound. So it can never be found during Fatima's later set piece, and the learner never carries attacker kit into the defend half. If Joanne already holds it (the backstop case), both removals are no-ops; her use mapping is gated off, so a later silent use at her PC gives nothing and says nothing. The `needs` mapping field cannot clear an interest (it takes `suspend`, `resume`, `set` and `print` only), so her interest stays; with the floor object gone there is nothing left to notice.
 
 EventMappings, appended last:
 - **Nilesh** (start room, always registered):
   1. `episode_world_beat`, `onceOnly`: person-chat `targetKnot: red_stick`.
-  2. `conversation_closed:nilesh_solanki` when `ca15_drop_given` and not yet walked: `patrolOverride` to the doorway tile, then back (timed).
-  3. `item_dropped:ca15_red_stick`, condition `data.roomId === "open_plan"`, `onceOnly`: set `ca15_drop_dropped`, `completeTask: drop_the_stick`.
-  4. `item_dropped:ca15_red_stick`, condition `data.roomId === "training_room"`, cooldown 20 s: bark "Not in here. Try next door."
-  5. `global_variable_changed:ca15_drop_timeout`, `value === true`: bark "Nobody bit. Corners don't get found."; remove the dropped object (see above).
-  6. `global_variable_changed:ca15_drop_nudge`, `value === true`, `onceOnly`: bark "Next door. Somewhere people stop for a minute."
+  2. `conversation_closed:nilesh_solanki`, condition `globalVars.ca15_drop_given && !globalVars.ca15_drop_done`, `onceOnly`: `patrolOverride` to the doorway tile, then back (timed). `onceOnly` stands in for "not yet walked", so no new global.
+  3. `item_dropped:ca15_red_stick`, condition `data.roomId === "open_plan" && !globalVars.ca15_drop_done`, `onceOnly`: set `ca15_drop_dropped`, `completeTask: drop_the_stick`.
+  4. `item_dropped:ca15_red_stick`, condition `data.roomId === "training_room" && !globalVars.ca15_drop_done`, cooldown 20 s: bark "Not in here. Try next door."
+  5. `global_variable_changed:ca15_drop_timeout`, `value === true`: bark "Nobody bit. Corners don't get found." (bark only; the take-back is mapping 7).
+  6. `global_variable_changed:ca15_drop_nudge`, `value === true`, condition `!globalVars.ca15_drop_done`, `onceOnly`: bark "Next door. Somewhere people stop for a minute."
+  7. `global_variable_changed:ca15_drop_done`, `value === true`, `onceOnly`: `actions: [{ type: "hint", text: "Nilesh has his stick back.", condition: "!globalVars.ca15_drop_found" }, { type: "remove_item", itemId: "ca15_red_stick" }, { type: "remove_world_item", itemId: "ca15_red_stick" }]` (E4). The hint shows only when no one found the stick, so it never claims a take-back from Joanne; each removal is a no-op where the stick is not.
 - **Joanne**:
   1. `npc_picked_up:ca15_red_stick`, condition `!globalVars.ca15_drop_done`, `onceOnly`: set `ca15_drop_found`, bark "Someone's dropped a memory stick. Whose is this?"
   2. `npc_used:ca15_ops_pc`, condition `data.tag === "tag_ca15_stick" && !globalVars.ca15_drop_done`, `onceOnly`: set `ca15_drop_used` and `ca15_drop_done`, `completeTask: watch_who_finds_it`, give `ca15_session_note`, bark "I'll just plug it in and see whose it is." Delivery cheerful and matter-of-fact. **[check during implementation]** how a JSON bark carries delivery (a bark field or the NPC's voice style); a breezy read is what the lesson needs.
 - **Niamh**: none beyond her chatter pool.
+
+Joanne's needs and interest are not suspended at any point: the take-back on `ca15_drop_done` leaves nothing for her to notice, and her mappings are gated on the same global.
 
 Ink (`scenarios/ca15_shadow_it/ink/nilesh_solanki.ink`): new globals `ca15_drop_given`, `ca15_drop_used`; new knot `red_stick` (opening lines, one choice with two options, `#give_item:ca15_red_stick`, sets `ca15_drop_given`, `#exit_conversation`), tagged `#delivery: stepping into the red-team host role, conspiratorial but light` so the attacker voice reads as a role he takes on for the exercise, not his own habit; one new hub branch placed before the existing post-stick branch, when `ca15_drop_used` and not yet said (a `ca15_drop_said` ink flag), with the "being kind" line.
 
@@ -381,10 +392,13 @@ Server-enforced items: `ca15_red_stick` and `ca15_session_note` are server-known
 | Speaker | Where | Line |
 |---|---|---|
 | Nilesh | `red_stick` | "Before we flip, one from the red-team kit. A stick, no label, no note." |
+| Nilesh | `red_stick` | "It's a safe tracker, booked in with IT. It only tells us who opened it." |
 | Nilesh | `red_stick` | "Leave it next door, somewhere people stop. Then watch who picks it up." |
 | Player choice | `red_stick` | "Why would anyone plug in a stranger's stick?" / "On it." |
-| Nilesh | `red_stick`, after the question | "To find out whose it is. Kindness does the attacker's work." |
-| Nilesh | `red_stick`, after the question | "No label is deliberate. A labelled stick gets opened out of nosiness; a blank one, out of kindness." |
+| Nilesh | `red_stick`, answer line 1 | "To find out whose it is. Kindness does the attacker's work." |
+| Nilesh | `red_stick`, answer line 2 | "No label is deliberate. A labelled stick gets opened out of nosiness; a blank one, out of kindness." |
+
+The two answer lines play in sequence as one answer to the question, line 1 then line 2; they are not alternatives.
 | Nilesh | bark, training-room drop | "Not in here. Try next door." |
 | Nilesh | bark, nudge | "Next door. Somewhere people stop for a minute." |
 | Nilesh | bark, timeout | "Nobody bit. Corners don't get found." |
@@ -397,7 +411,7 @@ Shown text, not voiced: the E3 panel strings, the stick's observation, the sessi
 
 ### 2.8 Defend twin (`ca15_shadow_it_defend`)
 
-The twin has no kit set piece, no `visitor_stick` beat and no room besides the training room. Its stick text (`defend scenario.json.erb:5`, `:86`, `:189`, `:209-213`, `:266-299`, `:444-452`) says found and posted sticks go to IT unplugged, that opening a file on one can run malware, and that most people who plug one in are being kind or curious. The drop agrees with every line: Joanne is kind, she opens a file to find the owner, and the twin's rule is the defence against exactly her move. The session note now names the same trigger. No text change. The concept panel's "The stick that came in the post was ours" still refers to the posted stick, a different stick from the drop. **[check during implementation]** the twin's ink folder for any stick line naming a place; nothing in the JSON names one. No room is added to the twin.
+The twin has no kit set piece, no `visitor_stick` beat and no room besides the training room. Its stick text (`defend scenario.json.erb:5`, `:86`, `:189`, `:209-213`, `:266-299`, `:444-452`) says found and posted sticks go to IT unplugged, that opening a file on one can run malware, and that most people who plug one in are being kind or curious. The drop agrees with every line: Joanne is kind, she opens a file to find the owner, and the twin's rule is the defence against exactly her move. The session note names the same trigger. No text change. The concept panel's "The stick that came in the post was ours" still refers to the posted stick, a different stick from the drop. **[check during implementation]** the twin's ink folder for any stick line naming a place; nothing in the JSON names one. No room is added to the twin.
 
 ---
 
@@ -406,9 +420,12 @@ The twin has no kit set piece, no `visitor_stick` beat and no room besides the t
 **Unit tests (`test/js/`)**
 - E1, `door-gates.test.mjs`: both side sprites join one gate; `gateKey` is set on both; a click on either sprite routes to the gate; the bump works on the side axis; open, hold and close carve and uncarve the side corridor (the tile is unwalkable after close); side animation keys; `approachPoint` offsets on x for side doors; `walkThroughTarget` from both sides lands one tile into the far room, not two; a barred player stays out. North-south cases unchanged (the existing suite passes untouched). `door-gates-validator.test.mjs`: the side-gate warning is gone, a side gate validates.
 - E1, barred after a teleport: a no-vest player placed in the lobby by `enterWorld` (`setPosition`) counts as outside the secured room (`_playerBarred`, `door-gates.js:40-44`); with the gate open for Jun, the player stops at the strip.
-- E2: `holdUntil` waits for the global; `holdMaxMs` ends the hold, writes the global true and runs hand-back exactly once; a reload while held writes the global and resumes into the flip; no `holdUntil` behaves as today; the validator rejects `holdUntil` without `holdMaxMs`. `leaveWorld` with a wearable costume on and `world.costume` null leaves the costume on; the existing test that a world costume comes off still passes.
-- E3: (a) a beat with `readyGlobal: null` after `mistake` shows an enabled Look up with `kit_defend_done` false; (b) picking that beat writes its own key and leaves `stepAwayPicked` unset, and the post-defend panel still shows; (c) the legacy `stepAway: true` shells behave as today (the existing step-away suite runs unchanged); Look up emits once per beat; Carry on stores the key and advances; the waiting panel shows only while `doneGlobal` is false; a reload before a pick shows the panel; facilitated runs skip a `facilitated: false` beat; validator rules.
-- Needs notice point (extend the needs suite): an item within `noticeRadius` of the selection point is picked; an item near only the middle of the path between two stops is not.
+- E1, live window: with `activeIf` false the gate is inert: an unworn player is not barred from either side, his click on the shut gate opens it for one `holdMs` from either side (through the `exitOpen` path), the events carry `inert: true`, an `openFor` NPC still opens it as it nears, and an opener NPC is never turned back with the player standing beside it. With `activeIf` true, today's behaviour. A gate without `activeIf` is always live. A condition that fails to parse counts as live. Validator: `activeIf` is checked with the condition grammar and names only declared globals.
+- E2: `holdUntil` waits for the global; `holdMaxMs` ends the hold, writes the global true and runs hand-back exactly once; a reload while held writes the global and resumes into the flip; no `holdUntil` behaves as today; the validator rejects `holdUntil` without `holdMaxMs`. A timeout while a chat is open waits for the chat to close, then writes the global and hands back once. A runner opened inside the hold (the kiosk reached during the grace) stops the watcher, completes the write stage, writes the global and goes on to the flip. `leaveWorld` with a wearable costume on and `world.costume` null leaves the costume on; the existing test that a world costume comes off still passes.
+- E3: (a) a beat with `readyGlobal: null` after `mistake` shows an enabled Look up with `kit_defend_done` false, on the stage advance inside the open runner; (b) picking that beat writes its own key and leaves `stepAwayPicked` unset, and the post-defend panel still shows; (c) the legacy `stepAway: true` shells behave as today (the existing step-away and `stepAwayHeld` tests run unchanged); (d) a shell with the `stepAways` form holds the success screen exactly as a legacy shell does, and the `red_stick`-shaped beat never holds it; (e) Carry on, from the first panel and from the waiting panel, writes the beat's `doneGlobal` true once; (f) `resumeOnDone` reopens the runner at the next stage 3 s after the global turns true, waits while a chat is open, stops when the runner is opened another way, and restarts at load when the beat is picked and the global is false. Also: Look up emits once per beat; Carry on stores the key and advances; the waiting panel shows only while `doneGlobal` is false; a reload before a pick shows the panel; facilitated runs skip a `facilitated: false` beat; validator rules, including `resumeOnDone` without `doneGlobal` rejected.
+- E4: a mapping's `actions` run once after its `condition`, `onceOnly` and cooldown pass, and not when any of them fails; each action's own `condition` is honoured; a mapping without `actions` is unchanged. `remove_world_item` removes a `player_drop` object by id (sprite gone, one room-state removal) and is a no-op when the object was picked up, consumed or never dropped. Validator: the action schema and a declared droppable `itemId`.
+- E5, `flip-view` unit test: `flipDefenderLineByGlobal` is read after `NoSpray` and `ByHost` and before `ByChoice`; the first entry whose global is truthy wins; with none truthy, or no globals passed, the fallback `flipDefenderLine` shows. Validator: declared globals, non-empty lines, no `{variables}`.
+- Needs notice point (extend the needs suite): an item within `noticeRadius` of the selection point is picked; an item near only the middle of the path between two stops is not; a need set through the `set` control (the `triggerNeed` path) sends the NPC on a trip whose stop point does the noticing, exactly as a decayed need does.
 - Any new static import in an engine module (including `world-play.js`) goes into each JS test-harness copy list, or `bin/test-js` fails with ERR_MODULE_NOT_FOUND.
 
 **Validator and lint**
@@ -422,40 +439,45 @@ The twin has no kit set piece, no `visitor_stick` beat and no room besides the t
 **Ink**
 - Compile every touched ink; `node scripts/ink_runtime_check/inklint.mjs` and `dialoguelint.mjs` on both mission folders; `tagdiff.mjs` against the last commit; `inkcheck.js` on `ca12_yusuf_demir.json` (each `challenge` branch with its globals) and on `nilesh_solanki.json` (`red_stick`, and the hub with `ca15_drop_used` true and false); `loopcheck.js` on the hub.
 - Route suites: none exist for CA. Create `scripts/ink_runtime_check/ca12_routes/` and `ca15_routes/` as copies of the m01 driver (`m01_routes/route.js`) with the mission path, ink list and NPC ids changed.
-  - ca12: `got_it` with the hi-vis; `got_it` without (turn-back, no-vest challenge); `walked_away` hi-vis bark, step back, follow Jun, credited; `walked_away` no vest; `reported` (Yusuf walks over); timeout at 75 s.
-  - ca15: drop found; drop timeout; found late (pickup at 85 s, no timeout bark, backstop or use ends it); training-room drop; Carry on skip; the post-defend step-away after the world beat.
+  - ca12: `got_it` with the hi-vis (Delphine's door line, Yusuf's desk-pass line, `ca12_desk_pass`); `got_it` without (turn-back, no-vest challenge, `ca12_challenged`); `walked_away` hi-vis bark, step back, follow Jun, credited (Yusuf's courier line, Jo's tailgate line, `ca12_tailgated`); `walked_away` no vest; `reported` (Yusuf walks over, alerted challenge); timeout at 75 s. Each route then checks that the flip's defender line is the one its globals choose (E5), and the neutral fallback on the timeout.
+  - ca15: drop found; drop timeout; found late (pickup at 85 s, no timeout bark, backstop or use ends it); training-room drop; Carry on skip from the first panel; Look up, take the stick, Carry on from the waiting panel while holding it (the stick is taken back, then a drop in `open_plan` during the step-away gives nothing: no task, no timer, no bark); the post-defend step-away after the world beat.
   - Run every route with `maxRun 9` before sending a hash.
 - `reopencheck.mjs scripts/ink_runtime_check/missions.json ca12 ca15` (the entries exist); add the new NPCs to `missions.json` only if they gain phone ink (they do not).
 
 **Focused test scenarios (new)**
-- `scenarios/test_side_door_gate/`: two rooms joined east-west; a gate with one opener NPC on a patrol through it and a second opener sent to a diagonal tile beside the approach tile (Delphine's case); a hook giving a wearable whose global is `playerMayPassIf`; a guard with a sight check anchored to a reader. It proves E1 without the full episode.
-- `scenarios/test_episode_world_beat/`: a minimal episode with a `stepAways` list (a beat after `mistake` and one after `defend`), a droppable item with a `needsTag`, one finder NPC with two stop points and a target PC, and the 90 s and 30 s timers. It proves E3, both beats in one run, and the drop-find chain on their own.
+- `scenarios/test_side_door_gate/`: two rooms joined east-west; a gate with one opener NPC on a patrol through it and a second opener sent to a diagonal tile beside the approach tile (Delphine's case); a hook giving a wearable whose global is `playerMayPassIf`; a guard with a sight check anchored to a reader; an `activeIf` window on two test globals, switched by two objects the tester clicks. It proves E1 without the full episode: outside the window the gate is inert, an unworn player clicks it open from outside and walks in, the `openFor` NPC still opens it, and nobody is turned back on the player's account.
+- `scenarios/test_episode_world_beat/`: a minimal episode with a `stepAways` list (a beat after `mistake` with a `doneGlobal` and `resumeOnDone`, and one after `defend`), a droppable item with a `needsTag`, one finder NPC with two need stop points and a target PC, the 90 s and 30 s timers, and a take-back mapping with E4 `actions`. It proves E3, both beats in one run, Carry on writing the done global, the automatic return, the success-screen hold with the list form, and the drop-find chain on their own.
 
 **Live proof** (Haiku, a keyless server from the worktree on a free port, a fresh game per check via `new-game.rb`, `window.__test.throttleFps(20)`, fixed steps on; commit before running; never edit a game row; `verify-run.rb` must show progress):
-- Test scenarios: a side gate opens for the NPC from both sides; the diagonal opener holds it without blocking the doorway; the worn player passes within the hold; the unworn player is barred and the guard challenges; world beat Look up, drop near a stop point, find, resume at the next stage, then the post-defend Look up appears in the same run; Carry on; reload before a pick.
+- Test scenarios: a side gate opens for the NPC from both sides; the diagonal opener holds it without blocking the doorway; the worn player passes within the hold; the unworn player is barred and the guard challenges; with the window closed, the unworn player clicks the gate open from outside, walks in, and the opener NPC still crosses without a turn-back; world beat Look up, drop near a stop point, find, the runner reopens at the next stage by itself, then the post-defend Look up appears in the same run and the success screen waits for it; Carry on from both panels; reload before a pick; reload mid-beat, then the automatic return still happens.
 - Lab regression after E1: the lab's records-door tailgate (north-south, which shares `groupAtPosition` through `doors.js:668`) still works live.
-- ca12: (a) wear, `got_it`, Delphine holds the door from her side tile, walk in, pass bark plays, `slip_past_guard` ticks, flip opens after the grace; (b) no vest, `got_it`, Delphine turned back, no-vest challenge, flip opens on the conversation closing; (c) wear, `walked_away`, walk up alone, hi-vis bark, step back, follow Jun inside the hold, credited, no challenge; (d) `reported`, Yusuf walks over and challenges within about 10 s; (e) do nothing, no-vest toast at 30 s, flip at 75 s, and Yusuf does not challenge in the lobby during the defend step-away; (f) reload while held; (g) the hi-vis is still shown at the kiosk after hand-back; (h) Camila walks in from out of view through the gate and out again at the step-away, five tries, and Jun's loop has stopped.
-- ca15: (a) drop near the kettle, Joanne finds and uses it within 60 s, note lands, tasks tick, kiosk resumes at the flip (five tries); (b) drop in a far corner, timeout bark at 90 s, stick cleared, resume; (c) training-room drop, bark, pick up again; (d) Carry on without dropping; (e) reload after the drop; (f) **hard pass condition:** in a run that used the world beat, Look up appears after defend and Fatima's found-stick set piece runs unchanged, with no Joanne line over it.
+- ca12: (a) wear, `got_it`, Delphine holds the door from her side tile, walk in, pass bark plays, `slip_past_guard` ticks, flip opens after the grace; (b) no vest, `got_it`, Delphine turned back, no-vest challenge, flip opens on the conversation closing; (c) wear, `walked_away`, walk up alone, hi-vis bark, step back, follow Jun inside the hold, credited, Jo's voiced line after Yusuf's, no challenge; (d) `reported`, Yusuf walks over and challenges within about 10 s; (e) do nothing, no-vest toast at 30 s, flip at 75 s, and Yusuf does not challenge in the lobby during the defend step-away; (f) reload while held; (g) the hi-vis stays on through the hold, and at the kiosk after `ca12_world_done` both the costume and `ca12_wearing_hivis` are off, with the hi-vis still in the inventory; (h) Camila walks in from out of view through the gate and out again at the step-away, five tries, and Jun's loop has stopped; repeat once with the learner standing beside the gate in the lobby: she is never turned back; (i) at the brief or OSINT stage, close the kiosk (first confirm the runner can be closed at those stages; if it cannot, this check runs after the flip only), walk to the lobby without the hi-vis: nothing reacts (no bark, no challenge, no toast), click the inert gate, walk back in, reopen the kiosk at the same stage; (j) after the flip, with the hi-vis off, walk out through the inert gate and back in; (k) the flip's defender line matches each ending in (a)-(e): desk pass, challenged, tailgated, challenged, and the neutral fallback.
+- ca15 (live proofs and takes may force Joanne's next trip with `triggerNeed`, 2.3; at least one of the five tries in (a) runs on her natural decay): (a) drop near the kettle, Joanne finds and uses it within 60 s, note lands, tasks tick, the runner reopens at the flip by itself about 3 s later (five tries); (b) drop in a far corner, timeout bark at 90 s, "Nilesh has his stick back." shows, the floor stick is gone, the runner reopens at the flip by itself; (b2) the backstop path (a pickup whose use never lands) is proved in `test_episode_world_beat`, whose finder has a second variant with no target PC: the beat ends 30 s after the pickup and the runner reopens by itself; (c) training-room drop, bark, pick up again; (d) Look up, take the stick, Carry on from the waiting panel while holding it: the stick leaves the inventory with "Nilesh has his stick back.", so nothing can be dropped later; then, during the post-defend step-away, walk into `open_plan` and confirm no drop mapping fires, no ca15 timer starts and Joanne says nothing; repeat with the stick dropped in a far corner before Carry on (the floor stick is removed); (e) reload after the drop; (f) **hard pass condition:** in a run that used the world beat, Look up appears after defend and Fatima's found-stick set piece runs unchanged, with no Joanne line over it.
 
 ---
 
 ## 4. Order of implementation
 
-Engine first, each step its own commit with explicit paths, on a branch (hashes go to AC0 for a train).
+VID1 first, then engine, one commit per engine piece with explicit paths, on a branch (hashes go to AC0 for a train). Each engine commit carries its own unit tests and validator rules, since a feature is not done without them; the full suites and the live proofs run once the scenarios are voiced (steps 13-14).
 
-0. **Agree the shared-file order with VID1** (section 0) before any engine edit. VID1's walk-in and walk-out lands on main from that session; step 5 waits for it.
-1. **E1** side-door gates: `door-gates.js`, `doors.js`, validator, graph generator, unit tests, `test_side_door_gate`, live proof of the test scenario, the lab records-door regression.
-2. **E2** world hold: `episode-model.js`, `episode-runner-minigame.js`, `world-play.js`, validator rule, unit tests.
-3. **E3** step-away beats: same two runner files, validator rules, the server allow list if needed, unit tests, `test_episode_world_beat`, live proof of the test scenario.
-4. **ca12 shell:** `disguises`, `ca12_hivis`, `ca12_auth_letter`, kit bag hook, reader, gate block, Yusuf and Jun, globals, timers, tasks, appended mappings, Yusuf's ink, strings, `people`; `ca12_routes`; validator and lint; live proofs (a)-(g).
-5. **ca12 kit (after VID1 lands):** Camila's set piece in `merrin_sallow.json` on VID1's walk-in and walk-out; no-change regen first, then the change, copy in; live proof (h).
-6. **ca15 kit reconciliation:** the no-change regen. Commit kit values only if the regen differs (2.6).
-7. **ca15 shell:** the room variant or the fallback type, connections, objects, Joanne and Niamh, items, timers, appended mappings, Nilesh's ink, `stepAways` and its strings; the lost-property tray move if needed; `ca15_routes`; validator and lint; live proofs (a)-(f).
-8. **Dressing and lighting** of `open_plan`, including the notice-circle measurement (2.2), and the ca12 lobby check.
-9. **POV background** for `open_plan` (section 7), once its dressing and lighting are final.
-10. **Dialogue pass** (`npc-dialog-review`, new lines only), then voicing.
-11. **CA fun/USP rubric scoring** of both episodes (one persona per agent), then the trailer re-shoots.
-12. **Lab sheets and walkthroughs** for ca12 and ca15 last.
+0. **VID1 on main.** VID1's walk-in and walk-out lands on main from that session, and this branch merges main, before any engine edit here. Agree the `npc-manager.js` order with that session before E4 (section 0). Engine work starts only after this step.
+1. **E1** side-door gates with the live window (about 165-245 lines: 115-165 `door-gates.js`, 30-50 `doors.js`, 20-30 validator and graph generator): unit tests, `test_side_door_gate`.
+2. **E2** world hold (about 90-120: 80-110 in `episode-model.js`, `episode-runner-minigame.js`, `world-play.js`, about 10 validator): unit tests.
+3. **E4** mapping actions and `remove_world_item` (about 45-70: 35-55 in `npc-manager.js` and `apply-actions.js`, 10-15 validator): unit tests. Before the ca12 shell, which needs it for `take_off`.
+4. **E5** flip line by global (about 15-30: 10-20 in `flip-view.js` and its caller, 5-10 validator): the `flip-view` unit test.
+5. **E3** step-away beats as a list, with Carry on closing the beat and `resumeOnDone` (about 225-295: 200-260 in the two runner files, 25-35 validator; plus the server allow list if needed): unit tests, `test_episode_world_beat`.
+   Engine total about 540-760 lines including validator and graph generator.
+6. **ca12 shell and kit:** `disguises`, `ca12_hivis`, `ca12_auth_letter`, kit bag hook, reader, gate block with `activeIf`, Yusuf, Jun and Jo, globals, timers, tasks, appended mappings, Yusuf's ink, strings (`flipDefenderLineByGlobal` and the neutral fallback), `people`; Camila's set piece in `merrin_sallow.json` on `walkIn`/`walkOut` (no-change regen first, then the change, copy in; defend twin and `test_ca12_fallback` unchanged); validator and lint as each part is written.
+7. **ca15 kit reconciliation:** the no-change regen. Commit kit values only if the regen differs (2.6).
+8. **ca15 shell:** the room variant or the fallback type, connections, objects, Joanne and Niamh, items, timers, appended mappings (Nilesh 1-7, Joanne 1-2), Nilesh's ink, `stepAways` and its strings; the lost-property tray move if needed; validator and lint as each part is written.
+9. **Dressing and lighting** of `open_plan`, including the notice-circle measurement (2.2), and the ca12 lobby check.
+10. **POV background** for `open_plan` (section 7), once its dressing and lighting are final.
+11. **Dialogue review** (`npc-dialog-review`, new lines only).
+12. **TTS:** voice the new lines, Jo's voice entry first.
+13. **Tests:** the full JS and Ruby suites, validator and lint across all CA shells, the drift tool, dungeon graphs, ink checks, `ca12_routes` and `ca15_routes` with `maxRun 9` (section 3).
+14. **Live proof:** the test scenarios, the lab regression, ca12 (a)-(k), ca15 (a)-(f) (section 3).
+15. **CA fun/USP rubric scoring** of both episodes (one persona per agent), then the trailer re-shoots.
+16. **Lab sheets and walkthroughs** for ca12 and ca15 last.
 
 No scenario or test scenario is renamed or deleted. If a later revision does, grep Hacktivity's `test/` first (read-only), since its tests load BE test scenarios from main.
 
@@ -465,26 +487,35 @@ No scenario or test scenario is renamed or deleted. If a later revision does, gr
 
 - **E1 could disturb north-south gates** (the lab's records door and others). Mitigation: every new branch is behind `isSideDoor`, the existing gate tests run unchanged, and the lab's records-door tailgate is re-run live.
 - **The side-door corridor carve under a held door.** If `markSideDoorCorridor` leaves the tile walkable after close, NPCs path through a shut door. Covered by the open, hold, close unit test and the test scenario.
-- **E3 touches every CA shell's step-away.** Mitigation: `stepAway: true` normalises to the same single beat, and the existing step-away suite runs unchanged.
-- **VID1 timing.** Camila's step waits for VID1's fix; if it slips, step 5 waits and everything else ships. Shared files are ordered with VID1 before work starts, so neither session rebases over the other's half-done edits.
+- **E3 touches every CA shell's step-away.** Mitigation: `stepAway: true` normalises to the same single beat, `stepAwayOn` and `stepAwayHeld` read the normalised list, and the existing step-away and `stepAwayHeld` tests run unchanged.
+- **`resumeOnDone` reopens the runner while the learner is busy.** It waits for any open minigame to close and for a 3 s grace, and stops if the learner opens the runner first; the unit tests pin each case.
+- **VID1 timing.** All engine work here starts after VID1 is on main (section 4, step 0); if it slips, the whole plan waits, since E1 and E4 are written on top of its `doors.js`, validator and mapping changes. Agreeing the `npc-manager.js` order with that session first keeps either from rebasing over the other's half-done edits.
+- **The inert gate opens the studio to anyone outside the beat.** Outside its window the ca12 gate opens on a click from either side, so anyone can walk between the lobby and the studio. Nothing secret sits in the studio, and the room's server-side lock is not relied on for anything in this episode. The lab's gate has no `activeIf`, so it behaves as today; any gate without `activeIf` is always live.
+- **E4 adds a mapping field.** No existing mapping carries `actions`, so nothing changes until a shell uses it; the validator checks each action against the `triggerOnInteract` action schema, and the actions run once per firing after the mapping's own guards.
 - **Jun's timing.** A learner who reaches the door between passes waits up to about 15 s (two openings per 30 s loop). Yusuf's bark tells a courier something is off without ending the beat, and Yusuf's walk gives them something to watch.
 - **Yusuf's sight check during the call.** Every challenge mapping is gated on `ca12_world_on`, set only once the call outcome lands, and on `!ca12_world_done`, which is always set when the hold ends.
 - **The no-vest path feels like a dead end.** It ends quickly (turn-back or sight challenge, then hand-back), the toast at 30 s points to the guard, and its lines name the reason; rubric scoring checks F2 and O4 on it.
-- **Reload mid step-away in ca12:** if the lobby has not loaded, the gate is not registered. How VID1's walk-in handles that is a check (1.6); degraded but harmless; noted for playtesters.
+- **Reload mid step-away in ca12.** Camila's presence comes back from VID1's `npcVisibility` boolean, so no state is added; if her route crosses the studio door before the lobby has loaded and registered the gate, VID1 fades her at the doorway. Degraded but harmless; noted for playtesters (1.6).
 - **Tailgate credit is client-written.** A tampered client could tick `slip_past_guard`. It is an optional task with nothing secret behind it, in line with the cheat-resistance rule.
-- **Joanne's notice rule.** She notices only from her stop points, so a drop between stops is missed. The layout puts most of the floor inside a circle, Nilesh's lines say "somewhere people stop", and the timeout covers the rest. Tune the radius 2-4 tiles live.
+- **Joanne's notice rule.** She notices only from the stop points her needs take her to, so a drop between stops is missed. The layout puts most of the floor inside a circle, Nilesh's lines say "somewhere people stop", and the timeout covers the rest. Tune the radius 2-4 tiles live.
+- **Joanne's timing.** A trip that comes due late leaves the learner waiting by the stick. Her caffeine decay is tuned for a trip about every 45-60 s, inside the 90 s timeout; proofs and takes that cannot wait force the trip with `triggerNeed`, and at least one live run relies on the natural decay so the tuning is tested.
+- **A stick Joanne holds when the beat closes.** If the backstop ends the beat after her pickup, the take-back finds nothing to remove and her interest stays (the `needs` field cannot clear it). Her use mapping is gated off, so a later use at her PC is silent and gives nothing.
 - **The open-plan room variant.** If the generator cannot make a matching variant cheaply, the lab type is used and looks less like Tarrowby. Dressing absorbs most of it.
-- **Kit regen and the hand-written connections.** If the regen drops them, the shell loses the door on the next kit run. Checked at step 7 by a post-change regen.
+- **Kit regen and the hand-written connections.** If the regen drops them, the shell loses the door on the next kit run. Checked at step 8 by a post-change regen.
 - **Mapping index drift.** All new mappings are appended last; Camila's edits change mappings in place; the drift tool runs before each hash.
 
 ---
 
 ## 6. Decisions
 
-- **Notice from stop points, not mid-walk.** The engine scores interests at selection, and "leave bait where people pause" is the truer baiting lesson. Mid-walk noticing is left out of this work.
+- **Notice from stop points, not mid-walk (owner's decision).** No engine change for mid-walk noticing. Joanne is driven by the needs system: she gets up from her PC for coffee or water as an ordinary need, and notices the stick from where that routine stops her. "Leave bait where people pause" is also the truer baiting lesson. Proofs and takes force a trip with `triggerNeed`; the shell never does.
 - **Joanne's second stop is a water cooler, not a print errand.** Print errands need a print-job source that the open-plan does not have; a second need is data only.
-- **The hand-back grace is a scenario timer, not an engine option.** A 2.5 s timer on `ca12_entered` does the job in data and keeps E2 smaller.
-- **The attacker's read at the hero tailgate is a shown toast, not a voiced line.** Jo has no voice in the awareness cast, and a voiced line there would sit on top of Yusuf's pass bark; the trailer's narrator carries the attacker voice in footage. If Jo turns out to be voiced in ca12, the toast text is voiced as written.
+- **The hand-back grace is a scenario timer, not an engine option.** A 5 s timer on `ca12_entered` (`ca12_t_grace`) does the job in data, gives Yusuf's pass bark and Jo's line time to play, and keeps E2 smaller.
+- **Jo is voiced, off screen (owner confirmed).** Her tailgate line is a TTS bark on the `ca12_jo` record, timed after Yusuf's pass bark. Her two door hints stay shown toasts.
+- **The gate has a live window, not a pass global.** One engine check reads globals the beat already keeps; a pass global would still leave the learner waiting outside for staff, since an outside click never opens a live gate.
+- **The hi-vis comes off at hand-back.** On `ca12_world_done`, E4 runs `take_off`, so the defender is never seen in a courier's kit; the hi-vis stays in the inventory.
+- **Jun's loop runs only on `walked_away`.** In `got_it` the door is Delphine's alone, so her opening is the one the learner watches; in `reported` Yusuf comes to the learner.
+- **Carry on closes a beat, and ca15 returns to the kiosk by itself.** One done global ends every drop mapping, takes the stick back and triggers the automatic reopen, so the drop never leaks into the defend half.
 - **No change to the ca12 defend twin's text.** Its courier call already teaches the hi-vis pretext, signing in at the desk and the escort rule.
 - **The authorisation letter is an item in Jo's bag, and the brief names the scope.** A letter the learner can read makes the authorised test concrete at no cost; the brief keeps "step back if challenged" as the rule of engagement, so a withdrawal reads as tradecraft.
 
@@ -492,7 +523,7 @@ No scenario or test scenario is renamed or deleted. If a later revision does, gr
 
 ## 7. Art requests
 
-- **ca15 open-plan POV background.** A 400x400 person-chat background for `open_plan`, made with the `room-pov-background` skill: one agy concept (free), then one PixelLab 400x400 conversion, wired to the room's `chatBackground`. Made only after the room's dressing and lighting are final (step 9).
+- **ca15 open-plan POV background.** A 400x400 person-chat background for `open_plan`, made with the `room-pov-background` skill: one agy concept (free), then one PixelLab 400x400 conversion, wired to the room's `chatBackground`. Made only after the room's dressing and lighting are final (section 4, step 10).
 - Nothing else. All four new NPCs use existing awareness-cast atlases (`yusuf_demir`, `jun_watanabe`, `joanne_pell`, `niamh_doherty`); all props use existing sprites; the open-plan map is built from existing tiles.
 
 ## 8. Footage notes
@@ -502,19 +533,19 @@ Use the `camlib.mjs` camera-follow helper for the follow shots; record after dre
 ca12:
 - Studio: the learner opening Jo's kit bag, the letter and the hi-vis, putting it on (costume change on screen), Jun at his desk behind.
 - Lobby wide as the call card closes: Yusuf walking his loop between the reader and the window.
-- `got_it`: Delphine leaving the desk and stopping beside the door, the gate opening, the learner walking past Yusuf ("Morning. Mind the step."), held for the 2.5 s grace.
-- Tailgate, the hero shot: a low wide on the side gate as Jun taps the reader and goes through, and the learner slips in behind within the hold, Yusuf's "Delivery? Studio's straight through." over it. Follow-cam on the learner from the desk to the studio. An earlier cut can show the courier walking up alone, getting Yusuf's "Deliveries go via the desk." and stepping back to wait.
+- `got_it`: Delphine leaving the desk and stopping beside the door, the gate opening, the learner walking past Yusuf ("Morning. Mind the step."), held for the 5 s grace.
+- Tailgate, the hero shot: a low wide on the side gate as Jun taps the reader and goes through, and the learner slips in behind within the hold, Yusuf's "Delivery? Studio's straight through." over it, then Jo in the learner's ear: "The desk is one layer and the door is another. A uniform and a held door beat both." Follow-cam on the learner from the desk to the studio. An earlier cut can show the courier walking up alone, getting Yusuf's "Deliveries go via the desk." and stepping back to wait.
 - `reported`: Yusuf walking over from the door, "Sorry, can I help you there?".
-- Step-away: Camila walking in from out of view across the lobby, through the gate as it opens, Lorna walking her to the desks.
+- Step-away: Camila walking in from out of view across the lobby (`walkIn`), through the gate as it opens, to her seat.
 
 ca15:
 - Nilesh walking the learner to the open-plan doorway (follow-cam on Nilesh).
 - Open-plan establishing wide: Joanne and Niamh at the kettle, chatter.
 - The drop: the stick on the floor near the kettle, in a wide that shows the stop points.
+- Takes force Joanne's next trip with `triggerNeed` (`camlib.mjs`) so the find lands on cue; the trip itself is her ordinary needs routine.
 - The find, the hero shot: Joanne finishing at the kettle, turning and walking to the stick, the pickup ("Someone's dropped a memory stick. Whose is this?"), the walk to her desk, plugging it in ("I'll just plug it in and see whose it is."), the session note landing.
 - The timeout version for a "nobody bit" cut: a stick in a far corner, staff passing between stops, Nilesh's bark.
 
 ## 9. Open questions for the owner
 
-1. **Mid-walk noticing.** Staff notice a dropped item only from where they stop (desk, kettle, cooler), not as they walk past it. The plan builds the drop around that. Do you want NPCs to notice items as they pass, as a separate engine change after this work, or is the stop-point rule the one to keep?
-2. **A voice for Jo.** The red team's commentary in ca12 is shown text because Jo has no voice. Should Jo get a voice entry so the hero-shot line ("A uniform and a held door beat both.") and the door hints can be spoken in game?
+None open. Mid-walk noticing (left out) and Jo's voice (yes) are settled in section 6.
