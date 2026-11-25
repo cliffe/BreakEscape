@@ -225,3 +225,13 @@ test('long ids are cut in messages', { skip }, () => {
     const out = errors(issues(sc)).join('\n');
     assert.ok(!out.includes('z'.repeat(61)));
 });
+
+test('an item owner naming an account-only account is an error', { skip }, () => {
+    const sc = clean();
+    sc.rooms.office.objects.push({ id: 'svc_phone', type: 'phone', name: 'Spare phone', takeable: true, owner: 'svc' });
+    const out = issues(sc);
+    assertHas(errors(out), "item 'svc_phone': its owner 'svc' is an account-only NPC");
+    const ok = clean();
+    ok.rooms.office.objects.push({ id: 'lee_phone', type: 'phone', name: 'Spare phone', takeable: true, owner: 'lee' });
+    assert.ok(!has(issues(ok), 'owns no items'));
+});

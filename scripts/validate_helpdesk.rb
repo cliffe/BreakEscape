@@ -30,10 +30,13 @@ def check_helpdesk(json_data, repo_root = nil, scenario_dir = nil)
   warn = ->(msg) { issues << "⚠️ WARNING: helpdesk: #{msg}" }
   info = ->(msg) { issues << "ℹ️ INFO: helpdesk: #{msg}" }
   hm = BreakEscape::HelpdeskModel
-  accounts = mfa_room_npcs(json_data).map(&:first).select { |n| BreakEscape::AccessIdentities.account?(n) }
+  every_account = mfa_room_npcs(json_data).map(&:first).select { |n| BreakEscape::AccessIdentities.account?(n) }
+  # A people desk never serves an account-only or a local account, so the rest of the checks leave them out
+  accounts = every_account.select { |n| hm.desk_serves_account?(n) }
   desks = json_data['helpdesks']
   desks = {} unless desks.is_a?(Hash)
 
+  helpdesk_kind_errors(json_data, desks, every_account - accounts, err)
   helpdesk_desk_errors(json_data, desks, accounts, err)
   helpdesk_recovery_errors(json_data, desks, accounts, err)
   helpdesk_password_errors(json_data, desks, accounts, repo_root, scenario_dir, err)
@@ -42,6 +45,26 @@ def check_helpdesk(json_data, repo_root = nil, scenario_dir = nil)
   helpdesk_desk_warnings(json_data, desks, accounts, scenario_dir, warn)
   helpdesk_info(json_data, desks, accounts, hm, info)
   issues
+end
+
+# A desk rule that targets an account a people desk never resets: creds.recovery or
+# creds.resetPassword on an account-only or local account, or a desk whose own NPC is account-only.
+def helpdesk_kind_errors(json_data, desks, unserved, err)
+  unserved.each do |npc|
+    creds = npc['creds'].is_a?(Hash) ? npc['creds'] : {}
+    %w[recovery resetPassword].each do |key|
+      next unless creds.key?(key)
+
+      kind = BreakEscape::AccessIdentities.account_only?(npc) ? 'an account-only' : 'a local'
+      err.call("#{mfa_name(npc)}: creds.#{key} is on #{kind} account; a people desk never resets it (it answers a request naming it as an unknown name).")
+    end
+  end
+  desks.each do |id, desk|
+    npc = desk.is_a?(Hash) ? BreakEscape::AccessIdentities.room_npcs(json_data).map { |e| e[:npc] }.find { |n| n['id'] == desk['npc'] } : nil
+    next unless npc && BreakEscape::AccessIdentities.account_only?(npc)
+
+    err.call("helpdesks.#{id}: npc '#{npc['id']}' is an account-only NPC; a desk is a person who answers the phone.")
+  end
 end
 
 def helpdesk_desk_errors(json_data, desks, accounts, err)

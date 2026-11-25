@@ -499,6 +499,14 @@ def privilege_account_only(json_data, npcs, err, warn = nil)
   return if only.empty?
 
   privilege_account_only_names(json_data, only, npcs, err, warn || ->(_msg) { })
+  # An account-only account owns no items (it has no itemsHeld); an item owner is a person
+  BreakEscape::MfaModel.each_authored_item(json_data).each do |entry|
+    item = entry[:item]
+    owner = item['owner']
+    next unless owner.is_a?(String) && only.key?(owner)
+
+    err.call("item '#{item['id'].to_s[0, 60]}': its owner '#{owner[0, 60]}' is an account-only NPC; an account with no person behind it owns no items")
+  end
   ai.sign_in_pcs(json_data).each do |entry|
     pc = entry[:object]
     owner = ai.owner_id(pc)

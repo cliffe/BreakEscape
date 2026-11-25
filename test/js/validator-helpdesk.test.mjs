@@ -275,3 +275,40 @@ test('the rendered scenario passes the schema and the S8b fields are no longer r
     assert.ok(!has(mfaIssues(sc), 'not built yet'));
     assert.deepEqual(errors(issues(sc)), []);
 });
+
+// A people desk never resets an account-only or a local account.
+test('errors: recovery or resetPassword on an account-only account', { skip }, () => {
+    for (const key of ['recovery', 'resetPassword']) {
+        const sc = base();
+        room(sc).npcs.push({ id: 'svc', displayName: 'Service account', accountOnly: true, staff: true,
+                             creds: { username: 'svc.batch', password: 'Svc-Pass-3', [key]: key === 'recovery' ? { staff_no: '1' } : 'Svc-Reset-4' } });
+        assertHas(errors(issues(sc)), `NPC 'svc': creds.${key} is on an account-only account; a people desk never resets it`);
+    }
+});
+
+test('errors: recovery or resetPassword on a local account', { skip }, () => {
+    for (const key of ['recovery', 'resetPassword']) {
+        const sc = base();
+        omar(sc).creds.accountKind = 'local';
+        omar(sc).creds.localTo = ['desk_pc'];
+        const creds = omar(sc).creds;
+        if (key === 'recovery') delete creds.resetPassword; else delete creds.recovery;
+        assertHas(errors(issues(sc)), `NPC 'omar': creds.${key} is on a local account; a people desk never resets it`);
+    }
+});
+
+test('an account-only or local account is left out of the desk checks and the information line', { skip }, () => {
+    const sc = base();
+    room(sc).npcs.push({ id: 'svc', displayName: 'Service account', accountOnly: true, staff: true,
+                         creds: { username: 'svc.batch', password: 'Svc-Pass-3' } });
+    const out = issues(sc);
+    assert.deepEqual(errors(out), []);
+    assertHas(infos(out), 'covers omar (password)');
+    assert.ok(!has(infos(out), 'svc'));
+});
+
+test('errors: a desk run by an account-only NPC', { skip }, () => {
+    const sc = base();
+    room(sc).npcs[1] = { id: 'ria', displayName: 'Ria', accountOnly: true, staff: true, creds: { username: 'ria.svc', password: 'Ria-Pass-2' } };
+    assertHas(errors(issues(sc)), "npc 'ria' is an account-only NPC; a desk is a person who answers the phone");
+});
