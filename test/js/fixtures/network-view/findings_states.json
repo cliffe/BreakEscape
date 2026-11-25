@@ -1,0 +1,165 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "print01",
+          "kind": "device",
+          "name": "Second floor printer",
+          "sprite": "pnw_portable_printer1",
+          "scanned": true,
+          "services": [
+            {
+              "name": "web",
+              "label": "web",
+              "port": 80,
+              "product": "Brackley PrintPanel",
+              "version": "2.0"
+            }
+          ],
+          "findings": [
+            {
+              "id": "print01.web.factory_login",
+              "alias": "f1",
+              "hostId": "print01",
+              "service": "web",
+              "class": "default_creds",
+              "severity": "high",
+              "summary": "Summary for f1.",
+              "status": "unconfirmed"
+            },
+            {
+              "id": "print01.web.old_banner",
+              "alias": "f2",
+              "hostId": "print01",
+              "service": "web",
+              "class": "unpatched",
+              "severity": "medium",
+              "summary": "Summary for f2.",
+              "status": "confirmed",
+              "needs": [
+                {
+                  "kind": "credential",
+                  "label": "Admin login",
+                  "met": true
+                }
+              ]
+            },
+            {
+              "id": "print01.web.cosmetic_build",
+              "alias": "f3",
+              "hostId": "print01",
+              "service": "web",
+              "class": "unpatched",
+              "severity": "low",
+              "summary": "Summary for f3.",
+              "status": "false",
+              "falseBecause": "The build number is cosmetic."
+            },
+            {
+              "id": "print01.web.patched_item",
+              "alias": "f4",
+              "hostId": "print01",
+              "service": "web",
+              "class": "unpatched",
+              "severity": "medium",
+              "summary": "Summary for f4.",
+              "status": "confirmed",
+              "fixed": true,
+              "needs": []
+            }
+          ]
+        }
+      ],
+      "networks": [
+        {
+          "id": "lab_net",
+          "name": "Lab network",
+          "route": "up",
+          "via": null,
+          "hosts": [
+            {
+              "id": "print01",
+              "kind": "device",
+              "name": "Second floor printer",
+              "sprite": "pnw_portable_printer1",
+              "scanned": true,
+              "services": [
+                {
+                  "name": "web",
+                  "label": "web",
+                  "port": 80,
+                  "product": "Brackley PrintPanel",
+                  "version": "2.0"
+                }
+              ],
+              "findings": [
+                {
+                  "id": "print01.web.factory_login",
+                  "alias": "f1",
+                  "hostId": "print01",
+                  "service": "web",
+                  "class": "default_creds",
+                  "severity": "high",
+                  "summary": "Summary for f1.",
+                  "status": "unconfirmed"
+                },
+                {
+                  "id": "print01.web.old_banner",
+                  "alias": "f2",
+                  "hostId": "print01",
+                  "service": "web",
+                  "class": "unpatched",
+                  "severity": "medium",
+                  "summary": "Summary for f2.",
+                  "status": "confirmed",
+                  "needs": [
+                    {
+                      "kind": "credential",
+                      "label": "Admin login",
+                      "met": true
+                    }
+                  ]
+                },
+                {
+                  "id": "print01.web.cosmetic_build",
+                  "alias": "f3",
+                  "hostId": "print01",
+                  "service": "web",
+                  "class": "unpatched",
+                  "severity": "low",
+                  "summary": "Summary for f3.",
+                  "status": "false",
+                  "falseBecause": "The build number is cosmetic."
+                },
+                {
+                  "id": "print01.web.patched_item",
+                  "alias": "f4",
+                  "hostId": "print01",
+                  "service": "web",
+                  "class": "unpatched",
+                  "severity": "medium",
+                  "summary": "Summary for f4.",
+                  "status": "confirmed",
+                  "fixed": true,
+                  "needs": []
+                }
+              ]
+            }
+          ],
+          "swept": true,
+          "ops": true
+        }
+      ]
+    }
+  ]
+}

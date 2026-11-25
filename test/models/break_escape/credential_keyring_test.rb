@@ -195,11 +195,14 @@ module BreakEscape
 
     # --- forgery and no leak ------------------------------------------------------------------
 
-    test 'a hash entry is never listed (not built in phase 1); a token is, with no value (K5)' do
-      @game.scenario_data['credentials']['a_hash'] = { 'kind' => 'hash', 'account' => 'lena', 'connectsTo' => 'lena_pc', 'proof' => { 'foothold' => 'j' } }
+    test 'a hash entry is a built kind and carries no value or route; a token is listed with no value (K5)' do
+      @game.scenario_data['credentials']['a_hash'] = { 'kind' => 'hash', 'account' => 'lena', 'proof' => { 'foothold' => 'j' } }
       @game.scenario_data['credentials']['a_token'] = { 'kind' => 'token', 'account' => 'lena', 'connectsTo' => 'lena_pc', 'proof' => { 'foothold' => 'j' } }
       @game.player_state['footholds'] = { 'j' => {} }
-      refute entry('a_hash'), 'a hash is not a built kind'
+      hash_row = entry('a_hash')
+      assert hash_row, 'S7 builds hash'
+      assert_equal 'hash', hash_row['kind']
+      %w[password routes connectsTo].each { |k| refute hash_row.key?(k), k }
       token = entry('a_token')
       assert token, 'K5 builds token'
       assert_equal true, token['expired'], 'a token with no expiresMin fails closed'
@@ -230,6 +233,19 @@ module BreakEscape
       e = @game.keyring_for_client(pc_id: 'lena_pc')[:entries].find { |x| x['id'] == 'lena_rdp' }
       assert_equal true, e['forThisPc']
       assert_equal true, e['accepted'], 'the default policy accepts a saved_connection'
+    end
+
+    test 'S7 R1-S8: a hash row listed with a pc_id is not scoped to the PC and is never accepted' do
+      @game.scenario_data['credentials']['lena_hash'] = { 'kind' => 'hash', 'account' => 'lena', 'proof' => { 'held' => 'lena_hash_file' },
+                                                          'crack' => { 'password' => 'strong' } }
+      @game.scenario_data['rooms']['office']['objects'] << { 'id' => 'lena_hash_file', 'type' => 'text_file', 'name' => 'lena hash',
+                                                             'takeable' => true, 'credential' => 'lena_hash' }
+      inv([{ 'id' => 'lena_hash_file', 'type' => 'text_file', 'name' => 'lena hash', 'credential' => 'lena_hash' }])
+      e = @game.keyring_for_client(pc_id: 'lena_pc')[:entries].find { |x| x['id'] == 'lena_hash' }
+      assert_equal 'hash', e['kind'], 'the hash row is listed'
+      assert_equal false, e['forThisPc']
+      assert_equal false, e['accepted'], 'a hash never signs in'
+      assert_nil e['connectsTo']
     end
 
     test 'a pc_id naming no sign-in PC the player can open is ignored (R1 m3)' do

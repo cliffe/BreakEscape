@@ -1,0 +1,13 @@
+[head|Starting Nmap against web]
+[note|Running vuln scripts on 80/tcp (web)]
+[head|Nmap scan report for ][head|web]
+[ok|Host is up.]
+[head@8|PORT ][head@7|STATE ][head|SERVICE]
+[@8|80/tcp ][@7|open ]web
+[note|| ][head|web-default-creds:]
+[note||   ]Default login High on web
+[note||     ][note|Finding: ]f1
+[note||     ][note|State: ]Confirmed
+[note||     ][note|Risk: ]Default login High
+[note||_    ]Summary for f1.
+Nmap done: 1 IP address (1 host up) scanned

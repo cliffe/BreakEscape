@@ -1,0 +1,860 @@
+{
+  "scenario_brief": "Ops demo: on the network. A working day at Merrin & Sallow. Fenlow Managed IT has been asked to show what an outsider could see from one spare network port. Ama Owusu hosts. While the office gets on with its day, plug a drop box in when nobody is at the hot desk, list what answers on the network, look at what each machine runs, test which reported weaknesses are real, and use the technique cards you are handed. Graham in IT shows you the network log at the end. Authorised practice in a fictional office; nothing to break and no combat.",
+  "endGoal": "Demo only: see what the network shows, then read your own trail in the network log.",
+  "startRoom": "office",
+  "startPosition": { "x": 5, "y": 6 },
+  "npcNeedsSeed": "demo_ops_recon",
+  "npcWindupMs": 700,
+  "showPressingNeeds": true,
+  "officePresets": true,
+  "roomTone": true,
+  "disableAttacks": true,
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "chatter": {
+    "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"],
+    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Quiet one today, isn't it?", "Have you tried the new sandwich place?"],
+    "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
+    "grumble_gone": ["Missed it."],
+    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."],
+    "work_fail_printer": ["The printer's off again.", "Nothing's coming out of the printer.", "Who switched the printer off?"],
+    "work_fail": ["Why is nothing working today?"]
+  },
+
+  "actionIcons": {
+    "upkeep": "icon:npc-upkeep"
+  },
+
+  "defaultPolicy": "desk",
+
+  "policies": {
+    "desk": { "maxAttempts": null, "remote": "allowed" },
+    "infra": { "maxAttempts": null, "remote": "allowed" }
+  },
+
+  "networks": {
+    "office_lan": {
+      "name": "Office network",
+      "discovery": "scan",
+      "cli": {
+        "range": "10.30.0.0/24",
+        "hosts": {
+          "printer_host": { "address": "10.30.0.20" },
+          "lobby_camera": { "address": "10.30.0.31" },
+          "file_server": { "address": "10.30.0.10" },
+          "agnieszka_pc": { "address": "10.30.0.52" },
+          "chidi_pc": { "address": "10.30.0.51" },
+          "jun_pc": { "address": "10.30.0.53" },
+          "graham_pc": { "address": "10.30.0.54" }
+        }
+      }
+    }
+  },
+
+  "hosts": {
+    "printer_host": {
+      "name": "Office printer",
+      "network": "office_lan",
+      "sprite": "pnw_portable_printer1",
+      "offWhen": "printer_off",
+      "services": [
+        { "name": "print", "port": 9100, "product": "Inkvale JetServe", "version": "1.4" },
+        {
+          "name": "admin_page", "label": "Admin page", "port": 80, "product": "Inkvale WebPanel", "version": "2.0",
+          "cli": { "protocol": "tcp", "service": "http", "banner": "Inkvale WebPanel 2.0 admin page ready" },
+          "weaknesses": [
+            {
+              "id": "factory_login", "class": "default_creds", "severity": "high",
+              "summary": "The admin page still accepts the account it shipped with.",
+              "grants": { "credential": "print_admin" }
+            }
+          ],
+          "decoys": [
+            {
+              "id": "old_build", "class": "unpatched", "severity": "low",
+              "summary": "The page reports a build number with known problems.",
+              "falseBecause": "The build listed is older than the one this printer runs. The page only shows a stale label."
+            }
+          ]
+        }
+      ]
+    },
+    "lobby_camera": {
+      "name": "Reception camera",
+      "network": "office_lan",
+      "sprite": "cctv_camera1",
+      "services": [
+        {
+          "name": "stream", "port": 554, "product": "Tarnwick ViewLine", "version": "1.0",
+          "cli": { "protocol": "tcp", "service": "viewline", "banner": "Tarnwick ViewLine 1.0 stream ready" },
+          "decoys": [
+            {
+              "id": "stream_label", "class": "misconfig", "severity": "low",
+              "summary": "The stream page mentions an open setting.",
+              "falseBecause": "The wording is only a banner. The setting it names is switched off."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "techniques": {
+    "factory_accounts": {
+      "name": "Factory accounts",
+      "summary": "Devices often ship with a published account that nobody changes.",
+      "worksOn": { "class": "default_creds" }
+    },
+    "update_gap": {
+      "name": "Known update gap",
+      "summary": "For a service that has fallen behind its published fixes.",
+      "worksOn": { "class": "unpatched", "product": "Tarnwick FileHold", "versions": ["4.2"] }
+    },
+    "open_settings": {
+      "name": "Left-open settings",
+      "summary": "For a setting somebody left open by mistake.",
+      "worksOn": { "class": "misconfig" }
+    }
+  },
+
+  "credentials": {
+    "print_admin": {
+      "kind": "saved_connection",
+      "label": "Printer's saved link",
+      "account": "agnieszka_duda",
+      "connectsTo": "agnieszka_pc",
+      "proof": { "technique_card": "printer_host.admin_page.factory_login" }
+    }
+  },
+
+  "resources": {
+    "printer_res": {
+      "name": "Office printer",
+      "kind": "printer",
+      "object": "office_printer",
+      "offWhen": "printer_off"
+    },
+    "shared_drive": {
+      "kind": "file_share",
+      "name": "Shared-Drive",
+      "host": "FILESRV01",
+      "network": "office_lan",
+      "access": { "people": ["graham_whitfield"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "drive_readme",
+          "name": "readme.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Shared drive. Quarterly folders are archived on the first of the month.",
+          "observations": "A readme in the office's shared drive."
+        }
+      ]
+    }
+  },
+
+  "logSources": {
+    "network_log": {
+      "title": "Network log",
+      "events": ["net_link_up", "net_link_down", "share_folder_opened", "network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_used", "technique_refused"],
+      "seedRows": [
+        { "id": "s1", "at": "Tue 07:10", "event": "net_link_up", "where": { "kind": "jack", "id": "kitchen_jack" }, "result": "ok" },
+        { "id": "s2", "at": "Tue 07:12", "event": "network_swept", "where": { "kind": "network", "id": "office_lan" }, "result": "ok", "detail": { "from": "kitchen_jack" } },
+        { "id": "s3", "at": "Tue 07:14", "event": "host_scanned", "where": { "kind": "host", "id": "printer_host" }, "result": "ok", "detail": { "from": "kitchen_jack" } }
+      ]
+    }
+  },
+
+  "globalVariables": {
+    "coffee_call": 0,
+    "act_midday": false,
+    "act_evening": false,
+    "printer_off": false,
+    "r4_real_seen": false,
+    "r4_false_seen": false,
+    "zainab_card_given": false,
+    "office_coffee_off": false,
+    "kitchen_seen": false,
+    "heard_exchange_cooler_chat": false,
+    "cake_servings": 2,
+    "plug_in_done": false,
+    "sweep_done": false,
+    "scan_printer_done": false,
+    "confirm_both_done": false,
+    "use_card_done": false,
+    "terminal_view_done": false,
+    "open_share_done": false,
+    "read_log_done": false,
+    "server_room_seen": false,
+    "file_server_seen": false,
+    "jun_caught": false
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "pc",
+      "id": "kit_dropbox",
+      "name": "Network drop box",
+      "sprite": "network_dropbox",
+      "takeable": true,
+      "rogueDevice": true,
+      "observations": "A palm-sized network drop box. Plug it into a live wall port to join that port's network."
+    },
+    {
+      "type": "cake1",
+      "id": "cake",
+      "name": "Cake",
+      "takeable": true,
+      "droppable": true,
+      "observations": "A cake for the office. Choose Drop here in your inventory to put it out where people will see it.",
+      "affordance": {
+        "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 45, "servings": 2, "perPerson": 1 }
+      }
+    }
+  ],
+
+  "objectives": [
+    {
+      "aimId": "morning",
+      "title": "Morning: get on the network",
+      "description": "Each task ticks when you have done it. Ama's hub says what is next.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "plug_in", "title": "Plug the drop box in where nobody will notice", "type": "custom", "status": "active" },
+        { "taskId": "sweep", "title": "List what answers on the office network", "type": "custom", "status": "active" },
+        { "taskId": "scan_printer", "title": "Find out what the printer runs", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "midday",
+      "title": "Midday: real or false?",
+      "description": "Some reported weaknesses are real and some are not. Test them, then try a technique.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "confirm_both", "title": "Test both of the printer's reported weaknesses", "type": "custom", "status": "active" },
+        { "taskId": "use_card", "title": "Use a technique on the one that is real", "type": "custom", "status": "active" },
+        { "taskId": "terminal_view", "title": "Look at the file server in the Terminal", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "evening",
+      "title": "Evening: what it looked like",
+      "description": "Most staff go home. The network log keeps everything you did.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "open_share", "title": "Open the shared drive", "type": "custom", "status": "active" },
+        { "taskId": "read_log", "title": "Find yourself in the network log", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "network": "office_lan",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "ambient": "#8f96b0", "lights": [{ "x": 2.3, "y": 5.5, "color": "#ffd9a0", "radius": 70, "intensity": 0.8 }] }
+        ]
+      },
+      "connections": { "west": "kitchen", "north": "server_room", "east": "it_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "chidi_pc",
+          "owner": "chidi_okeke",
+          "name": "Chidi's PC",
+          "host": "CHIDI-PC",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["chidi_okeke"] },
+          "policy": "desk",
+          "observations": "Chidi's desk PC.",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
+        },
+        {
+          "type": "pc",
+          "id": "jun_pc",
+          "owner": "jun_watanabe",
+          "name": "Hot desk PC",
+          "host": "HOTDESK-PC",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["jun_watanabe"] },
+          "policy": "desk",
+          "observations": "The hot desk. Jun sits here, next to the network port.",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
+        },
+        {
+          "type": "pc",
+          "id": "agnieszka_pc",
+          "owner": "agnieszka_duda",
+          "name": "Agnieszka's PC",
+          "host": "AGNIESZKA-PC",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["agnieszka_duda"] },
+          "policy": "desk",
+          "observations": "Agnieszka's desk PC. She prints from here.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "agnieszka_print_note",
+              "name": "print-queue.txt",
+              "takeable": true,
+              "readable": true,
+              "text": "Print queue: two pages waiting for the office printer.",
+              "observations": "A note about Agnieszka's print queue."
+            }
+          ],
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
+        },
+        {
+          "type": "pc",
+          "id": "hotdesk_jack",
+          "name": "Hot desk network port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 3.0, "y": 5.9 },
+          "takeable": false,
+          "networkJack": true,
+          "affordance": false,
+          "linkName": "Drop box: hot desk",
+          "jackConfirm": "Plug the drop box into the hot desk's network port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A live network port at the hot desk. You need the drop box in hand to plug it in.",
+          "observations": "A live network port beside the hot desk."
+        },
+        {
+          "type": "photocopier1",
+          "id": "office_printer",
+          "name": "Office printer",
+          "position": { "x": 8.3, "y": 3.0 },
+          "takeable": false,
+          "observations": "The office printer. Agnieszka's PC prints to it.",
+          "offWhen": "printer_off"
+        },
+        {
+          "type": "power_socket2",
+          "id": "printer_socket",
+          "name": "Printer wall socket",
+          "position": { "x": 9.0, "y": 3.9 },
+          "observations": "The printer's plug, at the wall.",
+          "spriteVariants": [{ "condition": "globalVars.printer_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.printer_off",
+              "text": "Switch off the printer at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "printer_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "The printer is switched off at the wall. It no longer answers on the network." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.printer_off",
+              "text": "Switch the printer back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "printer_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The printer is switched back on." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "printer_cupboard",
+          "name": "Printer cupboard",
+          "position": { "x": 8.0, "y": 5.2 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cupboard of printer supplies and setup notes, just below the printer.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_factory",
+              "name": "Technique card: factory accounts",
+              "technique_card": "factory_accounts",
+              "takeable": true,
+              "observations": "A folded note about devices and the accounts they ship with."
+            }
+          ]
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "observations": "The office coffee station. One person at a time; anyone else waits in line.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee", "overhearRadius": 200 },
+          "offWhen": "office_coffee_off"
+        },
+        {
+          "type": "power_socket2",
+          "id": "office_coffee_socket",
+          "name": "Coffee wall socket",
+          "position": { "x": 8.65625, "y": 7.0625 },
+          "observations": "The coffee machine's plug, at the wall.",
+          "spriteVariants": [{ "condition": "globalVars.office_coffee_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.office_coffee_off",
+              "text": "Switch off the coffee machine at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall. Anyone on their way to it turns back." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.office_coffee_off",
+              "text": "Switch the coffee machine back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched on at the wall. The next coffee run comes here again." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "dirty_mugs1",
+          "id": "office_mugs",
+          "name": "Abandoned Mugs",
+          "position": { "x": 4.6, "y": 7.6 },
+          "takeable": true,
+          "needsTag": "dirty_mugs",
+          "observations": "Someone's left their mugs on the floor again."
+        },
+        {
+          "type": "notice_board1",
+          "id": "tour_notice",
+          "name": "Things to try",
+          "position": { "x": 8.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Morning:\n- Ask Ama to send them for coffee, then plug the drop box into the hot desk's network port while Jun is away.\n- Sweep the office network, then scan the printer.\nMidday:\n- Check the printer's admin page and test both findings.\n- Take the card from the printer cupboard and use it on the real one.\n- Look at the file server in the Terminal, then tell Ama what it said.\nEvening:\n- Look in on the kitchen and the server room, then ask Ama to call it a day.\n- Talk to Zainab (server room, then the kitchen coffee).\n- Open the shared drive, then read the network log with Graham."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ama_owusu",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": { "x": 5.5, "y": 4.5 },
+          "spriteSheet": "ama_owusu",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "storyPath": "scenarios/demo_ops_recon/ink/ama_owusu.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Autonoe", "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "immovable": true },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
+            { "eventPattern": "game_loaded", "cooldown": 0, "setGlobal": { "kitchen_seen": false, "server_room_seen": false } },
+            { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
+            { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
+            { "eventPattern": "network_foothold_gained:hotdesk_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "You're in. Now see what answers." },
+            { "eventPattern": "network_swept", "cooldown": 0, "completeTask": "sweep", "setGlobal": { "sweep_done": true } },
+            { "eventPattern": "network_host_scanned:printer_host", "cooldown": 0, "completeTask": "scan_printer", "setGlobal": { "scan_printer_done": true } },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'confirmed'", "cooldown": 0, "setGlobal": { "r4_real_seen": true } },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'false'", "cooldown": 0, "setGlobal": { "r4_false_seen": true } },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'confirmed' && globalVars.r4_false_seen === true", "cooldown": 0, "completeTask": "confirm_both", "setGlobal": { "confirm_both_done": true } },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'false' && globalVars.r4_real_seen === true", "cooldown": 0, "completeTask": "confirm_both", "setGlobal": { "confirm_both_done": true } },
+            { "eventPattern": "network_technique_used", "condition": "data.grant === 'credential'", "cooldown": 0, "completeTask": "use_card", "setGlobal": { "use_card_done": true } },
+            { "eventPattern": "network_share_opened:shared_drive", "cooldown": 0, "completeTask": "open_share", "setGlobal": { "open_share_done": true } },
+            { "eventPattern": "network_device_unplugged:hotdesk_jack", "onceOnly": true, "cooldown": 0, "bark": "Unplugged. Every session through that box has ended with it." },
+            { "eventPattern": "global_variable_changed:printer_off", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "bark": "Printer's off. It won't answer on the network now." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": true } },
+            { "eventPattern": "room_entered:server_room", "cooldown": 0, "setGlobal": { "server_room_seen": true } },
+            { "eventPattern": "network_host_scanned:file_server", "cooldown": 0, "setGlobal": { "file_server_seen": true } },
+            { "eventPattern": "network_foothold_gained:kitchen_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "That works too. Nobody's watching the kitchen port." },
+            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_printer_done !== true", "cooldown": 0, "bark": "That's everything that answers. Pick the printer and scan it." },
+            { "eventPattern": "global_variable_changed:scan_printer_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_both_done !== true", "cooldown": 0, "bark": "The admin page is the one to look at. Check it, then test what it reports." },
+            { "eventPattern": "global_variable_changed:confirm_both_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_card_done !== true", "cooldown": 0, "bark": "One real, one false alarm. There's a technique card in the printer cupboard." },
+            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "The printer kept a saved link to Agnieszka's PC. Try it from her row." },
+            { "eventPattern": "global_variable_changed:file_server_seen", "condition": "data.value === true && data.oldValue !== true && globalVars.terminal_view_done !== true", "cooldown": 0, "bark": "That's the file server. Try it in the Terminal too, then tell me what it said." },
+            { "eventPattern": "global_variable_changed:open_share_done", "condition": "data.value === true && data.oldValue !== true && globalVars.read_log_done !== true", "cooldown": 0, "bark": "You're in the shared drive. Graham can show you how that looked." }
+          ]
+        },
+        {
+          "id": "chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "npcType": "person",
+          "position": { "x": 7, "y": 3 },
+          "spriteSheet": "chidi_okeke",
+          "spriteTalk": "assets/characters/chidi_okeke_talk.png",
+          "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
+          "storyPath": "scenarios/demo_ops_recon/ink/chidi_okeke.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Zubenelgenubi", "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "cokeke", "password": "Fernwick-Chi-3047" },
+          "needsHome": "chidi_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 25, "urgentAt": 40, "initial": 61 },
+            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 },
+            "hunger": { "decayPerMin": 5, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": { "coffee": ["Report's due at four. Wish me luck.", "Someone's finished the biscuits.", "Is the network slow for anyone else?"] },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "jun_watanabe",
+          "displayName": "Jun Watanabe",
+          "npcType": "person",
+          "position": { "x": 3, "y": 6 },
+          "spriteSheet": "jun_watanabe",
+          "spriteTalk": "assets/characters/jun_watanabe_talk.png",
+          "spriteVisemes": "assets/characters/jun_watanabe_visemes.png",
+          "storyPath": "scenarios/demo_ops_recon/ink/jun_watanabe.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Puck", "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "jwatanabe", "password": "Larkmoor-Jun-5521" },
+          "needsHome": "jun_pc",
+          "needsSpeed": 80,
+          "needs": {
+            "caffeine": { "decayPerMin": 10, "urgentAt": 40, "initial": 70 },
+            "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 },
+            "hunger": { "decayPerMin": 5, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": { "coffee": ["Third one today. Don't judge.", "Did you see that new rota?", "I always sit by the wall port."] },
+          "eventMappings": [
+            { "eventPattern": "npc_left_post:chidi_okeke", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?", "setGlobal": { "jun_caught": true } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false },
+            { "eventPattern": "npc_left_post:jun_watanabe", "cooldown": 0, "setGlobal": { "jun_caught": false } },
+            { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance !== null && data.playerDistance <= 80 && globalVars.jun_caught !== true", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?" }
+          ]
+        },
+        {
+          "id": "agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "npcType": "person",
+          "position": { "x": 1, "y": 5 },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "storyPath": "scenarios/demo_ops_recon/ink/agnieszka_duda.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Callirrhoe", "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "aduda", "password": "Gorsefield-Ag-8213" },
+          "needsHome": "agnieszka_pc",
+          "needsSpeed": 70,
+          "workNeeds": ["+printer_res"],
+          "needs": {
+            "thirst": { "decayPerMin": 15, "urgentAt": 40, "initial": 80 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 },
+            "work": { "decayPerMin": 12, "urgentAt": 50, "initial": 60 }
+          },
+          "interests": { "dirty_mugs": { "weight": 3, "noticeRooms": ["office", "kitchen"] } },
+          "chatter": { "cooler": ["Someone's left mugs everywhere again.", "Are you going to the quiz?", "I never know who fixed the printer last."] },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 62 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        }
+      ]
+    },
+
+    "kitchen": {
+      "type": "room_break",
+      "door_sign": "Kitchen",
+      "network": "office_lan",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "mode": "motion", "offAfter": 10 }
+        ]
+      },
+      "connections": { "east": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kitchen_jack",
+          "name": "Kitchen wall network port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 8.0, "y": 2.4 },
+          "takeable": false,
+          "networkJack": true,
+          "affordance": false,
+          "linkName": "Drop box: kitchen",
+          "jackConfirm": "Plug the drop box into the kitchen's network port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A live network port in the kitchen. You need the drop box in hand to plug it in.",
+          "observations": "A live network port on the kitchen wall."
+        },
+        {
+          "type": "qdc_fridge1",
+          "id": "fridge",
+          "name": "Fridge",
+          "position": { "x": 1, "y": 2 },
+          "takeable": false,
+          "observations": "The office fridge. Mostly yoghurts with names on."
+        },
+        {
+          "type": "microwave1",
+          "id": "microwave",
+          "name": "Microwave",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "observations": "A microwave on the kitchen table."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "kitchen_coffee",
+          "name": "Kitchen Coffee Station",
+          "position": { "x": 3, "y": 8 },
+          "takeable": false,
+          "observations": "The kitchen coffee machine. It shares a fuse with the office one, so only one of them runs at a time.",
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "queue": { "cells": [{ "dx": 1, "dy": -1 }, { "dx": 2, "dy": -1 }] } },
+          "offWhen": { "office_coffee_off": false }
+        },
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 1, "y": 7 },
+          "takeable": false,
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "affordance": { "useSeconds": 40, "overhearRadius": 360 }
+        },
+        {
+          "type": "mugs_tray1",
+          "id": "washing_up_tray",
+          "name": "Washing-up Tray",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
+          "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        }
+      ],
+      "npcs": []
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "door_sign": "Server room",
+      "network": "office_lan",
+      "connections": { "south": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "file_server",
+          "name": "File server",
+          "host": "FILESRV01",
+          "sprite": "pc_desktop",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"], "people": ["agnieszka_duda"] },
+          "policy": "infra",
+          "observations": "A file server with no screen or keyboard. It is managed over the network.",
+          "services": [
+            {
+              "name": "storage", "port": 445, "product": "Tarnwick FileHold", "version": "4.2",
+              "cli": { "protocol": "tcp", "service": "filehold", "banner": "Tarnwick FileHold 4.2 file service ready" },
+              "weaknesses": [
+                {
+                  "id": "update_lag", "class": "unpatched", "severity": "high",
+                  "summary": "The storage service is behind its published fixes.",
+                  "grants": { "session": { "account": "agnieszka_duda", "access": "user" } }
+                },
+                {
+                  "id": "link_setting", "class": "misconfig", "severity": "medium",
+                  "summary": "A setting on the storage service was left open.",
+                  "needs": { "session": "user" },
+                  "grants": { "session": { "account": "graham_whitfield", "access": "admin" } }
+                }
+              ],
+              "decoys": [
+                {
+                  "id": "release_line", "class": "misconfig", "severity": "low",
+                  "summary": "The service reports an older build number.",
+                  "falseBecause": "The build number is only a label. The service was updated last month."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "m10_tool_roll1",
+          "id": "zainab_tool_roll",
+          "name": "Zainab's tool roll",
+          "owner": "zainab_hussain",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 7.0, "y": 4.2, "elevation": 24 },
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } },
+          "observations": "A field engineer's tool roll: crimpers, a punch-down tool, a cable tester and a few folded cards.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_open_settings",
+              "name": "Technique card: left-open settings",
+              "technique_card": "open_settings",
+              "takeable": true,
+              "observations": "A folded card about settings somebody left open."
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "zainab_hussain",
+          "displayName": "Zainab Hussain",
+          "npcType": "person",
+          "position": { "x": 5.5, "y": 6 },
+          "spriteSheet": "zainab_hussain",
+          "spriteTalk": "assets/characters/zainab_hussain_talk.png",
+          "spriteVisemes": "assets/characters/zainab_hussain_visemes.png",
+          "storyPath": "scenarios/demo_ops_recon/ink/zainab_hussain.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Achernar", "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "zainab_tool_roll",
+          "needsSpeed": 80,
+          "needsCompany": { "avoids": ["*"], "avoidRadius": 0 },
+          "needs": {
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 },
+            "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 }
+          },
+          "itemsHeld": [
+            {
+              "type": "technique_card",
+              "id": "card_update_gap",
+              "name": "Technique card: known update gap",
+              "technique_card": "update_gap",
+              "takeable": true,
+              "observations": "A card about a service that has fallen behind its published fixes."
+            }
+          ],
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 1500, "cooldown": 0, "fireOnlyWhenLoaded": true, "bark": "Quiet now. Time for a coffee in peace." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 8000, "cooldown": 0, "fireOnlyWhenLoaded": true, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "room_entered:server_room", "condition": "globalVars.act_evening === true && globalVars.zainab_card_given !== true", "cooldown": 60000, "needs": { "set": { "caffeine": 10 } } }
+          ]
+        }
+      ]
+    },
+
+    "it_room": {
+      "type": "room_it",
+      "door_sign": "IT room",
+      "network": "office_lan",
+      "connections": { "west": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "graham_pc",
+          "owner": "graham_whitfield",
+          "name": "Graham's PC",
+          "host": "IT-PC",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "roles": ["it"] },
+          "policy": "desk",
+          "observations": "Graham's desk PC.",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "network_log_pc",
+          "name": "Network log PC",
+          "position": { "x": 6.2, "y": 2.8 },
+          "takeable": false,
+          "observations": "A terminal showing the office network log.",
+          "minigameData": {
+            "logSource": "network_log",
+            "anomaly": { "rowId": "s2" },
+            "flagActionLabel": "Flag the odd one",
+            "completionActions": [
+              { "type": "set_global", "key": "read_log_done", "value": true },
+              { "type": "complete_task", "taskId": "read_log" }
+            ]
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "npcType": "person",
+          "position": { "x": 4.5, "y": 5.5 },
+          "spriteSheet": "graham_whitfield",
+          "spriteTalk": "assets/characters/graham_whitfield_talk.png",
+          "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
+          "storyPath": "scenarios/demo_ops_recon/ink/graham_whitfield.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Umbriel", "style": "Merrin & Sallow's IT coordinator, in his early 60s, unhurried and kind; he looks after the office network. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "gwhitfield", "password": "Tarnbeck-Gra-6390", "admin": true },
+          "needsHome": "graham_pc",
+          "needsSpeed": 85,
+          "needs": {
+            "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
+            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 72 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
+          },
+          "chatter": { "cooler": ["How's tricks, then?", "Nobody tells me anything up here.", "The log never forgets, you know."] },
+          "exchanges": [{ "with": "agnieszka_duda", "knot": "exchange_cooler_chat", "topic": "cooler" }],
+          "eventMappings": [
+            { "eventPattern": "npc_left_post:agnieszka_duda", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "fireOnlyWhenLoaded": true, "needs": { "set": { "hunger": 62 } } },
+            { "eventPattern": "room_entered:it_room", "condition": "globalVars.act_midday === true && globalVars.act_evening !== true", "cooldown": 60000, "needs": { "set": { "hunger": 62 } } }
+          ]
+        }
+      ]
+    }
+  }
+}

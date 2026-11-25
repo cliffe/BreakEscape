@@ -8,6 +8,7 @@ import { loadCanvasFonts } from './utils/canvas-fonts.js';
 // Bluetooth scanner is now handled as a minigame
 // Biometrics is now handled as a minigame
 import { startLockpickingMinigame } from './systems/minigame-starters.js';
+import { settleHeldWorld, startStepAwayWatchFromState } from './systems/episode-starter.js';
 import { initializeDebugSystem } from './systems/debug.js';
 import { initializeUI } from './ui/panels.js';
 import { initializeModals } from './ui/modals.js';
@@ -28,6 +29,8 @@ import NPCBarkSystem from './systems/npc-barks.js';
 import NPCLazyLoader from './systems/npc-lazy-loader.js';
 import { installPhoneRinger } from './minigames/phone-chat/phone-ringer-dom.js';
 import './systems/npc-game-bridge.js'; // Bridge for NPCs to influence game state
+// A lock's second step (S8c): configures lock-step.js and the pane, sets window.lockStep
+import { wireLockStep } from './systems/lock-step-wiring.js';
 
 // Import Objectives System
 import { getObjectivesManager } from './systems/objectives-manager.js';
@@ -163,6 +166,9 @@ function initializeGame() {
     // window.submitSECapture / window.mirrorSECapture, before any game code captures.
     installCaptureClient(window.stateSync);
     window.stateSync.start();
+    // Second step on a lock (S8c): needs window.stateSync, window.mfaClient (pc-sessions.js) and
+    // window.ApiClient, all in place by here; ApiClient.unlock hands a gate answer to window.lockStep.run
+    wireLockStep(window);
     
     console.log('✅ NPC systems initialized');
     
@@ -203,6 +209,20 @@ function initializeGame() {
             import('./systems/se-phish-send-client.js')
                 .then((mod) => mod.redrivePhishEvidence(window.gameScenario, globals))
                 .catch((err) => console.warn('[BreakEscape] phish re-drive failed:', err));
+        });
+    }
+
+    // Reload handler (E2): a world hold left open by a reload ends here. Its cap clock is page
+    // memory, so without this the hold global stays false (and the beat's mappings armed) until
+    // the learner next opens the kiosk. systems/episode-starter.js exports settleHeldWorld.
+    if (window.eventDispatcher) {
+        window.eventDispatcher.once('game_loaded', () => {
+            try { settleHeldWorld(window); } catch (err) { console.warn('[BreakEscape] hold settle failed:', err); }
+        });
+        // E3: a step-away beat with resumeOnDone whose Look up was picked before the reload gets its
+        // watcher back (a pure function of the saved episode state; see startStepAwayWatchFromState).
+        window.eventDispatcher.once('game_loaded', () => {
+            startStepAwayWatchFromState(window).catch((err) => console.warn('[BreakEscape] step-away watch restart failed:', err));
         });
     }
 

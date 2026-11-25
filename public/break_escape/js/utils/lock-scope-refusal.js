@@ -16,10 +16,16 @@ export const LOCK_SCOPE_REFUSAL_TEXT = Object.freeze({
 const EXPIRED_FALLBACK = 'This sign-in has expired.';
 const MAX_SERVER_LINE = 160;
 
-/** The refusal reason ('off', 'not_responding', 'unreachable' or 'expired') in an unlock error, or null. */
+// S8c: a second step the player did not pass (denied, expired, or closed with the X) rejects the
+// unlock with this reason. The pad closes as cancelled, counts no attempt and plays no reject
+// sound; the line and tone come from window.lockStep.cancelFeedback, not from a table here.
+export const SECOND_STEP_CANCELLED = 'second_step_cancelled';
+
+/** The refusal reason ('off', 'not_responding', 'unreachable', 'expired' or 'second_step_cancelled') in an unlock error, or null. */
 export function lockScopeRefusal(error) {
     const reason = error?.status === 403 ? error.body?.reason : null;
     if (reason === 'expired') return 'expired';
+    if (reason === SECOND_STEP_CANCELLED) return SECOND_STEP_CANCELLED;
     return Object.prototype.hasOwnProperty.call(LOCK_SCOPE_REFUSAL_TEXT, reason) ? reason : null;
 }
 
@@ -31,6 +37,12 @@ export function lockScopeRefusal(error) {
 export function lockScopeRefusalLine(error) {
     const reason = lockScopeRefusal(error);
     if (!reason) return null;
+    if (reason === SECOND_STEP_CANCELLED) {
+        // No line of its own: the one reject tone and "Not approved." (or nothing, for the
+        // player's own X) are lockStep's, said once here. Returns '' so a pad shows no text.
+        try { window.lockStep?.cancelFeedback?.(error); } catch (e) { /* feedback must not break the pad */ }
+        return '';
+    }
     if (reason === 'expired') {
         const message = error.body?.message;
         return typeof message === 'string' && message.trim() && message.length <= MAX_SERVER_LINE
@@ -47,18 +59,22 @@ export function lockScopeRefusalLine(error) {
 // currentRoom sync promotes the room, flush one state sync and re-post once. Fires only on that
 // reason-and-flag body, and never for a door (a door into a route room is the split itself, §3.5):
 // any other refusal, or a door, is re-thrown unchanged so callers handle it exactly as before.
-export async function unlockWithRouteRoomRetry(type, targetId, attempt, method, extra) {
+export async function unlockWithRouteRoomRetry(type, targetId, attempt, method, extra, opts) {
     const apiClient = window.ApiClient || window.APIClient;
     // Forward extra only when given, so a caller that posts four args keeps posting four (the
     // access-list card_ids path is the only one that passes extra).
-    const post = () => extra === undefined
-        ? apiClient.unlock(type, targetId, attempt, method)
-        : apiClient.unlock(type, targetId, attempt, method, extra);
+    // opts (S8c: { fromDoor }) is forwarded only when given, for the same reason.
+    const post = () => opts !== undefined
+        ? apiClient.unlock(type, targetId, attempt, method, extra === undefined ? {} : extra, opts)
+        : extra === undefined
+            ? apiClient.unlock(type, targetId, attempt, method)
+            : apiClient.unlock(type, targetId, attempt, method, extra);
     try {
         return await post();
     } catch (error) {
         const body = error && error.body;
-        const canRetry = type !== 'door' && body &&
+        // A cancelled second step is the player's or the phone's answer, never a room-sync race
+        const canRetry = type !== 'door' && body && body.reason !== SECOND_STEP_CANCELLED &&
             body.reason === 'room_not_reachable' && body.retryable === true;
         if (!canRetry) throw error;
         // Awaited for its ordering, never for its success: a rejecting (or absent) sync still

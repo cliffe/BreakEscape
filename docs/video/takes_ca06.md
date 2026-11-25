@@ -56,3 +56,90 @@ Verdict: it lands 6.0 to 7.0 s after Send, never within 6 s, and the line is vis
 
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t08_zainab_to_notice (new, or t07_notice_beat changed) | step-away seed (as t07_notice_beat) | before pressing Look up call `followNpc(kit_zainab_hussain, lerp 0.1)`; press Look up; her `patrolOverride` walks her from (128,192) to (48,160) about 1 s later; Z1 bark 1.5 s after; hold through Z2; `followPlayer` after | look_up, follow-start, walk-start, walk-end, z1-start, z2-start, follow-end | hook (Z1 as she reaches the notice) and office (Z2) | Her walk is only about 80 px (about 1 s): follow-cam adds a glide, not a long walk. Option: `triggerNeed(thirst, 5)` on Zainab first so she is at the machine (about (240,197)) when Look up fires, giving a 2 s crossing; unproven (needs suspend mid-trip). Keep the notice in frame at the end. Never click; she opens a choice at Z2
+
+Dry run 25 Nov (step-away seed with kit_quiet=true, headless, BE_DRY=1): PASS on attempt 1, game 13373. Zainab starts at (140,185). Look up comes 1.6 s before her walk starts from (128,160), and she arrives at (68,132), 34 px from the notice anchor (48,160), 2.0 s after the walk starts. Return marks are n/a, as designed. Camera: 39 samples while following, scroll start (-341,-86), end (-256,-117), range 71 by 52, back on the player at the end. The Z1 bubble-end and the Z2 bubble-start share one timestamp (70.6 s), so the gap between the two lines cannot be read from this run: check it in the real take. Z2 started 3.1 s after she arrived (the header says about 4 s). Frames not looked at.
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t10_fatima_drinks (new) | fresh game, any seed with the room loaded | `followNpc(kit_fatima_begum)`; she leaves post (60,186) about 27.5 s after load, or `triggerNeed(thirst, 5)`; follow to the machine (about (240,197)) | follow-start, left-post, at-machine | office-life filler for the research or build beats | Fatima is `kit_fatima_begum`, a different id from ca02 `fatima_begum` |
+
+Dry run 25 Nov (fresh game, natural trip, headless, BE_DRY=1): PASS on attempt 1, game 13374. Fatima starts at (60,186), walks from (64,161) 25.6 s after the take's npc-start mark, reaches the machine at (237,199) 5.0 s later, leaves from (209,170) 22.8 s after arriving and is back at (60,186) 3.2 s after that. Camera: 210 samples while following, scroll start (-421,-85), end (-281,-72), range 166 by 27, back on the player at the end. Frames not looked at.
+
+## Capture 25 Nov
+
+Real captures, 1920x1080 30 fps, display :147, keyless server :3456, `BE_SPRITE=female_office_worker_v2` (every take logged `player-sprite` = that key), flags as in the seeds above. Footage in `~/video-takes-local/ca06/takes/` (not in git), each file `<id>.trimmed.mkv` with `.trimmed.markers.json`, `.check.json`, `.contact.jpg`. All nine passed the check (both slates found, A/V offset corrected as a constant, `fullFrame` true, no problems). Marks are in trimmed seconds. Sidecars (`.take.json`) are still drafts. t05 runs A and B were renamed `_runA` and `_runB` straight after each run, so no id clash.
+
+| take (file) | length s | drop % | A/V offset start/end ms | key marks (trimmed s) | frames checked |
+|---|---|---|---|---|---|
+| t07_notice_beat | 16.67 | 0.53 | -68 / -72 | look_up 3.96, Z1 bubble 5.63, audio Z1 6.15 to 10.12 (3.96 s), Z2 bubble 10.47, audio Z2 10.69 to 15.53 (4.80 s), z1_end_to_z2_start 0.572, end 16.15 | Z1 bubble at 5.9 not at 5.5; Z2 text at 10.6, not at 10.3; room small and centred, notice poster on the left wall |
+| t08_zainab_to_notice | 16.30 | 0.54 | -95 / -112 | follow-on 3.90, look_up 4.52, walk-start 6.15, Z1 bubble 6.20, arrive 8.16 (38 px from the notice), Z1 bubble end and Z2 bubble start 10.99, follow-off 14.49, cam 40 samples, scroll range 65 by 52, back on player | contact sheet: camera glides to Zainab, bubbles as marked, no choice menu |
+| t10_fatima_drinks | 58.04 | 0.17 | -90 / -95 | walk-start 24.68, arrive 29.33 at (241,197), return-start 52.13, back 55.33 at (60,186), cam 215 samples, range 169 by 25, back on player | Fatima beside the machine at 29.5 and 40, back at her post 55.5 |
+| t04_chidi_flip | 19.40 | 0.16 | -32 / -58 | portrait up 8.99, c1_start 9.18, c1_end 17.63 (durMs 8450), tts 200 audio/mpeg 66261, chat-closed 18.12, end 18.92 | marks only plus first-frame run; C1 was the first line |
+| t02_attack_run | 43.00 | 0.22 | -87 / -50 | start 4.05, browser-open 5.57, note-kaylee 7.73, note-dev 9.49, notices-open 11.14, note-scheme 12.71, browser-closed 14.88, mail-open 15.89, compose 18.01, slot1 22.24, slot2 25.88, pretext-set 28.04, slot3 31.44, ask-set 33.58, send 36.93, landed-held 38.43, flip-up 40.09, end 42.59 | contact sheet: browser 6 to 14 s, mail 16 to 36, result panel 37 to 39, flip heading from 40 |
+| t02b_attack_run_narrow | 42.94 | 0.07 | -30 / -50 | as t02: note-kaylee 7.62, notices-open 11.02, browser-closed 14.73, slot1 22.10, ask-set 33.45, send 36.80, flip-up 39.96 | marks only |
+| t05_work_phone_runA | 16.20 | 0.55 | -73 / -73 | kiosk-open 2.91, intro 6.33, list 7.74, list-held end 15.74 (8.0 s) | marks only |
+| t05_work_phone_runB | 22.50 | 0.40 | -55 / -85 | list 7.75, sweep 9.05 to 13.84, row_open 15.16 (list + 7.41 s), card-geometry 16.49 (card y 152 to 504, x 835 to 1291), card-held 22.02 | list at 7.9 and 14.9 (no card), card with QR at 17.5 and 21.0; tally and verdict row hidden |
+| t05b_work_phone_narrow | 21.47 | 0.14 | -30 / -33 | list 7.31, sweep 8.61 to 13.11, row_open 14.27 (list + 6.96 s), card y 502 to 822, x 622 to 1298, card-held 21.01 | frames at 7.4, 14.0, 17.5, 20.5: stacked list over card, no verdicts |
+
+### Findings
+
+- **t08 gap.** The bubble end and the next bubble start share one timestamp again (10.99), so the bubbles chain with no gap. The real gap is in the audio: speech stops at 10.04 (Z1) and starts at 11.54 (Z2), a 1.50 s silence, with the bubble handover 0.95 s after Z1 speech ends and 0.55 s before Z2 speech (silencedetect at -45 dB on the trimmed take; Z1 speech 6.61 to 10.04, Z2 from 11.54). In t07 the audio-to-audio gap (clip end to next clip start) is 0.57 s. Plan the edit on 1.5 s speech gap in t08, 0.57 s clip gap in t07 (the clips carry some leading and trailing silence, so t07's speech gap is also longer than 0.57).
+- **t10 first attempt failed** (kept in `tmp/delete/ca06_t10_fail1/`): the script's `settle` read a 1 s pause at (169,197), mid-route, as arrival, then took her next stop at the machine as "back" and threw "did not get back to her post". The retake ran the same script and passed: she walked from 24.68 s straight to the machine at 29.33 s. So Fatima can pause mid-route on the way to the machine; the arrival check in `t10_fatima_drinks.mjs` should require x above 225 or so. Not changed.
+- **t04**: the first `interact:chidi_okeke` reported `no-effect-confirmed` at 8.00 yet the portrait was up at 8.99 and C1 played once (line-start 9.18); a second interact at 10.37 reported ok with no second line. Harmless, but cut on c1_start.
+- Marks versus pictures agree to within a frame in every take checked. The 9:16 bubble crop for t07 and t08 has not been framed.
+- Zainab's Z2 started 4.2 s after arrival in t08 (about 3.5 s in t07).
+
+## Render queue
+
+Edit lists from the 25 Nov takes (round 1, 73.0 s, 16 shots, lint 0 errors): `tools/video/edits/ca06_trailer_r1.json` (16:9) and `ca06_trailer_r1_narrow.json` (9:16 and 1:1). Not rendered. Takes are read from `video_out/ca06/takes`, a symlink to `~/video-takes-local/ca06/takes` (git-ignored; recreate it on a fresh checkout). Run one at a time, nothing else rendering or capturing (`pgrep -af 'remotion|render.mjs|render.sh'`, `free -g`). About 35 min per aspect at one thread (about 1 h 50 min for all three):
+
+```bash
+cd <worktree>
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1-16x9     # dedicated empty folder, deleted on success
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1.json 16:9
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1_narrow-9x16
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1_narrow.json 9:16
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1_narrow-1x1
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1_narrow.json 1:1
+```
+
+No `--final` (spoiler blocks are unreviewed). Output: `video_out/ca06/renders/`.
+
+Window table (output s, take, in-out in trimmed-take s; narrow file in the second column where it differs):
+
+| shot | out s | take (wide / narrow) | in-out (wide / narrow) | note |
+|---|---|---|---|---|
+| hook | 0-3.9 | t08_zainab_to_notice | 6.465-10.365 | Z1 speech 6.615-10.049; background drifts for about 1 s while Zainab stays at x 0.50 |
+| topic | 9.0-15.8 | t05 run A | 8.0-14.8 | narrow file uses the same wide run, zoomed out |
+| research | 18.8-23.0 | t02 / t02b | 6.35-10.55 / 6.25-10.45 | Kaylee and Dev noted |
+| notices | 23.0-26.5 | t02 / t02b | 11.17-14.67 / 11.05-14.55 | 3.5 s; browser closes just after the out |
+| write | 26.5-32.3 | t02 / t02b | 29.4-35.2 / 29.27-35.07 | ask set about 3.0-3.6 s in |
+| lands | 32.3-35.3 | t02 / t02b | 36.4-39.4 / 36.27-39.27 | flip panel not in |
+| flip | 35.3-37.3 | t02 / t02b | 40.0-42.0 / 39.87-41.87 | heading and tab strip only |
+| chidi_flip | 37.3-45.7 | t04_chidi_flip | 9.0-17.4 | portrait first shows at 9.0; speech about 9.45-17.2 |
+| phone_list | 47.7-54.5 | t05 run B / t05b | 8.0-14.8 / 7.35-14.15 | card not up yet |
+| phone_card | 54.5-60.1 | t05 run B / t05b | 16.0-21.6 / 15.0-20.6 | canteen notice, no verdict row |
+| office_life (PROPOSED) | 60.1-62.5 | t10_fatima_drinks | 24.5-26.9 | silent, +2.4 s |
+| office | 62.5-67.5 | t07_notice_beat | 10.59-15.59 | Z2 speech 10.938-15.187 |
+
+Edit notes (defaults the owner can change):
+- Music: PeaceFolk Guitar Motif from 95.545 s, as ca02 (alternatives are listed in the edit's `music` block). The script names no track.
+- Office-life slot: `office_life` uses t10_fatima_drinks (24.5-26.9, silent) between phone_card and office. It is not in the script; delete the shot for 70.6 s.
+- The office shot uses t07_notice_beat, not t08. Reason: t08's camera pans back to the player from 14.49 inside Z2's last sentence, so a fixed crop would go half black. t07 has a fixed camera (room x 0.155-0.65, Zainab at 0.27). The hook is t08.
+- Notices window is 3.5 s, not the script's 3.6 s (the browser closes between 14.70 and 14.73 in the wide take). Research and notices are two cut shots.
+- chidi_flip is 8.4 s from 9.0 (the script's 8.45 s starts before the portrait is up).
+- VO: Sulafat_v2 clips, no trims.
+
+Checks still to do before a render (crop simulations on one frame per shot, no render needed): 9:16 and 1:1 for the hook (bubble inside 607 px, notice in frame), office (bubble 0.16-0.39), chidi_flip (Chidi in frame, game text bar cropped out), and t10 (Fatima centred as the camera follows). Also check the t05b phone_list out (14.15) has no card, and read the written 9:16 and 1:1 framings of the wide file as untested (the wide file mirrors the narrow values for shots that have a narrow take). Lint warnings: unreviewed spoiler blocks on every gameplay and card shot; VO v5 is 3.0 words/s and v10 is 3.2 words/s (the voiced files).

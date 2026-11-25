@@ -1,0 +1,66 @@
+/* The push part of the lock second-step pane (ops layer S8c, unit 19). Plain frame: 2px borders, no rounded corners. */
+.lock-step-push {
+    font-family: 'VT323', monospace;
+    color: #dde6ee;
+    font-size: 20px;
+    line-height: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lock-step-push-number {
+    font-size: 32px;
+    line-height: 36px;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.lock-step-push-number[hidden],
+.lock-step-push-card[hidden] {
+    display: none;
+}
+
+.lock-step-push-count {
+    color: #9fb0c0;
+}
+
+.lock-step-push-message {
+    min-height: 24px;
+    color: #ffb4a8;
+}
+
+.lock-step-push-actions,
+.lock-step-push-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lock-step-push-btn {
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    padding: 4px 12px;
+    color: #dde6ee;
+    background: #1b2430;
+    border: 2px solid #dde6ee;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+.lock-step-push-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.lock-step-push-card {
+    border: 2px solid #dde6ee;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lock-step-push-card-name {
+    font-size: 22px;
+}

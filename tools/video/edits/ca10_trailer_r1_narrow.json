@@ -1,0 +1,793 @@
+{
+    "mission": "ca10",
+    "id": "ca10_trailer_r1_narrow",
+    "theme": "ca",
+    "title": "Cyber Aware ca10 trailer, round 1 (narrow-panel takes for the research, send, flip, pages and step-away shots; render 9:16 and 1:1 from this file)",
+    "script": {
+        "heading": "ca10 trailer script (fake downloads and checks)",
+        "owner_card": "none yet",
+        "brief": "See docs/video/scripts/ca10_trailer_script.md, docs/video/takes_ca10.md and tmp/handover/ca0/HANDOVER_edit_ca10.md. Model ca05 (attack-first, same Quayholt room). Marks from the 25 Nov takes (trimmed-take seconds); Sulafat_v2 VO. DEFAULTS the owner can change: (1) music is PeaceFolk Guitar Motif from 95.545 s as ca02 (gain -5, 2.5 s fade-out; ca10 script names no track, the scenario plays PeaceFolk), alternatives in music.alternatives; (2) office_life (2.4 s, t09_darren_cooler, silent) is not in the script, it sits after pages and before step_away, adds 2.4 s (72.7 s total); drop the shot to return to the script's 70.3 s. Hook: bar cropped out in every aspect, sentence 1 only as a burned caption. Lands default cut, Leo's reply not shown. v8b starts 0.25 s after v8a (the script's pages+2.49 would leave a 0.03 s gap). Chips: MORNING OF WEB PAGES (script tab)."
+    },
+    "fps": 30,
+    "length": 72.7,
+    "music": {
+        "track": "PeaceFolk/Guitar Motif.mp3",
+        "analysis": "guitar_motif_75.json",
+        "start": 95.545,
+        "length": 72.7,
+        "gain_db": -5,
+        "fade_in": 0,
+        "fade_out": 2.5,
+        "alternatives": [
+            "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window)",
+            "PeaceFolk/Quiet Reflection.mp3 @24.016 (used by ca05)"
+        ]
+    },
+    "beat": {
+        "bpm": 95.0,
+        "period": 0.6316,
+        "offset": 0
+    },
+    "duck": {
+        "db": -10,
+        "attack": 0.12,
+        "release": 0.3
+    },
+    "audio": {
+        "fade_ms": 8,
+        "target_lufs": -14,
+        "true_peak": -1.5
+    },
+    "shots": [
+        {
+            "id": "hook",
+            "type": "gameplay",
+            "duration": 3.45,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t01_anjali_hook.trimmed.mkv",
+                "in": 2.5,
+                "out": 5.95
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t01_anjali_hook 25 Nov: portrait fully up 2.5 (frame 2.3 is the room wide, 2.4 fading in; the 'npc_portrait_up 3.73' mark is the interact log line), speech 2.71-5.82 (sentence 1), sentence 2 starts 6.11 so out 5.95 stays before it; the game bar shows BOTH sentences the whole time (sentence 2 is the tell): bar (y from about 0.79) cropped out of every aspect, sentence 1 burned in as a caption; Anjali about x 0.68, cx estimated, check on the render | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.68,
+                    "cy": 0.335,
+                    "zoom": 1.5
+                },
+                "9:16": {
+                    "cx": 0.68,
+                    "cy": 0.385,
+                    "zoom": 1.3
+                },
+                "1:1": {
+                    "cx": 0.68,
+                    "cy": 0.335,
+                    "zoom": 1.5
+                }
+            },
+            "lines": [
+                {
+                    "start": 0.21,
+                    "end": 3.3,
+                    "speaker": "Anjali",
+                    "text": "Had a device pulled for a dodgy download today."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-open",
+            "id": "open",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "title": "Fake downloads and checks",
+                "company": "Quayholt Insurance",
+                "stripe": "#3b5b8c"
+            },
+            "duration": 5.1
+        },
+        {
+            "id": "topic",
+            "type": "gameplay",
+            "duration": 7.3,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t05_pages_list_runA.trimmed.mkv",
+                "in": 7.0,
+                "out": 14.3
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t05 run A: kiosk-open 2.94, intro 5.53, list 6.84, list held to 14.84; seven rows, nothing picked or opened; pane about x 0.25-0.75; card and list fit at 16:9 zoom 2.0; verdict buttons hidden by CSS (empty below the card); narrow file uses the same wide take zoomed out (as ca02), check legibility | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "MORNING OF WEB PAGES",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.27,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.47,
+                    "zoom": 0.6
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.47,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "red_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "attack",
+            "duration": 3.0,
+            "join": {
+                "type": "cut"
+            },
+            "text": [
+                "You play the attacker"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+            }
+        },
+        {
+            "id": "research",
+            "type": "gameplay",
+            "duration": 4.8,
+            "join": {
+                "type": "seam"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 10.4,
+                "out": 15.2
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "narrow take t02b (browser not narrowed there, only the mail panel; wide-take framing kept); shifted -0.15 from the wide window (10.55-15.35); browser closes about 15.4 so out 15.2 is 0.2 before, check the last frame | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "OPEN-SOURCE RESEARCH",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.48,
+                    "cy": 0.5,
+                    "zoom": 1.2
+                },
+                "9:16": {
+                    "cx": 0.48,
+                    "cy": 0.5,
+                    "zoom": 0.57
+                },
+                "1:1": {
+                    "cx": 0.48,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "build",
+            "type": "gameplay",
+            "duration": 7.8,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_fake_check_builder_narrow.trimmed.mkv",
+                "in": 5.5,
+                "out": 13.3
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "narrow take t03b (panel narrowed); window as the wide take (marks within 0.05); frames NOT yet viewed, check the preview/chips fit; zoom 1.25 as the ca02 narrow builder to hide any Close fragment; host pick about 5.8, steps picked by 11.5, no counter or Score rows in any wide frame (2.1-14.9) | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "FAKE-CHECK BUILDER",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.48,
+                    "zoom": 1.1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.42,
+                    "zoom": 1.25
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.435,
+                    "zoom": 1.25
+                }
+            }
+        },
+        {
+            "id": "lands",
+            "type": "gameplay",
+            "duration": 4.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 42.65,
+                "out": 46.85
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "narrow take t02b: send 43.38, green panel by 43.55; mail panel spans x about 0.36-0.65 with a Close-button fragment at x 0.65-0.68, y 0.03-0.07; 9:16 and 1:1 zoom 1.25 to crop it (as ca02), check the fragment is hidden at both ends | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "THE SEND",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.48,
+                    "zoom": 1.1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.42,
+                    "zoom": 1.25
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.435,
+                    "zoom": 1.25
+                }
+            }
+        },
+        {
+            "id": "flip",
+            "type": "gameplay",
+            "duration": 2.4,
+            "join": {
+                "type": "flip"
+            },
+            "source": {
+                "file": "t02b_attack_run_narrow.trimmed.mkv",
+                "in": 54.75,
+                "out": 57.15
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "narrow take t02b: flip-up 54.87, panel by 54.6-54.8 (verify 54.7); 'Now it lands on a colleague' heading, body out of frame | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "YOUR TURN",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.47,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.47,
+                    "zoom": 0.75
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.47,
+                    "zoom": 1.3
+                }
+            }
+        },
+        {
+            "id": "niamh_flip",
+            "type": "gameplay",
+            "duration": 8.15,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_niamh_flip.trimmed.mkv",
+                "in": 9.27,
+                "out": 17.42
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 N1: frame 9.2 black, 9.23 portrait fully up, text full, Niamh only (no player portrait); speech 9.335-17.07 (silencedetect), sentence 1 ends 2.43 into the shot, sentence 2 3.42-7.6 with pauses at 3.66-4.0 and 4.79-5.13 (split after 'seat' is by word count, check by ear); chat closes 17.5-17.55, choice menu never shown; game bar, Skip and X cropped; framing copied from the ca02 Fatima shot, Niamh's x is a guess, check cx | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "YOUR TURN",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.64,
+                    "cy": 0.335,
+                    "zoom": 1.5
+                },
+                "9:16": {
+                    "cx": 0.72,
+                    "cy": 0.385,
+                    "zoom": 1.3
+                },
+                "1:1": {
+                    "cx": 0.7,
+                    "cy": 0.335,
+                    "zoom": 1.5
+                }
+            },
+            "lines": [
+                {
+                    "start": 0.07,
+                    "end": 2.43,
+                    "speaker": "Niamh",
+                    "text": "Good, the email's away to Leo."
+                },
+                {
+                    "start": 3.42,
+                    "end": 4.79,
+                    "speaker": "Niamh",
+                    "text": "Now take the other seat"
+                },
+                {
+                    "start": 5.13,
+                    "end": 7.6,
+                    "speaker": "Niamh",
+                    "text": "and sort a morning of the web the way it really turns up."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "id": "blue_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "defend",
+            "duration": 2.4,
+            "join": {
+                "type": "seam"
+            },
+            "text": [
+                "You sort a morning of web pages"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+            }
+        },
+        {
+            "id": "pages",
+            "type": "gameplay",
+            "duration": 9.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t05b_pages_list_narrow.trimmed.mkv",
+                "in": 7.5,
+                "out": 16.5
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "narrow take t05b (marks as t05 run B: list 6.95, row_open 10.19, end 16.70); frames NOT yet viewed, panel said to be 760 px wide stacked, verdict buttons may be in frame at 9:16 and 1:1, check; list visible 7.5-10.2, card from 10.21 | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "MORNING OF WEB PAGES",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.27,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.47,
+                    "zoom": 0.72
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.47,
+                    "zoom": 1.15
+                }
+            }
+        },
+        {
+            "id": "office_life",
+            "type": "gameplay",
+            "duration": 2.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t09_darren_cooler.trimmed.mkv",
+                "in": 2.65,
+                "out": 5.05
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "PROPOSAL (no slot in the script, default ON, owner can drop it): t09_darren_cooler, Darren leaves his post 2.88 and reaches the cooler by about 4.8 (mark arrive 5.63 is late vs the picture), '...' bubble near 3.8; the follow-cam pans the room across the frame (room x 0.32-0.81 at 2.9 to 0.10-0.60 at 5.0), crop zoom 1.5 cx 0.46, check both ends; silent take | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.46,
+                    "cy": 0.5,
+                    "zoom": 1.5
+                },
+                "9:16": {
+                    "cx": 0.46,
+                    "cy": 0.5,
+                    "zoom": 0.65
+                },
+                "1:1": {
+                    "cx": 0.46,
+                    "cy": 0.5,
+                    "zoom": 1.1
+                }
+            }
+        },
+        {
+            "id": "step_away",
+            "type": "gameplay",
+            "duration": 3.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t07c_lookup_panel_narrow.trimmed.mkv",
+                "in": 3.4,
+                "out": 6.6
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "narrow take t07c (panel 3.40, hold-end 6.60); frames NOT yet viewed, check the panel fits 9:16 and 1:1; panel static from 3.2 ('Before the debrief', Look up and Carry on buttons, no click), panel x 0.31-0.70, y 0.33-0.70; stops before any click | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.52,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.52,
+                    "zoom": 0.75
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.52,
+                    "zoom": 1.3
+                }
+            }
+        },
+        {
+            "id": "darren_end",
+            "type": "gameplay",
+            "duration": 4.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t07_darren_prompt.trimmed.mkv",
+                "in": 5.8,
+                "out": 9.8
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t07_darren_prompt D1: bubble up from 5.49, speech 6.04-9.37 (silencedetect 0.25-3.48 in the shot); in 5.8 out 9.8 never reaches D2; Darren seated at x 0.31, y 0.54, room about x 0.15-0.65; crop zoom 1.9 cx 0.38 puts the game bar (y from 0.79) out of 16:9; framing estimated, check on the render; no menu, no click | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#3b5b8c"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.38,
+                    "cy": 0.5,
+                    "zoom": 1.9
+                },
+                "9:16": {
+                    "cx": 0.36,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                },
+                "1:1": {
+                    "cx": 0.38,
+                    "cy": 0.5,
+                    "zoom": 1.5
+                }
+            },
+            "lines": [
+                {
+                    "start": 0.24,
+                    "end": 3.5,
+                    "speaker": "Darren",
+                    "text": "Supplier portal's asking me to prove I'm human now."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-close",
+            "id": "close",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "name": "Fake downloads and checks",
+                "tagline": "Play the attack \u00b7 Learn to stop it",
+                "hacktivity": "Hacktivity",
+                "cta": "Learn on Hacktivity.co.uk",
+                "layout": {
+                    "1:1": {
+                        "mark_y": 0.14
+                    }
+                },
+                "wordmark": [
+                    "HACKTIVITY",
+                    "CYBER AWARE"
+                ]
+            },
+            "duration": 5.5
+        }
+    ],
+    "vo": [
+        {
+            "id": "v1",
+            "start": 3.65,
+            "end": 8.354,
+            "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+            "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v1.mp3"
+        },
+        {
+            "id": "v1b",
+            "start": 8.75,
+            "end": 11.99,
+            "text": "Some web pages are traps that look ordinary.",
+            "caption": "Some web pages are traps\nthat look ordinary.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v1b.mp3"
+        },
+        {
+            "id": "v1c",
+            "start": 12.24,
+            "end": 15.36,
+            "text": "This episode: fake downloads and checks.",
+            "caption": "This episode:\nfake downloads and checks.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v1c.mp3"
+        },
+        {
+            "id": "v2",
+            "start": 16.05,
+            "end": 18.45,
+            "text": "First, you play the attacker.",
+            "caption": "First, you play the attacker.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v2.mp3"
+        },
+        {
+            "id": "v3",
+            "start": 19.05,
+            "end": 22.218,
+            "text": "The website names the supplier portal staff use.",
+            "caption": "The website names the\nsupplier portal staff use.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v3.mp3"
+        },
+        {
+            "id": "v4",
+            "start": 23.85,
+            "end": 27.258,
+            "text": "Build a fake 'verify you are human' check.",
+            "caption": "Build a fake 'verify\nyou are human' check.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v4.mp3"
+        },
+        {
+            "id": "v4b",
+            "start": 27.508,
+            "end": 29.884,
+            "text": "Put it on a site staff already trust.",
+            "caption": "Put it on a site\nstaff already trust.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v4b.mp3"
+        },
+        {
+            "id": "v5",
+            "start": 31.65,
+            "end": 34.074,
+            "text": "Remind Leo to order from his bookmark.",
+            "caption": "Remind Leo to order\nfrom his bookmark.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v5.mp3"
+        },
+        {
+            "id": "v8a",
+            "start": 48.8,
+            "end": 51.056,
+            "text": "Seven pages, one morning.",
+            "caption": "Seven pages, one morning.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v8a.mp3"
+        },
+        {
+            "id": "v8b",
+            "start": 51.306,
+            "end": 53.826,
+            "text": "Same site as the page you built.",
+            "caption": "Same site as the\npage you built.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v8b.mp3"
+        },
+        {
+            "id": "v10",
+            "start": 54.38,
+            "end": 56.156,
+            "text": "Real, or rigged?",
+            "caption": "Real, or rigged?",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v10.mp3"
+        },
+        {
+            "id": "v9",
+            "start": 60.2,
+            "end": 62.168,
+            "text": "Then a colleague's screen asks.",
+            "caption": "Then a colleague's\nscreen asks.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v9.mp3"
+        },
+        {
+            "id": "v11",
+            "start": 67.4,
+            "end": 72.368,
+            "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+            "caption": "Play the attack, learn to\nstop it, on Hacktivity.co.uk.",
+            "file": "/home/cliffe/video-takes-local/ca10/vo/Sulafat_v2/trim/v11.mp3"
+        }
+    ]
+}

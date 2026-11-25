@@ -1,0 +1,15 @@
+{
+ "scenario": "ca02_cv_lures_defend",
+ "lists": {
+  "host": [
+   {"k": null, "h": "d15ffadb"},
+   {"k": "quiet_on", "h": "05ecf8a5"},
+   {"k": "defend_done", "h": "ce1571fe"},
+   {"k": "caught", "h": "80bdfac2"},
+   {"k": "quiet_off_debrief", "h": "92c58a8a"}
+  ],
+  "npc:kit_chidi_okeke": [
+   {"k": "chg_defend_done_knot_ca02_react", "h": "39eb1928"}
+  ]
+ }
+}

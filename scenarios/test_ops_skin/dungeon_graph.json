@@ -1,0 +1,297 @@
+{
+  "scenario": "test_ops_skin",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_files01",
+      "label": "File server<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_records01",
+      "label": "Records server<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_ian",
+      "label": "Ian Okafor sign-in<br/>(iokafor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_office_port",
+      "label": "Office wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "resource_floor_printer",
+      "label": "Floor print queue<br/>(printer)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "resource_office_drop",
+      "label": "Office-Drop<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "weak_files01_storage_entry_a",
+      "label": "File server<br/>storage :445<br/>unpatched / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_files01_storage_entry_c",
+      "label": "File server<br/>storage :445<br/>misconfig / medium",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_guest_lan",
+      "label": "Guest network<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "host_guest_cam01",
+      "label": "Guest lounge camera<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "pivot_files01",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_records01",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "comms_room",
+      "label": "Comms room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_network_audit",
+      "label": "Network audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "cred_file_link",
+      "label": "Ian Okafor saved connection<br/>(iokafor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "tech_update_notes",
+      "label": "Update notes: FileHold 4.2",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_update",
+      "label": "Field note: file server updates",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_settings_review",
+      "label": "Settings review",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_settings",
+      "label": "Field note: reviewing settings",
+      "kind": "item",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "lobby",
+      "to": "signin_ian",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_files01",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_records01",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "jack_office_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_files01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_records01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "resource_floor_printer",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "resource_office_drop",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_files01_storage_entry_a",
+      "soft": false,
+      "label": "storage"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_files01_storage_entry_c",
+      "soft": false,
+      "label": "storage"
+    },
+    {
+      "from": "net_guest_lan",
+      "to": "host_guest_cam01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "net_guest_lan",
+      "soft": true,
+      "label": "link",
+      "undirected": true
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_files01",
+      "soft": false
+    },
+    {
+      "from": "lock_files01",
+      "to": "pivot_files01",
+      "soft": false
+    },
+    {
+      "from": "pivot_files01",
+      "to": "net_guest_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_records01",
+      "soft": false
+    },
+    {
+      "from": "lock_records01",
+      "to": "pivot_records01",
+      "soft": false
+    },
+    {
+      "from": "pivot_records01",
+      "to": "net_guest_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lobby",
+      "to": "comms_room",
+      "soft": false
+    },
+    {
+      "from": "cred_file_link",
+      "to": "lock_files01",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_update",
+      "to": "tech_update_notes",
+      "soft": false
+    },
+    {
+      "from": "tech_update_notes",
+      "to": "weak_files01_storage_entry_a",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_settings",
+      "to": "tech_settings_review",
+      "soft": false
+    },
+    {
+      "from": "tech_settings_review",
+      "to": "weak_files01_storage_entry_c",
+      "soft": false
+    },
+    {
+      "from": "weak_files01_storage_entry_a",
+      "to": "lock_files01",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_files01_storage_entry_c",
+      "to": "cred_file_link",
+      "soft": false
+    }
+  ]
+}

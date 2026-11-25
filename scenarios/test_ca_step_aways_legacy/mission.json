@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: step-away beats (E3, legacy form)",
+  "description": "Fixture for engine change E3. The legacy stepAway true form: one beat after defend. Stub content, not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

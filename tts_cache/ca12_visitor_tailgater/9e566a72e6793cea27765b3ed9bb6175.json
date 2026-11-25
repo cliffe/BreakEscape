@@ -1,0 +1,13 @@
+{
+  "key": "9e566a72e6793cea27765b3ed9bb6175",
+  "npc": "ca12_yusuf_demir",
+  "text": "Sorry, can I help you there? Deliveries go via the desk.",
+  "voice": "Alnilam",
+  "style": "Merrin & Sallow's building security officer on the studio door, in his 40s, British Turkish, steady and practical; polite, firm, unhurried. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:58:53Z"
+}

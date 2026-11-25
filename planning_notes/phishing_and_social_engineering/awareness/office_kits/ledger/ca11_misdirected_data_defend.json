@@ -1,0 +1,15 @@
+{
+ "scenario": "ca11_misdirected_data_defend",
+ "lists": {
+  "host": [
+   {"k": null, "h": "6a2593e3"},
+   {"k": "quiet_on", "h": "0929deb3"},
+   {"k": "defend_done", "h": "c42f10cd"},
+   {"k": "caught", "h": "e8a45a68"},
+   {"k": "quiet_off_debrief", "h": "083a58e2"}
+  ],
+  "npc:kit_yusuf_demir": [
+   {"k": "chg_defend_done_knot_ca11_react", "h": "81755ba4"}
+  ]
+ }
+}

@@ -164,11 +164,12 @@ module BreakEscape
       refute game.send(:session_for_client, 'sam_pc').key?('access')
     end
 
-    test 'a relay session of an admin account is user' do
+    # S5 ruling B (unit 02): a relay has the rights of the relayed account; see relay_access_level_test.rb
+    test 'a relay session of an admin account is admin' do
       build
       set_session('jake_pc', { 'id' => 'jake', 'via' => 'credential', 'credential' => 'jake_assist', 'relay' => true })
-      assert_equal 'user', level('jake_pc')
-      refute game.send(:session_for_client, 'jake_pc').key?('access')
+      assert_equal 'admin', level('jake_pc')
+      assert_equal 'admin', game.send(:session_for_client, 'jake_pc')['access']
     end
 
     # ---- nothing held right now -----------------------------------------------------------------

@@ -30,6 +30,15 @@ module BreakEscape
       show?
     end
 
+    def crack?
+      show?
+    end
+
+    # S5b: the collect has the same rule as crack?
+    def harvest_credentials?
+      show?
+    end
+
     def update_room?
       show?
     end
@@ -87,6 +96,31 @@ module BreakEscape
     end
 
     def login?
+      show?
+    end
+
+    def mfa_device?
+      show?
+    end
+
+    def mfa_verify?
+      show?
+    end
+
+    def mfa_prompt?
+      show?
+    end
+
+    def mfa_phone?
+      show?
+    end
+
+    def mfa_approve?
+      show?
+    end
+
+    # S8b unit 13
+    def helpdesk_request?
       show?
     end
 

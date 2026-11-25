@@ -1,0 +1,13 @@
+{
+  "key": "c53fc4fbc57a11b413a893f57d096d7d",
+  "npc": "ca12_jo",
+  "text": "Client's in this morning.",
+  "voice": "Leda",
+  "style": "Jo Fairweather, red-team lead at Northlight Security, in her mid 30s, warm, quick and practical, quietly pleased, speaking low into a tester's earpiece. Speak with a consistent Glaswegian accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:59:21Z"
+}

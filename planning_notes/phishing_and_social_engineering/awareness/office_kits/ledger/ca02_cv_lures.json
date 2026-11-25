@@ -1,0 +1,36 @@
+{
+ "scenario": "ca02_cv_lures",
+ "lists": {
+  "host": [
+   {"k": null, "h": "832ab2f3"},
+   {"k": null, "h": "fc3feb56"},
+   {"k": "quiet_on", "h": "64b17814"},
+   {"k": "attack_done", "h": "e2b25f58"},
+   {"k": "defend_done", "h": "101867a1"},
+   {"k": "caught", "h": "3dfbfe7c"},
+   {"k": "quiet_off_debrief", "h": "33372db1"},
+   {"k": "quiet_off_debrief_seen", "h": "1474b12b"},
+   {"k": "step_away", "h": "9a0c7056"},
+   {"k": "chg_ca02_cv_choice", "h": "29a0976b"},
+   {"k": "chg_ca02_asked", "h": "2a9a4758"}
+  ],
+  "npc:kit_chidi_okeke": [
+   {"k": "chg_out_sets_ca02_there", "h": "6f90b446"},
+   {"k": "chg_out", "h": "e1d649b4"},
+   {"k": "chg_ca02_there_knot_ca02_cv", "h": "2e15febc"},
+   {"k": "chg_ca02_there_sets_ca02_asked", "h": "8a544690"},
+   {"k": "conversation_closed_chidi_okeke_sets_ca02_cv_choice", "h": "afccb653"},
+   {"k": "chg_ca02_cv_choice_sets_ca02_moved", "h": "1233ea5d"},
+   {"k": "chg_ca02_cv_choice_sets_ca02_done", "h": "c7caae38"},
+   {"k": "chg_ca02_moved_sets_ca02_done", "h": "7f732f02"},
+   {"k": "chg_ca02_done_sets_ca02_cv_choice", "h": "f84d3f53"},
+   {"k": "chg_ca02_there_knot_ca02_cv~rearm", "h": "167757f8"},
+   {"k": "chg_ca02_there_sets_ca02_asked~rearm", "h": "3a71bcb2"},
+   {"k": "chg_ca02_there_sets_ca02_asked~rearm_cue", "h": "4eb2d3f8"}
+  ],
+  "npc:kit_zainab_hussain": [
+   {"k": "chg_out", "h": "c988a17a"},
+   {"k": "chg_ca02_done", "h": "bf65e548"}
+  ]
+ }
+}

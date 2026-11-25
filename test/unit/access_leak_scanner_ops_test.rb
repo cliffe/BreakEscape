@@ -176,7 +176,11 @@ class AccessLeakScannerOpsTest < ActiveSupport::TestCase
     assert_includes lines.first, 'ops_string'
   end
 
-  test 'a scenario with no hosts and no discovery registers nothing' do
-    assert_equal 0, AccessLeakScanner.new(NetworkModelScenario.scenario).counts[:ops_strings]
+  test 'a scenario with no hosts and no discovery registers only the catalog entries it does not link' do
+    scanner = AccessLeakScanner.new(NetworkModelScenario.scenario)
+    modules = BreakEscape::RealismCatalog.entry_ids.map { |id| BreakEscape::RealismCatalog.lookup(id)['module'].to_s.strip }
+    assert_equal modules.reject(&:empty?).uniq.length, scanner.counts[:ops_strings]
+    owners = scanner.instance_variable_get(:@ops_strings).values.flatten.map { |o| o[:owner] }
+    assert owners.all? { |o| o.start_with?('ops:catalog:') }, 'only unlinked catalog entries are registered'
   end
 end

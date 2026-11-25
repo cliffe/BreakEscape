@@ -19,6 +19,7 @@ CLI (nothing writes into the repo):
   office_kit.py [--repo <checkout>] export <shell folder>   print the kit-owned members as JSON
 """
 import copy
+import hashlib
 import json
 import os
 import re
@@ -32,6 +33,40 @@ SHARED_BOOLS = ('kit_attack_done', 'kit_defend_done', 'kit_quiet', 'kit_caught')
 CAUGHT_PERCENT = 85   # the one threshold in the course (plan 6.1)
 KEY_GLOBAL = 'kit_key_caught'   # the one generic global a row's keyMessage writes (plan 4.2)
 KIOSK_FINISHED = 'globalVars.kit_defend_done === true && globalVars.kit_quiet === false'
+
+# Every eventMapping the kit generates (host mappings and each kit NPC's own) carries a stable internal key,
+# `_kitKey`, written in the kit data (office_kits/*.json for set-piece mappings, host_mappings() for the shared
+# ones). The key names the mapping, never its content: a kit edit changes what a mapping says, not which one
+# it is. The merge decides by key; the key never reaches a scenario file (build() strips it). The other
+# lists (npcs, objects, timers, resources, roles) are keyed by their `id`, chatter and globals by their dict key.
+KEY = '_kitKey'
+
+
+def strip_keys(x):
+    """A deep copy of x with every `_kitKey` removed (the form that reaches a scenario file)."""
+    if isinstance(x, dict):
+        return {k: strip_keys(v) for k, v in x.items() if k != KEY}
+    if isinstance(x, list):
+        return [strip_keys(v) for v in x]
+    return x
+
+
+def _ensure_keys(maps, label='mappings'):
+    """Every mapping in this one list has a unique `_kitKey`. A mapping written without one (a test fixture,
+    never the real kit files, which test_office_kit checks) gets `auto:<event>:<purpose>:<n>` from its place
+    among same-event-and-purpose siblings. Duplicates raise."""
+    seen = {}
+    for m in maps:
+        if KEY not in m:
+            i = _map_id(m)
+            n = seen.get(i, 0)
+            seen[i] = n + 1
+            m[KEY] = f'auto:{i[0]}:{",".join(map(str, i[1]))}:{n}'
+    keys = [m[KEY] for m in maps]
+    dup = sorted({k for k in keys if keys.count(k) > 1})
+    if dup:
+        raise ValueError(f'{label}: duplicate _kitKey {", ".join(map(str, dup))}')
+    return maps
 
 
 # ---- data ----------------------------------------------------------------------
@@ -184,10 +219,11 @@ def _rearm_mappings(ask, twins, out_key, asked_key, done_key, choice_key):
         m['eventPattern'] = 'game_loaded'
         m['condition'] = f'{live} && globalVars.{asked_key} !== true'
         m['onceOnly'] = True
+        m[KEY] = f'{src[KEY]}~rearm'
         out.append(m)
     cue = {'eventPattern': 'game_loaded', 'condition': f'{live} && globalVars.{asked_key} === true',
            'onceOnly': True, 'delayMs': ask['delayMs'], 'askCue': True, 'whenPerceivable': True,
-           'askCueUntil': choice_key, 'askCueMs': ask['askCueMs'], 'askCueQuiet': True}
+           'askCueUntil': choice_key, 'askCueMs': ask['askCueMs'], 'askCueQuiet': True, KEY: f'{ask[KEY]}~rearm_cue'}
     out.append(cue)
     return out
 
@@ -242,7 +278,7 @@ def step_away_defaults(piece):
                 out_key = out_start
         piece['timers'] = [t for t in piece.get('timers', []) if t['id'] not in {e['id'] for e in extra}] + extra
     for rec in piece.get('staff', {}).values():
-        maps = rec.get('eventMappings', [])
+        maps = _ensure_keys(rec.get('eventMappings', []), 'set piece staff eventMappings')
         rearm = []
         for m in maps:
             if asked & set((m.get('setGlobal') or {}).keys()):
@@ -298,8 +334,14 @@ def _pool(kit):
     return {'lines': list(p['lines']), 'requireGlobal': copy.deepcopy(p['requireGlobal'])}
 
 
-def room_npcs(kit, row, prefix=None):
-    """The two ambient staff as room NPC records, then the set piece's own `npcs`. Empty for tier none."""
+def room_npcs(kit, row, prefix=None, keyed=False):
+    """The two ambient staff as room NPC records, then the set piece's own `npcs`. Empty for tier none.
+    With `keyed`, each NPC's eventMappings carry their `_kitKey`."""
+    out = _room_npcs(kit, row, prefix)
+    return out if keyed else strip_keys(out)
+
+
+def _room_npcs(kit, row, prefix=None):
     if not active(row):
         return []
     # chatter is written only for a kit with a pool and a row that is not the convention form
@@ -340,10 +382,15 @@ def room_npcs(kit, row, prefix=None):
             # that carries the same gate as the top-level pool (validator V13)
             npc['chatter'] = {pool_key: {'lines': lines, 'requireGlobal': copy.deepcopy(kit['pool']['requireGlobal'])}}
         npc.update(patches.get(person, {}))
+        if 'eventMappings' in npc:
+            _ensure_keys(npc['eventMappings'], f"{row['id']} {npc['id']} eventMappings")
         out.append(npc)
     # a set piece's own `npcs` (ca12's visitor): kit-owned records, after the ambient pair, written as the
     # set piece has them (placeholders filled in; no currentKnot/storyPath defaults, the record carries them)
-    out.extend(_subst(copy.deepcopy(_set_piece(kit, row).get('npcs', [])), prefix, row))
+    for extra in _subst(copy.deepcopy(_set_piece(kit, row).get('npcs', [])), prefix, row):
+        if 'eventMappings' in extra:
+            _ensure_keys(extra['eventMappings'], f"{row['id']} {extra.get('id')} eventMappings")
+        out.append(extra)
     return out
 
 
@@ -430,35 +477,42 @@ def kit_timers(kit, row, prefix=None):
     return _subst(copy.deepcopy(_set_piece(kit, row).get('timers', [])), prefix, row)
 
 
-def host_mappings(kit, row, prefix, state_global):
-    """Host eventMappings, to be appended after the host's existing ones (plan 6.1)."""
+def host_mappings(kit, row, prefix, state_global, keyed=False):
+    """Host eventMappings, to be appended after the host's existing ones (plan 6.1). With `keyed`, each record
+    carries its `_kitKey` (the merge reads it; nothing written to a scenario does)."""
     if not active(row) or is_convention(row):
         return []
+    m = _host_mappings(kit, row, prefix, state_global)
+    return m if keyed else strip_keys(m)
+
+
+def _host_mappings(kit, row, prefix, state_global):
     state = f'global_variable_changed:{state_global}'
     complete = f'global_variable_changed:{prefix}complete'
-    m = [{'eventPattern': state, 'onceOnly': True, 'setGlobal': {'kit_quiet': True}}]
+    m = [{KEY: 'quiet_on', 'eventPattern': state, 'onceOnly': True, 'setGlobal': {'kit_quiet': True}}]
     if row.get('attack'):
-        m.append({'eventPattern': state, 'condition': "data.value.stage === 'defend'",
+        m.append({KEY: 'attack_done', 'eventPattern': state, 'condition': "data.value.stage === 'defend'",
                   'onceOnly': True, 'setGlobal': {'kit_attack_done': True}})
-    m.append({'eventPattern': complete, 'condition': 'value === true', 'onceOnly': True,
+    m.append({KEY: 'defend_done', 'eventPattern': complete, 'condition': 'value === true', 'onceOnly': True,
               'setGlobal': {'kit_defend_done': True}})
-    m.append({'eventPattern': complete,
+    m.append({KEY: 'caught', 'eventPattern': complete,
               'condition': f'value === true && globalVars.{prefix}percent >= {CAUGHT_PERCENT}',
               'onceOnly': True, 'setGlobal': {'kit_caught': True}})
-    m.append({'eventPattern': state, 'condition': "data.value.done.includes('debrief')",
+    m.append({KEY: 'quiet_off_debrief', 'eventPattern': state, 'condition': "data.value.done.includes('debrief')",
               'onceOnly': True, 'setGlobal': {'kit_quiet': False}})
     if row.get('stepAway'):
         # The panel's Close can leave done without 'debrief'; debriefSeen is the second release.
         # Conditions support && only, never ||, so it is its own mapping.
-        m.append({'eventPattern': state, 'condition': 'data.value.debriefSeen === true',
+        m.append({KEY: 'quiet_off_debrief_seen', 'eventPattern': state, 'condition': 'data.value.debriefSeen === true',
                   'onceOnly': True, 'setGlobal': {'kit_quiet': False}})
-        step = {'eventPattern': 'episode_step_away', 'condition': 'globalVars.kit_defend_done === true',
+        step = {KEY: 'step_away', 'eventPattern': 'episode_step_away', 'condition': 'globalVars.kit_defend_done === true',
                 'onceOnly': True, 'setGlobal': {out_global(row): True}}
         if row.get('stepAwayBark'):
             step['bark'] = row['stepAwayBark']
         m.append(step)
-    m.extend(_subst(copy.deepcopy(_set_piece(kit, row).get('mappings', [])), prefix, row))
-    return m
+    m.extend(_ensure_keys(_subst(copy.deepcopy(_set_piece(kit, row).get('mappings', [])), prefix, row),
+                          'set piece mappings'))
+    return _ensure_keys(m, f"{row['id']} host mappings")
 
 
 def scenario_fields(kit, row):
@@ -552,16 +606,23 @@ def kit_keyed(kit, row):
     return out
 
 
-def build(kit, row, prefix, state_global):
-    """Everything the kit owns for one shell, in one dict (the form the tests compare)."""
+def build(kit, row, prefix, state_global, keyed=False):
+    """Everything the kit owns for one shell, in one dict (the form the tests compare). With `keyed`, the
+    host mappings and each NPC's eventMappings keep their `_kitKey` (what the merge reads); otherwise the keys
+    are stripped, so the result is exactly what reaches a scenario file."""
+    out = _build(kit, row, prefix, state_global)
+    return out if keyed else strip_keys(out)
+
+
+def _build(kit, row, prefix, state_global):
     kit = apply_override(kit, row)
     check_pool(kit)
     out = {
-        'npcs': room_npcs(kit, row, prefix),
+        'npcs': room_npcs(kit, row, prefix, keyed=True),
         'objects': room_objects(kit, row, prefix),
         'globals': kit_globals(kit, row, prefix),
         'timers': kit_timers(kit, row, prefix),
-        'mappings': host_mappings(kit, row, prefix, state_global),
+        'mappings': host_mappings(kit, row, prefix, state_global, keyed=True),
         'scenario': scenario_fields(kit, row),
         'stepAway': bool(active(row) and row.get('stepAway')),
     }
@@ -594,12 +655,17 @@ def is_kit_member(m):
     return isinstance(m, dict) and str(m.get('id', '')).startswith('kit_')
 
 
+KIT_COND = re.compile(r'globalVars\.kit_')
+
+
 def is_kit_mapping(m):
-    """A host mapping is kit-owned when its setGlobal key, knot (knot or targetKnot) or condition names a kit_ global."""
+    """A host mapping is kit-owned when its setGlobal key is a kit_ global, its knot (or targetKnot) is named
+    kit_*, or its condition reads a kit global as `globalVars.kit_*` (the only form kit-built conditions use).
+    A hand mapping that merely mentions kit_ in other words is not claimed."""
     sg = m.get('setGlobal')
     if isinstance(sg, dict) and any(str(k).startswith('kit_') for k in sg):
         return True
-    return bool(KIT_NAME.search(str(m.get('condition', '')))) or bool(KIT_NAME.search(str(m.get('knot', ''))) or KIT_NAME.search(str(m.get('targetKnot', ''))))
+    return bool(KIT_COND.search(str(m.get('condition', '')))) or bool(KIT_NAME.search(str(m.get('knot', ''))) or KIT_NAME.search(str(m.get('targetKnot', ''))))
 
 
 # top-level keys the kit owns whole; `chatter` is shared with the shell, so only its kit_ keys are the kit's
@@ -646,6 +712,18 @@ def _kit_caught_verdicts(outcome):
     return {k: v for k, v in mcv.items() if k in ids} if isinstance(mcv, dict) else {}
 
 
+def has_step_away(episode):
+    """True when an awarenessEpisode carries the kit's step-away: the legacy `stepAway: true`, or a hand-written
+    `stepAways` list (plan E3) with a post-defend `episode_step_away` beat. The two are exclusive (the validator
+    rejects both set), and the kit never adds `stepAway` beside a `stepAways` list."""
+    if not isinstance(episode, dict):
+        return False
+    if isinstance(episode.get('stepAways'), list):
+        return any(isinstance(b, dict) and b.get('after') == 'defend' and b.get('event') == 'episode_step_away'
+                   for b in episode['stepAways'])
+    return episode.get('stepAway') is True
+
+
 def strip_kit(sc, host_id=None):
     """A deep copy of a parsed shell with every kit-owned member removed."""
     sc = copy.deepcopy(sc)
@@ -680,6 +758,8 @@ def strip_kit(sc, host_id=None):
             sc[key] = [r for r in sc[key] if not is_kit_member(r)]
         if key in sc and not sc[key]:
             del sc[key]
+    # `stepAway` is the kit's; a `stepAways` list is hand-written (it also holds the shell's own world beats),
+    # so it stays through strip and apply, and apply_kit then adds no `stepAway` beside it.
     sc['social']['awarenessEpisode'].pop('stepAway', None)
     oc = key_outcome(sc)
     if _kit_caught_verdicts(oc):
@@ -713,57 +793,533 @@ def _insert_after(d, after_key, items):
     return out
 
 
-def apply_kit(sc, kit, row, host_id=None):
+class KitMergeError(ValueError):
+    """A regeneration would move an existing record or clash with a hand-written one."""
+
+
+def _keyed(records, ident):
+    """[(ident, n)] where n counts earlier records with the same ident: the nth of an ident is one identity."""
+    seen = {}
+    out = []
+    for r in records:
+        i = ident(r)
+        out.append((i, seen.get(i, 0)))
+        seen[i] = seen.get(i, 0) + 1
+    return out
+
+
+def merge_plan(old, new, owned, ident, label='list', strict=False, unique=False):
+    """What merging a kit's `new` records into the shell's `old` list does, as [(op, old_index, record)]:
+    ('keep', i, None) a hand record or an untouched one stays; ('set', i, rec) a record `owned` by the kit
+    stays at i, replaced by the kit's current copy with the same identity (`ident`, then the nth of it among
+    the owned ones); ('add', None, rec) a kit record the shell has not got goes last. A kit record the kit no
+    longer produces is dropped. With `strict` (eventMappings: the server keys them by index), dropping one
+    that has any record after it raises KitMergeError, since that would shift the later ones; at the end of
+    the list it is fine. With `unique`, a kit record whose ident is a hand record's raises (id collision)."""
+    if unique:
+        hand = {ident(o) for o in old if not owned(o) and ident(o) is not None}
+        clash = sorted(str(ident(n)) for n in new if ident(n) in hand)
+        if clash:
+            raise KitMergeError(f"{label}: a hand-written record and a kit record share the id {', '.join(clash)}")
+        # Ownership is by key: an old record is the kit's copy when its id is one the kit generates. A second
+        # old record with such an id is a hand-written one sharing it (a regenerated shell holds each once).
+        gen = {ident(n) for n in new}
+        ids = [ident(o) for o in old if ident(o) in gen]
+        twice = sorted({str(i) for i in ids if ids.count(i) > 1})
+        if twice:
+            raise KitMergeError(f"{label}: a hand-written record and a kit record share the id {', '.join(twice)}")
+    pending = {k: n for k, n in zip(_keyed(new, ident), new)}
+    owned_keys = iter(_keyed([o for o in old if owned(o)], ident))
+    used = set()
+    plan = []
+    gone = None
+    for i, o in enumerate(old):
+        if not owned(o):
+            k = None
+        else:
+            k = next(owned_keys)
+        n = pending.get(k) if k is not None else None
+        if k is None:
+            plan.append(('keep', i, None))
+            if strict and gone is not None:
+                raise KitMergeError(
+                    f"{label}: the kit no longer produces the mapping at index {gone[0]} {gone[1]!r}, and records "
+                    f"follow it (index {i}), so regenerating would shift them. Keep that mapping in the kit data, "
+                    f"or edit the shell's list by hand.")
+        elif n is None:
+            if gone is None:
+                gone = (i, k[0])
+        else:
+            used.add(k)
+            plan.append(('set', i, n))
+            if strict and gone is not None:
+                raise KitMergeError(
+                    f"{label}: the kit no longer produces the mapping at index {gone[0]} {gone[1]!r}, and records "
+                    f"follow it (index {i}), so regenerating would shift them. Keep that mapping in the kit data, "
+                    f"or edit the shell's list by hand.")
+    plan += [('add', None, n) for k, n in zip(_keyed(new, ident), new) if k not in used]
+    return plan
+
+
+def merge_list(old, new, owned, ident, label='list', strict=False, unique=False):
+    """Merge a kit's `new` records into the shell's `old` list without moving anything (see merge_plan)."""
+    return [old[i] if op == 'keep' else rec for op, i, rec in merge_plan(old, new, owned, ident, label, strict, unique)]
+
+
+def merge_dict(old, new, owned_key, label='dict'):
+    """merge_list for a dict: kit-owned keys keep their position (new value), others stay, new keys go last.
+    A hand key the kit also writes raises KitMergeError."""
+    clash = sorted(str(k) for k in new if k in old and not owned_key(k))
+    if clash:
+        raise KitMergeError(f"{label}: a hand-written entry and a kit entry share the key {', '.join(clash)}")
+    out = {}
+    for k, v in old.items():
+        if not owned_key(k):
+            out[k] = v
+        elif k in new:
+            out[k] = new[k]
+    for k, v in new.items():
+        if k not in out:
+            out[k] = v
+    return out
+
+
+def map_ident(m):
+    """What a kit mapping is for (the key merge_plan pairs old and new by, with the nth of it)."""
+    return _map_id(m)
+
+
+def member_ident(m):
+    return m.get('id')
+
+
+def _strong_kit_mapping(m):
+    """A mapping that sets a kit_ global or runs a kit_ knot: surely the kit's when the kit used to write it.
+    One that only reads a kit_ global in its condition (the step-away mapping, a hand follow-through) is not."""
+    sg = m.get('setGlobal')
+    return (isinstance(sg, dict) and any(str(k).startswith('kit_') for k in sg)) or bool(
+        KIT_NAME.search(str(m.get('knot', ''))) or KIT_NAME.search(str(m.get('targetKnot', ''))))
+
+
+def _purpose_elems(m):
+    return set(_map_id(m)[1])
+
+
+def _summ(m):
+    """One line naming a mapping: its event, what it sets or runs, and the start of its condition."""
+    sg = sorted(m.get('setGlobal') or {})
+    what = f"sets {sg}" if sg else f"knot {m.get('knot') or m.get('targetKnot')}" if (m.get('knot') or m.get('targetKnot')) else 'no set/knot'
+    return f"{m.get('eventPattern')} ({what}; {str(m.get('condition', ''))[:50]!r})"
+
+
+def match_mappings(old, new, candidate, orphan_ok, label='mappings'):
+    """One-off matcher: the key (a new record's `_kitKey`) of each record in the shell's `old` list, from what
+    the shell holds today. The result is parallel to `old`: a key string (the kit still writes it), ('orphan', n)
+    (a record the kit used to write and no longer does) or None (a hand record). Everything after this step
+    is decided by key, not by content.
+      1. an old candidate equal to a new record is that record (the usual case: the shell was generated);
+      2. of the rest, old and new with the same event and purpose pair up in order when there are the same
+         number of each; an uneven count (an edit and an insert at once) cannot be told apart and raises;
+      3. of the rest, one old and one new on the same event that share a purpose element (a kit_ global or a
+         knot) pair up (a mapping that gained a second kit_ global).
+    A candidate still unmatched is an orphan when `orphan_ok` (it is a kit mapping the kit dropped), else hand."""
+    plain = [strip_keys(n) for n in new]
+    keys = [None] * len(old)
+    free_new = list(range(len(new)))
+    cand = [i for i, o in enumerate(old) if candidate(o)]
+    for i in cand:
+        for j in free_new:
+            if plain[j] == old[i]:
+                keys[i] = new[j][KEY]
+                free_new.remove(j)
+                break
+    left = [i for i in cand if keys[i] is None]
+    groups = {}
+    for i in left:
+        groups.setdefault(_map_id(old[i]), ([], []))[0].append(i)
+    for j in free_new:
+        g = groups.get(_map_id(new[j]))
+        if g:
+            g[1].append(j)
+    for ident, (oi, nj) in groups.items():
+        if oi and nj and len(oi) != len(nj):
+            raise KitMergeError(f"{label}: {len(oi)} old and {len(nj)} new kit mapping(s) share {_summ(old[oi[0]])[:60]}, "
+                                f"and the kit data changed more than one of them, so which is which cannot be told. "
+                                f"Edit the kit data in separate steps (an edit, then an insert).")
+        for i, j in zip(oi, nj):
+            keys[i] = new[j][KEY]
+            free_new.remove(j)
+    left = [i for i in cand if keys[i] is None]
+    for i in list(left):
+        ev = old[i].get('eventPattern')
+        near_new = [j for j in free_new if new[j].get('eventPattern') == ev and _purpose_elems(new[j]) & _purpose_elems(old[i])]
+        near_old = [k for k in left if old[k].get('eventPattern') == ev and _purpose_elems(old[k]) & _purpose_elems(old[i])]
+        if len(near_new) == 1 and len(near_old) == 1:
+            keys[i] = new[near_new[0]][KEY]
+            free_new.remove(near_new[0])
+            left.remove(i)
+    for n, i in enumerate(i for i in cand if keys[i] is None):
+        if orphan_ok(old[i]):
+            keys[i] = ('orphan', n)
+    return keys
+
+
+def keyed_plan(old, old_keys, new, label):
+    """[(op, old_index, record)] for a list the server keys by index: ('keep', i, None) a hand record stays;
+    ('set', i, rec) a kit record stays at its index with the kit's current copy (matched by key); ('add', None,
+    rec) a kit record the shell lacks goes after every old one. A kit record the kit dropped comes off the list
+    only when nothing after it stays; otherwise the later records would shift, which raises KitMergeError."""
+    new_by_key = {}
+    for n in new:
+        if n[KEY] in new_by_key:
+            raise ValueError(f'{label}: duplicate _kitKey {n[KEY]}')
+        new_by_key[n[KEY]] = n
+    plan, used, gone = [], set(), None
+    for i, (o, k) in enumerate(zip(old, old_keys)):
+        if k is None or isinstance(k, str):
+            if gone is not None:
+                raise KitMergeError(
+                    f"{label}: the kit no longer produces the mapping at index {gone[0]} {_summ(gone[1])}"
+                    f"{' (ledger key ' + repr(gone[2]) + ': key renamed or removed)' if gone[2] else ''}, and records "
+                    f"follow it (index {i}), so regenerating would shift them. Keep that mapping in the kit data, "
+                    f"or edit the shell's list by hand.")
+        if k is None:
+            plan.append(('keep', i, None))
+        elif isinstance(k, str):
+            used.add(k)
+            plan.append(('set', i, strip_keys(new_by_key[k])))
+        elif gone is None:
+            gone = (i, o, k[2] if len(k) > 2 else None)
+    plan += [('add', None, strip_keys(n)) for n in new if n[KEY] not in used]
+    return plan
+
+
+def check_positions(label, old, old_keys, merged, new):
+    """The backstop for an index-keyed list: for every index i of the old list, merged[i] must be the same
+    record (a hand record unchanged; a kit record the one with the same key). A kit record the kit dropped
+    may only leave off the end, and new records go after every old one. Anything else raises KitMergeError
+    naming the list, the index and the two records."""
+    by_key = {n[KEY]: strip_keys(n) for n in new}
+    for i, (o, k) in enumerate(zip(old, old_keys)):
+        got = merged[i] if i < len(merged) else None
+        if k is None:
+            ok = got == o
+        elif isinstance(k, str):
+            ok = got == by_key[k]
+        else:
+            ok = got is None        # dropped: only from the end
+        if not ok:
+            raise KitMergeError(f"{label}: index {i} would change from {_summ(o)} to "
+                                f"{_summ(got) if got is not None else 'nothing'}; the server keys this list by index, "
+                                f"so a mapping may only change in place, be dropped from the end, or be added last")
+
+
+LEDGER_DIR = os.path.join(KITS_DIR, 'ledger')
+
+
+def ledger_path(sid, ledger_dir=None):
+    return os.path.join(ledger_dir or LEDGER_DIR, f'{sid}.json')
+
+
+def record_hash(rec, key=None):
+    """Short fingerprint of one record as written to the shell and the ledger key it is stored under: sha256 of
+    the key (JSON, so null for a hand record) and a newline plus the record's canonical JSON (sorted keys,
+    compact separators, `_kitKey` stripped), first 8 hex digits. The key is in the hash so that swapping two
+    `k` fields in a ledger is caught."""
+    blob = json.dumps(key) + '\n' + json.dumps(strip_keys(rec), sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(blob.encode('utf-8')).hexdigest()[:8]
+
+
+def load_ledger(sid, ledger_dir=None):
+    """The shell's stored ledger {'host': [key|None, ...], 'npc:<id>': [...], '_hashes': {list: [h, ...]}}, or
+    None when it has none. An old key-only or mixed ledger raises KitMergeError (resync with --rebuild-ledger)."""
+    path = ledger_path(sid, ledger_dir)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        doc = json.load(f)
+    keys, hashes = {}, {}
+    for name, entries in doc['lists'].items():
+        for i, e in enumerate(entries):
+            if not (isinstance(e, dict) and 'k' in e and 'h' in e):
+                raise KitMergeError(
+                    f"{sid} ledger {name!r} entry {i} is not a {{k, h}} record (an old-format or mixed ledger, "
+                    f"{path}); rebuild it from the shell as it is with: apply_training_room.py --rebuild-ledger {sid}")
+        keys[name] = [e['k'] for e in entries]
+        hashes[name] = [e['h'] for e in entries]
+    keys['_hashes'] = hashes
+    return keys
+
+
+def ledger_text(sid, lists):
+    """Plain, sorted, one entry per line ({"k": key-or-null, "h": content hash}), so a diff shows exactly
+    which index changed."""
+    hashes = lists['_hashes']
+    out = ['{', f' "scenario": {json.dumps(sid)},', ' "lists": {']
+    names = sorted(k for k in lists if k != '_hashes')
+    for ni, name in enumerate(names):
+        if len(lists[name]) != len(hashes[name]):
+            raise KitMergeError(f"{sid} {name}: {len(lists[name])} ledger keys but {len(hashes[name])} hashes")
+        out.append(f'  {json.dumps(name)}: [')
+        for i, (k, h) in enumerate(zip(lists[name], hashes[name])):
+            out.append('   ' + json.dumps({'k': k, 'h': h}) + (',' if i < len(lists[name]) - 1 else ''))
+        out.append('  ]' + (',' if ni < len(names) - 1 else ''))
+    out += [' }', '}', '']
+    return '\n'.join(out)
+
+
+def save_ledger(sid, lists, ledger_dir=None, path=None):
+    path = path or ledger_path(sid, ledger_dir)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    text = ledger_text(sid, lists)      # built first: a failure writes nothing
+    with open(path, 'w') as f:
+        f.write(text)
+    return path
+
+
+def _ledger_keys(old, ledger_list, new, label, sid, hashes=None):
+    """The key of each record of the shell's `old` list, read from the stored ledger (no content matching):
+    a str when the kit still writes that key, None for a hand record, ('orphan', i, key) when the kit no
+    longer has the key (dropped, or renamed: a rename is a drop plus an insert)."""
+    resync = f"resync with: apply_training_room.py --rebuild-ledger {sid} (infers the keys once from the shell as it is)"
+    if len(ledger_list) != len(old):
+        raise KitMergeError(f"{label}: the key ledger holds {len(ledger_list)} entries but the shell's list holds "
+                            f"{len(old)}, so the shell was edited out of step with the ledger; {resync}")
+    seen = [k for k in ledger_list if k is not None]
+    if len(seen) != len(set(seen)):
+        raise KitMergeError(f"{label}: the key ledger repeats a key; {resync}")
+    kit_keys = {n[KEY] for n in new}
+    if hashes is not None:
+        _check_hashes(old, ledger_list, hashes, new, label, sid)
+    return [None if k is None else k if k in kit_keys else ('orphan', i, k) for i, k in enumerate(ledger_list)]
+
+
+def _check_hashes(old, ledger_list, hashes, new, label, sid):
+    """The shell's records must still be the ones the ledger recorded (same length, same keys already
+    checked). Kit entries must hash to the stored h. Hand entries may have been edited, but must not be a
+    kit record: not one stored under a kit entry's h (a swap), nor one the kit builds now."""
+    fix = (f"shell edited by hand or out of step; run apply_training_room.py --rebuild-ledger {sid} "
+           f"after checking")
+    if len(hashes) != len(old):
+        raise KitMergeError(f"{label}: the key ledger holds {len(hashes)} hashes for {len(old)} records; {fix}")
+    kit_stored = [(k, h) for k, h in zip(ledger_list, hashes) if k is not None]
+    built = {n[KEY]: n for n in new}
+    for i, (k, h) in enumerate(zip(ledger_list, hashes)):
+        if k is not None:
+            if record_hash(old[i], k) != h:
+                raise KitMergeError(f"{label}: scenario {sid}, list {label.split(' ', 1)[1]}, index {i}, key {k!r}: "
+                                    f"the record no longer matches the ledger; {fix}")
+        elif any(record_hash(old[i], sk) == sh for sk, sh in kit_stored):
+            raise KitMergeError(f"{label}: scenario {sid}, index {i} is a hand record in the ledger but holds a "
+                                f"stored kit record (a hand/kit swap); {fix}")
+        elif any(strip_keys(b) == old[i] for b in built.values()):
+            bk = next(bk for bk, b in built.items() if strip_keys(b) == old[i])
+            raise KitMergeError(f"{label}: scenario {sid}, index {i} is a hand record in the ledger but equals the "
+                                f"kit's record {bk!r}; run apply_training_room.py --rebuild-ledger {sid} to adopt "
+                                f"it as that kit record (its content equals the kit's output), or change one of the "
+                                f"two records")
+    have = set(ledger_list)
+    for key, b in built.items():
+        if key in have:
+            continue
+        # A record whose ledger key the kit no longer builds is a rename or a drop: keyed_plan reports that.
+        at = [i for i, cur in enumerate(old) if cur == strip_keys(b) and (ledger_list[i] is None or ledger_list[i] in built)]
+        if at:
+            raise KitMergeError(f"{label}: scenario {sid}, key {key!r} is not in the ledger but its record is "
+                                f"already at index {at[0]}; appending it would duplicate it; {fix}")
+
+
+def _adopt_equal(old, keys, new):
+    """Keys for `old` where a record the matcher left as hand (None) equals a kit record `new` builds whose key no
+    other record holds: that hand record is the kit's, so it takes the key (--rebuild-ledger after a hand mapping
+    was moved into the kit data)."""
+    keys = list(keys)
+    taken = {k for k in keys if isinstance(k, str)}
+    for i, k in enumerate(keys):
+        if k is None:
+            for n in new:
+                if n[KEY] not in taken and strip_keys(n) == old[i]:
+                    keys[i] = n[KEY]
+                    taken.add(n[KEY])
+                    break
+    return keys
+
+
+def _ledger_from_keys(keys):
+    """The ledger list for inferred keys: a str stays, None stays, an orphan gets a stable placeholder."""
+    return [k if k is None or isinstance(k, str) else f'orphan:{k[1]}' for k in keys]
+
+
+def _ledger_after(keys, plan, new):
+    """The ledger list for the merged list: old positions in order (dropped ones gone), then added keys."""
+    used = {keys[i] for op, i, _ in plan if op == 'set'}
+    return [keys[i] for op, i, _ in plan if op != 'add'] + [n[KEY] for n in new if n[KEY] not in used]
+
+
+def merge_keyed_mappings(old, new, label, candidate, orphan_ok, ledger_list=None, sid='', hashes=None):
+    """Merge a kit's keyed `new` mappings into the shell's `old` list. Returns (merged list, plan, old keys,
+    orphans, new ledger list); the position guard has already run. With `ledger_list` (the stored keys of
+    the old records) no content is matched: the record at index i has the ledger's key. Without one the keys
+    are inferred from content once (match_mappings: bootstrap and rebuild only)."""
+    if ledger_list is None:
+        keys = match_mappings(old, new, candidate, orphan_ok, label)
+    else:
+        keys = _ledger_keys(old, ledger_list, new, label, sid, hashes)
+    plan = keyed_plan(old, keys, new, label)
+    merged = [old[i] if op == 'keep' else rec for op, i, rec in plan]
+    check_positions(label, old, keys, merged, new)
+    orphans = [old[i] for i, k in enumerate(keys) if isinstance(k, tuple)]
+    return merged, plan, keys, orphans, _ledger_after(keys, plan, new)
+
+
+def infer_ledger(orig, bk, sid, host_id=None):
+    """The ledger of the shell `orig` as it stands, inferred from content once against the keyed build `bk`
+    (bootstrap and --rebuild-ledger). Raises KitMergeError where the inference cannot tell records apart."""
+    ohost = _find_host(orig, host_id)
+    hmaps = ohost.get('eventMappings', [])
+    hkeys = _ledger_from_keys(_adopt_equal(hmaps, match_mappings(
+        hmaps, bk['mappings'], is_kit_mapping, _strong_kit_mapping, f'{sid} host eventMappings'), bk['mappings']))
+    lists = {'host': hkeys}
+    hashes = {'host': [record_hash(m, k) for m, k in zip(hmaps, hkeys)]}
+    for n in orig['rooms']['training_room']['npcs']:
+        if is_kit_member(n) and n.get('eventMappings'):
+            nk = next((x for x in bk['npcs'] if x['id'] == n['id']), None)
+            ml = nk.get('eventMappings', []) if nk else []
+            nkeys = _ledger_from_keys(_adopt_equal(n['eventMappings'], match_mappings(
+                n['eventMappings'], ml, lambda m: True, lambda m: True, f"{sid} npc {n['id']} eventMappings"), ml))
+            lists[f"npc:{n['id']}"] = nkeys
+            hashes[f"npc:{n['id']}"] = [record_hash(m, k) for m, k in zip(n['eventMappings'], nkeys)]
+    lists['_hashes'] = hashes
+    return lists
+
+
+def prepare(orig, bk, sid, host_id=None, ledger=None):
+    """Everything a merge decides about eventMappings, from the shell `orig` and the keyed build `bk`: the host
+    list and each kit NPC's own list (M2), merged by key with the position guard run. `ledger` is the stored
+    {'host': [...], 'npc:<id>': [...]} key ledger (None: infer once). Returns a namespace:
+    b (the plain build, its NPCs carrying the merged eventMappings), host_merged, host_plan, host_keys,
+    npc_lists {npc id: (label, old list, old keys, keyed new list)}, lost (strings for hand_written) and
+    ledger (the ledger of the merged shell)."""
+    import types
+    b = strip_keys(bk)
+    ohost = _find_host(orig, host_id)
+    old = ohost.get('eventMappings', [])
+    host_label = f'{sid} host eventMappings'
+    lget = (lambda k: ledger.get(k, [])) if ledger is not None else (lambda k: None)
+    hget = (lambda k: ledger['_hashes'].get(k, [])) if ledger is not None else (lambda k: None)
+    merged, plan, keys, orphans, new_led = merge_keyed_mappings(
+        old, bk['mappings'], host_label, is_kit_mapping, _strong_kit_mapping, lget('host'), sid, hget('host'))
+    out_ledger = {'host': new_led}
+    out_hashes = {'host': [record_hash(m, k) for m, k in zip(merged, new_led)]}
+    lost = [f"host mapping on {m.get('eventPattern')} setting {sorted(m.get('setGlobal') or {})}" for m in orphans]
+    old_npcs = {n['id']: n for n in orig['rooms']['training_room']['npcs'] if is_kit_member(n)}
+    npc_lists = {}
+    for nk, n in zip(bk['npcs'], b['npcs']):
+        o = old_npcs.get(nk['id'])
+        ml = nk.get('eventMappings', [])
+        if o is None:
+            if ml:
+                out_ledger[f"npc:{nk['id']}"] = [m[KEY] for m in ml]
+                out_hashes[f"npc:{nk['id']}"] = [record_hash(m, m[KEY]) for m in ml]
+            continue
+        ol = o.get('eventMappings', [])
+        if not ml and not ol:
+            continue
+        label = f"{sid} npc {nk['id']} eventMappings"
+        nm, nplan, nkeys, norph, nled = merge_keyed_mappings(
+            ol, ml, label, lambda m: True, lambda m: True, lget(f"npc:{nk['id']}"), sid,
+            hget(f"npc:{nk['id']}"))
+        if nm:
+            n['eventMappings'] = nm
+            out_ledger[f"npc:{nk['id']}"] = nled
+            out_hashes[f"npc:{nk['id']}"] = [record_hash(m, k) for m, k in zip(nm, nled)]
+        else:
+            n.pop('eventMappings', None)
+        npc_lists[nk['id']] = (label, ol, nkeys, ml)
+        lost += [f"npc {nk['id']} mapping on {m.get('eventPattern')}" for m in norph]
+    out_ledger['_hashes'] = out_hashes
+    return types.SimpleNamespace(b=b, host_merged=merged, host_plan=plan, host_keys=keys, host_old=old,
+                                 host_new=bk['mappings'], npc_lists=npc_lists, lost=lost, ledger=out_ledger)
+
+
+def apply_kit(sc, kit, row, host_id=None, ledger=None, ledger_out=None):
     """The shell with the kit's content applied (a new dict). Tier none returns an unchanged copy.
-    Old kit-owned members are removed first, so applying twice gives the same result."""
+    Old kit-owned members are removed first, so applying twice gives the same result. `ledger` is the shell's
+    stored key ledger (None: keys are inferred from content, for bootstrap); `ledger_out`, a dict, receives
+    the ledger of the result."""
     if not active(row):
         return copy.deepcopy(sc)
+    orig = copy.deepcopy(sc)
     out = strip_kit(sc, host_id)
     prefix, state_global = shell_ids(out, row)
-    b = build(kit, row, prefix, state_global)
+    sid = row['id']
+    prep = prepare(orig, build(kit, row, prefix, state_global, keyed=True), sid, host_id, ledger)
+    if ledger_out is not None:
+        ledger_out.update(prep.ledger)
+    b = prep.b      # the plain build; its kit NPCs carry their eventMappings merged by key (M2)
     tr = out['rooms']['training_room']
-    tr['npcs'] = tr['npcs'] + b['npcs']
-    tr['objects'] = tr['objects'] + b['objects']
+    otr = orig['rooms']['training_room']
+    tr['npcs'] = merge_list(otr['npcs'], b['npcs'], is_kit_member, member_ident, f'{sid} npcs', unique=True)
+    tr['objects'] = merge_list(otr.get('objects', []), b['objects'], is_kit_member, member_ident, f'{sid} objects', unique=True)
     host = _find_host(out, host_id)
-    if b['mappings'] or 'eventMappings' in host:       # a convention row has none: add no empty list
-        host['eventMappings'] = host.get('eventMappings', []) + b['mappings']
-    out['globalVariables'].update(b['globals'])
+    ohost = _find_host(orig, host_id)
+    if prep.host_merged or 'eventMappings' in host:       # a convention row has none: add no empty list
+        host['eventMappings'] = prep.host_merged
+    out['globalVariables'] = merge_dict(orig.get('globalVariables', {}), b['globals'], lambda k: k.startswith('kit_'), f'{sid} globalVariables')
     top = [(k, v) for k, v in b['scenario'].items() if k == 'npcThoughts']
     out = _insert_after(out, 'disableAttacks', top)
     after = []
     for k, v in b['scenario'].items():
         if k == 'npcThoughts':
             continue
-        if k == 'chatter' and isinstance(out.get('chatter'), dict):
-            out['chatter'] = {**out['chatter'], **v}      # the shell's own pools stay; the kit adds its kit_ ones
+        if k == 'chatter' and isinstance(orig.get('chatter'), dict):
+            # the shell's own pools stay; the kit's kit_ ones keep their place, new ones go last. Merged
+            # against the original even when every pool is the kit's (strip_kit then dropped the key)
+            merged = merge_dict(orig['chatter'], v, lambda k: str(k).startswith('kit_'), f'{sid} chatter')
+            if isinstance(out.get('chatter'), dict):
+                out['chatter'] = merged
+            else:
+                after.append((k, merged))
         else:
             after.append((k, v))
     after.extend(shell_flags(row).items())
     if b['timers']:
         if 'timers' in out:
-            out['timers'] = out['timers'] + b['timers']
-        else:
-            after.append(('timers', b['timers']))
+            out['timers'] = merge_list(orig.get('timers', []), b['timers'],
+                                       lambda t: str(t.get('id', '')).startswith('kit_'), member_ident, f'{sid} timers', unique=True)
+        else:       # all-kit (strip_kit dropped the key) or new: still merged against the original order
+            after.append(('timers', merge_list(orig.get('timers', []), b['timers'],
+                                               lambda t: str(t.get('id', '')).startswith('kit_'), member_ident,
+                                               f'{sid} timers', unique=True)))
     for key in KIT_KEYED:
         if key in b:
             cur = out.get(key)
             if isinstance(cur, dict):
-                out[key] = {**cur, **b[key]}
+                out[key] = merge_dict(orig.get(key) or {}, b[key], lambda k: str(k).startswith('kit_'), f'{sid} {key}')
             elif isinstance(cur, list):
-                out[key] = cur + b[key]
+                out[key] = merge_list(orig.get(key) or [], b[key], is_kit_member, member_ident, f'{sid} {key}', unique=True)
+            elif isinstance(orig.get(key), dict):      # all-kit: strip_kit dropped it; keep the old order
+                after.append((key, merge_dict(orig[key], b[key], lambda k: str(k).startswith('kit_'), f'{sid} {key}')))
+            elif isinstance(orig.get(key), list):
+                after.append((key, merge_list(orig[key], b[key], is_kit_member, member_ident, f'{sid} {key}', unique=True)))
             else:
                 after.append((key, b[key]))
     out = _insert_after(out, 'globalVariables', after)
-    if b['stepAway']:
+    if b['stepAway'] and 'stepAways' not in out['social']['awarenessEpisode']:
         out['social']['awarenessEpisode']['stepAway'] = True
     if b.get('messageGlobals'):
         oc = key_outcome(out)
         if oc is None:
             raise ValueError(f"{row['id']}: keyMessage needs a triage set with an outcome")
-        oc['messageGlobals'] = {**oc.get('messageGlobals', {}), **b['messageGlobals']}
+        omg = key_outcome(orig).get('messageGlobals') or {}
+        oc['messageGlobals'] = merge_dict(omg, b['messageGlobals'], lambda k: str(omg[k]).startswith('kit_'),
+                                          f'{sid} messageGlobals')
     if b.get('messageCaughtVerdicts'):
         oc = key_outcome(out)
-        oc['messageCaughtVerdicts'] = {**oc.get('messageCaughtVerdicts', {}), **b['messageCaughtVerdicts']}
+        okit = _kit_message_globals(key_outcome(orig))      # the kit owns the verdicts for its own message ids
+        oc['messageCaughtVerdicts'] = merge_dict(key_outcome(orig).get('messageCaughtVerdicts') or {},
+                                                 b['messageCaughtVerdicts'], lambda k: k in okit,
+                                                 f'{sid} messageCaughtVerdicts')
     return out
 
 
@@ -799,7 +1355,7 @@ def kit_owned(sc, host_id=None):
         'mappings': [m for m in host.get('eventMappings', []) if is_kit_mapping(m)],
         'scenario': {**{k: sc[k] for k in KIT_TOP_KEYS if k in sc},
                      **({'chatter': kit_chatter(sc)} if kit_chatter(sc) else {})},
-        'stepAway': sc['social']['awarenessEpisode'].get('stepAway') is True,
+        'stepAway': has_step_away(sc['social']['awarenessEpisode']),
     }
     mg = _kit_message_globals(key_outcome(sc))
     if mg:
@@ -817,17 +1373,34 @@ def kit_owned(sc, host_id=None):
 
 
 def _map_id(m):
-    """What a mapping is, apart from its wording: the event, the globals it sets and the kinds of effect it has.
-    Conditions, delays, bark text and values can change in the kit data and be regenerated; a mapping whose
-    identity the kit data does not produce was written by hand."""
-    return (m.get('eventPattern'), tuple(sorted((m.get('setGlobal') or {}))),
-            tuple(k for k in ('needs', 'patrolOverride', 'bark', 'knot', 'targetKnot') if k in m))
+    """What a kit mapping is for, not how it is worded or built: its event and its purpose. The purpose is the
+    kit_ globals it sets, else the knot it runs, else any other global it sets (the step-away mapping sets the
+    row's out global), else nothing. Conditions, delays, bark text, values and the effect kinds can change in
+    the kit data and the mapping keeps its identity. Two mappings with the same event and purpose are told
+    apart by position among the kit's mappings (merge_plan's nth), never by their content."""
+    sg = sorted(m.get('setGlobal') or {})
+    kit_keys = tuple(k for k in sg if str(k).startswith('kit_'))
+    if kit_keys:
+        purpose = ('sets',) + kit_keys
+    elif m.get('knot') or m.get('targetKnot'):
+        purpose = ('knot', m.get('knot'), m.get('targetKnot'))
+    elif sg:
+        purpose = ('sets',) + tuple(sg)
+    else:
+        purpose = ()
+    return (m.get('eventPattern'), purpose)
 
 
-def hand_written(old, new):
+def mapping_keys(mappings):
+    """[(_map_id, n)] for a list of kit mappings: identities the merge pairs old and new by."""
+    return _keyed(mappings, _map_id)
+
+
+def hand_written(old, new, maps_lost=None):
     """What a regeneration would erase: kit-owned members of the old shell (`old` is kit_owned()) that the kit
     data (`new` is build()) does not produce. Members are matched by id or name (npcs, objects, timers,
-    globals, chatter pools), mappings by _map_id (host and per-NPC). Returns a list of readable strings."""
+    globals, chatter pools), mappings by _map_id (host and per-NPC). With `maps_lost` (prepare().lost: the
+    mappings the key matcher found orphaned) the mappings are judged by key instead. Returns a list of readable strings."""
     lost = []
     new_npcs = {n['id']: n for n in new['npcs']}
     for n in old['npcs']:
@@ -835,15 +1408,20 @@ def hand_written(old, new):
         if t is None:
             lost.append(f"npc {n['id']}")
             continue
-        have = {_map_id(m) for m in t.get('eventMappings', [])}
-        lost += [f"npc {n['id']} mapping on {m.get('eventPattern')}" for m in n.get('eventMappings', []) if _map_id(m) not in have]
+        if maps_lost is None:
+            have = set(mapping_keys(t.get('eventMappings', [])))
+            lost += [f"npc {n['id']} mapping on {m.get('eventPattern')}"
+                     for m, k in zip(n.get('eventMappings', []), mapping_keys(n.get('eventMappings', []))) if k not in have]
     for kind, key in (('object', 'objects'), ('timer', 'timers')):
         ids = {x.get('id') for x in new[key]}
         lost += [f"{kind} {x.get('id')}" for x in old[key] if x.get('id') not in ids]
     lost += [f'global {k}' for k in old['globals'] if k not in new['globals']]
-    have = {_map_id(m) for m in new['mappings']}
-    lost += [f"host mapping on {m.get('eventPattern')} setting {sorted(m.get('setGlobal') or {})}"
-             for m in old['mappings'] if _map_id(m) not in have]
+    if maps_lost is None:
+        have = set(mapping_keys(new['mappings']))
+        lost += [f"host mapping on {m.get('eventPattern')} setting {sorted(m.get('setGlobal') or {})}"
+                 for m, k in zip(old['mappings'], mapping_keys(old['mappings'])) if k not in have]
+    else:
+        lost += maps_lost
     lost += [f'chatter pool {k}' for k in old['scenario'].get('chatter', {}) if k not in new['scenario'].get('chatter', {})]
     lost += [f'messageGlobals {k}' for k in old.get('messageGlobals', {}) if k not in new.get('messageGlobals', {})]
     lost += [f'messageCaughtVerdicts {k}' for k in old.get('messageCaughtVerdicts', {})
@@ -895,18 +1473,12 @@ def reverts(old, new):
 
 def _mapping_changes(who, old_ms, new_ms):
     out = []
-    groups = {}
-    for m in new_ms:
-        groups.setdefault(_map_id(m), []).append(m)
-    seen = {}
-    for m in old_ms:
-        i = _map_id(m)
-        k = seen.get(i, 0)
-        seen[i] = k + 1
-        cands = groups.get(i, [])
-        if k < len(cands):
+    by_key = dict(zip(mapping_keys(new_ms), new_ms))
+    for m, k in zip(old_ms, mapping_keys(old_ms)):
+        t = by_key.get(k)
+        if t is not None:
             out += [f"{who} mapping on {m.get('eventPattern')} (sets {sorted(m.get('setGlobal') or {})}) field {f}"
-                    for f in _fields(m, cands[k])]
+                    for f in _fields(m, t)]
     return out
 
 

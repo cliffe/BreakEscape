@@ -45,12 +45,13 @@ module BreakEscape
   end
 
   class OpsLogUnchangedScenariosTest < ActiveSupport::TestCase
-    # OPS_LOG_ROWS_PLAN.md section 10, check 2: no scenario outside test_ops_* declares logSources, so
-    # no existing scenario gains a row, a state key or an answer field.
-    test 'no scenario outside test_ops_* declares logSources' do
+    # OPS_LOG_ROWS_PLAN.md section 10, check 2: no scenario outside test_ops_* and the demo_ops_* showcases
+    # declares logSources, so no existing scenario gains a row, a state key or an answer field.
+    test 'no scenario outside test_ops_* and demo_ops_* declares logSources' do
       root = File.expand_path('../../../scenarios', __dir__)
-      files = Dir.glob(File.join(root, '*', '**', '*.json{,.erb}')).reject { |f| File.basename(File.dirname(f)).start_with?('test_ops_') }
-      files = files.reject { |f| f.sub("#{root}/", '').start_with?('test_ops_') }
+      allowed = %w[test_ops_ demo_ops_]
+      files = Dir.glob(File.join(root, '*', '**', '*.json{,.erb}')).reject { |f| allowed.any? { |a| File.basename(File.dirname(f)).start_with?(a) } }
+      files = files.reject { |f| allowed.any? { |a| f.sub("#{root}/", '').start_with?(a) } }
       assert_operator files.size, :>, 50, 'the scan finds the scenarios'
       declared = files.select { |f| File.read(f).include?('"logSources"') }
       assert_empty declared.map { |f| f.sub("#{root}/", '') }
@@ -576,7 +577,16 @@ module BreakEscape
     # Hand-kept: the event registry (lib/break_escape/ops_log_events.rb) records no per-event `as` rule, so there is nothing to derive this from.
     OPS_AS_NIL_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed technique_refused net_link_up net_link_down net_wifi_join].freeze
     # technique_used names the session's account (nil for a credential grant): the worst case is an account name.
-    OPS_AS_ACCOUNT_EVENTS = %w[technique_used admin_profile_read usb_install_overridden share_folder_opened].freeze
+    test 'S5b and S5c log events are registered as written' do
+      harvest = BreakEscape::OpsLogEvents::EVENTS['credentials_harvested']
+      assert_equal 'CRED_COLLECT', harvest[:label]
+      assert_equal %w[pc], harvest[:places]
+      assert_equal %w[ok], harvest[:results]
+      assert_equal({ 'count' => { count: 8 } }, harvest[:detail])
+      assert_equal({ 'kind' => %w[local domain] }, BreakEscape::OpsLogEvents::EVENTS['signin_refused'][:detail])
+    end
+
+    OPS_AS_ACCOUNT_EVENTS = %w[technique_used admin_profile_read usb_install_overridden share_folder_opened account_password_reset account_mfa_reenrolled].freeze
 
     test 'every registered event builds a ceiling-filled row of at most 400 bytes' do
       BreakEscape::OpsLog.events.each do |name, entry|

@@ -106,11 +106,22 @@ export function sessionGrantPc(objectData) {
     return grantPcIn(objectData.triggerOnInteract);
 }
 
+/**
+ * S5 ruling A: the PC a governed USB port belongs to: the object portOf when it is a non-empty
+ * string, else null. Not a secret (a PC id). Mirrors the server CaptureModel.port_pc. A string of
+ * only spaces is a name the server would not match, so it is null here as well.
+ */
+export function portPc(objectData) {
+    if (!objectData || typeof objectData !== "object") return null;
+    const v = objectData.portOf;
+    return typeof v === "string" && v.trim() !== "" ? v : null;
+}
+
 /** Whether the object policy refuses this item (a gated remove): the same test the plant uses. */
 export function gatedRemove(item, objectData, scenario) {
     return usbRefused(usbPolicyFor(objectData, scenario), classOf(item));
 }
 
-const pcPolicy = Object.freeze({ effectivePolicy, usbGoverned, usbRefused, usbPolicyFor, plantRefusal, sessionGrantPc, gatedRemove, USB_REFUSAL_LINES });
+const pcPolicy = Object.freeze({ effectivePolicy, usbGoverned, usbRefused, usbPolicyFor, plantRefusal, sessionGrantPc, portPc, gatedRemove, USB_REFUSAL_LINES });
 if (typeof window !== "undefined") window.pcPolicy = pcPolicy;
 export default pcPolicy;

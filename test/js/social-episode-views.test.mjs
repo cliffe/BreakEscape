@@ -37,7 +37,7 @@ window.gameState = { globalVariables: {} };
 
 const mod = (rel) => import(pathToFileURL(join(dir, rel)));
 const { renderStepStrip, renderWordmark } = await mod('minigames/episode-runner/step-strip.js');
-const { renderFlipView, tellSentence, defenderLine } = await mod('minigames/episode-runner/flip-view.js');
+const { renderFlipView, tellSentence, defenderLine, globalLine } = await mod('minigames/episode-runner/flip-view.js');
 const { renderDebrief } = await mod('minigames/episode-runner/debrief-view.js');
 const { redFlagString } = await mod('minigames/inbox-triage/triage-flags.js');
 
@@ -654,4 +654,98 @@ test('D286 debrief: debriefHostLineByHost draws the line for the chosen host; no
     const h = host();
     renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday.' }, hostId: 'lookalike', variant: 'full', onFinish() {} });
     assert.equal(h.querySelectorAll('.aw-host-line').length, 0);
+});
+
+// ── CA pilots E5: a flip line chosen by global ──
+test('E5 defenderLine(): flipDefenderLineByGlobal, first truthy global wins, after NoSpray and ByHost, before ByChoice', () => {
+    const strings = {
+        flipDefenderLine: 'Neutral.',
+        flipDefenderLineByChoice: { t1: 'Choice.' },
+        flipDefenderLineByHost: { h1: 'Host.' },
+        flipDefenderLineNoSpray: 'NoSpray.',
+        flipDefenderLineByGlobal: [
+            { global: 'ca12_tailgated', line: 'Tailgated.' },
+            { global: 'ca12_desk_pass', line: 'Desk pass.' },
+            { global: 'ca12_door_missed', line: 'Missed.' },
+            { global: 'ca12_guard_alerted', line: 'Alerted.' },
+            { global: 'ca12_challenged', line: 'Challenged.' }
+        ]
+    };
+    // each ending picks its line
+    for (const [g, line] of [['ca12_tailgated', 'Tailgated.'], ['ca12_desk_pass', 'Desk pass.'], ['ca12_door_missed', 'Missed.'], ['ca12_guard_alerted', 'Alerted.'], ['ca12_challenged', 'Challenged.']]) {
+        assert.equal(defenderLine(strings, null, false, null, { [g]: true }), line, g);
+    }
+    // order: the list order decides, not the globals' key order (reported sets alerted and challenged)
+    assert.equal(defenderLine(strings, null, false, null, { ca12_challenged: true, ca12_guard_alerted: true }), 'Alerted.');
+    // falsy globals are skipped
+    assert.equal(defenderLine(strings, null, false, null, { ca12_tailgated: false, ca12_desk_pass: 1 }), 'Desk pass.');
+    // fallback: none truthy, no globals, or a missing map -> the neutral line
+    assert.equal(defenderLine(strings, null, false, null, { other: true }), 'Neutral.');
+    assert.equal(defenderLine(strings, null, false, null, null), 'Neutral.');
+    assert.equal(defenderLine(strings, null), 'Neutral.');
+    // precedence: after NoSpray and ByHost, before ByChoice
+    const g = { ca12_tailgated: true };
+    assert.equal(defenderLine(strings, 't1', true, 'h1', g), 'NoSpray.');
+    assert.equal(defenderLine(strings, 't1', false, 'h1', g), 'Host.');
+    assert.equal(defenderLine(strings, 't1', false, null, g), 'Tailgated.');
+    assert.equal(defenderLine(strings, 't1', false, null, {}), 'Choice.');
+    // malformed entries are skipped
+    assert.equal(defenderLine({ flipDefenderLine: 'N.', flipDefenderLineByGlobal: [null, { global: 'a', line: '' }, { line: 'x' }, { global: 'a', line: 'Ok.' }] }, null, false, null, { a: true }), 'Ok.');
+    // absent field: existing behaviour unchanged
+    assert.equal(defenderLine({ flipDefenderLine: 'Base.', flipDefenderLineByChoice: { t1: 'Choice.' } }, 't1', false, null, { a: true }), 'Choice.');
+    assert.equal(defenderLine({ flipDefenderLine: 'Base.' }, null, false, null, { a: true }), 'Base.');
+});
+
+test('E5 renderFlipView passes globals to the defender line', () => {
+    const strings = { flipDefenderLine: 'Base.', flipDefenderLineByGlobal: [{ global: 'g1', line: 'By global.' }] };
+    const run = (globals) => {
+        const h = host();
+        renderFlipView(h, { page: { url: 'https://x.example/', fields: [] }, strings, globals, onContinue() {} });
+        return h.querySelector('.aw-defender-line').textContent;
+    };
+    assert.equal(run({ g1: true }), 'By global.');
+    assert.equal(run({}), 'Base.');
+    assert.equal(run(undefined), 'Base.');
+});
+
+test('E5 renderFlipView: a missed call flip (walked_away, reported) reads ByGlobal, with an optional heading; none matching keeps flipMissed', () => {
+    const strings = {
+        flipMissed: 'Generic miss.', flipMissedHeading: 'Nothing to replay this time', flipDefenderLine: 'Neutral.',
+        flipDefenderLineByGlobal: [
+            { global: 'ca12_tailgated', line: 'Tailgated.', heading: 'You walked in' },
+            { global: 'ca12_guard_alerted', line: 'Alerted.' },
+            { global: 'ca12_runner_go', line: 'Never got past the lobby.' }
+        ]
+    };
+    const run = (globals, over = {}) => {
+        const h = host();
+        renderFlipView(h, { call: null, missed: true, strings, globals, onContinue() {}, ...over });
+        return { landedClass: !!h.querySelector('.aw-defender-line.aw-landed-no-tells'), line: h.querySelector('.aw-defender-line')?.textContent, missed: h.querySelector('.aw-missed')?.textContent, heading: h.querySelector('h2, h3')?.textContent };
+    };
+    const tail = run({ ca12_tailgated: true });
+    assert.equal(tail.line, 'Tailgated.');
+    assert.equal(tail.missed, undefined, 'flipMissed is replaced, not added');
+    assert.equal(tail.heading, 'You walked in');
+    const alerted = run({ ca12_guard_alerted: true });
+    assert.equal(alerted.line, 'Alerted.');
+    assert.equal(alerted.heading, 'Nothing to replay this time', 'no heading on the entry: flipMissedHeading');
+    assert.equal(run({ ca12_runner_go: true, ca12_world_done: true }).line, 'Never got past the lobby.', 'the timeout comes from an explicit last entry');
+    assert.equal(run({ ca12_world_done: true }).line, undefined, 'a got_it run at the cap matches no entry');
+    const none = run({});
+    assert.equal(none.line, undefined);
+    assert.equal(none.missed, 'Generic miss.');
+    assert.equal(run(null).missed, 'Generic miss.');
+    // landedNoTells reads it too
+    const landed = run({ ca12_guard_alerted: true }, { missed: false, landedNoTells: true });
+    assert.equal(landed.line, 'Alerted.');
+    assert.equal(landed.landedClass, true, 'the landed-no-tells class stays on a ByGlobal line');
+    assert.equal(tail.landedClass, false);
+});
+
+test('E5 globalLine: only own keys of the globals map count', () => {
+    const strings = { flipDefenderLineByGlobal: [{ global: 'constructor', line: 'Inherited.' }, { global: 'toString', line: 'Inherited.' }, { global: 'real', line: 'Real.' }] };
+    assert.equal(globalLine(strings, {}), null);
+    assert.equal(globalLine(strings, { real: true }), 'Real.');
+    assert.equal(defenderLine({ flipDefenderLine: 'N.', ...strings }, null, false, null, {}), 'N.');
+    assert.equal(globalLine({}, { a: true }), null);
 });

@@ -1,0 +1,15 @@
+{
+ "scenario": "ca07_voice_ceo_defend",
+ "lists": {
+  "host": [
+   {"k": null, "h": "a3deb518"},
+   {"k": "quiet_on", "h": "e9f5d7c1"},
+   {"k": "defend_done", "h": "e29b90f5"},
+   {"k": "caught", "h": "3b4da5eb"},
+   {"k": "quiet_off_debrief", "h": "d04fea6a"}
+  ],
+  "npc:kit_graham_whitfield": [
+   {"k": "chg_defend_done_knot_ca07_react", "h": "12ea701a"}
+  ]
+ }
+}

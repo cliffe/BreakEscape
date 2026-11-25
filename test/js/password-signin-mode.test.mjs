@@ -158,6 +158,48 @@ test('it stops only on a lockout, with the server\'s message', async () => {
     assert.equal(ended[0][0], false);
 });
 
+test('a locked-account screen has "Use a different account": it returns to the account choice and signs in as another', async () => {
+    const mg = open();
+    document.querySelectorAll('.signin-tile')[0].click();
+    nextResult = { ok: false, reason: 'locked_out', message: 'This account is locked on this PC', attemptsLeft: 0, lockedOut: true };
+    q('#password-field').value = 'right';
+    await mg.submitPassword();
+    assert.ok(q('#submit-password').disabled && q('#signin-change').disabled, 'the form and Change stay disabled');
+    const back = q('#signin-locked-back');
+    assert.ok(back, 'the way back is there');
+    assert.equal(back.textContent, 'Use a different account');
+    assert.equal(back.disabled, false);
+    back.click();
+    assert.equal(q('#signin-locked-back'), null);
+    assert.equal(mg.gameResult, null);
+    assert.equal(document.querySelectorAll('.signin-tile').length >= 2, true, 'the tiles are offered');
+    // another account signs in from here
+    nextResult = { ok: true, session: { username: 'ishaw', displayName: 'Ian Shaw' } };
+    document.querySelectorAll('.signin-tile')[1].click();
+    assert.equal(q('#password-field').disabled, false, 'the form is live again');
+    assert.equal(q('#submit-password').disabled, false);
+    q('#password-field').value = 'pw';
+    await mg.submitPassword();
+    assert.deepEqual(signIns.at(-1).slice(0, 2), ['hot_desk', 'ishaw']);
+    // the X still closes a locked screen
+    const again = open();
+    document.querySelectorAll('.signin-tile')[0].click();
+    nextResult = { ok: false, reason: 'locked_out', message: 'This account is locked on this PC', attemptsLeft: 0, lockedOut: true };
+    q('#password-field').value = 'right';
+    await again.submitPassword();
+    q('#minigame-close').click();
+    assert.equal(ended.length, 1);
+});
+
+test('a locked screen with no account choice to go back to gets no "Use a different account"', async () => {
+    const mg = open({ picker: false });
+    nextResult = { ok: false, reason: 'locked_out', message: 'This account is locked on this PC', attemptsLeft: 0, lockedOut: true };
+    q('#signin-username').value = 'sokafor';
+    q('#password-field').value = 'right';
+    await mg.submitPassword();
+    assert.equal(q('#signin-locked-back'), null);
+});
+
 test('not permitted keeps the screen open with the server\'s message, and no letter-case hint ever shows', async () => {
     const mg = open({ picker: false });
     nextResult = { ok: false, reason: 'not_permitted', message: "This account can't sign in on this PC", attemptsLeft: null, caseMismatch: true };

@@ -1,0 +1,7 @@
+[head@11|Name ][head@17|Current Setting ][head@10|Required ][head|Description]
+[@11|RHOSTS ][@17|print01 ][@10|yes ]The target host
+[@11|RPORT ][@17|80 ][@10|yes ]The target port
+[@11|TECHNIQUE ][@17|phish ][@10|yes ]The held technique to use
+[head|Techniques:]
+  phish  Phishing note
+  phish_sms  Text message note

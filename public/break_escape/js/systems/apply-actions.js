@@ -136,6 +136,22 @@ export function isCardRevoked(cardId) {
 }
 if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
 
+// The server withholds the entry of a fact the player has not earned (R1-S1) and sends it as the
+// fact is earned. Merge each into the live social.intelFacts before the grant, as a feed fact is,
+// so grantFact finds its label. An id already listed is left as it is.
+function mergeEarnedFactEntries(map) {
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return;
+    const sc = window.gameScenario;
+    if (!sc || typeof sc !== 'object') return;
+    for (const [id, entry] of Object.entries(map)) {
+        if (!id || id === '__proto__' || id === 'constructor' || id === 'prototype') continue;
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+        if (!sc.social || typeof sc.social !== 'object') sc.social = {};
+        if (!sc.social.intelFacts || typeof sc.social.intelFacts !== 'object') sc.social.intelFacts = {};
+        if (!Object.prototype.hasOwnProperty.call(sc.social.intelFacts, id)) sc.social.intelFacts[id] = entry;
+    }
+}
+
 /**
  * Shared action executor for scenario-defined action descriptors.
  *
@@ -200,6 +216,9 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
             const holds = window.evaluateActionCondition;
             if (typeof holds !== 'function' || holds(action.condition, window.gameState?.globalVariables || {}) !== true) continue;
         }
+        // The entry of a fact this action earns rides on it (a grant_fact's `entry`, a give_item's `facts`)
+        if (action && action.type === 'grant_fact' && action.entry && typeof action.fact === 'string') mergeEarnedFactEntries({ [action.fact.replace(/^se_intel_/, '')]: action.entry });
+        else if (action && action.type === 'give_item') mergeEarnedFactEntries(action.facts);
         switch (action.type) {
 
             case 'set_global':

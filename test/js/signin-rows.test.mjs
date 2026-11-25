@@ -419,3 +419,104 @@ test('the DOM row carries the loading state on its secret node', () => {
     assert.equal(secretNode.textContent, 'Loading...');
     assert.equal(secretNode.dataset.secretState, 'loading');
 });
+
+// ---- S7: hash rows and cracked passwords ------------------------------------------------------
+
+const hashEntry = (extra = {}) => ({
+    id: 'dana_hash', kind: 'hash', source: 'registry', label: 'dana.hash', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', salted: true, status: 'ready',
+    account: { npcId: 'dana', username: 'dana', displayName: 'Dana Roe' }, ...extra
+});
+const crackedPw = (extra = {}) => ({
+    id: 'dana.cracked', kind: 'password', source: 'cracked', label: 'Cracked', password: 'plum-42-door',
+    account: { npcId: 'dana', username: 'dana', displayName: 'Dana Roe' }, ...extra
+});
+const domOf = (r) => { globalThis.document = new JSDOM('<body></body>').window.document; return buildSignInRow(r).row; };
+
+test('S7: a hash row lists username, token in fours and status, never a password, and sits after other rows', () => {
+    const { signins } = build({ captures: [], keyring: { entries: [hashEntry(), fileEntry()], captures: {}, foundVisible: () => true } });
+    assert.deepEqual(signins.map((r) => r.key), ['account:ian', 'hash:dana_hash'], 'the hash group is last');
+    const h = signins[1];
+    assert.equal(h.group, 'hash');
+    assert.equal(h.token, 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q');
+    assert.equal(h.salted, true);
+    assert.equal(h.use, 'Ready');
+    assert.doesNotMatch(rowText([h]), /password/i);
+    const row = domOf(h);
+    assert.match(row.textContent, /dana/);
+    assert.match(row.textContent, /N4L9-E9K3-8PBA-TNMH-9EP6-K66Q/);
+    assert.match(row.textContent, /Salted/);
+    assert.match(row.textContent, /Ready/);
+});
+
+test('S7: the Salted marker only shows on a salted record', () => {
+    const { signins } = build({ captures: [], keyring: { entries: [hashEntry({ salted: false })], captures: {} } });
+    assert.equal(signins[0].salted, false);
+    assert.doesNotMatch(domOf(signins[0]).textContent, /Salted/);
+});
+
+test('S7: the Crack button shows for ready and running only, and starts the cracker with the hash id', () => {
+    const run = (extra) => domOf(build({ captures: [], keyring: { entries: [hashEntry(extra)], captures: {} } }).signins[0]);
+    assert.ok(run({ status: 'ready' }).querySelector('button.signin-crack'));
+    assert.ok(run({ status: 'running', readyInSeconds: 5 }).querySelector('button.signin-crack'));
+    assert.equal(run({ status: 'ready' }).querySelector('button.signin-crack').textContent, 'Crack');
+    assert.equal(run({ status: 'running', readyInSeconds: 5 }).querySelector('button.signin-crack').textContent, 'Open', 'a running row does not say Crack again');
+    assert.equal(run({ status: 'running', readyInSeconds: 0 }).querySelector('button.signin-crack').textContent, 'Finish');
+    assert.equal(run({ status: 'infeasible' }).querySelector('button'), null);
+    assert.equal(run({ status: 'cracked' }).querySelector('button'), null);
+    const started = [];
+    globalThis.window = { MinigameFramework: { startMinigame: (...a) => started.push(a) } };
+    try {
+        run({ status: 'ready' }).querySelector('button').click();
+    } finally { delete globalThis.window; }
+    assert.deepEqual(started, [['ops-cracker', null, { hashId: 'dana_hash' }]]);
+});
+
+test('S7: a running row at 0 seconds reads "Ready to finish" and keeps its button; with time left it counts down', () => {
+    const at0 = build({ captures: [], keyring: { entries: [hashEntry({ status: 'running', readyInSeconds: 0 })], captures: {} } }).signins[0];
+    assert.equal(at0.use, 'Ready to finish');
+    assert.ok(domOf(at0).querySelector('button.signin-crack'));
+    const some = build({ captures: [], keyring: { entries: [hashEntry({ status: 'running', readyInSeconds: 30 })], captures: {} } }).signins[0];
+    assert.equal(some.use, 'Cracking, 30 s left');
+    // The keyring's own clock wins over the served figure
+    const live = build({ captures: [], keyring: { entries: [hashEntry({ status: 'running', readyInSeconds: 30 })], captures: {}, crackSecondsLeft: () => 0 } }).signins[0];
+    assert.equal(live.use, 'Ready to finish');
+});
+
+test('S7: a cracked hash row has no button, and the cracked password shows in full beside it', () => {
+    const { signins } = build({ captures: [], social: {}, keyring: { entries: [hashEntry({ status: 'cracked' }), crackedPw()], captures: {} } });
+    assert.deepEqual(signins.map((r) => r.key), ['account:dana', 'hash:dana_hash']);
+    const [pw, h] = signins;
+    assert.equal(h.use, 'Cracked');
+    assert.equal(domOf(h).querySelector('button'), null);
+    assert.deepEqual(pw.kinds, ['cracked']);
+    assert.equal(pw.value, 'plum-42-door', 'shown in full even where captures are masked');
+    assert.equal(pw.use, 'plum-42-door');
+    assert.doesNotMatch(rowText([h]), /plum-42-door/);
+});
+
+test('S7: hostile strings in a hash row are drawn as text, never as markup', () => {
+    const evil = '<img src=x onerror="window.pwned=1"><b>x</b>';
+    const { signins } = build({ captures: [], keyring: { entries: [hashEntry({
+        token: evil, label: evil, account: { npcId: 'dana', username: evil, displayName: evil } })], captures: {} } });
+    const row = domOf(signins[0]);
+    assert.equal(row.querySelector('img'), null);
+    assert.equal(row.querySelector('b'), null);
+    assert.match(row.textContent, /<img src=x/);
+});
+
+test('S7 R2-6: when a running row counts down to 0 its button changes from Open to Finish with the status', () => {
+    const realSet = globalThis.setInterval, realClear = globalThis.clearInterval, realNow = Date.now;
+    let tick = null, now = 1_000_000;
+    globalThis.setInterval = (fn) => { tick = fn; return { unref() {} }; };
+    globalThis.clearInterval = () => {};
+    Date.now = () => now;
+    try {
+        const r = build({ captures: [], keyring: { entries: [hashEntry({ status: 'running', readyInSeconds: 3 })], captures: {} } }).signins[0];
+        const row = domOf(r);
+        const button = row.querySelector('button.signin-crack');
+        assert.equal(button.textContent, 'Open');
+        now += 3000; tick();
+        assert.equal(row.querySelector('.signin-hash-status').textContent, 'Ready to finish');
+        assert.equal(button.textContent, 'Finish');
+    } finally { globalThis.setInterval = realSet; globalThis.clearInterval = realClear; Date.now = realNow; }
+});

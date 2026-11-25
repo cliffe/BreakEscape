@@ -1,0 +1,60 @@
+{
+ "scenario": "ca15_shadow_it",
+ "lists": {
+  "host": [
+   {"k": null, "h": "a10e5b33"},
+   {"k": "quiet_on", "h": "33d122e0"},
+   {"k": "attack_done", "h": "c135fc6f"},
+   {"k": "defend_done", "h": "896c94ed"},
+   {"k": "caught", "h": "1edeca5c"},
+   {"k": "quiet_off_debrief", "h": "76dc074f"},
+   {"k": "quiet_off_debrief_seen", "h": "83bcb1ee"},
+   {"k": "step_away", "h": "41c02a60"},
+   {"k": "chg_ca15_at_host", "h": "fbaf5eca"},
+   {"k": "chg_ca15_at_host_sets_ca15_done", "h": "c26d13f9"},
+   {"k": "chg_ca15_at_tray_sets_ca15_done", "h": "993dd12e"},
+   {"k": "chg_ca15_stick_choice_sets_ca15_chidi_go", "h": "c76de3fc"},
+   {"k": "chg_ca15_chidi_at_host", "h": "64732c2b"},
+   {"k": "chg_ca15_chidi_at_host_sets_ca15_done", "h": "90e18b45"},
+   {"k": null, "h": "6988558c"},
+   {"k": null, "h": "b0d33338"},
+   {"k": null, "h": "9921f91a"},
+   {"k": null, "h": "f0245fa5"},
+   {"k": null, "h": "fd4340ec"},
+   {"k": null, "h": "cd60b7a9"},
+   {"k": null, "h": "b5a33f22"},
+   {"k": null, "h": "0a2e5d90"},
+   {"k": null, "h": "cd10e77a"}
+  ],
+  "npc:kit_chidi_okeke": [
+   {"k": "chg_ca15_out", "h": "4f2cdcc2"},
+   {"k": "chg_ca15_chidi_go", "h": "2e222239"},
+   {"k": "npc_arrived_chidi_okeke_sets_ca15_chidi_there", "h": "b1dcb81b"},
+   {"k": "chg_ca15_chidi_there_sets_ca15_stick_taken", "h": "92e62e7f"},
+   {"k": "chg_ca15_chidi_there", "h": "b5b9738d"},
+   {"k": "chg_ca15_chidi_there_sets_ca15_chidi_sent", "h": "879ff29e"},
+   {"k": "npc_arrived_chidi_okeke_sets_ca15_chidi_at_host", "h": "5827facd"},
+   {"k": "chg_ca15_done", "h": "3807bd94"}
+  ],
+  "npc:kit_fatima_begum": [
+   {"k": "chg_ca15_out", "h": "4f2cdcc2"},
+   {"k": "chg_ca15_out_2", "h": "4b008fab"},
+   {"k": "chg_ca15_out_3", "h": "096e098c"},
+   {"k": "npc_arrived_fatima_begum_sets_ca15_there", "h": "90086a3a"},
+   {"k": "chg_ca15_there_knot_ca15_stick", "h": "3838ba89"},
+   {"k": "chg_ca15_there_sets_ca15_asked", "h": "8723a5a6"},
+   {"k": "conversation_closed_fatima_begum_sets_ca15_stick_choice", "h": "1a7e7047"},
+   {"k": "chg_ca15_stick_choice_sets_ca15_stick_taken", "h": "cb927283"},
+   {"k": "chg_ca15_stick_choice_sets_ca15_sent", "h": "b58bb6f4"},
+   {"k": "chg_ca15_stick_choice_sets_ca15_sent_2", "h": "a712dd1d"},
+   {"k": "npc_arrived_fatima_begum_sets_ca15_at_host", "h": "8039e803"},
+   {"k": "npc_arrived_fatima_begum_sets_ca15_at_tray", "h": "f7751ee2"},
+   {"k": "chg_ca15_stick_choice", "h": "6e8ccbfb"},
+   {"k": "chg_ca15_done_sets_ca15_stick_choice", "h": "706c5d06"},
+   {"k": "chg_ca15_done", "h": "3807bd94"},
+   {"k": "chg_ca15_there_knot_ca15_stick~rearm", "h": "58813b01"},
+   {"k": "chg_ca15_there_sets_ca15_asked~rearm", "h": "312a15ae"},
+   {"k": "chg_ca15_there_sets_ca15_asked~rearm_cue", "h": "2abb62c2"}
+  ]
+ }
+}

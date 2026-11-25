@@ -1,0 +1,13 @@
+{
+  "key": "33e24c3e75ff6a8c45c5fa405ac1081b",
+  "npc": "ca12_yusuf_demir",
+  "text": "Desk's just there. Delphine will sort you out.",
+  "voice": "Alnilam",
+  "style": "Merrin & Sallow's building security officer on the studio door, in his 40s, British Turkish, steady and practical; polite, firm, unhurried. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:58:24Z"
+}

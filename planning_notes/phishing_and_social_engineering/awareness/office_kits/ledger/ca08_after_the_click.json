@@ -1,0 +1,28 @@
+{
+ "scenario": "ca08_after_the_click",
+ "lists": {
+  "host": [
+   {"k": null, "h": "d89ae7f7"},
+   {"k": null, "h": "bc79fbf0"},
+   {"k": "quiet_on", "h": "4217d608"},
+   {"k": "attack_done", "h": "ed7b6c6f"},
+   {"k": "defend_done", "h": "5c145f9a"},
+   {"k": "caught", "h": "5397990e"},
+   {"k": "quiet_off_debrief", "h": "9a468928"},
+   {"k": "quiet_off_debrief_seen", "h": "a6d10c0f"},
+   {"k": "step_away", "h": "b648bbf1"},
+   {"k": "chg_ca08_there_sets_ca08_done", "h": "f0617401"}
+  ],
+  "npc:kit_darren_price": [
+   {"k": "chg_ca08_out", "h": "92954cda"},
+   {"k": "chg_ca08_out_2", "h": "33515114"},
+   {"k": "npc_arrived_darren_price_sets_ca08_there", "h": "7a53e38f"},
+   {"k": "chg_ca08_there", "h": "440c9b46"},
+   {"k": "chg_ca08_done", "h": "507e0424"}
+  ],
+  "npc:kit_niamh_doherty": [
+   {"k": "chg_ca08_out", "h": "92954cda"},
+   {"k": "chg_ca08_done", "h": "507e0424"}
+  ]
+ }
+}

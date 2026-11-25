@@ -28,10 +28,15 @@ require_relative 'validate_capture_log'
 require_relative 'validate_log_rows'
 require_relative 'validate_network_ops'
 require_relative 'validate_privilege'
+require_relative 'validate_mfa'
+require_relative 'validate_lock_step'
+require_relative 'validate_helpdesk'
+require_relative 'validate_realism_skin'
 require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
 require_relative 'validate_plant_hiding'
 require_relative 'validate_phone_calls'
+require_relative 'validate_cracking'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/schema_walk'
@@ -1635,6 +1640,7 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
         # Speaker-prefix resolution + ink character hazards.
         issues.concat(check_ink_dialogue_hazards(ink_lines, source_ink_path, valid_speakers))
+        issues.concat(realism_skin_ink_wording(ink_lines, source_ink_path)) if realism_skin_uses_services?(json_data)
       rescue => e
         # Non-fatal — file was already compiled successfully above
       end
@@ -2742,6 +2748,80 @@ def check_dispenses_containers(json_data)
   issues
 end
 
+# A container with contents and no `locked` key, and a nested container the player cannot open.
+# The client reads a missing `locked` as a key lock (unlock-system.js), so a container that
+# means to be open must say `"locked": false`. Seven types already raise an error for this in
+# check_common_issues; they are skipped here so no object gets two lines.
+UNOPENABLE_ERROR_TYPES = %w[briefcase bag bag1 suitcase safe pc bin1].freeze
+# Types that open their own screen, so their `contents` are never shown whatever `locked` says. Derived from the client code, not listed by hand: the object types systems/interactions.js sends to
+# their own screen (the dispatch block from the workstation branch up to the lockpick branch) and the
+# keys of systems/minigame-registry.js, minus mail_terminal (its screen comes after the container branch)
+# and the inventory-only tools that are not placed in rooms.
+OWN_SCREEN_SOURCE_DIR = File.expand_path('../public/break_escape/js/systems', __dir__)
+OWN_SCREEN_INVENTORY_ONLY = %w[ble_scanner bluetooth_scanner fingerprint_kit rfid_cloner keycard].freeze
+
+def derive_own_screen_types(dir = OWN_SCREEN_SOURCE_DIR)
+  types = []
+  inter = File.join(dir, 'interactions.js')
+  if File.exist?(inter)
+    src = File.read(inter)
+    from = src.index(/scenarioData\.type === ["']workstation["']/)
+    upto = src.index(/scenarioData\.type === ["']lockpick["']/)
+    if from && upto && upto > from
+      types += src[from...upto].scan(/scenarioData\.type === ["']([^"']+)["']/).flatten
+    end
+  end
+  reg = File.join(dir, 'minigame-registry.js')
+  if File.exist?(reg)
+    block = File.read(reg)[/const BUILT_IN = \{(.*?)^\};/m, 1].to_s
+    types += block.scan(/^\s*'([^']+)':\s*\{/).flatten
+  end
+  (types - %w[mail_terminal] - OWN_SCREEN_INVENTORY_ONLY).uniq.freeze
+end
+
+OWN_SCREEN_TYPES = derive_own_screen_types
+
+def check_unopenable_containers(json_data)
+  issues = []
+  label = lambda do |obj|
+    obj['name'] ? " (#{obj['name']})" : ''
+  end
+  walk = lambda do |obj, path, nested|
+    return unless obj.is_a?(Hash)
+    contents = obj['contents']
+    if contents.is_a?(Array) && !contents.empty? && !nested && OWN_SCREEN_TYPES.include?(obj['type'])
+      issues << "⚠️ WARNING: '#{path}'#{label.call(obj)} (type '#{obj['type']}') opens its own screen, so its contents are never shown " \
+                "to the player, whatever 'locked' says. Move the item out of contents (into a room object or an NPC)."
+    elsif contents.is_a?(Array) && !contents.empty?
+      exempt = (!nested && UNOPENABLE_ERROR_TYPES.include?(obj['type'])) ||
+               (obj['type'] == 'pc' && obj['lockType'] == 'login') || obj['type'] == 'usb'
+      if !exempt && !obj.key?('locked')
+        issues << "⚠️ WARNING: '#{path}'#{label.call(obj)} has contents but no 'locked' key. The game reads a missing " \
+                  "'locked' as a key lock, so the player may be unable to open it. Add \"locked\": false, or \"locked\": true with a lock type."
+      end
+      # Neither the container window (isInteractiveItem: a locked item, or an unlocked folder)
+      # nor the take path (takeable items go to the inventory and open from there) opens it.
+      if nested && obj['locked'] != true && obj['type'] != 'folder' && obj['takeable'] != true &&
+         obj['type'] != 'usb' && !(obj['type'] == 'pc' && obj['lockType'] == 'login')
+        issues << "⚠️ WARNING: '#{path}'#{label.call(obj)} is a nested container (type '#{obj['type']}') with contents that the " \
+                  "player cannot open: it is not locked, not a folder and not takeable, so its icon does nothing. Make it a folder, lock it, or make it takeable."
+      end
+      contents.each_with_index { |c, i| walk.call(c, "#{path}/contents[#{i}]", true) }
+    end
+  end
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+    Array(room['objects']).each_with_index { |o, i| walk.call(o, "rooms/#{room_id}/objects[#{i}]", false) }
+  end
+  if json_data['accountProfiles'].is_a?(Hash)
+    json_data['accountProfiles'].each do |id, profile|
+      next unless profile.is_a?(Hash) && profile['contents'].is_a?(Array)
+      profile['contents'].each_with_index { |c, i| walk.call(c, "accountProfiles/#{id}/contents[#{i}]", true) }
+    end
+  end
+  issues
+end
+
 def check_npc_held_containers(json_data)
   issues = []
   npcs = []
@@ -3566,6 +3646,7 @@ def check_common_issues(json_data, valid_item_types = nil)
       # world sprite, so it needs no picture in assets/objects/. Only a folder nested in a
       # container's contents is exempt: a room-level folder is drawn in the world and needs one.
       engine_type ||= t == 'folder' && in_contents
+      engine_type ||= t == 'helpdesk_form' && in_contents
       # The ops log terminal reuses the existing log terminal's sprite (log_filter_terminal.png)
       engine_type ||= t == 'ops_log_terminal'
       unless exact_match || variant_match || engine_type
@@ -4869,6 +4950,8 @@ def check_recommended_fields(json_data)
       if room['npcs']
         room['npcs'].each_with_index do |npc, idx|
           path = "rooms/#{room_id}/npcs[#{idx}]"
+          # An account-only NPC is an account, not a person in the world: it may not carry a position or behaviour
+          next if npc['accountOnly'] == true
 
           # Phone NPCs should have avatar
           if npc['npcType'] == 'phone' && !npc['avatar']
@@ -8494,7 +8577,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     c_owner = ai.room_npcs(claim_data).map { |x| x[:npc] }.find { |n| n['id'].to_s == owner_id.to_s }
     next false unless c_owner
     # Game#claim_login_session! checks 4 and 5 (account_holder?, pc_admits_account?)
-    next false unless ai.account?(c_owner) && (c_pc['access'].nil? || ai.acl_admits?(c_pc['access'], c_owner))
+    next false unless ai.account_admitted?(c_pc, c_owner)
     next false if ai.screen_always_locks?(c_pc, c_owner)
 
     c_policy = claim_data['policies'].is_a?(Hash) ? claim_data['policies'][(c_pc['policy'] || claim_data['defaultPolicy']).to_s] : nil
@@ -9304,6 +9387,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_pin_locks') { check_pin_locks(json_data) }
   run.call('check_combination_cryptex_locks') { check_combination_cryptex_locks(json_data) }
   run.call('check_dispenses_containers') { check_dispenses_containers(json_data) }
+  run.call('check_unopenable_containers') { check_unopenable_containers(json_data) }
   run.call('check_npc_held_containers') { check_npc_held_containers(json_data) }
   run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
   run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }
@@ -9325,6 +9409,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
   run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
   run.call('check_credentials') { check_credentials(json_data) }
+  run.call('check_cracking') { check_cracking(json_data) }
   run.call('check_gated_door_credit') { check_gated_door_credit(json_data) }
   run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
@@ -9332,6 +9417,10 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_log_rows') { check_log_rows(json_data) }
   run.call('check_network_ops') { check_network_ops(json_data) }
   run.call('check_privilege') { check_privilege(json_data) }
+  run.call('check_mfa') { check_mfa(json_data) }
+  run.call('check_lock_step') { check_lock_step(json_data) }
+  run.call('check_helpdesk') { check_helpdesk(json_data, repo_root, scenario_dir) }
+  run.call('check_realism_skin') { check_realism_skin(json_data) }
   run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
   run.call('check_plant_hiding') { check_plant_hiding(json_data, repo_root) }

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops helpdesk recovery",
+  "description": "Test of helpdesk recovery in the ops core (S8b, feature A23): an IT desk that resets a password or moves a second sign-in step to the owner's own phone after checking the caller, an ID desk that does it only while you hold the owner's phone, a request form opened in person, over a PC and from a call, and a sign-in that shows what changed. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 45,
+  "test_type": "ops_helpdesk",
+  "test_objective": "Prove a desk resets only after its rule is met and stops serving a name after repeated refusals, an unknown name looks the same as a wrong answer, a reset password replaces the old one and makes saved connections stale until typed once, a second-step reset moves the step to the owner's own phone, and no answer shows a recovery answer or a code early"
+}

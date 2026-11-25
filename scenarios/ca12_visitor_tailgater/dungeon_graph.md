@@ -2,19 +2,19 @@
 
 # ca12_visitor_tailgater — Scenario Graph Reference
 
-You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets at the front desk. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.
+You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by Julian Sallow. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.
 
 ## Scenario Statistics
 
 | Metric | Value |
 |---|---|
 | Story aims | 2 |
-| Total tasks | 2 (0 optional) |
+| Total tasks | 4 (2 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 1 |
 | AND-gate convergences | 0 |
 | Rooms | 1 |
-| Puzzle graph nodes / edges | 2 / 1 |
+| Puzzle graph nodes / edges | 4 / 3 |
 | Story graph nodes / edges | 2 / 0 |
 
 ## Critical Path
@@ -71,11 +71,16 @@ flowchart TD
 
   door_training_room["Studio<br/>Key lock"]
   training_room("Studio")
+  grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
+  grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
 
   door_training_room --> training_room
+  training_room -.-> grant_ca12_auth_letter
+  training_room -.-> grant_ca12_hivis
 
   class door_training_room lock
   class training_room room
+  class grant_ca12_auth_letter,grant_ca12_hivis item
   class node_start start
 ```
 
@@ -135,13 +140,18 @@ flowchart TD
 
   door_training_room["Studio<br/>Key lock"]
   training_room("Studio")
+  grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
+  grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
   aim_red_team_aim{{"Run the front-desk pretext"}}
   aim_reception_desk_aim{{"Cover the reception desk"}}
 
   door_training_room --> training_room
+  training_room -.-> grant_ca12_auth_letter
+  training_room -.-> grant_ca12_hivis
 
   class door_training_room lock
   class training_room room
+  class grant_ca12_auth_letter,grant_ca12_hivis item
   class aim_red_team_aim,aim_reception_desk_aim aim
   class node_start start
 ```
@@ -209,19 +219,45 @@ flowchart TD
   training_room["Studio<br/>(locked)"]
   lobby("Reception")
   rc_training_kiosk_1{"Training kiosk"}
-  rc_npc_lorna_easton_2("Lorna Easton")
-  rc_lobby_hotdesk_3{"Hot-desk workstation"}
-  rc_npc_delphine_arvanitis_4("Delphine Arvanitis")
+  rc_ca12_kit_bag_2{"Jo's kit bag"}
+  rc_kit_sofa_3{"Sofa"}
+  rc_kit_ca12_journals_4{"Journal stack"}
+  rc_kit_ca12_pc_5{"Thandiwe's workstation"}
+  rc_npc_lorna_easton_6("Lorna Easton")
+  rc_npc_thandiwe_moyo_7("Thandiwe Moyo")
+  rc_npc_julian_sallow_8("Julian Sallow")
+  rc_npc_camila_ospina_9("Camila Ospina")
+  rc_npc_jun_watanabe_10("Jun Watanabe")
+  rc_npc_jo_fairweather_11("Jo Fairweather")
+  rc_ca12_badge_reader_12{"Studio door badge reader"}
+  rc_lobby_hotdesk_13{"Hot-desk workstation"}
+  rc_npc_delphine_arvanitis_14("Delphine Arvanitis")
+  rc_npc_yusuf_demir_15("Yusuf Demir")
+  rc_grant_ca12_auth_letter_16{"Authorisation letter<br/>(granted)"}
+  rc_grant_ca12_hivis_17{"Courier hi-vis<br/>(granted)"}
 
   training_room --> lobby
   training_room --> rc_training_kiosk_1
-  training_room --> rc_npc_lorna_easton_2
-  lobby --> rc_lobby_hotdesk_3
-  lobby --> rc_npc_delphine_arvanitis_4
+  training_room --> rc_ca12_kit_bag_2
+  training_room --> rc_kit_sofa_3
+  training_room --> rc_kit_ca12_journals_4
+  training_room --> rc_kit_ca12_pc_5
+  training_room --> rc_npc_lorna_easton_6
+  training_room --> rc_npc_thandiwe_moyo_7
+  training_room --> rc_npc_julian_sallow_8
+  training_room --> rc_npc_camila_ospina_9
+  training_room --> rc_npc_jun_watanabe_10
+  training_room --> rc_npc_jo_fairweather_11
+  lobby --> rc_ca12_badge_reader_12
+  lobby --> rc_lobby_hotdesk_13
+  lobby --> rc_npc_delphine_arvanitis_14
+  lobby --> rc_npc_yusuf_demir_15
+  training_room -.-> rc_grant_ca12_auth_letter_16
+  training_room -.-> rc_grant_ca12_hivis_17
 
   class training_room lock
   class lobby room
-  class rc_training_kiosk_1,rc_lobby_hotdesk_3 item
-  class rc_npc_lorna_easton_2,rc_npc_delphine_arvanitis_4 npc
+  class rc_training_kiosk_1,rc_ca12_kit_bag_2,rc_kit_sofa_3,rc_kit_ca12_journals_4,rc_kit_ca12_pc_5,rc_ca12_badge_reader_12,rc_lobby_hotdesk_13,rc_grant_ca12_auth_letter_16,rc_grant_ca12_hivis_17 item
+  class rc_npc_lorna_easton_6,rc_npc_thandiwe_moyo_7,rc_npc_julian_sallow_8,rc_npc_camila_ospina_9,rc_npc_jun_watanabe_10,rc_npc_jo_fairweather_11,rc_npc_delphine_arvanitis_14,rc_npc_yusuf_demir_15 npc
   class node_start start
 ```

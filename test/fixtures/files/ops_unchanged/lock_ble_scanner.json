@@ -1,0 +1,514 @@
+{
+  "name": "lock_ble_scanner",
+  "description": "S8c unit 01: BLE-locked safe and tablet, before any S8c engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "name": "BLE Scanner Test",
+    "description": "Test scenario for the BLE scanner minigame",
+    "scenario_brief": "Test BLE scanning, default-PIN pairing, and handshake replay.",
+    "startRoom": "test_lab",
+    "endGoal": "Pair with a BLE device using a default PIN or captured handshake",
+    "globalVariables": {
+      "smart_lock_paired": false,
+      "medical_sensor_paired": false
+    },
+    "objectives": [
+      {
+        "aimId": "pair_devices",
+        "title": "Pair with BLE Devices",
+        "description": "Use the BLE scanner to pair with both devices in the lab",
+        "status": "active",
+        "order": 0,
+        "tasks": [
+          {
+            "taskId": "pair_smart_lock",
+            "title": "Pair with the Smart Lock",
+            "description": "The manufacturer never changed the factory PIN — try common defaults",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "pair_medical_sensor",
+            "title": "Pair with the Medical Sensor",
+            "description": "Find and replay the captured handshake token",
+            "type": "custom",
+            "status": "active"
+          }
+        ]
+      }
+    ],
+    "player": {
+      "id": "player",
+      "displayName": "Security Tester",
+      "spriteSheet": "hacker",
+      "startX": 200,
+      "startY": 200
+    },
+    "startItemsInInventory": [
+      {
+        "type": "ble_scanner",
+        "name": "BLE Scanner",
+        "takeable": true,
+        "observations": "A portable BLE scanner for discovering and pairing with nearby BLE devices"
+      }
+    ],
+    "rooms": {
+      "test_lab": {
+        "name": "BLE Test Lab",
+        "type": "room_reception",
+        "connections": {},
+        "objects": [
+          {
+            "type": "safe",
+            "name": "Smart Lock",
+            "takeable": false,
+            "locked": true,
+            "lockType": "ble",
+            "mac": "AA:BB:CC:DD:EE:01",
+            "uuids": [
+              "1800",
+              "1801",
+              "180F"
+            ],
+            "allowedPins": [
+              "1234"
+            ],
+            "maxPinAttempts": 3,
+            "completesTask": "pair_smart_lock",
+            "onPairSetGlobal": {
+              "smart_lock_paired": true
+            },
+            "observations": "A BLE smart lock. The manufacturer never changed the factory PIN."
+          },
+          {
+            "type": "tablet",
+            "name": "Medical Sensor",
+            "takeable": false,
+            "locked": true,
+            "lockType": "ble",
+            "mac": "BB:CC:DD:EE:FF:02",
+            "uuids": [
+              "181A",
+              "0000181A-0000-1000-8000-00805f9b34fb"
+            ],
+            "handshakeFingerprint": "ffdce8afb3a10c841ee442c6e7c3103ebc7bf8574adc8de0a2a65fd2da969775",
+            "completesTask": "pair_medical_sensor",
+            "onPairSetGlobal": {
+              "medical_sensor_paired": true
+            },
+            "observations": "A BLE medical sensor. Check the sticky note on the desk for a captured handshake."
+          },
+          {
+            "type": "notes",
+            "name": "Sticky Note",
+            "takeable": true,
+            "readable": true,
+            "text": "Scrawled handshake token: testhandshake01"
+          }
+        ]
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "test_lab",
+    "unlockedRooms": [
+      "test_lab"
+    ],
+    "encounteredNPCs": []
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "room_test_lab",
+      "method": "GET",
+      "path": "room/test_lab"
+    },
+    {
+      "id": "safe_container_locked",
+      "method": "GET",
+      "path": "container/test_lab_safe_0"
+    },
+    {
+      "id": "safe_wrong_method",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_lab_safe_0",
+        "method": "bluetooth"
+      }
+    },
+    {
+      "id": "safe_ble",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_lab_safe_0",
+        "method": "ble"
+      }
+    },
+    {
+      "id": "safe_container_open",
+      "method": "GET",
+      "path": "container/test_lab_safe_0"
+    },
+    {
+      "id": "tablet_wrong_method",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_lab_tablet_1",
+        "method": "pin",
+        "attempt": "1"
+      }
+    },
+    {
+      "id": "tablet_ble",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_lab_tablet_1",
+        "method": "ble"
+      }
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "name": "BLE Scanner Test",
+          "rooms": {
+            "test_lab": {
+              "type": "room_reception",
+              "connections": {},
+              "locked": false
+            }
+          },
+          "player": {
+            "id": "player",
+            "startX": 200,
+            "startY": 200,
+            "displayName": "Security Tester",
+            "spriteSheet": "hacker"
+          },
+          "endGoal": "Pair with a BLE device using a default PIN or captured handshake",
+          "startRoom": "test_lab",
+          "objectives": [
+            {
+              "aimId": "pair_devices",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "Pair with the Smart Lock",
+                  "status": "active",
+                  "taskId": "pair_smart_lock",
+                  "description": "The manufacturer never changed the factory PIN — try common defaults"
+                },
+                {
+                  "type": "custom",
+                  "title": "Pair with the Medical Sensor",
+                  "status": "active",
+                  "taskId": "pair_medical_sensor",
+                  "description": "Find and replay the captured handshake token"
+                }
+              ],
+              "title": "Pair with BLE Devices",
+              "status": "active",
+              "description": "Use the BLE scanner to pair with both devices in the lab"
+            }
+          ],
+          "description": "Test scenario for the BLE scanner minigame",
+          "formatVersion": 3,
+          "scenario_brief": "Test BLE scanning, default-PIN pairing, and handshake replay.",
+          "globalVariables": {
+            "smart_lock_paired": false,
+            "medical_sensor_paired": false
+          },
+          "characterSprites": [
+            "hacker"
+          ],
+          "savedCurrentRoom": "test_lab",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "name": "BLE Scanner",
+              "type": "ble_scanner",
+              "takeable": true,
+              "observations": "A portable BLE scanner for discovering and pairing with nearby BLE devices"
+            }
+          ]
+        }
+      },
+      {
+        "id": "room_test_lab",
+        "status": 200,
+        "body": {
+          "room_id": "test_lab",
+          "room": {
+            "name": "BLE Test Lab",
+            "type": "room_reception",
+            "objects": [
+              {
+                "id": "test_lab_safe_0",
+                "mac": "AA:BB:CC:DD:EE:01",
+                "name": "Smart Lock",
+                "type": "safe",
+                "uuids": [
+                  "1800",
+                  "1801",
+                  "180F"
+                ],
+                "locked": true,
+                "lockType": "ble",
+                "takeable": false,
+                "allowedPins": [
+                  "1234"
+                ],
+                "observations": "A BLE smart lock. The manufacturer never changed the factory PIN.",
+                "completesTask": "pair_smart_lock",
+                "maxPinAttempts": 3,
+                "onPairSetGlobal": {
+                  "smart_lock_paired": true
+                }
+              },
+              {
+                "id": "test_lab_tablet_1",
+                "mac": "BB:CC:DD:EE:FF:02",
+                "name": "Medical Sensor",
+                "type": "tablet",
+                "uuids": [
+                  "181A",
+                  "0000181A-0000-1000-8000-00805f9b34fb"
+                ],
+                "locked": true,
+                "lockType": "ble",
+                "takeable": false,
+                "observations": "A BLE medical sensor. Check the sticky note on the desk for a captured handshake.",
+                "completesTask": "pair_medical_sensor",
+                "onPairSetGlobal": {
+                  "medical_sensor_paired": true
+                },
+                "handshakeFingerprint": "ffdce8afb3a10c841ee442c6e7c3103ebc7bf8574adc8de0a2a65fd2da969775"
+              },
+              {
+                "id": "test_lab_notes_2",
+                "name": "Sticky Note",
+                "text": "Scrawled handshake token: testhandshake01",
+                "type": "notes",
+                "readable": true,
+                "takeable": true
+              }
+            ],
+            "connections": {}
+          }
+        }
+      },
+      {
+        "id": "safe_container_locked",
+        "status": 404,
+        "body": {
+          "error": "Container not found: test_lab_safe_0"
+        }
+      },
+      {
+        "id": "safe_wrong_method",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "safe_ble",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object"
+        }
+      },
+      {
+        "id": "safe_container_open",
+        "status": 404,
+        "body": {
+          "error": "Container not found: test_lab_safe_0"
+        }
+      },
+      {
+        "id": "tablet_wrong_method",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "tablet_ble",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object"
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "name": "BLE Scanner Test",
+          "rooms": {
+            "test_lab": {
+              "type": "room_reception",
+              "connections": {},
+              "locked": false
+            }
+          },
+          "player": {
+            "id": "player",
+            "startX": 200,
+            "startY": 200,
+            "displayName": "Security Tester",
+            "spriteSheet": "hacker"
+          },
+          "endGoal": "Pair with a BLE device using a default PIN or captured handshake",
+          "startRoom": "test_lab",
+          "objectives": [
+            {
+              "aimId": "pair_devices",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "Pair with the Smart Lock",
+                  "status": "active",
+                  "taskId": "pair_smart_lock",
+                  "description": "The manufacturer never changed the factory PIN — try common defaults"
+                },
+                {
+                  "type": "custom",
+                  "title": "Pair with the Medical Sensor",
+                  "status": "active",
+                  "taskId": "pair_medical_sensor",
+                  "description": "Find and replay the captured handshake token"
+                }
+              ],
+              "title": "Pair with BLE Devices",
+              "status": "active",
+              "description": "Use the BLE scanner to pair with both devices in the lab"
+            }
+          ],
+          "description": "Test scenario for the BLE scanner minigame",
+          "formatVersion": 3,
+          "scenario_brief": "Test BLE scanning, default-PIN pairing, and handshake replay.",
+          "globalVariables": {
+            "smart_lock_paired": false,
+            "medical_sensor_paired": false
+          },
+          "characterSprites": [
+            "hacker"
+          ],
+          "savedCurrentRoom": "test_lab",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "name": "BLE Scanner",
+              "type": "ble_scanner",
+              "takeable": true,
+              "observations": "A portable BLE scanner for discovering and pairing with nearby BLE devices"
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {},
+      "footholds": {},
+      "inventory": [
+        {
+          "name": "BLE Scanner",
+          "type": "ble_scanner",
+          "takeable": true,
+          "observations": "A portable BLE scanner for discovering and pairing with nearby BLE devices"
+        }
+      ],
+      "pinDusted": {},
+      "mfaPending": {},
+      "mfaPrompts": {},
+      "copiedItems": [],
+      "currentRoom": "test_lab",
+      "mfaAccounts": {},
+      "opsFindings": {},
+      "room_states": {},
+      "signedInPcs": [],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "unlockedRooms": [
+        "test_lab"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [
+        "test_lab_safe_0",
+        "test_lab_tablet_1"
+      ],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

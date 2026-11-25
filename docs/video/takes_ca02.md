@@ -51,3 +51,64 @@ Other changes:
 
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t09_zainab_drinks (new) | fresh game or defend flags; `kit_ca02_out` NOT set | start on the player; `followNpc(kit_zainab_hussain, lerp 0.08)`; `triggerNeed(thirst, 5)` if she has not left (she leaves about 7.5 s after load on her own); hold on her walk to the machine (about (227,196)) and 20 s use; `followPlayer` before any kiosk action | follow-start, npc-left-post, at-machine, use-start, follow-end, camState rows each 0.5 s | office or cold open: a person crosses the room | Needs suspended after Look up, so record before the kiosk. Her chatter ("Could murder a cold drink.") plays only while `kit_quiet` is false: fine here. Lines 2 s apart may overlap Fatima. Existing t07_chidi_prompt gains movement only if she is mid-trip when Look up is pressed: unproven, dry-run first |
+
+Dry run 25 Nov (keyless server on :3456, headless, BE_DRY=1, no BE_SPRITE): PASS on attempt 2, game 13372. Attempt 1 stopped at the sprite gate before any movement (hooded avatar; `spriteCheck` is strict unless BE_DRY=1). Zainab starts at (140,185) on her post, walks from (128,161) 0.6 s after the thirst trigger, reaches the machine at (238,197) 4.0 s later, leaves from (216,177) and is back at (140,185) about 30 s after the trigger. Camera: 112 samples while following, scroll start (-343,-89), end (-288,-72), range 99 by 24, back on the player at the end. Frames not looked at.
+
+## Capture 25 Nov
+
+Recorded 25 Nov on display :147, keyless server :3456 (worktree b-ca-trailers-next), `FOOTAGE_ROOT=$HOME/video-takes-local` (footage in `~/video-takes-local/ca02/takes`, outside the repo; not committed). 1920x1080 full frame (`fullFrame` true on every take), 30 fps, `--hide-hud --zoom-step 1`, `--music 0`, `BE_SPRITE=female_office_worker_v2`. Every take passed first time (0 retakes). Flags: DEF = defend-seat flags, AFT = after-defend flags, as in the table at the top of this file. Frames checked in a contact sheet at the listed marks. The t05 runs share one take id, so the files were renamed `t05_inbox_list_runA.*` and `t05_inbox_list_runB.*` (paths inside their `.check.json` and `.take.json` still say `t05_inbox_list`). Voice: t07_zainab_hook POST /tts 200 audio/mpeg (42789 B, line 5.36 s); t04 F1 and t07_chidi bark 1 and 2 played from cache (keyless server, no 503s logged by the takes).
+
+| take | flags | trimmed s | drop % | A/V offset start/end ms | key marks (trimmed s) | frames checked / issues |
+|---|---|---|---|---|---|---|
+| t07_zainab_hook | AFT | 11.24 | 0.25 | -83/-98 | portrait up 3.51, subtitle 3.46, audio 3.83 to 9.19, sentence 1 ends about 6.52 (est, 3.83 + 2.69), chat closed 9.77, end 10.77 | frames at 3.7, 5.0, 6.0: Zainab portrait, Tarrowby sign, bar showing both sentences (crop it in the edit, as noted), no choice menu. Walk used the moveToNear fallback (distance 35) |
+| t02_attack_run | none | 49.40 | 0.19 | -73/-83 | start 4.27, browser 5.87, Careers 12.44, vacancy noted 14.71, mail open 19.32, slot1 27.71, slot2 31.40, attach 34.42, send 37.43 (landed same tick), reply row 43.65, flip 44.59, continue 47.67, end 48.92 | frames at 16.0 (careers, vacancy noted), 35.5 (builder filled), 37.6 (green result panel), 44.7 ("Now it lands on you" heading). About 0.6 to 1.9 s later than the dry-run marks (use these, not the dry-run windows) |
+| t02n_attack_run_narrow | none | 46.40 | 0.07 | -45/-32 | start 3.93, careers 11.50, vacancy noted 13.64, mail open 18.03, attach 31.82, send 34.56, reply row 40.95, flip 41.73, continue 44.74, end 45.95 | frames at 32.9 (builder, Close fragment at the right as expected) and 34.8 (result panel). 9:16 and 1:1 use |
+| t04_fatima_flip | DEF | 19.20 | 0.47 | -78/-110 | portrait up 8.69, subtitle 8.65, F1 audio 8.91 to 17.13 (8.22 s), sentence 1 ends 11.76 (est), chat closed 17.72, end 18.72 | frames at 9.5, 12.0: Fatima portrait, full F1 text in the bar, Tarrowby sign; crop the sign neighbours, Skip and X |
+| t05_inbox_list_runA | DEF, INBOX_RUN=A | 13.40 | 0.22 | -53/-35 | kiosk 2.71, inbox open 3.73, start 4.95, list 5.46 to end 12.96 | frames at 6.5, 10.0: six-row list, "0 of 6 sorted", nothing opened, cursor off the panel |
+| t05_inbox_list_runB | DEF, INBOX_RUN=B | 19.74 | 0.45 | -83/-92 | kiosk 2.88, inbox open 4.07, start 5.33, list 5.90, card open 10.75, end 19.27 | frames at 6.5 (list), 12.5 (Tendai Shava card: From line, subject, label; Trust, Report, Delete buttons in frame, nothing hovered or pressed; edit frames above the buttons) |
+| t05n_inbox_narrow | DEF | 19.27 | 0.47 | -68/-72 | kiosk 2.79, inbox open 3.91, start 5.16, list 5.68, card open 10.30, end 18.82 | frame at 11.5: card at 760 px, From line and attachment label in frame, buttons below. 9:16 and 1:1 use |
+| t07_chidi_prompt | AFT + `--set episode_e2_cv_lures_defend_percent=60` | 25.17 | 0.37 | -95/-98 | kiosk 2.86, Look up panel 3.98, Look up pressed 4.40, bark 1 start 6.17, bark 2 11.74, bark 3 (Fatima) 20.79, end 24.69 | frames at 4.0 (panel: heading, Look up and Carry on buttons) and 6.7 (Chidi bubble "Got a CV in for the driver job.", Zainab and others in the room). Shot in = 6.17 - 2.8, out = 6.17 + 2.8 (ends before bark 2) |
+| t09_zainab_drinks | none (fresh game) | 32.37 | 0.10 | -62/-30 | npc-start 0.43 at post (140,185), thirst forced 0.43, left post 1.06, at machine 5.02 (239,197), return-start 27.53, back at post 29.82, follow-off 30.63, end 31.94 | PASS. Camera followed 116 samples, scroll (-182,1) to (-128,18) (range 100 by 24), ended on the player (`following: player`). Frames at 0.5, 3, 6, 15, 31.5: Zainab on her post, mid-walk past the table with a bubble, at the machine, back on post. The room is small: the camera pans only a little (about 100 px at 1x) |
+
+Not recorded: none of the ca02 take scripts were skipped. The script's lands variant (Fatima's reply) is off, so no Done-and-row-click take was made; the reply row arrives 6.2 s after Send in these takes (send 37.43, row 43.65). t09_zainab_drinks is not in the trailer script (it is the movement-shot candidate for the cold open or office slot).
+
+## Render queue
+
+Edit lists from the 25 Nov takes (round 1, 72.5 s, lint 0 errors): `tools/video/edits/ca02_trailer_r1.json` (16:9) and `ca02_trailer_r1_narrow.json` (9:16 and 1:1). Not rendered (machine busy). Takes are read from `video_out/ca02/takes`, a symlink to `~/video-takes-local/ca02/takes` (git-ignored; recreate it on a fresh checkout). Run one at a time, nothing else rendering or capturing (`pgrep -af 'remotion|render.mjs|render.sh'`, `free -g`):
+
+```bash
+cd <worktree>
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca02_trailer_r1-16x9     # dedicated empty folder, deleted on success
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca02_trailer_r1.json 16:9
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca02_trailer_r1_narrow-9x16
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca02_trailer_r1_narrow.json 9:16
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca02_trailer_r1_narrow-1x1
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca02_trailer_r1_narrow.json 1:1
+```
+
+No `--final` (spoiler blocks are unreviewed, as for the other CA round-1 edits). Output: `video_out/ca02/renders/`.
+
+Window table (output s, take, in-out in trimmed-take s; all inside their takes and clear of the hazards above):
+
+| shot | out s | take | in-out | note |
+|---|---|---|---|---|
+| hook | 0-3.0 | t07_zainab_hook | 3.65-6.65 | speech 4.00-6.488, sentence 2 starts 6.83 |
+| topic | 8.1-15.2 | t05 run A | 5.6-12.7 | narrow file uses the same wide take, zoomed out |
+| research | 18.2-23.0 | t02 / t02n | 11.9-16.7 / 10.95-15.75 | ends before browser closes |
+| build | 23.0-30.2 | t02 / t02n | 28.2-35.4 / 25.78-32.98 | attach lands about 6.2 s in |
+| lands | 30.2-34.4 | t02 / t02n | 35.9-40.1 / 33.0-37.2 | reply row not in |
+| flip | 34.4-36.8 | t02 / t02n | 44.6-47.0 / 41.8-44.2 | before Continue |
+| fatima_flip | 36.8-45.2 | t04_fatima_flip | 8.9-17.3 | speech 9.12-16.584, menu not in |
+| inbox | 47.2-59.0 | t05 run B / t05n | 6.95-18.75 / 6.5-18.3 | card opens 3.8 s in; 16:9 crop above the verdict buttons |
+| office_life (PROPOSED) | 59.0-61.4 | t09_zainab_drinks | 1.0-3.4 | not in the script; Zainab leaves her post and walks to the drinks machine, silent, +2.4 s |
+| office | 61.4-67.0 | t07_chidi_prompt | 3.37-8.97 | Look up panel for 1.03 s, then Chidi bark 1 (speech from 3.12 s in) |
+
+Open issues for the render check: music is PeaceFolk Guitar Motif from 95.545 s (a choice; alternatives in the edit); chip is EMAIL BUILDER (script's name is 25 characters, limit 24); blue card text is 30 characters (lint warning, owner wording); VO v4 is 3.3 words/s (lint warning, the voiced file); Fatima sentence-2 caption split is estimated; framings for the hook, Fatima, office and office_life are from contact frames, check them in the render; 1:1 narrow build shows the Close fragment; 9:16 and 1:1 inbox show the verdict buttons unpressed.

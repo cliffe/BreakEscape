@@ -1,0 +1,28 @@
+{
+ "scenario": "ca03_helpdesk_reset",
+ "lists": {
+  "host": [
+   {"k": null, "h": "e0764431"},
+   {"k": null, "h": "a5c826aa"},
+   {"k": "quiet_on", "h": "623f4363"},
+   {"k": "attack_done", "h": "b7aac925"},
+   {"k": "defend_done", "h": "4a8a3e73"},
+   {"k": "caught", "h": "4377e867"},
+   {"k": "quiet_off_debrief", "h": "e2e4af55"},
+   {"k": "quiet_off_debrief_seen", "h": "39047eee"},
+   {"k": "step_away", "h": "49932740"},
+   {"k": "chg_ca03_there_sets_ca03_done", "h": "cdabc533"}
+  ],
+  "npc:kit_anjali_rao": [
+   {"k": "chg_ca03_out", "h": "6fe4d521"},
+   {"k": "chg_ca03_out_2", "h": "f5cf5dae"},
+   {"k": "npc_arrived_anjali_rao_sets_ca03_there", "h": "85cb02de"},
+   {"k": "chg_ca03_there", "h": "6fb73813"},
+   {"k": "chg_ca03_done", "h": "390ed806"}
+  ],
+  "npc:kit_niamh_doherty": [
+   {"k": "chg_ca03_out", "h": "6fe4d521"},
+   {"k": "chg_ca03_done", "h": "390ed806"}
+  ]
+ }
+}

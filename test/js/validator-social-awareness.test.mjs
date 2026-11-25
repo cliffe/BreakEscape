@@ -1190,7 +1190,7 @@ test('EC1: stepAway is a boolean, for a full episode only', { skip }, () => {
 });
 
 test('living office: stepAway in a kit shell with no mapping that sets kit_defend_done is a warning', { skip }, () => {
-  const lookUp = /no eventMapping sets kit_defend_done/;
+  const lookUp = /(no eventMapping sets kit_defend_done|waits on kit_defend_done but no eventMapping sets it)/;
   const j = fx('clean_full.json');
   ep(j).stepAway = true;
   // no kit_ globals: not a kit shell, nothing to say

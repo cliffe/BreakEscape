@@ -1,0 +1,5 @@
+[prompt|msf > ]use training/filehold/release_line; check
+[note|[*]] Checking 10.20.0.10:445
+[bad|[-]] 10.20.0.10:445 - The target is not vulnerable.
+  f2  False positive
+  The build number is only a label.

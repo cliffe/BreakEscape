@@ -108,7 +108,7 @@ test('callers set the expectation before the toast', () => {
     const branch = starters.slice(exp, end);
     assert.match(branch, /'Lockpicking', 4000/, 'the pick toast follows the expectation');
     assert.match(branch, /'Unlock Successful', 4000/, 'so does the key toast');
-    for (const toast of ["'Unlock Successful', 4000);\n                // Small delay", "'PIN Accepted', 4000);\n                callback(true, result)", "'Password Accepted', 4000);\n                callback(true, result)"]) {
+    for (const toast of ["'Unlock Successful', 4000);\n                }\n                // Small delay", "'PIN Accepted', 4000);\n                callback(true, result)", "'Password Accepted', 4000);\n                callback(true, result)"]) {
         const at = starters.indexOf(toast);
         assert.ok(at > 0, toast);
         assert.match(starters.slice(Math.max(0, at - 260), at), /expectContainerAfterUnlock/, toast);
