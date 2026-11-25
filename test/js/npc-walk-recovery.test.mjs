@@ -100,21 +100,38 @@ test('walk-out arriving in view re-plans to another out-of-view cell and still r
     assert.equal(left[0].data.how, 'walked');
 });
 
-test('walk-out: after 4 failed re-plans it fades and reports faded', async () => {
+test('walk-out: re-plans while arrivals land in view, at most WALK_MAX_REPLANS, then fades and reports faded', async () => {
+    // Deep picks (WALK_PICK_DEPTH_PX) step 64 px or more each time, so the 320 px dock runs out
+    // before the cap here: the walk ends faded either way.
     const w = world();
     const b = w.addNpc('guard', { visible: true });
     const p = w.manager.walkNPCOut('guard', { to: 'dock' });
     await flush();
-    for (let i = 0; i < WALK_MAX_REPLANS + 1; i++) {
+    for (let i = 0; i < WALK_MAX_REPLANS + 1 && w.manager.walks.has('guard'); i++) {
         const mv = b.moves.at(-1);
         w.view = { x: 0, y: 0, width: mv.x - 28, height: 320 };   // each arrival cell is in view
         b.arrive({ x: mv.x, y: mv.y });
         await flush();
     }
-    assert.equal(b.moves.length, WALK_MAX_REPLANS + 1, 'the first plan plus four re-plans');
+    assert.ok(b.moves.length >= 2 && b.moves.length <= WALK_MAX_REPLANS + 1, `${b.moves.length} legs`);
+    for (let i = 1; i < b.moves.length; i++) assert.ok(b.moves[i].x > b.moves[i - 1].x, 'each re-plan goes further out');
     assert.equal(await p, 'faded');
     assert.deepEqual(w.fades, [0]);
     assert.equal(names(w, 'npc_left:guard')[0].data.how, 'faded');
+});
+
+test('walk-out: the re-plan cap holds (no fifth re-plan, even with room left)', async () => {
+    const w = world();
+    const b = w.addNpc('guard', { visible: true });
+    const p = w.manager.walkNPCOut('guard', { to: 'dock' });
+    await flush();
+    const mv = b.moves.at(-1);
+    w.manager.walks.get('guard').replans = WALK_MAX_REPLANS;
+    w.view = { x: 0, y: 0, width: mv.x - 28, height: 320 };
+    b.arrive({ x: mv.x, y: mv.y });
+    await flush();
+    assert.equal(b.moves.length, 1, 'no further leg');
+    assert.equal(await p, 'faded');
 });
 
 test('walk-out never re-plans back into the room it left', async () => {
@@ -332,24 +349,28 @@ test('walk-out exit cell is picked WALK_PICK_DEPTH_PX clear of the view, so stop
     assert.ok(gap - WALK_ARRIVE_PX > 0, 'a stop short of it is still out of view');
 });
 
-test('walk-out whose re-plans run out while it is out of view in the far room reports walked (nobody saw it go)', async () => {
+test('walk-out that times out out of view in the far room reports walked (nobody saw it go)', async () => {
     const w = world();
     const b = w.addNpc('guard', { visible: true });
-    const p = w.manager.walkNPCOut('guard', { to: 'dock' });
+    const p = w.manager.walkNPCOut('guard', { to: 'dock', timeoutMs: 5000 });
     await flush();
-    for (let i = 0; i < WALK_MAX_REPLANS; i++) {
-        const mv = b.moves.at(-1);
-        w.view = { x: 0, y: 0, width: mv.x - 28, height: 320 };   // each arrival cell is in view
-        b.arrive({ x: mv.x, y: mv.y });
-        await flush();
-    }
-    // Last arrival: the camera has swung back, the walker stands in the dock out of view
-    const mv = b.moves.at(-1);
-    w.view = { x: 0, y: 0, width: 300, height: 320 };
-    w.manager.walks.get('guard').phase = 'replanning';   // the tick's early end does not get there first
-    w.manager.walks.get('guard').replans = WALK_MAX_REPLANS;
-    b.arrive({ x: mv.x, y: mv.y });
+    b.sprite.body.reset(400, 160 - 16);   // in the dock, out of view
+    w.manager.walks.get('guard').phase = 'replanning';   // mid re-plan: the tick's early end does not run
+    w.advance(6000);
+    tick(w);
     assert.equal(await p, 'walked');
     assert.deepEqual(w.fades, [], 'no fade');
     assert.equal(names(w, 'npc_left:guard')[0].data.how, 'walked');
+});
+
+test('walk-out that times out in view still fades and reports faded', async () => {
+    const w = world();
+    const b = w.addNpc('guard', { visible: true });
+    const p = w.manager.walkNPCOut('guard', { to: 'dock', timeoutMs: 5000 });
+    await flush();
+    b.sprite.body.reset(200, 160 - 16);   // still in the hall, in view
+    w.advance(6000);
+    tick(w);
+    assert.equal(await p, 'faded');
+    assert.deepEqual(w.fades, [0]);
 });
