@@ -338,3 +338,10 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - (22:12) CA0 done at 22:11; CA0 doing catalogue preview cuts next (told to go ahead). Ask CA0 before any render of mine.
 - (23:22) CA0 capture block (display 147, :3456, dry runs :3457), about 1.5 h. No render, encode or capture from me until CA0 says it has ended.
 - (23:27) Owner via AC0: weekly quota low. Scripted takes/re-takes, frame and loudness checks, lint, lookups and digests go to Grok or Haiku; Sonnet/Opus only for judgement, review and writing. Don't slow down.
+
+## State 25 Nov, ~22:50
+
+- Noor t12 re-take: both earlier attempts failed because m09's game_loaded mapping rings the HaX dock call when briefing_played is set. Take header now adds `--set dock_done=true` (aaa3c5fa9). Haiku re-take r2 running; faces go to $S/noor_retake/faces.png. Then re-cut noor_cover in tools/video/edits/m09_trailer60.json, render m09 v3, encode, add a v3 tab to page B (https://claude.ai/artifact/8UFHWa6tf6XjfAZVw6aarv), republish.
+- Walk-in fix (fix/npc-walk-live, worktree .claude/worktrees/npc-walk-fix): Sonnet agent on case f (body-fit spawn, stall respawn) is running; results in $S/walkproof6/RESULTS.md. After a pass: merge main if it moved, train-check.sh (about 40 min, ask CA0 for the machine), GREEN hash to AC0, tell CA0.
+- Machine order agreed with CA0: Noor take, train-check, m09 v3 render; or CA0's B5 (ca19/ca20, about 1.5 h) first if the fix runs late.
+- Then: m10 t16 gallery-guard re-take after the walk-in lands; Tesseract after the owner's pick (E default); catalogue scrub waits on the owner.
