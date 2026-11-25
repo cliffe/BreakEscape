@@ -94,9 +94,9 @@ module BreakEscape
       when Hash
         node.each_with_object({}) do |(k, v), h|
           h[k] = if k == 'rev' && v.is_a?(String) then 'REVISION'
-                 elsif k == 'token' && v.is_a?(String) then "XXXX-XXXX-XXXX-XXXX-XXXX-#{node.dig('account', 'npcId').to_s.upcase[0, 4].ljust(4, 'X')}"
-                 else normalise(v)
-                 end
+          elsif k == 'token' && v.is_a?(String) then "XXXX-XXXX-XXXX-XXXX-XXXX-#{node.dig('account', 'npcId').to_s.upcase[0, 4].ljust(4, 'X')}"
+          else normalise(v)
+          end
         end
       when Array then node.map { |v| normalise(v) }
       else node
