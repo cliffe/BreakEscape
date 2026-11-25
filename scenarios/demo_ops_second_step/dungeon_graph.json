@@ -1,0 +1,309 @@
+{
+  "scenario": "demo_ops_second_step",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "lock_lorna_pc",
+      "label": "Lorna's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_visitor_kiosk",
+      "label": "Visitor kiosk<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_darren_pc",
+      "label": "Darren's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_anjali_pc",
+      "label": "Anjali's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_yusuf_pc",
+      "label": "Yusuf's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_lorna_easton",
+      "label": "Lorna Easton sign-in<br/>(leaston)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "reception",
+      "label": "Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_niamh_doherty",
+      "label": "Niamh Doherty sign-in<br/>(ndoherty)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_darren_price",
+      "label": "Darren Price sign-in<br/>(dprice)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_anjali_rao",
+      "label": "Anjali Rao sign-in<br/>(arao)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_yusuf_demir",
+      "label": "Yusuf Demir sign-in<br/>(ydemir)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "workaround_darren_price_0",
+      "label": "Darren Price: writes it down, at 60",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "outage_printer_off",
+      "label": "printer_off<br/>(outage)",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "workaround_yusuf_demir_0",
+      "label": "Yusuf Demir: says the login out loud, at 50",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "it_room",
+      "label": "IT room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_mfa_log",
+      "label": "Sign-in and approvals<br/>signin_ok, signin_fail, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_mfa_log_pc",
+      "label": "Approvals log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_lorna_login",
+      "label": "Lorna Easton password<br/>(leaston)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_lorna_login_card",
+      "label": "Lorna's sign-in card",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "mfa_approve_darren_pc_darren_price",
+      "label": "owner approves (pestered)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_anjali_fob",
+      "label": "Anjali's code fob",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_src_yusuf_phone",
+      "label": "Yusuf's phone",
+      "kind": "item",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "reception",
+      "to": "lock_lorna_pc",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "lock_visitor_kiosk",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_darren_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_anjali_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_yusuf_pc",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "signin_lorna_easton",
+      "soft": false
+    },
+    {
+      "from": "signin_lorna_easton",
+      "to": "lock_lorna_pc",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "signin_niamh_doherty",
+      "soft": false
+    },
+    {
+      "from": "signin_niamh_doherty",
+      "to": "lock_visitor_kiosk",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_darren_price",
+      "soft": false
+    },
+    {
+      "from": "signin_darren_price",
+      "to": "lock_darren_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_anjali_rao",
+      "soft": false
+    },
+    {
+      "from": "signin_anjali_rao",
+      "to": "lock_anjali_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_yusuf_demir",
+      "soft": false
+    },
+    {
+      "from": "signin_yusuf_demir",
+      "to": "lock_yusuf_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_anjali_rao",
+      "soft": false,
+      "label": "sticky note at anjali_pc"
+    },
+    {
+      "from": "outage_printer_off",
+      "to": "workaround_darren_price_0",
+      "soft": false
+    },
+    {
+      "from": "workaround_darren_price_0",
+      "to": "signin_darren_price",
+      "soft": false,
+      "label": "sticky note"
+    },
+    {
+      "from": "outage_printer_off",
+      "to": "workaround_yusuf_demir_0",
+      "soft": false
+    },
+    {
+      "from": "workaround_yusuf_demir_0",
+      "to": "signin_yusuf_demir",
+      "soft": false,
+      "label": "said to anjali_rao"
+    },
+    {
+      "from": "reception",
+      "to": "office",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "kitchen",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "it_room",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "reader_mfa_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_mfa_log",
+      "to": "reader_mfa_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "cred_src_lorna_login_card",
+      "to": "cred_lorna_login",
+      "soft": false
+    },
+    {
+      "from": "cred_lorna_login",
+      "to": "lock_lorna_pc",
+      "soft": false
+    },
+    {
+      "from": "mfa_approve_darren_pc_darren_price",
+      "to": "lock_darren_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "cred_src_anjali_fob",
+      "to": "lock_anjali_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "cred_src_yusuf_phone",
+      "to": "lock_yusuf_pc",
+      "soft": false,
+      "label": "second step"
+    }
+  ]
+}
