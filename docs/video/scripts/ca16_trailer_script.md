@@ -1,6 +1,6 @@
 # ca16 trailer script (Insider risk)
 
-Status: script round 1 plus round 1 review fixes (Opus sell and truth, Sonnet timing; see "Changes from review (round 1)"), captions only, not voiced, no takes yet (scout: `docs/video/scout/ca16_scout.md`, a desk scout, nothing run). Model: ca15 (consequence-first, same template), with the lessons of the ca02 and ca10 reviews built in. Length 72.1 s. Owner card: none yet.
+Status: script round 1 plus round 1 review fixes (Opus sell and truth, Sonnet timing; see "Changes from review (round 1)"), captions only, not voiced, no takes yet (scout: `docs/video/scout/ca16_scout.md`, a desk scout, nothing run). Model: ca15 (consequence-first, same template), with the lessons of the ca02 and ca10 reviews built in. Length 72.1 s. Owner card: none yet; open questions resolved to defaults (see "Defaults taken").
 
 Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line, cut to the 5.0 s cold-open limit; open card with v1; name the topic in VO over footage that shows it; red chapter card (title only), each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card (title only) and VO naming what is being done, never what to check; end on the episode's own in-game line; ca-close with the tagline and the Hacktivity.co.uk call (the card text and the spoken close use the same words). Spoilers fine, no masks, no debrief cost line (D317). PeaceFolk bed (D331, the scenario already plays it); music is left to the edit. VO budget 2.3 words/s plus 0.3 s per internal stop, 0.25 s between cues, 0.2 s clear of cast lines, 0.2 s lead and 0.15 s tail per shot (Sulafat). Cards are title only; close 5.5 s; cold open at most 5.0 s. The narration never says "kiosk". ca16 is consequence-first: there is no attacker to play, so the left seat is labelled `YOUR CALLS` (edit-level `seat_labels`; the right seat stays `DEFENDER`).
 
@@ -8,7 +8,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 |---|---|---|---|---|
 | 0.0–4.2 | hook | t01_anjali_hook · fresh game, Anjali's welcome in person-chat, her second sentence only; in = audio start of sentence 2 (3.58 s into the clip) minus 0.2 s, out = 7.54 s (speech ends 7.34 s, plus 0.2 s), 4.16 s; the game's bar cropped in every format (it prints sentence 3, "You're not here to catch anyone") and sentence 2 burned as the caption · cold open, no tell, no reply clicked · **pending take** | — | Anjali: "This week someone's leaving and there's a bit of talk going round." |
 | 4.2–9.3 | open | Title: Insider risk / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
-| 9.3–13.4 | topic | t02_brief 1–5.1 s · the Brief panel, framed on the Quayholt purple tab, the heading and the five-step strip only (the paragraph with the advice is out of frame), `Start` unpressed · **pending take** | **v1c** "This episode: insider risk." | — |
+| 9.3–13.4 | topic | t08_darren_cooler, 1.6 s office cutaway (Darren Price leaves his desk for the water cooler, follow camera, silent with `kit_quiet`), then t02_brief 1–3.5 s (2.5 s) · the Brief panel, framed on the Quayholt purple tab, the heading and the five-step strip only (the paragraph with the advice is out of frame), `Start` unpressed · **pending take** | **v1c** "This episode: insider risk." | — |
 | 13.4–16.5 | red_card | chapter card, title only: "Make the week's calls" (left seat colour) | **v2** "First, make the week's calls." | — |
 | 16.5–19.9 | pick_offer | t03_choices_reveal, beat 3 of 5 · the card "An unknown contact messages you: ... 25% of what we make. Totally anonymous. Interested?" with its two options, the learner's pick highlighted ("Reply to find out who's really behind it"), no marks before Next · **pending take** | **v3** "Someone offers you money for access." | — |
 | 19.9–23.6 | pick_export | t03_choices_reveal, beat 4 of 5 · "Ross asks you to export his accounts to his personal email 'for the handover'." with its two options, pick highlighted, no marks · **pending take** | **v4** "A colleague who's leaving asks a favour." | — |
@@ -59,13 +59,16 @@ Sonnet review (timing):
 - m3: cast captions: Anjali as three short lines (27 / 25 / 15), Niamh as two timed entries.
 - Totals recomputed: 72.1 s, hook 4.2 s (limit 5.0), close 5.5 s.
 
-## Open questions for the owner
+## Defaults taken for the open owner questions (25 Nov)
 
-- PLACEHOLDER (owner question) 1, left seat label and red card: ca15's "THE SHORTCUT" does not fit ca16 (the calls are favours and rumours, not shortcuts). Recommendation: seat label `YOUR CALLS`, red card "Make the week's calls".
-- PLACEHOLDER (owner question) 2, close tagline: one tagline per episode type, which replaces D351. This episode (consequence-first, like ca11 and ca15): "Make the calls · See where they lead", spoken in the close VO in the same words. Attack episodes keep "Play the attack · Learn to stop it"; defend-only (ca17) uses "Make the calls · Learn where the line sits". Recommendation: adopt all three.
-- PLACEHOLDER (owner question) 3, hook: Anjali's second welcome sentence in person-chat, 4.2 s, with the bar cropped in every format (it would otherwise print "You're not here to catch anyone"). Recommendation: keep. Alternative: the room chatter "Phones haven't stopped today." (mild, 2.0 to 2.7 s), which is more office and less story.
-- PLACEHOLDER (owner question) 4, end: Niamh's ask is the outline's pick and a living-office moment, with no answer given. It echoes Reuben's row in the list, which is cropped out of the list shot for that reason. Recommendation: keep. Alternative: her bark "Hang on, my screen's thrown me out." (3.1 s) as the end, which is weaker.
-- PLACEHOLDER (owner question) 5, trimming on-screen text: the take cuts the two punch-in montage lines to their first sentence in the page's DOM, word for word, as with ca15's hidden labels. Hana's line 2 is dropped by a plain crop, with no DOM edit. Recommendation: yes. If the owner prefers untouched text, show the list only (no Hana card) and keep the montage page and one punch-in.
-- PLACEHOLDER (owner question) 6, show the rumour or Samira beat? It is the centre of the episode (fair concerns) but it lands on a named colleague's family illness. Recommendation: no, with VO v4 as the only "people" beat. The `led_page` shot is now a crop on the offer card alone, so neither card (nor Reuben's shared-login card) is on screen. Revisit if the owner wants the "facts, not a verdict" idea sold, which would then need a cast or narrator line that does not say the rule outright.
-- PLACEHOLDER (owner question) 7, "insider risk" in v1c: the episode's own name, glossed by the hook ("someone's leaving", "talk going round"). Recommendation: keep.
-- PLACEHOLDER (owner question) 8, no trailer for `ca16_insider_risk_defend` (the 8 minute spot-it variant). Recommendation: none unless asked.
+Owner decisions are parked; each question below takes its recommended default so the review rounds can go on.
+
+- 1, left seat and red card: Default taken (owner may change): seat label `YOUR CALLS`, red card "Make the week's calls".
+- 2, close tagline: Default taken (owner may change): one tagline per episode type; consequence-first "Make the calls · See where they lead", spoken in the same words.
+- 3, hook: Default taken (owner may change): Anjali's second welcome sentence, 4.2 s, bar cropped in every format (spare: the chatter "Phones haven't stopped today.").
+- 4, end: Default taken (owner may change): Niamh's ask "It won't take my password at all. Could I borrow your login for an hour?", no answer shown.
+- 5, trimming on-screen text: Default taken (owner may change): the two punch-in montage lines cut to their first sentence in the DOM, word for word; Hana's line 2 dropped by a plain crop.
+- 6, rumour or Samira beat: Default taken (owner may change): not shown; v4 is the only "people" beat and `led_page` crops to the offer card.
+- 7, "insider risk" in v1c: Default taken (owner may change): kept, glossed by the hook.
+- 8, `_defend` trailer: Default taken (owner may change): none unless asked.
+- 9, movement insert (`CA_MOVEMENT_B4.md`): Default taken (owner may change): Darren's cooler walk (`t08_darren_cooler`, follow camera) as the first 1.6 s of `topic`, then the Brief panel for 2.5 s, v1c spoken across the join; no length change (see the `topic` row).

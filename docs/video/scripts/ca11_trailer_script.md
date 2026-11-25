@@ -1,6 +1,6 @@
 # ca11 trailer script (Misdirected data)
 
-Status: script round 1 plus round 1 review fixes (Opus sell and truth, Sonnet timing; see "Changes from review (round 1)"), captions only, not voiced, no takes yet (scout: `docs/video/scout/ca11_scout.md`, a desk scout). Model: ca15 (consequence-first, same kiosk runner), with the review lessons from ca02, ca06, ca10 and ca13 applied. Length 71.7 s. Owner card: none yet.
+Status: script round 1 plus round 1 review fixes (Opus sell and truth, Sonnet timing; see "Changes from review (round 1)"), captions only, not voiced, no takes yet (scout: `docs/video/scout/ca11_scout.md`, a desk scout). Model: ca15 (consequence-first, same kiosk runner), with the review lessons from ca02, ca06, ca10 and ca13 applied. Length 71.7 s. Owner card: none yet; open questions resolved to defaults (see "Defaults taken").
 
 Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on an in-game line, cut to the 5.0 s cold-open limit; open card with v1; name the topic in VO over footage that shows it; red chapter card (title only), each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card (title only) and VO naming what is being done, never what to check; end on the episode's own in-game line, a living-office moment; ca-close with the tagline and the Hacktivity.co.uk call (the card text and the spoken close use the same words). Spoilers fine, no masks, no debrief cost line (D317). PeaceFolk bed (D331, the scenario already plays it): music is left to the edit. VO budget 2.3 words/s plus 0.3 s per internal stop, 0.25 s between cues, 0.2 s clear of cast lines, 0.2 s lead and 0.15 s tail per shot (Sulafat). Cards are title only; close 5.5 s; cold open at most 5.0 s. The narration never says "kiosk". ca11 is consequence-first: there is no attacker to play, so the left seat reads YOUR CALLS (edit-level `seat_labels`; the right seat stays DEFENDER).
 
@@ -46,7 +46,7 @@ Opus review (sell and truth):
 - Hook (M): the welcome "Morning. I'm Yusuf, I keep an eye on security here." was an introduction. The hook is now Yusuf's cached "Handovers go out fast when it's busy." (sentence 1 only; the bar is cropped because it prints sentence 2). v9 names Yusuf. The Sonnet cut-inside-a-word blocker on the welcome (below) goes with it.
 - v3 "A caller asks where Bernadette is today." became "A caller asks where Bernadette cleans today.", so a silent viewer does not read a child in danger (Bernadette is a cleaner). The punch-in stays.
 - v5 "Six months on, see where each one led." became "Then see where each one led." (the heading says "Six months later" and the punch-ins read "Two weeks on" and "A month on").
-- Close: tagline and VO now "Make the calls · See where they lead" / "Make the calls, see where they lead, on Hacktivity.co.uk." (the old VO said "led" over a card saying "leads"); left seat YOUR CALLS. Marked PLACEHOLDER in question 6 (one tagline per episode type).
+- Close: tagline and VO now "Make the calls · See where they lead" / "Make the calls, see where they lead, on Hacktivity.co.uk." (the old VO said "led" over a card saying "leads"); left seat YOUR CALLS (one tagline per episode type, default 6 below).
 - Kept: the end cut after sentence 2, picks (cards 1 and 3), the 11:15 card with v10 as a question, v9 with the Yusuf name now doing work.
 
 Sonnet review (timing):
@@ -59,17 +59,20 @@ Sonnet review (timing):
 - v1 placement as in ca18 (card start plus 0.2 s, no padding).
 - Totals recomputed: 71.7 s, hook 2.9 s (limit 5.0), close 5.5 s.
 
-## Open questions for the owner
+## Defaults taken for the open owner questions (25 Nov)
 
-- PLACEHOLDER (owner question) 1, hook: Yusuf's cached talk line "Handovers go out fast when it's busy." (sentence 1 of 2, 2.9 s). It replaces the welcome ("Morning. I'm Yusuf..."), which was an introduction and not a hook. It sets up the topic and neither approves nor answers anything. No chatter entry or mapping is needed. Recommendation: keep.
-- PLACEHOLDER (owner question) 2, end: Yusuf's bark cut after sentence 2, "This printout isn't ours. It's a care home's resident list, with health notes on it." Sentence 3, "Someone sent it here by mistake.", is dropped because it says in the episode's own words what the inbox reviewer is meant to spot (the data-we-were-sent-in-error flag), and the cut leaves the question open. Alternative: the full three sentences (+1.9 s, 73.6 s). Recommendation: the cut.
-- PLACEHOLDER (owner question) 3, picks: all four unsafe options, with card 1 (the caller) and card 3 (the contact export) shown and card 2 skipped (its text names the "External recipient" chip and its montage line points at the first inbox item). Recommendation: as written.
-- PLACEHOLDER (owner question) 4, the montage punch-ins: card 1 ("a stranger was waiting for Bernadette outside her school") and card 3 ("three families complained and one wrote to the ICO"). Card 1 is the episode's strongest attacker-side picture (the friendly call is how he learned where she would be) and v5b says it in the gentlest terms; the tone is curious, not frightening. Recommendation: keep, and watch the tone in the review round.
-- PLACEHOLDER (owner question) 5, the card opened in the inbox: the genuine 11:15 update from Sam Whitlow, with "Whose job is this one?" over it and the buttons unnamed. Recommendation: keep. Sam Whitlow also sends the 08:52 key item, so a viewer who reads the sender line may link the two: the frame keeps to the subject and body.
-- PLACEHOLDER (owner question) 6, tagline: one tagline per episode type, which replaces D351. This episode (consequence-first, like ca15 and ca16): "Make the calls · See where they lead", spoken in the close VO in the same words, left seat labelled `YOUR CALLS`; the red card "You make four quick choices" stays. Attack episodes keep "Play the attack · Learn to stop it"; defend-only (ca17) uses "Make the calls · Learn where the line sits". Recommendation: adopt all three.
-- PLACEHOLDER (owner question) 7, tab names (unverified against the panels): A BUSY MORNING, SIX MONTHS LATER, YOUR TURN, CARE LAUNDRY DESK INBOX (the triage set's title), THE TRAINING ROOM. Recommendation: as written, to be confirmed in the dry run.
-- PLACEHOLDER (owner question) 8, titles: "Misdirected data / Carrholme Services" (mission.json display name and company); blue card "You sort the desk inbox" (the objective's own wording). Recommendation: keep.
-- PLACEHOLDER (owner question) 9, v9 "Then Yusuf finds something at the copier." It now also names Yusuf, who the hook line does not. It points at the copier before the viewer sees it, but only as a place. Recommendation: keep; alternative "Then, at the next desk." if the reviewers find it leading.
+Owner decisions are parked; each question below takes its recommended default so the review rounds can go on.
+
+- 1, hook: Default taken (owner may change): Yusuf's cached "Handovers go out fast when it's busy." (sentence 1 only, 2.9 s, bar cropped).
+- 2, end: Default taken (owner may change): Yusuf's bark cut after sentence 2, sentence 3 ("Someone sent it here by mistake.") dropped; the full line is +1.9 s (73.6 s).
+- 3, picks: Default taken (owner may change): all four unsafe options, card 1 (the caller) and card 3 (the export) shown, card 2 (overtime) never shown.
+- 4, montage punch-ins: Default taken (owner may change): card 1 (the stranger outside the school) and card 3 (three families, one to the regulator), tone watched in review.
+- 5, inbox card: Default taken (owner may change): the genuine 11:15 Sam Whitlow update with v10 "Whose job is this one?", buttons unnamed, framed on subject and body.
+- 6, tagline: Default taken (owner may change): one tagline per episode type; consequence-first "Make the calls · See where they lead", spoken in the same words, left seat `YOUR CALLS`, red card "You make four quick choices".
+- 7, tab names: Default taken (owner may change): A BUSY MORNING, SIX MONTHS LATER, YOUR TURN, CARE LAUNDRY DESK INBOX, THE TRAINING ROOM, as edit overlay chips (the game's own headings differ; `takes_ca11.md` decision 1).
+- 8, titles: Default taken (owner may change): "Misdirected data / Carrholme Services"; blue card "You sort the desk inbox".
+- 9, v9: Default taken (owner may change): "Then Yusuf finds something at the copier." (fallback "Then, at the next desk." if reviewers find it leading).
+- 10, movement insert (`CA_MOVEMENT_B4.md`): Default taken (owner may change): no insert; the `office` shot already walks Yusuf to the copier tray, and `t08_yusuf_cooler` stays a spare for the `panel` slot.
 
 ## Changes after voicing
 
