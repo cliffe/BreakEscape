@@ -7,10 +7,12 @@
 #
 # Categories (default: CLEAN_CATEGORIES, "worktrees logs" with no settings):
 #   worktrees  landed worktrees, by tools/wt-clean.sh and all its rules
-#   logs       empty (truncate, never delete) test/dummy/log/*.log and log/*.log
-#              in every worktree when over CLEAN_LOG_MAX_MB and idle CLEAN_LOG_IDLE_MIN
+#   logs       trim (never delete) test/dummy/log/*.log and log/*.log in every
+#              worktree no process is working in, when over CLEAN_LOG_MAX_MB and
+#              idle CLEAN_LOG_IDLE_MIN, keeping the last CLEAN_LOG_KEEP_MB (10)
 #   leftovers  playtest pid files and pipes-* folders whose processes are gone,
-#              stale tmp/ and server pid files, and idle tmp/keyless-*.log whose
+#              stale tmp/*.pid files (never tmp/pids/*.pid: a server pid file
+#              keeps its worktree from wt-clean), and idle tmp/keyless-*.log whose
 #              server is not running, in worktrees no process is working in
 #   train      CLEAN_TRAIN_GLOB folders in CLEAN_TRAIN_ROOTS older than
 #              CLEAN_TRAIN_DAYS, always keeping the newest CLEAN_TRAIN_KEEP_NEWEST
@@ -18,7 +20,10 @@
 #   tmpdirs    mktemp-named folders (name-XXXXXX) in CLEAN_TMPDIR_ROOTS untouched
 #              for CLEAN_TMPDIR_DAYS
 # --if-low only acts when a volume it covers is at least PCT full (default
-# CLEAN_LOW_PCT), for a cron job or hook.
+# CLEAN_LOW_PCT), for a cron job or hook. A volume is covered when a configured
+# root or a candidate worktree (not the main checkout) is on it, so a full / does
+# not trigger a run that can only free space on /data. It refuses --apply when no
+# settings file was found.
 # Every deletion goes through clean_guard (tools/clean-lib.sh): real path inside
 # a configured root, no . or .., no symlinks, never /, $HOME, the checkout, a
 # worktree or a root itself. Settings: tools/clean.conf.example.
@@ -31,7 +36,8 @@ while [ $# -gt 0 ]; do
     --dry-run) CLEAN_APPLY=0;;
     --category|--categories) shift; cats="$cats ${1//,/ }";;
     --category=*) v=${1#*=}; cats="$cats ${v//,/ }";;
-    --if-low) iflow=$CLEAN_LOW_PCT; case "${2:-}" in [0-9]*) iflow=$2; shift;; esac;;
+    --if-low) iflow=$CLEAN_LOW_PCT; case "${2:-}" in [0-9]*) iflow=$2; shift;; esac
+      [[ $iflow =~ ^[0-9]{1,3}$ ]] || { echo "disk-clean: --if-low needs a whole number, got '$iflow'" >&2; exit 2; };;
     -h|--help) sed -n '2,/^\. /{/^\. /d;s/^# \{0,1\}//;p}' "$0"; exit 0;;
     *) echo "disk-clean: unknown argument $1 (see --help)" >&2; exit 2;;
   esac
@@ -47,11 +53,15 @@ now=$(date +%s)
 clean_read_cwds
 
 # Volumes this run covers.
-vols=$(for p in $CLEAN_WORKTREES $CLEAN_TRAIN_ROOTS $CLEAN_SCRATCH_ROOTS $CLEAN_TMPDIR_ROOTS; do
+vols=$(for p in $(sed 1d <<<"$CLEAN_WORKTREES") $CLEAN_TRAIN_ROOTS $CLEAN_SCRATCH_ROOTS $CLEAN_TMPDIR_ROOTS; do
   [ -e "$p" ] && clean_vol "$p"; done | sort -u)
 dfline() { df -Pk -- "$1" | awk 'NR==2{print $3, $4, $5}'; }   # used avail pct%
 
 echo "disk-clean $([ "$CLEAN_APPLY" = 1 ] && echo APPLY || echo 'DRY RUN (nothing is changed; --apply to act)')"
+if [ -z "$CLEAN_CONF_USED" ]; then
+  echo "WARNING: no settings file found (looked for \$CLEAN_CONF, ${XDG_CONFIG_HOME:-~/.config}/break-escape/clean.conf, $CHECKOUT/tools/clean.local.conf); only the defaults apply" >&2
+  if [ -n "$iflow" ] && [ "$CLEAN_APPLY" = 1 ]; then echo "disk-clean: refusing --apply --if-low with no settings file" >&2; exit 1; fi
+fi
 echo "checkout $CHECKOUT; settings ${CLEAN_CONF_USED:-none (defaults)}; categories:$(printf ' %s' $cats)"
 declare -A BEFORE
 for v in $vols; do BEFORE[$v]=$(dfline "$v"); set -- ${BEFORE[$v]}; echo "volume $v: $3 full, $(clean_h "$2") free"; done
@@ -72,13 +82,14 @@ cat_worktrees() {
 cat_logs() {
   local w f sz idle
   for w in $CLEAN_WORKTREES; do
+    if clean_busy "$w"; then echo "SKIP      $w logs (a process is working in it)"; continue; fi
     for f in "$w"/test/dummy/log/*.log "$w"/log/*.log; do
       [ -f "$f" ] && [ ! -L "$f" ] || continue
       sz=$(stat -c %s -- "$f")
       [ "$sz" -gt $(( CLEAN_LOG_MAX_MB * 1048576 )) ] || continue
       idle=$(( now - $(stat -c %Y -- "$f") ))
       if [ $idle -lt $(( CLEAN_LOG_IDLE_MIN * 60 )) ]; then echo "SKIP      $f (written $((idle/60)) min ago)"; continue; fi
-      clean_truncate "log over $CLEAN_LOG_MAX_MB MB" "$f" "$w"
+      clean_trim "log over $CLEAN_LOG_MAX_MB MB" "$f" "$CLEAN_LOG_KEEP_MB" "$w"
     done
   done
 }
@@ -108,7 +119,7 @@ cat_leftovers() {
       if [ $idle -lt $(( CLEAN_LOG_IDLE_MIN * 60 )) ]; then echo "SKIP      $lg (written $((idle/60)) min ago)"; continue; fi
       clean_rm "keyless server log, server stopped" "$lg" "$w"
     done
-    for pf in "$w"/tmp/*.pid "$w"/tmp/pids/*.pid "$w"/test/dummy/tmp/pids/*.pid; do
+    for pf in "$w"/tmp/*.pid "$w"/test/dummy/tmp/pids/*.pid; do
       [ -f "$pf" ] || continue
       clean_pid_alive "$pf" && continue
       clean_rm "pid file of a process that is gone" "$pf" "$w"
@@ -158,6 +169,7 @@ cat_tmpdirs() {
       n=${d##*/}; suf=${n##*-}
       # mktemp suffixes: 6 letters/digits with at least one capital or digit
       [[ $suf =~ ^[A-Za-z0-9]{6}$ && $suf =~ [A-Z0-9] ]] || continue
+      [ "$(stat -c %a -- "$d")" = 700 ] || continue   # mktemp -d makes mode 700
       old_enough "$d" "$CLEAN_TMPDIR_DAYS" || continue
       if clean_busy "$d"; then echo "SKIP      $d (a process is working in it)"; continue; fi
       clean_rm "temp dir untouched for $CLEAN_TMPDIR_DAYS d" "$d" "$root"

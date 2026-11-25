@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   mkdtempSync, mkdirSync, writeFileSync, copyFileSync, chmodSync, symlinkSync,
-  existsSync, statSync, utimesSync, rmSync, realpathSync, readdirSync, lstatSync,
+  existsSync, statSync, utimesSync, rmSync, realpathSync, readdirSync, lstatSync, readFileSync, appendFileSync,
 } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -108,7 +108,7 @@ function build() {
     'CLEAN_KEEP="wt-kept"',
     `CLEAN_SYMLINK_DIRS="${T}/links"`,
     'CLEAN_CATEGORIES="worktrees logs leftovers train scratch tmpdirs"',
-    'CLEAN_LOG_MAX_MB=1', 'CLEAN_LOG_IDLE_MIN=1',
+    'CLEAN_LOG_MAX_MB=1', 'CLEAN_LOG_IDLE_MIN=1', 'CLEAN_LOG_KEEP_MB=0',
     `CLEAN_TRAIN_ROOTS="${trains}"`, 'CLEAN_TRAIN_DAYS=2', 'CLEAN_TRAIN_KEEP_NEWEST=2',
     `CLEAN_SCRATCH_ROOTS="${scratch}"`, 'CLEAN_SCRATCH_DAYS=2',
     `CLEAN_TMPDIR_ROOTS="${tmpr}"`, 'CLEAN_TMPDIR_DAYS=2',
@@ -116,6 +116,9 @@ function build() {
   ].join('\n'));
   env.CLEAN_CONF = conf;
   env.TMPDIR = T;
+  env.HOME = T;
+  env.XDG_CONFIG_HOME = join(T, 'xdg');
+  for (const n of ['foo-Ab3dE9', 'foo-abcdef', 'bar-Xy12Zz']) chmodSync(join(tmpr, n), 0o700);
   return { T, repo, ext, trains, scratch, tmpr, log, pt, env };
 }
 
@@ -201,12 +204,12 @@ test('safe-rm refuses escapes and protected paths, removes inside a root', (ctx)
   // A root that contains a worktree cannot delete it, and a root of $HOME or / is ignored.
   const r1 = sh(join(t.repo, 'tools', 'safe-rm.sh'), [`${t.ext}/wt-kept`],
     { env: { ...t.env, CLEAN_RM_ROOTS: t.ext }, check: false });
-  assert.equal(r1.status, 1);
-  assert.match(r1.stdout, /protected/);
+  assert.equal(r1.status, 2);
+  assert.match(r1.stderr, /protected/);
   assert.ok(existsSync(`${t.ext}/wt-kept`));
   const r2 = sh(join(t.repo, 'tools', 'safe-rm.sh'), [`${t.T}/outside`],
     { env: { ...t.env, CLEAN_RM_ROOTS: '/' }, check: false });
-  assert.equal(r2.status, 1);
+  assert.equal(r2.status, 2);
   assert.ok(existsSync(`${t.T}/outside/f`));
   // --dry-run changes nothing; a plain call removes.
   assert.match(run(t, 'safe-rm.sh', ['--dry-run', `${trains}/train1`]).stdout, /WOULD rm/);
@@ -231,4 +234,101 @@ test('with no settings file only <checkout>/.claude/worktrees is considered and 
   const r = sh(join(t.repo, 'tools', 'safe-rm.sh'), [`${t.scratch}/old`], { env, check: false });
   assert.equal(r.status, 1);
   assert.ok(existsSync(`${t.scratch}/old`));
+});
+
+test('numeric settings that are not whole numbers stop the run before anything is listed', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const keys = ['CLEAN_WT_MIN_AGE_HOURS', 'CLEAN_LOG_MAX_MB', 'CLEAN_LOG_IDLE_MIN', 'CLEAN_LOG_KEEP_MB', 'CLEAN_TRAIN_DAYS',
+    'CLEAN_TRAIN_KEEP_NEWEST', 'CLEAN_SCRATCH_DAYS', 'CLEAN_TMPDIR_DAYS', 'CLEAN_LOW_PCT'];
+  for (const k of keys) {
+    for (const bad of ['x', '', '2d', 'a[$(touch ' + t.T + '/pwned)]']) {
+      const r = sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env: { ...t.env, [k]: bad }, check: false });
+      assert.equal(r.status, 2, `${k}=${JSON.stringify(bad)}\n${r.stdout}${r.stderr}`);
+      assert.doesNotMatch(r.stdout, /WOULD|== /);
+      assert.match(r.stderr, new RegExp(k));
+    }
+  }
+  assert.ok(!existsSync(`${t.T}/pwned`));
+  // Zero would switch an age guard off.
+  for (const k of ['CLEAN_TRAIN_DAYS', 'CLEAN_SCRATCH_DAYS', 'CLEAN_WT_MIN_AGE_HOURS', 'CLEAN_TRAIN_KEEP_NEWEST']) {
+    const r = sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env: { ...t.env, [k]: '0' }, check: false });
+    assert.equal(r.status, 2, k);
+  }
+  const ok = sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env: { ...t.env, CLEAN_ALLOW_ZERO: '1', CLEAN_SCRATCH_DAYS: '0' } });
+  assert.match(ok.stdout, /== scratch/);
+});
+
+test('roots that contain the checkout, a worktree or $HOME stop the run; a path inside a worktree is never removed through a root', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  for (const root of [t.ext, t.T, '/', `${t.ext}/wt-kept`, `${t.repo}/tools`]) {
+    const r = sh(join(t.repo, 'tools', 'safe-rm.sh'), [`${t.repo}/tools/clean-lib.sh`],
+      { env: { ...t.env, CLEAN_RM_ROOTS: root }, check: false });
+    assert.equal(r.status, 2, root);
+    assert.match(r.stderr, /protected|contains|inside/, root);
+    assert.ok(existsSync(`${t.repo}/tools/clean-lib.sh`));
+    assert.ok(existsSync(`${t.ext}/wt-kept`));
+  }
+  // Whitespace or glob characters in a root or the keep list are refused.
+  for (const [k, v] of [['CLEAN_RM_ROOTS', `${t.T}/a\nb`], ['CLEAN_SCRATCH_ROOTS', `${t.T}/*`], ['CLEAN_KEEP', '*']]) {
+    const r = sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env: { ...t.env, [k]: v }, check: false });
+    assert.equal(r.status, 2, k);
+  }
+  // A root inside a worktree is not allowed to delete there either.
+  mkdirSync(`${t.ext}/wt-kept/junk`);
+  const r = sh(join(t.repo, 'tools', 'safe-rm.sh'), [`${t.ext}/wt-kept/junk`],
+    { env: { ...t.env, CLEAN_RM_ROOTS: `${t.ext}/wt-kept/junk/..` }, check: false });
+  assert.equal(r.status, 2);
+  assert.ok(existsSync(`${t.ext}/wt-kept/junk`));
+  const r2 = sh(join(t.repo, 'tools', 'safe-rm.sh'), [`${t.ext}/wt-kept/junk`],
+    { env: { ...t.env, CLEAN_RM_ROOTS: `${t.ext}/wt-kept` }, check: false });
+  assert.equal(r2.status, 2);
+  assert.ok(existsSync(`${t.ext}/wt-kept/junk`));
+});
+
+test('settings are found in the user config dir, and --apply --if-low refuses without any', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  const env = { ...t.env };
+  delete env.CLEAN_CONF;
+  mkdirSync(join(t.T, 'xdg', 'break-escape'), { recursive: true });
+  const none = sh(join(t.repo, 'tools', 'disk-clean.sh'), ['--apply', '--if-low'], { env, check: false });
+  assert.equal(none.status, 1);
+  assert.match(none.stdout + none.stderr, /WARNING: no settings file/);
+  copyFileSync(join(t.T, 'clean.conf'), join(t.T, 'xdg', 'break-escape', 'clean.conf'));
+  const out = sh(join(t.repo, 'tools', 'disk-clean.sh'), ['--category', 'train'], { env }).stdout;
+  assert.match(out, /settings \S*xdg\/break-escape\/clean\.conf/);
+  assert.match(out, /WOULD rm .*train1/);
+});
+
+test('busy and in-use worktrees are kept, logs keep their tail, a failing git status skips, a stale server pid stays', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  // In-use marker (fresh) keeps wt-landed.
+  appendFileSync(git(`${t.ext}/wt-landed`, 'rev-parse', '--git-path', 'info/exclude').replace(/^(?!\/)/, `${t.ext}/wt-landed/`), 'tmp/\n');
+  mkdirSync(`${t.ext}/wt-landed/tmp`, { recursive: true });
+  writeFileSync(`${t.ext}/wt-landed/tmp/in-use`, 'agent\n');
+  const dry = run(t, 'wt-clean.sh', []).stdout;
+  assert.match(dry, /SKIP  wt-landed \(in-use marker/);
+  // Logs: only the tail is kept, and a busy worktree's logs are left alone.
+  writeFileSync(`${t.ext}/wt-kept/tools/stale.txt`, '');
+  const env = { ...t.env, CLEAN_LOG_KEEP_MB: '1' };
+  const d2 = sh(join(t.repo, 'tools', 'disk-clean.sh'), ['--category', 'logs'], { env }).stdout;
+  assert.match(d2, /WOULD trim .*test\.log/);
+  sh(join(t.repo, 'tools', 'disk-clean.sh'), ['--apply', '--category', 'logs'], { env });
+  assert.equal(statSync(join(t.log, 'test.log')).size, 1048576);
+  // A dead tmp/pids pid file is not removed by leftovers (it keeps the worktree for wt-clean).
+  mkdirSync(`${t.ext}/wt-kept/tmp/pids`, { recursive: true });
+  writeFileSync(`${t.ext}/wt-kept/tmp/pids/server.pid`, '999999999\n');
+  const d3 = run(t, 'disk-clean.sh', ['--category', 'leftovers']).stdout;
+  assert.doesNotMatch(d3, /tmp\/pids\/server\.pid/);
+});
+
+test('CLEAN_TALLY_FILE from outside is ignored', (ctx) => {
+  const t = build();
+  ctx.after(() => rmSync(t.T, { recursive: true, force: true }));
+  writeFileSync(`${t.T}/victim`, 'keep\n');
+  sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env: { ...t.env, CLEAN_TALLY_FILE: `${t.T}/victim` } });
+  assert.equal(readFileSync(`${t.T}/victim`, 'utf8'), 'keep\n');
 });

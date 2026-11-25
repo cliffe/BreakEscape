@@ -1,9 +1,14 @@
 # Per-machine cleanup settings for tools/wt-clean.sh, tools/disk-clean.sh and
-# tools/safe-rm.sh. Copy to tools/clean.local.conf in the main checkout
-# (git-ignored) and edit; or set CLEAN_CONF=/path/to/file; or override any key
+# tools/safe-rm.sh. Copy to ~/.config/break-escape/clean.conf (outside every
+# checkout, so every worktree and cron see the same file; first choice) or to
+# tools/clean.local.conf in the main checkout (git-ignored) and edit; or set
+# CLEAN_CONF=/path/to/file; or override any key
 # with an environment variable of the same name. Sourced as shell. Lists are
 # space separated. Leaving a key out keeps the default shown here, which is safe
-# on any machine. $CHECKOUT is the main checkout, found from git.
+# on any machine. Numbers must be whole numbers; 0 is refused for ages, days and
+# keep-newest unless CLEAN_ALLOW_ZERO=1. Roots and the keep list take no globs and
+# no spaces; a root may not be or contain /, $HOME, the checkout or a worktree.
+# $CHECKOUT is the main checkout, found from git.
 
 # Branch a worktree's HEAD must be in before it may be removed.
 #CLEAN_MAIN_BRANCH=main
@@ -18,8 +23,10 @@
 
 # Categories disk-clean runs when --category is not given.
 #CLEAN_CATEGORIES="worktrees logs"
-# Test logs over this size are emptied (truncated, never deleted) once idle.
+# Test logs over this size are trimmed to their last CLEAN_LOG_KEEP_MB (never
+# deleted) once idle, in worktrees no process is working in.
 #CLEAN_LOG_MAX_MB=200
+#CLEAN_LOG_KEEP_MB=10
 #CLEAN_LOG_IDLE_MIN=15
 # Train output: folders matching the glob in these roots, older than N days,
 # always keeping the newest K.
@@ -40,7 +47,9 @@
 
 # Example: a machine with worktrees on a data volume as /data/be-*, linked from $HOME.
 #CLEAN_WORKTREE_GLOBS="/data/be-*"
-#CLEAN_KEEP="be-ops-core"
+# Every long-lived lane goes on the keep list; `touch <worktree>/tmp/in-use` also
+# protects a worktree for 24 hours.
+#CLEAN_KEEP="be-ops-build be-ops-core be-ops-follow be-ops-logs be-ops-skin"
 #CLEAN_SYMLINK_DIRS="$HOME"
 #CLEAN_CATEGORIES="worktrees logs leftovers train scratch tmpdirs"
 #CLEAN_TRAIN_ROOTS=/data/tmp
