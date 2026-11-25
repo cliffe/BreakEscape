@@ -1,6 +1,6 @@
 {
  "mission": "m09",
- "id": "m09_trailer60_v2",
+ "id": "m09_trailer60_v3",
  "title": "SAFETYNET: Licence to Hack, m09 Digital Archaeology 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -376,10 +376,10 @@
    },
    "source": {
     "file": "t12_noor_cover.trimmed.mkv",
-    "in": 3.1,
-    "out": 7.3
+    "in": 4.3,
+    "out": 8.5
    },
-   "note": "Noor at the front desk, voice 3.07-6.77; in 3.1 (conversation open, text still fading in), out 7.3 before the reply menu (7.7)",
+   "note": "Noor at the front desk, re-take 25 Nov: voice 4.435-8.288; in 4.3 (conversation open 3.896, text settled), out 8.5 before the reply menu",
    "framing": {
     "16:9": {
      "cx": 0.62,
