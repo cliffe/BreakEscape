@@ -3,13 +3,16 @@
 // Contract: SHOWCASE_PLAN.md 8.3.1 (recon). Every VAR below is a scenario global that the
 // scenario file declares with the same initial value, synced in when the conversation starts;
 // met_ama is the only ink-local VAR (first-meeting line plays once, as in office_life_showcase).
-// coffee_call is a counter: the lever adds one and stays offered, so every press is a change.
+// coffee_call is a counter: a press that is not already pending adds one, so it is a change.
+// coffee_pending is true from a press until Jun is back at his desk (a mapping on Jun clears it):
+// a press in between says the run is on its way and queues nothing.
 // kitchen_seen and server_room_seen gate lunch and the evening: an NPC's needs only pick
 // targets in rooms the player has loaded, so the kitchen (food, the evening coffee) and the
 // server room (Zainab) must be loaded before those levers can work (as office_life_showcase
 // gates its lunch on kitchen_seen).
 
 VAR coffee_call = 0
+VAR coffee_pending = false
 VAR act_midday = false
 VAR act_evening = false
 VAR kitchen_seen = false
@@ -137,7 +140,13 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
 -> hub
 
 === lever_coffee ===
+{ coffee_pending:
+    # speaker:npc
+    That's already on its way. Give them a minute.
+    -> hub
+}
 ~ coffee_call = coffee_call + 1
+~ coffee_pending = true
 # speaker:npc
 Right, a coffee run. Chidi and Jun will head for the machine.
 { not plug_in_done:
