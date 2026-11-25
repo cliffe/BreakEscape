@@ -652,6 +652,7 @@ class AccessLeakScanner
     @crack_running_seen = false # a well formed 200 running answer so far (R2-L4: a running row or a wait map follows one)
     @crack_runs_seen = false # a 200 nomatch answer with `runs: 1` so far (R2-L3: the strong record's first run)
     @crack_infeasible_seen = false # a well formed 200 infeasible answer so far (R2-L4)
+    @crack_by_id = {} # tagged runs only (hardening U2): hash id => { credits:, running_seen:, runs_seen:, infeasible_seen:, run_start: }
     @crack_last_grant = nil # the accounts the cracked answer of the current row granted, nil if none or not grantable (R2-L2)
     @fact_granted = @fact_start_ids.dup # award fact ids a 200 answer of the server's own shape has granted so far, and the start items' (S7 R2-L1)
     @fact_game_earned = @game && !@fact_entries.empty? ? Array(@game.earned_fact_ids).map(&:to_s).to_set : nil
@@ -3895,6 +3896,7 @@ class AccessLeakScanner
   CRACK_APP_ERRORS = { 'Not authorized' => 403, 'invalid_authenticity_token' => 422 }.freeze
 
   CRACK_GRANTING_CLASSES = %w[common guessable reused].freeze
+  CRACK_WAIT_SLACK_S = 2 # row `t` is the arrival of the answer (H3)
 
   # Hash records of the scenario (with the class and grade the server resolves for each), and each NPC's own password.
   # Read once.
@@ -3955,7 +3957,9 @@ class AccessLeakScanner
   # server could have given it (see crack_grant). A well formed 200 running answer is one credit for a later salted grant.
   def note_crack_earned(body, ctx, row)
     @crack_last_grant = nil
-    return unless ctx[:crack] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body)
+    return unless ctx[:crack] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body, row)
+
+    return note_crack_earned_tagged(body, row) if @tags_on
 
     case body['status']
     when 'running'
@@ -3964,19 +3968,53 @@ class AccessLeakScanner
     when 'nomatch' then @crack_runs_seen = true if body['runs'] == 1
     when 'infeasible' then @crack_infeasible_seen = true
     end
-    @crack_last_grant = crack_cracked_accounts(body)
+    @crack_last_grant = crack_cracked_accounts(body, row)
     @crack_earned.merge(@crack_last_grant) if @crack_last_grant
   end
 
+  # H1 to H4 (hardening U2): the same bookkeeping per hash id, the id being the row's `hash` tag. A row with no usable tag
+  # earns nothing and changes no record's state. A `nomatch` or `cracked` row ends the id's current run.
+  def crack_state(id)
+    @crack_by_id[id] ||= { credits: 0, running_seen: false, runs_seen: false, infeasible_seen: false, run_start: nil }
+  end
+
+  def note_crack_earned_tagged(body, row)
+    id = crack_row_tag(row)
+    return unless id
+
+    state = crack_state(id)
+    case body['status']
+    when 'running'
+      state[:credits] += 1
+      state[:running_seen] = true
+      state[:run_start] ||= { t: capture_time(row), ready: body['readyInSeconds'] }
+    when 'nomatch'
+      state[:runs_seen] = true if body['runs'] == 1
+      state[:run_start] = nil
+    when 'infeasible' then state[:infeasible_seen] = true
+    when 'cracked'
+      @crack_last_grant = crack_cracked_accounts(body, row)
+      @crack_earned.merge(@crack_last_grant) if @crack_last_grant
+      state[:run_start] = nil
+    end
+  end
+
+  # A per-record flag: the tagged id's in a tagged run, the run-wide one otherwise.
+  def crack_flag(id, key)
+    return !!(@crack_by_id[id] && @crack_by_id[id][key]) if @tags_on
+
+    instance_variable_get({ running_seen: :@crack_running_seen, runs_seen: :@crack_runs_seen, infeasible_seen: :@crack_infeasible_seen }.fetch(key))
+  end
+
   # The accounts a cracked answer grants, or nil unless the whole answer is well formed and the server could have given it.
-  def crack_cracked_accounts(body)
+  def crack_cracked_accounts(body, row)
     return nil unless body['status'] == 'cracked' && body.key?('accountId')
 
     account = body['accountId']
     accounts = body['credentialIds'].map { |cid| cid.delete_suffix('.cracked') }
     return nil unless accounts.include?(account) && accounts.uniq.length == accounts.length
 
-    crack_grant(account, accounts) ? accounts : nil
+    crack_grant(account, accounts, row) ? accounts : nil
   end
 
   # OpsCracking#run_crack! and #crack_grant!: a record of the named account that is held, has a class that can be cracked
@@ -3984,8 +4022,13 @@ class AccessLeakScanner
   # record's equal-password account already held), and either is unsalted (a direct hit grants at once) or follows a
   # running answer (a salted hit is granted only by a post after a stored run). More than one account is a batch: only an
   # unsalted direct hit batches, only to accounts with an equal password and a held unsalted record of their own.
-  def crack_grant(account, accounts)
+  def crack_grant(account, accounts, row)
     candidates = crack_held_records(account).select { |r| crack_recipe_met?(r) }
+    if @tags_on
+      # H1: the tagged record, which must be one of this account's own
+      tag = crack_row_tag(row)
+      candidates = candidates.select { |r| r[:id] == tag }
+    end
     return false if candidates.empty?
 
     if accounts.length > 1
@@ -3997,9 +4040,24 @@ class AccessLeakScanner
       end
     end
     return true if candidates.any? { |r| !r[:resolved][:salted] }
+    return crack_grant_tagged_salted(candidates.first, row) if @tags_on
     return false if @crack_running_credits < 1
 
     @crack_running_credits -= 1
+    true
+  end
+
+  # H2, H3: a salted grant spends its own record's credit, and only once the current run's wait is over (row `t` is the answer's
+  # arrival, so a 2 second tolerance). No current run, an unreadable time or an unreadable wait earns nothing.
+  def crack_grant_tagged_salted(record, row)
+    state = @crack_by_id[record[:id]]
+    return false unless state && state[:credits] >= 1 && state[:run_start]
+
+    start = state[:run_start]
+    now = capture_time(row)
+    return false unless now && start[:t] && start[:ready].is_a?(Integer) && now >= start[:t] + start[:ready] - CRACK_WAIT_SLACK_S
+
+    state[:credits] -= 1
     true
   end
 
@@ -4044,8 +4102,11 @@ class AccessLeakScanner
   end
 
   # The exact keys and value ranges of each 200 answer of POST /crack.
-  def crack_answer_shape_ok?(body)
+  def crack_answer_shape_ok?(body, row)
     return false unless body['success'] == true
+
+    tag = @tags_on ? crack_row_tag(row) : nil
+    tagged = tag && @crack_records.find { |r| r[:id] == tag }
 
     keys = body.keys.sort
     int = ->(v, range) { v.is_a?(Integer) && range.cover?(v) }
@@ -4056,10 +4117,15 @@ class AccessLeakScanner
       keys == %w[accountId credentialIds status success] && body['accountId'].is_a?(String) && !body['accountId'].empty? &&
         body['credentialIds'].is_a?(Array) && body['credentialIds'].length.between?(1, 64) &&
         body['credentialIds'].all? { |c| c.is_a?(String) && c.end_with?('.cracked') && c.length > '.cracked'.length }
-    when 'running' then keys == %w[readyInSeconds status success] && int.call(body['readyInSeconds'], 0..crack_held_max_wait)
+    when 'running'
+      max = tagged ? (crack_waiting_record?(tagged) && crack_record_held?(tagged) ? [tagged[:resolved][:crack_seconds], CRACK_MAX_WAIT].min : -1) : crack_held_max_wait
+      keys == %w[readyInSeconds status success] && int.call(body['readyInSeconds'], 0..max)
     when 'nomatch'
-      keys == %w[status success] || (keys == %w[runs status success] && body['runs'] == 1 && crack_held_class?('strong'))
-    when 'infeasible' then keys == %w[runs status success] && body['runs'] == 2 && crack_held_class?('strong') && @crack_runs_seen
+      keys == %w[status success] ||
+        (keys == %w[runs status success] && body['runs'] == 1 && (@tags_on ? crack_tagged_strong?(tagged) : crack_held_class?('strong')))
+    when 'infeasible'
+      keys == %w[runs status success] && body['runs'] == 2 &&
+        (@tags_on ? crack_tagged_strong?(tagged) && crack_flag(tag, :runs_seen) : crack_held_class?('strong') && @crack_runs_seen)
     when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..crack_held_max_facts)
     else false
     end
@@ -4080,6 +4146,11 @@ class AccessLeakScanner
     facts = @crack_records.select { |r| r[:resolved] && r[:klass] == 'guessable' && crack_record_held?(r) }
                           .map { |r| Array(r[:entry].dig('crack', 'facts')).length }
     [facts.max || 0, 4].min
+  end
+
+  # Tagged runs: the tagged record itself is a held strong one (no tag, or an unknown id, is not).
+  def crack_tagged_strong?(record)
+    !record.nil? && !record[:resolved].nil? && record[:klass] == 'strong' && crack_record_held?(record)
   end
 
   def crack_held_class?(klass)
@@ -4173,7 +4244,7 @@ class AccessLeakScanner
     return add.call('crack_answer', 'crack:answer', '$') unless http.is_a?(Integer)
     return if http != 200 && body.is_a?(String)
 
-    ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body) : crack_refusal_shape_ok?(body, http) || crack_app_error_ok?(body, http))
+    ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body, row) : crack_refusal_shape_ok?(body, http) || crack_app_error_ok?(body, http))
     add.call('crack_answer', 'crack:answer', '$') unless ok
     # R2-L2: a well formed cracked answer for an account the server must not grant is a finding by itself
     return unless ok && http == 200 && body['status'] == 'cracked' && body.key?('accountId') && @crack_last_grant.nil?
@@ -4211,13 +4282,13 @@ class AccessLeakScanner
     return false unless crack_token_ok?(row['token'], record) && crack_scope_keys_ok?(row)
     return false if row.key?('heldItem') && !crack_held_item_ok?(row['heldItem'], record[:entry])
     return false if row['status'] == 'cracked' && !crack_account_granted?(record[:account])
-    return false if row['status'] == 'infeasible' && !(record[:klass] == 'strong' && @crack_infeasible_seen)
+    return false if row['status'] == 'infeasible' && !(record[:klass] == 'strong' && crack_flag(record[:id], :infeasible_seen))
 
     wait = row['readyInSeconds']
     return !row.key?('readyInSeconds') unless row['status'] == 'running'
 
     # R2-L4: running only for a salted record of a crackable class, within its own wait, after a running answer
-    crack_waiting_record?(record) && @crack_running_seen && wait.is_a?(Integer) && wait.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
+    crack_waiting_record?(record) && crack_flag(record[:id], :running_seen) && wait.is_a?(Integer) && wait.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
   end
 
   # R1-A1: heldItem names the file the record's held proof needs, and the capture shows the player holding it.
@@ -4262,7 +4333,7 @@ class AccessLeakScanner
 
   def crack_wait_ok?(id, seconds)
     record = @crack_records.find { |r| r[:id] == id }
-    !record.nil? && crack_waiting_record?(record) && crack_record_held?(record) && @crack_running_seen &&
+    !record.nil? && crack_waiting_record?(record) && crack_record_held?(record) && crack_flag(record[:id], :running_seen) &&
       seconds.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
   end
 
@@ -4577,6 +4648,12 @@ class AccessLeakScanner
 
     id = row['hash']['hashId']
     id.is_a?(String) && !id.empty? ? id : nil
+  end
+
+  # The crack rules' reader: the row's `hash` tag when it names a registry hash record, else nil (null and unknown ids earn nothing).
+  def crack_row_tag(row)
+    id = row_hash_tag(row)
+    id && @crack_hash_ids.include?(id) ? id : nil
   end
 
   # What a 200 PC-route row's tag is worth, with the answer in hand: [:none, nil] (no tag, null, tags off, not a 200 row),

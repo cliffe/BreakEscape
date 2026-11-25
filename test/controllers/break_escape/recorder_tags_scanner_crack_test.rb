@@ -28,6 +28,8 @@ module BreakEscape
     def post(*args, **opts, &blk)
       result = super
       row = captured.last
+      # The recorder stamps every row with the arrival time `t` (response-capture.js); the crack rules time the wait by it (U2).
+      row['t'] = Time.now.utc.strftime('%Y-%m-%dT%H:%M:%S.%LZ') if row
       sent = opts[:params]
       sent = sent.to_unsafe_h if sent.respond_to?(:to_unsafe_h)
       sent = (sent || {}).with_indifferent_access
