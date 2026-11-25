@@ -1,0 +1,415 @@
+{
+  "scenario": "demo_ops_terminal",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "lock_chidi_pc",
+      "label": "Chidi's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_file_server",
+      "label": "File server<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_backup_pc",
+      "label": "Backup PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_graham_pc",
+      "label": "Graham's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_chidi_okeke",
+      "label": "Chidi Okeke sign-in<br/>(cokeke)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_zainab_hussain",
+      "label": "Zainab Hussain sign-in<br/>(zhussain)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_graham_whitfield",
+      "label": "Graham Whitfield sign-in<br/>(gwhitfield)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_room",
+      "label": "IT room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_rack_jack",
+      "label": "Server room network port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_branch_lan",
+      "label": "Branch network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_spare_jack",
+      "label": "Spare network port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_file_server_storage_link_setting",
+      "label": "File server<br/>storage :445<br/>misconfig / medium",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_file_server_storage_update_lag",
+      "label": "File server<br/>storage :445<br/>unpatched / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "implant_backup_pc",
+      "label": "Implant: backup_pc<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "device_kit_keys",
+      "label": "Keystroke device<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_graham_assist",
+      "label": "Graham Whitfield assist invite<br/>(gwhitfield)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_graham_assist_code",
+      "label": "Remote assist code",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_zainab_token",
+      "label": "Zainab Hussain token<br/>(zhussain)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_zainab_token_spare",
+      "label": "Zainab Hussain token<br/>(zhussain)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "tech_update_gap",
+      "label": "Known update gap",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_update_gap",
+      "label": "Technique card: known update gap",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_open_settings",
+      "label": "Left-open settings",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_open_settings",
+      "label": "Technique card: left-open settings",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "admin@file_server",
+      "label": "File server<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@graham_pc",
+      "label": "Graham's PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "lock_chidi_pc",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_backup_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "lock_graham_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_chidi_okeke",
+      "soft": false
+    },
+    {
+      "from": "signin_chidi_okeke",
+      "to": "lock_chidi_pc",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "signin_zainab_hussain",
+      "soft": false
+    },
+    {
+      "from": "signin_zainab_hussain",
+      "to": "lock_file_server",
+      "soft": false
+    },
+    {
+      "from": "signin_zainab_hussain",
+      "to": "lock_backup_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_graham_whitfield",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_file_server",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_graham_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "jack_rack_jack",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_rack_jack",
+      "soft": false
+    },
+    {
+      "from": "jack_rack_jack",
+      "to": "net_branch_lan",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "jack_spare_jack",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_spare_jack",
+      "soft": false
+    },
+    {
+      "from": "jack_spare_jack",
+      "to": "net_branch_lan",
+      "soft": false
+    },
+    {
+      "from": "net_branch_lan",
+      "to": "lock_backup_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_branch_lan",
+      "to": "lock_chidi_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_branch_lan",
+      "to": "lock_file_server",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_branch_lan",
+      "to": "lock_graham_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_branch_lan",
+      "to": "weak_file_server_storage_link_setting",
+      "soft": false,
+      "label": "storage"
+    },
+    {
+      "from": "net_branch_lan",
+      "to": "weak_file_server_storage_update_lag",
+      "soft": false,
+      "label": "storage"
+    },
+    {
+      "from": "server_room",
+      "to": "implant_backup_pc",
+      "soft": false,
+      "label": "at USB socket on the backup PC"
+    },
+    {
+      "from": "office",
+      "to": "device_kit_keys",
+      "soft": false
+    },
+    {
+      "from": "device_kit_keys",
+      "to": "implant_backup_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_backup_pc",
+      "to": "implant_backup_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_backup_pc",
+      "to": "net_branch_lan",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "it_room",
+      "soft": false
+    },
+    {
+      "from": "cred_src_graham_assist_code",
+      "to": "cred_graham_assist",
+      "soft": false
+    },
+    {
+      "from": "cred_graham_assist",
+      "to": "lock_graham_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_zainab_token",
+      "to": "lock_backup_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_zainab_token_spare",
+      "to": "lock_backup_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_update_gap",
+      "to": "tech_update_gap",
+      "soft": false
+    },
+    {
+      "from": "tech_update_gap",
+      "to": "weak_file_server_storage_update_lag",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_open_settings",
+      "to": "tech_open_settings",
+      "soft": false
+    },
+    {
+      "from": "tech_open_settings",
+      "to": "weak_file_server_storage_link_setting",
+      "soft": false
+    },
+    {
+      "from": "weak_file_server_storage_link_setting",
+      "to": "lock_file_server",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_file_server_storage_update_lag",
+      "to": "lock_file_server",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@file_server",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "weak_file_server_storage_link_setting",
+      "to": "admin@file_server",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@graham_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "lock_file_server",
+      "to": "weak_file_server_storage_link_setting",
+      "soft": false
+    }
+  ]
+}

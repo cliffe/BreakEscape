@@ -10,6 +10,6 @@ cannot be read.
 
 | id | file | form | scenarios | identity | content |
 | --- | --- | --- | --- | --- | --- |
-| filehold_link_setting | training_fixtures.json | advisories 1, output 2, auxiliary/4 | test_ops_skin | a53d549bd405 | - |
-| filehold_release_line | training_fixtures.json | advisories 1, output 2, auxiliary/4 | test_ops_skin | b12bcee7b85b | - |
-| filehold_update_lag | training_fixtures.json | advisories 1, output 2, auxiliary/4 | test_ops_skin | 544a8ceff73b | - |
+| filehold_link_setting | training_fixtures.json | advisories 1, output 2, auxiliary/4 | demo_ops_terminal, test_ops_skin | a53d549bd405 | e7cb7ea6dbc0 |
+| filehold_release_line | training_fixtures.json | advisories 1, output 2, auxiliary/4 | demo_ops_terminal, test_ops_skin | b12bcee7b85b | 92d2374ccc1c |
+| filehold_update_lag | training_fixtures.json | advisories 1, output 2, auxiliary/4 | demo_ops_terminal, test_ops_skin | 544a8ceff73b | b8d65af87691 |

@@ -1,0 +1,519 @@
+{
+  "scenario_brief": "Ops demo: the Terminal close up. Fenlow Managed IT's field engineer Zainab is setting up remote support for Merrin & Sallow's file server, and Ama Owusu asks you to look at it the way an attacker's tools would. Read a scanner's report and a console's search in the Terminal view, test which findings are real, then see what a timed sign-in token and a shared screen give you, and what they do not. Authorised practice in a fictional office; nothing to break and no combat.",
+  "endGoal": "Demo only: read the Terminal's reports, test the findings, and see what a token, a shared screen and a keyboard-only device do over a remote session.",
+  "startRoom": "office",
+  "startPosition": { "x": 5, "y": 6 },
+  "npcNeedsSeed": "demo_ops_terminal",
+  "npcWindupMs": 700,
+  "showPressingNeeds": true,
+  "officePresets": true,
+  "roomTone": true,
+  "disableAttacks": true,
+  "ttsPregenerateChatter": true,
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "networkView": { "defaultSkin": "cli" },
+
+  "actionIcons": {
+    "upkeep": "icon:npc-upkeep"
+  },
+
+  "defaultPolicy": "desk",
+
+  "policies": {
+    "desk": { "maxAttempts": null, "remote": "allowed" },
+    "infra": { "maxAttempts": null, "remote": "allowed" }
+  },
+
+  "networks": {
+    "branch_lan": {
+      "name": "Branch network",
+      "discovery": "scan",
+      "cli": {
+        "range": "10.50.0.0/24",
+        "hosts": {
+          "file_server": { "address": "10.50.0.10" },
+          "backup_pc": { "address": "10.50.0.60" },
+          "chidi_pc": { "address": "10.50.0.51" },
+          "graham_pc": { "address": "10.50.0.54" }
+        }
+      }
+    }
+  },
+
+  "techniques": {
+    "update_gap": {
+      "name": "Known update gap",
+      "summary": "For a service that has fallen behind its published fixes.",
+      "worksOn": { "class": "unpatched", "product": "Tarnwick FileHold", "versions": ["4.2"] }
+    },
+    "open_settings": {
+      "name": "Left-open settings",
+      "summary": "For a setting somebody left open by mistake.",
+      "worksOn": { "class": "misconfig" }
+    }
+  },
+
+  "credentials": {
+    "zainab_token": {
+      "kind": "token",
+      "account": "zainab_hussain",
+      "connectsTo": "backup_pc",
+      "label": "Backup PC sign-in token",
+      "expiresMin": 6,
+      "proof": { "foothold": "jack_rack_jack" }
+    },
+    "zainab_token_spare": {
+      "kind": "token",
+      "account": "zainab_hussain",
+      "connectsTo": "backup_pc",
+      "label": "Backup PC sign-in token (spare)",
+      "expiresMin": 6,
+      "proof": { "foothold": "jack_spare_jack" }
+    },
+    "graham_assist": {
+      "kind": "assist_invite",
+      "account": "graham_whitfield",
+      "connectsTo": "graham_pc",
+      "label": "Graham's assist code",
+      "proof": { "held": "graham_assist_code" },
+      "endsOnGlobal": "graham_assist_ended"
+    }
+  },
+
+  "globalVariables": {
+    "coffee_call": 0,
+    "plug_in_done": false,
+    "sweep_done": false,
+    "use_token_done": false,
+    "needs_console_done": false,
+    "scan_check_done": false,
+    "console_done": false,
+    "confirm_all_done": false,
+    "t6_update_seen": false,
+    "t6_link_seen": false,
+    "t6_release_seen": false,
+    "step_up_done": false,
+    "keeps_log_done": false,
+    "relay_seen": false,
+    "shared_screen_done": false,
+    "graham_assist_ended": false,
+    "graham_assist_given": false,
+    "token_ran_out": false,
+    "token_expired_done": false,
+    "spare_port_offered": false,
+    "unplug_done": false,
+    "zainab_card_given": false
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "pc",
+      "id": "kit_dropbox",
+      "name": "Network drop box",
+      "sprite": "network_dropbox",
+      "takeable": true,
+      "rogueDevice": true,
+      "observations": "A palm-sized network drop box. Plug it into a live wall port to join that port's network."
+    },
+    {
+      "type": "pc",
+      "id": "kit_keys",
+      "name": "Keystroke device",
+      "sprite": "drop_box1",
+      "takeable": true,
+      "usbClass": "hid",
+      "observations": "A USB device that types on its own once plugged into a PC. It needs someone signed in at that keyboard."
+    }
+  ],
+
+  "objectives": [
+    {
+      "aimId": "get_in",
+      "title": "Get in: the box and the token",
+      "description": "Each task ticks when you have done it. Ama's hub says what is next.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "plug_in", "title": "Plug the drop box into the server room port", "type": "custom", "status": "active" },
+        { "taskId": "sweep", "title": "Sweep the network", "type": "custom", "status": "active" },
+        { "taskId": "use_token", "title": "Sign in to the backup PC with Zainab's token", "type": "custom", "status": "active" },
+        { "taskId": "needs_console", "title": "Try the keystroke device on the backup PC", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "report",
+      "title": "The report: what the file server says",
+      "description": "A scanner's write-up is only a report. Test each finding before you trust it.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "scan_check", "title": "Scan the file server and check its storage service", "type": "custom", "status": "active" },
+        { "taskId": "console", "title": "Search and ask for info in the console", "type": "custom", "status": "active" },
+        { "taskId": "confirm_all", "title": "Confirm all three findings", "type": "custom", "status": "active" },
+        { "taskId": "step_up", "title": "Use Zainab's cards: a user session, then an administrator's", "type": "custom", "status": "active" },
+        { "taskId": "keeps_log", "title": "Switch to Panels and back: the Terminal keeps its log", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "remote",
+      "title": "Remote ways in: what they give",
+      "description": "A shared screen and a token both run out. See how.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "shared_screen", "title": "Share Graham's screen, then have him end it", "type": "custom", "status": "active" },
+        { "taskId": "token_expired", "title": "See the token run out", "type": "custom", "status": "active" },
+        { "taskId": "unplug", "title": "Unplug the box from the Terminal", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "network": "branch_lan",
+      "connections": { "north": "server_room", "east": "it_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "chidi_pc",
+          "owner": "chidi_okeke",
+          "name": "Chidi's PC",
+          "host": "CHIDI-PC",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["chidi_okeke"] },
+          "policy": "desk",
+          "observations": "Chidi's desk PC.",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "observations": "The office coffee station. One person at a time; anyone else waits in line.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] } }
+        },
+        {
+          "type": "notice_board1",
+          "id": "tour_notice",
+          "name": "Things to try",
+          "position": { "x": 8.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Get in:\n- Take the drop box to the server room and plug it into the port by the rack. The view opens as a Terminal.\n- Sweep the network, then use Zainab's token on the backup PC while it is fresh.\n- Plug the keystroke device into the backup PC's socket.\nThe report:\n- Scan the file server and check its storage service.\n- Open the console and search, then ask for info on a finding.\n- Confirm all three, ask Zainab for her card, and use both cards.\n- Switch to Panels and back.\nRemote ways in:\n- Ask Graham to share his screen, then ask Ama to have him end it.\n- Watch the token run out.\n- Unplug from the Terminal."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ama_owusu",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": { "x": 5.5, "y": 4.5 },
+          "spriteSheet": "ama_owusu",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "storyPath": "scenarios/demo_ops_terminal/ink/ama_owusu.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Autonoe", "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "immovable": true },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
+
+            { "eventPattern": "network_foothold_gained:rack_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true } },
+            { "eventPattern": "global_variable_changed:plug_in_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "This Terminal imitates a scanner and a console. Every name and number in it is invented. Zainab's token came with the box, and its clock is running." },
+            { "eventPattern": "network_swept", "cooldown": 0, "completeTask": "sweep", "setGlobal": { "sweep_done": true } },
+            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_token_done !== true", "cooldown": 0, "bark": "The same list Panels would show, as a table. Each cell lines up in its column. Zainab's token is in your keyring. Use it soon." },
+            { "eventPattern": "pc_signed_in:backup_pc", "condition": "data.token === true", "cooldown": 0, "completeTask": "use_token", "setGlobal": { "use_token_done": true } },
+            { "eventPattern": "global_variable_changed:use_token_done", "condition": "data.value === true && data.oldValue !== true && globalVars.needs_console_done !== true", "cooldown": 0, "bark": "You're on the backup PC with a token, no password. It only lasts a few minutes. Try the keystroke device on its socket." },
+            { "eventPattern": "network_device_refused", "condition": "data.reason === 'needs_console'", "cooldown": 0, "completeTask": "needs_console", "setGlobal": { "needs_console_done": true } },
+            { "eventPattern": "global_variable_changed:needs_console_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_check_done !== true", "cooldown": 0, "bark": "That device needs someone signed in at this keyboard. A remote session doesn't count. Now scan the file server." },
+
+            { "eventPattern": "network_service_checked", "condition": "data.hostId === 'file_server'", "cooldown": 0, "completeTask": "scan_check", "setGlobal": { "scan_check_done": true } },
+            { "eventPattern": "global_variable_changed:scan_check_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_all_done !== true", "cooldown": 0, "bark": "Three findings, each with a scanner's write-up and reference ids. The false one reads just as convincingly as the real ones." },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.status === 'false'", "cooldown": 0, "setGlobal": { "t6_release_seen": true } },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.status === 'confirmed' && globalVars.t6_update_seen === true && globalVars.t6_link_seen !== true", "cooldown": 0, "setGlobal": { "t6_link_seen": true } },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.status === 'confirmed' && globalVars.t6_update_seen !== true", "cooldown": 0, "setGlobal": { "t6_update_seen": true } },
+            { "eventPattern": "network_finding_confirmed", "condition": "globalVars.t6_update_seen === true && globalVars.t6_link_seen === true && globalVars.t6_release_seen === true", "cooldown": 0, "completeTask": "confirm_all", "setGlobal": { "confirm_all_done": true } },
+            { "eventPattern": "global_variable_changed:confirm_all_done", "condition": "data.value === true && data.oldValue !== true && globalVars.step_up_done !== true", "cooldown": 0, "bark": "Two real, one false, and the false one says why. The write-ups didn't tell you that. Testing did." },
+            { "eventPattern": "pc_signed_in:file_server", "condition": "data.via === 'technique' && data.npcId === 'zainab_hussain'", "cooldown": 0, "bark": "That's a user session. The settings finding needs one before it will work." },
+            { "eventPattern": "pc_signed_in:file_server", "condition": "data.via === 'technique' && data.npcId === 'graham_whitfield'", "cooldown": 0, "completeTask": "step_up", "setGlobal": { "step_up_done": true } },
+            { "eventPattern": "global_variable_changed:step_up_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "A user session first, then an administrator's on top of it. Same as the recon day, typed." },
+
+            { "eventPattern": "pc_signed_in:graham_pc", "condition": "data.relay === true", "onceOnly": true, "cooldown": 0, "setGlobal": { "relay_seen": true }, "bark": "You're on Graham's own screen because he let you in. It shows as Administrator because he is one. It's still his session." },
+            { "eventPattern": "pc_signed_out:backup_pc", "condition": "data.reason === 'token_expired'", "cooldown": 0, "completeTask": "token_expired", "setGlobal": { "token_ran_out": true, "token_expired_done": true }, "bark": "Tokens run out. The session ended on the clock, and the token won't open it again." },
+
+            { "eventPattern": "network_foothold_gained:spare_jack", "onceOnly": true, "cooldown": 0, "bark": "The spare port. Its token's clock starts now, so be quick." },
+            { "eventPattern": "network_device_unplugged:rack_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
+            { "eventPattern": "network_device_unplugged:spare_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
+            { "eventPattern": "global_variable_changed:unplug_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "A short form won't end the trip. You have to type the whole word. And unplugging ended every session through the box." }
+          ]
+        },
+        {
+          "id": "chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "npcType": "person",
+          "position": { "x": 7, "y": 3 },
+          "spriteSheet": "chidi_okeke",
+          "spriteTalk": "assets/characters/chidi_okeke_talk.png",
+          "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
+          "storyPath": "scenarios/demo_ops_terminal/ink/chidi_okeke.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Zubenelgenubi", "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "cokeke", "password": "Fernwick-Chi-3047" },
+          "needsHome": "chidi_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 25, "urgentAt": 40, "initial": 61 },
+            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 }
+          },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 20 } } }
+          ]
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "door_sign": "Server room",
+      "network": "branch_lan",
+      "connections": { "south": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "rack_jack",
+          "name": "Server room network port",
+          "sprite": "network_rack1",
+          "network": "branch_lan",
+          "position": { "x": 8.5, "y": 6.3 },
+          "takeable": false,
+          "networkJack": true,
+          "affordance": false,
+          "linkName": "Drop box: server room",
+          "jackConfirm": "Plug the drop box into the server room's network port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A live network port by the rack. You need the drop box in hand to plug it in.",
+          "observations": "A live network port by the rack."
+        },
+        {
+          "type": "pc",
+          "id": "spare_jack",
+          "name": "Spare network port",
+          "sprite": "network_rack1",
+          "network": "branch_lan",
+          "position": { "x": 8.5, "y": 3.3 },
+          "takeable": false,
+          "networkJack": true,
+          "revealOnGlobal": "spare_port_offered",
+          "affordance": false,
+          "linkName": "Drop box: spare port",
+          "jackConfirm": "Plug the drop box into the spare network port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A second live network port by the rack. You need the drop box in hand to plug it in.",
+          "observations": "A second live network port by the rack, Zainab's spare."
+        },
+        {
+          "type": "pc",
+          "id": "file_server",
+          "name": "File server",
+          "host": "FILESRV01",
+          "sprite": "pc_desktop",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"], "people": ["zainab_hussain"] },
+          "policy": "infra",
+          "observations": "A file server with no screen or keyboard. It is managed over the network.",
+          "services": [
+            {
+              "name": "storage", "port": 445, "product": "Tarnwick FileHold", "version": "4.2",
+              "cli": { "protocol": "tcp", "service": "filehold", "banner": "Tarnwick FileHold 4.2 file service ready" },
+              "weaknesses": [
+                {
+                  "id": "update_lag", "class": "unpatched", "severity": "high", "realism": "filehold_update_lag",
+                  "summary": "The storage service is behind its published fixes.",
+                  "grants": { "session": { "account": "zainab_hussain", "access": "user" } }
+                },
+                {
+                  "id": "link_setting", "class": "misconfig", "severity": "medium", "realism": "filehold_link_setting",
+                  "summary": "A setting on the storage service was left open.",
+                  "needs": { "session": "user" },
+                  "grants": { "session": { "account": "graham_whitfield", "access": "admin" } }
+                }
+              ],
+              "decoys": [
+                {
+                  "id": "release_line", "class": "misconfig", "severity": "low", "realism": "filehold_release_line",
+                  "summary": "The service reports an older build number.",
+                  "falseBecause": "The build number is only a label. The service was updated last month."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "backup_pc",
+          "name": "Backup PC",
+          "host": "BACKUP-PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 5.5, "y": 3.6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["zainab_hussain"] },
+          "policy": "desk",
+          "observations": "A desk PC that runs the backups. Nobody owns it; Zainab signs in to it for support work."
+        },
+        {
+          "type": "pc",
+          "id": "backup_pc_socket",
+          "name": "USB socket on the backup PC",
+          "sprite": "network_rack1",
+          "position": { "x": 6.7, "y": 5.4 },
+          "takeable": false,
+          "affordance": false,
+          "observations": "A spare USB socket on the backup PC's desk. A keystroke device needs someone signed in at that keyboard.",
+          "requiresItem": "kit_keys",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke device into the backup PC? It only types into a PC someone is signed in at.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "backup_pc", "needsSession": true, "needsHeld": "kit_keys" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "m10_tool_roll1",
+          "id": "zainab_tool_roll",
+          "name": "Zainab's tool roll",
+          "owner": "zainab_hussain",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 7.0, "y": 4.2, "elevation": 24 },
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } },
+          "observations": "A field engineer's tool roll: crimpers, a punch-down tool, a cable tester and a few folded cards.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_open_settings",
+              "name": "Technique card: left-open settings",
+              "technique_card": "open_settings",
+              "takeable": true,
+              "observations": "A folded card about settings somebody left open."
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "zainab_hussain",
+          "displayName": "Zainab Hussain",
+          "npcType": "person",
+          "position": { "x": 5.5, "y": 6 },
+          "spriteSheet": "zainab_hussain",
+          "spriteTalk": "assets/characters/zainab_hussain_talk.png",
+          "spriteVisemes": "assets/characters/zainab_hussain_visemes.png",
+          "storyPath": "scenarios/demo_ops_terminal/ink/zainab_hussain.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Achernar", "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "zhussain", "password": "Ravenmoor-Zai-7724" },
+          "itemsHeld": [
+            {
+              "type": "technique_card",
+              "id": "card_update_gap",
+              "name": "Technique card: known update gap",
+              "technique_card": "update_gap",
+              "takeable": true,
+              "observations": "A card about a service that has fallen behind its published fixes."
+            }
+          ]
+        }
+      ]
+    },
+
+    "it_room": {
+      "type": "room_it",
+      "door_sign": "IT room",
+      "network": "branch_lan",
+      "connections": { "west": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "graham_pc",
+          "owner": "graham_whitfield",
+          "name": "Graham's PC",
+          "host": "IT-PC",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "roles": ["it"] },
+          "policy": "desk",
+          "observations": "Graham's desk PC.",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "npcType": "person",
+          "position": { "x": 4.5, "y": 5.5 },
+          "spriteSheet": "graham_whitfield",
+          "spriteTalk": "assets/characters/graham_whitfield_talk.png",
+          "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
+          "storyPath": "scenarios/demo_ops_terminal/ink/graham_whitfield.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Umbriel", "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind, a little tired of the same password questions. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "gwhitfield", "password": "Tarnbeck-Gra-6390", "admin": true },
+          "needsHome": "graham_pc",
+          "needsSpeed": 85,
+          "needs": {
+            "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 }
+          },
+          "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "graham_assist_code",
+              "name": "Remote assist code",
+              "takeable": true,
+              "droppable": false,
+              "credential": "graham_assist",
+              "text": "Remote assist code from Graham Whitfield. Connect it from your inventory to join his session.",
+              "observations": "A shared-screen code from Graham."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
