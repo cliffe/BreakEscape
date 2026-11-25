@@ -135,8 +135,9 @@ Cast across the episode: Delphine Arvanitis (Greek-Cypriot British), Lorna Easto
 - **[check during implementation]** that the server accepts the room-state removal of a `player_drop` that the client did not pick up; if it only accepts a pickup, the action goes through the pickup endpoint and then `remove_item`, so the inventory and the room stay in step.
 
 **E5. A flip line chosen by global.** About 10-20 lines in `minigames/episode-runner/flip-view.js` and its caller, plus 5-10 validator lines.
-- `defenderLine()` (`flip-view.js:99-108`) chooses among `flipDefenderLineNoSpray`, `flipDefenderLineByHost`, `flipDefenderLineByChoice` and `flipDefenderLine`. Nothing there can tell a tailgate from a desk pass or a stop at the door.
-- New optional `strings.flipDefenderLineByGlobal: [{ "global": "<name>", "line": "<text>" }]`, read after `NoSpray` and `ByHost` and before `ByChoice`: the first entry whose global is truthy wins. The caller passes the current globals (`window.gameState.globalVariables`); a missing map changes nothing.
+- `defenderLine()` (`flip-view.js`) chooses among `flipDefenderLineNoSpray`, `flipDefenderLineByHost`, `flipDefenderLineByChoice` and `flipDefenderLine`. Nothing there can tell a tailgate from a desk pass or a stop at the door.
+- New optional `strings.flipDefenderLineByGlobal: [{ "global": "<name>", "line": "<text>", "heading": "<text>" }]`, read after `NoSpray` and `ByHost` and before `ByChoice`: the first entry whose global is truthy wins (list order decides; only the globals map's own keys count). `heading` is optional. "Truthy" is deliberate and wider than a boolean: a counter or a pretext state object (an object once a call starts) also matches, so entries point at boolean globals. The caller passes the live globals (`window.gameState.globalVariables`, read once at render time, so a later change does not redraw an open flip); a missing map changes nothing.
+- The missed path reads it too. A call flip whose outcome is `walked_away` or `reported` has no call to replay, so `renderFlipView` takes its `missed` branch (and `landedNoTells` likewise). There, a matching entry replaces the `flipMissed` text with its line (same `aw-defender-line` class, so playtests read one selector), and its `heading`, when present, replaces `flipMissedHeading`; with no match the generic missed text shows as before. The neutral `flipDefenderLine` is not read on that path, so a timeout's neutral line is an explicit last entry (ca12: global `ca12_world_done`, which is always true by then).
 - Validator: each `global` is declared, each `line` is a non-empty string with no `{variables}`.
 
 ### 1.6 Kit change: Camila walks in and out
@@ -155,14 +156,14 @@ Set piece `setPieces.ca12_visitor` (`office_kits/merrin_sallow.json:195`). Today
 
 Episode block (`awarenessEpisode`):
 - `world`: delete `costume` (`:607-614`); add `holdUntil: "ca12_world_done"`, `holdMaxMs: 75000`, and a lobby `spawn` clear of the gate's approach tile and Delphine's door tile.
-- `strings`: the brief's authorisation and kit-bag lines (1.1 step 1); `flipDefenderLineByGlobal` (E5), first truthy global wins, shown text:
+- `strings`: the brief's authorisation and kit-bag lines (1.1 step 1); `flipDefenderLineByGlobal` (E5), first truthy global wins (a call flip with `walked_away` or `reported` reads this list too, so entries 1 and 4 each carry a `heading` that fits what happened), shown text:
   1. `ca12_tailgated`: "You walked in behind a member of staff while the door held. Nobody had to say yes."
   2. `ca12_desk_pass`: "The desk said yes on the phone, then opened the door for you. One call got you past both layers."
   3. `ca12_door_missed`: "The desk said yes and held the door, but you didn't go through. A held door lasts seconds."
   4. `ca12_guard_alerted`: "The desk didn't buy it and called security. You never reached the door."
-  5. `ca12_challenged`: "Yusuf stopped you at the door. The desk is one layer; he was the second, and he held."
+  5. `ca12_challenged`: "Yusuf stopped you at the door. The desk is the first layer. He was the second, and he held."
   `ca12_guard_alerted` sits before `ca12_challenged` because the `reported` ending sets both, and there the desk, not the door, did the stopping.
-- `flipDefenderLine` (`:632`) today says Delphine buzzed the learner through in a hi-vis, which is now only one of six endings. It becomes the neutral fallback for a hold that timed out on `walked_away` with nobody entering and nobody challenged: "You never got past the lobby. The desk and the door both held this time." The `ByGlobal` lines cover every other ending.
+- `flipDefenderLine` (`:632`) today says Delphine buzzed the learner through in a hi-vis, which is now only one of six endings. Its text is rewritten to stay neutral, but a missed call flip never reads it, so the timeout case (a hold that ended on `walked_away` with nobody entering and nobody challenged) is a sixth, last `ByGlobal` entry: global `ca12_world_done`, line "You never got past the lobby. The desk and the door both held this time." It sits last because `ca12_world_done` is true in every ending. The first five lines cover every other ending.
 - **[check during implementation]** whether the call strings (`:620-640`) assume the learner wore the hi-vis. Where they do, make the line neutral ("in a courier's kit" becomes "as a courier") rather than adding a no-vest variant.
 - **[check during implementation]** Julian Sallow's role in the ca12 kit fits "signed off by Julian Sallow"; if not, the brief says "signed off by the partners".
 
@@ -408,7 +409,7 @@ Server-enforced items: `ca15_red_stick` and `ca15_session_note` are server-known
 | Nilesh | `red_stick` | "Leave it next door, somewhere people stop. Then watch who picks it up." |
 | Player choice | `red_stick` | "Why would anyone plug in a stranger's stick?" / "On it." |
 | Nilesh | `red_stick`, answer line 1 | "To find out whose it is. Kindness does the attacker's work." |
-| Nilesh | `red_stick`, answer line 2 | "No label is deliberate. A labelled stick gets opened out of nosiness; a blank one, out of kindness." |
+| Nilesh | `red_stick`, answer line 2 | "No label is deliberate. A labelled stick gets opened out of nosiness. A blank one gets handed in." |
 
 The two answer lines play in sequence as one answer to the question, line 1 then line 2; they are not alternatives.
 | Nilesh | bark, training-room drop | "Not in here. Try next door." |

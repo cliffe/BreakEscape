@@ -37,7 +37,7 @@ window.gameState = { globalVariables: {} };
 
 const mod = (rel) => import(pathToFileURL(join(dir, rel)));
 const { renderStepStrip, renderWordmark } = await mod('minigames/episode-runner/step-strip.js');
-const { renderFlipView, tellSentence, defenderLine } = await mod('minigames/episode-runner/flip-view.js');
+const { renderFlipView, tellSentence, defenderLine, globalLine } = await mod('minigames/episode-runner/flip-view.js');
 const { renderDebrief } = await mod('minigames/episode-runner/debrief-view.js');
 const { redFlagString } = await mod('minigames/inbox-triage/triage-flags.js');
 
@@ -706,4 +706,43 @@ test('E5 renderFlipView passes globals to the defender line', () => {
     assert.equal(run({ g1: true }), 'By global.');
     assert.equal(run({}), 'Base.');
     assert.equal(run(undefined), 'Base.');
+});
+
+test('E5 renderFlipView: a missed call flip (walked_away, reported) reads ByGlobal, with an optional heading; none matching keeps flipMissed', () => {
+    const strings = {
+        flipMissed: 'Generic miss.', flipMissedHeading: 'Nothing to replay this time', flipDefenderLine: 'Neutral.',
+        flipDefenderLineByGlobal: [
+            { global: 'ca12_tailgated', line: 'Tailgated.', heading: 'You walked in' },
+            { global: 'ca12_guard_alerted', line: 'Alerted.' },
+            { global: 'ca12_world_done', line: 'Never got past the lobby.' }
+        ]
+    };
+    const run = (globals, over = {}) => {
+        const h = host();
+        renderFlipView(h, { call: null, missed: true, strings, globals, onContinue() {}, ...over });
+        return { line: h.querySelector('.aw-defender-line')?.textContent, missed: h.querySelector('.aw-missed')?.textContent, heading: h.querySelector('h2, h3')?.textContent };
+    };
+    const tail = run({ ca12_tailgated: true });
+    assert.equal(tail.line, 'Tailgated.');
+    assert.equal(tail.missed, undefined, 'flipMissed is replaced, not added');
+    assert.equal(tail.heading, 'You walked in');
+    const alerted = run({ ca12_guard_alerted: true });
+    assert.equal(alerted.line, 'Alerted.');
+    assert.equal(alerted.heading, 'Nothing to replay this time', 'no heading on the entry: flipMissedHeading');
+    assert.equal(run({ ca12_world_done: true }).line, 'Never got past the lobby.', 'the timeout comes from an explicit last entry');
+    const none = run({});
+    assert.equal(none.line, undefined);
+    assert.equal(none.missed, 'Generic miss.');
+    assert.equal(run(null).missed, 'Generic miss.');
+    // landedNoTells reads it too
+    const landed = run({ ca12_guard_alerted: true }, { missed: false, landedNoTells: true });
+    assert.equal(landed.line, 'Alerted.');
+});
+
+test('E5 globalLine: only own keys of the globals map count', () => {
+    const strings = { flipDefenderLineByGlobal: [{ global: 'constructor', line: 'Inherited.' }, { global: 'toString', line: 'Inherited.' }, { global: 'real', line: 'Real.' }] };
+    assert.equal(globalLine(strings, {}), null);
+    assert.equal(globalLine(strings, { real: true }), 'Real.');
+    assert.equal(defenderLine({ flipDefenderLine: 'N.', ...strings }, null, false, null, {}), 'N.');
+    assert.equal(globalLine({}, { a: true }), null);
 });
