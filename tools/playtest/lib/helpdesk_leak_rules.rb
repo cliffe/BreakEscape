@@ -588,6 +588,9 @@ module HelpdeskLeakRules
     return nil unless minfo[:method] == 'GET' && minfo[:route] == 'mfa/phone' && minfo[:ok]
     return nil unless mfa_query_value(minfo, 'own') == '1' && body.keys == ['requests'] && body['requests'].is_a?(Array)
     return nil if @hd_mfa_earned.empty?
+    # an entry in lock form (it names a lock) is the lock rules' answer, never an own phone's: it is not allowed, consumed or
+    # stripped here, so the lock rules judge it whole and this row is still judged as an own-phone list that is out of shape
+    return nil if body['requests'].any? { |entry| entry.is_a?(Hash) && (entry.key?('targetType') || entry.key?('targetId')) }
 
     owners = body['requests'].map do |entry|
       name = entry.is_a?(Hash) ? entry['username'] : nil

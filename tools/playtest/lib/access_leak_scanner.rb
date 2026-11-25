@@ -618,8 +618,11 @@ class AccessLeakScanner
       scan_facts(body, ctx, row, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
+      # S8b first: it judges the row and answers the body the second-step rules see (the own-phone code, number choices and flag a
+      # desk's re-enrolment earned taken out of a copy; a lock-form answer is never one). The lock rules (S8c) come after it, so they
+      # never call an earned own-phone secret a leak, and judge a lock-form answer whole.
+      body = scan_helpdesk(body, row, add)
       scan_lock_steps(body, row, add) # S8c lock second step
-      body = scan_helpdesk(body, row, add) # S8b: judges the row, answers the body the second-step rules see
       scan_mfa(body, row, add)
       note_network_swept(body, ctx, row)
     end

@@ -177,7 +177,12 @@ module BreakEscape
     test 'tamper 11: the phone list with a number choice list for a lock the phone holder was never given' do
       rows = copy
       phone = pick(rows, 'GET', 'mfa/phone') { |r| r['body']['requests']&.any? && r['body']['requests'].first.key?('numbers') }
-      phone['body']['requests'].first['numbers'] = [11, 12, 13]
+      # three numbers that do NOT hold the number the lock's prompt showed: the number is a digest of the game id, so a fixed
+      # list holds it for a few game ids (3 in 90), and a list that holds it is an honest one the scanner rightly accepts
+      entry = phone['body']['requests'].first
+      shown = rows.select { |r| r['body'].is_a?(Hash) && r['body']['secondStep'] == true && r['body']['targetId'] == entry['targetId'] && r['body']['number'].is_a?(Integer) }.map { |r| r['body']['number'] }
+      assert_not_empty shown
+      entry['numbers'] = (11..99).reject { |n| shown.include?(n) }.first(3)
       assert_flags 'lock_step_answer', rows, 'lockstep:phone'
     end
 
