@@ -705,7 +705,7 @@ module BreakEscape
 
     def take_cabinet_record
       open_container('backups_cabinet')
-      take_file('deskadmin_record_file', 'desk_rounds_record.dat')
+      take_file('desk_rounds_record_file', 'desk_rounds_record.dat')
     end
 
     # A sign-out the scanner needs named (a logout answer does not say which PC it was at): the n-th successful POST /logout of the run.
@@ -763,10 +763,10 @@ module BreakEscape
       assert_equal 'hot_desk', creds['niamh_cached_hot_desk']['proof']['harvested']
       assert_equal 'partner_pc', creds['delphine_cached_partner']['proof']['harvested']
       assert_equal 'partner_pc', creds['julian_cached_partner']['proof']['harvested']
-      assert_equal 'deskadmin_record_file', creds['deskadmin_hash']['proof']['held']
+      assert_equal 'desk_rounds_record_file', creds['desk_rounds_hash']['proof']['held']
       it_room = data['rooms']['it_room']['objects'].index_by { |o| o['id'] }
       assert_equal %w[delphine_record_file graham_record_file julian_record_file], it_room['secure_bin']['contents'].map { |c| c['id'] }
-      assert_equal %w[deskadmin_record_file], it_room['backups_cabinet']['contents'].map { |c| c['id'] }
+      assert_equal %w[desk_rounds_record_file], it_room['backups_cabinet']['contents'].map { |c| c['id'] }
       assert_includes data['logSources']['signin_log']['events'], 'credentials_harvested'
       assert_includes data['logSources']['signin_log']['events'], 'signin_refused'
       aim = data['objectives'].find { |o| o['aimId'] == 'afternoon_cache' }
@@ -788,7 +788,7 @@ module BreakEscape
       # the account's own NPC carries the name; nothing else in the file may (the authored `credentials` label says "shared desk account")
       outside = stripped
       outside['rooms'].each_value { |r| Array(r['npcs']).reject! { |n| n['id'] == 'deskadmin' } }
-      outside['credentials'].delete('deskadmin_hash')
+      outside['credentials'].delete('desk_rounds_hash')
       refute_match(/deskadmin/i, outside.to_json.gsub(/"(?:id|account|credential)":\s*"deskadmin[a-z_]*"/, ''))
     end
 
@@ -923,8 +923,8 @@ module BreakEscape
       travel_to T0 do
         build
         take_cabinet_record
-        assert_equal 'ready', row('deskadmin_hash')['status']
-        assert_equal 'cracked', crack('deskadmin_hash')['status']
+        assert_equal 'ready', row('desk_rounds_hash')['status']
+        assert_equal 'cracked', crack('desk_rounds_hash')['status']
         refute_includes response.body, DESKADMIN[1]
         cracked = row('deskadmin.cracked')
         assert_equal DESKADMIN[1], cracked['password']
@@ -965,8 +965,9 @@ module BreakEscape
       { 'delphine_pc' => DELPHINE, 'jun_pc' => JUN, 'partner_pc' => GRAHAM, 'graham_pc' => GRAHAM, 'hot_desk' => JUN }.each do |pc, who|
         get game_path("room/#{pc == 'partner_pc' ? 'partner_office' : pc == 'graham_pc' ? 'it_room' : 'office'}"), as: :json
         assert_response :success, response.body
-        found = Array(response.parsed_body['objects']).find { |o| o['id'] == pc }
-        assert_equal 'merrin', found&.dig('domain'), "#{pc} shows its domain on the sign-in screen" if found&.key?('domain')
+        found = Array(response.parsed_body.dig('room', 'objects')).find { |o| o['id'] == pc }
+        assert found, "#{pc} is in its room answer"
+        assert_equal 'merrin', found.fetch('domain'), "#{pc} shows its domain on the sign-in screen"
         body = sign_in(pc, *who)
         assert body['success'], "#{pc}: #{body}"
         logout(pc)
@@ -978,7 +979,7 @@ module BreakEscape
       travel_to T0 do
         build
         take_cabinet_record
-        crack('deskadmin_hash')
+        crack('desk_rounds_hash')
         sign_in('partner_pc', *GRAHAM)
         harvest('partner_pc')
         sign_in('hot_desk', *DESKADMIN)
@@ -1022,8 +1023,8 @@ module BreakEscape
         keyring
         # P13 and P14
         take_cabinet_record
-        assert_equal 'ready', row('deskadmin_hash')['status'], 'the player sees the row in the capture log before cracking it'
-        assert_equal 'cracked', crack('deskadmin_hash')['status']
+        assert_equal 'ready', row('desk_rounds_hash')['status'], 'the player sees the row in the capture log before cracking it'
+        assert_equal 'cracked', crack('desk_rounds_hash')['status']
         secret = row('deskadmin.cracked')
         body = sign_in('delphine_pc', secret.dig('account', 'username'), secret['password'])
         assert body['success'], body.to_s

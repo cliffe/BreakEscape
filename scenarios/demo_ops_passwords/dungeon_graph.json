@@ -183,13 +183,13 @@
       "optional": false
     },
     {
-      "id": "cred_deskadmin_hash",
+      "id": "cred_desk_rounds_hash",
       "label": "Desk administrator hash<br/>(deskadmin)",
       "kind": "key",
       "optional": false
     },
     {
-      "id": "cred_src_deskadmin_record_file",
+      "id": "cred_src_desk_rounds_record_file",
       "label": "desk_rounds_record.dat",
       "kind": "item",
       "optional": false
@@ -595,8 +595,8 @@
       "soft": false
     },
     {
-      "from": "cred_src_deskadmin_record_file",
-      "to": "cred_deskadmin_hash",
+      "from": "cred_src_desk_rounds_record_file",
+      "to": "cred_desk_rounds_hash",
       "soft": false
     },
     {
@@ -639,7 +639,7 @@
       "label": "crack (medium)"
     },
     {
-      "from": "cred_deskadmin_hash",
+      "from": "cred_desk_rounds_hash",
       "to": "crackpw_deskadmin",
       "soft": false,
       "label": "crack"

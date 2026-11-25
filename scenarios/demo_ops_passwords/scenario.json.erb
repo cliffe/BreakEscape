@@ -178,11 +178,11 @@
       "proof": { "harvested": "partner_pc" },
       "crack": { "password": "strong" }
     },
-    "deskadmin_hash": {
+    "desk_rounds_hash": {
       "kind": "hash",
       "account": "deskadmin",
       "label": "Record: shared desk account",
-      "proof": { "held": "deskadmin_record_file" },
+      "proof": { "held": "desk_rounds_record_file" },
       "crack": { "password": "common" }
     },
     "printer_admin": {
@@ -935,11 +935,11 @@
           "contents": [
             {
               "type": "text_file",
-              "id": "deskadmin_record_file",
+              "id": "desk_rounds_record_file",
               "name": "desk_rounds_record.dat",
               "takeable": true,
               "readable": false,
-              "credential": "deskadmin_hash",
+              "credential": "desk_rounds_hash",
               "observations": "A stored account record. It is not readable as it stands."
             }
           ]

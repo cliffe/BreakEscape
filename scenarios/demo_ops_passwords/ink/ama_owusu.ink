@@ -280,7 +280,7 @@ Same cracker, new source. A weak password falls whatever the PC.
 # speaker:npc
 The sign-in screen names the domain. A domain account works across it. A local account stays on its own PCs.
 # speaker:npc
-So the shared account falls on every desk it's on, and not on Julian's.
+So the shared account opens every desk it's on, and not Julian's.
 #complete_task:local_refused
 ~ local_refused_done = true
 -> hub.choices
@@ -435,13 +435,13 @@ The staff won't be back once they've gone home. Seen everything you wanted?
     ~ recapped_local = true
     ~ said = said + 1
     # speaker:npc
-    One shared desk password opened every desk it covered. That's why it must not be weak.
+    One shared desk password would open every desk it covers. That's why it must not be weak.
 }
 { said < 2 and crack_cached_done and not recapped_crack_cached:
     ~ recapped_crack_cached = true
     ~ said = said + 1
     # speaker:npc
-    A remembered record falls like any other. It only needed one fact.
+    A remembered record falls like any other: a weak one at once, Jun's with one fact.
 }
 { said < 2 and collect_hot_desk_done and not recapped_collect_hot_desk:
     ~ recapped_collect_hot_desk = true
