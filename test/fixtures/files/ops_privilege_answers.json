@@ -102,7 +102,7 @@
           "hashId": "baypc_uma"
         }
       ],
-      "keyringRev": "b86fb2"
+      "keyringRev": "1cf356"
     }
   },
   "collect_bay_repeat": {
@@ -129,7 +129,7 @@
           "hashId": "baypc_uma"
         }
       ],
-      "keyringRev": "b86fb2"
+      "keyringRev": "1cf356"
     }
   },
   "collect_refused_locked": {
@@ -155,7 +155,7 @@
   "keyring_after_bay_collect": {
     "status": 200,
     "body": {
-      "rev": "b86fb2",
+      "rev": "1cf356",
       "entries": [
         {
           "id": "baypc_olu",
@@ -167,7 +167,7 @@
             "displayName": "Olu Marsh"
           },
           "label": "Stored record: Olu (bay PC)",
-          "token": "CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000
@@ -182,7 +182,7 @@
             "displayName": "Uma Quayle"
           },
           "label": "Stored record: Uma (bay PC)",
-          "token": "F4KR-DU7U-NYRP-TYXU-6UNH-3DKR",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800001
@@ -206,7 +206,7 @@
   "keyring_after_crack_olu": {
     "status": 200,
     "body": {
-      "rev": "7c06f3",
+      "rev": "4f8423",
       "entries": [
         {
           "id": "olu.cracked",
@@ -230,7 +230,7 @@
             "displayName": "Olu Marsh"
           },
           "label": "Stored record: Olu (bay PC)",
-          "token": "CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -245,7 +245,7 @@
             "displayName": "Uma Quayle"
           },
           "label": "Stored record: Uma (bay PC)",
-          "token": "F4KR-DU7U-NYRP-TYXU-6UNH-3DKR",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800001
@@ -306,7 +306,7 @@
           "hashId": "hotdesk_priya"
         }
       ],
-      "keyringRev": "6ac419"
+      "keyringRev": "e30203"
     }
   },
   "claim_hot_desk_guest": {
@@ -360,13 +360,13 @@
           "hashId": "hotdesk_sam"
         }
       ],
-      "keyringRev": "1356c0"
+      "keyringRev": "e123b4"
     }
   },
   "keyring_before_crack_sam": {
     "status": 200,
     "body": {
-      "rev": "fbba49",
+      "rev": "a5ba1d",
       "entries": [
         {
           "id": "olu.cracked",
@@ -390,7 +390,7 @@
             "displayName": "Olu Marsh"
           },
           "label": "Stored record: Olu (bay PC)",
-          "token": "CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -405,7 +405,7 @@
             "displayName": "Uma Quayle"
           },
           "label": "Stored record: Uma (bay PC)",
-          "token": "F4KR-DU7U-NYRP-TYXU-6UNH-3DKR",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800001
@@ -420,7 +420,7 @@
             "displayName": "Priya Nair"
           },
           "label": "Stored record: Priya (hot desk)",
-          "token": "P4SE-FW9Y-ZQL7-M7GC-6HST-6F8R",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000
@@ -435,7 +435,7 @@
             "displayName": "Sam Okoro"
           },
           "label": "Stored record: Sam (hot desk)",
-          "token": "2VEN-F9FS-9PVE-9CW2-X7SM-ZJR8",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000
@@ -478,11 +478,11 @@
   "audit_rows_after_override": {
     "status": 200,
     "body": {
-      "rev": "f55dd8",
+      "rev": "54daa6",
       "title": "Privilege audit",
       "rows": [
         {
-          "id": "fb28ff6f99",
+          "id": "90d3ea96ca",
           "elapsedMs": 0,
           "event": "CRED_COLLECT",
           "as": "adelwick",
@@ -491,7 +491,7 @@
           "detail": "count: 2"
         },
         {
-          "id": "51698b3d6b",
+          "id": "583a69cbb3",
           "elapsedMs": 0,
           "event": "CRED_COLLECT",
           "as": "adelwick",
@@ -500,7 +500,7 @@
           "detail": "count: 1"
         },
         {
-          "id": "466a00be77",
+          "id": "4fc5fb28f7",
           "elapsedMs": 0,
           "event": "USB_OVERRIDE",
           "as": "adelwick",
@@ -514,7 +514,7 @@
   "keyring_with_adel_assist": {
     "status": 200,
     "body": {
-      "rev": "681d81",
+      "rev": "0a8eed",
       "entries": [
         {
           "id": "olu.cracked",
@@ -574,7 +574,7 @@
             "displayName": "Olu Marsh"
           },
           "label": "Stored record: Olu (bay PC)",
-          "token": "CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -589,7 +589,7 @@
             "displayName": "Uma Quayle"
           },
           "label": "Stored record: Uma (bay PC)",
-          "token": "F4KR-DU7U-NYRP-TYXU-6UNH-3DKR",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800001
@@ -604,7 +604,7 @@
             "displayName": "Priya Nair"
           },
           "label": "Stored record: Priya (hot desk)",
-          "token": "P4SE-FW9Y-ZQL7-M7GC-6HST-6F8R",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000
@@ -619,7 +619,7 @@
             "displayName": "Sam Okoro"
           },
           "label": "Stored record: Sam (hot desk)",
-          "token": "2VEN-F9FS-9PVE-9CW2-X7SM-ZJR8",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -706,7 +706,7 @@
           "hashId": "hotdesk_sam"
         }
       ],
-      "keyringRev": "2c4382"
+      "keyringRev": "e7d104"
     }
   },
   "relay_signin_uma_store": {
@@ -796,7 +796,7 @@
           "hashId": "desk_a_deskadmin"
         }
       ],
-      "keyringRev": "009f46"
+      "keyringRev": "01463f"
     }
   },
   "collect_desk_a_repeat": {
@@ -815,7 +815,7 @@
           "hashId": "desk_a_deskadmin"
         }
       ],
-      "keyringRev": "009f46"
+      "keyringRev": "01463f"
     }
   },
   "crack_deskadmin_desk_a": {
@@ -832,7 +832,7 @@
   "keyring_after_crack_deskadmin": {
     "status": 200,
     "body": {
-      "rev": "ba1d10",
+      "rev": "44ecda",
       "entries": [
         {
           "id": "olu.cracked",
@@ -904,7 +904,7 @@
             "displayName": "Olu Marsh"
           },
           "label": "Stored record: Olu (bay PC)",
-          "token": "CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -919,7 +919,7 @@
             "displayName": "Uma Quayle"
           },
           "label": "Stored record: Uma (bay PC)",
-          "token": "F4KR-DU7U-NYRP-TYXU-6UNH-3DKR",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800001
@@ -934,7 +934,7 @@
             "displayName": "Desk administrator"
           },
           "label": "Stored record: desk admin A",
-          "token": "DNDB-UUTD-NL9W-MUTF-RR2L-VJ26",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -949,7 +949,7 @@
             "displayName": "Priya Nair"
           },
           "label": "Stored record: Priya (hot desk)",
-          "token": "P4SE-FW9Y-ZQL7-M7GC-6HST-6F8R",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000
@@ -964,7 +964,7 @@
             "displayName": "Sam Okoro"
           },
           "label": "Stored record: Sam (hot desk)",
-          "token": "2VEN-F9FS-9PVE-9CW2-X7SM-ZJR8",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1054,13 +1054,13 @@
           "hashId": "desk_b_deskadmin"
         }
       ],
-      "keyringRev": "6f26c9"
+      "keyringRev": "ec5399"
     }
   },
   "keyring_after_collect_desk_b": {
     "status": 200,
     "body": {
-      "rev": "6f26c9",
+      "rev": "ec5399",
       "entries": [
         {
           "id": "olu.cracked",
@@ -1132,7 +1132,7 @@
             "displayName": "Olu Marsh"
           },
           "label": "Stored record: Olu (bay PC)",
-          "token": "CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1147,7 +1147,7 @@
             "displayName": "Uma Quayle"
           },
           "label": "Stored record: Uma (bay PC)",
-          "token": "F4KR-DU7U-NYRP-TYXU-6UNH-3DKR",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800001
@@ -1162,7 +1162,7 @@
             "displayName": "Desk administrator"
           },
           "label": "Stored record: desk admin A",
-          "token": "DNDB-UUTD-NL9W-MUTF-RR2L-VJ26",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1177,7 +1177,7 @@
             "displayName": "Desk administrator"
           },
           "label": "Stored record: desk admin B",
-          "token": "DNDB-UUTD-NL9W-MUTF-RR2L-VJ26",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1192,7 +1192,7 @@
             "displayName": "Priya Nair"
           },
           "label": "Stored record: Priya (hot desk)",
-          "token": "P4SE-FW9Y-ZQL7-M7GC-6HST-6F8R",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000
@@ -1207,7 +1207,7 @@
             "displayName": "Sam Okoro"
           },
           "label": "Stored record: Sam (hot desk)",
-          "token": "2VEN-F9FS-9PVE-9CW2-X7SM-ZJR8",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1292,7 +1292,7 @@
           "hashId": "lab_labadmin"
         }
       ],
-      "keyringRev": "f42f4a"
+      "keyringRev": "97e215"
     }
   },
   "crack_labadmin_nomatch": {
@@ -1306,7 +1306,7 @@
   "keyring_after_collect_lab": {
     "status": 200,
     "body": {
-      "rev": "f42f4a",
+      "rev": "97e215",
       "entries": [
         {
           "id": "olu.cracked",
@@ -1378,7 +1378,7 @@
             "displayName": "Olu Marsh"
           },
           "label": "Stored record: Olu (bay PC)",
-          "token": "CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1393,7 +1393,7 @@
             "displayName": "Uma Quayle"
           },
           "label": "Stored record: Uma (bay PC)",
-          "token": "F4KR-DU7U-NYRP-TYXU-6UNH-3DKR",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800001
@@ -1408,7 +1408,7 @@
             "displayName": "Desk administrator"
           },
           "label": "Stored record: desk admin A",
-          "token": "DNDB-UUTD-NL9W-MUTF-RR2L-VJ26",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1423,7 +1423,7 @@
             "displayName": "Desk administrator"
           },
           "label": "Stored record: desk admin B",
-          "token": "DNDB-UUTD-NL9W-MUTF-RR2L-VJ26",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1438,7 +1438,7 @@
             "displayName": "Priya Nair"
           },
           "label": "Stored record: Priya (hot desk)",
-          "token": "P4SE-FW9Y-ZQL7-M7GC-6HST-6F8R",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000
@@ -1453,7 +1453,7 @@
             "displayName": "Sam Okoro"
           },
           "label": "Stored record: Sam (hot desk)",
-          "token": "2VEN-F9FS-9PVE-9CW2-X7SM-ZJR8",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
           "salted": false,
           "status": "cracked",
           "gainedAt": 1795510800000
@@ -1468,7 +1468,7 @@
             "displayName": "Lab administrator"
           },
           "label": "Stored record: lab admin",
-          "token": "85SM-5D8B-72WY-YUQU-J9F2-9CCJ",
+          "token": "TC6E-N2UX-L6WQ-NBB5-VXFT-B9TP",
           "salted": false,
           "status": "ready",
           "gainedAt": 1795510800000

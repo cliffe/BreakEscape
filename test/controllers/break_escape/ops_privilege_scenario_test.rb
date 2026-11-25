@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'minitest/mock'
 require_relative '../../support/network_ops_scenario'
 require_relative '../../support/privilege_answers'
 
@@ -903,8 +904,17 @@ module BreakEscape
 
     teardown { travel_back }
 
+    # The answers carry values keyed from the app's secret (hash tokens, log row ids), and the
+    # secret differs per checkout (test/dummy/tmp/development_secret.txt is random per tree). The
+    # run is therefore played under one fixed key generator, and the fixture is recorded under it
+    # too, so the comparison holds in every tree and in any test order. The stub is put back by
+    # `stub` itself when the block ends.
+    FIXTURE_KEY_GENERATOR = ActiveSupport::CachingKeyGenerator.new(
+      ActiveSupport::KeyGenerator.new('ops-privilege-answers-fixture-secret', iterations: 1000)
+    )
+
     test 'the run in order plays every beat and each real answer equals the recorded one' do
-      answers = play_all_beats
+      answers = Rails.application.stub(:key_generator, FIXTURE_KEY_GENERATOR) { play_all_beats }
       if ENV['PRIV_ANSWERS_RECORD'] == '1'
         File.write(PrivilegeAnswers::PATH, "#{JSON.pretty_generate(answers)}\n")
       else
