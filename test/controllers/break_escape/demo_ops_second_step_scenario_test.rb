@@ -6,9 +6,11 @@ module BreakEscape
   # Ops showcase unit S-T (SHOWCASE_PLAN.md 8.3, "second step"): the real
   # scenarios/demo_ops_second_step/scenario.json.erb driven through the routes, one test per beat that has a
   # server side (M1 to M10), each assertion read from a re-read game or a fresh answer. Time is frozen, so a code
-  # is read from the held device's route (as the browser does) and the waits are travel_to. What only the browser
-  # decides (who is at the desk, the notes, the overheard login, the toasts) is PLAYTEST.md's. The last case
-  # passes every answer of a played run through the leak scanner and asserts it reports nothing.
+  # is read from the held device's route (as the browser does) and the waits are travel_to. The notes (M1, M2) and
+  # the overheard login (M3) are served by login_accounts, npc_frustration and npc_workaround, driven here as the
+  # needs runner drives them. What only the browser decides (who is at the desk, who is in earshot, the toasts) is
+  # PLAYTEST.md's. The last case passes every answer of a played run, those three routes included, through the
+  # leak scanner (given the game, so it can judge an earned note or share) and asserts it reports nothing.
   class DemoOpsSecondStepScenarioTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include NetworkOpsRequests
@@ -103,6 +105,43 @@ module BreakEscape
       response.parsed_body
     end
 
+    # The sign-in screen at a PC's own keyboard: the tiles, and the note only where its owner wrote one
+    def accounts(pc)
+      get game_path('login_accounts'), params: { pc_id: pc }, as: :json
+      assert_response :success, response.body
+      response.parsed_body
+    end
+
+    # Ama's "Switch the printer off" (or the socket), as the browser syncs it
+    def printer_off!
+      put game_path('sync_state'), params: { globalVariables: { 'printer_off' => true } }, as: :json
+      assert_response :success, response.body
+    end
+
+    # A failed print, as the needs runner reports it (the office printer resource is down)
+    def print_fail(npc)
+      pc = { 'darren_price' => 'darren_pc', 'yusuf_demir' => 'yusuf_pc' }.fetch(npc)
+      { npc_id: npc, event: 'fail', need: 'work', object_id: pc, missing: [{ id: 'print_service', why: 'down' }] }
+    end
+
+    def frustration(npc)
+      post game_path('npc_frustration'), params: { reports: [print_fail(npc)] }, as: :json
+      assert_response :success, response.body
+      response.parsed_body['answers'].first
+    end
+
+    # Two failed prints 25 s apart (past the pace floor); the second answer hands the workaround over
+    def frustrate(npc)
+      first = frustration(npc)
+      later(25)
+      [first, frustration(npc)]
+    end
+
+    def workaround_done(npc, run, extra = {})
+      post game_path('npc_workaround'), params: { npc_id: npc, index: run['index'], hand: run['hand'] }.merge(extra), as: :json
+      response
+    end
+
     # ---- the scenario's shape ----------------------------------------------------------------------
 
     test 'the real scenario holds the policies, the accounts, the access lists and the devices the beats need' do
@@ -169,12 +208,16 @@ module BreakEscape
       assert_equal 'push', body['mfa']
       assert_equal 'lorna_easton', body['npcId']
       assert_nil state['sessions']['lorna_pc']
-      2.times do
-        assert_equal false, prompt('lorna_pc')['approved']
+      [1, 2].each do |n|
+        body = prompt('lorna_pc')
+        assert_equal false, body['approved']
+        assert_equal n, body['promptsSent'], 'the step_holds tick reads this count'
         later(3)
       end
       assert_nil state['sessions']['lorna_pc']
       assert_equal 2, count('mfa_prompt_sent')
+      assert_equal 1, rows('mfa_prompt_sent').size, 'two requests merge into one row with a count'
+      assert_equal 2, rows('mfa_prompt_sent').first['n']
       assert_equal 0, count('mfa_prompt_approved') + count('mfa_prompt_denied'), 'a never-approving owner writes no deny row'
       later(MfaModel::PENDING_SECONDS + 1)
       body = prompt('lorna_pc')
@@ -290,6 +333,60 @@ module BreakEscape
       assert_equal 0, count('mfa_prompt_approved')
     end
 
+    # ---- M1, M2, M3: passwords escape (the routes whose answer is the password itself) -------------------
+
+    test 'M1: Anjali\'s sign-in screen carries her note; Lorna\'s, Darren\'s and Yusuf\'s carry none' do
+      assert_equal "arao / #{ANJALI.last}", accounts('anjali_pc')['postitNote']
+      assert_equal 'no-store', response.headers['Cache-Control']
+      %w[lorna_pc darren_pc yusuf_pc].each do |pc|
+        body = accounts(pc)
+        assert_nil body['postitNote'], "#{pc} shows a note"
+        PCS.each_value { |c| assert_not_includes body.to_json, c.last, "#{pc} answer holds a password" }
+      end
+    end
+
+    test 'M2: Darren writes his password down only after two failed prints and the workaround done; a third fail starts no second one' do
+      assert_nil accounts('darren_pc')['postitNote']
+      printer_off!
+      first, second = frustrate('darren_price')
+      assert_nil first['run'], 'one failed print is not enough'
+      run = second['run']
+      assert_equal({ 'index' => 0, 'hand' => 1, 'do' => 'writes_down', 'dwell' => 6 }, run)
+      assert_not_includes [first, second].to_json, DARREN.last
+      assert_nil accounts('darren_pc')['postitNote'], 'handed over is not done'
+      later(7)
+      res = workaround_done('darren_price', run)
+      assert_response :success, res.body
+      assert_equal({ 'pcId' => 'darren_pc', 'hasPostit' => true }, res.parsed_body)
+      assert_equal "dprice / #{DARREN.last}", accounts('darren_pc')['postitNote']
+      later(25)
+      assert_nil frustration('darren_price')['run'], 'the note is written once'
+    end
+
+    test 'M3: Yusuf\'s login said aloud: an unheard share gives nothing; a heard one in the office gives his login' do
+      printer_off!
+      first, second = frustrate('yusuf_demir')
+      assert_nil first['run']
+      run = second['run']
+      assert_equal({ 'index' => 0, 'hand' => 1, 'do' => 'share_login', 'dwell' => 6, 'with' => 'anjali_rao' }, run)
+      later(7)
+      res = workaround_done('yusuf_demir', run, heard: false)
+      assert_response :success, res.body
+      assert_equal({}, res.parsed_body)
+      assert_not_includes res.body, YUSUF.last
+      assert_nil state['sharedLogins']&.first
+      later(25)
+      again = frustration('yusuf_demir')['run']
+      assert_equal 'share_login', again['do'], 'a share repeats on the next failed print'
+      later(7)
+      res = workaround_done('yusuf_demir', again, heard: true, room_id: 'office')
+      assert_response :success, res.body
+      body = res.parsed_body
+      assert_equal 'yusuf_demir', body.dig('capture', 'targetId')
+      assert_includes body['line'], YUSUF.last
+      assert_equal ['yusuf_demir'], state['sharedLogins']
+    end
+
     # ---- M8: the way round ----------------------------------------------------------------------------------
 
     test 'M8: an owner\'s open screen is claimed with no step and no sign-in row; Lorna, who always locks, is refused' do
@@ -384,6 +481,22 @@ module BreakEscape
     def run_game
       get_row('scenario', {}, :boot0)
       ROOMS.each { |room| get_row("room/#{room}", {}, nil) }
+      # M1: Anjali's note at her keyboard; M2 and M3: the printer goes off, Darren writes his down, Yusuf says his aloud
+      get_row('login_accounts', { pc_id: 'anjali_pc' }, :anjali_note)
+      put game_path('sync_state'), params: { globalVariables: { 'printer_off' => true } }, as: :json
+      rec(:printer_off)
+      %w[darren_price yusuf_demir].each do |npc|
+        post_row('npc_frustration', { reports: [print_fail(npc)] }, nil)
+        later(25)
+        post_row('npc_frustration', { reports: [print_fail(npc)] }, :"#{npc}_handed")
+      end
+      later(7)
+      darren_run = @marks[:darren_price_handed]['body']['answers'].first['run']
+      post_row('npc_workaround', { npc_id: 'darren_price', index: darren_run['index'], hand: darren_run['hand'] }, :darren_wrote)
+      get_row('login_accounts', { pc_id: 'darren_pc' }, :darren_note)
+      yusuf_run = @marks[:yusuf_demir_handed]['body']['answers'].first['run']
+      post_row('npc_workaround', { npc_id: 'yusuf_demir', index: yusuf_run['index'], hand: yusuf_run['hand'], heard: true, room_id: 'office' },
+               :yusuf_heard)
       take_row('lorna_login_card', 'text_file', "Lorna's sign-in card", :take_card, npc: 'ama_owusu')
       # M4: the push that nobody answers
       sign_in_row('lorna_pc', LORNA, :lorna_required)
@@ -421,7 +534,7 @@ module BreakEscape
     end
 
     def scan(rows)
-      AccessLeakScanner.new(scenario).scan(rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] })
+      AccessLeakScanner.new(scenario, game: Game.find(@game.id)).scan(rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] })
     end
 
     test 'the leak scanner over the whole played run reports nothing, and the run holds every earned answer' do
@@ -432,6 +545,9 @@ module BreakEscape
       assert_equal 3, @marks[:phone]['body']['requests'].first['numbers'].size
       assert_equal 'owner', @marks[:darren_pass]['body']['approvedBy']
       assert_equal 'player', @marks[:yusuf_pass]['body']['approvedBy']
+      assert_equal "arao / #{ANJALI.last}", @marks[:anjali_note]['body']['postitNote']
+      assert_equal "dprice / #{DARREN.last}", @marks[:darren_note]['body']['postitNote']
+      assert_includes @marks[:yusuf_heard]['body']['line'], YUSUF.last
       assert_equal 422, @marks[:cancel]['status']
       assert_equal 'anjali_rao', @marks[:boot_end]['body']['sessions']['anjali_pc']['npcId']
       assert_not_includes @marks[:boot_end]['body'].to_json, 'mfaPending'

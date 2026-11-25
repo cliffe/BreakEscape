@@ -123,6 +123,7 @@ niamh_pw  = "Dohertree-Nia-14"
   "globalVariables": {
     "se_osint_state": {},
     "coffee_call": 0,
+    "kitchen_seen": false,
     "printer_off": false,
     "office_coffee_off": false,
     "act_midday": false,
@@ -269,19 +270,20 @@ niamh_pw  = "Dohertree-Nia-14"
           ],
           "eventMappings": [
             { "eventPattern": "room_entered:reception", "onceOnly": true, "cooldown": 0, "bark": "Morning. Come and find me when you're ready." },
+            { "eventPattern": "room_entered:kitchen", "onceOnly": true, "cooldown": 0, "setGlobal": { "kitchen_seen": true }, "bark": "That's the kitchen. Come back to me and I can send them for coffee." },
             { "eventPattern": "pc_signin_shown:anjali_pc", "condition": "data.hasPostit === true", "cooldown": 0, "completeTask": "see_note", "setGlobal": { "see_note_done": true } },
             { "eventPattern": "npc_workaround:darren_price", "condition": "data.do === 'writes_down' && data.phase === 'done'", "cooldown": 0, "completeTask": "see_temper_note", "setGlobal": { "see_temper_note_done": true } },
-            { "eventPattern": "npc_workaround:yusuf_demir", "condition": "data.phase === 'started'", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's off to find Anjali. Stand close." },
+            { "eventPattern": "npc_workaround:yusuf_demir", "condition": "data.phase === 'started'", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's off to find Anjali. Stand right next to them to hear." },
             { "eventPattern": "npc_overheard_login:*", "cooldown": 0, "completeTask": "overhear", "setGlobal": { "overhear_done": true } },
             { "eventPattern": "mfa_prompt_sent:lorna_easton", "condition": "data.n >= 2", "cooldown": 0, "completeTask": "step_holds", "setGlobal": { "step_holds_done": true } },
             { "eventPattern": "workstation_accessed:darren_pc", "cooldown": 0, "completeTask": "open_screen", "setGlobal": { "open_screen_done": true } },
             { "eventPattern": "pc_signed_in:anjali_pc", "cooldown": 0, "completeTask": "fob", "setGlobal": { "fob_done": true } },
             { "eventPattern": "pc_signed_in:yusuf_pc", "cooldown": 0, "completeTask": "number_match", "setGlobal": { "number_match_done": true } },
-            { "eventPattern": "mfa_approved:darren_price", "condition": "data.pcId === 'darren_pc'", "cooldown": 0, "completeTask": "pestered", "setGlobal": { "pestered_done": true } },
+            { "eventPattern": "mfa_approved:darren_price", "condition": "data.pcId === 'darren_pc'", "onceOnly": true, "cooldown": 0, "completeTask": "pestered", "setGlobal": { "pestered_done": true }, "bark": "He approved just to make it stop." },
             { "eventPattern": "pc_signed_in:visitor_kiosk", "cooldown": 0, "completeTask": "exempt", "setGlobal": { "exempt_done": true } },
             { "eventPattern": "npc_left_post:anjali_rao", "onceOnly": true, "cooldown": 0, "bark": "Anjali's left her code fob on her desk." },
             { "eventPattern": "npc_left_post:yusuf_demir", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's phone is by the coffee machine." },
-            { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's popped out for coffee. His screen is still open." },
+            { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's popped out. If it's a quick coffee, his screen stays open." },
             { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Darren's gone to lunch. His screen will be locked." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } }
           ]
@@ -514,7 +516,7 @@ niamh_pw  = "Dohertree-Nia-14"
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Read the note under Anjali's keyboard while she is away.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand near when Yusuf goes to find Anjali.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\n- Use Darren's screen while he is out for coffee.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room."
+          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- Read the note under Anjali's keyboard while she is away.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\n- Use Darren's screen while he is out for coffee.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room."
         }
       ],
       "npcs": [
@@ -581,7 +583,6 @@ niamh_pw  = "Dohertree-Nia-14"
             "thirst": { "decayPerMin": 15, "urgentAt": 40, "initial": 75 },
             "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
           },
-          "chatter": { "login_aloud": ["Thanks. I'll send it from here."] },
           "eventMappings": [
             { "eventPattern": "room_entered:office", "condition": "globalVars.coffee_call > 0", "cooldown": 300000, "needs": { "set": { "thirst": 10 } } },
             { "eventPattern": "room_entered:office", "condition": "globalVars.act_evening === true", "cooldown": 0, "setVisible": false },
@@ -617,8 +618,8 @@ niamh_pw  = "Dohertree-Nia-14"
             "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
           },
           "chatter": {
-            "wk_share_login": ["Printer's dead. Asking Anjali."],
-            "login_aloud": ["Use mine, Anjali. You know the one."],
+            "wk_share_login": ["Printer's dead. I'll ask Anjali."],
+            "login_aloud": ["Use my login, Anjali. Here it is."],
             "work_fail_printer": ["Print job failed. Again."]
           },
           "eventMappings": [

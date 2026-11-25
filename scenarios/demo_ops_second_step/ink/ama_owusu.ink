@@ -2,8 +2,11 @@
 // Contract 8.3.1 (second step). Levers are sticky and stay offered; the task
 // flags <task>_done are scenario globals synced in when the conversation starts.
 // Ticks by ink: see_note (knot tell_note). All other tasks tick by mapping.
+// The coffee and lunch levers wait for kitchen_seen: staff needs only pick targets in
+// rooms the player has opened, and the water and lunch are in the kitchen.
 
 VAR coffee_call = 0 // Synced scenario global
+VAR kitchen_seen = false // Synced scenario global (set on room_entered:kitchen)
 VAR printer_off = false // Synced scenario global
 VAR act_midday = false // Synced scenario global
 VAR act_evening = false // Synced scenario global
@@ -29,7 +32,7 @@ VAR met_ama = false
 # speaker:npc
 Welcome to Merrin and Sallow. We switched on a second sign-in step last month.
 # speaker:npc
-Today you see what it stops, and where it gives way.
+Today you'll see what it stops and where it gives way.
 -> hub.choices
 
 === hub ===
@@ -64,36 +67,47 @@ What can I help with?
 {
     - not lorna_card_given:
         # speaker:npc
-        Start with Lorna's sign-in. She agreed to be the test, so I'll hand it over.
+        Start with Lorna's sign-in. She agreed to be the test. Ask me for it.
+    - not kitchen_seen:
+        # speaker:npc
+        Have a look in the kitchen, through the office. That's where the water and lunch are.
+        # speaker:npc
+        Then come back to me, and I can send them for coffee.
     - not see_note_done:
         # speaker:npc
-        Anjali keeps a note under her keyboard. Read it while she's away from her desk.
+        Anjali keeps a note under her keyboard.
         # speaker:npc
-        If she's staying put, send them for coffee.
+        Tell me to send them for coffee, then read it while she's away.
     - not see_temper_note_done:
         # speaker:npc
         Switch the printer off and wait. Darren writes things down when he's cross.
     - not overhear_done:
         # speaker:npc
-        Yusuf will go and tell Anjali his login. Stand close to them.
+        Yusuf asks Anjali for help each time the printer fails him.
+        # speaker:npc
+        Wait right beside Anjali to hear his login.
     - not step_holds_done:
         # speaker:npc
         Sign in at Lorna's PC while she's away, and ask for approval twice.
     - not open_screen_done:
         # speaker:npc
         Darren's short coffee trips leave his screen open. Use it while he's out.
-    - not act_midday:
-        # speaker:npc
-        Time for the second half of the day. Tell me to send them to lunch.
     - not fob_done:
         # speaker:npc
-        Anjali's fob sits on her desk when she's away. Take it, then sign in at her PC.
+        Anjali's fob sits on her desk when she's away.
+        # speaker:npc
+        Send them for coffee, then take it and sign in at her PC.
     - not number_match_done:
         # speaker:npc
         Yusuf's phone sits by the coffee machine when he's away. Take it, then sign in at his PC.
+    - not act_midday:
+        # speaker:npc
+        Darren takes a long lunch. Tell me to send them to lunch, then go straight to his PC.
     - not pestered_done:
         # speaker:npc
-        Sign in at Darren's PC while he's at lunch, and keep asking until he gives in.
+        His password's on the note on his sign-in screen.
+        # speaker:npc
+        Sign in while he's at lunch, and keep asking until he gives in.
     - not exempt_done:
         # speaker:npc
         Read the card at the visitor desk and sign in there.
@@ -122,13 +136,18 @@ Her PC will send a request to her phone each time.
 # speaker:npc
 Good. A password on a note under a keyboard is no secret at all.
 # speaker:npc
-That's the first way a password escapes.
+That's one way a password escapes.
 #complete_task:see_note
 #set_global:see_note_done:true
 ~ see_note_done = true
 -> hub.choices
 
 === lever_coffee ===
+{ not kitchen_seen:
+    # speaker:npc
+    Have a look in the kitchen first. That's where the water is, and Anjali won't move without it.
+    -> hub.choices
+}
 # speaker:npc
 Right, coffee for everyone. Watch who leaves their desk.
 ~ coffee_call = coffee_call + 1
@@ -144,6 +163,11 @@ Printer's off. Let's see who loses patience.
 -> END
 
 === lever_lunch ===
+{ not kitchen_seen:
+    # speaker:npc
+    Have a look in the kitchen first. That's where lunch happens.
+    -> hub.choices
+}
 # speaker:npc
 Lunchtime, then. Some of them will be away for a while.
 #set_global:act_midday:true
@@ -177,63 +201,45 @@ Seen everything you wanted? Staff won't be back once they've gone home.
 }
 { see_note_done:
     # speaker:npc
-    A written note: a password escapes through habit.
-    # speaker:npc
-    The second step cannot help if the password is on show.
+    A note under a keyboard: the second step can't help once the password's on show.
 }
 { see_temper_note_done:
     # speaker:npc
-    Darren wrote his down when the printer let him down.
-    # speaker:npc
-    Frustration makes people take shortcuts.
+    Darren wrote his down when the printer let him down. Frustration makes shortcuts.
 }
 { overhear_done:
     # speaker:npc
     A login said aloud travels as far as the nearest listener.
-    # speaker:npc
-    Two colleagues helping each other still leak it.
 }
 { step_holds_done:
     # speaker:npc
-    With the password in hand, you still needed Lorna's phone.
-    # speaker:npc
-    She never approved, so the second step held.
+    Lorna never approved, so her password alone got you nowhere.
 }
 { open_screen_done:
     # speaker:npc
-    No step was asked. It guards signing in, not a screen left open.
-    # speaker:npc
-    That's the way round.
+    Darren's open screen asked for no second step. It guards signing in, not a screen left open.
 }
 { fob_done:
     # speaker:npc
-    The code came from a fob left on a desk.
-    # speaker:npc
-    A second step is only as good as the thing you keep hold of.
+    A fob left on a desk: the step is only as good as what you keep hold of.
 }
 { number_match_done:
-    # speaker:npc
-    A phone left by the coffee machine answered for its owner.
     # speaker:npc
     Matching the number stops a blind tap, not a borrowed phone.
 }
 { pestered_done:
     # speaker:npc
     Darren approved just to make the requests stop.
-    # speaker:npc
-    Too many prompts wear people down.
 }
 { exempt_done:
     # speaker:npc
     The visitor desk account has no second step at all.
-    # speaker:npc
-    An exempt account is a gap, even a small one.
 }
 { read_log_done:
     # speaker:npc
-    The log kept every request, including the ones nobody answered.
+    Those night-time requests mean someone else had Darren's password first.
     # speaker:npc
-    That's how someone notices a burst in the night.
+    They were trying to wear him down.
 }
 -> hub.choices
 
@@ -245,7 +251,5 @@ A second step adds a thing you must also have.
 # speaker:npc
 It holds when the owner ignores the request.
 # speaker:npc
-It gives way to a worn-down approver, a fob on a desk or a phone by the kettle.
-# speaker:npc
-And it never covers a screen someone left open.
+It gives way to a worn-down approver, a fob on a desk or a phone by the coffee machine, and it never covers a screen left open.
 -> hub.choices
