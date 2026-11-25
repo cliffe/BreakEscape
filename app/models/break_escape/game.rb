@@ -9,9 +9,20 @@ module BreakEscape
     include NetworkOps
     include CaptureProofs
     include CredentialKeyring
+    include EarnedFacts
+    include OpsCracking
+    include CachedCredentials # S5b
     include CredentialLogin
     include NpcFrustration
     include SocialFeed
+    include MfaAccess
+    include MfaSignIn
+    # Second step on any lock (S8c): rule stubs, filled in by later units
+    include LockSecondStep
+    include LockStepGate
+    include LockStepReach
+    include LockStepDoors
+    include HelpdeskAccess
     include Wearables
     include PinDust
 
@@ -137,6 +148,8 @@ module BreakEscape
     def unlock_room!(room_id)
       player_state['unlockedRooms'] ||= []
       player_state['unlockedRooms'] << room_id unless player_state['unlockedRooms'].include?(room_id)
+      # Second step (S8c): an open door no longer waits on an NPC's step grant
+      clear_npc_step_grant!(room_id)
       save!
     end
 
@@ -691,6 +704,11 @@ module BreakEscape
 
     # Object management
     def unlock_object!(object_id)
+      # Second step (S8c): only record_step_open! writes a gated object's id
+      if second_step_ids.include?(object_id.to_s)
+        Rails.logger.warn "[BreakEscape] unlock_object! refused for gated object #{object_id}: only record_step_open! writes it"
+        return
+      end
       player_state['unlockedObjects'] ||= []
       player_state['unlockedObjects'] << object_id unless player_state['unlockedObjects'].include?(object_id)
       save!
@@ -718,7 +736,7 @@ module BreakEscape
       end
     end
 
-    def add_inventory_item!(item)
+    def add_inventory_item!(item, fact_source: false)
       player_state['inventory'] ||= []
 
       # `credential` is a forgeable field (stripped from every client contribution and
@@ -732,6 +750,8 @@ module BreakEscape
 
       unless item_exists
         player_state['inventory'] << item
+        # S7: facts the stored copy reveals (a take or a server-given item), before the save below
+        stamp_item_facts!(item) if fact_source
         # q35: an NPC's Friendface phone reaching the inventory is taken for good (review R1 m2)
         note_friendface_phone_taken!(item)
         save!
@@ -1176,7 +1196,7 @@ module BreakEscape
 
       # q35 review R1 m1: a Friendface phone enters a room only as an NPC's drop or a player's
       # drop, never from client fields, so no client can mint one
-      if item['type'] == SocialFeed::FRIENDFACE_PHONE && source_data['npc_id'].blank? && source_data['source_type'] != 'player_drop'
+      if MfaModel::OWNER_BOUND_TYPES.include?(item['type']) && source_data['npc_id'].blank? && source_data['source_type'] != 'player_drop'
         Rails.logger.warn "[BreakEscape] add_object of a Friendface phone with no source rejected"
         return false
       end
@@ -2072,6 +2092,7 @@ module BreakEscape
 
           room['npcs'].each do |npc|
             next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+            next if AccessIdentities.account_only?(npc) # S5c: no person to knock out
 
             ids << npc['id']
           end
@@ -2081,6 +2102,7 @@ module BreakEscape
 
       narrow_room_npc_stubs.each_with_object(Set.new) do |npc, ids|
         next unless npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+        next if AccessIdentities.account_only?(npc) # S5c: no person to knock out
 
         ids << npc['id']
       end
@@ -2090,7 +2112,7 @@ module BreakEscape
     # scenario_data (sync_state's narrow load). jsonb_each / jsonb_array_elements /
     # jsonb_build_object only, so it runs on PostgreSQL 9.5 (jsonpath needs 12). Bounded by the scenario.
     NARROW_ROOM_NPC_STUBS_SQL = <<~SQL.squish
-      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'npcType', n.npc -> 'npcType')
+      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'accountOnly', n.npc -> 'accountOnly', 'npcType', n.npc -> 'npcType')
       FROM break_escape_games g
       CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(g.scenario_data -> 'rooms') = 'object'
                                          THEN g.scenario_data -> 'rooms' ELSE '{}'::jsonb END) AS r(room_id, room)
@@ -2187,7 +2209,7 @@ module BreakEscape
       room = scenario_data.dig('rooms', room_id)
       return false unless room
 
-      scenario_has_npc = room['npcs']&.any? { |npc| npc['id'] == npc_id }
+      scenario_has_npc = room['npcs']&.any? { |npc| npc['id'] == npc_id && !AccessIdentities.account_only?(npc) } # S5c
 
       # Check if NPC was removed from this room
       removed = player_state.dig('room_states', room_id, 'npcs_removed')&.include?(npc_id)
@@ -2260,7 +2282,7 @@ module BreakEscape
       (scenario_data['rooms'] || {}).values
         .select { |room| room.is_a?(Hash) }
         .flat_map { |room| room['npcs'].is_a?(Array) ? room['npcs'] : [] }
-        .select { |npc| npc.is_a?(Hash) && %w[person both].include?(npc['npcType']) }
+        .select { |npc| npc.is_a?(Hash) && %w[person both].include?(npc['npcType']) && !AccessIdentities.account_only?(npc) } # S5c
         .map { |npc| npc['spriteSheet'].presence || 'hacker' }
         .push(scenario_data.dig('player', 'spriteSheet').presence)
         .compact
@@ -2462,6 +2484,14 @@ module BreakEscape
              access acceptsUIDOnly cryptexConfig dustable dustHint].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
+          strip_account_only_people!(kept_fields)
+          # Second step (S8c): kind and owner only, as authored; and who opened a gated door.
+          step = room_data['secondStep']
+          kept_fields['secondStep'] = step.slice('kind', 'owner') if step.is_a?(Hash)
+          unless unlocked_rooms.include?(room_id)
+            opener = npc_step_opener_for(room_id)
+            kept_fields['npcStepOpener'] = opener unless opener.nil?
+          end
           self.class.strip_lock_answers!(kept_fields)
           # A pad lock's answer never leaves this method: fill the PIN pad length first, then drop
           # `requires` unless it names a card, as GamesController#filter_requires_recursive does
@@ -2479,7 +2509,7 @@ module BreakEscape
           npcs = room_data['npcs']
           if npcs.is_a?(Array)
             kept_fields['hasPresentNpc'] = npcs.any? do |n|
-              n.is_a?(Hash) && n['npcType'] != 'phone' && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
+              n.is_a?(Hash) && n['npcType'] != 'phone' && !AccessIdentities.account_only?(n) && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
             end
           end
 
@@ -2524,6 +2554,8 @@ module BreakEscape
 
       # Slice 9.2 C (8.3): a feed post's fact travels with its post, never in the bootstrap
       withhold_feed_facts!(filtered)
+      # S7 review R1-S1: and an item's or a flag reward's fact until it is earned
+      withhold_unearned_facts!(filtered)
 
       # Strip every authored capture secret from the bootstrap: a landing page's capture (the
       # phished portal password), an NPC's usePayload, a mapping's addCapture and an
@@ -2534,10 +2566,18 @@ module BreakEscape
       # revealSecret flag are not secret and stay.
       strip_capture_secrets!(filtered)
 
+      # S8c R1: a headless record (social.characters.*.emailRecord, a mail contact's emailRecord)
+      # keeps only the shipped habits, as a room NPC does: approvesPrompts and promptPatience
+      # decide whether a lock's owner approves a prompt and never reach the browser.
+      withhold_headless_habits!(filtered)
+
       # A declared grant's contents (a timer's give_item, a triggerOnInteract reward) are
       # served from the held item, never shipped. GamesController#filter_requires_recursive
       # strips them again as a second line of defence.
       BreakEscape::DeclaredGrants.strip_all_grant_contents!(filtered)
+
+      forms = helpdesk_forms_for_client
+      filtered['helpdeskForms'] = forms unless forms.nil?
 
       filtered
     end
@@ -2773,6 +2813,9 @@ module BreakEscape
 
       # Apply dynamic room state changes (delta overlay)
       apply_room_state_changes!(room, room_id)
+
+      # S5c: an account with no person behind it is never a room NPC in any answer.
+      room['npcs'].reject! { |npc| AccessIdentities.account_only?(npc) } if room['npcs'].is_a?(Array)
 
       # Remove ONLY the 'requires' field (the solution) and locked 'contents'
       # Keep lockType, locked, observations visible to client. The work plans built on the way
@@ -3055,6 +3098,9 @@ module BreakEscape
     # preserved_keys, so a reset drops them all and initialize_player_state refills them.
     ACCESS_STATE_DEFAULTS = {
       'sessions' => {}, 'signedInPcs' => [], 'loginFailures' => {}, 'loginLockouts' => [],
+      # Multi-factor sign-in (S8a): pending second steps, prompt counts and per-account tallies.
+      # Server-owned: no sync body writes them, and none is sent to the browser.
+      'mfaPending' => {}, 'mfaPrompts' => {}, 'mfaAccounts' => {},
       'copiedItems' => [], 'serverClones' => {},
       # Networks (slice 9.3a, NetworkAccess): footholds held now, and every jack one was gained from
       'footholds' => {}, 'gainedFootholds' => [],
@@ -3100,7 +3146,18 @@ module BreakEscape
       'opsFindings' => {},
       # Network ops S3 (OPS_CORE_PLAN.md 8): [findingId], the findings a technique card was used on
       # (a credential grant, once each). Server-written only, never in a sync body or any answer.
-      'opsUsed' => []
+      'opsUsed' => [],
+      # Second step on any lock (S8c): { "object:<id>" | "door:<roomId>" => record } and
+      # { "door:<roomId>" => npcId }. Server-written only, never in a sync body, the bootstrap or any answer.
+      'lockSteps' => {}, 'npcStepGrants' => {},
+      # Offline cracking S7 (S7_BUILD_BRIEF.md 4): earnedFacts [factId] (at most 64), crackRuns and
+      # crackStarted { hashId => ... }, crackedAccounts [npcId]. Server-written only, never in a sync
+      # body, the bootstrap or any answer whole, at most 64 entries each.
+      'earnedFacts' => [], 'crackRuns' => {}, 'crackStarted' => {}, 'crackedAccounts' => [],
+      # S5b (S5BC_BUILD_BRIEF 4.2): "<pcId>|<npcId>" pairs. cachedAt: borrowers cached at a PC;
+      # harvestedAccounts: accounts an admin session collected. Grow-only, server-written only.
+      'cachedAt' => [],
+      'harvestedAccounts' => []
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -3297,6 +3354,10 @@ module BreakEscape
     # right now (OPS_PRIVILEGE_ACCOUNTS_PLAN S5a). Worked out on every read and never stored,
     # except that a technique record carries the `access` the core's step up wrote. The steps
     # run in this order: a relay record is `via: "credential"`, so step 5 comes before step 7.
+    # S5 ruling B: a relayed session has exactly the rights of the account relayed, so a relay
+    # record is read like any credential record (its account, at this PC's access list). Only a
+    # claim is always `user`. A relay still never feeds a step up (ops_need_session refuses it)
+    # and is never a keyboard admin.
     def session_access(pc_id)
       session = access_sessions[pc_id.to_s]
       return nil unless session.is_a?(Hash)
@@ -3305,7 +3366,7 @@ module BreakEscape
       npc = session_identity(pc_id)
       return nil unless npc
       return nil unless session_route_up?(pc_id)
-      return 'user' if relay_session?(session) || session['via'] == 'claim'
+      return 'user' if session['via'] == 'claim'
 
       case session['via']
       when 'technique'
@@ -3537,17 +3598,28 @@ module BreakEscape
     end
 
     # A PC's access list admits the account; no access list admits every account (5.2).
+    # S5c: one definition, CredentialModel's (the kind first, then the access list); proved equal
+    # on every shipped scenario by pc_admits_account_test.rb before this delegated.
     def pc_admits_account?(pc, npc)
-      return true if pc['access'].nil?
-
-      self.class.acl_admits?(pc['access'], npc)
+      CredentialModel.pc_admits_account?(pc, npc)
     end
 
-    # The accounts present on a PC for an admin session's profile reach. S5a: its owner only
-    # (a seam so S5b can widen it); reads nothing but `owner`.
+    # S5c: the kind ('local' or 'domain') of an account that the PC's KIND refuses, else nil. The
+    # kind detail of a signin_refused row is written only when the kind did the refusing.
+    def refusing_account_kind(pc, npc)
+      return nil if AccessIdentities.account_kind_admits?(pc, npc)
+
+      kind = npc['creds']['accountKind']
+      %w[local domain].include?(kind) ? kind : nil
+    end
+
+    # The accounts present on a PC for an admin session's profile reach: its owner, then (S5b) the
+    # accounts cached at the PC now, each once. Reads only `owner` and the declared cached list.
     def admin_present_accounts(pc)
       owner = login_pc_owner(pc)
-      owner ? [owner] : []
+      present = owner ? [owner] : []
+      cached_accounts_at(pc).each { |npc| present << npc unless present.any? { |p| p['id'] == npc['id'] } }
+      present
     end
 
     # The PC's owner (its explicit owner, a single NPC id), or nil, as ownerOf does on the
@@ -3599,6 +3671,13 @@ module BreakEscape
       "#{owner['creds']['username']} / #{password}"
     end
 
+    # Whether any desk reset is held. The helpdesk accessors write an empty `accountResets` into
+    # player_state when it is missing, which would change every saved game that has no desk; a
+    # sign-in reads them only once the key exists as a non-empty Hash.
+    def resets_held?
+      player_state['accountResets'].is_a?(Hash) && !player_state['accountResets'].empty?
+    end
+
     # POST /login with a username and password (section 6). Returns { status:, body: }.
     # A wrong password and an unknown username answer exactly alike, counted per PC and
     # normalised username; no letter-case hint.
@@ -3616,8 +3695,58 @@ module BreakEscape
       info = find_login_pc(pc_id)
       return { status: :not_found, body: { success: false, message: 'Sign-in PC not found' } } unless info
 
-      unreachable = { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
       foothold = foothold.presence&.to_s
+      refusal = typed_route_refusal(info, foothold: foothold, from: from, from_given: from_given)
+      return refusal if refusal
+
+      pc = info[:object]
+      normalised = self.class.normalise_username(username)
+      key = AccessIdentities.lockout_key(pc['id'], username)
+      if login_lockouts.include?(key)
+        # Ops log L1b: a refusal that saves nothing else, so it saves only when the row stored
+        r = write_log_row!('signin_refused', as: { typed: username.to_s }, where: { kind: 'pc', id: pc['id'].to_s },
+                                              result: 'blocked', save_limit: true)
+        save! if r&.stored?
+        return login_locked_out_answer
+      end
+
+      npc = account_for_username(normalised)
+      secret = npc && (resets_held? ? effective_password(npc) : npc['creds']['password'])
+      if secret.is_a?(String) && !secret.empty? && password.to_s == secret
+        unless pc_admits_account?(pc, npc)
+          # Ops log L1b: a right password the PC does not admit; saves only when the row stored
+          kind = refusing_account_kind(pc, npc) # S5c
+          r = write_log_row!('signin_refused', as: { account: npc['creds']['username'] },
+                                                where: { kind: 'pc', id: pc['id'].to_s }, result: 'denied',
+                                                detail: kind ? { 'kind' => kind } : nil,
+                                                save_limit: true)
+          save! if r&.stored?
+          return { status: :unprocessable_entity,
+                   body: { success: false, message: LOGIN_NOT_PERMITTED, notPermitted: true } }
+        end
+
+        # Multi-factor sign-in (S8a): a right password owes a second step when the policy asks for one
+        step = mfa_step_for(pc, npc)
+        unless step == 'none'
+          return issue_mfa_challenge!(pc, npc, step, foothold: foothold, from: from, from_given: from_given)
+        end
+
+        login_failures.delete(key)
+        from = from_given ? from : nil
+        note_typed_sign_in!(npc['id']) if resets_held?
+        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
+        save!
+        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
+        return { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
+      end
+
+      record_login_failure!(pc, key, account: !npc.nil?)
+    end
+
+    # The route half of attempt_login!: the refusal Hash a typed sign-in meets before any
+    # credential is read, or nil when the route is open (same answers, same order).
+    def typed_route_refusal(info, foothold:, from:, from_given:)
+      unreachable = { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
       if from_given
         return credential_login_refusal if foothold || !credentials_declared?
 
@@ -3649,39 +3778,7 @@ module BreakEscape
         return pc_off_answer
       end
 
-      pc = info[:object]
-      normalised = self.class.normalise_username(username)
-      key = "#{pc['id']}|#{normalised}"
-      if login_lockouts.include?(key)
-        # Ops log L1b: a refusal that saves nothing else, so it saves only when the row stored
-        r = write_log_row!('signin_refused', as: { typed: username.to_s }, where: { kind: 'pc', id: pc['id'].to_s },
-                                              result: 'blocked', save_limit: true)
-        save! if r&.stored?
-        return login_locked_out_answer
-      end
-
-      npc = account_for_username(normalised)
-      secret = npc && npc['creds']['password']
-      if secret.is_a?(String) && !secret.empty? && password.to_s == secret
-        unless pc_admits_account?(pc, npc)
-          # Ops log L1b: a right password the PC does not admit; saves only when the row stored
-          r = write_log_row!('signin_refused', as: { account: npc['creds']['username'] },
-                                                where: { kind: 'pc', id: pc['id'].to_s }, result: 'denied',
-                                                save_limit: true)
-          save! if r&.stored?
-          return { status: :unprocessable_entity,
-                   body: { success: false, message: LOGIN_NOT_PERMITTED, notPermitted: true } }
-        end
-
-        login_failures.delete(key)
-        from = from_given ? from : nil
-        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
-        save!
-        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
-        return { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
-      end
-
-      record_login_failure!(pc, key, account: !npc.nil?)
+      nil
     end
 
     # A storyPath's text for OwnerClaim: the compiled story GamesController#ink serves (not
@@ -3759,7 +3856,7 @@ module BreakEscape
       creds = npc.is_a?(Hash) ? npc['creds'] : nil
       return false unless creds.is_a?(Hash) && creds['username'].present?
 
-      Array(player_state['loginLockouts']).include?("#{pc_id}|#{self.class.normalise_username(creds['username'])}")
+      Array(player_state['loginLockouts']).include?(AccessIdentities.lockout_key(pc_id, creds['username']))
     end
 
     # Sub-slice L review R1 M1 (orchestrator decision): the sign-in PCs where the server holds a
@@ -3770,7 +3867,7 @@ module BreakEscape
       list = player_state['loginLockouts']
       return [] unless list.is_a?(Array)
 
-      list.filter_map { |k| k.is_a?(String) && k.include?('|') ? k.split('|', 2).first : nil }
+      list.filter_map { |k| AccessIdentities.lockout_key_parts(k)&.first }
           .uniq.select { |pc| find_login_pc(pc) }
     end
 
@@ -4061,7 +4158,8 @@ module BreakEscape
 
       encountered = Array(player_state['encounteredNPCs'])
       account_npcs.select do |npc|
-        pc_admits_account?(pc, npc) && (picker != 'known' || encountered.include?(npc['id']))
+        !AccessIdentities.account_only?(npc) && # S5c: no tile for an account with no person behind it
+          pc_admits_account?(pc, npc) && (picker != 'known' || encountered.include?(npc['id']))
       end.map do |npc|
         {
           'username' => npc['creds']['username'],
@@ -4627,7 +4725,7 @@ module BreakEscape
 
     # A failure key ("pcId|username") belongs to a real account.
     def account_login_key?(key, account_usernames)
-      account_usernames.include?(key.to_s.split('|', 2).last)
+      account_usernames.include?(AccessIdentities.lockout_key_parts(key)&.last)
     end
 
     def account_usernames
@@ -4651,7 +4749,7 @@ module BreakEscape
       count = failures[key]['n']
       max = login_max_attempts(pc)
       # Ops log L1b: the typed username as the key holds it (normalised); this method saves
-      write_log_row!('signin_fail', as: { typed: key.to_s.split('|', 2).last.to_s },
+      write_log_row!('signin_fail', as: { typed: AccessIdentities.lockout_key_parts(key)&.last.to_s },
                                     where: { kind: 'pc', id: pc['id'].to_s }, result: 'fail')
       if max && count >= max
         add_login_lockout!(key, account: account)
@@ -4685,7 +4783,7 @@ module BreakEscape
       return if lockouts.include?(key)
 
       # Ops log L1b: one per lockout; record_login_failure! saves
-      pc_part, typed_part = key.to_s.split('|', 2)
+      pc_part, typed_part = AccessIdentities.lockout_key_parts(key)
       write_log_row!('signin_lockout', as: { typed: typed_part.to_s }, where: { kind: 'pc', id: pc_part.to_s })
 
       unless account
@@ -4932,7 +5030,7 @@ module BreakEscape
     # Unlock validation
     # card_ids: every card id the client holds, sent for an rfid lock with an access list
     # (access model 4.1); nil when the client sent none.
-    def validate_unlock(target_type, target_id, attempt, method, card_ids: nil)
+    def validate_unlock(target_type, target_id, attempt, method, card_ids: nil, resolved: nil)
       Rails.logger.info "[BreakEscape] validate_unlock: type=#{target_type}, id=#{target_id}, attempt=#{attempt}, method=#{method}"
 
       if target_type == 'door'
@@ -5029,15 +5127,31 @@ module BreakEscape
           return false
         end
 
-        # Check if already unlocked in player state (grants access regardless of method)
-        if object_unlocked?(target_id)
+        # Second step (S8c): a target the caller already resolved is used as given, and is
+        # refused as an invented id would be when it sits behind a closed gated container or
+        # is a carried gated object that has left the player.
+        resolved_object = resolved.is_a?(Hash) ? resolved[:object] : nil
+        if resolved_object
+          resolved_path = resolved[:path]
+          if behind_closed_step?(resolved_path) || !carried_step_reachable?(resolved_object, resolved_path) ||
+             step_room_unreached?(resolved_object, resolved_path)
+            Rails.logger.warn "[BreakEscape] Refused unlock of #{target_id}: behind a closed step, out of reach or in an unopened room"
+            return false
+          end
+        end
+        step_gated_closed = resolved_object && second_step_ids.include?(resolved_object['id'].to_s) &&
+                            !step_object_open?(resolved_object)
+
+        # Check if already unlocked in player state (grants access regardless of method);
+        # off for a gated object whose step is not open
+        if !step_gated_closed && object_unlocked?(target_id)
           Rails.logger.info "[BreakEscape] Object already unlocked in player state, granting access"
           return true
         end
 
         # Find object in all rooms - check id, name, or generated client ID, and recurse into
         # nested container contents (a locked archive sitting inside a pc/desktop container).
-        object = find_scenario_object(target_id)
+        object = resolved_object || find_scenario_object(target_id)
 
         if object
           Rails.logger.info "[BreakEscape] Found object: id=#{object['id']}, name=#{object['name']}, locked=#{object['locked']}, requires=#{object['requires']}"
@@ -5203,6 +5317,11 @@ module BreakEscape
     # generated id (roomId_type_index), as validate_unlock does. Recurses into nested
     # container `contents` so a locked archive inside a pc/desktop container resolves.
     def find_scenario_object(target_id)
+      # Second step (S8c): with gated objects in the scenario, the lookup goes through
+      # resolve_unlock_target (the first match by id, name or generated id, as the plain walk
+      # below), which also judges what sits below a closed gated container
+      return resolve_unlock_target(target_id)&.dig(:object) unless second_step_ids.empty?
+
       scenario_data['rooms']&.each do |room_id, room|
         room['objects']&.each_with_index do |obj, index|
           found = find_object_in_contents(obj, target_id, "#{room_id}_#{obj['type']}_#{index}")
@@ -6466,13 +6585,17 @@ module BreakEscape
     def scenario_npc_ids
       ids = Set.new
       if has_attribute?(:scenario_data)
-        scenario_npc_records.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) }
+        scenario_npc_records.each do |npc|
+          ids << npc['id'] if npc['id'].is_a?(String) && !AccessIdentities.account_only?(npc)
+        end
       else
         # sync_state's narrow load leaves scenario_data out; read just the ids:
         # room NPCs, and the headless records' ids (social.characters.*.channels.email
         # where the character has an emailRecord; see headless_npc_records)
         # (9.5-safe: no jsonpath; see narrow_room_npc_stubs)
-        narrow_room_npc_stubs.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? }
+        narrow_room_npc_stubs.each do |npc|
+          ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? && !AccessIdentities.account_only?(npc)
+        end
         social = self.class.where(id: id).pick(Arel.sql("scenario_data -> 'social'"))
         social = JSON.parse(social) if social.is_a?(String)
         self.class.headless_npc_records('social' => social).each do |rec|
@@ -7514,9 +7637,40 @@ module BreakEscape
       node
     end
 
+    # Ids of the scenario's account-only NPCs, built once per scenario copy (the filter below runs
+    # for every object of every answer).
+    def account_only_npc_ids
+      data = has_attribute?(:scenario_data) ? scenario_data : nil
+      return Set.new unless data.is_a?(Hash)
+
+      @account_only_ids_memo = nil unless @account_only_ids_memo && @account_only_ids_memo[0].equal?(data)
+      @account_only_ids_memo ||= [data, self.class.scenario_npc_records(data)
+                                          .select { |npc| AccessIdentities.account_only?(npc) }
+                                          .filter_map { |npc| npc['id'].to_s if npc['id'].is_a?(String) }.to_set]
+      @account_only_ids_memo[1]
+    end
+
+    # S5c: an access list that reaches the browser (an object's, a room's, an item's) never names an
+    # account with no person behind it. The `people` key stays; only those ids go.
+    def strip_account_only_people!(obj)
+      access = obj['access']
+      return unless access.is_a?(Hash) && access['people'].is_a?(Array)
+
+      hidden = account_only_npc_ids
+      return if hidden.empty?
+
+      access['people'] = access['people'].reject { |person| person.is_a?(String) && hidden.include?(person) }
+    end
+
+    # Second step (S8c): a gated object whose step has not opened
+    def step_closed_gated?(obj)
+      obj.is_a?(Hash) && obj['id'].present? && second_step_ids.include?(obj['id'].to_s) && !step_object_open?(obj)
+    end
+
     def filter_requires_and_contents_recursive(obj)
       case obj
       when Hash
+        strip_account_only_people!(obj)
         self.class.strip_puzzle_graph_keys!(obj)
         # A declared grant's contents are served from the held item, never shipped.
         # Deep, because this filter descends only into objects, npcs, contents and the
@@ -7574,7 +7728,8 @@ module BreakEscape
         # Remove 'contents' if locked (lazy-loaded via separate endpoint), but
         # mark it so the client still treats it as a container once unlocked
         # (e.g. remotely, by a flag reward) and fetches the contents
-        if obj['locked'] && obj.key?('contents')
+        # Second step (S8c): a gated object counts as locked until its step is open.
+        if (obj['locked'] || step_closed_gated?(obj)) && obj.key?('contents')
           obj.delete('contents')
           obj['hasContents'] = true
         end
@@ -7714,6 +7869,30 @@ module BreakEscape
         npc['hasFeed'] = true
       else
         npc.delete('hasFeed')
+      end
+    end
+
+    # Every emailRecord under social (characters and mail contacts) is cut to SHIPPED_HABIT_KEYS, the
+    # same allow-list withhold_npc_secrets! applies to a room NPC. Edits the Hash it is given.
+    def withhold_headless_habits!(data)
+      social = data['social']
+      return unless social.is_a?(Hash)
+
+      records = []
+      social['characters'].each_value { |c| records << c['emailRecord'] if c.is_a?(Hash) } if social['characters'].is_a?(Hash)
+      mail = social['mailClient']
+      contacts = mail.is_a?(Hash) ? mail['contacts'] : nil
+      contacts.each { |c| records << c['emailRecord'] if c.is_a?(Hash) } if contacts.is_a?(Array)
+      records.each do |record|
+        next unless record.is_a?(Hash)
+
+        # `awareness` picks the preset prompt habit when none is authored (MfaModel.prompt_habit)
+        record.delete('awareness')
+        next unless record.key?('habits')
+
+        habits = record['habits']
+        kept = habits.is_a?(Hash) ? habits.slice(*SHIPPED_HABIT_KEYS) : {}
+        kept.empty? ? record.delete('habits') : record['habits'] = kept
       end
     end
 

@@ -227,11 +227,17 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                 // minigame reports the method it succeeded with in its result.
                 const usedKey = result?.method === 'key';
                 console.log(`LOCKPICK SUCCESS (method=${usedKey ? 'key' : 'lockpick'})`);
-                window.expectContainerAfterUnlock?.(lockable);
-                if (usedKey) {
-                    window.gameAlert('Successfully unlocked with the correct key!', 'success', 'Unlock Successful', 4000);
-                } else {
-                    window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
+                // A lock with a second step (its data carries `secondStep`, an object's own or its
+                // door's room's) is not open yet: no toast and no container expected
+                const gated = !!(lockable?.scenarioData?.secondStep || lockable?.doorProperties?.secondStep
+                    || window.gameScenario?.rooms?.[lockable?.doorProperties?.connectedRoom]?.secondStep);
+                if (!gated) {
+                    window.expectContainerAfterUnlock?.(lockable);
+                    if (usedKey) {
+                        window.gameAlert('Successfully unlocked with the correct key!', 'success', 'Unlock Successful', 4000);
+                    } else {
+                        window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
+                    }
                 }
                 callback(true, { method: usedKey ? 'key' : 'lockpick' });
             } else {
@@ -477,8 +483,14 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 const successMsg = unlockMethod === 'lockpick'
                     ? 'Successfully picked the lock!'
                     : 'Successfully unlocked with the correct key!';
-                window.expectContainerAfterUnlock?.(lockable, type);
-                window.gameAlert(successMsg, 'success', 'Unlock Successful', 4000);
+                // A lock with a second step (its data carries `secondStep`, an object's own or its
+                // door's room's) is not open yet: no toast and no container expected
+                const gated = !!(lockable?.scenarioData?.secondStep || lockable?.doorProperties?.secondStep
+                    || window.gameScenario?.rooms?.[lockable?.doorProperties?.connectedRoom]?.secondStep);
+                if (!gated) {
+                    window.expectContainerAfterUnlock?.(lockable, type);
+                    window.gameAlert(successMsg, 'success', 'Unlock Successful', 4000);
+                }
                 // Small delay to ensure minigame cleanup completes before room loading
                 if (unlockTargetCallback) {
                     setTimeout(() => {
@@ -1329,6 +1341,45 @@ export function startAuthenticator(params = {}) {
 }
 window.startAuthenticator = startAuthenticator;
 
+// Live authenticator (ops layer S8a): the held phone's real prompts. params { npcId, returnTo, onComplete }.
+export function startAuthenticatorLive(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Authenticator unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    return window.MinigameFramework.startMinigame('authenticator-live', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof params.onComplete === 'function') params.onComplete(success, result);
+        }
+    }));
+}
+window.startAuthenticatorLive = startAuthenticatorLive;
+
+// Code device (ops layer S8a): params { itemId, returnTo, onComplete }. Alone it just closes; as a
+// child (returnTo set) it returns to the sign-in screen.
+export function startCodeDevice(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Code device unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    return window.MinigameFramework.startMinigame('code-device', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof params.onComplete === 'function') params.onComplete(success, result);
+        }
+    }));
+}
+window.startCodeDevice = startCodeDevice;
+
 // Authenticator device (a room object): the push stream is the object's minigameData
 // ({ pushes, approvesAt } or { choice, pushTemplate, defenderNote }, plus optional strings).
 // With setGlobalPrefix, closing the phone writes <prefix>approved (never cleared once true)
@@ -1367,3 +1418,29 @@ export function startPretextPrepMinigame(params = {}) {
     window.MinigameFramework.startMinigame('pretext-prep', null, socialOverlayParams(params));
 }
 window.startPretextPrepMinigame = startPretextPrepMinigame;
+
+// IT request form (ops layer S8b): object type `helpdesk_form`, through the starter registry (the
+// scene registers the type). Takes { deskId, pcId? } from the object's minigameData, from a bare
+// object, or from options (options win); returnTo and onComplete go through as the scene takes them.
+export function startHelpdeskRequest(obj = {}, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Request form unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = obj?.scenarioData?.minigameData || obj?.minigameData || obj || {};
+    const params = { ...options };
+    for (const key of ['deskId', 'pcId']) {
+        if (params[key] === undefined && typeof data[key] === 'string' && data[key]) params[key] = data[key];
+    }
+    return window.MinigameFramework.startMinigame('helpdesk-request', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startHelpdeskRequest = startHelpdeskRequest;

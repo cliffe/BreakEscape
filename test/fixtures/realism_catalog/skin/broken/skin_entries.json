@@ -1,0 +1,11 @@
+{
+  "_": "A catalog that does not validate (an unknown key on an entry), for test/unit/validate_realism_skin_test.rb.",
+  "entries": {
+    "skin_weak_one": {
+      "title": "Quillbox spool queue behind its published updates",
+      "module": "auxiliary/scanner/quillbox/queue_lag_check",
+      "script": "quillbox-queue-lag",
+      "bogus": 1
+    }
+  }
+}

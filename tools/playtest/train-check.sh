@@ -7,7 +7,10 @@
 #
 #   tools/playtest/train-check.sh <worktree> <outdir> <port>
 #   TESTS_LOCK=/path/to/tests.lock tools/playtest/train-check.sh ...   (serialise with other batches;
-#   the default is the shared lock <main checkout>/tmp/tests.lock, which every session uses)
+#   the default is the shared lock <main checkout>/tmp/tests.lock, which every session uses; the main
+#   checkout is the parent of `git rev-parse --git-common-dir`, which works on old and new git)
+#   TRAIN_CHECK_PRINT_LOCK=1 tools/playtest/train-check.sh ...   (dry mode: checks the arguments, prints
+#   TESTS_LOCK=<path or none> and BUNDLE_PATH=<value or (unset)>, exits 0; no lock, server or test)
 #
 # Under the lock it records HEAD, starts a keyless server from the worktree
 # on <port>, makes games for m01_first_contact, sis01_healthcare and sis02_energy, then runs:
@@ -31,7 +34,8 @@
 # Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE (default: the chrome-headless-shell in $HOME/.cache/ms-playwright),
 #      RUBY (the ruby for the validator corpus; default /usr/bin/ruby3.2 if present, else ruby on PATH),
 #      BUNDLE_PATH (default: <main checkout>/vendor/bundle when the worktree has no .bundle/config),
-#      TESTS_LOCK (default: <main checkout>/tmp/tests.lock, shared by every session and worktree;
+#      TESTS_LOCK (default: <main checkout>/tmp/tests.lock, shared by every session and worktree; if the
+#      main checkout cannot be worked out the script exits 2 and asks for TESTS_LOCK;
 #      TESTS_LOCK=none runs unlocked, with a warning in summary.txt and on stderr),
 #      TRAIN_CHECK_JS_JOBS (JS files run at once; default 8, lower it on a loaded machine),
 #      TRAIN_CHECK_SKIP_RAILS=1 / _SKIP_JS=1 / _SKIP_CORPUS=1 for a partial run (summary says SKIPPED;
@@ -43,10 +47,29 @@ set -uo pipefail
 
 if [ "$#" -ne 3 ]; then echo "usage: $0 <worktree> <outdir> <port>" >&2; exit 2; fi
 WT="$(cd "$1" && pwd)" || exit 2
+# The main checkout: the parent of git's common dir. Old git answers a relative ".git" in the main
+# checkout and an absolute path in a worktree; new git may answer either. Fails closed.
+main_checkout() {
+  local common abs
+  common="$(git -C "$WT" rev-parse --git-common-dir 2>/dev/null)" || common=""
+  case "$common" in
+    "") ;;
+    /*) ;;
+    *) common="$WT/$common" ;;
+  esac
+  abs=""
+  if [ -n "$common" ]; then abs="$(cd "$common" 2>/dev/null && pwd)" || abs=""; fi
+  if [ -z "$abs" ] || [ ! -d "$abs" ]; then
+    echo "cannot work out the main checkout from $WT: set TESTS_LOCK" >&2
+    exit 2
+  fi
+  dirname "$abs"
+}
 # A fresh worktree has no .bundle/config, so bundler would look for gems in the worktree's own
 # vendor/bundle and the server would fail to start. Default to the main checkout's gems.
 if [ -z "${BUNDLE_PATH:-}" ] && [ ! -f "$WT/.bundle/config" ]; then
-  export BUNDLE_PATH="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")/vendor/bundle"
+  MAIN="$(main_checkout)" || exit 2
+  export BUNDLE_PATH="$MAIN/vendor/bundle"
 fi
 mkdir -p "$2" || exit 2
 OUT="$(cd "$2" && pwd)"
@@ -60,12 +83,19 @@ if [ -n "${RUBY:-}" ]; then TC_RUBY="$RUBY"; elif [ -x /usr/bin/ruby3.2 ]; then 
 export TC_RUBY
 
 if [ -z "${TESTS_LOCK:-}" ]; then
-  TESTS_LOCK="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")/tmp/tests.lock"
-  mkdir -p "$(dirname "$TESTS_LOCK")"
+  MAIN="$(main_checkout)" || exit 2
+  TESTS_LOCK="$MAIN/tmp/tests.lock"
+  [ "${TRAIN_CHECK_PRINT_LOCK:-0}" = 1 ] || mkdir -p "$(dirname "$TESTS_LOCK")"
+fi
+if [ "${TRAIN_CHECK_PRINT_LOCK:-0}" = 1 ]; then
+  echo "TESTS_LOCK=$TESTS_LOCK"
+  echo "BUNDLE_PATH=${BUNDLE_PATH:-(unset)}"
+  exit 0
 fi
 if [ "$TESTS_LOCK" != none ]; then
-  exec 9>"$TESTS_LOCK"
-  flock 9
+  exec 9>"$TESTS_LOCK" || { echo "cannot open the lock file $TESTS_LOCK: set TESTS_LOCK" >&2; exit 2; }
+  flock 9 || { echo "cannot take the lock $TESTS_LOCK" >&2; exit 2; }
+  [ "${TRAIN_CHECK_LOCK_ONLY:-0}" = 1 ] && exit 0
 else
   echo "WARNING: TESTS_LOCK=none; another train check or test batch may share the test database" >&2
   NOLOCK_WARN=1

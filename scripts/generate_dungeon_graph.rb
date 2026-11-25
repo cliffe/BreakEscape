@@ -18,13 +18,21 @@ require 'digest'
 # Scenario and ink files are UTF-8: read them so whatever the shell's locale (LANG=C).
 Encoding.default_external = Encoding::UTF_8
 
+require_relative 'validate_cracking'
+require_relative '../lib/break_escape/crack_difficulty'
 require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/cached_accounts'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/mfa_model'
+require_relative '../lib/break_escape/lock_step_model'
+require_relative 'validate_access_work'
+require_relative '../lib/break_escape/helpdesk_model'
+
 require_relative '../lib/break_escape/wearable_model'
 require_relative '../lib/break_escape/scenario_binding'
 
@@ -1755,6 +1763,51 @@ BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
   end
 end
 
+# S7 (offline cracking): a hash record's account gets a `<npcId> password` node. The hash node and each
+# recipe fact's source (a carrying item, a feed post, a flag station with a grant_fact reward) have an edge
+# to it labelled "crack", or "crack (hard)" with the grade. The source edge into the hash node is the
+# held-item edge or the technique grant edge drawn elsewhere. Labels name ids, never a password.
+BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
+  next unless cred_entry['kind'] == 'hash'
+
+  crack_npc = BreakEscape::CredentialModel.account_npc(scenario, cred_entry['account'])
+  crack_hash_node = "cred_#{nid(cid)}"
+  next unless crack_npc && $nodes.key?(crack_hash_node)
+
+  crack_rec = cred_entry['crack'].is_a?(Hash) ? cred_entry['crack'] : {}
+  crack_habits = crack_npc['habits'].is_a?(Hash) ? crack_npc['habits'] : {}
+  crack_grade = [crack_rec['difficulty'], crack_habits['passwordDifficulty']].find { |g| BreakEscape::CrackDifficulty::GRADES.include?(g) }
+  crack_label = crack_grade ? "crack (#{crack_grade})" : 'crack'
+  crack_pw_node = add_node("crackpw_#{nid(crack_npc['id'])}", "#{crack_npc['displayName'] || crack_npc['id']} password", 'key')
+  crack_edge = lambda do |from|
+    add_edge(from, crack_pw_node, label: crack_label) unless $edges.any? { |e| e[:from] == from && e[:to] == crack_pw_node }
+  end
+  crack_edge.call(crack_hash_node)
+
+  facts = crack_rec['facts'].is_a?(Array) ? crack_rec['facts'].grep(String) : []
+  next if facts.empty?
+
+  crack_reveal_items(scenario).each do |entry|
+    item = entry[:item]
+    next unless item['id'].is_a?(String) && !item['id'].empty? && (Array(item['revealsFacts']) & facts).any?
+
+    crack_edge.call(add_node("cred_src_#{nid(item['id'])}", scrub_label((item['name'] || item['id']).to_s), 'item'))
+  end
+  BreakEscape::CredentialModel.room_npcs(scenario).each do |feed_npc|
+    BreakEscape::AccessWork.feed_posts(feed_npc).each do |post|
+      next unless post['fact'].is_a?(String) && facts.include?(post['fact'].delete_prefix('se_intel_'))
+
+      crack_edge.call(add_node("crack_feed_#{nid(feed_npc['id'])}_#{nid(post['id'])}", scrub_label("#{feed_npc['displayName'] || feed_npc['id']} feed post #{post['id']}"), 'key'))
+    end
+  end
+  crack_hashes_with(scenario, 'flagRewards').each do |holder|
+    node = holder[:node]
+    next unless Array(node['flagRewards']).any? { |r| r.is_a?(Hash) && r['type'] == 'grant_fact' && facts.include?(r['fact']) }
+
+    crack_edge.call(add_node("crack_flag_#{nid(node['id'] || node['name'])}", scrub_label("#{node['name'] || node['id']} flag"), 'key'))
+  end
+end
+
 # N15 (S3, plan 9.3): technique cards. `tech_<techniqueId>` is a key node (the registry entry's name) with an edge
 # to every weakness it matches (NetworkModel.technique_matches?); each carrying item is a source node drawn as a
 # held-credential source is (`cred_src_<itemId>`, shared with a `held` proof or an `item` need on the same item).
@@ -1815,7 +1868,7 @@ end
 # an edge from each `creds.admin` account the PC admits (from that account's sign-in node, as the habit edges
 # are drawn) and from each weakness on the PC's host whose session grant has `access: "admin"` (that weakness
 # keeps its `grants session` edge to the lock). A scenario with neither draws no such node. Labels name the PC,
-# never a password. No hash-record or "collect" edges (S5b).
+# never a password. The hash-record "collect" edges (S5b) are drawn after this block.
 admin_pcs = {} # pc id => { pc:, from: [node ids] }
 admin_rec_for = lambda do |lock_entry|
   pc = lock_entry[:lock]
@@ -1855,6 +1908,220 @@ admin_pcs.each do |pc_id, rec|
   pc_label = rec[:pc]['name'].is_a?(String) && !rec[:pc]['name'].strip.empty? ? rec[:pc]['name'] : pc_id
   add_node(admin_id, "#{pc_label}<br/>Administrator session", 'key')
   rec[:from].uniq.each { |from| add_edge(from, admin_id, label: 'administrator') }
+end
+
+# S5b (cached accounts, dungeon graph): a sign-in PC's `cachedAccounts` each reach the account's hash record
+# (the one `proof: { harvested: <pcId> }` record, found by CachedAccounts.hash_record_id) by an edge from
+# `admin@<pcId>` labelled "collect". An entry with `after: "borrow"` also gets an edge from the account's own
+# `borrow_session` workaround at that PC (the action node drawn above), labelled "borrow". An account with no
+# hash record draws nothing. A scenario without `cachedAccounts` draws nothing. Labels name ids, never a password.
+def draw_cached_account_edges(scenario, rooms)
+  aw_c = BreakEscape::AccessWork
+  cached_pcs = BreakEscape::AccessIdentities.locks(scenario).select do |l|
+    l[:kind] == 'login' && l[:lock].is_a?(Hash) && l[:lock]['id'].is_a?(String) && !BreakEscape::CachedAccounts.candidates(l[:lock]).empty?
+  end
+  return if cached_pcs.empty?
+
+  aw_c.with_index(scenario) do
+    cached_pcs.each do |lock_entry|
+      pc = lock_entry[:lock]
+      BreakEscape::CachedAccounts.candidates(pc).each do |cand|
+        hash_id = BreakEscape::CachedAccounts.hash_record_id(scenario, pc['id'], cand['npc'])
+        hash_node = hash_id && "cred_#{nid(hash_id)}"
+        next unless hash_node && $nodes.key?(hash_node)
+
+        admin_id = "admin@#{pc['id']}"
+        unless $nodes.key?(admin_id)
+          pc_label = pc['name'].is_a?(String) && !pc['name'].strip.empty? ? pc['name'] : pc['id']
+          add_node(admin_id, "#{pc_label}<br/>Administrator session", 'key')
+        end
+        add_edge(admin_id, hash_node, label: 'collect') unless $edges.any? { |e| e[:from] == admin_id && e[:to] == hash_node }
+        next unless cand['after'] == 'borrow'
+
+        npc = BreakEscape::CredentialModel.account_npc(scenario, cand['npc'])
+        next unless npc
+
+        aw_c.workarounds(scenario, npc).each_with_index do |w, i|
+          next unless w['do'] == 'borrow_session' && w['pc'] == pc['id']
+
+          from = "workaround_#{nid(npc['id'])}_#{i}"
+          add_edge(from, hash_node, label: 'borrow') if $nodes.key?(from) && $edges.none? { |e| e[:from] == from && e[:to] == hash_node }
+        end
+      end
+    end
+  end
+end
+draw_cached_account_edges(scenario, rooms)
+
+# S8a unit 11 (MFA plan, dungeon graph): a sign-in lock under a policy with an `mfa` kind gets a second key
+# edge per admitted, enrolled account (`creds.mfa` not false; an exempt account gets none). `code`: the
+# account's `code_device` item (the `cred_src_<id>` node, as other held items). `push`: the owner's phone
+# item when one is declared, else an "owner approves" node when the owner's habit resolves to pestered or
+# always. `push_number_match`: the phone item only. Labels name the step, never a code, number or password.
+mfa_graph = BreakEscape::MfaModel
+mfa_item_node = lambda do |item|
+  next nil unless item.is_a?(Hash) && item['id'].is_a?(String) && !item['id'].empty?
+
+  add_node("cred_src_#{nid(item['id'])}", scrub_label((item['name'] || item['id']).to_s), 'item')
+end
+mfa_phone_for = lambda do |npc_id|
+  found = mfa_graph.each_authored_item(scenario).find do |e|
+    e[:item]['type'] == 'phone_friendface' && e[:item]['owner'] == npc_id
+  end
+  found && found[:item]
+end
+BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
+  npc = account[:npc]
+  next unless mfa_graph.enrolled?(npc)
+
+  account[:opens].each do |lock_entry|
+    next unless lock_entry[:kind] == 'login'
+
+    kind = mfa_graph.kind(BreakEscape::CredentialModel.policy_for(scenario, lock_entry[:lock]))
+    next if kind == 'none'
+
+    lock_node = access_lock_node(lock_entry, rooms)
+    sources = []
+    case kind
+    when 'code'
+      sources << mfa_item_node.call(mfa_graph.device_for(scenario, npc['id']))
+    when 'push'
+      phone = mfa_phone_for.call(npc['id'])
+      if phone
+        sources << mfa_item_node.call(phone)
+      elsif %w[pestered always].include?(mfa_graph.prompt_habit(npc, scenario))
+        sources << add_node("mfa_approve_#{nid(lock_entry[:lock]['id'])}_#{nid(npc['id'])}",
+                            "owner approves (#{mfa_graph.prompt_habit(npc, scenario)})", 'key')
+      end
+    when 'push_number_match'
+      sources << mfa_item_node.call(mfa_phone_for.call(npc['id']))
+    end
+    sources.compact.each do |src|
+      add_edge(src, lock_node, label: 'second step') unless $edges.any? { |e| e[:from] == src && e[:to] == lock_node }
+    end
+  end
+end
+
+# S8c unit 07 (lock second step, dungeon graph): a lock whose object or room carries `secondStep` gets a
+# second edge into its lock node from the owner's NPC node, labelled with the kind (`push`,
+# `push_number_match` or `code`). When the step can never pass (LockStepModel.lock_step_never_passes?) the
+# edge is dashed and labelled "never passes". Nothing is drawn when the owner is unknown. Labels name the
+# step only, never a code, number, password or PIN. A scenario without the field draws as before.
+lock_step_find_room = lambda do |npc_id|
+  rooms.find { |_rid, r| r.is_a?(Hash) && Array(r['npcs']).any? { |n| n.is_a?(Hash) && n['id'] == npc_id } }&.first
+end
+BreakEscape::LockStepModel.each_lock_step(scenario).each do |entry|
+  owner = entry[:step]['owner']
+  next unless owner
+
+  lockable = entry[:lockable]
+  if entry[:kind] == :door
+    lock_node = "door_#{entry[:id]}"
+    next unless $nodes.key?(lock_node)
+  else
+    obj_id = entry[:id] || nid((lockable['name'] || lockable['type']).to_s)
+    lock_node = "lock_#{obj_id}"
+    unless $nodes.key?(lock_node)
+      next unless lockable['locked']
+
+      obj_name = lockable['name'] || obj_id.tr('_', ' ').split.map(&:capitalize).join(' ')
+      add_node(lock_node, scrub_label("#{obj_name}<br/>#{LOCK_TYPE_LABELS[lockable['lockType']] || 'Lock'}"), 'lock')
+      add_edge(entry[:room], lock_node) if entry[:room] && rooms.key?(entry[:room]) &&
+                                           add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]]), 'room')
+    end
+  end
+
+  npc = BreakEscape::LockStepModel.find_npc(scenario, owner)
+  display = npc ? (npc['displayName'] || npc['name'] || owner) : owner
+  npc_node = add_node("npc_#{nid(display)}", scrub_label(display.to_s), 'key')
+  npc_room = lock_step_find_room.call(owner)
+  if npc_room && !$edges.any? { |e| e[:to] == npc_node && e[:from] == npc_room }
+    add_node(npc_room, room_label(npc_room, rooms[npc_room]), 'room')
+    add_edge(npc_room, npc_node)
+  end
+
+  # The same story-file block as scripts/validate_lock_step.rb, so the graph and the validator agree on what
+  # ink hands over; falls back to the scenario folder's own ink/ when the repo-relative path is missing.
+  never = BreakEscape::LockStepModel.lock_step_never_passes?(scenario, lockable) do |story_path|
+    ValidateAccessWork.story_file(story_path) ||
+      [File.join(File.dirname(SCENARIO_FILE), 'ink', File.basename(story_path.to_s)),
+       File.join(File.dirname(SCENARIO_FILE), 'ink', File.basename(story_path.to_s).sub(/\.json\z/, '.ink'))]
+        .find { |f| File.file?(f) }
+  end
+  label = never ? 'never passes' : "second step: #{entry[:step]['kind']}"
+  next if $edges.any? { |e| e[:from] == npc_node && e[:to] == lock_node && e[:label] == label }
+
+  add_edge(npc_node, lock_node, dashed: never, label: label)
+end
+
+# S8b unit 06 (helpdesk plan, dungeon graph): a desk that covers an account (HM.covers?) draws one grant node per
+# thing it resets, labelled with the desk NPC's name. A `password` grant is a key source for every sign-in lock
+# that admits the account. An `mfa` grant is a source for that account's `second step` edge, beside the device or
+# phone edge. The grant's own requirements: the desk NPC's room; for `questions`, the readable homes of the
+# recovery answers (the clue walk, `NpcHabits::Clues.readable_texts`); for `callback`, the owner's phone item.
+# No answer, password or code is in any label. A scenario with no `helpdesks` draws nothing here.
+unless BreakEscape::HelpdeskModel.desks(scenario).empty?
+  hm_graph = BreakEscape::HelpdeskModel
+  desk_texts = nil
+  desk_room_of = lambda do |npc_id|
+    found = rooms.find { |_rid, room| room.is_a?(Hash) && Array(room['npcs']).any? { |n| n.is_a?(Hash) && n['id'] == npc_id } }
+    found && found[0]
+  end
+  hm_graph.desks(scenario).each do |desk_id, desk|
+    desk_npc_id = desk['npc']
+    desk_room = desk_room_of.call(desk_npc_id)
+    desk_npc = desk_room && Array(rooms[desk_room]['npcs']).find { |n| n.is_a?(Hash) && n['id'] == desk_npc_id }
+    desk_name = scrub_label((desk_npc && (desk_npc['displayName'] || desk_npc['id']) || desk_npc_id).to_s)
+    BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
+      npc = account[:npc]
+      next if account[:opens].empty?
+
+      sinks = { 'password' => [], 'mfa' => [] }
+      account[:opens].each do |lock_entry|
+        next unless lock_entry[:kind] == 'login'
+
+        sinks['password'] << [access_lock_node(lock_entry, rooms), 'password reset']
+        next unless mfa_graph.enrolled?(npc)
+        next if mfa_graph.kind(BreakEscape::CredentialModel.policy_for(scenario, lock_entry[:lock])) == 'none'
+
+        sinks['mfa'] << [access_lock_node(lock_entry, rooms), 'second step']
+      end
+      %w[password mfa].each do |what|
+        next if sinks[what].empty? || !hm_graph.covers?(desk, npc, what)
+
+        grant = add_node("desk_#{nid(desk_id)}_#{nid(npc['id'])}_#{what}",
+                         "#{desk_name}<br/>resets #{what == 'password' ? 'password' : 'second step'}", 'key')
+        if desk_room
+          add_node(desk_room, room_label(desk_room, rooms[desk_room]), 'room')
+          add_edge(desk_room, grant)
+        end
+        case desk['verify']
+        when 'questions'
+          desk_texts ||= BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE)) +
+                         BreakEscape::NpcHabits::Clues.set_member_texts(scenario)
+          recovery = npc['creds']['recovery'].is_a?(Hash) ? npc['creds']['recovery'] : {}
+          Array(desk['questions']).each do |qid|
+            want = hm_graph.normalise_answer(recovery[qid])
+            next if want.empty?
+
+            desk_texts.select { |t| t[:text].is_a?(String) && hm_graph.normalise_text(t[:text]).include?(want) }
+                      .uniq { |t| t[:path] }.each do |t|
+              source = t[:room] ? t : t.merge(room: account[:room], locks: [])
+              clue = clue_node_for.call(source, scrub_label((t[:name] || 'note').to_s))
+              add_edge(clue, grant, label: 'answer') unless $edges.any? { |e| e[:from] == clue && e[:to] == grant }
+            end
+          end
+        when 'callback'
+          phone = mfa_phone_for.call(npc['id'])
+          src = phone && mfa_item_node.call(phone)
+          add_edge(src, grant, label: 'callback') if src && $edges.none? { |e| e[:from] == src && e[:to] == grant }
+        end
+        sinks[what].each do |lock_node, label|
+          add_edge(grant, lock_node, label: label) unless $edges.any? { |e| e[:from] == grant && e[:to] == lock_node }
+        end
+      end
+    end
+  end
 end
 
 # N14 (S2, plan 9.3, Need row): an edge into each weakness from the node of what it needs, drawn here

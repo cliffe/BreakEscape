@@ -845,6 +845,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             // aw2: the pretext the learner chose, so the flip can quote back a per-choice defender
             // line (strings.flipDefenderLineByChoice). A call has no pretext template; null there.
             templateId: this.state.sent?.templateId ?? null,
+            globals: this.globals,
             onContinue: () => this._flipContinue()
         });
         this._prependPrompt('flip');

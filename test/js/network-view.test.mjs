@@ -34,6 +34,17 @@ copy('utils/sync-before-fetch.js');
 copy('systems/network-links.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/network-view/ops-model.js');
+copy('minigames/network-view/view-texts.js');
+copy('minigames/network-view/view-controls.js');
+copy('minigames/network-view/network-view-panels.js');
+copy('minigames/network-view/terminal-grammar.js');
+copy('minigames/network-view/terminal-format.js');
+copy('minigames/network-view/skin-choice.js');
+copy('minigames/network-view/network-view-terminal.js');
+copy('minigames/network-view/cli-gen/defaults.js');
+copy('minigames/network-view/cli-gen/scanner-output.js');
+copy('minigames/network-view/cli-gen/framework-console.js');
+copy('minigames/network-view/cli-gen/registry.js');
 copy('minigames/network-view/network-view-minigame.js');
 copy('utils/compromise-bolt.js');
 

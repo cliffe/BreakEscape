@@ -1,0 +1,18 @@
+{
+  "entries": {
+    "sample_note": {
+      "title": "SMB/CIFS and Read/Write/Execute access",
+      "module": "auxiliary/gather/quillmark/sample_note",
+      "script": "quillmark-sample",
+      "advisories": [
+        "CVE-0000-11111"
+      ],
+      "output": [
+        "Anonymous login: allowed",
+        "Weak TLS 1.0 enabled",
+        "HTTP/1.1 and TCP/IP in use",
+        "timeout=30 on the file server"
+      ]
+    }
+  }
+}

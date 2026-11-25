@@ -98,11 +98,18 @@ const str = (strings, key) => (strings && typeof strings[key] === 'string' && st
  * quotes back the lever the learner pulled; otherwise the single flipDefenderLine (then DEFAULT).
  * The map is keyed by template id, so one episode can carry a line per pretext branch.
  */
-export function defenderLine(strings, templateId, noSpray = false, hostId = null) {
+export function defenderLine(strings, templateId, noSpray = false, hostId = null, globals = null) {
     if (noSpray === true && isStr(strings?.flipDefenderLineNoSpray)) return strings.flipDefenderLineNoSpray;
     // A fake-check page can follow the host the learner chose (flipDefenderLineByHost[hostId]).
     const byHost = isObj(strings) ? strings.flipDefenderLineByHost : null;
     if (isObj(byHost) && isStr(hostId) && isStr(byHost[hostId])) return byHost[hostId];
+    // CA pilots (E5): an ordered list of { global, line }; the first entry whose global is truthy wins.
+    const byGlobal = isObj(strings) ? strings.flipDefenderLineByGlobal : null;
+    if (Array.isArray(byGlobal) && isObj(globals)) {
+        for (const e of byGlobal) {
+            if (isObj(e) && isStr(e.global) && isStr(e.line) && globals[e.global]) return e.line;
+        }
+    }
     const byChoice = isObj(strings) ? strings.flipDefenderLineByChoice : null;
     if (isObj(byChoice) && isStr(templateId) && isStr(byChoice[templateId])) return byChoice[templateId];
     return str(strings, 'flipDefenderLine');
@@ -174,7 +181,7 @@ function renderMontage(root, container, { beats, flipBeat, strings, onContinue }
     };
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, guess = false, noSpray = false, missed = false, landedNoTells = false, templateId = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
+export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, guess = false, noSpray = false, missed = false, landedNoTells = false, templateId = null, globals = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
     if (montage === true) {
         const own = isStr(strings?.flipHeading) ? strings.flipHeading : DEFAULTS.flipMontageHeading;
@@ -332,7 +339,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
     }
 
     if (parts.length) {
-        root.appendChild(el('p', 'aw-defender-line', defenderLine(strings, templateId, hasGuess && noSpray, hasPage ? page.hostId : null)));
+        root.appendChild(el('p', 'aw-defender-line', defenderLine(strings, templateId, hasGuess && noSpray, hasPage ? page.hostId : null, globals)));
     } else if (missed || landedNoTells) {
         const landed = !missed && landedNoTells;
         parts.push(landed ? 'landedNoTells' : 'missed');

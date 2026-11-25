@@ -109,7 +109,9 @@ function formatAsk(row, spec, at) {
     if (typeof ask.floor === 'number') bits.push(`needs ${ask.floor} or better`);
     bits.push(`now at ${typeof at === 'number' ? at : 0}`);
     const sentence = spec?.tells?.ask?.[key];
-    const tail = typeof sentence === 'string' && sentence ? ` ${sentence}` : '';
+    // An ask that opened a helpdesk form says it went through only once a request was answered
+    const unsent = row.helpdesk && row.sent !== true;
+    const tail = typeof sentence === 'string' && sentence && !unsent ? ` ${sentence}` : '';
     return `${label}  ${bits.join(', ')}.${tail}`;
 }
 

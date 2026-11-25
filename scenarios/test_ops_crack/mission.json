@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops crack",
+  "description": "Test of hash records and the offline cracker (S7, feature A21): stored account records collected from a share, a technique grant and an administrator's profile, then cracked from what the player has earned about the account's owner. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 30,
+  "test_type": "ops_crack",
+  "test_objective": "Prove a hash row appears when its record is held, the cracker offers only earned facts, a salted guess costs a wait and a strong password is a dead end, a reused password cracks from the one already held, a common one cracks at once with its unsalted twin, and a cracked password signs in like any other"
+}

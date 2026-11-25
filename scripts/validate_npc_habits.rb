@@ -15,12 +15,17 @@
 # BreakEscape::NpcHabits.expanded_copy(json_data) returns. No line ever quotes a password or
 # any text from one: pieces are named by position and kind, sources by path.
 require_relative '../lib/break_escape/scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
+require_relative '../lib/break_escape/crack_difficulty' unless defined?(BreakEscape::CrackDifficulty)
 require_relative '../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
+require_relative '../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 
 module ValidateNpcHabits
   NH = BreakEscape::NpcHabits
   AI = BreakEscape::AccessIdentities
   CL = BreakEscape::NpcHabits::Clues
+
+  # MFA plan S8a: read raw by MfaModel; not habits of the awareness table
+  MFA_KEYS = %w[approvesPrompts promptPatience].freeze
 
   module_function
 
@@ -84,6 +89,13 @@ module ValidateNpcHabits
         err(issues, "'#{path}' has '#{field}', which is allowed only on room NPCs (rooms.<id>.npcs[]): other NPC " \
                     'records reach the browser unfiltered.')
       end
+      next unless npc['habits'].is_a?(Hash)
+
+      MFA_KEYS.each do |key|
+        next unless npc['habits'].key?(key)
+
+        err(issues, "'#{path}' has habits.#{key}, which is allowed only on room NPCs (rooms.<id>.npcs[]).")
+      end
     end
   end
 
@@ -126,11 +138,28 @@ module ValidateNpcHabits
       habits.each do |name, value|
         next if name.to_s.start_with?('_')
 
-        if NH::PARAMETERS.include?(name)
+        if name == 'approvesPrompts'
+          unless BreakEscape::MfaModel::PROMPT_HABITS.include?(value)
+            err(issues, "#{who} habits.approvesPrompts has value #{value.inspect}; allowed: #{BreakEscape::MfaModel::PROMPT_HABITS.map(&:inspect).join(', ')}.")
+          end
+        elsif name == 'promptPatience'
+          unless value.is_a?(Integer) && value.between?(2, 9)
+            err(issues, "#{who} habits.promptPatience has value #{value.inspect}; it must be a whole number from 2 to 9.")
+          end
+        elsif NH::PARAMETERS.include?(name)
           err(issues, "#{who} habits.#{name} must be a non-empty string.") unless NH.valid_parameter?(name, value)
         elsif NH::HABITS.key?(name) && !NH.valid_habit?(name, value)
           err(issues, "#{who} habit '#{name}' has value #{value.inspect}; allowed: #{NH::HABITS[name].map(&:inspect).join(', ')}.")
         end
+      end
+      grade = habits['passwordDifficulty']
+      if habits.key?('passwordDifficulty') && NH.valid_parameter?('passwordDifficulty', grade) &&
+         !BreakEscape::CrackDifficulty::GRADES.include?(grade)
+        err(issues, "#{who} habits.passwordDifficulty '#{grade}' is not one of " \
+                    "#{BreakEscape::CrackDifficulty::GRADES.join(', ')}.")
+      end
+      if habits.key?('passwordDifficulty') && !habits.key?('password')
+        warn(issues, "#{who} passwordDifficulty has no effect without a password habit")
       end
       pattern = habits['passwordPattern']
       if NH.valid_parameter?('passwordPattern', pattern) && CL.find_object(json_data, pattern).nil? &&

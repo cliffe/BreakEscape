@@ -1,0 +1,297 @@
+{
+  "footholds": [
+    {
+      "id": "jack_office_port",
+      "via": "jack",
+      "name": "Drop box: Office",
+      "itemId": "netlink_office_port",
+      "sourceId": "office_port",
+      "network": {
+        "id": "office_lan",
+        "name": "Office network"
+      },
+      "hosts": [
+        {
+          "id": "files01",
+          "kind": "pc",
+          "name": "File server",
+          "host": "FILES01",
+          "sprite": "pc_desktop",
+          "headless": true,
+          "remoteSignIn": true,
+          "address": "10.20.0.10",
+          "scanned": true,
+          "services": [
+            {
+              "name": "storage",
+              "port": 445,
+              "product": "Tarnwick FileHold",
+              "version": "4.2",
+              "cli": {
+                "protocol": "tcp",
+                "service": "filehold",
+                "banner": "Tarnwick FileHold 4.2 file service ready"
+              }
+            }
+          ],
+          "findings": [
+            {
+              "id": "files01.storage.entry_a",
+              "alias": "f1",
+              "hostId": "files01",
+              "service": "storage",
+              "class": "unpatched",
+              "severity": "high",
+              "summary": "The storage service is behind its published fixes.",
+              "status": "unconfirmed",
+              "cli": {
+                "title": "Storage service behind its fixes",
+                "module": "training/filehold/update_lag",
+                "script": "filehold-update-lag"
+              }
+            },
+            {
+              "id": "files01.storage.entry_b",
+              "alias": "f2",
+              "hostId": "files01",
+              "service": "storage",
+              "class": "unpatched",
+              "severity": "high",
+              "summary": "The service reports an older build number.",
+              "status": "unconfirmed",
+              "cli": {
+                "title": "Storage release line reported old",
+                "module": "training/filehold/release_line",
+                "script": "filehold-release-line"
+              }
+            },
+            {
+              "id": "files01.storage.entry_c",
+              "alias": "f3",
+              "hostId": "files01",
+              "service": "storage",
+              "class": "misconfig",
+              "severity": "medium",
+              "summary": "A setting on the storage service was left open.",
+              "status": "unconfirmed",
+              "cli": {
+                "title": "Storage link setting left open",
+                "module": "training/filehold/link_setting",
+                "script": "filehold-link-setting"
+              }
+            }
+          ]
+        },
+        {
+          "id": "records01",
+          "kind": "pc",
+          "name": "Records server",
+          "host": "RECORDS01",
+          "sprite": "pc_desktop",
+          "headless": true,
+          "remoteSignIn": false
+        },
+        {
+          "id": "office_drop",
+          "kind": "file_share",
+          "name": "Office-Drop",
+          "host": "OFFICE-FS",
+          "open": true
+        },
+        {
+          "id": "floor_printer",
+          "kind": "printer",
+          "name": "Floor print queue",
+          "host": "OFFICE-PRN",
+          "open": true,
+          "observations": "A print queue anyone on the network can read."
+        }
+      ],
+      "networks": [
+        {
+          "id": "office_lan",
+          "name": "Office network",
+          "route": "up",
+          "via": null,
+          "cli": {
+            "range": "10.20.0.0/24"
+          },
+          "hosts": [
+            {
+              "id": "files01",
+              "kind": "pc",
+              "name": "File server",
+              "host": "FILES01",
+              "sprite": "pc_desktop",
+              "headless": true,
+              "remoteSignIn": true,
+              "address": "10.20.0.10",
+              "scanned": true,
+              "services": [
+                {
+                  "name": "storage",
+                  "port": 445,
+                  "product": "Tarnwick FileHold",
+                  "version": "4.2",
+                  "cli": {
+                    "protocol": "tcp",
+                    "service": "filehold",
+                    "banner": "Tarnwick FileHold 4.2 file service ready"
+                  }
+                }
+              ],
+              "findings": [
+                {
+                  "id": "files01.storage.entry_a",
+                  "alias": "f1",
+                  "hostId": "files01",
+                  "service": "storage",
+                  "class": "unpatched",
+                  "severity": "high",
+                  "summary": "The storage service is behind its published fixes.",
+                  "status": "unconfirmed",
+                  "cli": {
+                    "title": "Storage service behind its fixes",
+                    "module": "training/filehold/update_lag",
+                    "script": "filehold-update-lag"
+                  }
+                },
+                {
+                  "id": "files01.storage.entry_b",
+                  "alias": "f2",
+                  "hostId": "files01",
+                  "service": "storage",
+                  "class": "unpatched",
+                  "severity": "high",
+                  "summary": "The service reports an older build number.",
+                  "status": "unconfirmed",
+                  "cli": {
+                    "title": "Storage release line reported old",
+                    "module": "training/filehold/release_line",
+                    "script": "filehold-release-line"
+                  }
+                },
+                {
+                  "id": "files01.storage.entry_c",
+                  "alias": "f3",
+                  "hostId": "files01",
+                  "service": "storage",
+                  "class": "misconfig",
+                  "severity": "medium",
+                  "summary": "A setting on the storage service was left open.",
+                  "status": "unconfirmed",
+                  "cli": {
+                    "title": "Storage link setting left open",
+                    "module": "training/filehold/link_setting",
+                    "script": "filehold-link-setting"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "records01",
+              "kind": "pc",
+              "name": "Records server",
+              "host": "RECORDS01",
+              "sprite": "pc_desktop",
+              "headless": true,
+              "remoteSignIn": false
+            },
+            {
+              "id": "office_drop",
+              "kind": "file_share",
+              "name": "Office-Drop",
+              "host": "OFFICE-FS",
+              "open": true
+            },
+            {
+              "id": "floor_printer",
+              "kind": "printer",
+              "name": "Floor print queue",
+              "host": "OFFICE-PRN",
+              "open": true,
+              "observations": "A print queue anyone on the network can read."
+            }
+          ],
+          "swept": true,
+          "ops": true
+        },
+        {
+          "id": "guest_lan",
+          "name": "Guest network",
+          "route": "up",
+          "via": {
+            "hostId": "files01",
+            "host": "FILES01"
+          },
+          "cli": {
+            "range": "10.40.0.0/28"
+          },
+          "hosts": [
+            {
+              "id": "guest_cam01",
+              "kind": "device",
+              "name": "Guest lounge camera",
+              "sprite": "cctv_camera1",
+              "address": "10.40.0.4",
+              "scanned": true,
+              "services": [
+                {
+                  "name": "stream",
+                  "port": 554,
+                  "product": "Tarnwick ViewLine",
+                  "version": "1.0",
+                  "cli": {
+                    "protocol": "udp",
+                    "service": "viewline",
+                    "banner": "Tarnwick ViewLine 1.0 stream ready"
+                  }
+                }
+              ],
+              "findings": [
+                {
+                  "id": "guest_cam01.stream.entry_d",
+                  "alias": "f4",
+                  "hostId": "guest_cam01",
+                  "service": "stream",
+                  "class": "default_creds",
+                  "severity": "high",
+                  "summary": "A factory account may still be accepted.",
+                  "status": "unconfirmed",
+                  "cli": {
+                    "title": "Stream account left at its default",
+                    "module": "training/viewline/stock_account",
+                    "script": "viewline-stock-account"
+                  }
+                }
+              ]
+            }
+          ],
+          "ops": true
+        }
+      ]
+    }
+  ],
+  "techniques": {
+    "update_notes": {
+      "name": "Update notes: FileHold 4.2",
+      "summary": "For a service that has fallen behind its published fixes.",
+      "worksOn": {
+        "class": "unpatched",
+        "product": "Tarnwick FileHold",
+        "versions": [
+          "4.2"
+        ]
+      },
+      "itemId": "card_update"
+    },
+    "settings_review": {
+      "name": "Settings review",
+      "summary": "For a setting somebody left open by mistake.",
+      "worksOn": {
+        "class": "misconfig"
+      },
+      "itemId": "card_settings"
+    }
+  }
+}

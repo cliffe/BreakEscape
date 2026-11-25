@@ -2,9 +2,11 @@
 # Start a playtest session in the background and expose it as a FIFO pair, so a
 # single long-lived browser can be driven one command per tool call.
 #
-#   tools/playtest/session-start.sh --url <URL> [--flags <XML>] [--speed human] ...
+#   tools/playtest/session-start.sh --url <URL> [--net-skin gui|cli|default] [--flags <XML>] [--speed human] ...
 #
-# Every argument is passed straight through to playtest-session.js. The session
+# Every argument is passed straight through to playtest-session.js, except --net-skin, which
+# adds net_skin=<value> to the URL (Panels, gui, when not given;
+# "default" adds nothing). The session
 # is keyed by the game id in the URL (falling back to the PID), giving each run
 # its own pipe directory so two sessions never cross wires.
 #
@@ -23,14 +25,12 @@ cd "$(dirname "$0")/../.."
 HARNESS=.claude/skills/playtest-scenario/scripts/playtest-session.js
 [ -f "$HARNESS" ] || { echo "harness not found: $HARNESS" >&2; exit 1; }
 
-# Tag from the game id in --url, so the pipes match the run that owns them.
-TAG=
-prev=
-for a in "$@"; do
-  case "$prev" in --url) TAG=$(printf '%s' "$a" | grep -oE '[0-9]+/?$' | tr -d /);; esac
-  case "$a" in --url=*) TAG=$(printf '%s' "${a#--url=}" | grep -oE '[0-9]+/?$' | tr -d /);; esac
-  prev=$a
-done
+# Tag from the game id in --url, so the pipes match the run that owns them. --net-skin gui|cli
+# is taken out here and becomes net_skin=<value> on the URL (see lib/session-args.sh).
+# shellcheck source=lib/session-args.sh
+. tools/playtest/lib/session-args.sh
+session_args_parse "$@" || exit 1
+set -- "${SESSION_ARGS[@]+"${SESSION_ARGS[@]}"}"
 TAG=${TAG:-$$}
 
 DIR=tools/playtest/pipes-$TAG

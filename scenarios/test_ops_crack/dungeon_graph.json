@@ -1,0 +1,580 @@
+{
+  "scenario": "test_ops_crack",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_dana_pc",
+      "label": "Finance desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_eli_pc",
+      "label": "Store desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_dana",
+      "label": "Dana Reyes sign-in<br/>(dreyes)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "bay",
+      "label": "Bay",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_farah",
+      "label": "Farah Nkemelu sign-in<br/>(fnkemelu)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_eli",
+      "label": "Eli Brandt sign-in<br/>(ebrandt)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "store",
+      "label": "Store room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_deskadmin",
+      "label": "Front desk administrator sign-in<br/>(fdadmin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_sparedesk",
+      "label": "Spare desk login sign-in<br/>(spare)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "clue_desk_notes",
+      "label": "Reception notes",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "clue_social_intelfacts_dana_pet",
+      "label": "social/intelFacts/dana pet",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_rooms_bay_npcs_0_feed_posts_0",
+      "label": "rooms/bay/npcs[0]/feed/posts[0]",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_social_intelfacts_dana_town",
+      "label": "social/intelFacts/dana town",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_social_intelfacts_dana_year",
+      "label": "social/intelFacts/dana year",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_it_poster",
+      "label": "IT poster",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_office_port",
+      "label": "Office wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "host_desk_panel",
+      "label": "Front desk panel<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "resource_shared_drive",
+      "label": "Office-Shared<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "weak_desk_panel_admin_page_factory_login",
+      "label": "Front desk panel<br/>Admin page :80<br/>default_creds / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "log_crack_audit",
+      "label": "Office audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_used, share_folder_opened, admin_profile_read, signin_ok, signin_fail",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_audit_log_pc",
+      "label": "Audit log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_dana_hash",
+      "label": "Dana Reyes hash<br/>(dreyes)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_dana_file",
+      "label": "dana_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_deskadmin_hash",
+      "label": "Front desk administrator hash<br/>(fdadmin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_eli_hash",
+      "label": "Eli Brandt hash<br/>(ebrandt)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_eli_hash_file",
+      "label": "eli_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_farah_hash",
+      "label": "Farah Nkemelu hash<br/>(fnkemelu)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_farah_file",
+      "label": "farah_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_sparedesk_hash",
+      "label": "Spare desk login hash<br/>(spare)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_sparedesk_file",
+      "label": "sparedesk_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "crackpw_dana",
+      "label": "Dana Reyes password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_desk_notes",
+      "label": "Reception notes",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "crack_feed_dana_dana_post_1",
+      "label": "Dana Reyes feed post dana_post_1",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crack_flag_records_station",
+      "label": "Flag Submission Terminal flag",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_deskadmin",
+      "label": "Front desk administrator password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_eli",
+      "label": "Eli Brandt password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_farah",
+      "label": "Farah Nkemelu password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_sparedesk",
+      "label": "Spare desk login password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "tech_factory_accounts",
+      "label": "Factory accounts",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_factory",
+      "label": "Field note: shipped accounts",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "admin@dana_pc",
+      "label": "Finance desk PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@eli_pc",
+      "label": "Store desk PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "bay",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "lock_eli_pc",
+      "soft": false
+    },
+    {
+      "from": "bay",
+      "to": "signin_dana",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_eli_pc",
+      "soft": false
+    },
+    {
+      "from": "bay",
+      "to": "signin_farah",
+      "soft": false
+    },
+    {
+      "from": "signin_farah",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_farah",
+      "to": "lock_eli_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_eli",
+      "soft": false
+    },
+    {
+      "from": "signin_eli",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_eli",
+      "to": "lock_eli_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_deskadmin",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "lock_eli_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_sparedesk",
+      "soft": false
+    },
+    {
+      "from": "signin_sparedesk",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_sparedesk",
+      "to": "lock_eli_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "clue_desk_notes",
+      "soft": false
+    },
+    {
+      "from": "clue_desk_notes",
+      "to": "signin_dana",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "clue_social_intelfacts_dana_pet",
+      "to": "signin_dana",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "clue_rooms_bay_npcs_0_feed_posts_0",
+      "to": "signin_dana",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "clue_social_intelfacts_dana_town",
+      "to": "signin_dana",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "clue_social_intelfacts_dana_year",
+      "to": "signin_dana",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "lobby",
+      "to": "clue_it_poster",
+      "soft": false
+    },
+    {
+      "from": "clue_it_poster",
+      "to": "signin_dana",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "signin_dana",
+      "to": "signin_farah",
+      "soft": false,
+      "label": "shared with dana"
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "jack_office_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "host_desk_panel",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_dana_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_eli_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "resource_shared_drive",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "host_desk_panel",
+      "to": "weak_desk_panel_admin_page_factory_login",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "bay",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "store",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "reader_audit_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_crack_audit",
+      "to": "reader_audit_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "cred_src_dana_file",
+      "to": "cred_dana_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_src_eli_hash_file",
+      "to": "cred_eli_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_src_farah_file",
+      "to": "cred_farah_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_src_sparedesk_file",
+      "to": "cred_sparedesk_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_dana_hash",
+      "to": "crackpw_dana",
+      "soft": false,
+      "label": "crack (hard)"
+    },
+    {
+      "from": "cred_src_desk_notes",
+      "to": "crackpw_dana",
+      "soft": false,
+      "label": "crack (hard)"
+    },
+    {
+      "from": "crack_feed_dana_dana_post_1",
+      "to": "crackpw_dana",
+      "soft": false,
+      "label": "crack (hard)"
+    },
+    {
+      "from": "crack_flag_records_station",
+      "to": "crackpw_dana",
+      "soft": false,
+      "label": "crack (hard)"
+    },
+    {
+      "from": "cred_deskadmin_hash",
+      "to": "crackpw_deskadmin",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_eli_hash",
+      "to": "crackpw_eli",
+      "soft": false,
+      "label": "crack"
+    },
+    {
+      "from": "cred_farah_hash",
+      "to": "crackpw_farah",
+      "soft": false,
+      "label": "crack (medium)"
+    },
+    {
+      "from": "cred_sparedesk_hash",
+      "to": "crackpw_sparedesk",
+      "soft": false,
+      "label": "crack"
+    },
+    {
+      "from": "cred_src_card_factory",
+      "to": "tech_factory_accounts",
+      "soft": false
+    },
+    {
+      "from": "tech_factory_accounts",
+      "to": "weak_desk_panel_admin_page_factory_login",
+      "soft": false
+    },
+    {
+      "from": "weak_desk_panel_admin_page_factory_login",
+      "to": "cred_deskadmin_hash",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "admin@dana_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "admin@eli_pc",
+      "soft": false,
+      "label": "administrator"
+    }
+  ]
+}

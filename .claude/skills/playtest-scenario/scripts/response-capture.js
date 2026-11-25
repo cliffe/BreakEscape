@@ -4,7 +4,7 @@
 //
 // playtest-session.js turns it on with --capture-responses <file>. Each line is
 //
-//   { n, t, method, path, [query], status, cmdSeq, cmd, cmdActive, [npcId], [inv], body }
+//   { n, t, method, path, [query], status, cmdSeq, cmd, cmdActive, [npcId], [inv], [pc], [hash], body }
 //
 // where `body` is the parsed JSON (or `bodyText` when it does not parse, or
 // `bodyError` when the browser no longer holds it), and cmdSeq is the session
@@ -28,6 +28,17 @@
 // actionType, item, used_on, usedOn): Rails lets the query beat the body, so
 // the tagger declines. A null `inv` on a remove row tells the scanner the row
 // may have been a plant it cannot read.
+//
+// Every POST whose path ends /login, /logout, /lock_session, /mfa/verify, /mfa/prompt or
+// /mfa/approve carries `pc`: { pcId }, read from the request body's pc_id (and nothing else: no
+// username, password, credential, code or facts). Every POST ending /crack carries `hash`:
+// { hashId }, from hash_id. The key is present on every such row and is null when the id cannot be
+// read: the body is missing, not a JSON object, has no non-empty string id of at most 200
+// characters, a `pc` body names target_type or target_id (a subject that is not a PC), or the URL's
+// query names a field the route reads (Rails lets the query beat the body). Other rows have neither
+// key. The key is `pc`, not `login`, on purpose: the leak scanner honours a row key `login` but
+// refuses any capture that holds one until it is taught to read recorder tags, so writing `login`
+// would make every new capture unusable. The scanner does not read `pc` or `hash` yet.
 //
 // Only responses from the game's own origin, with a JSON content type, count;
 // static files (/js/, /css/, /assets/, /stylesheets/) and redirects are skipped.
@@ -92,6 +103,46 @@ function inventoryTag(request, url = null) {
   return hiddenIn ? { action, itemId, usedOn, hiddenIn } : { action, itemId, usedOn };
 }
 
+const PC_ROUTE_RE = /\/(login|logout|lock_session|mfa\/verify|mfa\/prompt|mfa\/approve)$/;
+const CRACK_ROUTE_RE = /\/crack$/;
+const PC_QUERY_RE = /(^|[?&;])(pc_id|target_type|target_id)(\[|=|&|;|$)/;
+const HASH_QUERY_RE = /(^|[?&;])hash_id(\[|=|&|;|$)/;
+const ID_LIMIT = 200;
+
+// The body as a JSON object, or null. Never throws.
+function jsonObjectBody(request) {
+  let data;
+  try { data = request.postData(); } catch { return null; }
+  if (typeof data !== 'string' || !data) return null;
+  let parsed;
+  try { parsed = JSON.parse(data); } catch { return null; }
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+}
+
+const idString = v => (typeof v === 'string' && v && v.length <= ID_LIMIT ? v : null);
+
+/** The `pc` tag of a PC sign-in, sign-out, lock or second-step POST: { pcId } or null. Never throws. */
+function pcTag(request, url = null) {
+  try {
+    if (url && PC_QUERY_RE.test(decodeURIComponent(url.search))) return null;
+  } catch { return null; }
+  const body = jsonObjectBody(request);
+  if (!body) return null;
+  if ('target_type' in body || 'target_id' in body) return null;
+  const pcId = idString(body.pc_id);
+  return pcId ? { pcId } : null;
+}
+
+/** The `hash` tag of a POST /crack row: { hashId } or null. Never throws. */
+function hashTag(request, url = null) {
+  try {
+    if (url && HASH_QUERY_RE.test(decodeURIComponent(url.search))) return null;
+  } catch { return null; }
+  const body = jsonObjectBody(request);
+  const hashId = body ? idString(body.hash_id) : null;
+  return hashId ? { hashId } : null;
+}
+
 function isJsonContentType(headers) {
   const type = headers && (headers['content-type'] || headers['Content-Type']);
   return typeof type === 'string' && /\bjson\b/i.test(type);
@@ -149,6 +200,14 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
     if (method === 'POST' && w.url.pathname.endsWith('/inventory')) {
       try { inv = inventoryTag(response.request(), w.url); } catch { inv = null; }
     }
+    let pc;
+    if (method === 'POST' && PC_ROUTE_RE.test(w.url.pathname)) {
+      try { pc = pcTag(response.request(), w.url); } catch { pc = null; }
+    }
+    let hash;
+    if (method === 'POST' && CRACK_ROUTE_RE.test(w.url.pathname)) {
+      try { hash = hashTag(response.request(), w.url); } catch { hash = null; }
+    }
     // Start reading the body at once: a navigation can drop it later.
     const bodyP = Promise.resolve()
       .then(() => response.text())
@@ -160,6 +219,8 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
       if (w.url.search) line.query = w.url.search.slice(1);
       if (npcId) line.npcId = npcId;
       if (inv !== undefined) line.inv = inv;
+      if (pc !== undefined) line.pc = pc;
+      if (hash !== undefined) line.hash = hash;
       if (got.error !== undefined) {
         line.bodyError = got.error;
       } else {
@@ -176,4 +237,4 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
   return { onResponse, startCommand, endCommand, flush, get count() { return count; }, file };
 }
 
-module.exports = { createResponseCapture, isJsonContentType, feedPostNpcId, inventoryTag };
+module.exports = { createResponseCapture, isJsonContentType, feedPostNpcId, inventoryTag, pcTag, hashTag };

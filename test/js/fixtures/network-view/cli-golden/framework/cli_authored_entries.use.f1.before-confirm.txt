@@ -1,0 +1,3 @@
+[prompt|msf > ]use training/filehold/update_lag; set TECHNIQUE update_notes; run
+[note|[*]] Trying update_notes against 10.20.0.10:445
+[bad|[-]] That finding has not been confirmed yet.

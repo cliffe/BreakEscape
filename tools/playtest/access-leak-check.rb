@@ -18,8 +18,18 @@
 # session at that PC without admin or as an off PC's host row (`responding: false` and `heldAs`), not only after a 403, and only
 # for the same kind of session, a row not past the token's deadline, and no other end in between. A `--logout` or `--signin`
 # name that the next answers refute (the next answer listing that PC's session still shows the account; the desktop right after
-# a sign-in is another PC) is an error (exit 2); where no such answer follows, the name stands. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
+# a sign-in is another PC) is an error (exit 2); where no such answer follows, the name stands (the privilege rules only: in a second-step scenario a --signin name must be confirmed, see below). An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
 # an error (exit 2), never silence. Put the options after the game id and before the files. When checking after every beat, give only the entries for rows already in the files.
+#
+# In a scenario whose PCs ask for a second step (multi-factor sign-in, S8a) the same `--signin` and `--logout` entries place the
+# sign-in or sign-out the capture cannot place (the recorder writes no PC for it). An honest run of test_ops_mfa's playtest needs
+# `--signin hana@code_pc1#1 --signin cal@plain_pc#1`. A named sign-in at a PC that asks for the step is still judged: it needs the step
+# passed first, or the one unlock of a locked session; naming a PC earns nothing. `--resume` has nothing to restore there.
+# A name is only a claim (S8a fix R2): it stands only when the first desktop row of a PC after that sign-in is the named PC
+# showing the named account signed in by a keyboard password. A name the capture never confirms (the capture ends first, no desktop
+# row follows, another sign-in or a sign-out comes first, the desktop shows another PC or account) exits 2 and says which and why:
+# give the capture up to the desktop that followed the sign-in. A `--logout` name stands only when a later answer lists that PC's session.
+# A row holding a `login` tag is refused (exit 2): the recorder writes none.
 #
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
@@ -57,14 +67,18 @@
 # have made is credited only for a finding confirmed in the log and not granted yet; otherwise nothing is credited).
 # See the header of tools/playtest/lib/access_leak_scanner.rb.
 #
+# Hash records and the cracker (S7): a cracked password may appear only on the `<npc>.cracked` entry of a GET /keyring answer that
+# follows a 200 POST /crack answer which named that account, so give every capture file of the game, oldest first, as for the
+# ops steps above. The rules are in the scanner header (`crack_key`, `crack_row`, `crack_answer`, `crack_unearned`).
+#
 # Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error, files whose first timed rows are not oldest first,
-# overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
+# an unconfirmed second-step name, a capture holding a `login` tag, overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'
 
 args = ARGV.dup
 usage = 'usage: access-leak-check.rb [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
         '[--resume <account id>@<pc id>@<row time>]... [--logout <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... <game_id> <responses.jsonl> [more.jsonl ...] ' \
-        '(n counts every successful POST /login answer of the account in the log, remote and relay ones too)'
+        '(n counts every successful POST /login answer of the account in the log, remote and relay ones too; in a second-step scenario a --signin name must be confirmed by the desktop row that follows, else exit 2; a capture with a `login` tag is refused, exit 2)'
 signins = []
 resumes = []
 logouts = []
@@ -96,7 +110,12 @@ served = BreakEscape::Game.scenario_room_npcs(game.scenario_data || {}).select d
   BreakEscape::Game.account_holder?(npc) &&
     usernames.include?(BreakEscape::Game.normalise_username(npc['creds']['username']))
 end.map { |npc| npc['id'] }
-scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served, game: game)
+begin
+  scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served, game: game)
+rescue ArgumentError => e
+  warn e.message
+  exit 2
+end
 
 lines = []
 unreadable = 0
@@ -125,6 +144,12 @@ end
 game_problem = AccessLeakScanner.game_mismatch_problem(game.id, per_file)
 if game_problem
   warn "capture files from different games: #{game_problem}"
+  exit 2
+end
+
+tag_problem = AccessLeakScanner.hand_tag_problem(per_file)
+if tag_problem
+  warn "capture files edited by hand: #{tag_problem}"
   exit 2
 end
 

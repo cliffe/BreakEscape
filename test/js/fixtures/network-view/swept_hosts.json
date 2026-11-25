@@ -1,0 +1,91 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "desk_pc",
+          "kind": "pc",
+          "name": "Desk PC",
+          "host": "LAB-01",
+          "sprite": "pc_desktop",
+          "headless": false,
+          "remoteSignIn": true
+        },
+        {
+          "id": "print01",
+          "kind": "device",
+          "name": "Second floor printer",
+          "sprite": "pnw_portable_printer1",
+          "scanned": true,
+          "services": [
+            {
+              "name": "web",
+              "label": "web",
+              "port": 80,
+              "product": "Brackley PrintPanel",
+              "version": "2.0"
+            }
+          ]
+        },
+        {
+          "id": "print02",
+          "kind": "device",
+          "name": "Store room printer",
+          "sprite": "pnw_portable_printer1"
+        }
+      ],
+      "networks": [
+        {
+          "id": "lab_net",
+          "name": "Lab network",
+          "route": "up",
+          "via": null,
+          "hosts": [
+            {
+              "id": "desk_pc",
+              "kind": "pc",
+              "name": "Desk PC",
+              "host": "LAB-01",
+              "sprite": "pc_desktop",
+              "headless": false,
+              "remoteSignIn": true
+            },
+            {
+              "id": "print01",
+              "kind": "device",
+              "name": "Second floor printer",
+              "sprite": "pnw_portable_printer1",
+              "scanned": true,
+              "services": [
+                {
+                  "name": "web",
+                  "label": "web",
+                  "port": 80,
+                  "product": "Brackley PrintPanel",
+                  "version": "2.0"
+                }
+              ]
+            },
+            {
+              "id": "print02",
+              "kind": "device",
+              "name": "Store room printer",
+              "sprite": "pnw_portable_printer1"
+            }
+          ],
+          "swept": true,
+          "ops": true
+        }
+      ]
+    }
+  ]
+}
