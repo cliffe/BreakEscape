@@ -34,6 +34,11 @@ module BreakEscape
       show?
     end
 
+    # S5b: the collect has the same rule as crack?
+    def harvest_credentials?
+      show?
+    end
+
     def update_room?
       show?
     end

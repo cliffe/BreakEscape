@@ -21,6 +21,7 @@ Encoding.default_external = Encoding::UTF_8
 require_relative 'validate_cracking'
 require_relative '../lib/break_escape/crack_difficulty'
 require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/cached_accounts'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/credential_model'
@@ -1867,7 +1868,7 @@ end
 # an edge from each `creds.admin` account the PC admits (from that account's sign-in node, as the habit edges
 # are drawn) and from each weakness on the PC's host whose session grant has `access: "admin"` (that weakness
 # keeps its `grants session` edge to the lock). A scenario with neither draws no such node. Labels name the PC,
-# never a password. No hash-record or "collect" edges (S5b).
+# never a password. The hash-record "collect" edges (S5b) are drawn after this block.
 admin_pcs = {} # pc id => { pc:, from: [node ids] }
 admin_rec_for = lambda do |lock_entry|
   pc = lock_entry[:lock]
@@ -1908,6 +1909,49 @@ admin_pcs.each do |pc_id, rec|
   add_node(admin_id, "#{pc_label}<br/>Administrator session", 'key')
   rec[:from].uniq.each { |from| add_edge(from, admin_id, label: 'administrator') }
 end
+
+# S5b (cached accounts, dungeon graph): a sign-in PC's `cachedAccounts` each reach the account's hash record
+# (the one `proof: { harvested: <pcId> }` record, found by CachedAccounts.hash_record_id) by an edge from
+# `admin@<pcId>` labelled "collect". An entry with `after: "borrow"` also gets an edge from the account's own
+# `borrow_session` workaround at that PC (the action node drawn above), labelled "borrow". An account with no
+# hash record draws nothing. A scenario without `cachedAccounts` draws nothing. Labels name ids, never a password.
+def draw_cached_account_edges(scenario, rooms)
+  aw_c = BreakEscape::AccessWork
+  cached_pcs = BreakEscape::AccessIdentities.locks(scenario).select do |l|
+    l[:kind] == 'login' && l[:lock].is_a?(Hash) && l[:lock]['id'].is_a?(String) && !BreakEscape::CachedAccounts.candidates(l[:lock]).empty?
+  end
+  return if cached_pcs.empty?
+
+  aw_c.with_index(scenario) do
+    cached_pcs.each do |lock_entry|
+      pc = lock_entry[:lock]
+      BreakEscape::CachedAccounts.candidates(pc).each do |cand|
+        hash_id = BreakEscape::CachedAccounts.hash_record_id(scenario, pc['id'], cand['npc'])
+        hash_node = hash_id && "cred_#{nid(hash_id)}"
+        next unless hash_node && $nodes.key?(hash_node)
+
+        admin_id = "admin@#{pc['id']}"
+        unless $nodes.key?(admin_id)
+          pc_label = pc['name'].is_a?(String) && !pc['name'].strip.empty? ? pc['name'] : pc['id']
+          add_node(admin_id, "#{pc_label}<br/>Administrator session", 'key')
+        end
+        add_edge(admin_id, hash_node, label: 'collect') unless $edges.any? { |e| e[:from] == admin_id && e[:to] == hash_node }
+        next unless cand['after'] == 'borrow'
+
+        npc = BreakEscape::CredentialModel.account_npc(scenario, cand['npc'])
+        next unless npc
+
+        aw_c.workarounds(scenario, npc).each_with_index do |w, i|
+          next unless w['do'] == 'borrow_session' && w['pc'] == pc['id']
+
+          from = "workaround_#{nid(npc['id'])}_#{i}"
+          add_edge(from, hash_node, label: 'borrow') if $nodes.key?(from) && $edges.none? { |e| e[:from] == from && e[:to] == hash_node }
+        end
+      end
+    end
+  end
+end
+draw_cached_account_edges(scenario, rooms)
 
 # S8a unit 11 (MFA plan, dungeon graph): a sign-in lock under a policy with an `mfa` kind gets a second key
 # edge per admitted, enrolled account (`creds.mfa` not false; an exempt account gets none). `code`: the

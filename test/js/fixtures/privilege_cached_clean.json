@@ -1,0 +1,28 @@
+{
+  "startRoom": "office",
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        { "id": "hot_desk", "type": "pc", "name": "Hot desk", "lockType": "login", "locked": true,
+          "cachedAccounts": [ { "npc": "priya" }, { "npc": "sam", "after": "borrow" } ] },
+        { "id": "alex_pc", "type": "pc", "name": "Alex's PC", "lockType": "login", "locked": true, "owner": "alex",
+          "cachedAccounts": [ { "npc": "alex" }, { "npc": "kemi" } ] }
+      ],
+      "npcs": [
+        { "id": "alex", "npcType": "person", "creds": { "username": "alex.t", "password": "Alex-Pass-1" } },
+        { "id": "priya", "npcType": "person", "creds": { "username": "priya.n", "password": "Priya-Pass-2" } },
+        { "id": "sam", "npcType": "person", "creds": { "username": "sam.o", "password": "Sam-Pass-3" },
+          "workarounds": [ { "do": "borrow_session", "pc": "hot_desk" } ] },
+        { "id": "kemi", "npcType": "person", "creds": { "username": "kemi.a", "password": "Kemi-Pass-4", "admin": true } }
+      ]
+    }
+  },
+  "credentials": {
+    "hot_priya": { "kind": "hash", "account": "priya", "proof": { "harvested": "hot_desk" } },
+    "hot_sam": { "kind": "hash", "account": "sam", "proof": { "harvested": "hot_desk" } },
+    "alex_alex": { "kind": "hash", "account": "alex", "proof": { "harvested": "alex_pc" } },
+    "alex_kemi": { "kind": "hash", "account": "kemi", "proof": { "harvested": "alex_pc" } }
+  }
+}

@@ -196,4 +196,51 @@ Lines changed or added in round 1. No audio exists, so every change is free.
 
 ## Totals
 
-126 lines listed, 0 over the cap.
+126 lines listed above, 0 over the cap; with the P-S5 append below, 161 lines listed, 0 over the cap.
+
+## P-S5 append (S5b cached accounts and the borrow, S5c account kinds): text only
+
+New spoken lines added by unit P-S5, numbered on from the table above. Nothing generated or cached. Ama about 22, Graham 2 (the rota), Jun 3 in ink and 5 in his chatter pools, 3 scenario chatter. The rota sheet, the cabinet and the hot desk are text on objects, not voiced. Feed post text is below.
+
+| # | Who | Source | Line | Words |
+|---|---|---|---|---|
+| 127 | ama_owusu | ink | Still signed in at Julian's PC as Graham? Use Cached accounts on its desktop, then tell me. | 17 |
+| 128 | ama_owusu | ink | Ask me to switch Jun's PC off, and watch where he goes. Do it before you call it a day. | 20 |
+| 129 | ama_owusu | ink | Jun left the hot desk signed in. Sign in there as Graham and use Cached accounts, then tell me. | 19 |
+| 130 | ama_owusu | ink | Crack one of the records you collected. A weak one falls at once. Then tell me. | 16 |
+| 131 | ama_owusu | ink | Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then sign in at Delphine's PC. | 23 |
+| 132 | ama_owusu | ink | Type the name and password under Other user. | 8 |
+| 133 | ama_owusu | ink | Now try the same account at Julian's PC. Look at what the sign-in screen says, then tell me. | 18 |
+| 134 | ama_owusu | ink | Julian's PC remembers who signed in. An administrator gets the stored records, never the passwords. | 15 |
+| 135 | ama_owusu | ink | Jun's record only turned up because he borrowed the PC. Anyone who signs in leaves something behind. | 17 |
+| 136 | ama_owusu | ink | Same cracker, new source. A weak password falls whatever the PC. | 11 |
+| 137 | ama_owusu | ink | The sign-in screen names the domain. A domain account works across it. A local account stays on its own PCs. | 20 |
+| 138 | ama_owusu | ink | So the shared account falls on every desk it's on, and not on Julian's. | 14 |
+| 139 | ama_owusu | ink | I'll flick the switch at the wall. Watch what Jun does. | 11 |
+| 140 | ama_owusu | ink | Back on again. | 3 |
+| 141 | ama_owusu | ink | I'll ask Jun what he's been up to. Give him a minute. | 12 |
+| 142 | ama_owusu | ink | The shared account was refused where it doesn't belong. A local account stays local. | 14 |
+| 143 | ama_owusu | ink | One shared desk password opened every desk it covered. That's why it must not be weak. | 16 |
+| 144 | ama_owusu | ink | A remembered record falls like any other. It only needed one fact. | 12 |
+| 145 | ama_owusu | ink | The hot desk remembered Jun because he'd sat there. | 9 |
+| 146 | ama_owusu | ink | Jun couldn't work, so he borrowed a PC and left it signed in. | 13 |
+| 147 | ama_owusu | ink | A PC keeps a record of who used it. An administrator can collect them. | 14 |
+| 148 | jun_watanabe | ink | Dead as a doorknob. I can't get a thing done. | 10 |
+| 149 | jun_watanabe | ink | I'll have to try the hot desk. | 7 |
+| 150 | jun_watanabe | ink | Only till mine's back. I never log out of borrowed PCs. Is that bad? | 14 |
+| 151 | graham_whitfield | ink rota | Tuesdays I do the desk rounds on the shared desk account. One login, three desks. | 15 |
+| 152 | graham_whitfield | ink rota | The rota says which. Don't ask me about the old backups cabinet. | 12 |
+| 153 | ama_owusu | ink short_version | A PC remembers who used it, and a shared local password falls wherever it's used. | 15 |
+| 154 | jun_watanabe | chatter station_fail | It's dead. Of course it's dead. | 6 |
+| 155 | jun_watanabe | chatter station_fail | Who switched my PC off? | 5 |
+| 156 | jun_watanabe | chatter station_fail | I only just saved that. | 5 |
+| 157 | jun_watanabe | chatter work_fail | I can't work like this. | 5 |
+| 158 | jun_watanabe | chatter work_fail | Right. That's it. The hot desk. | 6 |
+| 159 | scenario | scenario chatter station_fail | My PC's dead. Brilliant. | 4 |
+| 160 | scenario | scenario chatter station_fail | Why is it off? | 4 |
+| 161 | scenario | scenario chatter wk_borrow | I'll use the hot desk. | 5 |
+
+| Person | Post id | Text |
+|---|---|---|
+| jun_watanabe | jun_post_1 | Adopted a cat at the weekend. Biscuit has already claimed the good chair. |
+| jun_watanabe | jun_post_2 | Day three of finding the stationery cupboard. Still lost. |

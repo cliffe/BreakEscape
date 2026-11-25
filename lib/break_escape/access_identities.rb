@@ -296,9 +296,12 @@ module BreakEscape
       card_opens?(lock, card_id, holders) && !Array(lock['requires']).map(&:to_s).include?(card_id.to_s)
     end
 
-    # May an account sign in at this PC? No access list admits every account (section 5.2).
+    # May an account sign in at this PC? The account's kind is judged first (S5c: kinds only narrow), then
+    # the access list; no access list admits every account (section 5.2). Same rule as
+    # CredentialModel.pc_admits_account?, which the server uses; the graph and the validator ask this one.
     def account_admitted?(pc, npc)
       return false unless account?(npc)
+      return false unless account_kind_admits?(pc, npc)
 
       pc['access'].is_a?(Hash) ? acl_admits?(pc['access'], npc) : true
     end
@@ -331,6 +334,33 @@ module BreakEscape
       return true if rooms.values.any? { |r| r.is_a?(Hash) && r.key?('access') }
 
       room_objects(scenario).any? { |e| e[:object].key?('access') || login_pc?(e[:object]) }
+    end
+
+    # S5c: an account with no person behind it. Such an NPC entry is an account holder only.
+    def account_only?(npc)
+      npc.is_a?(Hash) && npc['accountOnly'] == true
+    end
+
+    # S5c: does the account's kind allow it at this PC? Kinds only narrow admission; the
+    # access list is judged separately. No kind admits; local needs the PC's id in localTo;
+    # domain needs the PC's domain to equal creds.domain (an absent PC domain never matches).
+    # Any junk value refuses.
+    def account_kind_admits?(pc, npc)
+      creds = npc.is_a?(Hash) ? npc['creds'] : nil
+      return true unless creds.is_a?(Hash) && creds.key?('accountKind')
+
+      pc = {} unless pc.is_a?(Hash)
+      case creds['accountKind']
+      when 'local'
+        pc_id = pc['id']
+        local_to = creds['localTo']
+        pc_id.is_a?(String) && !pc_id.empty? && local_to.is_a?(Array) && local_to.include?(pc_id)
+      when 'domain'
+        domain = creds['domain']
+        domain.is_a?(String) && !domain.empty? && pc['domain'].is_a?(String) && pc['domain'] == domain
+      else
+        false
+      end
     end
   end
 end

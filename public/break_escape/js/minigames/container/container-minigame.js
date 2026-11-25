@@ -13,6 +13,7 @@ import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessag
 import { createBoltCanvas } from '../../utils/compromise-bolt.js';
 import { syncBeforeFetch } from '../../utils/sync-before-fetch.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
+import { mountCachedAccountsPanel } from './cached-accounts-panel.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, refreshTokenLines, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
 
@@ -1233,6 +1234,7 @@ export class ContainerMinigame extends MinigameScene {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
         }
+        this.cachedAccounts?.destroy?.();
         this.taskbar?.destroy?.();
         this.pcMonitor?.destroy?.();
         if (this.exitReason !== 'item') releaseHeldEnter();
@@ -1694,8 +1696,24 @@ export class ContainerMinigame extends MinigameScene {
             </div>
         `;
         this.mountTaskbar(this.gameContainer.querySelector('.pc-desktop'));
+        this.mountCachedAccounts(this.gameContainer.querySelector('.pc-desktop')); // S5b
         this.decorateRemoteView(this.loginSession());
         this.watchDesktopScroll();
+    }
+
+    /**
+     * S5b: the "Cached accounts" control on a sign-in desktop, shown only while the client holds an
+     * admin session at this PC (the server decides every collect). Sends the desktop's own route.
+     */
+    mountCachedAccounts(host) {
+        if (!host || !this.loginPcId || this.mode === 'npc') return;
+        const pcId = this.loginPcId;
+        const session = this.loginSession();
+        const route = this.remote?.footholdId ? { foothold: this.remote.footholdId }
+            : (this.relay || session?.relay === true ? { relay: true }
+                : (this.fromRoute?.fromPcId ? { from: this.fromRoute.fromPcId } : null));
+        this.cachedAccounts?.destroy?.();
+        this.cachedAccounts = mountCachedAccountsPanel(host, { pcId, route, isAdmin: () => window.pcSessions?.sessionAdmin?.(pcId) === true });
     }
 
     /** A sign-in desktop's remote and claim lines (the account itself is on the taskbar). */

@@ -24,8 +24,13 @@ module BreakEscape
     JULIAN_PASSWORD = 'Ferrous-Lantern-Quill-84'.freeze
     PASSWORDS = [DELPHINE[1], GRAHAM[1], JULIAN_PASSWORD, 'Marlow-Quarry-Tide-71', 'Cobalt-Fennel-Rook-38'].freeze
     FACTS = %w[delphine_dog_name delphine_dog_year].freeze
-    PCS = %w[delphine_pc jun_pc graham_pc partner_pc].freeze
+    PCS = %w[delphine_pc jun_pc graham_pc partner_pc hot_desk].freeze
     ROOMS = %w[office kitchen it_room partner_office].freeze
+    # S5b and S5c (P-S5): the appended accounts, held here as constants like the rest.
+    JUN = %w[jwatanabe Biscuit123].freeze
+    NIAMH = %w[ndoherty Welcome2024].freeze
+    DESKADMIN = %w[deskadmin Spring2026].freeze
+    NEW_PASSWORDS = [JUN[1], NIAMH[1], DESKADMIN[1]].freeze
     CAST = %w[delphine_arvanitis graham_whitfield julian_sallow jun_watanabe niamh_doherty printer_svc ama_owusu].freeze
 
     def scenario
@@ -152,7 +157,7 @@ module BreakEscape
         refute_includes Array(pc.dig('access', 'roles')), 'service', pc['id']
       end
       assert_equal 'service', data['rooms']['it_room']['npcs'].find { |n| n['id'] == 'printer_svc' }['role']
-      assert_equal %w[graham_whitfield], data['rooms'].values.flat_map { |r| Array(r['npcs']) }.select { |n| n.dig('creds', 'admin') }.map { |n| n['id'] }
+      assert_equal %w[deskadmin graham_whitfield], data['rooms'].values.flat_map { |r| Array(r['npcs']) }.select { |n| n.dig('creds', 'admin') }.map { |n| n['id'] }.sort
     end
 
     test 'the levers are counters with the section 4 shape, and the reported ticks are gated on what makes them possible' do
@@ -669,6 +674,394 @@ module BreakEscape
       rows_copy[last]['body']['entries'].find { |e| e['id'] == 'julian_hash' }['label'] = JULIAN_PASSWORD
       found = scan_run(rows_copy)
       refute_empty found
+    end
+
+    # ================================================================================================
+    # P-S5: S5b (cached accounts, the borrow) and S5c (account kinds, domains, the shared desk account)
+    # appended after the existing cases, which are unchanged but for the two shape lines the hot desk and the
+    # shared account widen (the PC list and the administrator list).
+    # ================================================================================================
+
+    def harvest(pc, **extra)
+      post game_path('harvest_credentials'), params: { pc_id: pc }.merge(extra), as: :json
+      response.parsed_body
+    end
+
+    def logout(pc)
+      post game_path('logout'), params: { pc_id: pc }, as: :json
+    end
+
+    def report(*reports)
+      post npc_frustration_game_url(@game), params: { reports: reports }, as: :json
+      (response.parsed_body.is_a?(Hash) && response.parsed_body['answers']) || flunk("#{response.status} #{response.body[0, 300]}")
+    end
+
+    def set_scenario_global(name, value)
+      @game.reload
+      @game.player_state['globalVariables'] ||= {}
+      @game.player_state['globalVariables'][name] = value
+      @game.save!
+    end
+
+    def take_cabinet_record
+      open_container('backups_cabinet')
+      take_file('desk_rounds_record_file', 'desk_rounds_record.dat')
+    end
+
+    # A sign-out the scanner needs named (a logout answer does not say which PC it was at): the n-th successful POST /logout of the run.
+    def named_logout(pc, account)
+      logout(pc)
+      assert_response :success, response.body
+      n = captured.count { |r| r['method'] == 'POST' && r['path'].end_with?('/logout') && r['status'] == 200 }
+      (@logouts ||= []) << "#{account}@#{pc}##{n}"
+    end
+
+    # Jun's PC is off; he fails twice, the second reaching his `at` of 60, and the borrow is handed over and made.
+    def make_jun_borrow
+      set_scenario_global('jun_pc_off', true)
+      fail_report = { npc_id: 'jun_watanabe', event: 'fail', need: 'work', object_id: 'jun_pc', missing: [{ id: 'jun_pc', why: 'off' }] }
+      report(npc_id: 'jun_watanabe', event: 'check', object_id: 'jun_pc')
+      travel 10.seconds
+      report(fail_report)
+      travel 25.seconds
+      run = report(fail_report).first['run']
+      assert_equal 'borrow_session', run['do']
+      assert_equal 'hot_desk', run['pc']
+      assert_equal [], Array(state['cachedAt']), 'not cached by the hand-over alone'
+      travel 65.seconds
+      post npc_workaround_game_url(@game), params: { npc_id: 'jun_watanabe', index: run['index'], hand: run['hand'] }, as: :json
+      assert_response :success, response.body
+    end
+
+    test 'P-S5 shape: the cached accounts, the borrow, the kinds and the domain are declared as planned, and the earlier accounts keep their reach' do
+      data = scenario
+      pcs = data['rooms'].values.flat_map { |r| Array(r['objects']) }.select { |o| o['lockType'] == 'login' }.index_by { |o| o['id'] }
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.index_by { |n| n['id'] }
+      assert_equal [{ 'npc' => 'julian_sallow' }, { 'npc' => 'delphine_arvanitis' }], pcs['partner_pc']['cachedAccounts']
+      assert_equal [{ 'npc' => 'niamh_doherty' }, { 'npc' => 'jun_watanabe', 'after' => 'borrow' }], pcs['hot_desk']['cachedAccounts']
+      assert_nil pcs['hot_desk']['owner'], 'a hot desk is a PC nobody owns'
+      assert_equal [{ 'at' => 60, 'do' => 'borrow_session', 'pc' => 'hot_desk' }], npcs['jun_watanabe']['workarounds']
+      assert_equal 'jun_pc_off', pcs['jun_pc']['offWhen']
+      assert_equal false, data['globalVariables']['jun_pc_off']
+      assert_nil pcs['hot_desk']['access']['roles'].find { |r| r == 'service' }
+      # every sign-in PC and every person account is in one domain, so every PC that admitted an account before still does
+      assert_equal ['merrin'], pcs.values.map { |o| o['domain'] }.uniq
+      persons = %w[delphine_arvanitis graham_whitfield julian_sallow jun_watanabe niamh_doherty]
+      persons.each do |id|
+        assert_equal 'domain', npcs[id]['creds']['accountKind'], id
+        assert_equal 'merrin', npcs[id]['creds']['domain'], id
+      end
+      assert_nil npcs['printer_svc']['creds']['accountKind'], 'the printer account has no kind, and no PC admits it anyway'
+      deskadmin = npcs['deskadmin']
+      assert_equal true, deskadmin['accountOnly']
+      assert_equal %w[delphine_pc hot_desk jun_pc], deskadmin['creds']['localTo'].sort
+      assert_equal 'local', deskadmin['creds']['accountKind']
+      assert_equal %w[accountOnly creds displayName id npcType role staff], deskadmin.keys.sort
+      # one hash record per PC and cached account, and the shared account's record is a held file outside the bin
+      creds = data['credentials']
+      assert_equal 'hot_desk', creds['jun_cached']['proof']['harvested']
+      assert_equal 'hot_desk', creds['niamh_cached_hot_desk']['proof']['harvested']
+      assert_equal 'partner_pc', creds['delphine_cached_partner']['proof']['harvested']
+      assert_equal 'partner_pc', creds['julian_cached_partner']['proof']['harvested']
+      assert_equal 'desk_rounds_record_file', creds['desk_rounds_hash']['proof']['held']
+      it_room = data['rooms']['it_room']['objects'].index_by { |o| o['id'] }
+      assert_equal %w[delphine_record_file graham_record_file julian_record_file], it_room['secure_bin']['contents'].map { |c| c['id'] }
+      assert_equal %w[desk_rounds_record_file], it_room['backups_cabinet']['contents'].map { |c| c['id'] }
+      assert_includes data['logSources']['signin_log']['events'], 'credentials_harvested'
+      assert_includes data['logSources']['signin_log']['events'], 'signin_refused'
+      aim = data['objectives'].find { |o| o['aimId'] == 'afternoon_cache' }
+      assert_equal %w[collect_partner see_borrow collect_hot_desk crack_cached local_account local_refused], aim['tasks'].map { |t| t['taskId'] }
+      assert_equal 3, aim['order']
+    end
+
+    test 'P-S5: the appended passwords stay out of ink, notices, objectives and the mission file, and the name of the shared account stays out of every mapping and served text' do
+      files = Dir[File.join(ROOT, 'scenarios/demo_ops_passwords/ink/*.{ink,json}')] + [File.join(ROOT, 'scenarios/demo_ops_passwords/mission.json')]
+      files.each do |path|
+        text = File.read(path)
+        NEW_PASSWORDS.each { |pw| refute_includes text, pw, "#{File.basename(path)} holds a password" }
+        refute_match(/deskadmin|Desk administrator/i, text, "#{File.basename(path)} names the shared account")
+      end
+      stripped = scenario
+      stripped['rooms'].each_value { |r| Array(r['npcs']).each { |n| n.delete('creds') } }
+      text = stripped.to_json
+      NEW_PASSWORDS.each { |pw| refute_includes text, pw }
+      # the account's own NPC carries the name; nothing else in the file may (the authored `credentials` label says "shared desk account")
+      outside = stripped
+      outside['rooms'].each_value { |r| Array(r['npcs']).reject! { |n| n['id'] == 'deskadmin' } }
+      outside['credentials'].delete('desk_rounds_hash')
+      refute_match(/deskadmin/i, outside.to_json.gsub(/"(?:id|account|credential)":\s*"deskadmin[a-z_]*"/, ''))
+    end
+
+    test 'P-S5: a new game holds no cached hash, and the boot answer names neither the shared account nor its password' do
+      build
+      assert_empty keyring['entries'].select { |e| e['kind'] == 'hash' }
+      assert_empty Array(state['cachedAt'])
+      assert_empty Array(state['harvestedAccounts'])
+      bootstrap_scenario
+      assert_response :success
+      NEW_PASSWORDS.each { |pw| refute_includes response.body, pw }
+      refute_match(/deskadmin|Desk administrator|cachedAccounts|harvest/i, response.body)
+    end
+
+    test 'P10: in Graham\'s admin session the partner PC gives Julian and Delphine as hashes, a second press nothing, and no password' do
+      travel_to T0 do
+        build
+        assert sign_in('partner_pc', *GRAHAM)['success']
+        body = harvest('partner_pc')
+        assert_response :success, body.to_s
+        assert_equal %w[julian_sallow delphine_arvanitis], body['harvested'].map { |r| r['npcId'] }
+        assert_equal %w[julian_sallow delphine_arvanitis], body['held'].map { |r| r['npcId'] }
+        assert_equal %w[julian_cached_partner delphine_cached_partner], body['held'].map { |r| r['hashId'] }
+        assert_equal %w[displayName hashId npcId portrait avatar username].sort, body['held'].first.keys.sort
+        NEW_PASSWORDS.each { |pw| refute_includes response.body, pw }
+        [JULIAN_PASSWORD, DELPHINE[1]].each { |pw| refute_includes response.body, pw }
+        again = harvest('partner_pc')
+        assert_equal [], again['harvested']
+        assert_equal 2, again['held'].size
+        hashes = keyring['entries'].select { |e| e['kind'] == 'hash' }.map { |e| e['id'] }
+        assert_equal %w[delphine_cached_partner julian_cached_partner], hashes.sort
+        assert_equal 1, rows('credentials_harvested').size, 'one row for the press that added a pair, none for the repeat'
+        assert_equal({ 'count' => 2 }, rows('credentials_harvested').first['detail'])
+        assert_equal({ 'account' => GRAHAM[0] }, rows('credentials_harvested').first['as'])
+      end
+    end
+
+    test 'P10: no session, a user session and a locked administrator session collect nothing' do
+      build
+      body = harvest('partner_pc')
+      refute_equal 200, response.status, body.to_s
+      assert_empty Array(state['harvestedAccounts'])
+      assert sign_in('delphine_pc', *DELPHINE)['success']
+      harvest('delphine_pc')
+      assert_response :unprocessable_entity
+      assert sign_in('partner_pc', *GRAHAM)['success']
+      post game_path('lock_session'), params: { pc_id: 'partner_pc' }, as: :json
+      harvest('partner_pc')
+      assert_response :unprocessable_entity
+      assert_empty Array(state['harvestedAccounts'])
+      assert_empty rows('credentials_harvested')
+    end
+
+    test 'P10: the collected record of Delphine cracks at once when her own password is already held, and Julian\'s never falls' do
+      travel_to T0 do
+        build
+        take_records
+        take_photo
+        serve_feed_post
+        assert_equal 'cracked', crack('delphine_hash', FACTS)['status']
+        assert sign_in('partner_pc', *GRAHAM)['success']
+        harvest('partner_pc')
+        assert_equal 'cracked', crack('delphine_cached_partner')['status'], 'the account is already held: answered at once, with no pick'
+        assert_equal 'nomatch', crack('julian_cached_partner')['status']
+        assert_equal 'infeasible', crack('julian_cached_partner')['status']
+        assert_equal 'infeasible', row('julian_cached_partner')['status']
+        assert_equal %w[delphine_arvanitis], state['crackedAccounts']
+      end
+    end
+
+    test 'P11: the hot desk caches Niamh from the start and Jun only after his borrow; the borrow is made by switching his PC off' do
+      travel_to T0 do
+        build
+        assert sign_in('hot_desk', *GRAHAM)['success']
+        assert_equal 'admin', level('hot_desk')
+        body = harvest('hot_desk')
+        assert_response :success, body.to_s
+        assert_equal %w[niamh_doherty], body['harvested'].map { |r| r['npcId'] }
+        assert_equal %w[niamh_cached_hot_desk], body['held'].map { |r| r['hashId'] }
+        assert_equal [], harvest('hot_desk')['harvested']
+        make_jun_borrow
+        assert_includes state['cachedAt'], 'hot_desk|jun_watanabe'
+        assert_nil level('hot_desk'), 'the borrow ends the session the player held at the hot desk'
+        assert sign_in('hot_desk', *GRAHAM)['success']
+        after = harvest('hot_desk')
+        assert_equal %w[jun_watanabe], after['harvested'].map { |r| r['npcId'] }
+        assert_equal %w[niamh_doherty jun_watanabe], after['held'].map { |r| r['npcId'] }
+        assert_equal %w[jun_cached niamh_cached_hot_desk], keyring['entries'].select { |e| e['kind'] == 'hash' }.map { |e| e['id'] }.sort
+        assert_equal 1, rows('credentials_harvested').size, 'the two collects at one PC by one account merge into one row'
+        assert_equal 2, rows('credentials_harvested').first['n'].to_i
+        NEW_PASSWORDS.each { |pw| refute_includes response.body, pw }
+      end
+    end
+
+    test 'P11: Jun\'s own failed uses alone, with his PC still on, borrow nothing' do
+      travel_to T0 do
+        build
+        fail_report = { npc_id: 'jun_watanabe', event: 'fail', need: 'work', object_id: 'jun_pc', missing: [{ id: 'jun_pc', why: 'off' }] }
+        report(npc_id: 'jun_watanabe', event: 'check', object_id: 'jun_pc')
+        answer = report(fail_report).first
+        assert_equal true, answer['stale'], 'the server has not seen his PC off, so the report counts for nothing'
+        assert_empty Array(state['cachedAt'])
+      end
+    end
+
+    test 'P12: Niamh\'s record falls at once with no fact, and Jun\'s needs the one fact from his feed post' do
+      travel_to T0 do
+        build
+        assert sign_in('hot_desk', *GRAHAM)['success']
+        harvest('hot_desk')
+        make_jun_borrow
+        assert sign_in('hot_desk', *GRAHAM)['success']
+        harvest('hot_desk')
+        assert_equal 'cracked', crack('niamh_cached_hot_desk')['status']
+        refute_includes response.body, NIAMH[1]
+        assert_equal NIAMH[1], row('niamh_doherty.cracked')['password']
+        body = crack('jun_cached')
+        assert_equal 'needMoreFacts', body['status']
+        assert_equal 1, body['missingCount']
+        post feed_post_game_url(@game), params: { npc_id: 'jun_watanabe' }, as: :json
+        assert_response :success, response.body
+        assert_equal %w[jun_cat_name], earned
+        assert_equal 'cracked', crack('jun_cached', %w[jun_cat_name])['status']
+        refute_includes response.body, JUN[1]
+        assert_equal JUN[1], row('jun_watanabe.cracked')['password']
+        assert_equal %w[jun_watanabe niamh_doherty], state['crackedAccounts'].sort
+        assert_empty rows.select { |r| r['event'].to_s.include?('crack') }
+      end
+    end
+
+    test 'P13 and P14: the shared desk account is found in the cabinet, cracks at once, signs in on its desks, and is refused at the partner PC and Graham\'s' do
+      travel_to T0 do
+        build
+        take_cabinet_record
+        assert_equal 'ready', row('desk_rounds_hash')['status']
+        assert_equal 'cracked', crack('desk_rounds_hash')['status']
+        refute_includes response.body, DESKADMIN[1]
+        cracked = row('deskadmin.cracked')
+        assert_equal DESKADMIN[1], cracked['password']
+        assert_equal DESKADMIN[0], cracked.dig('account', 'username')
+        %w[delphine_pc jun_pc hot_desk].each do |pc|
+          body = sign_in(pc, *DESKADMIN)
+          assert body['success'], "#{pc}: #{body}"
+          assert_equal 'admin', body['access'], pc
+          logout(pc)
+        end
+        %w[partner_pc graham_pc].each do |pc|
+          body = sign_in(pc, *DESKADMIN)
+          refute body['success'], "#{pc}: #{body}"
+          assert_response :unprocessable_entity, pc
+          assert_match(/This account can't sign in on this PC/, body['message'] || body['error'], pc)
+          assert_nil level(pc), pc
+        end
+        assert_empty rows('signin_fail'), 'a refusal by kind is not a failed sign-in and counts no lockout'
+        assert_equal %w[partner_pc graham_pc], rows('signin_refused').map { |r| r.dig('where', 'id') }
+        assert(rows('signin_refused').all? { |r| r['detail'] == { 'kind' => 'local' } })
+        assert_empty Array(state['loginLockouts'])
+      end
+    end
+
+    test 'P13: the shared account\'s record is not in the bin, and nothing about it is listed before it is taken' do
+      build
+      open_container('secure_bin')
+      get game_path('container/secure_bin'), as: :json
+      refute_includes response.body, 'deskadmin'
+      refute_includes response.body, 'desk_rounds'
+      assert_empty keyring['entries'].select { |e| e['id'].to_s.include?('deskadmin') }
+    end
+
+    test 'P15: every PC carries the domain, and each person account is a domain account that still signs in where it did before' do
+      build
+      data = bootstrap_scenario
+      assert_response :success
+      { 'delphine_pc' => DELPHINE, 'jun_pc' => JUN, 'partner_pc' => GRAHAM, 'graham_pc' => GRAHAM, 'hot_desk' => JUN }.each do |pc, who|
+        get game_path("room/#{pc == 'partner_pc' ? 'partner_office' : pc == 'graham_pc' ? 'it_room' : 'office'}"), as: :json
+        assert_response :success, response.body
+        found = Array(response.parsed_body.dig('room', 'objects')).find { |o| o['id'] == pc }
+        assert found, "#{pc} is in its room answer"
+        assert_equal 'merrin', found.fetch('domain'), "#{pc} shows its domain on the sign-in screen"
+        body = sign_in(pc, *who)
+        assert body['success'], "#{pc}: #{body}"
+        logout(pc)
+      end
+      refute_nil data
+    end
+
+    test 'P-S5: the sign-in log lists a collect and a refusal by kind, in the reader\'s words' do
+      travel_to T0 do
+        build
+        take_cabinet_record
+        crack('desk_rounds_hash')
+        sign_in('partner_pc', *GRAHAM)
+        harvest('partner_pc')
+        sign_in('hot_desk', *DESKADMIN)
+        sign_in('partner_pc', *DESKADMIN)
+        reader = reader_rows['rows']
+        events = reader.map { |r| r['event'] }
+        assert_includes events, 'CRED_COLLECT'
+        denied = reader.select { |r| r['result'] == 'DENIED' }
+        assert_equal ['kind: local'], denied.map { |r| r['detail'] }
+        assert_equal ["Julian's PC"], denied.map { |r| r['where'] }
+      end
+    end
+
+    # The afternoon, appended to the whole run: collect at the partner PC (the administrator session of P7 is still open),
+    # the borrow, the hot desk, the cracks, the shared desk account on its desks and refused at the partner PC.
+    def play_afternoon
+      travel_to T0 + 10.minutes do
+        @counts_after = Hash.new(0)
+        # P10: the session of P7 is still held at the partner PC
+        body = harvest('partner_pc')
+        assert_equal %w[julian_sallow delphine_arvanitis], body['harvested'].map { |r| r['npcId'] }
+        assert_equal [], harvest('partner_pc')['harvested']
+        assert_equal 'cracked', crack('delphine_cached_partner')['status']
+        assert_equal 'nomatch', crack('julian_cached_partner')['status']
+        assert_equal 'infeasible', crack('julian_cached_partner')['status']
+        # P11: the hot desk before and after the borrow
+        body = sign_in('hot_desk', *GRAHAM)
+        assert body['success'], body.to_s
+        @signins << "#{body['npcId']}@hot_desk##{2}"
+        assert_equal %w[niamh_doherty], harvest('hot_desk')['harvested'].map { |r| r['npcId'] }
+        make_jun_borrow
+        body = sign_in('hot_desk', *GRAHAM)
+        assert body['success'], body.to_s
+        @signins << "#{body['npcId']}@hot_desk##{3}"
+        assert_equal %w[jun_watanabe], harvest('hot_desk')['harvested'].map { |r| r['npcId'] }
+        # P12
+        assert_equal 'cracked', crack('niamh_cached_hot_desk')['status']
+        post feed_post_game_url(@game), params: { npc_id: 'jun_watanabe' }, as: :json
+        assert_response :success, response.body
+        assert_equal 'cracked', crack('jun_cached', %w[jun_cat_name])['status']
+        keyring
+        # P13 and P14
+        take_cabinet_record
+        assert_equal 'ready', row('desk_rounds_hash')['status'], 'the player sees the row in the capture log before cracking it'
+        assert_equal 'cracked', crack('desk_rounds_hash')['status']
+        secret = row('deskadmin.cracked')
+        body = sign_in('delphine_pc', secret.dig('account', 'username'), secret['password'])
+        assert body['success'], body.to_s
+        @signins << "#{body['npcId']}@delphine_pc#1"
+        desktop_ids('delphine_pc')
+        refute sign_in('partner_pc', secret.dig('account', 'username'), secret['password'])['success']
+        refute sign_in('graham_pc', secret.dig('account', 'username'), secret['password'])['success']
+        named_logout('delphine_pc', 'deskadmin')
+        named_logout('hot_desk', 'graham_whitfield')
+        reader = reader_rows
+        assert_includes reader['rows'].map { |r| r['event'] }, 'CRED_COLLECT'
+        bootstrap_scenario
+        desktop_ids('partner_pc')
+      end
+    end
+
+    test 'P-S5: the whole run with the afternoon appended, and the scanner judges every answer clean' do
+      play_whole_run
+      before = captured.size
+      play_afternoon
+      assert_operator captured.size, :>, before + 20
+      scanner = AccessLeakScanner.new(scenario, game: Game.find(@game.id))
+      lines = captured.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] }
+      found = scanner.scan(lines, signins: @signins, logouts: @logouts)
+      assert_equal [], found.map { |f| [f.line, f.rule, f.owner, f.route] }
+      assert_equal [], scanner.unused_entries, 'every named sign-in and sign-out did its work'
+      assert_equal %w[delphine_arvanitis graham_whitfield jun_watanabe niamh_doherty deskadmin].sort, state['crackedAccounts'].sort
+    end
+
+    test 'P-S5: the scanner is not blind to the afternoon: a cached password put into a collect answer is a finding' do
+      play_whole_run
+      play_afternoon
+      rows_copy = Marshal.load(Marshal.dump(captured))
+      hit = rows_copy.rindex { |r| r['method'] == 'POST' && r['path'].end_with?('/harvest_credentials') && r['body'].is_a?(Hash) && r['body']['held'].to_a.any? }
+      rows_copy[hit]['body']['held'].first['username'] = NIAMH[1]
+      lines = rows_copy.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] }
+      refute_empty AccessLeakScanner.new(scenario, game: Game.find(@game.id)).scan(lines, signins: @signins, logouts: @logouts)
     end
   end
 end

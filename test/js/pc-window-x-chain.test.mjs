@@ -27,7 +27,7 @@ put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { 
 put('systems/inventory.js', 'export async function addToInventory() { return { ok: true }; }\nexport function removeFromInventory() {}\nexport function inventoryImageKey(d) { return d?.type; }\n');
 for (const rel of ['utils/escape-html.js', 'utils/computer-keywords.js', 'utils/author-html.js', 'utils/lock-scope-refusal.js',
     'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'minigames/framework/base-minigame.js',
-    'minigames/container/container-item-image.js', 'minigames/container/container-minigame.js',
+    'minigames/container/container-item-image.js', 'minigames/container/container-minigame.js', 'minigames/container/cached-accounts-panel.js', 'minigames/network-view/ops-model.js',
     'utils/remote-host-text.js', 'utils/compromise-bolt.js', 'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js', 'minigames/text-file/text-file-minigame.js',
     'minigames/notes/notes-minigame.js', 'minigames/framework/minigame-manager.js', 'utils/note-markdown.js', 'utils/test-state-text.js']) copy(rel);
 

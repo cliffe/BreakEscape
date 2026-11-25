@@ -33,7 +33,7 @@ module BreakEscape
     TOKEN_MAX_MIN = 240
 
     # Exactly one of these keys names a proof (section 3.5).
-    PROOF_KINDS = %w[session planted dropped held foothold technique_card].freeze
+    PROOF_KINDS = %w[session planted dropped held foothold technique_card harvested].freeze
 
     # Registry caps (section 3.3).
     MAX_ENTRIES = 64
@@ -192,8 +192,12 @@ module BreakEscape
     end
 
     # Whether a sign-in PC's access list admits an account. No access list admits every account
-    # (AccessIdentities.acl_admits? rule, with an absent list as open).
+    # (AccessIdentities.acl_admits? rule, with an absent list as open), and (S5c) the account's
+    # kind allows it at this PC.
     def pc_admits_account?(pc, npc)
+      # S5c: the account's kind is judged first; kinds only narrow, the access list is judged after
+      return false unless AccessIdentities.account_kind_admits?(pc, npc)
+
       acl = pc.is_a?(Hash) ? pc['access'] : nil
       return true if acl.nil?
 

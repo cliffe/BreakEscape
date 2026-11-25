@@ -46,7 +46,7 @@ for (const rel of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils
     'utils/remote-host-text.js', 'utils/compromise-bolt.js', 'systems/keyring.js', 'systems/notifications.js', 'ui/modal-stack.js', 'utils/overlay-open.js',
     'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js', 'systems/network-links.js', 'api-client.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
-    'minigames/container/container-minigame.js', 'minigames/password/password-minigame.js']) copy(rel);
+    'minigames/container/container-minigame.js', 'minigames/container/cached-accounts-panel.js', 'minigames/network-view/ops-model.js', 'minigames/password/password-minigame.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;

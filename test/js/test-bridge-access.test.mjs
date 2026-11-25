@@ -35,7 +35,7 @@ test('the bridge exposes the access block', () => {
   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
   assert.match(src, /\baccess: accessBridge,/);
-  assert.deepEqual(Object.keys(accessBridge).sort(), ['compromiseMarks', 'feed', 'footholds', 'guest', 'hiddenDevices', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
+  assert.deepEqual(Object.keys(accessBridge).sort(), ['cachedAccounts', 'clickCollect', 'clickCrack', 'collectControl', 'compromiseMarks', 'feed', 'footholds', 'guest', 'hiddenDevices', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
 });
 
 test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {

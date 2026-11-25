@@ -1,6 +1,7 @@
 // Graham Whitfield, IT. Short chat plus log_offer, offered while act_evening is true.
 VAR act_evening = false
 VAR met_graham = false
+VAR told_rota = false
 
 === start ===
 { met_graham:
@@ -19,6 +20,8 @@ Go on, then.
     # speaker:npc
     I've one I like. Why would I change it?
     -> choices
++ { not told_rota } [What's the rota sheet by the door?]
+    -> rota
 + { act_evening } [What about the sign-in log?]
     -> log_offer
 + [I'll let you get on.]
@@ -32,6 +35,14 @@ Go on, then.
 Every sign-in leaves a row. Open the log terminal and find yours.
 # speaker:npc
 Then look at the small hours. Someone tried my PC in the night. Flag that row.
+-> hub.choices
+
+=== rota ===
+~ told_rota = true
+# speaker:npc
+Tuesdays I do the desk rounds on the shared desk account. One login, three desks.
+# speaker:npc
+The rota says which. Don't ask me about the old backups cabinet.
 -> hub.choices
 
 // Played once by the needs system when Graham and Niamh chat at the cooler

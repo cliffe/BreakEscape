@@ -577,6 +577,15 @@ module BreakEscape
     # Hand-kept: the event registry (lib/break_escape/ops_log_events.rb) records no per-event `as` rule, so there is nothing to derive this from.
     OPS_AS_NIL_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed technique_refused net_link_up net_link_down net_wifi_join].freeze
     # technique_used names the session's account (nil for a credential grant): the worst case is an account name.
+    test 'S5b and S5c log events are registered as written' do
+      harvest = BreakEscape::OpsLogEvents::EVENTS['credentials_harvested']
+      assert_equal 'CRED_COLLECT', harvest[:label]
+      assert_equal %w[pc], harvest[:places]
+      assert_equal %w[ok], harvest[:results]
+      assert_equal({ 'count' => { count: 8 } }, harvest[:detail])
+      assert_equal({ 'kind' => %w[local domain] }, BreakEscape::OpsLogEvents::EVENTS['signin_refused'][:detail])
+    end
+
     OPS_AS_ACCOUNT_EVENTS = %w[technique_used admin_profile_read usb_install_overridden share_folder_opened account_password_reset account_mfa_reenrolled].freeze
 
     test 'every registered event builds a ceiling-filled row of at most 400 bytes' do

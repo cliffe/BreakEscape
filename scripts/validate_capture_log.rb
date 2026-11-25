@@ -135,7 +135,7 @@ def check_capture_log(json_data)
   networks = nm.networks(json_data).any?
 
   pc_admits = lambda do |pc, npc|
-    pc['access'].nil? || ai.acl_admits?(pc['access'], npc)
+    ai.account_admitted?(pc, npc)
   end
   lock_answer_keys = cm.lock_answer_keys(json_data)
   # The server's rule (CaptureProofs#account_password_opens_something?): a sign-in PC that

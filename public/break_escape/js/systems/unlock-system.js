@@ -392,6 +392,7 @@ export function remoteLockable(row, footholdId) {
     return {
         scenarioData: {
             id: row?.id, name: row?.name || row?.host || row?.id, host: row?.host || null,
+            ...(typeof row?.domain === 'string' ? { domain: row.domain } : {}),
             type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
             remote: { footholdId }
         },
@@ -759,6 +760,11 @@ export function openLoginDesktop(lockable) {
     }
 }
 
+/** S5c: a PC's `domain` when it is a non-blank string, else null. Shown through escapeHtml only. */
+export function domainOf(data) {
+    return typeof data?.domain === 'string' && data.domain.trim() ? data.domain.trim() : null;
+}
+
 /**
  * The sign-in screen: the password minigame in sign-in mode, with the account tiles
  * refreshed from GET /login_accounts every time it opens (5.3: "known" changes as the
@@ -850,6 +856,8 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
         signIn: {
             pcId,
             pcName: data.name || pcId,
+            // S5c: the PC's domain, author text, shown as text only (null when it has none)
+            domain: domainOf(data),
             picker,
             tiles: picker === false ? [] : tiles,
             current,
@@ -913,6 +921,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             pcName: data.host && data.name && data.host !== data.name ? `${data.name} (${data.host})` : hostLabel,
             picker: false,
             tiles: [],
+            domain: domainOf(data),
             current: held && held.via !== 'claim' ? held : null,
             // A locked held session pre-chooses its own account, as the local screen does; a
             // refused Connect (K3b) pre-chooses the credential's account and shows the refusal
@@ -955,6 +964,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
                 headless: !!answer?.headless,
                 remoteScreen: answer?.remoteScreen,
                 host: answer?.host || hostLabel,
+                // S5c: the server sends the PC's domain on this answer (a host row of the view carries none)
+                domain: domainOf(answer),
                 tiles: Array.isArray(answer?.loginAccounts) ? answer.loginAccounts : []
             };
         } catch (error) {
@@ -993,7 +1004,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             ...(loginDone ? {
                 ...(loginAns.failed ? {} : { picker: loginAns.picker }),
                 headless: loginAns.headless, remoteScreen: loginAns.remoteScreen,
-                host: loginAns.host, tiles: loginAns.tiles, accountsFailed: !!loginAns.failed
+                host: loginAns.host, tiles: loginAns.tiles, accountsFailed: !!loginAns.failed,
+                ...(loginAns.domain ? { domain: loginAns.domain } : {})
             } : { accountsFailed: false }),
             captured: captureAns.list,
             capturedFailed: captureAns.failed,

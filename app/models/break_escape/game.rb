@@ -11,6 +11,7 @@ module BreakEscape
     include CredentialKeyring
     include EarnedFacts
     include OpsCracking
+    include CachedCredentials # S5b
     include CredentialLogin
     include NpcFrustration
     include SocialFeed
@@ -2091,6 +2092,7 @@ module BreakEscape
 
           room['npcs'].each do |npc|
             next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+            next if AccessIdentities.account_only?(npc) # S5c: no person to knock out
 
             ids << npc['id']
           end
@@ -2100,6 +2102,7 @@ module BreakEscape
 
       narrow_room_npc_stubs.each_with_object(Set.new) do |npc, ids|
         next unless npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+        next if AccessIdentities.account_only?(npc) # S5c: no person to knock out
 
         ids << npc['id']
       end
@@ -2109,7 +2112,7 @@ module BreakEscape
     # scenario_data (sync_state's narrow load). jsonb_each / jsonb_array_elements /
     # jsonb_build_object only, so it runs on PostgreSQL 9.5 (jsonpath needs 12). Bounded by the scenario.
     NARROW_ROOM_NPC_STUBS_SQL = <<~SQL.squish
-      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'npcType', n.npc -> 'npcType')
+      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'accountOnly', n.npc -> 'accountOnly', 'npcType', n.npc -> 'npcType')
       FROM break_escape_games g
       CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(g.scenario_data -> 'rooms') = 'object'
                                          THEN g.scenario_data -> 'rooms' ELSE '{}'::jsonb END) AS r(room_id, room)
@@ -2206,7 +2209,7 @@ module BreakEscape
       room = scenario_data.dig('rooms', room_id)
       return false unless room
 
-      scenario_has_npc = room['npcs']&.any? { |npc| npc['id'] == npc_id }
+      scenario_has_npc = room['npcs']&.any? { |npc| npc['id'] == npc_id && !AccessIdentities.account_only?(npc) } # S5c
 
       # Check if NPC was removed from this room
       removed = player_state.dig('room_states', room_id, 'npcs_removed')&.include?(npc_id)
@@ -2279,7 +2282,7 @@ module BreakEscape
       (scenario_data['rooms'] || {}).values
         .select { |room| room.is_a?(Hash) }
         .flat_map { |room| room['npcs'].is_a?(Array) ? room['npcs'] : [] }
-        .select { |npc| npc.is_a?(Hash) && %w[person both].include?(npc['npcType']) }
+        .select { |npc| npc.is_a?(Hash) && %w[person both].include?(npc['npcType']) && !AccessIdentities.account_only?(npc) } # S5c
         .map { |npc| npc['spriteSheet'].presence || 'hacker' }
         .push(scenario_data.dig('player', 'spriteSheet').presence)
         .compact
@@ -2481,6 +2484,7 @@ module BreakEscape
              access acceptsUIDOnly cryptexConfig dustable dustHint].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
+          strip_account_only_people!(kept_fields)
           # Second step (S8c): kind and owner only, as authored; and who opened a gated door.
           step = room_data['secondStep']
           kept_fields['secondStep'] = step.slice('kind', 'owner') if step.is_a?(Hash)
@@ -2505,7 +2509,7 @@ module BreakEscape
           npcs = room_data['npcs']
           if npcs.is_a?(Array)
             kept_fields['hasPresentNpc'] = npcs.any? do |n|
-              n.is_a?(Hash) && n['npcType'] != 'phone' && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
+              n.is_a?(Hash) && n['npcType'] != 'phone' && !AccessIdentities.account_only?(n) && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
             end
           end
 
@@ -2809,6 +2813,9 @@ module BreakEscape
 
       # Apply dynamic room state changes (delta overlay)
       apply_room_state_changes!(room, room_id)
+
+      # S5c: an account with no person behind it is never a room NPC in any answer.
+      room['npcs'].reject! { |npc| AccessIdentities.account_only?(npc) } if room['npcs'].is_a?(Array)
 
       # Remove ONLY the 'requires' field (the solution) and locked 'contents'
       # Keep lockType, locked, observations visible to client. The work plans built on the way
@@ -3146,7 +3153,11 @@ module BreakEscape
       # Offline cracking S7 (S7_BUILD_BRIEF.md 4): earnedFacts [factId] (at most 64), crackRuns and
       # crackStarted { hashId => ... }, crackedAccounts [npcId]. Server-written only, never in a sync
       # body, the bootstrap or any answer whole, at most 64 entries each.
-      'earnedFacts' => [], 'crackRuns' => {}, 'crackStarted' => {}, 'crackedAccounts' => []
+      'earnedFacts' => [], 'crackRuns' => {}, 'crackStarted' => {}, 'crackedAccounts' => [],
+      # S5b (S5BC_BUILD_BRIEF 4.2): "<pcId>|<npcId>" pairs. cachedAt: borrowers cached at a PC;
+      # harvestedAccounts: accounts an admin session collected. Grow-only, server-written only.
+      'cachedAt' => [],
+      'harvestedAccounts' => []
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -3343,6 +3354,10 @@ module BreakEscape
     # right now (OPS_PRIVILEGE_ACCOUNTS_PLAN S5a). Worked out on every read and never stored,
     # except that a technique record carries the `access` the core's step up wrote. The steps
     # run in this order: a relay record is `via: "credential"`, so step 5 comes before step 7.
+    # S5 ruling B: a relayed session has exactly the rights of the account relayed, so a relay
+    # record is read like any credential record (its account, at this PC's access list). Only a
+    # claim is always `user`. A relay still never feeds a step up (ops_need_session refuses it)
+    # and is never a keyboard admin.
     def session_access(pc_id)
       session = access_sessions[pc_id.to_s]
       return nil unless session.is_a?(Hash)
@@ -3351,7 +3366,7 @@ module BreakEscape
       npc = session_identity(pc_id)
       return nil unless npc
       return nil unless session_route_up?(pc_id)
-      return 'user' if relay_session?(session) || session['via'] == 'claim'
+      return 'user' if session['via'] == 'claim'
 
       case session['via']
       when 'technique'
@@ -3583,17 +3598,28 @@ module BreakEscape
     end
 
     # A PC's access list admits the account; no access list admits every account (5.2).
+    # S5c: one definition, CredentialModel's (the kind first, then the access list); proved equal
+    # on every shipped scenario by pc_admits_account_test.rb before this delegated.
     def pc_admits_account?(pc, npc)
-      return true if pc['access'].nil?
-
-      self.class.acl_admits?(pc['access'], npc)
+      CredentialModel.pc_admits_account?(pc, npc)
     end
 
-    # The accounts present on a PC for an admin session's profile reach. S5a: its owner only
-    # (a seam so S5b can widen it); reads nothing but `owner`.
+    # S5c: the kind ('local' or 'domain') of an account that the PC's KIND refuses, else nil. The
+    # kind detail of a signin_refused row is written only when the kind did the refusing.
+    def refusing_account_kind(pc, npc)
+      return nil if AccessIdentities.account_kind_admits?(pc, npc)
+
+      kind = npc['creds']['accountKind']
+      %w[local domain].include?(kind) ? kind : nil
+    end
+
+    # The accounts present on a PC for an admin session's profile reach: its owner, then (S5b) the
+    # accounts cached at the PC now, each once. Reads only `owner` and the declared cached list.
     def admin_present_accounts(pc)
       owner = login_pc_owner(pc)
-      owner ? [owner] : []
+      present = owner ? [owner] : []
+      cached_accounts_at(pc).each { |npc| present << npc unless present.any? { |p| p['id'] == npc['id'] } }
+      present
     end
 
     # The PC's owner (its explicit owner, a single NPC id), or nil, as ownerOf does on the
@@ -3689,8 +3715,10 @@ module BreakEscape
       if secret.is_a?(String) && !secret.empty? && password.to_s == secret
         unless pc_admits_account?(pc, npc)
           # Ops log L1b: a right password the PC does not admit; saves only when the row stored
+          kind = refusing_account_kind(pc, npc) # S5c
           r = write_log_row!('signin_refused', as: { account: npc['creds']['username'] },
                                                 where: { kind: 'pc', id: pc['id'].to_s }, result: 'denied',
+                                                detail: kind ? { 'kind' => kind } : nil,
                                                 save_limit: true)
           save! if r&.stored?
           return { status: :unprocessable_entity,
@@ -4130,7 +4158,8 @@ module BreakEscape
 
       encountered = Array(player_state['encounteredNPCs'])
       account_npcs.select do |npc|
-        pc_admits_account?(pc, npc) && (picker != 'known' || encountered.include?(npc['id']))
+        !AccessIdentities.account_only?(npc) && # S5c: no tile for an account with no person behind it
+          pc_admits_account?(pc, npc) && (picker != 'known' || encountered.include?(npc['id']))
       end.map do |npc|
         {
           'username' => npc['creds']['username'],
@@ -6556,13 +6585,17 @@ module BreakEscape
     def scenario_npc_ids
       ids = Set.new
       if has_attribute?(:scenario_data)
-        scenario_npc_records.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) }
+        scenario_npc_records.each do |npc|
+          ids << npc['id'] if npc['id'].is_a?(String) && !AccessIdentities.account_only?(npc)
+        end
       else
         # sync_state's narrow load leaves scenario_data out; read just the ids:
         # room NPCs, and the headless records' ids (social.characters.*.channels.email
         # where the character has an emailRecord; see headless_npc_records)
         # (9.5-safe: no jsonpath; see narrow_room_npc_stubs)
-        narrow_room_npc_stubs.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? }
+        narrow_room_npc_stubs.each do |npc|
+          ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? && !AccessIdentities.account_only?(npc)
+        end
         social = self.class.where(id: id).pick(Arel.sql("scenario_data -> 'social'"))
         social = JSON.parse(social) if social.is_a?(String)
         self.class.headless_npc_records('social' => social).each do |rec|
@@ -7604,6 +7637,31 @@ module BreakEscape
       node
     end
 
+    # Ids of the scenario's account-only NPCs, built once per scenario copy (the filter below runs
+    # for every object of every answer).
+    def account_only_npc_ids
+      data = has_attribute?(:scenario_data) ? scenario_data : nil
+      return Set.new unless data.is_a?(Hash)
+
+      @account_only_ids_memo = nil unless @account_only_ids_memo && @account_only_ids_memo[0].equal?(data)
+      @account_only_ids_memo ||= [data, self.class.scenario_npc_records(data)
+                                          .select { |npc| AccessIdentities.account_only?(npc) }
+                                          .filter_map { |npc| npc['id'].to_s if npc['id'].is_a?(String) }.to_set]
+      @account_only_ids_memo[1]
+    end
+
+    # S5c: an access list that reaches the browser (an object's, a room's, an item's) never names an
+    # account with no person behind it. The `people` key stays; only those ids go.
+    def strip_account_only_people!(obj)
+      access = obj['access']
+      return unless access.is_a?(Hash) && access['people'].is_a?(Array)
+
+      hidden = account_only_npc_ids
+      return if hidden.empty?
+
+      access['people'] = access['people'].reject { |person| person.is_a?(String) && hidden.include?(person) }
+    end
+
     # Second step (S8c): a gated object whose step has not opened
     def step_closed_gated?(obj)
       obj.is_a?(Hash) && obj['id'].present? && second_step_ids.include?(obj['id'].to_s) && !step_object_open?(obj)
@@ -7612,6 +7670,7 @@ module BreakEscape
     def filter_requires_and_contents_recursive(obj)
       case obj
       when Hash
+        strip_account_only_people!(obj)
         self.class.strip_puzzle_graph_keys!(obj)
         # A declared grant's contents are served from the held item, never shipped.
         # Deep, because this filter descends only into objects, npcs, contents and the

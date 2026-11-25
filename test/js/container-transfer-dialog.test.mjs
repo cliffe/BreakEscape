@@ -42,6 +42,8 @@ put('systems/inventory.js',
 copy('minigames/container/container-item-image.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/container/container-minigame.js');
+copy('minigames/container/cached-accounts-panel.js');
+copy('minigames/network-view/ops-model.js');
 copy('systems/pc-sessions.js');
 copy('systems/mfa-client.js');
 copy('systems/helpdesk-client.js');

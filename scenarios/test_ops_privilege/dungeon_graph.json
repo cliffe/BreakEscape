@@ -3,6 +3,18 @@
   "start_room": "lobby",
   "nodes": [
     {
+      "id": "lock_hot_desk",
+      "label": "Hot desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_sam_pc",
+      "label": "Sam's desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "lock_bay_pc",
       "label": "Bay desk PC<br/>Sign-in",
       "kind": "lock",
@@ -12,6 +24,42 @@
       "id": "lock_store_pc",
       "label": "Records PC<br/>Sign-in",
       "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_desk_a",
+      "label": "Desk PC A<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_desk_b",
+      "label": "Desk PC B<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_lab_pc",
+      "label": "Lab PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_priya",
+      "label": "Priya Nair sign-in<br/>(pnair)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_sam",
+      "label": "Sam Okoro sign-in<br/>(sokoro)",
+      "kind": "key",
       "optional": false
     },
     {
@@ -45,15 +93,33 @@
       "optional": false
     },
     {
-      "id": "device_kit_dropbox",
-      "label": "Network drop box<br/>(rogue device)",
+      "id": "signin_deskadmin",
+      "label": "Desk administrator sign-in<br/>(deskadmin)",
       "kind": "key",
       "optional": false
     },
     {
-      "id": "lobby",
-      "label": "Lobby",
+      "id": "it_room",
+      "label": "IT room",
       "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_labadmin",
+      "label": "Lab administrator sign-in<br/>(labadmin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_ravi",
+      "label": "Ravi Menon sign-in<br/>(rmenon-adm)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
       "optional": false
     },
     {
@@ -87,8 +153,20 @@
       "optional": false
     },
     {
+      "id": "workaround_sam_0",
+      "label": "Sam Okoro: uses the hot desk, at 40",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "outage_sam_pc_off",
+      "label": "sam_pc_off<br/>(outage)",
+      "kind": "gate",
+      "optional": false
+    },
+    {
       "id": "log_priv_audit",
-      "label": "Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden",
+      "label": "Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden, credentials_harvested, signin_refused",
       "kind": "note",
       "optional": false
     },
@@ -99,8 +177,62 @@
       "optional": false
     },
     {
+      "id": "cred_adel_assist",
+      "label": "Adel Wick assist invite<br/>(adelwick)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_adel_assist_code",
+      "label": "Adel assist code.txt",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "cred_adel_token",
       "label": "Adel Wick token<br/>(adelwick)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_baypc_olu",
+      "label": "Olu Marsh hash<br/>(omarsh)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_baypc_uma",
+      "label": "Uma Quayle hash<br/>(umaquay)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_desk_a_deskadmin",
+      "label": "Desk administrator hash<br/>(deskadmin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_desk_b_deskadmin",
+      "label": "Desk administrator hash<br/>(deskadmin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_hotdesk_priya",
+      "label": "Priya Nair hash<br/>(pnair)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_hotdesk_sam",
+      "label": "Sam Okoro hash<br/>(sokoro)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_lab_labadmin",
+      "label": "Lab administrator hash<br/>(labadmin)",
       "kind": "key",
       "optional": false
     },
@@ -117,6 +249,60 @@
       "optional": false
     },
     {
+      "id": "crackpw_olu",
+      "label": "Olu Marsh password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_bay_pinboard",
+      "label": "Bay pinboard",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "crackpw_uma",
+      "label": "Uma Quayle password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_deskadmin",
+      "label": "Desk administrator password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_it_rota_poster",
+      "label": "IT rota poster",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "crackpw_priya",
+      "label": "Priya Nair password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_lobby_noticeboard",
+      "label": "Front desk noticeboard",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "crackpw_sam",
+      "label": "Sam Okoro password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_labadmin",
+      "label": "Lab administrator password",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "tech_field_release_notes",
       "label": "Release notes: records build",
       "kind": "key",
@@ -126,6 +312,18 @@
       "id": "cred_src_card_stale",
       "label": "Field note: records updates",
       "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "admin@hot_desk",
+      "label": "Hot desk PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@sam_pc",
+      "label": "Sam's desk PC<br/>Administrator session",
+      "kind": "key",
       "optional": false
     },
     {
@@ -139,9 +337,37 @@
       "label": "Records PC<br/>Administrator session",
       "kind": "key",
       "optional": false
+    },
+    {
+      "id": "admin@desk_a",
+      "label": "Desk PC A<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@desk_b",
+      "label": "Desk PC B<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@lab_pc",
+      "label": "Lab PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
     }
   ],
   "edges": [
+    {
+      "from": "lobby",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
     {
       "from": "bay",
       "to": "lock_bay_pc",
@@ -153,8 +379,83 @@
       "soft": false
     },
     {
+      "from": "it_room",
+      "to": "lock_desk_a",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "lock_desk_b",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "lock_lab_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_priya",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_bay_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_store_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_sam",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_bay_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_store_pc",
+      "soft": false
+    },
+    {
       "from": "bay",
       "to": "signin_olu",
+      "soft": false
+    },
+    {
+      "from": "signin_olu",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_olu",
+      "to": "lock_sam_pc",
       "soft": false
     },
     {
@@ -174,6 +475,16 @@
     },
     {
       "from": "signin_uma",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_uma",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_uma",
       "to": "lock_bay_pc",
       "soft": false
     },
@@ -189,12 +500,77 @@
     },
     {
       "from": "signin_adel",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_adel",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_adel",
       "to": "lock_bay_pc",
       "soft": false
     },
     {
       "from": "signin_adel",
       "to": "lock_store_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_adel",
+      "to": "lock_desk_a",
+      "soft": false
+    },
+    {
+      "from": "signin_adel",
+      "to": "lock_desk_b",
+      "soft": false
+    },
+    {
+      "from": "signin_adel",
+      "to": "lock_lab_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_deskadmin",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "lock_desk_a",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "lock_desk_b",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_labadmin",
+      "soft": false
+    },
+    {
+      "from": "signin_labadmin",
+      "to": "lock_lab_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_ravi",
+      "soft": false
+    },
+    {
+      "from": "signin_ravi",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_ravi",
+      "to": "lock_bay_pc",
       "soft": false
     },
     {
@@ -264,6 +640,17 @@
       "soft": false
     },
     {
+      "from": "outage_sam_pc_off",
+      "to": "workaround_sam_0",
+      "soft": false
+    },
+    {
+      "from": "workaround_sam_0",
+      "to": "lock_hot_desk",
+      "soft": false,
+      "label": "open session"
+    },
+    {
       "from": "lobby",
       "to": "bay",
       "soft": false
@@ -271,6 +658,11 @@
     {
       "from": "lobby",
       "to": "store",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "it_room",
       "soft": false
     },
     {
@@ -283,6 +675,16 @@
       "to": "reader_audit_log_pc",
       "soft": true,
       "undirected": true
+    },
+    {
+      "from": "cred_src_adel_assist_code",
+      "to": "cred_adel_assist",
+      "soft": false
+    },
+    {
+      "from": "cred_adel_assist",
+      "to": "lock_hot_desk",
+      "soft": false
     },
     {
       "from": "cred_adel_token",
@@ -298,6 +700,78 @@
       "from": "cred_uma_assist",
       "to": "lock_store_pc",
       "soft": false
+    },
+    {
+      "from": "cred_baypc_olu",
+      "to": "crackpw_olu",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_src_bay_pinboard",
+      "to": "crackpw_olu",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_baypc_uma",
+      "to": "crackpw_uma",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_src_bay_pinboard",
+      "to": "crackpw_uma",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_desk_a_deskadmin",
+      "to": "crackpw_deskadmin",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_src_it_rota_poster",
+      "to": "crackpw_deskadmin",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_desk_b_deskadmin",
+      "to": "crackpw_deskadmin",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_hotdesk_priya",
+      "to": "crackpw_priya",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_src_lobby_noticeboard",
+      "to": "crackpw_priya",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_hotdesk_sam",
+      "to": "crackpw_sam",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_src_lobby_noticeboard",
+      "to": "crackpw_sam",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_lab_labadmin",
+      "to": "crackpw_labadmin",
+      "soft": false,
+      "label": "crack"
     },
     {
       "from": "cred_src_card_stale",
@@ -317,6 +791,30 @@
     },
     {
       "from": "signin_adel",
+      "to": "admin@hot_desk",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_ravi",
+      "to": "admin@hot_desk",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_adel",
+      "to": "admin@sam_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_adel",
+      "to": "admin@bay_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_ravi",
       "to": "admin@bay_pc",
       "soft": false,
       "label": "administrator"
@@ -332,6 +830,90 @@
       "to": "admin@store_pc",
       "soft": false,
       "label": "administrator"
+    },
+    {
+      "from": "signin_adel",
+      "to": "admin@desk_a",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "admin@desk_a",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_adel",
+      "to": "admin@desk_b",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "admin@desk_b",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_adel",
+      "to": "admin@lab_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_labadmin",
+      "to": "admin@lab_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "admin@hot_desk",
+      "to": "cred_hotdesk_priya",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "admin@hot_desk",
+      "to": "cred_hotdesk_sam",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "workaround_sam_0",
+      "to": "cred_hotdesk_sam",
+      "soft": false,
+      "label": "borrow"
+    },
+    {
+      "from": "admin@bay_pc",
+      "to": "cred_baypc_olu",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "admin@bay_pc",
+      "to": "cred_baypc_uma",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "admin@desk_a",
+      "to": "cred_desk_a_deskadmin",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "admin@desk_b",
+      "to": "cred_desk_b_deskadmin",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "admin@lab_pc",
+      "to": "cred_lab_labadmin",
+      "soft": false,
+      "label": "collect"
     },
     {
       "from": "lock_store_pc",

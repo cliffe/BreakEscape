@@ -28,6 +28,7 @@ module BreakEscape
       'signin_fail' => { label: 'SIGN_IN', places: %w[pc], results: %w[fail] },
       'signin_lockout' => { label: 'SIGN_IN', places: %w[pc], results: %w[ok] },
       'signin_refused' => { label: 'SIGN_IN', places: %w[pc], results: %w[denied blocked],
+                            detail: { 'kind' => %w[local domain] }, # S5c
                             save_limit: { 'denied' => 10, 'blocked' => 10 } },
       'session_end' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
       'session_lock' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
@@ -49,6 +50,9 @@ module BreakEscape
       # Privilege (S5a): an admin session reads an owner's profile; an admin session overrides the USB policy.
       'admin_profile_read' => { label: 'ADMIN_READ', places: %w[pc], results: %w[ok], detail: { 'profile' => { id: 'profile' } } },
       'usb_install_overridden' => { label: 'USB_OVERRIDE', places: %w[pc], results: %w[ok], detail: { 'device' => %w[storage hid] } },
+      # Ops S5b: an admin session collects the cached accounts of a PC; `count` is how many hash records arrived
+      # (a number, 1 to 8). No account name, hash or token is a detail value.
+      'credentials_harvested' => { label: 'CRED_COLLECT', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 8 } } },
       # Ops log L3: a jack plugged or unplugged, an access point joined, a share folder opened
       # (OPS_LOG_ROWS_PLAN.md 13.8). No identity on the network rows; the folder row names no file.
       # `merge: false` (L3 R2-1): the link rows never merge into an earlier row, so a plant after an unplug
@@ -400,7 +404,9 @@ module BreakEscape
       owner = pc && profile_owner(game, game.scenario_data['accountProfiles'][id.to_s])
       picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts' if pc
       shown = pc && !BreakEscape::NetworkModel.headless?(pc) && game.remote_screen(pc) == 'tiles'
-      owner && shown && picker == 'accounts' && BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
+      # An account-only account has no tile at any sign-in screen (S5c), so its name is never shown.
+      owner && !BreakEscape::AccessIdentities.account_only?(owner) && shown && picker == 'accounts' &&
+        BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
     end
 
     def foothold_name(game, id)

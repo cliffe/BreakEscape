@@ -4742,6 +4742,8 @@ def check_recommended_fields(json_data)
       if room['npcs']
         room['npcs'].each_with_index do |npc, idx|
           path = "rooms/#{room_id}/npcs[#{idx}]"
+          # An account-only NPC is an account, not a person in the world: it may not carry a position or behaviour
+          next if npc['accountOnly'] == true
 
           # Phone NPCs should have avatar
           if npc['npcType'] == 'phone' && !npc['avatar']
@@ -8367,7 +8369,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     c_owner = ai.room_npcs(claim_data).map { |x| x[:npc] }.find { |n| n['id'].to_s == owner_id.to_s }
     next false unless c_owner
     # Game#claim_login_session! checks 4 and 5 (account_holder?, pc_admits_account?)
-    next false unless ai.account?(c_owner) && (c_pc['access'].nil? || ai.acl_admits?(c_pc['access'], c_owner))
+    next false unless ai.account_admitted?(c_pc, c_owner)
     next false if ai.screen_always_locks?(c_pc, c_owner)
 
     c_policy = claim_data['policies'].is_a?(Hash) ? claim_data['policies'][(c_pc['policy'] || claim_data['defaultPolicy']).to_s] : nil

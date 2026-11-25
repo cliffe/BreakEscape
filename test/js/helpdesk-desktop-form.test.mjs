@@ -40,7 +40,7 @@ put('systems/inventory.js',
 for (const rel of ['utils/escape-html.js', 'utils/more-below.js', 'utils/computer-keywords.js', 'utils/pc-monitor.js',
     'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js', 'utils/remote-host-text.js', 'utils/compromise-bolt.js',
     'utils/sync-before-fetch.js', 'minigames/container/container-item-image.js', 'minigames/framework/base-minigame.js',
-    'minigames/framework/social-overlay.js', 'minigames/container/container-minigame.js', 'systems/pc-sessions.js',
+    'minigames/framework/social-overlay.js', 'minigames/container/container-minigame.js', 'minigames/container/cached-accounts-panel.js', 'minigames/network-view/ops-model.js', 'systems/pc-sessions.js',
     'systems/mfa-client.js', 'systems/helpdesk-client.js', 'systems/minigame-registry.js', 'systems/exercise-station-starter.js',
     'systems/global-writer.js', 'minigames/framework/minigame-manager.js',
     'minigames/helpdesk-request/helpdesk-request-minigame.js', 'ui/modal-stack.js']) copy(rel);

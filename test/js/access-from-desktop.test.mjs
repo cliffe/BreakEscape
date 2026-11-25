@@ -50,7 +50,7 @@ for (const rel of ['utils/locked-hint.js', 'utils/conditional-text.js', 'systems
     'utils/remote-host-text.js', 'utils/compromise-bolt.js',
     'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js', 'systems/keyring.js', 'systems/network-links.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
-    'minigames/container/container-minigame.js']) copy(rel);
+    'minigames/container/container-minigame.js', 'minigames/container/cached-accounts-panel.js', 'minigames/network-view/ops-model.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
