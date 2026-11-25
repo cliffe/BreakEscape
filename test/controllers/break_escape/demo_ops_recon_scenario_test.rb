@@ -594,7 +594,7 @@ module BreakEscape
       get game_path('keyring'), as: :json
       rec
       post game_path('login'), params: { pc_id: 'agnieszka_pc', credential: 'print_admin', foothold: FOOT }, as: :json
-      rec('login' => { 'pcId' => 'agnieszka_pc' })
+      rec('pc' => { 'pcId' => 'agnieszka_pc' })
       get game_path('container/agnieszka_pc'), params: { foothold: FOOT }, as: :json
       rec
       take_rec('technique_card', 'card_update_gap', 'Technique card: known update gap', npc: 'zainab_hussain')

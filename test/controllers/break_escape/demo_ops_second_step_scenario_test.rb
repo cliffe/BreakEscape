@@ -461,14 +461,23 @@ module BreakEscape
       row = { 't' => (Time.utc(2026, 1, 1) + @log.length).iso8601(3), 'method' => request.request_method,
               'path' => request.path, 'status' => response.status, 'body' => response.parsed_body }
       row['query'] = request.query_string unless request.query_string.to_s.empty?
+      # the recorder's own rule: a POST to a PC route carries `pc` = { pcId } from the body's pc_id, else null
+      row['pc'] = recorder_pc_tag if row['method'] == 'POST' && PC_ROUTE_RE.match?(row['path'])
       @log << row.merge(extra)
       @marks[mark] = @log.last if mark
       @log.last
     end
 
+    PC_ROUTE_RE = %r{/(login|logout|lock_session|mfa/verify|mfa/prompt|mfa/approve)\z}
+
+    def recorder_pc_tag
+      id = request.request_parameters['pc_id']
+      id.is_a?(String) && !id.empty? && !request.query_string.to_s.match?(/(\A|[?&;])(pc_id|target_type|target_id)(\[|=|&|;|\z)/) ? { 'pcId' => id } : nil
+    end
+
     def sign_in_row(pc, creds, mark)
       sign_in(pc, *creds)
-      rec(mark, 'login' => { 'pcId' => pc })
+      rec(mark)
     end
 
     def take_row(id, type, name, mark, npc: nil)

@@ -647,7 +647,7 @@ module HelpdeskLeakRules
       @hd_close_after << pc if pc
     elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
       kinds = route == 'mfa/verify' ? %w[code] : AccessLeakScanner::MFA_PUSH_KINDS
-      tag = hd_row_tag
+      tag = hd_row_tag(body)
       @hd_close_after.concat(@hd_own_steps.keys.select do |pc|
         rec = @mfa_pending[pc]
         (rec.nil? || kinds.include?(rec[:kind])) && (tag.nil? || pc == tag)
@@ -655,8 +655,9 @@ module HelpdeskLeakRules
     end
   end
 
-  def hd_row_tag
-    @hd_row && mfa_row_pc_tag(@hd_row)
+  # The checked reader the second-step close uses (R1-m3): a tag the answer refutes reads as no tag.
+  def hd_row_tag(body)
+    @hd_row && mfa_tag_for(body, @hd_row)
   end
 
   # The hook `mfa_pass_pc` asks for an approval answer: `approvedBy` is `own_phone`, the row's query is exactly `own=1`, the

@@ -23,10 +23,19 @@ module BreakEscape
       ns.map { |n| Marshal.load(Marshal.dump(real.fetch(n))) }
     end
 
+    # A scan that passes names (`signins:`, `logouts:`) is of an untagged capture: the names and the recorder's tags never sit together.
     def scan_rows(list, **opts)
+      opts = { tags: :absent }.merge(opts) if opts[:signins] || opts[:logouts]
       scanner = AccessLeakScanner.new(scenario)
       findings = scanner.scan(list.each_with_index.map { |r, i| ['capture.jsonl', i + 1, r] }, **opts)
       [findings, scanner]
+    end
+
+    # The recorder tags every PC-route row of a tagged capture; a row that names no PC carries `pc: null` ("unplaced").
+    def unplaced(list)
+      list.each do |row|
+        row['pc'] = nil if row['method'] == 'POST' && row['path'].match?(%r{/(login|logout|lock_session|mfa/verify|mfa/prompt|mfa/approve)\z}) && !row.key?('pc')
+      end
     end
 
     def found(findings)
@@ -117,7 +126,7 @@ module BreakEscape
       claim = lambda do |npc, username, pc|
         row = rows(107).first
         row['body'] = row['body'].merge('npcId' => npc, 'username' => username, 'via' => 'claim')
-        row['login'] = { 'pcId' => pc }
+        row['pc'] = { 'pcId' => pc }
         row
       end
       assert_equal [], found(scan_rows([claim.call('hana', 'hquill', 'code_pc1')]).first) # Hana owns Accounts PC
@@ -176,12 +185,13 @@ module BreakEscape
       base = '/break_escape/games/86'
       other = { 'method' => 'POST', 'path' => "#{base}/network/technique", 'status' => 200,
                 'body' => { 'success' => true, 'session' => { 'npcId' => 'ines', 'via' => 'technique', 'host' => 'ACC01' } } }
-      unlock = rows(107).first.merge('login' => { 'pcId' => 'code_pc1' })
-      assert_equal [], found(scan_rows(rows(95, 97, 98, 100) + [unlock]).first)
-      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(rows(95, 97, 98, 100) + [other, unlock]).first)
+      unlock = rows(107).first.merge('pc' => { 'pcId' => 'code_pc1' })
+      earlier = unplaced(rows(95, 97, 98, 100))
+      assert_equal [], found(scan_rows(earlier + [unlock]).first)
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(earlier + [other, unlock]).first)
       # a session whose host label names no PC replaces every PC's
       other['body']['session']['host'] = 'NOWHERE'
-      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(rows(95, 97, 98, 100) + [other, unlock]).first)
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(earlier + [other, unlock]).first)
     end
 
     # ---- R2-L6: closing is safe on any spelling or status; earning and using a name need the strict 200 answer --------------
@@ -211,10 +221,10 @@ module BreakEscape
 
     test 'R2-L8 an honest unlock of a locked token session is clean; with no lock it is reported' do
       base = '/break_escape/games/86'
-      token = { 'method' => 'POST', 'path' => "#{base}/login", 'status' => 200, 'login' => { 'pcId' => 'code_pc1' },
+      token = { 'method' => 'POST', 'path' => "#{base}/login", 'status' => 200, 'pc' => { 'pcId' => 'code_pc1' },
                 'body' => { 'success' => true, 'npcId' => 'hana', 'username' => 'hquill', 'via' => 'credential', 'kind' => 'token' } }
-      lock = rows(100).first
-      unlock = rows(107).first.merge('login' => { 'pcId' => 'code_pc1' })
+      lock = unplaced(rows(100)).first
+      unlock = rows(107).first.merge('pc' => { 'pcId' => 'code_pc1' })
       assert_equal [], found(scan_rows([token, lock, unlock]).first)
       assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows([token, unlock]).first)
       # the unlock is used up, as any lock is
@@ -271,9 +281,9 @@ module BreakEscape
 
     test 'R2-L9 a capture holding a login tag is refused' do
       tagged = rows(95, 97)
-      assert_nil AccessLeakScanner.hand_tag_problem([['capture.jsonl', tagged]])
+      assert_nil AccessLeakScanner.tag_problem([['capture.jsonl', tagged]], :auto)
       tagged[1]['login'] = { 'pcId' => 'code_pc1' }
-      assert_match(/capture.jsonl row 2 holds a `login` tag/, AccessLeakScanner.hand_tag_problem([['capture.jsonl', tagged]]))
+      assert_match(/capture.jsonl row 2 holds a `login` tag/, AccessLeakScanner.tag_problem([['capture.jsonl', tagged]], :auto))
     end
 
     test 'R1-L13 two open steps of one account in a browser capture: a pass answer names no PC, so it is reported' do

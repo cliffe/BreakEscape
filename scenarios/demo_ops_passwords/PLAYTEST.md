@@ -20,13 +20,13 @@ tools/playtest/session-start.sh --url <URL> --headless \
 tools/playtest/cmd.sh <game_id> '{"cmd":"bootstrap","tutorial":"decline","resume":"new"}'
 ```
 
-After each run read the server's record and run the leak check. A session resumed in a new browser writes a new capture file: give the leak check every capture file of the game, oldest first, named one by one (never a glob). Keyboard sign-ins must be named to the check (`--signin <npc id>@<pc id>#<n>`; the listing script in `scenarios/test_ops_privilege/PLAYTEST.md` "Setup" prints them).
+After each run read the server's record and run the leak check. A session resumed in a new browser writes a new capture file: give the leak check every capture file of the game, oldest first, named one by one (never a glob). The recorder tags each sign-in with its PC, so a new run's check takes no `--signin` or `--logout` (exit 2 if given). To check an older capture (made before recorder 1.0.21, no tags), pass `--untagged` and name its keyboard sign-ins (`--signin <npc id>@<pc id>#<n>`; the listing script in `scenarios/test_ops_privilege/PLAYTEST.md` "Setup" prints them).
 
 ```bash
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --ops-log
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> \
-  --signin <npc>@<pc>#<n> ... $S/responses-<game_id>.jsonl
+  $S/responses-<game_id>.jsonl
 ```
 
 Take a screenshot at every beat and write each finding as the run goes. Write every password as `[redacted N chars]`.
@@ -122,7 +122,7 @@ If Jun's PC was switched off before the first collect (the hub lever or the wall
 | gate | "You've done the hands-on part. Tell me to call it a day." | Lever "Call it a day." with a beat undone: "Not yet. Some of the morning, midday and afternoon things are still undone, and staff won't be back once they've gone home." with "Skip them and call it a day anyway." and "Not yet."; done: "Yes, call it a day." | `act_evening` |
 | P9 | "Open the sign-in log terminal in the IT room. Find your own rows, then flag the night-time failure." | Graham's line about the night; `signin_log_pc`; open the 02:10 row and flag it. | existing Graham lines; `read_log`. Ama's "That's everything." now adds "Try the printer account anywhere. No PC lets it in." |
 
-End of run: `{"cmd":"sync"}`, the leak check naming every keyboard sign-in (Delphine at `delphine_pc`, Graham at `partner_pc`, Graham at `delphine_pc` for P8b, Graham at `hot_desk` once or twice, the shared account at `delphine_pc`) and every sign-out made while another PC held an admin session (`--logout`), then `verify-run.rb <game_id> --access` and `--ops-log`. The Rails test names the same sign-ins in `play_afternoon`.
+End of run: `{"cmd":"sync"}`, the leak check (no names: the tags place each sign-in), `verify-run.rb <game_id> --access` and `--ops-log`.
 
 ## Probe answers recorded by the tour build (U2)
 

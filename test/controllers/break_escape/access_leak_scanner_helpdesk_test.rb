@@ -397,6 +397,26 @@ module BreakEscape
       assert_includes rules(found), 'mfa_secret', 'the second-step rule still judges the own code'
     end
 
+    # R1-m3: the desk record's cancel close reads the tag the checked way the second-step close does. A cancel at 200 whose answer
+    # names another PC than its tag has a refuted tag, so it reads as untagged and closes the open own step of its kind at every PC.
+    test 'a 200 cancel whose pcId refutes its tag closes the own steps the same as the second-step record does' do
+      tagged = ->(r, id) { r.merge('pc' => { 'pcId' => id }) }
+      cancel = lambda do |pc_id|
+        row('POST', 'mfa/prompt', { 'status' => 200, 'body' => { 'success' => false, 'cancelled' => true, 'pcId' => pc_id } })
+      end
+      open_steps = [grant_mfa(npc: 'nia'), tagged.call(login_own_push, 'match_pc')]
+      steps_after = lambda do |rows|
+        scanner = AccessLeakScanner.new(scenario)
+        # a close is applied at the next row, so a plain row follows
+        rows += [keyring([])]
+        scanner.scan(rows.each_with_index.map { |r, i| ['r.jsonl', i + 1, r] })
+        scanner.instance_variable_get(:@hd_own_steps)
+      end
+      assert_equal({ 'match_pc' => 'nia' }, steps_after.call(open_steps), 'the step is open before the cancel')
+      assert_empty steps_after.call(open_steps + [tagged.call(cancel.call('match_pc'), 'code_pc1')]), 'the answer refutes its tag: read as untagged, the own step closes'
+      assert_equal({ 'match_pc' => 'nia' }, steps_after.call(open_steps + [tagged.call(cancel.call(nil), 'code_pc1')]), 'an unrefuted tag at another PC leaves it open')
+    end
+
     test 'the helpdesk rule texts are in the rule table' do
       assert_includes AccessLeakScanner::RULE_TEXT.keys, 'helpdesk_secret'
       assert_includes AccessLeakScanner::RULE_TEXT.keys, 'helpdesk_grant'
