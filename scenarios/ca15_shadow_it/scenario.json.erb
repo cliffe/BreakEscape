@@ -51,14 +51,14 @@
           "taskId": "drop_the_stick",
           "title": "Leave the red-team stick where someone will find it",
           "type": "custom",
-          "status": "active",
+          "status": "locked",
           "optional": true
         },
         {
           "taskId": "watch_who_finds_it",
           "title": "Watch who picks it up",
           "type": "custom",
-          "status": "active",
+          "status": "locked",
           "optional": true
         }
       ]
@@ -1029,6 +1029,24 @@
               "condition": "value === true && !globalVars.ca15_drop_done",
               "onceOnly": true,
               "bark": "Next door. Somewhere people stop for a minute."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_given",
+              "condition": "value === true && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "unlockTask": [
+                "drop_the_stick",
+                "watch_who_finds_it"
+              ]
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_done",
+              "condition": "value === true && globalVars.ca15_drop_given && !globalVars.ca15_drop_used",
+              "onceOnly": true,
+              "skipTask": [
+                "drop_the_stick",
+                "watch_who_finds_it"
+              ]
             }
           ]
         },
@@ -1477,6 +1495,11 @@
       "npcs": [
         {
           "id": "ca15_joanne_pell",
+          "voice": {
+            "name": "Zephyr",
+            "style": "Tarrowby's operations coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
           "displayName": "Joanne Pell",
           "npcType": "person",
           "position": {
@@ -1554,6 +1577,11 @@
         },
         {
           "id": "ca15_niamh_doherty",
+          "voice": {
+            "name": "Leda",
+            "style": "Tarrowby's operations assistant, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
           "displayName": "Niamh Doherty",
           "npcType": "person",
           "position": {
