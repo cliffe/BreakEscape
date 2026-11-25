@@ -97,4 +97,4 @@ Sulafat, gemini-3.8-flash-tts, trimmed and levelled with `tools/video/scripts/tr
 | Line | Text | Trimmed s | Shot s | Need s | Fit |
 |---|---|---|---|---|---|
 | v1 | Hacktivity Cyber Aware: Security awareness training you can play. | 5.112 | 5.4 | 5.14 | fits (0.27 spare) |
-| v10 | A colleague's locked out. What would you do? | 2.616 | 5.2 | 2.97 | fits (2.2 spare; shorter than estimated) |
+| v10 | A colleague's locked out. What would you do? | 2.928 | 5.2 | 3.28 | fits (1.9 spare) |

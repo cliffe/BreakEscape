@@ -101,4 +101,4 @@ Sulafat, gemini-3.8-flash-tts, trimmed and levelled with `tools/video/scripts/tr
 | Line | Text | Trimmed s | Shot s | Need s | Fit |
 |---|---|---|---|---|---|
 | v1 | Hacktivity Cyber Aware: Security awareness training you can play. | 5.112 | 5.4 | 5.14 | fits (0.27 spare) |
-| v3 | A 'sister' asks where Bernadette cleans today. | 3.216 | 3.8 | 3.57 | fits (0.23 spare) |
+| v3 | A 'sister' asks where Bernadette cleans today. | 3.096 | 3.8 | 3.45 | fits (0.35 spare) |

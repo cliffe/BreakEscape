@@ -100,4 +100,4 @@ Sulafat, gemini-3.8-flash-tts, trimmed and levelled with `tools/video/scripts/tr
 |---|---|---|---|---|---|
 | v1 | Hacktivity Cyber Aware: Security awareness training you can play. | 5.112 | 5.4 | 5.14 | fits (0.27 spare) |
 | v7 | Defend the practice. | 1.608 | 2.4 | 1.96 | fits (0.44 spare) |
-| v10 | At Lorna's desk. | 1.080 | placed at in + 0.7 s | ends about `press` + 0.98 s | fits; 0.58 s clear of L1 (earliest `press` + 1.56 s) |
+| v10 | At Lorna's desk. | 1.200 | placed at in + 0.7 s | ends about `press` + 1.10 s | fits; 0.46 s clear of L1 (earliest `press` + 1.56 s) |
