@@ -2752,6 +2752,7 @@ class AccessLeakScanner
     @priv_resumable.delete(pc)
     @priv_deadlines.delete(pc)
     @priv_logout_pending.delete(pc)
+    @priv_relay_held.delete(pc) # S5bc R2-SCANNER3: a technique session replaces a relay one, and a host row lists it
     @priv_kinds[pc] = priv_kind_of(session)
     @ops_earned.delete_if { |step| step.start_with?("through:#{pc}:") || step == "admin:#{pc}" }
     @ops_earned << "through:#{pc}:#{session['footholdId']}" if session['footholdId'].is_a?(String)
@@ -3204,6 +3205,7 @@ class AccessLeakScanner
 
   # The step is gone for good and nothing of it may be resumed (the session became another kind, or another session replaced it).
   def lose_priv_step(pc)
+    @priv_relay_held.delete(pc) # S5bc R2-SCANNER3
     @ops_earned.delete("admin:#{pc}")
     @priv_deadlines.delete(pc)
     @priv_kinds.delete(pc)
@@ -3278,6 +3280,7 @@ class AccessLeakScanner
 
     @priv_used << [:resume, key]
     @priv_resumable.delete(pc)
+    @priv_relay_held.delete(pc) # S5bc R2-SCANNER3
     @ops_session_accounts[pc] = saved[:account]
     return unless saved[:step] && session['access'] == 'admin'
 
@@ -3555,9 +3558,12 @@ class AccessLeakScanner
   def note_usb_plant(body, row)
     return note_usb_implant(body, row) if row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/network/implant')
     return unless row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/inventory')
-    return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body.keys == ['success'] && body['success'] == true
+    return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash)
 
     inv = row['inv']
+    # S5bc R2-SCANNER1: an item given back to the tray can be planted again
+    @hv_planted.delete(inv['itemId']) if inv.is_a?(Hash) && inv['action'] == 'add' && inv['itemId'].is_a?(String)
+    return unless body.keys == ['success'] && body['success'] == true
     return unless inv.is_a?(Hash) && inv['action'] == 'remove' && inv['itemId'].is_a?(String) && inv['usedOn'].is_a?(String)
 
     obj = scenario_object(inv['usedOn'])
@@ -3567,6 +3573,9 @@ class AccessLeakScanner
     grant = BreakEscape::CaptureModel.session_grant_pc(obj)
     pc = grant.presence || (@priv_pcs.key?(obj['id'].to_s) ? obj['id'].to_s : BreakEscape::CaptureModel.port_pc(obj))
     return unless pc && @priv_pcs.key?(pc)
+    # S5bc R2-SCANNER1: the server answers 200 to a remove of an item that is not held and writes no row: only the first
+    # plant of a device (since it was last added) can have written one
+    return unless @hv_planted.add?(item['id'] || inv['itemId'])
     return unless grant.present? ? @ops_earned.include?("admin:#{pc}") : harvest_pc_admin?(pc)
 
     account = admin_act_account(pc)
@@ -3581,9 +3590,13 @@ class AccessLeakScanner
   def note_usb_implant(body, row)
     return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
     return unless body['consumedId'].is_a?(String) && body['foothold'].is_a?(Hash) && body['foothold']['sourceId'].is_a?(String)
+    return if body['already'] == true # S5bc R2-SCANNER1: the retry answer consumes nothing and writes no row
 
     pc = body['foothold']['sourceId']
-    return unless @priv_pcs.key?(pc) && @ops_earned.include?("admin:#{pc}")
+    return unless @priv_pcs.key?(pc)
+    return unless @hv_planted.add?(body['consumedId']) # R2-SCANNER1: a device already taken by an earlier plant answer
+    # R2-SCANNER2: the keyboard step only (a technique session's admin step answers needs_console and writes no row)
+    return unless @ops_earned.include?("admin:#{pc}") && %w[password credential].include?(@priv_kinds[pc]&.first) && @priv_kinds[pc][1] == false
 
     item = scenario_item(body['consumedId'])
     return unless item && %w[storage hid].include?(item['usbClass']) && BreakEscape::AccessWork.plant_refused?(@data, @priv_pcs[pc], item)
@@ -5132,6 +5145,7 @@ class AccessLeakScanner
     @hv_served_hashes = Set.new # hash record ids a credited collect row named
     @hv_name_earned = Set.new   # account-only ids whose display name has been earned
     @hv_user_earned = Set.new   # account-only ids whose username has been earned
+    @hv_planted = Set.new       # S5bc R2-SCANNER1: ids of devices a credited-shape plant answer took, until an inventory add gives them back
     @hv_acts = Hash.new(0)      # R2-L2: [:collect, pc, account, count] / [:plant, pc, account, device] => acts the capture shows so far
     @hv_relay = {}              # PC id => account id of a proved relay administrator session (R1-L1)
     @hv_relay_signed = {}       # R2-L1: PC id => account id of a proved relay SIGN-IN answer still standing (a desktop keeps the mark only on it)

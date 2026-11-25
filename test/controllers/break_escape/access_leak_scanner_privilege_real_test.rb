@@ -1490,6 +1490,18 @@ module BreakEscape
       assert_flagged reported(edit(rows, log) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['result'] = 'OK x2' }), 'log_row', 'log:usb_override:bay_pc'
     end
 
+    # S5bc R2-SCANNER1 (P1): the inventory answer for a remove is 200 { success: true } whether or not the item was held, so a
+    # second remove of the same stick writes no row and earns none.
+    test 'R2-SCANNER1 (P1): the stick remove answered twice earns one USB_OVERRIDE row, not two' do
+      rows = run_real
+      plant = plant_n(rows)
+      log = log_n(rows)
+      ox2 = edit(rows, log) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['result'] = 'OK x2' }
+      assert_flagged reported(ox2), 'log_row', 'log:usb_override:bay_pc'
+      twice = ox2.dup.insert(plant, deep(rows[plant - 1]))
+      assert_flagged reported(twice), 'log_row', 'log:usb_override:bay_pc'
+    end
+
     # R2-L3: the refused word list is built from what the scanner knows, and a clash refuses the scan (as `admin` does).
     test 'R2-L3 (G7): an account-only username or display name that is a key of the answers, a PC name or a log title refuses the scan; the real deskadmin and labadmin do not' do
       rows = run_real
