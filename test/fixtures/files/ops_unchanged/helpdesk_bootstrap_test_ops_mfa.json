@@ -1,0 +1,1783 @@
+{
+  "name": "helpdesk_bootstrap_test_ops_mfa",
+  "description": "S8b unit 01: the bootstrap, rooms, keyring and sign-in accounts of test_ops_mfa, before any S8b engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_brief": "TEST: Ops multi-factor sign-in\n\nA test floor for the second sign-in step (OPS_MFA_HELPDESK_PLAN.md, S8a). A lobby with a drop box, a wall port, an audit terminal and a cabinet; a floor with two PCs that ask for a six-digit code and three staff; a store room with a PC that sends a request to the owner's phone, one that asks for a number to be matched on the phone, one that asks for nothing extra, and three more staff. Nothing to solve.",
+    "endGoal": "Test only: compare the sign-in with no second step, with a code, with a request to the owner and with a number to match.",
+    "startRoom": "lobby",
+    "startPosition": {
+      "x": 7,
+      "y": 7
+    },
+    "npcNeedsSeed": "test_ops_mfa",
+    "npcWindupMs": 0,
+    "needsDebugOverlay": true,
+    "networks": {
+      "office_lan": {
+        "name": "Office network",
+        "discovery": "scan"
+      }
+    },
+    "policies": {
+      "code_gate": {
+        "mfa": "code",
+        "remote": "allowed",
+        "maxAttempts": 8
+      },
+      "push_gate": {
+        "mfa": "push",
+        "remote": "allowed",
+        "maxAttempts": 8
+      },
+      "match_gate": {
+        "mfa": "push_number_match",
+        "remote": "allowed",
+        "maxAttempts": 8
+      },
+      "plain_gate": {
+        "remote": "allowed",
+        "maxAttempts": 5
+      }
+    },
+    "credentials": {
+      "hana_token": {
+        "kind": "token",
+        "account": "hana",
+        "connectsTo": "code_pc1",
+        "label": "Accounts PC sign-in token",
+        "expiresMin": 30,
+        "proof": {
+          "foothold": "jack_office_port"
+        }
+      },
+      "hana_saved": {
+        "kind": "saved_connection",
+        "account": "hana",
+        "connectsTo": "code_pc1",
+        "label": "Accounts PC saved connection",
+        "proof": {
+          "held": "hana_saved_file"
+        }
+      }
+    },
+    "logSources": {
+      "mfa_audit": {
+        "title": "Sign-in audit",
+        "events": [
+          "signin_ok",
+          "signin_fail",
+          "signin_lockout",
+          "signin_refused",
+          "session_end",
+          "session_lock",
+          "mfa_challenge",
+          "mfa_code_ok",
+          "mfa_code_wrong",
+          "mfa_code_locked",
+          "mfa_expired",
+          "mfa_prompt_sent",
+          "mfa_prompt_approved",
+          "mfa_prompt_denied"
+        ]
+      }
+    },
+    "social": {
+      "osint": {
+        "sites": [
+          {
+            "id": "friendface",
+            "type": "social",
+            "name": "Friendface",
+            "url": "friendface.example",
+            "profiles": [
+              {
+                "person": "dev",
+                "name": "Dev Kapoor",
+                "bio": "Purchasing.",
+                "posts": [
+                  {
+                    "id": "dev_authored",
+                    "text": "Stock count done for the week."
+                  }
+                ]
+              },
+              {
+                "person": "nia",
+                "name": "Nia Faraday",
+                "bio": "Stock.",
+                "posts": [
+                  {
+                    "id": "nia_authored",
+                    "text": "Shelves relabelled at last."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "globalVariables": {
+      "se_osint_state": {}
+    },
+    "gameClock": {
+      "start": "Tue 08:30",
+      "rate": 1
+    },
+    "objectives": [
+      {
+        "aimId": "mfa_beats",
+        "title": "Try each kind of second step",
+        "description": "Test only. Nothing here ticks by itself.",
+        "status": "active",
+        "order": 0,
+        "tasks": [
+          {
+            "taskId": "m1_signed_in",
+            "title": "Sign in at the accounts PC",
+            "type": "custom",
+            "status": "active"
+          }
+        ]
+      }
+    ],
+    "rooms": {
+      "lobby": {
+        "type": "room_reception",
+        "door_sign": "Lobby",
+        "connections": {
+          "north": "floor",
+          "east": "store"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "kit_dropbox",
+            "name": "Network drop box",
+            "sprite": "drop_box1",
+            "position": {
+              "x": 8,
+              "y": 4
+            },
+            "takeable": true,
+            "rogueDevice": true,
+            "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+          },
+          {
+            "type": "pc",
+            "id": "office_port",
+            "name": "Office wall port",
+            "sprite": "network_rack1",
+            "network": "office_lan",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "networkJack": true,
+            "jackConfirm": "Plug the drop box into the office port?",
+            "plantedSprite": "pi_cluster1",
+            "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+            "observations": "A wall port marked Office."
+          },
+          {
+            "type": "ops_log_terminal",
+            "id": "audit_log_pc",
+            "name": "Audit log terminal",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "observations": "A terminal showing the building's sign-in audit log.",
+            "minigameData": {
+              "logSource": "mfa_audit"
+            }
+          },
+          {
+            "type": "filing_cabinet_locked1",
+            "id": "lobby_cabinet",
+            "name": "Cabinet by the front door",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "locked": false,
+            "observations": "A cabinet of notes the front desk keeps.",
+            "contents": [
+              {
+                "type": "text_file",
+                "id": "hana_saved_file",
+                "name": "Accounts PC.rdp",
+                "takeable": true,
+                "readable": true,
+                "credential": "hana_saved",
+                "text": "A saved connection to the accounts PC. Use it from the sign-in screen over the network.",
+                "observations": "A saved connection file someone left in the cabinet."
+              }
+            ]
+          },
+          {
+            "type": "code_device",
+            "id": "ines_device",
+            "name": "Code device",
+            "owner": "ines",
+            "position": {
+              "x": 4,
+              "y": 6
+            },
+            "takeable": true,
+            "observations": "A small code generator with a name label on the back."
+          },
+          {
+            "type": "notes1",
+            "id": "sign_lobby",
+            "name": "Sign: Start here",
+            "position": {
+              "x": 4,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Second step test. The floor is north, the store room east. The accounts you need are on the notes in each room. Some PCs ask for a code from a device, some send a request to a phone.",
+            "observations": "A sign on a stand by the front desk."
+          }
+        ]
+      },
+      "floor": {
+        "type": "room_office",
+        "door_sign": "Floor",
+        "connections": {
+          "south": "lobby"
+        },
+        "network": "office_lan",
+        "objects": [
+          {
+            "type": "pc",
+            "id": "code_pc1",
+            "name": "Accounts PC",
+            "host": "ACC01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "hana"
+              ]
+            },
+            "owner": "hana",
+            "policy": "code_gate",
+            "observations": "A desk PC on the floor. A tag on the monitor reads Hana."
+          },
+          {
+            "type": "pc",
+            "id": "code_pc2",
+            "name": "Ledger PC",
+            "host": "LED01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 7,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "hana",
+                "ines",
+                "svc_sync"
+              ]
+            },
+            "owner": "ines",
+            "policy": "code_gate",
+            "observations": "A desk PC on the floor. A tag on the monitor reads Ines."
+          },
+          {
+            "type": "notes1",
+            "id": "note_hana",
+            "name": "Note: Hana's login",
+            "position": {
+              "x": 2,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Hana's login: hquill / Quillmere-Hana-31",
+            "observations": "A note stuck under a monitor."
+          },
+          {
+            "type": "notes1",
+            "id": "note_ines",
+            "name": "Note: Ines's login",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Ines's login: ibrandt / Brandwick-Ines-44",
+            "observations": "A note stuck under a keyboard."
+          },
+          {
+            "type": "notes1",
+            "id": "note_sync",
+            "name": "Note: Sync service login",
+            "position": {
+              "x": 5,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Sync service login: svc_sync / Tidewater-Sync-90",
+            "observations": "A note pinned to the partition."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "hana",
+            "displayName": "Hana Quill",
+            "npcType": "person",
+            "position": {
+              "x": 4,
+              "y": 5
+            },
+            "spriteSheet": "female_office_worker_v2",
+            "spriteTalk": "assets/characters/female_office_worker_talk.png",
+            "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/hana.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "creds": {
+              "username": "hquill",
+              "password": "Quillmere-Hana-31"
+            },
+            "itemsHeld": [
+              {
+                "type": "code_device",
+                "id": "hana_device",
+                "droppable": true,
+                "name": "Code device",
+                "owner": "hana",
+                "takeable": true,
+                "observations": "A small code generator with a name label on the back."
+              }
+            ]
+          },
+          {
+            "id": "ines",
+            "displayName": "Ines Brandt",
+            "npcType": "person",
+            "position": {
+              "x": 6,
+              "y": 5
+            },
+            "spriteSheet": "female_blowse_v2",
+            "spriteTalk": "assets/characters/female_blowse_talk.png",
+            "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/ines.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "creds": {
+              "username": "ibrandt",
+              "password": "Brandwick-Ines-44"
+            }
+          },
+          {
+            "id": "svc_sync",
+            "displayName": "Sync service",
+            "npcType": "person",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "spriteSheet": "male_telecom_v2",
+            "spriteTalk": "assets/characters/male_telecom_talk.png",
+            "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/svc_sync.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "it",
+            "creds": {
+              "username": "svc_sync",
+              "password": "Tidewater-Sync-90",
+              "mfa": false
+            }
+          }
+        ]
+      },
+      "store": {
+        "type": "room_servers",
+        "door_sign": "Store room",
+        "connections": {
+          "west": "lobby"
+        },
+        "network": "office_lan",
+        "objects": [
+          {
+            "type": "pc",
+            "id": "push_pc",
+            "name": "Orders PC",
+            "host": "ORD01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "cal",
+                "dev"
+              ]
+            },
+            "owner": "cal",
+            "policy": "push_gate",
+            "observations": "A desk PC in the store room. A tag on the monitor reads Cal."
+          },
+          {
+            "type": "pc",
+            "id": "match_pc",
+            "name": "Stock PC",
+            "host": "STK01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 5,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "nia"
+              ]
+            },
+            "owner": "nia",
+            "policy": "match_gate",
+            "observations": "A desk PC in the store room. A tag on the monitor reads Nia."
+          },
+          {
+            "type": "pc",
+            "id": "plain_pc",
+            "name": "Shipping PC",
+            "host": "SHP01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 7,
+              "y": 4
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": "accounts",
+            "access": {
+              "people": [
+                "hana",
+                "cal"
+              ]
+            },
+            "policy": "plain_gate",
+            "observations": "A shared desk PC in the store room."
+          },
+          {
+            "type": "notes1",
+            "id": "note_cal",
+            "name": "Note: Cal's login",
+            "position": {
+              "x": 2,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Cal's login: cmoss / Mossbank-Cal-12",
+            "observations": "A note by the door."
+          },
+          {
+            "type": "notes1",
+            "id": "note_dev",
+            "name": "Note: Dev's login",
+            "position": {
+              "x": 5,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Dev's login: dkapoor / Kaporwell-Dev-77",
+            "observations": "A note under the shelf."
+          },
+          {
+            "type": "notes1",
+            "id": "note_nia",
+            "name": "Note: Nia's login",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Nia's login: nfaraday / Faradale-Nia-58",
+            "observations": "A note on the rack."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "cal",
+            "displayName": "Cal Moss",
+            "npcType": "person",
+            "position": {
+              "x": 3,
+              "y": 6
+            },
+            "spriteSheet": "male_office_worker_v2",
+            "spriteTalk": "assets/characters/male_office_worker_talk.png",
+            "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/cal.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "awareness": "low",
+            "creds": {
+              "username": "cmoss",
+              "password": "Mossbank-Cal-12"
+            }
+          },
+          {
+            "id": "dev",
+            "displayName": "Dev Kapoor",
+            "npcType": "person",
+            "position": {
+              "x": 6,
+              "y": 6
+            },
+            "spriteSheet": "male_nerd_v2",
+            "spriteTalk": "assets/characters/male_nerd_talk.png",
+            "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/dev.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "awareness": "high",
+            "creds": {
+              "username": "dkapoor",
+              "password": "Kaporwell-Dev-77"
+            },
+            "itemsHeld": [
+              {
+                "type": "phone_friendface",
+                "id": "dev_phone",
+                "name": "Dev's phone",
+                "owner": "dev",
+                "takeable": true,
+                "observations": "Dev's mobile."
+              }
+            ]
+          },
+          {
+            "id": "nia",
+            "displayName": "Nia Faraday",
+            "npcType": "person",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "spriteSheet": "female_scientist_v2",
+            "spriteTalk": "assets/characters/female_scientist_talk.png",
+            "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+            "storyPath": "scenarios/test_ops_mfa/ink/nia.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "staff",
+            "awareness": "medium",
+            "creds": {
+              "username": "nfaraday",
+              "password": "Faradale-Nia-58"
+            },
+            "itemsHeld": [
+              {
+                "type": "phone_friendface",
+                "id": "nia_phone",
+                "name": "Nia's phone",
+                "owner": "nia",
+                "takeable": true,
+                "observations": "Nia's mobile."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "lobby",
+    "unlockedRooms": [
+      "lobby",
+      "floor",
+      "store"
+    ],
+    "encounteredNPCs": [
+      "hana",
+      "ines",
+      "svc_sync",
+      "cal",
+      "dev",
+      "nia"
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "room_lobby",
+      "method": "GET",
+      "path": "room/lobby"
+    },
+    {
+      "id": "room_floor",
+      "method": "GET",
+      "path": "room/floor"
+    },
+    {
+      "id": "room_store",
+      "method": "GET",
+      "path": "room/store"
+    },
+    {
+      "id": "keyring_plain",
+      "method": "GET",
+      "path": "keyring"
+    },
+    {
+      "id": "accounts_code_pc1",
+      "method": "GET",
+      "path": "login_accounts",
+      "params": {
+        "pc_id": "code_pc1"
+      }
+    },
+    {
+      "id": "accounts_code_pc2",
+      "method": "GET",
+      "path": "login_accounts",
+      "params": {
+        "pc_id": "code_pc2"
+      }
+    },
+    {
+      "id": "accounts_push_pc",
+      "method": "GET",
+      "path": "login_accounts",
+      "params": {
+        "pc_id": "push_pc"
+      }
+    },
+    {
+      "id": "accounts_match_pc",
+      "method": "GET",
+      "path": "login_accounts",
+      "params": {
+        "pc_id": "match_pc"
+      }
+    },
+    {
+      "id": "accounts_plain_pc",
+      "method": "GET",
+      "path": "login_accounts",
+      "params": {
+        "pc_id": "plain_pc"
+      }
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "floor": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "door_sign": "Floor",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "store",
+                "north": "floor"
+              },
+              "door_sign": "Lobby",
+              "locked": false
+            },
+            "store": {
+              "type": "room_servers",
+              "connections": {
+                "west": "lobby"
+              },
+              "door_sign": "Store room",
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "osint": {
+              "sites": [
+                {
+                  "id": "friendface",
+                  "url": "friendface.example",
+                  "name": "Friendface",
+                  "type": "social",
+                  "profiles": [
+                    {
+                      "bio": "Purchasing.",
+                      "name": "Dev Kapoor",
+                      "posts": [
+                        {
+                          "id": "dev_authored",
+                          "text": "Stock count done for the week."
+                        }
+                      ],
+                      "person": "dev"
+                    },
+                    {
+                      "bio": "Stock.",
+                      "name": "Nia Faraday",
+                      "posts": [
+                        {
+                          "id": "nia_authored",
+                          "text": "Shelves relabelled at last."
+                        }
+                      ],
+                      "person": "nia"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "endGoal": "Test only: compare the sign-in with no second step, with a code, with a request to the owner and with a number to match.",
+          "policies": {
+            "code_gate": {
+              "mfa": "code",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "push_gate": {
+              "mfa": "push",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "match_gate": {
+              "mfa": "push_number_match",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "plain_gate": {
+              "remote": "allowed",
+              "maxAttempts": 5
+            }
+          },
+          "gameClock": {
+            "rate": 1,
+            "start": "Tue 08:30"
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "mfa_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "Sign in at the accounts PC",
+                  "status": "active",
+                  "taskId": "m1_signed_in"
+                }
+              ],
+              "title": "Try each kind of second step",
+              "status": "active",
+              "description": "Test only. Nothing here ticks by itself."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_ops_mfa",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Ops multi-factor sign-in\n\nA test floor for the second sign-in step (OPS_MFA_HELPDESK_PLAN.md, S8a). A lobby with a drop box, a wall port, an audit terminal and a cabinet; a floor with two PCs that ask for a six-digit code and three staff; a store room with a PC that sends a request to the owner's phone, one that asks for a number to be matched on the phone, one that asks for nothing extra, and three more staff. Nothing to solve.",
+          "globalVariables": {
+            "se_osint_state": {}
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "female_office_worker_v2",
+            "female_blowse_v2",
+            "male_telecom_v2",
+            "male_office_worker_v2",
+            "male_nerd_v2",
+            "female_scientist_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": true,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": []
+        }
+      },
+      {
+        "id": "room_lobby",
+        "status": 200,
+        "body": {
+          "room_id": "lobby",
+          "room": {
+            "type": "room_reception",
+            "objects": [
+              {
+                "id": "kit_dropbox",
+                "name": "Network drop box",
+                "type": "pc",
+                "sprite": "drop_box1",
+                "position": {
+                  "x": 8,
+                  "y": 4
+                },
+                "takeable": true,
+                "rogueDevice": true,
+                "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+              },
+              {
+                "id": "office_port",
+                "name": "Office wall port",
+                "type": "pc",
+                "sprite": "network_rack1",
+                "position": {
+                  "x": 5,
+                  "y": 3
+                },
+                "takeable": false,
+                "jackConfirm": "Plug the drop box into the office port?",
+                "networkJack": true,
+                "observations": "A wall port marked Office.",
+                "plantedSprite": "pi_cluster1",
+                "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+                "jackPlanted": false
+              },
+              {
+                "id": "audit_log_pc",
+                "name": "Audit log terminal",
+                "type": "ops_log_terminal",
+                "position": {
+                  "x": 3,
+                  "y": 4
+                },
+                "takeable": false,
+                "minigameData": {
+                  "logSource": "mfa_audit"
+                },
+                "observations": "A terminal showing the building's sign-in audit log."
+              },
+              {
+                "id": "lobby_cabinet",
+                "name": "Cabinet by the front door",
+                "type": "filing_cabinet_locked1",
+                "locked": false,
+                "contents": [
+                  {
+                    "id": "hana_saved_file",
+                    "name": "Accounts PC.rdp",
+                    "text": "A saved connection to the accounts PC. Use it from the sign-in screen over the network.",
+                    "type": "text_file",
+                    "readable": true,
+                    "takeable": true,
+                    "observations": "A saved connection file someone left in the cabinet.",
+                    "connect": true
+                  }
+                ],
+                "position": {
+                  "x": 8,
+                  "y": 6
+                },
+                "takeable": false,
+                "observations": "A cabinet of notes the front desk keeps."
+              },
+              {
+                "id": "ines_device",
+                "name": "Code device",
+                "type": "code_device",
+                "owner": "ines",
+                "position": {
+                  "x": 4,
+                  "y": 6
+                },
+                "takeable": true,
+                "observations": "A small code generator with a name label on the back."
+              },
+              {
+                "id": "sign_lobby",
+                "name": "Sign: Start here",
+                "text": "Second step test. The floor is north, the store room east. The accounts you need are on the notes in each room. Some PCs ask for a code from a device, some send a request to a phone.",
+                "type": "notes1",
+                "position": {
+                  "x": 4,
+                  "y": 3
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A sign on a stand by the front desk."
+              }
+            ],
+            "door_sign": "Lobby",
+            "connections": {
+              "east": "store",
+              "north": "floor"
+            }
+          }
+        }
+      },
+      {
+        "id": "room_floor",
+        "status": 200,
+        "body": {
+          "room_id": "floor",
+          "room": {
+            "npcs": [
+              {
+                "id": "hana",
+                "npcType": "person",
+                "behavior": {
+                  "facePlayer": true,
+                  "facePlayerDistance": 96
+                },
+                "position": {
+                  "x": 4,
+                  "y": 5
+                },
+                "itemsHeld": [
+                  {
+                    "id": "hana_device",
+                    "name": "Code device",
+                    "type": "code_device",
+                    "owner": "hana",
+                    "takeable": true,
+                    "droppable": true,
+                    "observations": "A small code generator with a name label on the back."
+                  }
+                ],
+                "storyPath": "scenarios/test_ops_mfa/ink/hana.json",
+                "spriteTalk": "assets/characters/female_office_worker_talk.png",
+                "currentKnot": "start",
+                "displayName": "Hana Quill",
+                "spriteSheet": "female_office_worker_v2",
+                "spriteVisemes": "assets/characters/female_office_worker_visemes.png"
+              },
+              {
+                "id": "ines",
+                "npcType": "person",
+                "behavior": {
+                  "facePlayer": true,
+                  "facePlayerDistance": 96
+                },
+                "position": {
+                  "x": 6,
+                  "y": 5
+                },
+                "storyPath": "scenarios/test_ops_mfa/ink/ines.json",
+                "spriteTalk": "assets/characters/female_blowse_talk.png",
+                "currentKnot": "start",
+                "displayName": "Ines Brandt",
+                "spriteSheet": "female_blowse_v2",
+                "spriteVisemes": "assets/characters/female_blowse_visemes.png"
+              },
+              {
+                "id": "svc_sync",
+                "npcType": "person",
+                "behavior": {
+                  "facePlayer": true,
+                  "facePlayerDistance": 96
+                },
+                "position": {
+                  "x": 8,
+                  "y": 3
+                },
+                "storyPath": "scenarios/test_ops_mfa/ink/svc_sync.json",
+                "spriteTalk": "assets/characters/male_telecom_talk.png",
+                "currentKnot": "start",
+                "displayName": "Sync service",
+                "spriteSheet": "male_telecom_v2",
+                "spriteVisemes": "assets/characters/male_telecom_visemes.png"
+              }
+            ],
+            "type": "room_office",
+            "objects": [
+              {
+                "id": "code_pc1",
+                "host": "ACC01",
+                "name": "Accounts PC",
+                "type": "pc",
+                "owner": "hana",
+                "access": {
+                  "people": [
+                    "hana"
+                  ]
+                },
+                "locked": true,
+                "policy": "code_gate",
+                "sprite": "pc_desktop",
+                "lockType": "login",
+                "position": {
+                  "x": 3,
+                  "y": 4
+                },
+                "takeable": false,
+                "loginPicker": "accounts",
+                "observations": "A desk PC on the floor. A tag on the monitor reads Hana.",
+                "hasContents": true,
+                "loginAccounts": [
+                  {
+                    "username": "hquill",
+                    "displayName": "Hana Quill",
+                    "portrait": "assets/characters/female_office_worker_talk.png",
+                    "avatar": null
+                  }
+                ]
+              },
+              {
+                "id": "code_pc2",
+                "host": "LED01",
+                "name": "Ledger PC",
+                "type": "pc",
+                "owner": "ines",
+                "access": {
+                  "people": [
+                    "hana",
+                    "ines",
+                    "svc_sync"
+                  ]
+                },
+                "locked": true,
+                "policy": "code_gate",
+                "sprite": "pc_desktop",
+                "lockType": "login",
+                "position": {
+                  "x": 7,
+                  "y": 4
+                },
+                "takeable": false,
+                "loginPicker": "accounts",
+                "observations": "A desk PC on the floor. A tag on the monitor reads Ines.",
+                "hasContents": true,
+                "loginAccounts": [
+                  {
+                    "username": "hquill",
+                    "displayName": "Hana Quill",
+                    "portrait": "assets/characters/female_office_worker_talk.png",
+                    "avatar": null
+                  },
+                  {
+                    "username": "ibrandt",
+                    "displayName": "Ines Brandt",
+                    "portrait": "assets/characters/female_blowse_talk.png",
+                    "avatar": null
+                  },
+                  {
+                    "username": "svc_sync",
+                    "displayName": "Sync service",
+                    "portrait": "assets/characters/male_telecom_talk.png",
+                    "avatar": null
+                  }
+                ]
+              },
+              {
+                "id": "note_hana",
+                "name": "Note: Hana's login",
+                "text": "Hana's login: hquill / Quillmere-Hana-31",
+                "type": "notes1",
+                "position": {
+                  "x": 2,
+                  "y": 6
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A note stuck under a monitor."
+              },
+              {
+                "id": "note_ines",
+                "name": "Note: Ines's login",
+                "text": "Ines's login: ibrandt / Brandwick-Ines-44",
+                "type": "notes1",
+                "position": {
+                  "x": 8,
+                  "y": 6
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A note stuck under a keyboard."
+              },
+              {
+                "id": "note_sync",
+                "name": "Note: Sync service login",
+                "text": "Sync service login: svc_sync / Tidewater-Sync-90",
+                "type": "notes1",
+                "position": {
+                  "x": 5,
+                  "y": 6
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A note pinned to the partition."
+              }
+            ],
+            "door_sign": "Floor",
+            "connections": {
+              "south": "lobby"
+            }
+          }
+        }
+      },
+      {
+        "id": "room_store",
+        "status": 200,
+        "body": {
+          "room_id": "store",
+          "room": {
+            "npcs": [
+              {
+                "id": "cal",
+                "habits": {
+                  "screen": {
+                    "lockChance": 0
+                  }
+                },
+                "npcType": "person",
+                "behavior": {
+                  "facePlayer": true,
+                  "facePlayerDistance": 96
+                },
+                "position": {
+                  "x": 3,
+                  "y": 6
+                },
+                "storyPath": "scenarios/test_ops_mfa/ink/cal.json",
+                "spriteTalk": "assets/characters/male_office_worker_talk.png",
+                "currentKnot": "start",
+                "displayName": "Cal Moss",
+                "spriteSheet": "male_office_worker_v2",
+                "spriteVisemes": "assets/characters/male_office_worker_visemes.png"
+              },
+              {
+                "id": "dev",
+                "npcType": "person",
+                "behavior": {
+                  "facePlayer": true,
+                  "facePlayerDistance": 96
+                },
+                "position": {
+                  "x": 6,
+                  "y": 6
+                },
+                "itemsHeld": [
+                  {
+                    "id": "dev_phone",
+                    "name": "Dev's phone",
+                    "type": "phone_friendface",
+                    "owner": "dev",
+                    "takeable": true,
+                    "observations": "Dev's mobile."
+                  }
+                ],
+                "storyPath": "scenarios/test_ops_mfa/ink/dev.json",
+                "spriteTalk": "assets/characters/male_nerd_talk.png",
+                "currentKnot": "start",
+                "displayName": "Dev Kapoor",
+                "spriteSheet": "male_nerd_v2",
+                "spriteVisemes": "assets/characters/male_nerd_visemes.png"
+              },
+              {
+                "id": "nia",
+                "habits": {
+                  "screen": {
+                    "lockChance": 0.5
+                  }
+                },
+                "npcType": "person",
+                "behavior": {
+                  "facePlayer": true,
+                  "facePlayerDistance": 96
+                },
+                "position": {
+                  "x": 8,
+                  "y": 3
+                },
+                "itemsHeld": [
+                  {
+                    "id": "nia_phone",
+                    "name": "Nia's phone",
+                    "type": "phone_friendface",
+                    "owner": "nia",
+                    "takeable": true,
+                    "observations": "Nia's mobile."
+                  }
+                ],
+                "storyPath": "scenarios/test_ops_mfa/ink/nia.json",
+                "spriteTalk": "assets/characters/female_scientist_talk.png",
+                "currentKnot": "start",
+                "displayName": "Nia Faraday",
+                "spriteSheet": "female_scientist_v2",
+                "spriteVisemes": "assets/characters/female_scientist_visemes.png"
+              }
+            ],
+            "type": "room_servers",
+            "objects": [
+              {
+                "id": "push_pc",
+                "host": "ORD01",
+                "name": "Orders PC",
+                "type": "pc",
+                "owner": "cal",
+                "access": {
+                  "people": [
+                    "cal",
+                    "dev"
+                  ]
+                },
+                "locked": true,
+                "policy": "push_gate",
+                "sprite": "pc_desktop",
+                "lockType": "login",
+                "position": {
+                  "x": 3,
+                  "y": 4
+                },
+                "takeable": false,
+                "loginPicker": "accounts",
+                "observations": "A desk PC in the store room. A tag on the monitor reads Cal.",
+                "hasContents": true,
+                "loginAccounts": [
+                  {
+                    "username": "cmoss",
+                    "displayName": "Cal Moss",
+                    "portrait": "assets/characters/male_office_worker_talk.png",
+                    "avatar": null
+                  },
+                  {
+                    "username": "dkapoor",
+                    "displayName": "Dev Kapoor",
+                    "portrait": "assets/characters/male_nerd_talk.png",
+                    "avatar": null
+                  }
+                ]
+              },
+              {
+                "id": "match_pc",
+                "host": "STK01",
+                "name": "Stock PC",
+                "type": "pc",
+                "owner": "nia",
+                "access": {
+                  "people": [
+                    "nia"
+                  ]
+                },
+                "locked": true,
+                "policy": "match_gate",
+                "sprite": "pc_desktop",
+                "lockType": "login",
+                "position": {
+                  "x": 5,
+                  "y": 4
+                },
+                "takeable": false,
+                "loginPicker": "accounts",
+                "observations": "A desk PC in the store room. A tag on the monitor reads Nia.",
+                "hasContents": true,
+                "loginAccounts": [
+                  {
+                    "username": "nfaraday",
+                    "displayName": "Nia Faraday",
+                    "portrait": "assets/characters/female_scientist_talk.png",
+                    "avatar": null
+                  }
+                ]
+              },
+              {
+                "id": "plain_pc",
+                "host": "SHP01",
+                "name": "Shipping PC",
+                "type": "pc",
+                "access": {
+                  "people": [
+                    "hana",
+                    "cal"
+                  ]
+                },
+                "locked": true,
+                "policy": "plain_gate",
+                "sprite": "pc_desktop",
+                "lockType": "login",
+                "position": {
+                  "x": 7,
+                  "y": 4
+                },
+                "takeable": false,
+                "loginPicker": "accounts",
+                "observations": "A shared desk PC in the store room.",
+                "hasContents": true,
+                "loginAccounts": [
+                  {
+                    "username": "hquill",
+                    "displayName": "Hana Quill",
+                    "portrait": "assets/characters/female_office_worker_talk.png",
+                    "avatar": null
+                  },
+                  {
+                    "username": "cmoss",
+                    "displayName": "Cal Moss",
+                    "portrait": "assets/characters/male_office_worker_talk.png",
+                    "avatar": null
+                  }
+                ]
+              },
+              {
+                "id": "note_cal",
+                "name": "Note: Cal's login",
+                "text": "Cal's login: cmoss / Mossbank-Cal-12",
+                "type": "notes1",
+                "position": {
+                  "x": 2,
+                  "y": 6
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A note by the door."
+              },
+              {
+                "id": "note_dev",
+                "name": "Note: Dev's login",
+                "text": "Dev's login: dkapoor / Kaporwell-Dev-77",
+                "type": "notes1",
+                "position": {
+                  "x": 5,
+                  "y": 6
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A note under the shelf."
+              },
+              {
+                "id": "note_nia",
+                "name": "Note: Nia's login",
+                "text": "Nia's login: nfaraday / Faradale-Nia-58",
+                "type": "notes1",
+                "position": {
+                  "x": 8,
+                  "y": 6
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A note on the rack."
+              }
+            ],
+            "door_sign": "Store room",
+            "connections": {
+              "west": "lobby"
+            }
+          }
+        }
+      },
+      {
+        "id": "keyring_plain",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "accounts_code_pc1",
+        "status": 200,
+        "body": {
+          "pc_id": "code_pc1",
+          "loginAccounts": [
+            {
+              "username": "hquill",
+              "displayName": "Hana Quill",
+              "portrait": "assets/characters/female_office_worker_talk.png",
+              "avatar": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "accounts_code_pc2",
+        "status": 200,
+        "body": {
+          "pc_id": "code_pc2",
+          "loginAccounts": [
+            {
+              "username": "hquill",
+              "displayName": "Hana Quill",
+              "portrait": "assets/characters/female_office_worker_talk.png",
+              "avatar": null
+            },
+            {
+              "username": "ibrandt",
+              "displayName": "Ines Brandt",
+              "portrait": "assets/characters/female_blowse_talk.png",
+              "avatar": null
+            },
+            {
+              "username": "svc_sync",
+              "displayName": "Sync service",
+              "portrait": "assets/characters/male_telecom_talk.png",
+              "avatar": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "accounts_push_pc",
+        "status": 200,
+        "body": {
+          "pc_id": "push_pc",
+          "loginAccounts": [
+            {
+              "username": "cmoss",
+              "displayName": "Cal Moss",
+              "portrait": "assets/characters/male_office_worker_talk.png",
+              "avatar": null
+            },
+            {
+              "username": "dkapoor",
+              "displayName": "Dev Kapoor",
+              "portrait": "assets/characters/male_nerd_talk.png",
+              "avatar": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "accounts_match_pc",
+        "status": 200,
+        "body": {
+          "pc_id": "match_pc",
+          "loginAccounts": [
+            {
+              "username": "nfaraday",
+              "displayName": "Nia Faraday",
+              "portrait": "assets/characters/female_scientist_talk.png",
+              "avatar": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "accounts_plain_pc",
+        "status": 200,
+        "body": {
+          "pc_id": "plain_pc",
+          "loginAccounts": [
+            {
+              "username": "hquill",
+              "displayName": "Hana Quill",
+              "portrait": "assets/characters/female_office_worker_talk.png",
+              "avatar": null
+            },
+            {
+              "username": "cmoss",
+              "displayName": "Cal Moss",
+              "portrait": "assets/characters/male_office_worker_talk.png",
+              "avatar": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "floor": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "door_sign": "Floor",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "store",
+                "north": "floor"
+              },
+              "door_sign": "Lobby",
+              "locked": false
+            },
+            "store": {
+              "type": "room_servers",
+              "connections": {
+                "west": "lobby"
+              },
+              "door_sign": "Store room",
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "osint": {
+              "sites": [
+                {
+                  "id": "friendface",
+                  "url": "friendface.example",
+                  "name": "Friendface",
+                  "type": "social",
+                  "profiles": [
+                    {
+                      "bio": "Purchasing.",
+                      "name": "Dev Kapoor",
+                      "posts": [
+                        {
+                          "id": "dev_authored",
+                          "text": "Stock count done for the week."
+                        }
+                      ],
+                      "person": "dev"
+                    },
+                    {
+                      "bio": "Stock.",
+                      "name": "Nia Faraday",
+                      "posts": [
+                        {
+                          "id": "nia_authored",
+                          "text": "Shelves relabelled at last."
+                        }
+                      ],
+                      "person": "nia"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "endGoal": "Test only: compare the sign-in with no second step, with a code, with a request to the owner and with a number to match.",
+          "policies": {
+            "code_gate": {
+              "mfa": "code",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "push_gate": {
+              "mfa": "push",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "match_gate": {
+              "mfa": "push_number_match",
+              "remote": "allowed",
+              "maxAttempts": 8
+            },
+            "plain_gate": {
+              "remote": "allowed",
+              "maxAttempts": 5
+            }
+          },
+          "gameClock": {
+            "rate": 1,
+            "start": "Tue 08:30"
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "mfa_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "Sign in at the accounts PC",
+                  "status": "active",
+                  "taskId": "m1_signed_in"
+                }
+              ],
+              "title": "Try each kind of second step",
+              "status": "active",
+              "description": "Test only. Nothing here ticks by itself."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_ops_mfa",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Ops multi-factor sign-in\n\nA test floor for the second sign-in step (OPS_MFA_HELPDESK_PLAN.md, S8a). A lobby with a drop box, a wall port, an audit terminal and a cabinet; a floor with two PCs that ask for a six-digit code and three staff; a store room with a PC that sends a request to the owner's phone, one that asks for a number to be matched on the phone, one that asks for nothing extra, and three more staff. Nothing to solve.",
+          "globalVariables": {
+            "se_osint_state": {}
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "female_office_worker_v2",
+            "female_blowse_v2",
+            "male_telecom_v2",
+            "male_office_worker_v2",
+            "male_nerd_v2",
+            "female_scientist_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": true,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": []
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {},
+      "footholds": {},
+      "inventory": [],
+      "pinDusted": {},
+      "mfaPending": {},
+      "mfaPrompts": {},
+      "copiedItems": [],
+      "currentRoom": "lobby",
+      "mfaAccounts": {},
+      "opsFindings": {},
+      "room_states": {},
+      "signedInPcs": [],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "opsLogClockAt": 1768478400000,
+      "unlockedRooms": [
+        "lobby",
+        "floor",
+        "store"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "hana",
+        "ines",
+        "svc_sync",
+        "cal",
+        "dev",
+        "nia"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

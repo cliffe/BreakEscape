@@ -11,6 +11,8 @@ require_relative '../../../lib/break_escape/credential_model' unless defined?(Br
 require_relative '../../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
+require_relative 'lock_step_leak_rules' # S8c lock second step
+require_relative 'helpdesk_leak_rules'
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -247,6 +249,8 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 #   findings = scanner.scan(lines)   # lines: [[source_label, line_no, parsed_hash], ...]
 #   scanner.report_lines(findings)
 class AccessLeakScanner
+  include LockStepLeakRules # S8c lock second step: scan_lock_steps and its ls_ helpers
+
   # Item fields whose strings are an item's content (its name and its text).
   CONTENT_FIELDS = %w[name text content].freeze
   # Keys under which the scenario nests further items, NPCs or objects.
@@ -270,6 +274,7 @@ class AccessLeakScanner
   CAPTURE_PAGE_LABEL = /(?<![[:alnum:]])captures?(?![[:alnum:]])/i.freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
+  include HelpdeskLeakRules # S8b: the helpdesk rules, in their own file
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness workarounds].freeze
@@ -551,6 +556,7 @@ class AccessLeakScanner
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     mfa_begin_scan # S8a: the second-step rules' own state
+    helpdesk_begin_scan # S8b: the helpdesk rules' own state
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
     lines.each_with_index do |(source, line_no, row), index|
@@ -564,6 +570,7 @@ class AccessLeakScanner
       @mfa_row_ref = "#{source}:#{line_no}"
       if body.nil?
         mfa_note_bodyless(row)
+        ls_note_bodyless(row) # S8c lock second step: a lost answer may have been a cancel or an expiry
         next
       end
 
@@ -611,6 +618,11 @@ class AccessLeakScanner
       scan_facts(body, ctx, row, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
+      # S8b first: it judges the row and answers the body the second-step rules see (the own-phone code, number choices and flag a
+      # desk's re-enrolment earned taken out of a copy; a lock-form answer is never one). The lock rules (S8c) come after it, so they
+      # never call an earned own-phone secret a leak, and judge a lock-form answer whole.
+      body = scan_helpdesk(body, row, add)
+      scan_lock_steps(body, row, add) # S8c lock second step
       scan_mfa(body, row, add)
       note_network_swept(body, ctx, row)
     end
@@ -671,6 +683,7 @@ class AccessLeakScanner
     'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
     'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
     'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)',
+    **HelpdeskLeakRules::RULE_TEXT,
     'mfa_secret' => MFA_RULE_TEXT['mfa_secret'],
     'mfa_session' => MFA_RULE_TEXT['mfa_session'],
     'crack_key' => 'a key the browser never gets from the cracker (the recipe, the difficulty, the earned-fact and cracking state) or a misplaced or unearned crackFacts',
@@ -678,7 +691,7 @@ class AccessLeakScanner
     'crack_answer' => 'a POST /crack answer that is not exactly the shape of its status or refusal (a running answer carries only the wait)',
     'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
     'fact_unearned' => "an intel fact's entry, label or text before the answer that grants it (the entry only in the bootstrap's social.intelFacts after the grant, the top-level facts of an inventory answer, the entry of a grant_fact reward or the facts of a give_item reward, in the server's own shape), or any entry of a fact the game has not earned"
-  }.freeze
+  }.merge(LockStepLeakRules::LOCK_STEP_RULE_TEXT).freeze # S8c lock second step
 
   private
 
@@ -4270,7 +4283,7 @@ class AccessLeakScanner
     return 'none' unless BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
 
     kind = BreakEscape::MfaModel.kind(BreakEscape::CredentialModel.policy_for(@data, pc))
-    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil?
+    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil? && !hd_reenrolled?(npc['id']) # S8b: a re-enrolled account owes a code step with no authored device
 
     kind
   end
@@ -4379,7 +4392,7 @@ class AccessLeakScanner
         elsif key == 'code' && @mfa_code_possible && !(device && hash.equal?(body)) &&
               ((hash.equal?(body) && mfa_route_name(info) == 'mfa/device') || !mfa_authored_code?(hash[key]))
           add.call('mfa_secret', 'mfa:key:code', at)
-        elsif key == 'numbers' && @mfa_numbers_possible && phone.none? { |entry| entry.equal?(hash) }
+        elsif key == 'numbers' && @mfa_numbers_possible && phone.none? { |entry| entry.equal?(hash) } && !ls_placed?(hash)
           add.call('mfa_secret', 'mfa:key:numbers', at)
         elsif key == 'number' && (in_mfa_route || hash.key?('mfaRequired') || hash.key?('mfa')) && !(required && hash.equal?(body))
           add.call('mfa_secret', 'mfa:key:number', at)
@@ -4451,7 +4464,9 @@ class AccessLeakScanner
       if info[:method] == 'POST' && body['success'] == true then mfa_judge_login(body, add)
       else mfa_judge_unplaced(body, row, add)
       end
-    when 'mfa/verify', 'mfa/prompt', 'mfa/approve' then mfa_judge_pass(body, info, row, add) if body['success'] == true
+    when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+      # S8c: a pass the lock rules placed is a lock's, not a PC's session
+      mfa_judge_pass(body, info, row, add) if body['success'] == true && !ls_placed?(body)
     when 'scenario'
       if info[:method] == 'GET' then mfa_judge_bootstrap(body, add)
       else mfa_judge_unplaced(body, row, add)
@@ -4556,7 +4571,7 @@ class AccessLeakScanner
       mfa_confirm_desktop(pending, body, info)
     elsif info[:method] == 'POST' && mfa_route_name(info) == 'logout'
       mfa_unconfirmed!('a sign-out came before any desktop row')
-    elsif body.is_a?(Hash) && body['success'] == true && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+    elsif body.is_a?(Hash) && body['success'] == true && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info)) && !ls_placed?(body)
       mfa_unconfirmed!("another sign-in or step passed (#{body['npcId'].inspect}) before any desktop row")
     end
   end
@@ -4678,7 +4693,7 @@ class AccessLeakScanner
       case route
       when 'verify' then rec[:kind] == 'code' && !body.key?('approvedBy')
       when 'prompt' then rec[:kind] == 'push' && body['approvedBy'] == 'owner' && mfa_owner_may_approve?(npc)
-      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && body['approvedBy'] == 'player' && mfa_phone_taken?(npc)
+      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && ((body['approvedBy'] == 'player' && mfa_phone_taken?(npc)) || hd_own_approval?(body, info, pc, npc))
       end
     good ? pc : nil
   end
@@ -4719,6 +4734,7 @@ class AccessLeakScanner
       mfa_note_signin(body) if @mfa_row_pcs
     when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
       return unless body.is_a?(Hash)
+      return if ls_placed?(body) # S8c (R1-SCANNER1): an answer the lock rules placed earns, counts and closes nothing for a PC step
 
       # R2-L6: closing is the safe direction, so a cancel, expiry or lockout closes on the loose route and at any status; only
       # a pass answer on the strict route earns

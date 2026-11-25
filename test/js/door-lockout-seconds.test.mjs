@@ -35,6 +35,7 @@ const unlockSrc = stubAll(read('systems/unlock-system.js'), {
     '../utils/locked-hint.js': dataUrl(read('utils/locked-hint.js')),
     '../utils/remote-host-text.js': dataUrl(read('utils/remote-host-text.js')),
     '../minigames/biometrics/fingerprint-reader-minigame.js': dataUrl('export function startFingerprintReader() {}'),
+    '../minigames/ble-scanner/ble-scanner-minigame.js': dataUrl('export function applyBlePairEffects() {}'),
     '../utils/lock-scope-refusal.js': dataUrl(read('utils/lock-scope-refusal.js')),
     '../utils/dispense-on-unlock.js': dataUrl('export const wantsDispense = () => false; export const dispenseContents = async () => ({ ok: false }); export const afterContainerUnlock = async (d, o = {}) => { if (o.autoOpen !== false && o.openScreen) o.openScreen(); };'),
     './lockpick-catch.js': dataUrl('export function catchLockpickInView() { return false; } export function anyKeyMightFitLock() { return true; } export function lockKeyPinsOf() { return undefined; }')

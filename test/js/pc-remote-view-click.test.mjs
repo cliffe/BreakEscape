@@ -27,9 +27,10 @@ put('systems/minigame-starters.js', ['startLockpickingMinigame', 'startKeySelect
     'startRansomwareDisplayMinigame', 'startBackupRecoveryMinigame', 'startInfusionPumpMinigame'].map(n => `export function ${n}() {}`).join('\n'));
 put('systems/ui-sounds.js', 'export function playUISound() {}\n');
 put('minigames/biometrics/fingerprint-reader-minigame.js', 'export function startFingerprintReader() {}\n');
+put('minigames/ble-scanner/ble-scanner-minigame.js', 'export function applyBlePairEffects() {}\n');
 put('systems/lockpick-catch.js', 'export function catchLockpickInView() { return false; } export function anyKeyMightFitLock() { return true; } export function lockKeyPinsOf() { return undefined; }\n');
 for (const rel of ['utils/locked-hint.js', 'utils/lock-scope-refusal.js', 'utils/dispense-on-unlock.js', 'utils/remote-host-text.js',
-    'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'utils/sync-before-fetch.js', 'minigames/container/container-item-image.js', 'utils/display-dashes.js']) copy(rel);
+    'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js', 'minigames/container/container-item-image.js', 'utils/display-dashes.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;

@@ -17,6 +17,8 @@ module OpsUnchangedCases
       .merge(core_network_cases)
       .merge(privilege_cases)
       .merge(mfa_cases)
+      .merge(lock_cases) # S8c unit 01
+      .merge(helpdesk_cases)
       .merge(cracking_cases)
   end
 
@@ -654,6 +656,304 @@ module OpsUnchangedCases
              scenario, steps)
   end
 
+  # ---- Second step on any lock plan (S8c), unit 01: golden answers for what a lock step must leave alone ----
+  #
+  # One fixture per case, "lock_<name>", captured from `ops-lock2` BEFORE any S8c engine edit (a first
+  # capture, not a re-record). The log_unlock_refusals, log_container_cases, privilege_* and mfa_*
+  # fixtures already pin: pin and rfid (with an access list) doors and objects, an unknown object, a
+  # container before and after a pin opens, sign-in PCs and archives under a session. These add what
+  # they do not: every other lock type a shipped test scenario has (password, key, combination,
+  # cryptex, biometric, bluetooth, ble, rfid with no access list), each with a refusal and an open,
+  # for an object and for a door where the scenario has one; GET /container and an inventory take
+  # before and after a locked container opens; an `npc` door unlock; the carried-item flows of the
+  # three scenarios S8c's carried check touches (test_unlock_gaps, ceo_exfil, test_social_m5_channels);
+  # and the bootstrap of each scenario used.
+  def lock_cases
+    {
+      'lock_unlock_gaps_give' => lock_unlock_gaps_give_case,
+      'lock_unlock_gaps_ko' => lock_unlock_gaps_ko_case,
+      'lock_ceo_exfil_locks' => lock_ceo_exfil_case,
+      'lock_ceo_exfil_npc_door' => lock_ceo_exfil_npc_door_case,
+      'lock_biometric_breach' => lock_biometric_breach_case,
+      'lock_ble_scanner' => lock_ble_scanner_case,
+      'lock_rfid_no_list_single' => lock_rfid_no_list_single_case,
+      'lock_rfid_no_list_multi' => lock_rfid_no_list_multi_case,
+      'lock_m5_channels_terminal' => lock_m5_terminal_case
+    }
+  end
+
+  def lock_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => "lock_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => [scenario['startRoom']],
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+  # ---- Helpdesk recovery plan (S8b), unit 01: golden answers for what the helpdesk stage must leave alone ----
+  #
+  # One fixture per case, "helpdesk_<name>", captured BEFORE any S8b engine edit (a first capture, not a
+  # re-record). The core_, privilege_ and mfa_ fixtures already pin typed and saved-connection sign-in
+  # (foothold, `from`, implant), lockout followed by the right password, the Friendface phone rule and
+  # the bootstrap of the sign-in, keyring, ca03 and habits scenarios. These add only: GET /keyring and
+  # /capture_secrets before and after a captured account, the bootstrap of test_ops_mfa, and on
+  # test_ops_mfa a right password at a code PC, a push prompt and the phone list.
+  def helpdesk_cases
+    {
+      'helpdesk_test_access_keyring_captured' => helpdesk_keyring_captured_case,
+      'helpdesk_bootstrap_test_ops_mfa' => helpdesk_bootstrap_ops_mfa_case,
+      'helpdesk_test_ops_mfa_second_step' => helpdesk_ops_mfa_second_step_case
+    }
+  end
+
+  def helpdesk_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => "helpdesk_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+  def take_step(id, item, source_npc = nil)
+    step(id, 'POST', 'inventory', { 'action_type' => 'add', 'item' => item, 'source_npc_id' => source_npc }.compact)
+  end
+
+  def room_steps(scenario)
+    scenario['rooms'].keys.map { |room| step("room_#{room}", 'GET', "room/#{room}") }
+  end
+
+  # Both held NPC-container routes of test_unlock_gaps: a conversation gives the locked bag.
+  def lock_unlock_gaps_give_case
+    scenario = core_render('test_unlock_gaps')
+    lock_base(
+      'unlock_gaps_give', 'S8c unit 01: combination and cryptex locks (objects and doors), a locked start item and an NPC-given locked bag, before any S8c engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('room_lobby', 'GET', 'room/lobby'),
+       container_step('start_cryptex_container_locked', 'test_start_cryptex'),
+       unlock('start_cryptex_wrong', 'object', 'test_start_cryptex', 'cryptex', 'attempt' => 'WRONGO'),
+       unlock('start_cryptex_right', 'object', 'test_start_cryptex', 'cryptex', 'attempt' => 'TINDER'),
+       container_step('start_cryptex_container_open', 'test_start_cryptex'),
+       take_step('take_start_note', { 'type' => 'notes', 'id' => 'test_start_note', 'name' => 'Pocket Note' }),
+       container_step('locker_container_locked', 'test_combo_locker'),
+       take_step('take_locker_note_early', { 'type' => 'notes', 'id' => 'test_locker_note', 'name' => 'Locker Note' }),
+       unlock('locker_wrong', 'object', 'test_combo_locker', 'combination', 'attempt' => '12-30-6'),
+       unlock('locker_wrong_method', 'object', 'test_combo_locker', 'pin', 'attempt' => '12-30-5'),
+       unlock('locker_right', 'object', 'test_combo_locker', 'combination', 'attempt' => '12-30-5'),
+       unlock('locker_again', 'object', 'test_combo_locker', 'combination', 'attempt' => '0-0-0'),
+       container_step('locker_container_open', 'test_combo_locker'),
+       take_step('take_locker_note', { 'type' => 'notes', 'id' => 'test_locker_note', 'name' => 'Locker Note' }),
+       unlock('cryptex_box_wrong', 'object', 'test_cryptex_box', 'cryptex', 'attempt' => 'NOPE'),
+       unlock('cryptex_box_right', 'object', 'test_cryptex_box', 'cryptex', 'attempt' => 'cipher'),
+       container_step('cryptex_box_container_open', 'test_cryptex_box'),
+       container_step('courier_bag_container_before_give', 'test_courier_bag'),
+       unlock('courier_bag_before_give', 'object', 'test_courier_bag', 'password', 'attempt' => 'Satchel42'),
+       take_step('give_courier_bag', { 'type' => 'bag1', 'id' => 'test_courier_bag', 'name' => 'Courier Bag' }, 'test_courier'),
+       container_step('courier_bag_container_locked', 'test_courier_bag'),
+       unlock('courier_bag_wrong', 'object', 'test_courier_bag', 'password', 'attempt' => 'wrong'),
+       unlock('courier_bag_right', 'object', 'test_courier_bag', 'password', 'attempt' => 'Satchel42'),
+       container_step('courier_bag_container_open', 'test_courier_bag'),
+       take_step('take_delivery_memo', { 'type' => 'notes', 'id' => 'test_delivery_memo', 'name' => 'Delivery Memo' }),
+       unlock('vault_wrong', 'door', 'vault', 'combination', 'attempt' => '1-2-3'),
+       unlock('vault_right', 'door', 'vault', 'combination', 'attempt' => '7-21-39'),
+       unlock('archive_wrong', 'door', 'archive', 'cryptex', 'attempt' => 'LOCK'),
+       unlock('archive_right', 'door', 'archive', 'cryptex', 'attempt' => 'keys'),
+       step('room_vault', 'GET', 'room/vault'),
+       step('room_archive', 'GET', 'room/archive'),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # The same scenario, the courier knocked out and the bag dropped instead of given.
+  def lock_unlock_gaps_ko_case
+    scenario = core_render('test_unlock_gaps')
+    bag = { 'type' => 'bag1', 'id' => 'test_courier_bag', 'name' => 'Courier Bag' }
+    lock_base(
+      'unlock_gaps_ko', 'S8c unit 01: an NPC-held locked bag dropped by a knock-out, then opened and emptied, before any S8c engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('room_lobby', 'GET', 'room/lobby'),
+       container_step('courier_bag_container_held', 'test_courier_bag'),
+       unlock('courier_bag_held_right', 'object', 'test_courier_bag', 'password', 'attempt' => 'Satchel42'),
+       step('knock_out_courier', 'POST', 'update_room', { 'roomId' => 'lobby', 'actionType' => 'update_npc_state',
+                                                         'data' => { 'npcId' => 'test_courier', 'stateChanges' => { 'isKO' => true, 'currentHP' => 0 } } }),
+       step('drop_courier_bag', 'POST', 'update_room', { 'roomId' => 'lobby', 'actionType' => 'add_object', 'sourceNpcId' => 'test_courier',
+                                                        'sourceType' => 'npc_defeated', 'data' => bag.merge('x' => 64, 'y' => 64) }),
+       step('room_lobby_with_drop', 'GET', 'room/lobby'),
+       container_step('courier_bag_container_locked', 'test_courier_bag'),
+       unlock('courier_bag_wrong', 'object', 'test_courier_bag', 'password', 'attempt' => 'wrong'),
+       unlock('courier_bag_right', 'object', 'test_courier_bag', 'password', 'attempt' => 'Satchel42'),
+       container_step('courier_bag_container_open', 'test_courier_bag'),
+       take_step('pickup_courier_bag', bag, 'test_courier'),
+       take_step('take_delivery_memo', { 'type' => 'notes', 'id' => 'test_delivery_memo', 'name' => 'Delivery Memo' }),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # ceo_exfil: password PC and PIN safe (objects), a Bluetooth tablet (carried, no id: the generated
+  # id), key doors and a key box, PIN doors, the keys taken from the rooms, and a wrong method.
+  def lock_ceo_exfil_case
+    scenario = core_render('ceo_exfil')
+    key_of = ->(room, idx) { scenario['rooms'][room]['objects'][idx].slice('type', 'name', 'takeable', 'opens_lock', 'keyPins').merge('id' => "#{room}_key_#{idx}") }
+    lock_base(
+      'ceo_exfil_locks', 'S8c unit 01: password, pin, key, bluetooth and lockpick locks of ceo_exfil, objects and doors, with the Tablet Device carried, before any S8c engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('room_reception', 'GET', 'room/reception'),
+       container_step('pc_container_locked', 'reception_pc_2'),
+       unlock('pc_wrong', 'object', 'reception_pc_2', 'password', 'attempt' => 'nope'),
+       unlock('pc_right', 'object', 'reception_pc_2', 'password', 'attempt' => 'secret123'),
+       container_step('pc_container_open', 'reception_pc_2'),
+       container_step('safe_container_locked', 'reception_safe_7'),
+       unlock('safe_wrong', 'object', 'reception_safe_7', 'pin', 'attempt' => '0000'),
+       unlock('safe_wrong_method', 'object', 'reception_safe_7', 'password', 'attempt' => '9573'),
+       unlock('safe_right', 'object', 'reception_safe_7', 'pin', 'attempt' => '9573'),
+       container_step('safe_container_open', 'reception_safe_7'),
+       unlock('tablet_wrong_method', 'object', 'reception_tablet_3', 'pin', 'attempt' => '1234'),
+       take_step('take_tablet_locked', scenario['rooms']['reception']['objects'][3].slice('type', 'name', 'takeable').merge('id' => 'reception_tablet_3')),
+       unlock('tablet_right', 'object', 'reception_tablet_3', 'bluetooth'),
+       take_step('take_tablet_open', scenario['rooms']['reception']['objects'][3].slice('type', 'name', 'takeable').merge('id' => 'reception_tablet_3')),
+       unlock('office1_key_missing', 'door', 'office1', 'key'),
+       unlock('office1_wrong_method', 'door', 'office1', 'pin', 'attempt' => '1234'),
+       take_step('take_office_key', key_of.call('reception', 5)),
+       unlock('office1_key_right', 'door', 'office1', 'key'),
+       step('room_office1', 'GET', 'room/office1'),
+       unlock('ceo_key_missing', 'door', 'ceo', 'key'),
+       unlock('ceo_lockpick', 'door', 'ceo', 'lockpick'),
+       unlock('closet_wrong', 'door', 'closet', 'pin', 'attempt' => '0000'),
+       unlock('closet_right', 'door', 'closet', 'pin', 'attempt' => '7391'),
+       unlock('server1_wrong', 'door', 'server1', 'pin', 'attempt' => '1111'),
+       unlock('server1_right', 'door', 'server1', 'pin', 'attempt' => '4829'),
+       unlock('ceo_pc_wrong', 'object', 'ceo_pc_0', 'password', 'attempt' => 'x'),
+       unlock('suitcase_key_missing', 'object', 'ceo_suitcase_1', 'key'),
+       unlock('suitcase_lockpick', 'object', 'ceo_suitcase_1', 'lockpick'),
+       step('room_ceo', 'GET', 'room/ceo'),
+       unlock('bluetooth_pc_right', 'object', 'office3_pc_0', 'bluetooth'),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # ceo_exfil's NPC-permitted doors: refused before the NPC is met, refused for an NPC with no
+  # permission, then opened by the NPC that has it.
+  def lock_ceo_exfil_npc_door_case
+    scenario = core_render('ceo_exfil')
+    lock_base(
+      'ceo_exfil_npc_door', 'S8c unit 01: the npc unlock method at a key door, before and after the NPC is met, before any S8c engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       unlock('ceo_npc_not_met', 'door', 'ceo', 'npc', 'attempt' => 'helper_npc'),
+       step('room_reception', 'GET', 'room/reception'),
+       unlock('ceo_npc_no_permission', 'door', 'ceo', 'npc', 'attempt' => 'gossip_girl'),
+       unlock('ceo_npc_unknown', 'door', 'ceo', 'npc', 'attempt' => 'nobody'),
+       unlock('office1_npc_no_permission', 'door', 'office1', 'npc', 'attempt' => 'helper_npc'),
+       unlock('ceo_npc_right', 'door', 'ceo', 'npc', 'attempt' => 'helper_npc'),
+       unlock('ceo_npc_again', 'door', 'ceo', 'npc', 'attempt' => 'helper_npc'),
+       step('room_ceo', 'GET', 'room/ceo'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'encounteredNPCs' => []
+    )
+  end
+
+  # Biometric doors and containers (the fingerprint is trusted from the client; a wrong method is refused).
+  def lock_biometric_breach_case
+    scenario = core_render('biometric_breach')
+    lock_base(
+      'biometric_breach', 'S8c unit 01: biometric doors and safes, and a key door, before any S8c engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       unlock('office1_wrong_method', 'door', 'office1', 'pin', 'attempt' => 'receptionist'),
+       unlock('office1_biometric', 'door', 'office1', 'biometric', 'attempt' => 'receptionist'),
+       step('room_office1', 'GET', 'room/office1'),
+       unlock('office2_biometric', 'door', 'office2', 'biometric', 'attempt' => 'researcher'),
+       unlock('closet_wrong', 'door', 'closet', 'pin', 'attempt' => '00000'),
+       unlock('closet_right', 'door', 'closet', 'pin', 'attempt' => '72958'),
+       container_step('closet_safe_container_locked', 'closet_safe_0'),
+       unlock('closet_safe_wrong_method', 'object', 'closet_safe_0', 'pin', 'attempt' => 'intruder'),
+       unlock('closet_safe_biometric', 'object', 'closet_safe_0', 'biometric', 'attempt' => 'intruder'),
+       container_step('closet_safe_container_open', 'closet_safe_0'),
+       unlock('server1_suitcase_biometric', 'object', 'server1_suitcase_2', 'biometric', 'attempt' => 'intruder'),
+       unlock('server1_key_missing', 'door', 'server1', 'key'),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # BLE containers (trusted from the client; a wrong method is refused).
+  def lock_ble_scanner_case
+    scenario = core_render('test-ble-scanner')
+    lock_base(
+      'ble_scanner', 'S8c unit 01: BLE-locked safe and tablet, before any S8c engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('room_test_lab', 'GET', 'room/test_lab'),
+       container_step('safe_container_locked', 'test_lab_safe_0'),
+       unlock('safe_wrong_method', 'object', 'test_lab_safe_0', 'bluetooth'),
+       unlock('safe_ble', 'object', 'test_lab_safe_0', 'ble'),
+       container_step('safe_container_open', 'test_lab_safe_0'),
+       unlock('tablet_wrong_method', 'object', 'test_lab_tablet_1', 'pin', 'attempt' => '1'),
+       unlock('tablet_ble', 'object', 'test_lab_tablet_1', 'ble'),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # RFID doors that carry no access list (the swipe is trusted from the client; a wrong method is refused).
+  # A held keycard: a lock with no access list is passed only by a card the server knows is held.
+  def lock_keycard(card_id)
+    { 'type' => 'keycard', 'id' => "kit_#{card_id}", 'name' => card_id.tr('_', ' ').capitalize, 'card_id' => card_id,
+      'rfid_protocol' => 'EM4100', 'takeable' => true }
+  end
+
+  def lock_rfid_no_list_single_case
+    lock_base(
+      'rfid_no_list_single', 'S8c unit 01: an rfid door with no access list and the card held, before any S8c engine edit.', core_render('test-rfid'),
+      [step('bootstrap', 'GET', 'scenario'),
+       unlock('secure_wrong_method', 'door', 'test_secure', 'pin', 'attempt' => '1234'),
+       unlock('secure_swipe_none', 'door', 'test_secure', 'rfid'),
+       unlock('secure_swipe_card', 'door', 'test_secure', 'rfid', 'card_ids' => ['master_keycard']),
+       step('room_test_secure', 'GET', 'room/test_secure'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => [lock_keycard('master_keycard')]
+    )
+  end
+
+  def lock_rfid_no_list_multi_case
+    lock_base(
+      'rfid_no_list_multi', 'S8c unit 01: the rfid doors of test-rfid-multiprotocol with one of the three cards held, before any S8c engine edit.', core_render('test-rfid-multiprotocol'),
+      [step('bootstrap', 'GET', 'scenario'),
+       unlock('em4100_wrong_method', 'door', 'em4100_room', 'pin', 'attempt' => '1'),
+       unlock('em4100_swipe', 'door', 'em4100_room', 'rfid', 'card_ids' => ['employee_badge']),
+       unlock('mifare_weak_swipe', 'door', 'mifare_weak_room', 'rfid', 'card_ids' => ['hotel_keycard']),
+       unlock('desfire_swipe', 'door', 'desfire_room', 'rfid', 'card_ids' => ['corporate_badge']),
+       step('room_em4100_room', 'GET', 'room/em4100_room'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => [lock_keycard('employee_badge')]
+    )
+  end
+
+  # test_social_m5_channels: a PIN-locked laptop that is itself takeable, before and after it opens.
+  def lock_m5_terminal_case
+    scenario = core_render('test_social_m5_channels')
+    laptop = scenario['rooms']['m5_room']['objects'].find { |o| o['id'] == 'm5_locked_terminal' }.slice('type', 'id', 'name', 'takeable')
+    lock_base(
+      'm5_channels_terminal', 'S8c unit 01: a locked, takeable laptop: container and inventory add before and after its PIN, before any S8c engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('room_m5_room', 'GET', 'room/m5_room'),
+       container_step('terminal_container_locked', 'm5_locked_terminal'),
+       take_step('take_terminal_locked', laptop),
+       unlock('terminal_wrong', 'object', 'm5_locked_terminal', 'pin', 'attempt' => '0000'),
+       unlock('terminal_right', 'object', 'm5_locked_terminal', 'pin', 'attempt' => '2468'),
+       container_step('terminal_container_open', 'm5_locked_terminal'),
+       take_step('take_terminal_open', laptop),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
   # ---- Ops cracking (S7), unit 01: golden answers for what the hash records must leave alone ----
   #
   # Captured on the code as it stood BEFORE any S7 engine edit (first capture, not a re-record). They
@@ -681,6 +981,78 @@ module OpsUnchangedCases
                          'encounteredNPCs' => people }.merge(player_state),
       'steps' => steps
     }
+  end
+
+
+  # The keyring with no capture, then Ian's account recorded through the sync route (the capture card's
+  # addCapture, as the browser sends it), the keyring and /capture_secrets before and after the drop box
+  # proves it, then the typed sign-in at Ian's PC.
+  def helpdesk_keyring_captured_case
+    scenario = core_render('test_access_keyring')
+    held = [mfa_find_object(scenario, 'kit_dropbox')]
+    capture = { 'ian' => { 'targetId' => 'ian', 'kind' => 'credential', 'address' => 'ishaw', 'at' => 1 } }
+    helpdesk_base(
+      'test_access_keyring_captured', 'S8b unit 01: GET /keyring and /capture_secrets before and after a captured account, before any S8b engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('keyring_before', 'GET', 'keyring'),
+       step('capture_secrets_before', 'GET', 'capture_secrets'),
+       step('sync_capture_ian', 'PUT', 'sync_state', { 'clientTs' => 10, 'globalVariables' => { 'se_captures' => capture } }),
+       step('keyring_captured', 'GET', 'keyring'),
+       step('capture_secrets_captured', 'GET', 'capture_secrets'),
+       step('plant_comms_port', 'POST', 'network/plant', { 'jack_id' => 'comms_port' }),
+       step('keyring_captured_proven', 'GET', 'keyring'),
+       step('keyring_captured_foothold', 'GET', 'keyring', { 'foothold' => 'jack_comms_port' }),
+       step('capture_secrets_proven', 'GET', 'capture_secrets'),
+       step('unplug_comms_port', 'POST', 'network/unplug', { 'jack_id' => 'comms_port' }),
+       step('keyring_after_unplug', 'GET', 'keyring'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
+  end
+
+  # The bootstrap, every room, GET /keyring and the sign-in accounts at each sign-in PC of test_ops_mfa.
+  def helpdesk_bootstrap_ops_mfa_case
+    scenario = core_render('test_ops_mfa')
+    steps = [step('bootstrap', 'GET', 'scenario')]
+    scenario['rooms'].each_key { |room| steps << step("room_#{room}", 'GET', "room/#{room}") }
+    steps << step('keyring_plain', 'GET', 'keyring')
+    core_login_pcs(scenario).each { |pc| steps << step("accounts_#{pc['id']}", 'GET', 'login_accounts', { 'pc_id' => pc['id'] }) }
+    steps << step('bootstrap_after', 'GET', 'scenario')
+    helpdesk_base('bootstrap_test_ops_mfa', 'S8b unit 01: the bootstrap, rooms, keyring and sign-in accounts of test_ops_mfa, before any S8b engine edit.',
+                  scenario, steps)
+  end
+
+  # A right password at a code PC (the pane, no session), a wrong then a missing-PC code, a right
+  # password at a push PC then the prompt and the phone list, and a PC with no second step. Held: Hana's
+  # code device and Dev's phone. Not here: the held device's answer and the number-matching answers, whose
+  # code and numbers differ per game (the mechanism compares whole bodies); a Rails test pins their keys.
+  def helpdesk_ops_mfa_second_step_case
+    scenario = core_render('test_ops_mfa')
+    held = %w[hana_device dev_phone].map { |id| mfa_find_object(scenario, id) }
+    helpdesk_base(
+      'test_ops_mfa_second_step', 'S8b unit 01: a right password at a code PC, the held device answer, a push prompt and the phone list on test_ops_mfa, before any S8b engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('device_not_declared_id', 'GET', 'mfa/device', { 'item_id' => 'no_such_device' }),
+       step('device_not_held', 'GET', 'mfa/device', { 'item_id' => 'ines_device' }),
+       login('hana_wrong_password', 'hquill', 'nope', 'code_pc1'),
+       login('hana_right_password_code_pc', 'hquill', 'Quillmere-Hana-31', 'code_pc1'),
+       step('verify_wrong_code', 'POST', 'mfa/verify', { 'pc_id' => 'code_pc1', 'code' => '000000' }),
+       step('verify_no_pending_pc', 'POST', 'mfa/verify', { 'pc_id' => 'code_pc2', 'code' => '000000' }),
+       step('verify_unknown_pc', 'POST', 'mfa/verify', { 'pc_id' => 'no_such_pc', 'code' => '000000' }),
+       step('desktop_code_pc1_no_session', 'GET', 'container/code_pc1'),
+       login('dev_right_password_push_pc', 'dkapoor', 'Kaporwell-Dev-77', 'push_pc'),
+       step('prompt_push_pc', 'POST', 'mfa/prompt', { 'pc_id' => 'push_pc' }),
+       step('phone_dev', 'GET', 'mfa/phone', { 'npc_id' => 'dev' }),
+       step('phone_cal_not_held', 'GET', 'mfa/phone', { 'npc_id' => 'cal' }),
+       step('phone_own_refused', 'GET', 'mfa/phone', { 'npc_id' => 'dev', 'own' => '1' }),
+       step('desktop_push_pc_no_session', 'GET', 'container/push_pc'),
+       login('cal_right_password_plain_pc', 'cmoss', 'Mossbank-Cal-12', 'plain_pc'),
+       step('desktop_plain_pc', 'GET', 'container/plain_pc'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
   end
 
   def keyring_rev_step(id, rev, params = {})

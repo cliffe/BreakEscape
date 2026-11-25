@@ -55,6 +55,7 @@ writeFileSync(join(sysBridge, 'log.js'),
 writeFileSync(join(sysBridge, 'minigames.js'), 'export const minigameBridge = {};\n');
 writeFileSync(join(sysBridge, 'access.js'), 'export const accessBridge = {};\n');
 writeFileSync(join(sysBridge, 'network.js'), 'export const networkBridge = {};\n');
+writeFileSync(join(sysBridge, 'lock-step.js'), 'export const lockStepBridge = {};\n');
 writeFileSync(join(sysBridge, 'throttle.js'), 'export const throttleFps = async () => ({}); export const unthrottleFps = async () => ({});\n');
 writeFileSync(join(dir, 'utils/constants.js'), 'export const INTERACTION_RANGE = 32;\nexport const DOOR_INTERACTION_RANGE = 64;\n');
 writeFileSync(join(dir, 'utils/overlay-open.js'), 'export const workstationPopupOpen = () => false;\n');

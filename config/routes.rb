@@ -40,6 +40,8 @@ BreakEscape::Engine.routes.draw do
       post 'mfa/prompt',     to: 'games#mfa_prompt', as: 'mfa_prompt'   # Ask the owner to approve a push (S8a)
       get  'mfa/phone',      to: 'games#mfa_phone', as: 'mfa_phone'     # Requests waiting on a held phone (S8a)
       post 'mfa/approve',    to: 'games#mfa_approve', as: 'mfa_approve' # Approve or deny from a held phone (S8a)
+      # S8b unit 13: helpdesk recovery
+      post 'helpdesk/request', to: 'games#helpdesk_request', as: 'helpdesk_request' # A desk resets a password or second step (S8b)
       post 'login'           # Sign in at a sign-in PC (password, or claim the owner's open session)
       post 'logout'          # End the session at a sign-in PC
       post 'lock_session'    # Lock a held session (UI slice 6): stays held, needs the password again

@@ -562,3 +562,70 @@ test('A5: a saved connection\'s Connect entry and click are unchanged beside a h
     assert.deepEqual(labels(inventoryMenuFor(held(RDP), { inventoryItems: items, dropBlocked: null, window: w })), ['Connect', 'Examine']);
     assert.equal(trayClickIsConnect(held({ id: 'lena_rdp_file', type: 'text_file', name: 'x' }), { inventoryItems: items, window: w }), true);
 });
+
+// S8c R1-CLIENT1: a droppable item that is locked (a carried briefcase with a PIN) has no click that
+// reaches its lock but this entry. handleObjectInteraction would drop it, so "Unlock" calls handleUnlock.
+const BRIEFCASE = { id: 'gordon_briefcase', type: 'briefcase', name: "Gordon's briefcase", locked: true, lockType: 'pin', droppable: true, hasContents: true };
+
+test('S8c: a droppable locked item has "Unlock" first, then "Drop here" and "Examine"', () => {
+    assert.deepEqual(labels(menu(held(BRIEFCASE))), ['Unlock', 'Drop here', 'Examine']);
+    assert.deepEqual(menu(held(BRIEFCASE)).map(e => e.id), ['unlock', 'drop', 'examine']);
+});
+
+test('S8c R2-CLIENT4: an opened droppable container (contents or hasContents) has "Open" first, never "Unlock"', () => {
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, contents: [{ id: 'x' }] }))), ['Open', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: undefined, hasContents: true }))), ['Open', 'Drop here', 'Examine']);
+    assert.deepEqual(menu(held({ ...BRIEFCASE, locked: false, contents: [{ id: 'x' }] })).map(e => e.id), ['open', 'drop', 'examine']);
+    // R3-CLIENT1: an emptied container offers no "Open"
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, hasContents: false, contents: [] }))), ['Drop here', 'Examine']);
+    // R4-6: the S8c briefcase keeps hasContents true after the player takes the last item (the client never clears it); the
+    // contents the client holds decide. With no contents list at all (a USB stick) hasContents still decides.
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, hasContents: true, contents: [] }))), ['Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, hasContents: true, contents: [{ id: 'x' }] }))), ['Open', 'Drop here', 'Examine']);
+});
+
+test('S8c R2-CLIENT4: a droppable with no contents and no lock keeps just Drop here and Examine', () => {
+    assert.deepEqual(labels(menu(held({ id: 'plain', type: 'notes', name: 'Plain', droppable: true }))), ['Drop here', 'Examine']);
+});
+
+test('S8c R2-CLIENT4: "Open" calls handleUnlock(item, "item"), the same path a non-droppable container takes', () => {
+    const el = held({ ...BRIEFCASE, locked: false, contents: [{ id: 'x' }] });
+    const calls = { unlock: [], interact: 0 };
+    const w = { handleUnlock: (e, t) => calls.unlock.push([e, t]), handleObjectInteraction: () => { calls.interact++; } };
+    let shown;
+    openInventoryItemMenu(el, 1, 1, { ctx: { inventoryItems: items, dropBlocked: null, window: w }, window: w, showInteractionMenu: (entries) => { shown = entries; } });
+    assert.equal(shown[0].label, 'Open');
+    shown[0].onSelect();
+    assert.deepEqual(calls.unlock, [[el, 'item']]);
+    assert.equal(calls.interact, 0);
+});
+
+test('S8c R2-CLIENT4: a locked droppable whose lock is a flag has no "Unlock" (the flag station is not reached from the tray)', () => {
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, lockType: 'flag' }))), ['Drop here', 'Examine']);
+});
+
+test('S8c: a locked item that is not droppable keeps no menu (its click already unlocks)', () => {
+    assert.equal(menu(held({ ...BRIEFCASE, droppable: false })), null);
+});
+
+test('S8c: "Unlock" calls handleUnlock(item, "item"), never handleObjectInteraction (which would drop it)', () => {
+    const el = held(BRIEFCASE);
+    const calls = { unlock: [], interact: 0, drop: 0 };
+    const w = { handleUnlock: (e, t) => calls.unlock.push([e, t]), handleObjectInteraction: () => { calls.interact++; } };
+    let shown;
+    const took = openInventoryItemMenu(el, 1, 1, {
+        ctx: { inventoryItems: items, dropBlocked: null, window: w }, window: w,
+        dropInventoryItem: () => { calls.drop++; },
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    assert.equal(took, true);
+    assert.deepEqual(shown.map(e => e.label), ['Unlock', 'Drop here', 'Examine']);
+    shown[0].onSelect();
+    assert.deepEqual(calls.unlock, [[el, 'item']]);
+    assert.equal(calls.interact, 0);
+    assert.equal(calls.drop, 0);
+});
+
+test('S8c: a locked wearable or item with Use keeps its Use entry after "Unlock"', () => {
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, id: 'tr', triggerOnInteract: [{ do: 'x' }] }))), ['Unlock', 'Use', 'Drop here', 'Examine']);
+});

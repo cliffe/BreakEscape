@@ -7,13 +7,15 @@
 # quotes a code, a number or a password.
 #
 # A scenario with no `mfa` policy value, no `code_device` item, no `creds.mfa`, no prompt habit key
-# and none of the S8b fields gets no line from this file (except the loose owned phone warning,
+# gets no line from this file (except the loose owned phone warning,
 # which reads an item type that already exists).
 require 'json'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/mfa_model'
+require_relative '../lib/break_escape/helpdesk_model'
+require_relative '../lib/break_escape/lock_step_model'
 require_relative 'validate_access_work'
 
 MFA_PUSH_KINDS = %w[push push_number_match].freeze
@@ -30,7 +32,6 @@ def check_mfa(json_data)
   mm = BreakEscape::MfaModel
   story = ->(path) { ValidateAccessWork.story_file(path) }
 
-  mfa_not_built(json_data, err)
   mfa_policy_values(json_data, err)
   mfa_creds_values(json_data, err)
   mfa_device_errors(json_data, err)
@@ -49,31 +50,6 @@ end
 
 def mfa_name(npc)
   "NPC '#{npc['id']}'"
-end
-
-# The S8b fields: one fixed line each, an error (follows validate_privilege.rb).
-def mfa_not_built(json_data, err)
-  line = ->(field) { "\"#{field}\" is not built yet (MFA plan stage S8b)" }
-  err.call(line.call('helpdesks')) if json_data.key?('helpdesks')
-  mfa_room_npcs(json_data).each do |npc, path|
-    creds = npc['creds']
-    next unless creds.is_a?(Hash)
-
-    %w[recovery resetPassword].each do |field|
-      err.call("#{path}: creds.#{line.call(field)}") if creds.key?(field)
-    end
-  end
-  social = json_data['social']
-  calls = social.is_a?(Hash) && social['pretextNpcs'].is_a?(Array) ? social['pretextNpcs'] : []
-  calls.each_with_index do |call, i|
-    next unless call.is_a?(Hash) && call['asks'].is_a?(Hash)
-
-    call['asks'].each do |ask_id, ask|
-      next unless ask.is_a?(Hash) && ask.key?('helpdesk')
-
-      err.call("social.pretextNpcs[#{i}].asks.#{ask_id}: #{line.call('helpdesk')}")
-    end
-  end
 end
 
 def mfa_policy_values(json_data, err)
@@ -107,12 +83,20 @@ def mfa_device_errors(json_data, err)
     owner = item['owner']
     if !cm.present_string?(owner)
       err.call("code_device '#{name}' has no owner: it belongs to one account's NPC.")
-    elsif cm.account_npc(json_data, owner).nil?
-      err.call("code_device '#{name}' owner '#{owner}' is not an account (a room NPC with creds).")
+    elsif cm.account_npc(json_data, owner).nil? && !mfa_lock_step_code_owner?(json_data, owner)
+      err.call("code_device '#{name}' owner '#{owner}' is not an account (a room NPC with creds) and owns no secondStep code lock.")
     end
   end
   devices.select { |i| cm.present_string?(i['owner']) }.group_by { |i| i['owner'] }.each do |owner, list|
     err.call("#{list.size} code_devices belong to '#{owner}': an account has one.") if list.size > 1
+  end
+end
+
+# S8c (D10): an NPC who owns a `secondStep` lock of kind code may own a code_device without being an
+# account.
+def mfa_lock_step_code_owner?(json_data, owner)
+  BreakEscape::LockStepModel.each_lock_step(json_data).any? do |e|
+    e[:step]['kind'] == 'code' && e[:step]['owner'] == owner
   end
 end
 
@@ -183,6 +167,7 @@ def mfa_ways(json_data, entry, npc, mm, holdable_phones, holdable_devices = [])
   if owner.to_s == npc['id'].to_s && !BreakEscape::AccessIdentities.screen_always_locks?(pc, npc)
     ways << "the owner's open screen, if claimed"
   end
+  ways << 'a helpdesk that resets mfa' if BreakEscape::HelpdeskModel.desks(json_data).values.any? { |d| BreakEscape::HelpdeskModel.covers?(d, npc, 'mfa') }
   ways.uniq!
   device = entry[:kind] == 'code' ? mm.device_for(json_data, npc['id']) : nil
   ways.unshift('the account\'s code device') if device && holdable_devices.include?(device['id'])
@@ -230,7 +215,7 @@ def mfa_pc_errors(json_data, err, warn, info, mm)
       end
     end
     mfa_number_id_errors(entry, who, err)
-    if entry[:kind] == 'code' && entry[:policy].is_a?(Hash) && !entry[:policy]['maxAttempts'].nil?
+    if entry[:kind] == 'code' && entry[:policy].is_a?(Hash) && !entry[:policy]['maxAttempts'].nil? && !json_data.key?('helpdesks')
       warn.call("#{who}: the policy has maxAttempts #{entry[:policy]['maxAttempts'].inspect}, so wrong codes can lock the sign-in for good. " \
                 'Remove maxAttempts, or give the player another way through.')
     end

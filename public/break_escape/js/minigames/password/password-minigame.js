@@ -418,7 +418,7 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
             // S7-1: the player's own work fills like any held password. No file line, no credential
             // button. A captured value wins, whichever entry comes first.
             if (typeof e.password === 'string' && e.password && !tile.keyPassword) tile.keyPassword = e.password;
-        } else if (kind === 'captured') {
+        } else if (kind === 'captured' || kind === 'reset') {
             if (typeof e.password === 'string' && e.password) tile.keyPassword = e.password;
         } else if (kind === 'in_file') {
             if (!tile.found.some(f => f.id === e.id)) tile.found.push({ id: e.id, label: String(e.label || e.foundIn || '') });
@@ -446,6 +446,7 @@ export function keyringTagKind(entry) {
     if (!entry || typeof entry !== 'object') return null;
     if (entry.kind === 'password') {
         if (entry.source === 'capture') return 'captured';
+        if (entry.source === 'helpdesk') return 'reset';
         return entry.source === 'cracked' ? 'cracked' : 'in_file';
     }
     return typeof entry.kind === 'string' ? entry.kind : null;
@@ -2158,7 +2159,7 @@ export class PasswordMinigame extends MinigameScene {
                 portrait: t.portrait,
                 avatar: t.avatar,
                 kinds: t.kinds,
-                password: t.capture?.password || t.keyPassword || null,
+                password: (Array.isArray(t.kinds) && t.kinds.includes('reset') ? t.keyPassword : null) || t.capture?.password || t.keyPassword || null,
                 credentials: t.credentials || [],
                 found: t.found || [],
                 targetId: t.targetId,
@@ -2720,8 +2721,11 @@ export class PasswordMinigame extends MinigameScene {
         }
         if (result.ok) {
             // A typed sign-in to an account with a password found in a file teaches that kind (8.1)
+            // (not when the sign-in used the desk's reset password: that one was issued, not found)
             const chosen = st.other ? null : this.signInTileFor(username);
-            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.teachAfter('in_file', result.session);
+            const usedReset = !!chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('reset');
+            if (usedReset) { /* no lesson */ }
+            else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.teachAfter('in_file', result.session);
             else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('cracked')) this.teachAfter('cracked', result.session);
             this.signInAccepted(result.session);
             return;
@@ -2732,7 +2736,8 @@ export class PasswordMinigame extends MinigameScene {
             this.params.mfaAccount = { username, displayName: chosen?.displayName || null };
             this.mfaClientRef()?.noteAccount?.(this.mfaSubject(), this.params.mfaAccount);
             // The lesson noted at the first step is taught once the second step passes
-            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.params.mfaTeach = 'in_file';
+            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('reset')) delete this.params.mfaTeach;
+            else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.params.mfaTeach = 'in_file';
             else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('cracked')) this.params.mfaTeach = 'cracked';
             else delete this.params.mfaTeach;
             this.passwordField.value = '';
@@ -2882,7 +2887,14 @@ export class PasswordMinigame extends MinigameScene {
             verify.type = 'button';
             verify.id = 'signin-verify';
             actions.appendChild(verify);
-            if (device) {
+            if (pending.ownPhone === true) {
+                // S8b: a re-enrolled account's codes come from the player's own phone, never a held device
+                const mine = mk('button', `signin-use-device signin-my-phone${inMonitor ? ' pc-os-btn' : ''}`, 'My phone');
+                mine.type = 'button';
+                mine.id = 'signin-my-phone';
+                actions.appendChild(mine);
+                this.addEventListener(mine, 'click', () => this.useCodeDevice(null, { own: true, npcId: pending.npcId }));
+            } else if (device) {
                 const use = mk('button', `signin-use-device${inMonitor ? ' pc-os-btn' : ''}`, `Use ${device.name}`);
                 use.type = 'button';
                 use.id = 'signin-use-device';
@@ -2923,7 +2935,7 @@ export class PasswordMinigame extends MinigameScene {
     }
 
     /** Open the held code device over this screen; the screen comes back as a new instance on its second pane. */
-    useCodeDevice(device) {
+    useCodeDevice(device, own = null) {
         if (!this.gameState.isActive || typeof window.startCodeDevice !== 'function') return;
         const client = this.mfaClientRef();
         const key = this.mfaSubject();
@@ -2940,7 +2952,7 @@ export class PasswordMinigame extends MinigameScene {
         wrapped._mfaOriginal = original;
         this.params.onComplete = wrapped;
         this.params.suspended = true;
-        window.startCodeDevice({ itemId: device.id, returnTo: { sceneType: 'password', params: {} } });
+        window.startCodeDevice(own ? { own: true, npcId: own.npcId, returnTo: { sceneType: 'password', params: {} } } : { itemId: device.id, returnTo: { sceneType: 'password', params: {} } });
         // The child did not start: this screen is still the running one, so give it back as it was
         if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
             this.params.suspended = false;
@@ -2982,7 +2994,13 @@ export class PasswordMinigame extends MinigameScene {
             again.type = 'button';
             again.id = 'signin-send-again';
             actions.appendChild(again);
-            if (phone) {
+            if (pending.ownPhone === true) {
+                const mine = mk('button', `signin-use-device signin-my-phone${inMonitor ? ' pc-os-btn' : ''}`, 'My phone');
+                mine.type = 'button';
+                mine.id = 'signin-my-phone';
+                actions.appendChild(mine);
+                this.addEventListener(mine, 'click', () => this.useLivePhone(pending.npcId, true));
+            } else if (phone) {
                 const check = mk('button', `signin-use-device${inMonitor ? ' pc-os-btn' : ''}`, `Check ${owner}'s phone`);
                 check.type = 'button';
                 check.id = 'signin-check-phone';
@@ -3005,7 +3023,7 @@ export class PasswordMinigame extends MinigameScene {
         if (!made) return false;
         this.pushCountEl?.setAttribute('aria-live', 'polite');
         // Focus lands on the first thing to do, so it does not fall to the page
-        (this.gameContainer.querySelector('#signin-check-phone') || this.gameContainer.querySelector('#signin-second-back'))?.focus?.();
+        (this.gameContainer.querySelector('#signin-my-phone') || this.gameContainer.querySelector('#signin-check-phone') || this.gameContainer.querySelector('#signin-second-back'))?.focus?.();
         this.refreshPushPane(pending);
         // The first request goes out when the pane opens; a pane coming back to a request already sent does not send another
         if (!(Number.isFinite(pending.n) && pending.n >= 1)) this.sendPush();
@@ -3113,7 +3131,7 @@ export class PasswordMinigame extends MinigameScene {
     }
 
     /** Open the owner's held phone over this screen, as the code device is opened. */
-    useLivePhone(npcId) {
+    useLivePhone(npcId, own = false) {
         if (!this.gameState.isActive || typeof window.startAuthenticatorLive !== 'function') return;
         const client = this.mfaClientRef();
         const key = this.mfaSubject();
@@ -3135,6 +3153,7 @@ export class PasswordMinigame extends MinigameScene {
         const parentParams = this.params;
         window.startAuthenticatorLive({
             npcId,
+            ...(own ? { own: true } : {}),
             returnTo: { sceneType: 'password', params: {} },
             onComplete: (success, result) => {
                 if (result && Number(result.denied) > 0) parentParams.mfaPhoneDenied = true;

@@ -19,7 +19,8 @@ globalThis.window = {};
 const mfaUrl = dataUrl(read('systems/mfa-client.js'));
 const { PcSessions, credentialRefusalReason, typeToSignInMessage } = await import(dataUrl(read('systems/pc-sessions.js')
     .split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(read('utils/sync-before-fetch.js'))}'`)
-    .split("'./mfa-client.js'").join(`'${mfaUrl}'`)));
+    .split("'./mfa-client.js'").join(`'${mfaUrl}'`)
+    .split("'./helpdesk-client.js'").join(`'${dataUrl(read('systems/helpdesk-client.js'))}'`)));
 const mfa = await import(mfaUrl);
 
 let events, next, thrown, posts;

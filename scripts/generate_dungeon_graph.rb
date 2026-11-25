@@ -28,6 +28,10 @@ require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/mfa_model'
+require_relative '../lib/break_escape/lock_step_model'
+require_relative 'validate_access_work'
+require_relative '../lib/break_escape/helpdesk_model'
+
 require_relative '../lib/break_escape/wearable_model'
 require_relative '../lib/break_escape/scenario_binding'
 
@@ -1950,6 +1954,128 @@ BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
     end
     sources.compact.each do |src|
       add_edge(src, lock_node, label: 'second step') unless $edges.any? { |e| e[:from] == src && e[:to] == lock_node }
+    end
+  end
+end
+
+# S8c unit 07 (lock second step, dungeon graph): a lock whose object or room carries `secondStep` gets a
+# second edge into its lock node from the owner's NPC node, labelled with the kind (`push`,
+# `push_number_match` or `code`). When the step can never pass (LockStepModel.lock_step_never_passes?) the
+# edge is dashed and labelled "never passes". Nothing is drawn when the owner is unknown. Labels name the
+# step only, never a code, number, password or PIN. A scenario without the field draws as before.
+lock_step_find_room = lambda do |npc_id|
+  rooms.find { |_rid, r| r.is_a?(Hash) && Array(r['npcs']).any? { |n| n.is_a?(Hash) && n['id'] == npc_id } }&.first
+end
+BreakEscape::LockStepModel.each_lock_step(scenario).each do |entry|
+  owner = entry[:step]['owner']
+  next unless owner
+
+  lockable = entry[:lockable]
+  if entry[:kind] == :door
+    lock_node = "door_#{entry[:id]}"
+    next unless $nodes.key?(lock_node)
+  else
+    obj_id = entry[:id] || nid((lockable['name'] || lockable['type']).to_s)
+    lock_node = "lock_#{obj_id}"
+    unless $nodes.key?(lock_node)
+      next unless lockable['locked']
+
+      obj_name = lockable['name'] || obj_id.tr('_', ' ').split.map(&:capitalize).join(' ')
+      add_node(lock_node, scrub_label("#{obj_name}<br/>#{LOCK_TYPE_LABELS[lockable['lockType']] || 'Lock'}"), 'lock')
+      add_edge(entry[:room], lock_node) if entry[:room] && rooms.key?(entry[:room]) &&
+                                           add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]]), 'room')
+    end
+  end
+
+  npc = BreakEscape::LockStepModel.find_npc(scenario, owner)
+  display = npc ? (npc['displayName'] || npc['name'] || owner) : owner
+  npc_node = add_node("npc_#{nid(display)}", scrub_label(display.to_s), 'key')
+  npc_room = lock_step_find_room.call(owner)
+  if npc_room && !$edges.any? { |e| e[:to] == npc_node && e[:from] == npc_room }
+    add_node(npc_room, room_label(npc_room, rooms[npc_room]), 'room')
+    add_edge(npc_room, npc_node)
+  end
+
+  # The same story-file block as scripts/validate_lock_step.rb, so the graph and the validator agree on what
+  # ink hands over; falls back to the scenario folder's own ink/ when the repo-relative path is missing.
+  never = BreakEscape::LockStepModel.lock_step_never_passes?(scenario, lockable) do |story_path|
+    ValidateAccessWork.story_file(story_path) ||
+      [File.join(File.dirname(SCENARIO_FILE), 'ink', File.basename(story_path.to_s)),
+       File.join(File.dirname(SCENARIO_FILE), 'ink', File.basename(story_path.to_s).sub(/\.json\z/, '.ink'))]
+        .find { |f| File.file?(f) }
+  end
+  label = never ? 'never passes' : "second step: #{entry[:step]['kind']}"
+  next if $edges.any? { |e| e[:from] == npc_node && e[:to] == lock_node && e[:label] == label }
+
+  add_edge(npc_node, lock_node, dashed: never, label: label)
+end
+
+# S8b unit 06 (helpdesk plan, dungeon graph): a desk that covers an account (HM.covers?) draws one grant node per
+# thing it resets, labelled with the desk NPC's name. A `password` grant is a key source for every sign-in lock
+# that admits the account. An `mfa` grant is a source for that account's `second step` edge, beside the device or
+# phone edge. The grant's own requirements: the desk NPC's room; for `questions`, the readable homes of the
+# recovery answers (the clue walk, `NpcHabits::Clues.readable_texts`); for `callback`, the owner's phone item.
+# No answer, password or code is in any label. A scenario with no `helpdesks` draws nothing here.
+unless BreakEscape::HelpdeskModel.desks(scenario).empty?
+  hm_graph = BreakEscape::HelpdeskModel
+  desk_texts = nil
+  desk_room_of = lambda do |npc_id|
+    found = rooms.find { |_rid, room| room.is_a?(Hash) && Array(room['npcs']).any? { |n| n.is_a?(Hash) && n['id'] == npc_id } }
+    found && found[0]
+  end
+  hm_graph.desks(scenario).each do |desk_id, desk|
+    desk_npc_id = desk['npc']
+    desk_room = desk_room_of.call(desk_npc_id)
+    desk_npc = desk_room && Array(rooms[desk_room]['npcs']).find { |n| n.is_a?(Hash) && n['id'] == desk_npc_id }
+    desk_name = scrub_label((desk_npc && (desk_npc['displayName'] || desk_npc['id']) || desk_npc_id).to_s)
+    BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
+      npc = account[:npc]
+      next if account[:opens].empty?
+
+      sinks = { 'password' => [], 'mfa' => [] }
+      account[:opens].each do |lock_entry|
+        next unless lock_entry[:kind] == 'login'
+
+        sinks['password'] << [access_lock_node(lock_entry, rooms), 'password reset']
+        next unless mfa_graph.enrolled?(npc)
+        next if mfa_graph.kind(BreakEscape::CredentialModel.policy_for(scenario, lock_entry[:lock])) == 'none'
+
+        sinks['mfa'] << [access_lock_node(lock_entry, rooms), 'second step']
+      end
+      %w[password mfa].each do |what|
+        next if sinks[what].empty? || !hm_graph.covers?(desk, npc, what)
+
+        grant = add_node("desk_#{nid(desk_id)}_#{nid(npc['id'])}_#{what}",
+                         "#{desk_name}<br/>resets #{what == 'password' ? 'password' : 'second step'}", 'key')
+        if desk_room
+          add_node(desk_room, room_label(desk_room, rooms[desk_room]), 'room')
+          add_edge(desk_room, grant)
+        end
+        case desk['verify']
+        when 'questions'
+          desk_texts ||= BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE)) +
+                         BreakEscape::NpcHabits::Clues.set_member_texts(scenario)
+          recovery = npc['creds']['recovery'].is_a?(Hash) ? npc['creds']['recovery'] : {}
+          Array(desk['questions']).each do |qid|
+            want = hm_graph.normalise_answer(recovery[qid])
+            next if want.empty?
+
+            desk_texts.select { |t| t[:text].is_a?(String) && hm_graph.normalise_text(t[:text]).include?(want) }
+                      .uniq { |t| t[:path] }.each do |t|
+              source = t[:room] ? t : t.merge(room: account[:room], locks: [])
+              clue = clue_node_for.call(source, scrub_label((t[:name] || 'note').to_s))
+              add_edge(clue, grant, label: 'answer') unless $edges.any? { |e| e[:from] == clue && e[:to] == grant }
+            end
+          end
+        when 'callback'
+          phone = mfa_phone_for.call(npc['id'])
+          src = phone && mfa_item_node.call(phone)
+          add_edge(src, grant, label: 'callback') if src && $edges.none? { |e| e[:from] == src && e[:to] == grant }
+        end
+        sinks[what].each do |lock_node, label|
+          add_edge(grant, lock_node, label: label) unless $edges.any? { |e| e[:from] == grant && e[:to] == lock_node }
+        end
+      end
     end
   end
 end

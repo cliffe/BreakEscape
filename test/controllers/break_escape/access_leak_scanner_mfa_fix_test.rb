@@ -404,6 +404,8 @@ module BreakEscape
         rows << { 'method' => 'GET', 'path' => '/break_escape/games/1/scenario', 'status' => 200, 'body' => { 'rooms' => data['rooms'], 'sessions' => {} } }
         found = AccessLeakScanner.new(data).scan(rows.each_with_index.map { |r, i| ['x', i + 1, r] }).select { |f| f.rule.start_with?('mfa_') }
         has_step = data['policies'].is_a?(Hash) && data['policies'].values.any? { |p| p.is_a?(Hash) && p['mfa'].to_s != '' && p['mfa'].to_s != 'none' }
+        # S8c R1-L6: a lock step (`secondStep` on a lockable) authors the same habit keys (approvesPrompts, promptPatience) on its owner
+        has_step ||= !BreakEscape::LockStepModel.each_lock_step(data).empty?
         # a scenario with a second step authors no code or number key at all; the shipped ones that have none must be clean
         assert_equal [], found.map { |f| [f.rule, f.owner, path[%r{scenarios/([^/]+)/}, 1]] }, path unless has_step
         checked += 1

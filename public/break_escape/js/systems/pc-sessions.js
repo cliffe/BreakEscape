@@ -92,6 +92,7 @@
  */
 import { syncBeforeFetch } from '../utils/sync-before-fetch.js';
 import * as mfaClient from './mfa-client.js';
+import * as helpdeskClient from './helpdesk-client.js';
 
 // A refused or lost remote sign-in after the globals sync ran out of time may only be the
 // server working from older globals: say so, in the error the player already sees (review R1 n3)
@@ -1252,7 +1253,7 @@ export const pcSessions = new PcSessions();
 export const sessionAdmin = (pcId) => pcSessions.sessionAdmin(pcId);
 export const keyboardAdmin = (pcId) => pcSessions.keyboardAdmin(pcId);
 export const plantAdmin = (objectData) => pcSessions.plantAdmin(objectData);
-if (typeof window !== 'undefined') { window.pcSessions = pcSessions; window.mfaClient = mfaClient; }
+if (typeof window !== 'undefined') { window.pcSessions = pcSessions; window.mfaClient = mfaClient; window.helpdeskClient = helpdeskClient; }
 
 export { mfaClient };
 

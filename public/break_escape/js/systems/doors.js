@@ -553,7 +553,11 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             pinLength: lockProps.pinLength ?? connectedRoomData?.pinLength ?? null,
             // Fingerprint-kit dusting of the PIN pad: opt in with dustable true, or give a hint line (neither is secret)
             dustable: lockProps.dustable ?? connectedRoomData?.dustable ?? null,
-            dustHint: lockProps.dustHint ?? connectedRoomData?.dustHint ?? null
+            dustHint: lockProps.dustHint ?? connectedRoomData?.dustHint ?? null,
+            // A second step on this door ({ kind, owner }, as authored) and the NPC who opened
+            // it, when one did (S8c). The server sends both only for a room still locked.
+            secondStep: lockProps.secondStep ?? connectedRoomData?.secondStep ?? null,
+            npcStepOpener: lockProps.npcStepOpener ?? connectedRoomData?.npcStepOpener ?? null
         };
 
         // Debug door properties
@@ -701,6 +705,8 @@ async function handleDoorInteraction(doorSprite) {
                 console.error('Clone-as-entry server unlock failed:', error);
             }
             if (!serverResponse || !serverResponse.success) {
+                // S8c: a cancelled second step is silent here (lockStep gave its own feedback)
+                if (serverResponse?.secondStepCancelled) return;
                 window.gameAlert?.('Access denied', 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, 'Access denied'));
                 return;
             }
