@@ -42,3 +42,11 @@ Look up at 3.10 s; G1 bubble 4.65, audio start 4.79 (+1.69), dur 4.64; G2 audio 
 
 | take | length | drop % | key marks | notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t07_agnieszka_coffee (new, proved path) | none or step-away seed with `kit_quiet=true`; `kit_ca13_out` not set | `followNpc(kit_agnieszka_duda, lerp 0.08)`; `triggerNeed(caffeine, 5)`; she walks (192,97) to (244,209) (proved, about 2 s game time at 20 fps), coffee or cooler; hold; `followPlayer` | follow-start, left-post, at-station, follow-end | office or cold open | After `kit_ca13_out` her `patrolOverride` returns her to tile (6,3): record the trip before Look up. t06_graham_step_away: start the camera on Agnieszka for the first 2 s (her recall walk), then `followPlayer`: unproven |

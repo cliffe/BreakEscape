@@ -56,3 +56,19 @@ Verdict: it lands 6.0 to 7.0 s after Send, never within 6 s, and the line is vis
 
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t08_zainab_to_notice (new, or t07_notice_beat changed) | step-away seed (as t07_notice_beat) | before pressing Look up call `followNpc(kit_zainab_hussain, lerp 0.1)`; press Look up; her `patrolOverride` walks her from (128,192) to (48,160) about 1 s later; Z1 bark 1.5 s after; hold through Z2; `followPlayer` after | look_up, follow-start, walk-start, walk-end, z1-start, z2-start, follow-end | hook (Z1 as she reaches the notice) and office (Z2) | Her walk is only about 80 px (about 1 s): follow-cam adds a glide, not a long walk. Option: `triggerNeed(thirst, 5)` on Zainab first so she is at the machine (about (240,197)) when Look up fires, giving a 2 s crossing; unproven (needs suspend mid-trip). Keep the notice in frame at the end. Never click; she opens a choice at Z2
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t10_fatima_drinks (new) | fresh game, any seed with the room loaded | `followNpc(kit_fatima_begum)`; she leaves post (60,186) about 27.5 s after load, or `triggerNeed(thirst, 5)`; follow to the machine (about (240,197)) | follow-start, left-post, at-machine | office-life filler for the research or build beats | Fatima is `kit_fatima_begum`, a different id from ca02 `fatima_begum` |
