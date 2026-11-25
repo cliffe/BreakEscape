@@ -8,7 +8,7 @@ Wording in this file follows the game's rule: it says what to do, and which butt
 - Staff only walk to rooms the player has opened. The water cooler, fridge and microwave are in the Kitchen, so Ama's "Send them for coffee." and "Send them to lunch." wait until the Kitchen has been opened once (she says "Have a look in the kitchen first..." until then). Every run therefore opens the Office and the Kitchen before any lever.
 - The X on a PC screen closes the desktop and keeps the session. Only Start > Sign out ends a session. If a desktop is left open, reopening that PC shows it at once and skips the password and the second step.
 - A PC whose owner is at the desk says "<name> is using this PC." and offers no sign-in. Every sign-in beat below runs while the owner is away and the screen is locked. The one claim beat (M8) runs while the owner is away and the screen is open.
-- A reload puts the player in Reception at the start point; the inventory, the sessions and the server's record of a pending step stay (a pending step is dropped after five minutes). Reopen the PC by clicking it.
+- A reload puts the player in Reception at the start point; the inventory, the sessions and the server's record of a pending step stay (a pending step is dropped after five minutes). Reopen the PC by clicking it. Rooms are not rebuilt by a reload: open the Office and the Kitchen doors again before a lever, because staff only walk to rooms opened since the reload (Anjali's coffee and the lunch trips wait until then).
 
 **Not played in the browser (Rails tests, `test/controllers/break_escape/demo_ops_second_step_scenario_test.rb`):** the refusal of each PC to an account its access list does not name, the exact expiry of an unanswered push, the one-use code, a wrong number not counting as a failed sign-in, the claim refused at Lorna's PC, and the leak scanner over every answer. Every beat has a click path below; none is test-only.
 
@@ -33,7 +33,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> <capture files, oldest first> --signin <account>@<pc>#<n> ...
 ```
 
-Name each honest sign-in with `--signin` once its rows are in the files (for example `lorna_easton@lorna_pc#1`, `darren_price@darren_pc#1`, `anjali_rao@anjali_pc#1`, `yusuf_demir@yusuf_pc#1`, `niamh_doherty@visitor_kiosk#1`). Expected: exit 0, "no leaks found".
+`--signin <account>@<pc>#<n>` names a keyboard sign-in that the capture cannot place, and `n` counts every successful `POST /login` answer of that account in the capture, open-screen claims included (`via: claim`). Here only Niamh's kiosk sign-in is such a row: a second-step PC (Lorna, Darren, Anjali, Yusuf) earns its desktop through the step, not through a successful login answer, and Darren's open-screen peeks are claims, which the scanner already allows. Never name a claim row (naming one exits 2, "named, unconfirmed (via claim)"), and never name a second-step sign-in (it matches no row, exit 2). So give one entry, in Run C only: `--signin niamh_doherty@visitor_kiosk#1` (Niamh has no claims, so her sign-in is always her 1st). Runs A and B take no `--signin` entry. Expected: exit 0, "VERDICT: no leaks found." (The three playtest 2 captures all exit 0 this way.)
 
 Every run: a screenshot per beat, findings written as the run goes, and an **earned-secrets table**: for each secret used, the in-game place it was read from (never the secret itself). A "stuck" claim is checked by a Sonnet run before it counts.
 
@@ -55,7 +55,7 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
    - See: "Have a look in the kitchen first. That's where the water is, and Anjali won't move without it." Nobody moves. (The kitchen gate.) Choose "I'll have a look round.".
    - Server: the card is one that Ama holds; nothing else in Reception carries Lorna's password.
 3. **Open the rooms.** Go north into the Office, then west into the Kitchen. Ama barks "That's the kitchen. Come back to me and I can send them for coffee." Open the IT room door on the way back if you like (east of the Office). Return to Reception, click Ama, choose "Send them for coffee.".
-   - See: "Right, coffee for everyone. Watch who leaves their desk." Within about a minute Lorna, Darren and Yusuf go to the Office Coffee Station and Anjali goes to the Kitchen cooler. Ama barks "Anjali's left her code fob on her desk." and "Darren's popped out. If it's a quick coffee, his screen stays open." Press "Send them for coffee." again if a window closes.
+   - See: "Right, coffee for everyone. Watch who leaves their desk." Ama adds "Give them a minute or two. If nobody moves, ask me again." Within about a minute Lorna, Darren and Yusuf go to the Office Coffee Station and Anjali goes to the Kitchen cooler. A press can seem to do nothing: a member of staff who has just given up on a queue or a failed walk skips that target for 60 seconds, so ask again after a minute (playtest 2: two presses sent nobody for about two minutes, the next worked within 17 seconds). Ama barks "Anjali's left her code fob on her desk." and "Darren's popped out. If it's a quick coffee, his screen stays open." Press "Send them for coffee." again if a window closes. Ama's barks are speech bubbles: they are not in the toast or the session log, so check them by eye.
 4. **M1, a password written down.** While Anjali is away, click "Anjali's PC". The sign-in screen shows a sticky note with her login. Close it with the X (do not sign in).
    - See: the task "Find a password written on a note at a desk" ticks (also available by telling Ama: "I read Anjali's note.").
 5. **M8, the way round.** While Darren is out for coffee (his trips are short, so his screen stays open), click "Darren's PC".
@@ -81,10 +81,10 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
    - See: her desktop opens. Task "Sign in with a code fob left on a desk" ticks. Click Start > Sign out.
    - **Reload mid-run here.** The fob stays in the inventory; the sessions do not come back as open desktops. Reopening Anjali's PC shows the password screen if she is still away, or "Anjali Rao is using this PC." if she is back (the first run found her back).
 3. **Yusuf's password.** In this fresh game, earn it as in Run A step 8: Ama, "Switch the printer off.", then stand right beside Anjali until the "Overheard: Yusuf Demir" toast.
-4. **M7, a phone left by the coffee.** Ama, "Send them for coffee." again; wait for Yusuf to leave his desk. His phone is on the side by the Office Coffee Station: pick it up (it joins the inventory; clicking it in the world may open its Friendface browser instead, which is fine once it is held). Click "Yusuf's PC", pick his tile, type his password, click Sign in.
-   - See: a two-digit number on the pane ("Pick the number shown on the phone").
+4. **M7, a phone left by the coffee.** Ama, "Send them for coffee." again; wait for Yusuf to leave his desk. His phone is on the side by the Office Coffee Station: pick it up (it joins the inventory; clicking it in the world may open its Friendface browser instead, which is fine once it is held). In that browser, "Yusuf Demir" under People reads "Captured" once you have overheard his login: the game marks a password you already hold. It does not show the value and is not a source; type the password you overheard. Click "Yusuf's PC", pick his tile, type his password, click Sign in.
+   - See: a two-digit number on the pane, with "Note this number before you open the phone." (for example "Number: 28").
    Click "Check Yusuf Demir's phone" in the pane (the inventory phone cannot be opened while the pane is open): the authenticator shows three numbers. Pick a **wrong** one.
-   - See: "Request cancelled."; no failed-sign-in count. Sign in again (a new number is shown), pick the matching one.
+   - See: "That number did not match. The request was cancelled." (a later "Request cancelled." on the password pane is the same cancel); no failed-sign-in count. Sign in again (a new number is shown), pick the matching one.
    - See: his desktop opens. Task "Sign in with a phone left by the coffee" ticks. Click Start > Sign out.
    - Server: `mfa_prompt_denied` then `mfa_prompt_approved` with approver `held_phone`.
 5. Do not press "Send them to lunch." here: it fires once only, and Run C needs it.
@@ -94,17 +94,24 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
 "Send them to lunch." fires once only, so Darren's password must be in his note before lunch is pressed.
 
 1. Start a fresh game. Open the Office and the Kitchen, then back to Reception (the gate). Click Ama, choose "Switch the printer off.". Wait for Darren's "That's it. I'm writing it down." and the task "See a password written down in a temper" to tick (up to about three minutes). Then click Ama, choose "Send them to lunch.". Darren goes to the Kitchen (fridge or microwave, over 100 seconds). Ama barks "Darren's gone to lunch. His screen will be locked."
-2. **M5, pestered into approving.** Click "Darren's PC" once he has left: the sign-in screen shows his note (record "from Darren's temper note"). Pick his tile, type that password, click Sign in.
+2. **M5, pestered into approving.** Wait about two minutes after Darren leaves for lunch: his screen is still open at first, so an early click on "Darren's PC" opens his desktop ("You're on Darren Price's open screen") and ticks M8, not the sign-in. Once his screen has locked (about two minutes away; playtest 2: left 04:02:44, locked by 04:04:55), click "Darren's PC": the sign-in screen shows his note (record "from Darren's temper note"). Pick his tile, type that password, click Sign in.
    - See: the pane "Second step for Darren Price", a push is sent. Send again (about every 3 seconds). On the third request the pane closes and his desktop opens. Ama barks "He approved just to make it stop." (her recap says it again).
    - Server: `mfa_prompt_sent` count 3, `mfa_prompt_approved` with approver `owner`, `signin_ok`. Task "Wear someone down until they approve a sign-in" ticks. Click Start > Sign out.
 3. **M9, an account with no second step.** Go south to Reception. Click "Kiosk login card" beside the kiosk and read it (username and password: record as "from the kiosk card"). Click "Visitor kiosk", pick the Niamh tile, type the password, click Sign in.
    - See: her desktop opens at once with no second step. Task "Sign in where no second step is asked" ticks. Click Start > Sign out.
 4. Click Ama, choose "Call it a day." then "Yes, call it a day.". Staff go home (everyone except Thandiwe).
-5. **M10, the log.** Go to the IT room. Click Thandiwe, choose "Can I see what I looked like from your side?". She tells you to look for Lorna's unanswered requests, Darren's approval, and to flag the burst of requests to Darren in the small hours. Click "Approvals log terminal".
-   - See: a table of rows: your own (sign-ins, challenges, requests, approvals), Lorna's unanswered requests (sent, never answered), Darren's approval, and seed rows. Filter by person if wanted. Find the burst of twelve requests to Darren from 01:40 on Tuesday (the first of them is the odd one out). Open that row and click "Flag the odd burst".
+5. **M10, the log.** Go to the IT room. Click Thandiwe, choose "Can I see what I looked like from your side?". She tells you to look for requests nobody answered and any approval, and to flag the burst of requests to Darren in the small hours. Click "Approvals log terminal".
+   - See: a table of rows: your own (sign-ins, challenges, requests, approvals), Lorna's unanswered requests (sent, never answered; only if M4 was played in this game, so a fresh Run C alone has none), Darren's approval (only if M5 was played), and seed rows. Filter by person if wanted. Find the burst of twelve requests to Darren from 01:40 on Tuesday (the first of them is the odd one out). Open that row and click "Flag the odd burst".
    - See: the last task ticks (Evening: the trail). No code, number or password appears in any row.
 6. Click Ama and choose "What did that show?" then "Give me the short version.": a one-line recap per ticked beat (the log line says the night burst means someone else had Darren's password first) and a four-line summary. Check that no line names a password.
 7. Run the three checks listed in Setup. Expected: `verify-run --access` and `--ops-log` pass; the leak check exits 0.
+
+## Things a tester sees that are not faults
+
+- Toasts arrive late: "Picked up Lorna's sign-in card" and "Overheard: Yusuf Demir" can appear after the event they report, even after a sign-out, and the overheard toast repeats for each time Yusuf asks (the share repeats while the printer stays off).
+- The session tools' `converse` with a named choice repeats that choice until the branch is spent ("Send them for coffee." five times, "What did that show?" three times, Thandiwe's line three times). That is the harness; a player sees each line once.
+- `verify-run --access` prints a habits block marked not for a blind tester: do not read it until the run is finished.
+- No lever says when nobody moves; see the coffee note in Run A step 3.
 
 ## Free play
 

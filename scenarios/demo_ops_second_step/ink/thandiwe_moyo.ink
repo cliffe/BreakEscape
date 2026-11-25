@@ -31,7 +31,7 @@ What do you need?
 # speaker:npc
 The approvals log is on the computer beside me. Your requests are in it.
 # speaker:npc
-Look for Lorna's unanswered ones, and Darren's approval.
+Look for requests nobody answered, and any approval.
 # speaker:npc
 Then flag the odd one out, a burst of requests to Darren in the small hours.
 -> hub.choices

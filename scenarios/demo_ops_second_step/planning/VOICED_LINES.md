@@ -37,6 +37,7 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); nothing here is gener
 | tell_note | That's one way a password escapes. | 6 |
 | lever_coffee | Have a look in the kitchen first. That's where the water is, and Anjali won't move without it. | 18 |
 | lever_coffee | Right, coffee for everyone. Watch who leaves their desk. | 9 |
+| lever_coffee | Give them a minute or two. If nobody moves, ask me again. | 12 |
 | lever_printer | Printer's off. Let's see who loses patience. | 7 |
 | lever_lunch | Have a look in the kitchen first. That's where lunch happens. | 11 |
 | lever_lunch | Lunchtime, then. Some of them will be away for a while. | 11 |
@@ -108,7 +109,7 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); nothing here is gener
 | hub | Sign-ins and the requests behind them. Who asked, who answered, and when. | 12 |
 | hub | Right you are. | 3 |
 | log_offer | The approvals log is on the computer beside me. Your requests are in it. | 14 |
-| log_offer | Look for Lorna's unanswered ones, and Darren's approval. | 8 |
+| log_offer | Look for requests nobody answered, and any approval. | 8 |
 | log_offer | Then flag the odd one out, a burst of requests to Darren in the small hours. | 16 |
 
 ## yusuf_demir (ink, 4 lines)
@@ -165,3 +166,8 @@ Changed lines (old, then new):
 - Yusuf wk_share_login: "Printer's dead. Asking Anjali." -> "Printer's dead. I'll ask Anjali."
 - Yusuf login_aloud: "Use mine, Anjali. You know the one." -> "Use my login, Anjali. Here it is." (40-character bubble; names no value)
 - Removed: Anjali's login_aloud "Thanks. I'll send it from here." (never said: only the sharer mutters it).
+
+## Round 2 fixes (changed or new lines)
+
+- Ama lever_coffee, new second line: "Give them a minute or two. If nobody moves, ask me again." (the lever gave no sign when staff were on a retry wait)
+- Thandiwe log_offer: "Look for Lorna's unanswered ones, and Darren's approval." -> "Look for requests nobody answered, and any approval." (a player who skipped the Lorna beat has no Lorna rows)

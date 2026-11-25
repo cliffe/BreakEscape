@@ -58,7 +58,7 @@ Reviews: `IMPL_REVIEW_R1.md` (1 blocker, 2 majors, 7 minors), `DIALOGUE_REVIEW_R
 | Impl minor 1: temper note read "once he is back at the desk" | Fixed: the task ticks when he writes it; the note is read at lunch (Run C). |
 | Impl minor 2: an expired push left waiting writes no row | Fixed in Free play: send twenty times for the expired row. |
 | Impl minor 3: `promptsSent` and the merged row untested | Fixed: M4 asserts `promptsSent` 1 then 2, one `mfa_prompt_sent` row with `n == 2`. |
-| Impl minor 4 / dialogue m5: nothing said when Darren gives in | Fixed: the `pestered` mapping is now onceOnly and carries the bark "He approved just to make it stop." (merged into one mapping so the validator's same-pair onceOnly warning does not fire). onceOnly budget 8/10. |
+| Impl minor 4 / dialogue m5: nothing said when Darren gives in | Fixed: the `pestered` mapping is now onceOnly and carries the bark "He approved just to make it stop." (merged into one mapping so the validator's same-pair onceOnly warning does not fire). office-life onceOnly mappings 6/10 (the validator's V8 figure; Ama's kitchen and pestered mappings are not counted as office-life ones). |
 | Impl minor 5: the cake can spoil M5 | PLAYTEST line: keep the cake until M5 is done. Not changed in the scenario: the cake is the office-life magnet beat and a free-play toy. |
 | Impl minor 6 / dialogue m4, m6: untrue barks ("His screen is still open", "kettle") | Fixed: "Darren's popped out. If it's a quick coffee, his screen stays open."; "a phone by the coffee machine". |
 | Impl minor 7: office relays keep firing on later entries | Documented in item 4 above. |
@@ -79,3 +79,23 @@ Reviews: `IMPL_REVIEW_R1.md` (1 blocker, 2 majors, 7 minors), `DIALOGUE_REVIEW_R
 | Playtest: "What did that show?" repeated in one converse | Left: the recap returns to the hub by design; the repeat was the converse loop choosing it twice. The recap is now half as long. |
 
 **Live check of the B1 fix** (keyless server on :3023, fresh game 197, headless, stopped after): before the Kitchen was opened, "Send them for coffee." answered "Have a look in the kitchen first. That's where the water is, and Anjali won't move without it." and `coffee_call` stayed 0. After walking Office, Kitchen (`kitchen_seen` true), back to Reception, one press set caffeine or thirst on Lorna, Darren, Anjali and Yusuf in the same tick (needs log tick 187), and all four left within a second; Anjali went to the Kitchen cooler and left her fob (tick 191). Log: `/data/tmp/scratch/showcase-second_step-fix1/session-197.jsonl`.
+
+## Round 2 fixes
+
+Source: `planning/IMPL_REVIEW_R2.md` (N1 to N3) and playtest 2 (`/data/tmp/scratch/showcase-second_step-playtest-2/RESULTS.md`).
+
+| Finding | Outcome |
+|---|---|
+| N1 reload: coffee and lunch gates open, Kitchen not loaded | PLAYTEST reload bullet now says to open the Office and Kitchen doors again before a lever. Engine side not touched. |
+| N2 onceOnly budget | Round 1 table now quotes the validator's V8 figure, 6/10. |
+| N3 dialoguelint measures 0 lines | Unchanged, deferred by agreement (shared prefix change). Lint: 0 ERROR, "Totals by rule: none", still 0 lines measured. |
+| PT2 1: a lever press sometimes sends nobody for about two minutes | Cause not proven. Likely the 60 s skip (`FAIL_COOLDOWN_MS`, `QUEUE_COOLDOWN_MS` in `npc-needs.js`) on a target a member of staff just gave up on. Fixed as a scenario fault of feedback: Ama now adds "Give them a minute or two. If nobody moves, ask me again."; PLAYTEST says the same. |
+| PT2 2: first click on Darren's PC after lunch opened his desktop | Not a fault: his screen stays open for about two minutes, then locks. PLAYTEST Run C step 2 says to wait; that click is M8. |
+| PT2 3 and confusing: no Lorna rows in Run C, Thandiwe asks for them | The empty result is right: the approvals log holds only this game's rows, and Lorna's unanswered requests come only from M4 (Run A). A fresh Run C alone writes Darren's and Niamh's rows. Thandiwe's line is now "Look for requests nobody answered, and any approval."; PLAYTEST says which rows depend on which beat. |
+| PT2 4: Yusuf's "Captured" tile in Friendface | Not a fault: the engine's tag for a password the player already holds (overheard). No value is shown. Documented in PLAYTEST. |
+| PT2 5: pane wording | PLAYTEST now quotes "Note this number before you open the phone." and "That number did not match. The request was cancelled." |
+| PT2 6: Ama and Lorna barks unverified | Documented: barks are speech bubbles, not in the toast or log, so check by eye. Still unverified by a run. |
+| PT2 7, 8, 9: late toasts, repeated converse choice, habits block | Added to PLAYTEST "Things a tester sees that are not faults". |
+| Leak check exits 2 with the listed `--signin` entries | Cause: the entries named second-step sign-ins (they earn their desktop through the step, not a successful login answer, so they match no row) and an open-screen claim (`via: claim`, unconfirmable). `#n` counts every successful `POST /login` answer including claims. Only Niamh's kiosk sign-in is such a row. PLAYTEST now lists one entry, `--signin niamh_doherty@visitor_kiosk#1`, Run C only. Re-run on the three playtest 2 captures: games 198, 202, 203 all "VERDICT: no leaks found." (203 with the Niamh entry). |
+
+Checks: ink compile of `ama_owusu` and `thandiwe_moyo`; validator 0 errors, 20 warnings (graph unchanged); mapping drift 0 failures; dialoguelint 0 ERROR; scenario test and golden compare: see the commit reply.

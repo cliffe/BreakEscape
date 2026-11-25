@@ -150,6 +150,8 @@ That's one way a password escapes.
 }
 # speaker:npc
 Right, coffee for everyone. Watch who leaves their desk.
+# speaker:npc
+Give them a minute or two. If nobody moves, ask me again.
 ~ coffee_call = coffee_call + 1
 # exit_conversation
 -> END
