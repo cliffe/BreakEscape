@@ -1,0 +1,9 @@
+{
+  "display_name": "Ops demo: second steps",
+  "description": "Merrin & Sallow have just switched on a second sign-in step. Watch passwords escape through ordinary habits, then see the second step hold, give way, and get skipped.",
+  "difficulty_level": 2,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 25,
+  "test_type": "ops_demo",
+  "test_objective": "Show the second sign-in step inside a working office, and the helpdesk that can undo it: a request that goes unanswered, an approval given to make the requests stop, a code from a fob left on a desk, a number matched on a phone left by the coffee, a screen left open, an account with no second step, and the approvals log that records it all, and a second step on a door, a safe and a case, with a door that a propped wedge skips."
+}

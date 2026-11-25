@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops skin",
+  "description": "Test of the network view's two looks (stage S6, feature N16): one small office network with a file server, a sealed server, two field notes, an open share and a printer. The same game is played in the Panels look and in the Terminal look. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 20,
+  "test_type": "ops_skin",
+  "test_objective": "Prove the Panels look and the Terminal look make the same requests and show the same hosts, findings, cards, statuses and sessions beat for beat, and that switching look changes nothing on the server"
+}

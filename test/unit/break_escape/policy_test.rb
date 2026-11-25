@@ -41,7 +41,7 @@ module BreakEscape
       policy = GamePolicy.new(@owner, @game)
       %i[show? update? scenario? ink? bootstrap? sync_state? update_room?
          unlock? inventory? room? objectives? complete_task? update_task_progress?
-         container? submit_flag? tts? reset? new_session?].each do |action|
+         container? submit_flag? tts? reset? new_session? crack? harvest_credentials?].each do |action|
         assert policy.public_send(action), "Expected owner to be allowed: #{action}"
       end
     end
@@ -56,7 +56,7 @@ module BreakEscape
       policy = GamePolicy.new(@other, @game)
       %i[show? update? scenario? ink? bootstrap? sync_state? update_room?
          unlock? inventory? room? objectives? complete_task? update_task_progress?
-         container? submit_flag? tts? reset? new_session?].each do |action|
+         container? submit_flag? tts? reset? new_session? crack? harvest_credentials?].each do |action|
         assert_not policy.public_send(action),
           "Expected non-owner to be DENIED: #{action}"
       end

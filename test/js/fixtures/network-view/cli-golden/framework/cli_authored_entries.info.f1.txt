@@ -1,0 +1,10 @@
+[head|Module: ]training/filehold/update_lag
+[head|Title: ]Storage service behind its fixes
+[head|Target: ]files01 (10.20.0.10), port 445, filehold
+[head|References:]
+  TRN-0000-0101
+  TRN-0000-0102
+[head|Finding: ]f1
+[head|Status: ]Unconfirmed
+[head|Risk: ]Out of date High
+[head|Summary: ]The storage service is behind its published fixes.

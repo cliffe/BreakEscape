@@ -1,0 +1,12 @@
+[head|Starting Nmap against lab_net]
+[head|Nmap scan report for ][head|desk_pc][head| (10.20.30.4)]
+[ok|Host is up.]
+[note|  Name: ]Desk PC
+[note|  Hostname: ]LAB-01
+[head|Nmap scan report for ][head|print01][head| (10.20.30.5)]
+[ok|Host is up.]
+[note|  Name: ]Second floor printer
+[head|Nmap scan report for ][head|print02]
+[ok|Host is up.]
+[note|  Name: ]Store room printer
+Nmap done: 3 hosts up

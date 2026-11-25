@@ -13,6 +13,7 @@ import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessag
 import { createBoltCanvas } from '../../utils/compromise-bolt.js';
 import { syncBeforeFetch } from '../../utils/sync-before-fetch.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
+import { mountCachedAccountsPanel } from './cached-accounts-panel.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, refreshTokenLines, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
 
@@ -407,6 +408,14 @@ const LABEL_ELLIPSIS = '…';
 // hand-over (window.pendingContainerReturn.focusReturn, then the reopen's params), so a
 // return that never happens leaves nothing behind. byKey: a key opened the file.
 const iconKeyOf = (item) => String(item?.id ?? item?.name ?? '');
+// An IT request form on a PC's desktop (ops layer S8b unit 22) has no sprite of its own: its icon
+// is the plain document glyph, and its name is the label under it.
+const HELPDESK_FORM_TYPE = 'helpdesk_form';
+const HELPDESK_FORM_ICON = '/break_escape/assets/objects/text_file.png';
+function objectIconUrl(item) {
+    return item?.type === HELPDESK_FORM_TYPE ? HELPDESK_FORM_ICON : `/break_escape/assets/objects/${item.type}.png`;
+}
+
 export function iconFocusMark(item, byKey) {
     return item ? { key: iconKeyOf(item), byKey: byKey === true } : null;
 }
@@ -1225,6 +1234,7 @@ export class ContainerMinigame extends MinigameScene {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
         }
+        this.cachedAccounts?.destroy?.();
         this.taskbar?.destroy?.();
         this.pcMonitor?.destroy?.();
         if (this.exitReason !== 'item') releaseHeldEnter();
@@ -1686,8 +1696,24 @@ export class ContainerMinigame extends MinigameScene {
             </div>
         `;
         this.mountTaskbar(this.gameContainer.querySelector('.pc-desktop'));
+        this.mountCachedAccounts(this.gameContainer.querySelector('.pc-desktop')); // S5b
         this.decorateRemoteView(this.loginSession());
         this.watchDesktopScroll();
+    }
+
+    /**
+     * S5b: the "Cached accounts" control on a sign-in desktop, shown only while the client holds an
+     * admin session at this PC (the server decides every collect). Sends the desktop's own route.
+     */
+    mountCachedAccounts(host) {
+        if (!host || !this.loginPcId || this.mode === 'npc') return;
+        const pcId = this.loginPcId;
+        const session = this.loginSession();
+        const route = this.remote?.footholdId ? { foothold: this.remote.footholdId }
+            : (this.relay || session?.relay === true ? { relay: true }
+                : (this.fromRoute?.fromPcId ? { from: this.fromRoute.fromPcId } : null));
+        this.cachedAccounts?.destroy?.();
+        this.cachedAccounts = mountCachedAccountsPanel(host, { pcId, route, isAdmin: () => window.pcSessions?.sessionAdmin?.(pcId) === true });
     }
 
     /** A sign-in desktop's remote and claim lines (the account itself is on the taskbar). */
@@ -1900,7 +1926,7 @@ export class ContainerMinigame extends MinigameScene {
             itemImg.className = 'container-content-item';
             // An item may override its icon with an explicit path (e.g. a .zip archive on a
             // desktop that has no object sprite of its own).
-            itemImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
+            itemImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : objectIconUrl(item));
             itemImg.alt = item.name;
             // No tooltip that repeats the name printed under the item (slice 2a review R1 m1);
             // a share's UNC path, which the label leaves out, is its title below
@@ -2020,7 +2046,7 @@ export class ContainerMinigame extends MinigameScene {
             
             const iconImg = document.createElement('img');
             iconImg.className = 'desktop-icon-image';
-            iconImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
+            iconImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : objectIconUrl(item));
             iconImg.alt = ''; // the icon's aria-label carries the name once
             
             const iconLabel = document.createElement('div');
@@ -2212,7 +2238,7 @@ export class ContainerMinigame extends MinigameScene {
 
     /** A takeable item (not a locked folder) seen through a sign-in desktop's session. */
     offersTransfer(item) {
-        return !!(this.sourcePcId || this.sourceResourceId) && this.mode !== 'npc' && item?.takeable === true && item.locked !== true;
+        return !!(this.sourcePcId || this.sourceResourceId) && this.mode !== 'npc' && item?.takeable === true && item.locked !== true && item.type !== HELPDESK_FORM_TYPE;
     }
 
     /**
@@ -2438,6 +2464,33 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
     
+    /**
+     * The IT request form on a PC's desktop: open the request scene with the item's desk and this
+     * PC's id (the server judges the PC; the id only says where the request was made). The desktop
+     * closes as for a note and comes back when the form closes. The item is never taken.
+     */
+    openHelpdeskForm(item) {
+        const deskId = typeof item.desk === 'string' ? item.desk : '';
+        const pcId = this.monitorPcId();
+        if (!deskId || typeof window.startHelpdeskRequest !== 'function') {
+            this.showMessage('Request form unavailable.', 'error');
+            return;
+        }
+        const returnToDesktop = () => returnToContainerAfterNotes();
+        window.pendingContainerReturn = {
+            containerItem: this.containerItem,
+            contents: this.contents,
+            isTakeable: this.isTakeable,
+            npcOptions: this.mode === 'npc' ? { mode: this.mode, npcId: this.npcId, npcDisplayName: this.npcDisplayName, npcAvatar: this.npcAvatar } : null,
+            focusReturn: iconFocusMark(item, this.openedByKey === true)
+        };
+        this.exitReason = 'item';
+        this.complete(false);
+        const options = { deskId, onComplete: returnToDesktop };
+        if (pcId) options.pcId = pcId;
+        window.startHelpdeskRequest({ deskId }, options);
+    }
+
     isInteractiveItem(item) {
         // Check if this item should trigger a minigame instead of being taken
 
@@ -2448,6 +2501,11 @@ export class ContainerMinigame extends MinigameScene {
 
         // Text files — always interactive (never taken, even without text)
         if (item.type === 'text_file') {
+            return true;
+        }
+
+        // The IT request form: always opens, is never taken
+        if (item.type === HELPDESK_FORM_TYPE) {
             return true;
         }
 
@@ -2489,6 +2547,10 @@ export class ContainerMinigame extends MinigameScene {
     
     handleInteractiveItem(item, itemElement) {
         console.log('Handling interactive item from container:', item);
+        if (item.type === HELPDESK_FORM_TYPE) {
+            this.openHelpdeskForm(item);
+            return;
+        }
         // Keyring K3a: an "In file" tag waits until its file is opened in this page (no import)
         try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
 

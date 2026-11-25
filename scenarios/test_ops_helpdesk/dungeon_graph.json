@@ -1,0 +1,407 @@
+{
+  "scenario": "test_ops_helpdesk",
+  "start_room": "front_office",
+  "nodes": [
+    {
+      "id": "lock_front_pc",
+      "label": "Front PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_ops_pc",
+      "label": "Operations PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_records_pc",
+      "label": "Records PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_vault_pc",
+      "label": "Vault PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_sam",
+      "label": "Sam Okoro sign-in<br/>(s.okoro)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "front_office",
+      "label": "Front Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_wim",
+      "label": "Wim Duarte sign-in<br/>(w.duarte)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "service_desk",
+      "label": "Service Desk",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_tess",
+      "label": "Tess Ama sign-in<br/>(t.ama)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "records",
+      "label": "Records",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_ugo",
+      "label": "Ugo Reyes sign-in<br/>(u.reyes)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_vera",
+      "label": "Vera Holt sign-in<br/>(v.holt)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_helpdesk_audit",
+      "label": "Helpdesk and sign-in audit<br/>signin_ok, signin_fail, signin_lockout, signin_refused, session_end, session_lock, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied, helpdesk_request, account_password_reset, account_mfa_reenrolled",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_audit_log_pc",
+      "label": "Audit log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_tess_saved",
+      "label": "Tess Ama saved connection<br/>(t.ama)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_tess_saved_file",
+      "label": "Records PC.rdp",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_src_vera_device",
+      "label": "Code device",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_wim_mfa",
+      "label": "Ria Vance<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "clue_staff_file",
+      "label": "Staff file",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_social_osint_friendface",
+      "label": "note",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_tess_password",
+      "label": "Ria Vance<br/>resets password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_ugo_password",
+      "label": "Ria Vance<br/>resets password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_vera_mfa",
+      "label": "Ria Vance<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_id_desk_wim_mfa",
+      "label": "Omar Stack<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_id_desk_vera_mfa",
+      "label": "Omar Stack<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_vera_phone",
+      "label": "Vera's phone",
+      "kind": "item",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "front_office",
+      "to": "lock_front_pc",
+      "soft": false
+    },
+    {
+      "from": "service_desk",
+      "to": "lock_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "records",
+      "to": "lock_records_pc",
+      "soft": false
+    },
+    {
+      "from": "records",
+      "to": "lock_vault_pc",
+      "soft": false
+    },
+    {
+      "from": "front_office",
+      "to": "signin_sam",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_front_pc",
+      "soft": false
+    },
+    {
+      "from": "service_desk",
+      "to": "signin_wim",
+      "soft": false
+    },
+    {
+      "from": "signin_wim",
+      "to": "lock_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "records",
+      "to": "signin_tess",
+      "soft": false
+    },
+    {
+      "from": "signin_tess",
+      "to": "lock_records_pc",
+      "soft": false
+    },
+    {
+      "from": "records",
+      "to": "signin_ugo",
+      "soft": false
+    },
+    {
+      "from": "signin_ugo",
+      "to": "lock_records_pc",
+      "soft": false
+    },
+    {
+      "from": "records",
+      "to": "signin_vera",
+      "soft": false
+    },
+    {
+      "from": "signin_vera",
+      "to": "lock_vault_pc",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_front_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_ops_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_records_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_vault_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "front_office",
+      "to": "service_desk",
+      "soft": false
+    },
+    {
+      "from": "front_office",
+      "to": "records",
+      "soft": false
+    },
+    {
+      "from": "front_office",
+      "to": "reader_audit_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_helpdesk_audit",
+      "to": "reader_audit_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "cred_src_tess_saved_file",
+      "to": "cred_tess_saved",
+      "soft": false
+    },
+    {
+      "from": "cred_tess_saved",
+      "to": "lock_records_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_vera_device",
+      "to": "lock_vault_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "service_desk",
+      "to": "desk_it_desk_wim_mfa",
+      "soft": false
+    },
+    {
+      "from": "records",
+      "to": "clue_staff_file",
+      "soft": false
+    },
+    {
+      "from": "clue_staff_file",
+      "to": "desk_it_desk_wim_mfa",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "service_desk",
+      "to": "clue_social_osint_friendface",
+      "soft": false
+    },
+    {
+      "from": "clue_social_osint_friendface",
+      "to": "desk_it_desk_wim_mfa",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "desk_it_desk_wim_mfa",
+      "to": "lock_ops_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "service_desk",
+      "to": "desk_it_desk_tess_password",
+      "soft": false
+    },
+    {
+      "from": "clue_staff_file",
+      "to": "desk_it_desk_tess_password",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "clue_social_osint_friendface",
+      "to": "desk_it_desk_tess_password",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "desk_it_desk_tess_password",
+      "to": "lock_records_pc",
+      "soft": false,
+      "label": "password reset"
+    },
+    {
+      "from": "service_desk",
+      "to": "desk_it_desk_ugo_password",
+      "soft": false
+    },
+    {
+      "from": "desk_it_desk_ugo_password",
+      "to": "lock_records_pc",
+      "soft": false,
+      "label": "password reset"
+    },
+    {
+      "from": "service_desk",
+      "to": "desk_it_desk_vera_mfa",
+      "soft": false
+    },
+    {
+      "from": "desk_it_desk_vera_mfa",
+      "to": "lock_vault_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "front_office",
+      "to": "desk_id_desk_wim_mfa",
+      "soft": false
+    },
+    {
+      "from": "desk_id_desk_wim_mfa",
+      "to": "lock_ops_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "front_office",
+      "to": "desk_id_desk_vera_mfa",
+      "soft": false
+    },
+    {
+      "from": "cred_src_vera_phone",
+      "to": "desk_id_desk_vera_mfa",
+      "soft": false,
+      "label": "callback"
+    },
+    {
+      "from": "desk_id_desk_vera_mfa",
+      "to": "lock_vault_pc",
+      "soft": false,
+      "label": "second step"
+    }
+  ]
+}

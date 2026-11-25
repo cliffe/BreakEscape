@@ -1,0 +1,2353 @@
+{
+  "signin_user_bay": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "uma",
+      "username": "umaquay",
+      "displayName": "Uma Quayle",
+      "via": "password",
+      "portrait": "assets/characters/female_office_worker_talk.png"
+    }
+  },
+  "desktop_user_bay": {
+    "status": 200,
+    "body": {
+      "container_id": "bay_pc",
+      "contents": [
+        {
+          "id": "uma_todo",
+          "name": "Uma to do.txt",
+          "text": "Uma's list: order toner, book the van, ask Adel about the shared drive.",
+          "type": "text_file",
+          "readable": true,
+          "takeable": false,
+          "observations": "Uma's own list."
+        }
+      ],
+      "session": {
+        "npcId": "uma",
+        "username": "umaquay",
+        "displayName": "Uma Quayle",
+        "via": "password",
+        "portrait": "assets/characters/female_office_worker_talk.png"
+      }
+    }
+  },
+  "collect_refused_not_admin": {
+    "status": 422,
+    "body": {
+      "success": false,
+      "reason": "not_admin"
+    }
+  },
+  "signin_admin_bay": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "adel",
+      "username": "adelwick",
+      "displayName": "Adel Wick",
+      "via": "password",
+      "portrait": "assets/characters/male_nerd_talk.png",
+      "access": "admin"
+    }
+  },
+  "keyring_before_collect": {
+    "status": 200,
+    "body": {
+      "rev": "06f67e",
+      "entries": [],
+      "captures": {}
+    }
+  },
+  "collect_bay_first": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "bay_pc",
+      "harvested": [
+        {
+          "npcId": "olu",
+          "displayName": "Olu Marsh",
+          "username": "omarsh",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "baypc_olu"
+        },
+        {
+          "npcId": "uma",
+          "displayName": "Uma Quayle",
+          "username": "umaquay",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "baypc_uma"
+        }
+      ],
+      "held": [
+        {
+          "npcId": "olu",
+          "displayName": "Olu Marsh",
+          "username": "omarsh",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "baypc_olu"
+        },
+        {
+          "npcId": "uma",
+          "displayName": "Uma Quayle",
+          "username": "umaquay",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "baypc_uma"
+        }
+      ],
+      "keyringRev": "1cf356"
+    }
+  },
+  "collect_bay_repeat": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "bay_pc",
+      "harvested": [],
+      "held": [
+        {
+          "npcId": "olu",
+          "displayName": "Olu Marsh",
+          "username": "omarsh",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "baypc_olu"
+        },
+        {
+          "npcId": "uma",
+          "displayName": "Uma Quayle",
+          "username": "umaquay",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "baypc_uma"
+        }
+      ],
+      "keyringRev": "1cf356"
+    }
+  },
+  "collect_refused_locked": {
+    "status": 422,
+    "body": {
+      "success": false,
+      "reason": "locked"
+    }
+  },
+  "collect_refused_not_reachable": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "reason": "not_reachable"
+    }
+  },
+  "collect_refused_unknown_pc": {
+    "status": 404,
+    "body": {
+      "error": "Container not found: no_such_pc"
+    }
+  },
+  "keyring_after_bay_collect": {
+    "status": 200,
+    "body": {
+      "rev": "1cf356",
+      "entries": [
+        {
+          "id": "baypc_olu",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Stored record: Olu (bay PC)",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_uma",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Stored record: Uma (bay PC)",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800001
+        }
+      ],
+      "captures": {},
+      "crackFacts": []
+    }
+  },
+  "crack_olu": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "status": "cracked",
+      "accountId": "olu",
+      "credentialIds": [
+        "olu.cracked"
+      ]
+    }
+  },
+  "keyring_after_crack_olu": {
+    "status": 200,
+    "body": {
+      "rev": "4f8423",
+      "entries": [
+        {
+          "id": "olu.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Cracked",
+          "password": "Harbourlight-Olu-08"
+        },
+        {
+          "id": "baypc_olu",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Stored record: Olu (bay PC)",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_uma",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Stored record: Uma (bay PC)",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800001
+        }
+      ],
+      "captures": {},
+      "crackFacts": [
+        "olu_pet",
+        "uma_town"
+      ]
+    }
+  },
+  "signin_olu_hot_desk": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "olu",
+      "username": "omarsh",
+      "displayName": "Olu Marsh",
+      "via": "password",
+      "portrait": "assets/characters/male_office_worker_talk.png"
+    }
+  },
+  "signin_admin_hot_desk": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "adel",
+      "username": "adelwick",
+      "displayName": "Adel Wick",
+      "via": "password",
+      "portrait": "assets/characters/male_nerd_talk.png",
+      "access": "admin"
+    }
+  },
+  "collect_hot_desk_before_borrow": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "hot_desk",
+      "harvested": [
+        {
+          "npcId": "priya",
+          "displayName": "Priya Nair",
+          "username": "pnair",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "hotdesk_priya"
+        }
+      ],
+      "held": [
+        {
+          "npcId": "priya",
+          "displayName": "Priya Nair",
+          "username": "pnair",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "hotdesk_priya"
+        }
+      ],
+      "keyringRev": "e30203"
+    }
+  },
+  "claim_hot_desk_guest": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "sam",
+      "username": "sokoro",
+      "displayName": "Sam Okoro",
+      "via": "claim",
+      "portrait": "assets/characters/male_office_worker_talk.png"
+    }
+  },
+  "collect_refused_claim_user": {
+    "status": 422,
+    "body": {
+      "success": false,
+      "reason": "not_admin"
+    }
+  },
+  "collect_hot_desk_after_borrow": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "hot_desk",
+      "harvested": [
+        {
+          "npcId": "sam",
+          "displayName": "Sam Okoro",
+          "username": "sokoro",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "hotdesk_sam"
+        }
+      ],
+      "held": [
+        {
+          "npcId": "priya",
+          "displayName": "Priya Nair",
+          "username": "pnair",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "hotdesk_priya"
+        },
+        {
+          "npcId": "sam",
+          "displayName": "Sam Okoro",
+          "username": "sokoro",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "hotdesk_sam"
+        }
+      ],
+      "keyringRev": "e123b4"
+    }
+  },
+  "keyring_before_crack_sam": {
+    "status": 200,
+    "body": {
+      "rev": "a5ba1d",
+      "entries": [
+        {
+          "id": "olu.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Cracked",
+          "password": "Harbourlight-Olu-08"
+        },
+        {
+          "id": "baypc_olu",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Stored record: Olu (bay PC)",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_uma",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Stored record: Uma (bay PC)",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800001
+        },
+        {
+          "id": "hotdesk_priya",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "priya",
+            "username": "pnair",
+            "displayName": "Priya Nair"
+          },
+          "label": "Stored record: Priya (hot desk)",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_sam",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Stored record: Sam (hot desk)",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        }
+      ],
+      "captures": {},
+      "crackFacts": [
+        "olu_pet",
+        "priya_pet",
+        "sam_year",
+        "uma_town"
+      ]
+    }
+  },
+  "crack_sam_from_panel": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "status": "cracked",
+      "accountId": "sam",
+      "credentialIds": [
+        "sam.cracked"
+      ]
+    }
+  },
+  "stick_refused_no_session": {
+    "status": 422,
+    "body": {
+      "success": false,
+      "reason": "usb_refused",
+      "error": "USB devices are disabled on this PC."
+    }
+  },
+  "stick_planted_admin": {
+    "status": 200,
+    "body": {
+      "success": true
+    }
+  },
+  "audit_rows_after_override": {
+    "status": 200,
+    "body": {
+      "rev": "54daa6",
+      "title": "Privilege audit",
+      "rows": [
+        {
+          "id": "90d3ea96ca",
+          "elapsedMs": 0,
+          "event": "CRED_COLLECT",
+          "as": "adelwick",
+          "where": "Bay desk PC",
+          "result": "OK",
+          "detail": "count: 2"
+        },
+        {
+          "id": "583a69cbb3",
+          "elapsedMs": 0,
+          "event": "CRED_COLLECT",
+          "as": "adelwick",
+          "where": "Hot desk PC",
+          "result": "OK x2",
+          "detail": "count: 1"
+        },
+        {
+          "id": "4fc5fb28f7",
+          "elapsedMs": 0,
+          "event": "USB_OVERRIDE",
+          "as": "adelwick",
+          "where": "Bay desk PC",
+          "result": "OK",
+          "detail": "device: storage"
+        }
+      ]
+    }
+  },
+  "keyring_with_adel_assist": {
+    "status": 200,
+    "body": {
+      "rev": "0a8eed",
+      "entries": [
+        {
+          "id": "olu.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Cracked",
+          "password": "Harbourlight-Olu-08"
+        },
+        {
+          "id": "sam.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Cracked",
+          "password": "Granary-Sam-47"
+        },
+        {
+          "id": "adel_assist",
+          "kind": "assist_invite",
+          "source": "registry",
+          "account": {
+            "npcId": "adel",
+            "username": "adelwick",
+            "displayName": "Adel Wick"
+          },
+          "label": "Adel's assist code",
+          "host": "HOT01",
+          "connectsTo": "hot_desk",
+          "how": "found",
+          "heldItem": "adel_assist_code",
+          "routes": [
+            {
+              "relay": true
+            }
+          ],
+          "sessionHeld": false,
+          "targetOff": false,
+          "remoteBlocked": false,
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_olu",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Stored record: Olu (bay PC)",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_uma",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Stored record: Uma (bay PC)",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800001
+        },
+        {
+          "id": "hotdesk_priya",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "priya",
+            "username": "pnair",
+            "displayName": "Priya Nair"
+          },
+          "label": "Stored record: Priya (hot desk)",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_sam",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Stored record: Sam (hot desk)",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        }
+      ],
+      "captures": {},
+      "crackFacts": [
+        "olu_pet",
+        "priya_pet",
+        "sam_year",
+        "uma_town"
+      ]
+    }
+  },
+  "relay_signin_adel_hot_desk": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "adel",
+      "username": "adelwick",
+      "displayName": "Adel Wick",
+      "via": "credential",
+      "portrait": "assets/characters/male_nerd_talk.png",
+      "kind": "assist_invite",
+      "label": "Adel's assist code",
+      "access": "admin",
+      "relay": true,
+      "host": "HOT01",
+      "route": {
+        "relay": true
+      }
+    }
+  },
+  "relay_desktop_hot_desk": {
+    "status": 200,
+    "body": {
+      "container_id": "hot_desk",
+      "contents": [
+        {
+          "id": "adel_runbook",
+          "name": "Admin runbook.txt",
+          "text": "Admin runbook: check the backups on Fridays, rotate the bay PC token monthly.",
+          "type": "text_file",
+          "readable": true,
+          "takeable": false,
+          "observations": "Adel's own runbook."
+        }
+      ],
+      "session": {
+        "npcId": "adel",
+        "username": "adelwick",
+        "displayName": "Adel Wick",
+        "via": "credential",
+        "portrait": "assets/characters/male_nerd_talk.png",
+        "kind": "assist_invite",
+        "label": "Adel's assist code",
+        "access": "admin",
+        "relay": true,
+        "host": "HOT01"
+      }
+    }
+  },
+  "collect_relay_admin": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "hot_desk",
+      "harvested": [],
+      "held": [
+        {
+          "npcId": "priya",
+          "displayName": "Priya Nair",
+          "username": "pnair",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "hotdesk_priya"
+        },
+        {
+          "npcId": "sam",
+          "displayName": "Sam Okoro",
+          "username": "sokoro",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null,
+          "hashId": "hotdesk_sam"
+        }
+      ],
+      "keyringRev": "e7d104"
+    }
+  },
+  "relay_signin_uma_store": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "uma",
+      "username": "umaquay",
+      "displayName": "Uma Quayle",
+      "via": "credential",
+      "portrait": "assets/characters/female_office_worker_talk.png",
+      "kind": "assist_invite",
+      "label": "Uma's assist code",
+      "relay": true,
+      "host": "RECS01",
+      "route": {
+        "relay": true
+      }
+    }
+  },
+  "collect_refused_relay_user": {
+    "status": 422,
+    "body": {
+      "success": false,
+      "reason": "not_admin"
+    }
+  },
+  "signin_admin_desk_a": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "adel",
+      "username": "adelwick",
+      "displayName": "Adel Wick",
+      "via": "password",
+      "portrait": "assets/characters/male_nerd_talk.png",
+      "access": "admin"
+    }
+  },
+  "desktop_admin_desk_a": {
+    "status": 200,
+    "body": {
+      "container_id": "desk_a",
+      "contents": [
+        {
+          "id": "adel_runbook",
+          "name": "Admin runbook.txt",
+          "text": "Admin runbook: check the backups on Fridays, rotate the bay PC token monthly.",
+          "type": "text_file",
+          "readable": true,
+          "takeable": false,
+          "observations": "Adel's own runbook."
+        }
+      ],
+      "session": {
+        "npcId": "adel",
+        "username": "adelwick",
+        "displayName": "Adel Wick",
+        "via": "password",
+        "portrait": "assets/characters/male_nerd_talk.png",
+        "access": "admin"
+      }
+    }
+  },
+  "collect_desk_a_deskadmin": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "desk_a",
+      "harvested": [
+        {
+          "npcId": "deskadmin",
+          "displayName": "Desk administrator",
+          "username": "deskadmin",
+          "portrait": null,
+          "avatar": null,
+          "hashId": "desk_a_deskadmin"
+        }
+      ],
+      "held": [
+        {
+          "npcId": "deskadmin",
+          "displayName": "Desk administrator",
+          "username": "deskadmin",
+          "portrait": null,
+          "avatar": null,
+          "hashId": "desk_a_deskadmin"
+        }
+      ],
+      "keyringRev": "01463f"
+    }
+  },
+  "collect_desk_a_repeat": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "desk_a",
+      "harvested": [],
+      "held": [
+        {
+          "npcId": "deskadmin",
+          "displayName": "Desk administrator",
+          "username": "deskadmin",
+          "portrait": null,
+          "avatar": null,
+          "hashId": "desk_a_deskadmin"
+        }
+      ],
+      "keyringRev": "01463f"
+    }
+  },
+  "crack_deskadmin_desk_a": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "status": "cracked",
+      "accountId": "deskadmin",
+      "credentialIds": [
+        "deskadmin.cracked"
+      ]
+    }
+  },
+  "keyring_after_crack_deskadmin": {
+    "status": 200,
+    "body": {
+      "rev": "44ecda",
+      "entries": [
+        {
+          "id": "olu.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Cracked",
+          "password": "Harbourlight-Olu-08"
+        },
+        {
+          "id": "sam.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Cracked",
+          "password": "Granary-Sam-47"
+        },
+        {
+          "id": "deskadmin.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Cracked",
+          "password": "Winter2026"
+        },
+        {
+          "id": "adel_assist",
+          "kind": "assist_invite",
+          "source": "registry",
+          "account": {
+            "npcId": "adel",
+            "username": "adelwick",
+            "displayName": "Adel Wick"
+          },
+          "label": "Adel's assist code",
+          "host": "HOT01",
+          "connectsTo": "hot_desk",
+          "how": "found",
+          "heldItem": "adel_assist_code",
+          "routes": [
+            {
+              "relay": true
+            }
+          ],
+          "sessionHeld": false,
+          "targetOff": false,
+          "remoteBlocked": false,
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_olu",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Stored record: Olu (bay PC)",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_uma",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Stored record: Uma (bay PC)",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800001
+        },
+        {
+          "id": "desk_a_deskadmin",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Stored record: desk admin A",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_priya",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "priya",
+            "username": "pnair",
+            "displayName": "Priya Nair"
+          },
+          "label": "Stored record: Priya (hot desk)",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_sam",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Stored record: Sam (hot desk)",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "uma_assist",
+          "kind": "assist_invite",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Uma's assist code",
+          "host": "RECS01",
+          "connectsTo": "store_pc",
+          "how": "found",
+          "heldItem": "assist_code",
+          "routes": [
+            {
+              "relay": true
+            }
+          ],
+          "sessionHeld": true,
+          "targetOff": false,
+          "remoteBlocked": false,
+          "gainedAt": 1795510800001
+        }
+      ],
+      "captures": {},
+      "crackFacts": [
+        "it_rota_seen",
+        "olu_pet",
+        "priya_pet",
+        "sam_year",
+        "uma_town"
+      ]
+    }
+  },
+  "signin_deskadmin_desk_b": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "deskadmin",
+      "username": "deskadmin",
+      "displayName": "Desk administrator",
+      "via": "password",
+      "access": "admin"
+    }
+  },
+  "desktop_deskadmin_desk_b": {
+    "status": 200,
+    "body": {
+      "container_id": "desk_b",
+      "contents": [],
+      "session": {
+        "npcId": "deskadmin",
+        "username": "deskadmin",
+        "displayName": "Desk administrator",
+        "via": "password",
+        "access": "admin"
+      }
+    }
+  },
+  "collect_desk_b_deskadmin": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "desk_b",
+      "harvested": [
+        {
+          "npcId": "deskadmin",
+          "displayName": "Desk administrator",
+          "username": "deskadmin",
+          "portrait": null,
+          "avatar": null,
+          "hashId": "desk_b_deskadmin"
+        }
+      ],
+      "held": [
+        {
+          "npcId": "deskadmin",
+          "displayName": "Desk administrator",
+          "username": "deskadmin",
+          "portrait": null,
+          "avatar": null,
+          "hashId": "desk_b_deskadmin"
+        }
+      ],
+      "keyringRev": "ec5399"
+    }
+  },
+  "keyring_after_collect_desk_b": {
+    "status": 200,
+    "body": {
+      "rev": "ec5399",
+      "entries": [
+        {
+          "id": "olu.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Cracked",
+          "password": "Harbourlight-Olu-08"
+        },
+        {
+          "id": "sam.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Cracked",
+          "password": "Granary-Sam-47"
+        },
+        {
+          "id": "deskadmin.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Cracked",
+          "password": "Winter2026"
+        },
+        {
+          "id": "adel_assist",
+          "kind": "assist_invite",
+          "source": "registry",
+          "account": {
+            "npcId": "adel",
+            "username": "adelwick",
+            "displayName": "Adel Wick"
+          },
+          "label": "Adel's assist code",
+          "host": "HOT01",
+          "connectsTo": "hot_desk",
+          "how": "found",
+          "heldItem": "adel_assist_code",
+          "routes": [
+            {
+              "relay": true
+            }
+          ],
+          "sessionHeld": false,
+          "targetOff": false,
+          "remoteBlocked": false,
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_olu",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Stored record: Olu (bay PC)",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_uma",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Stored record: Uma (bay PC)",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800001
+        },
+        {
+          "id": "desk_a_deskadmin",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Stored record: desk admin A",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "desk_b_deskadmin",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Stored record: desk admin B",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_priya",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "priya",
+            "username": "pnair",
+            "displayName": "Priya Nair"
+          },
+          "label": "Stored record: Priya (hot desk)",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_sam",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Stored record: Sam (hot desk)",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "uma_assist",
+          "kind": "assist_invite",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Uma's assist code",
+          "host": "RECS01",
+          "connectsTo": "store_pc",
+          "how": "found",
+          "heldItem": "assist_code",
+          "routes": [
+            {
+              "relay": true
+            }
+          ],
+          "sessionHeld": true,
+          "targetOff": false,
+          "remoteBlocked": false,
+          "gainedAt": 1795510800001
+        }
+      ],
+      "captures": {},
+      "crackFacts": [
+        "it_rota_seen",
+        "olu_pet",
+        "priya_pet",
+        "sam_year",
+        "uma_town"
+      ]
+    }
+  },
+  "signin_deskadmin_lab_refused": {
+    "status": 422,
+    "body": {
+      "success": false,
+      "message": "This account can't sign in on this PC",
+      "notPermitted": true
+    }
+  },
+  "signin_admin_lab": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "adel",
+      "username": "adelwick",
+      "displayName": "Adel Wick",
+      "via": "password",
+      "portrait": "assets/characters/male_nerd_talk.png",
+      "access": "admin"
+    }
+  },
+  "collect_lab_labadmin": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "pcId": "lab_pc",
+      "harvested": [
+        {
+          "npcId": "labadmin",
+          "displayName": "Lab administrator",
+          "username": "labadmin",
+          "portrait": null,
+          "avatar": null,
+          "hashId": "lab_labadmin"
+        }
+      ],
+      "held": [
+        {
+          "npcId": "labadmin",
+          "displayName": "Lab administrator",
+          "username": "labadmin",
+          "portrait": null,
+          "avatar": null,
+          "hashId": "lab_labadmin"
+        }
+      ],
+      "keyringRev": "97e215"
+    }
+  },
+  "crack_labadmin_nomatch": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "status": "nomatch",
+      "runs": 1
+    }
+  },
+  "keyring_after_collect_lab": {
+    "status": 200,
+    "body": {
+      "rev": "97e215",
+      "entries": [
+        {
+          "id": "olu.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Cracked",
+          "password": "Harbourlight-Olu-08"
+        },
+        {
+          "id": "sam.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Cracked",
+          "password": "Granary-Sam-47"
+        },
+        {
+          "id": "deskadmin.cracked",
+          "kind": "password",
+          "source": "cracked",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Cracked",
+          "password": "Winter2026"
+        },
+        {
+          "id": "adel_assist",
+          "kind": "assist_invite",
+          "source": "registry",
+          "account": {
+            "npcId": "adel",
+            "username": "adelwick",
+            "displayName": "Adel Wick"
+          },
+          "label": "Adel's assist code",
+          "host": "HOT01",
+          "connectsTo": "hot_desk",
+          "how": "found",
+          "heldItem": "adel_assist_code",
+          "routes": [
+            {
+              "relay": true
+            }
+          ],
+          "sessionHeld": false,
+          "targetOff": false,
+          "remoteBlocked": false,
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_olu",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "olu",
+            "username": "omarsh",
+            "displayName": "Olu Marsh"
+          },
+          "label": "Stored record: Olu (bay PC)",
+          "token": "3QV3-JHAN-GYMJ-GX8P-YA45-89U7",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "baypc_uma",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Stored record: Uma (bay PC)",
+          "token": "MVWA-7XG2-JTFA-GLQ9-FJJ4-5F5A",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800001
+        },
+        {
+          "id": "desk_a_deskadmin",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Stored record: desk admin A",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "desk_b_deskadmin",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "deskadmin",
+            "username": "deskadmin",
+            "displayName": "Desk administrator"
+          },
+          "label": "Stored record: desk admin B",
+          "token": "USNQ-P7TC-X8YE-X5PK-KXNC-GLEM",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_priya",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "priya",
+            "username": "pnair",
+            "displayName": "Priya Nair"
+          },
+          "label": "Stored record: Priya (hot desk)",
+          "token": "FNQA-59W6-UWXB-RBU3-8AZK-5AUG",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "hotdesk_sam",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "sam",
+            "username": "sokoro",
+            "displayName": "Sam Okoro"
+          },
+          "label": "Stored record: Sam (hot desk)",
+          "token": "GPL4-ZPCH-9AB6-AFLX-6WAL-JBBK",
+          "salted": false,
+          "status": "cracked",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "lab_labadmin",
+          "kind": "hash",
+          "source": "registry",
+          "account": {
+            "npcId": "labadmin",
+            "username": "labadmin",
+            "displayName": "Lab administrator"
+          },
+          "label": "Stored record: lab admin",
+          "token": "TC6E-N2UX-L6WQ-NBB5-VXFT-B9TP",
+          "salted": false,
+          "status": "ready",
+          "gainedAt": 1795510800000
+        },
+        {
+          "id": "uma_assist",
+          "kind": "assist_invite",
+          "source": "registry",
+          "account": {
+            "npcId": "uma",
+            "username": "umaquay",
+            "displayName": "Uma Quayle"
+          },
+          "label": "Uma's assist code",
+          "host": "RECS01",
+          "connectsTo": "store_pc",
+          "how": "found",
+          "heldItem": "assist_code",
+          "routes": [
+            {
+              "relay": true
+            }
+          ],
+          "sessionHeld": true,
+          "targetOff": false,
+          "remoteBlocked": false,
+          "gainedAt": 1795510800001
+        }
+      ],
+      "captures": {},
+      "crackFacts": [
+        "it_rota_seen",
+        "olu_pet",
+        "priya_pet",
+        "sam_year",
+        "uma_town"
+      ]
+    }
+  },
+  "signin_ravi_bay_pc": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "ravi",
+      "username": "rmenon-adm",
+      "displayName": "Ravi Menon",
+      "via": "password",
+      "portrait": "assets/characters/male_nerd_talk.png",
+      "access": "admin"
+    }
+  },
+  "signin_ravi_hot_desk": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "npcId": "ravi",
+      "username": "rmenon-adm",
+      "displayName": "Ravi Menon",
+      "via": "password",
+      "portrait": "assets/characters/male_nerd_talk.png",
+      "access": "admin"
+    }
+  },
+  "signin_ravi_desk_a_refused": {
+    "status": 422,
+    "body": {
+      "success": false,
+      "message": "This account can't sign in on this PC",
+      "notPermitted": true
+    }
+  },
+  "room_lobby": {
+    "status": 200,
+    "body": {
+      "room_id": "lobby",
+      "room": {
+        "npcs": [
+          {
+            "id": "priya",
+            "npcType": "person",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "position": {
+              "x": 6,
+              "y": 5
+            },
+            "storyPath": "scenarios/test_ops_privilege/ink/uma.json",
+            "spriteTalk": "assets/characters/female_office_worker_talk.png",
+            "currentKnot": "start",
+            "displayName": "Priya Nair",
+            "spriteSheet": "female_office_worker_v2",
+            "spriteVisemes": "assets/characters/female_office_worker_visemes.png"
+          },
+          {
+            "id": "sam",
+            "needs": {
+              "work": {
+                "initial": 60,
+                "urgentAt": 50,
+                "decayPerMin": 40
+              }
+            },
+            "habits": {
+              "screen": {
+                "lockChance": 0
+              }
+            },
+            "npcType": "person",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "position": {
+              "x": 3,
+              "y": 6
+            },
+            "needsHome": "sam_pc",
+            "storyPath": "scenarios/test_ops_privilege/ink/olu.json",
+            "spriteTalk": "assets/characters/male_office_worker_talk.png",
+            "currentKnot": "start",
+            "displayName": "Sam Okoro",
+            "spriteSheet": "male_office_worker_v2",
+            "needsDeferMin": 0.5,
+            "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+            "work": {
+              "breakDrain": 10.0,
+              "needs": [
+                {
+                  "id": "staff_mail",
+                  "kind": "email",
+                  "admitted": true,
+                  "routes": [
+                    []
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "type": "room_reception",
+        "objects": [
+          {
+            "id": "kit_dropbox",
+            "name": "Network drop box",
+            "type": "pc",
+            "sprite": "drop_box1",
+            "position": {
+              "x": 8,
+              "y": 4
+            },
+            "takeable": true,
+            "rogueDevice": true,
+            "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+          },
+          {
+            "id": "office_port",
+            "name": "Office wall port",
+            "type": "pc",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "jackConfirm": "Plug the drop box into the office port?",
+            "networkJack": true,
+            "observations": "A wall port marked Office.",
+            "plantedSprite": "pi_cluster1",
+            "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+            "jackPlanted": false
+          },
+          {
+            "id": "audit_log_pc",
+            "name": "Audit log terminal",
+            "type": "ops_log_terminal",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "minigameData": {
+              "logSource": "priv_audit"
+            },
+            "observations": "A terminal showing the building's privilege audit log."
+          },
+          {
+            "id": "lobby_cabinet",
+            "name": "Cabinet by the front door",
+            "type": "filing_cabinet_locked1",
+            "locked": false,
+            "contents": [
+              {
+                "id": "card_stale",
+                "name": "Field note: records updates",
+                "type": "technique_card",
+                "takeable": true,
+                "observations": "A folded note about an update the records machine missed.",
+                "technique_card": "field_release_notes"
+              },
+              {
+                "id": "assist_code",
+                "name": "Uma assist code.txt",
+                "text": "Assist code left by Uma for the records machine. Use it from the sign-in screen there.",
+                "type": "text_file",
+                "readable": true,
+                "takeable": true,
+                "observations": "A shared-screen code Uma left for the front desk."
+              },
+              {
+                "id": "adel_assist_code",
+                "name": "Adel assist code.txt",
+                "text": "Assist code left by Adel for the hot desk. Use it from the sign-in screen there.",
+                "type": "text_file",
+                "readable": true,
+                "takeable": true,
+                "observations": "A shared-screen code Adel left for the front desk."
+              }
+            ],
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "A cabinet of notes the front desk keeps."
+          },
+          {
+            "id": "sign_lobby",
+            "name": "Sign: Start here",
+            "text": "Ops privilege test. The bay is north, the store room east. Take the drop box and plug it into the wall port to work from another desk. The cabinet holds a note and a shared-screen code. The two logins you need are on notes in the store room.",
+            "type": "notes1",
+            "position": {
+              "x": 4,
+              "y": 3
+            },
+            "readable": true,
+            "takeable": false,
+            "addToNotes": false,
+            "readDisplay": "gameDisplay",
+            "observations": "A sign on a stand by the front desk."
+          },
+          {
+            "id": "hot_desk",
+            "host": "HOT01",
+            "name": "Hot desk PC",
+            "type": "pc",
+            "access": {
+              "roles": [
+                "staff"
+              ]
+            },
+            "domain": "northwind",
+            "locked": true,
+            "sprite": "pc_desktop",
+            "lockType": "login",
+            "position": {
+              "x": 2,
+              "y": 5
+            },
+            "takeable": false,
+            "affordance": {
+              "restores": 10,
+              "satisfies": "work",
+              "useSeconds": 5
+            },
+            "loginPicker": "accounts",
+            "observations": "A shared desk PC in the lobby. Anybody on the staff list may sign in.",
+            "hasContents": true,
+            "loginAccounts": [
+              {
+                "username": "omarsh",
+                "displayName": "Olu Marsh",
+                "portrait": "assets/characters/male_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "pnair",
+                "displayName": "Priya Nair",
+                "portrait": "assets/characters/female_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "sokoro",
+                "displayName": "Sam Okoro",
+                "portrait": "assets/characters/male_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "umaquay",
+                "displayName": "Uma Quayle",
+                "portrait": "assets/characters/female_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "adelwick",
+                "displayName": "Adel Wick",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "rmenon-adm",
+                "displayName": "Ravi Menon",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              }
+            ]
+          },
+          {
+            "id": "sam_pc",
+            "host": "SAM01",
+            "name": "Sam's desk PC",
+            "type": "pc",
+            "owner": "sam",
+            "access": {
+              "roles": [
+                "staff"
+              ]
+            },
+            "locked": true,
+            "policy": "sam_strict",
+            "sprite": "pc_desktop",
+            "offWhen": "sam_pc_off",
+            "lockType": "login",
+            "position": {
+              "x": 3,
+              "y": 7
+            },
+            "takeable": false,
+            "affordance": {
+              "restores": 10,
+              "satisfies": "work",
+              "useSeconds": 5
+            },
+            "loginPicker": "accounts",
+            "observations": "Sam's desk PC. A tag on the monitor reads Sam. Three wrong passwords lock an account out of it.",
+            "hasContents": true,
+            "loginAccounts": [
+              {
+                "username": "omarsh",
+                "displayName": "Olu Marsh",
+                "portrait": "assets/characters/male_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "pnair",
+                "displayName": "Priya Nair",
+                "portrait": "assets/characters/female_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "sokoro",
+                "displayName": "Sam Okoro",
+                "portrait": "assets/characters/male_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "umaquay",
+                "displayName": "Uma Quayle",
+                "portrait": "assets/characters/female_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "adelwick",
+                "displayName": "Adel Wick",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              }
+            ]
+          },
+          {
+            "id": "sam_breaker",
+            "name": "Sam's PC power",
+            "type": "aes_elec_cabinet1",
+            "position": {
+              "x": 8,
+              "y": 7
+            },
+            "takeable": false,
+            "interactable": true,
+            "observations": "The power switch for Sam's PC. The PC starts on. Switch it off and Sam cannot work at his desk, so he asks for the hot desk.",
+            "triggerOnInteract": [
+              {
+                "text": "Switch Sam's PC back on?",
+                "type": "confirm_action",
+                "condition": "globalVars.sam_pc_off",
+                "onConfirm": [
+                  {
+                    "key": "sam_pc_off",
+                    "type": "set_global",
+                    "value": false
+                  }
+                ],
+                "cancelLabel": "Leave it",
+                "confirmLabel": "Switch on"
+              },
+              {
+                "text": "Switch Sam's PC off?",
+                "type": "confirm_action",
+                "condition": "!globalVars.sam_pc_off",
+                "onConfirm": [
+                  {
+                    "key": "sam_pc_off",
+                    "type": "set_global",
+                    "value": true
+                  }
+                ],
+                "cancelLabel": "Leave it",
+                "confirmLabel": "Switch off"
+              }
+            ]
+          }
+        ],
+        "door_sign": "Lobby",
+        "connections": {
+          "east": "store",
+          "north": "bay",
+          "south": "it_room"
+        }
+      }
+    }
+  },
+  "room_bay": {
+    "status": 200,
+    "body": {
+      "room_id": "bay",
+      "room": {
+        "npcs": [
+          {
+            "id": "olu",
+            "npcType": "person",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "position": {
+              "x": 6,
+              "y": 6
+            },
+            "storyPath": "scenarios/test_ops_privilege/ink/olu.json",
+            "spriteTalk": "assets/characters/male_office_worker_talk.png",
+            "currentKnot": "start",
+            "displayName": "Olu Marsh",
+            "spriteSheet": "male_office_worker_v2",
+            "spriteVisemes": "assets/characters/male_office_worker_visemes.png"
+          }
+        ],
+        "type": "room_office",
+        "objects": [
+          {
+            "id": "bay_pc",
+            "host": "BAY01",
+            "name": "Bay desk PC",
+            "type": "pc",
+            "owner": "olu",
+            "access": {
+              "roles": [
+                "staff"
+              ]
+            },
+            "domain": "northwind",
+            "locked": true,
+            "policy": "bay_locked",
+            "sprite": "pc_desktop",
+            "offWhen": "bay_off",
+            "lockType": "login",
+            "position": {
+              "x": 5,
+              "y": 4
+            },
+            "takeable": false,
+            "loginPicker": "accounts",
+            "observations": "A desk PC in the bay. A tag on the monitor reads Olu.",
+            "hasContents": true,
+            "loginAccounts": [
+              {
+                "username": "omarsh",
+                "displayName": "Olu Marsh",
+                "portrait": "assets/characters/male_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "pnair",
+                "displayName": "Priya Nair",
+                "portrait": "assets/characters/female_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "sokoro",
+                "displayName": "Sam Okoro",
+                "portrait": "assets/characters/male_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "umaquay",
+                "displayName": "Uma Quayle",
+                "portrait": "assets/characters/female_office_worker_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "adelwick",
+                "displayName": "Adel Wick",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              },
+              {
+                "username": "rmenon-adm",
+                "displayName": "Ravi Menon",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              }
+            ]
+          },
+          {
+            "id": "bay_dock",
+            "name": "USB socket by the bay PC",
+            "type": "pc",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 7,
+              "y": 4
+            },
+            "takeable": false,
+            "observations": "A spare USB socket on the desk. Useful only while you are signed in at the bay PC.",
+            "requiresItem": "kit_badusb",
+            "requiresItemHint": "You would need a device to plug in here.",
+            "triggerOnInteract": [
+              {
+                "text": "Plug the keystroke injector into the bay PC? It only types into a PC you are signed in at, and it is used up once it runs.",
+                "type": "confirm_action",
+                "onConfirm": [
+                  {
+                    "pc": "bay_pc",
+                    "type": "grant_foothold",
+                    "needsHeld": "kit_badusb",
+                    "needsSession": true
+                  }
+                ],
+                "cancelLabel": "Leave it",
+                "confirmLabel": "Plug it in"
+              }
+            ]
+          },
+          {
+            "id": "bay_port",
+            "name": "Stick port on the bay shelf",
+            "type": "pc",
+            "policy": "bay_locked",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 2,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "A USB port on a shelf, wired to the bay PC's policy.",
+            "requiresItem": "usb",
+            "requiresItemHint": "You would need a USB stick to plug in here.",
+            "triggerOnInteract": [
+              {
+                "text": "Plug the stick into the shelf port?",
+                "type": "confirm_action",
+                "onConfirm": [
+                  {
+                    "item": "usb",
+                    "type": "remove_item"
+                  },
+                  {
+                    "key": "bay_stick_in",
+                    "type": "set_global",
+                    "value": true
+                  }
+                ],
+                "cancelLabel": "Leave it",
+                "confirmLabel": "Plug it in"
+              }
+            ]
+          },
+          {
+            "id": "bay_breaker",
+            "name": "Wall switch: bay power",
+            "type": "pc",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "takeable": false,
+            "observations": "A wall switch marked Bay power.",
+            "triggerOnInteract": [
+              {
+                "key": "bay_off",
+                "type": "set_global",
+                "value": true
+              },
+              {
+                "type": "hint",
+                "title": "Bay power",
+                "message": "The bay PC has gone quiet."
+              }
+            ]
+          },
+          {
+            "id": "bay_breaker_on",
+            "name": "Wall switch: bay power back on",
+            "type": "pc",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 7,
+              "y": 3
+            },
+            "takeable": false,
+            "observations": "A second wall switch, marked Bay power on.",
+            "triggerOnInteract": [
+              {
+                "key": "bay_off",
+                "type": "set_global",
+                "value": false
+              },
+              {
+                "type": "hint",
+                "title": "Bay power",
+                "message": "The bay PC hums again."
+              }
+            ]
+          },
+          {
+            "id": "kit_badusb",
+            "name": "Keystroke injector",
+            "type": "pc",
+            "sprite": "drop_box1",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": true,
+            "usbClass": "hid",
+            "observations": "A USB device that types on its own once plugged into a PC. It needs a desk you are signed in at."
+          },
+          {
+            "id": "kit_stick_a",
+            "name": "Grey USB stick",
+            "type": "usb",
+            "sprite": "usb_bowl1",
+            "position": {
+              "x": 3,
+              "y": 5
+            },
+            "takeable": true,
+            "usbClass": "storage",
+            "observations": "An ordinary USB stick."
+          },
+          {
+            "id": "kit_stick_b",
+            "name": "Blue USB stick",
+            "type": "usb",
+            "sprite": "usb_bowl1",
+            "position": {
+              "x": 3,
+              "y": 6
+            },
+            "takeable": true,
+            "usbClass": "storage",
+            "observations": "A second ordinary USB stick."
+          },
+          {
+            "id": "bay_usb_port",
+            "name": "Survey port on the bay desk",
+            "type": "pc",
+            "policy": "bay_locked",
+            "portOf": "bay_pc",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 2,
+              "y": 4
+            },
+            "takeable": false,
+            "observations": "A USB port on the bay desk. The bay policy refuses storage sticks here unless an administrator is signed in at the bay PC.",
+            "requiresItem": "usb",
+            "requiresItemHint": "You would need a USB stick to plug in here.",
+            "triggerOnInteract": [
+              {
+                "text": "Plug the survey stick into the bay desk port?",
+                "type": "confirm_action",
+                "onConfirm": [
+                  {
+                    "item": "usb",
+                    "type": "remove_item"
+                  },
+                  {
+                    "key": "survey_stick_in",
+                    "type": "set_global",
+                    "value": true
+                  }
+                ],
+                "cancelLabel": "Leave it",
+                "confirmLabel": "Plug it in"
+              }
+            ]
+          }
+        ],
+        "door_sign": "Bay",
+        "connections": {
+          "south": "lobby"
+        }
+      }
+    }
+  },
+  "room_it_room": {
+    "status": 200,
+    "body": {
+      "room_id": "it_room",
+      "room": {
+        "npcs": [
+          {
+            "id": "ravi",
+            "npcType": "person",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "position": {
+              "x": 5,
+              "y": 6
+            },
+            "storyPath": "scenarios/test_ops_privilege/ink/adel.json",
+            "spriteTalk": "assets/characters/male_nerd_talk.png",
+            "currentKnot": "start",
+            "displayName": "Ravi Menon",
+            "spriteSheet": "male_nerd_v2",
+            "spriteVisemes": "assets/characters/male_nerd_visemes.png"
+          }
+        ],
+        "type": "room_office",
+        "objects": [
+          {
+            "id": "desk_a",
+            "host": "DESKA",
+            "name": "Desk PC A",
+            "type": "pc",
+            "access": {
+              "roles": [
+                "it"
+              ]
+            },
+            "locked": true,
+            "sprite": "pc_desktop",
+            "lockType": "login",
+            "position": {
+              "x": 3,
+              "y": 4
+            },
+            "takeable": false,
+            "loginPicker": "accounts",
+            "observations": "A desk PC in the IT room. It shares its local administrator with the desk PC next to it.",
+            "hasContents": true,
+            "loginAccounts": [
+              {
+                "username": "adelwick",
+                "displayName": "Adel Wick",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              }
+            ]
+          },
+          {
+            "id": "desk_b",
+            "host": "DESKB",
+            "name": "Desk PC B",
+            "type": "pc",
+            "access": {
+              "roles": [
+                "it"
+              ]
+            },
+            "locked": true,
+            "sprite": "pc_desktop",
+            "lockType": "login",
+            "position": {
+              "x": 6,
+              "y": 4
+            },
+            "takeable": false,
+            "loginPicker": "accounts",
+            "observations": "A second desk PC in the IT room.",
+            "hasContents": true,
+            "loginAccounts": [
+              {
+                "username": "adelwick",
+                "displayName": "Adel Wick",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              }
+            ]
+          },
+          {
+            "id": "lab_pc",
+            "host": "LAB01",
+            "name": "Lab PC",
+            "type": "pc",
+            "access": {
+              "roles": [
+                "it"
+              ]
+            },
+            "locked": true,
+            "sprite": "pc_desktop",
+            "lockType": "login",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "loginPicker": "accounts",
+            "observations": "The lab PC. It has an administrator of its own.",
+            "hasContents": true,
+            "loginAccounts": [
+              {
+                "username": "adelwick",
+                "displayName": "Adel Wick",
+                "portrait": "assets/characters/male_nerd_talk.png",
+                "avatar": null
+              }
+            ]
+          }
+        ],
+        "door_sign": "IT room",
+        "connections": {
+          "north": "lobby"
+        }
+      }
+    }
+  },
+  "remote_lockable_bay_pc": {
+    "status": 200,
+    "body": {
+      "pc_id": "bay_pc",
+      "host": "BAY01",
+      "headless": false,
+      "loginPicker": "accounts",
+      "remoteScreen": "tiles",
+      "loginAccounts": [
+        {
+          "username": "omarsh",
+          "displayName": "Olu Marsh",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "pnair",
+          "displayName": "Priya Nair",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "sokoro",
+          "displayName": "Sam Okoro",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "umaquay",
+          "displayName": "Uma Quayle",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "adelwick",
+          "displayName": "Adel Wick",
+          "portrait": "assets/characters/male_nerd_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "rmenon-adm",
+          "displayName": "Ravi Menon",
+          "portrait": "assets/characters/male_nerd_talk.png",
+          "avatar": null
+        }
+      ],
+      "domain": "northwind"
+    }
+  }
+}

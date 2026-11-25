@@ -1,0 +1,11 @@
+[head|Starting Nmap against print01]
+[head|Nmap scan report for ][head|print01]
+[ok|Host is up.]
+[head@9|PORT ][head@7|STATE ][head@9|SERVICE ][head|VERSION]
+[@9|80/tcp ][@7|open ][@9|web ]Brackley PrintPanel 2.0
+[@9|445/tcp ][@7|open ][@9|files ]Brackley ShareServe 3.1
+[note||_id: ]web
+[note|| id: ]files (file share)
+[note||_banner: ]ShareServe ready
+[note|Service detection performed.]
+Nmap done: 1 IP address (1 host up) scanned

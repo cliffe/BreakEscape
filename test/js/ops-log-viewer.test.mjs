@@ -521,7 +521,7 @@ function openFrom(self, item) {
     const handed = [];
     const win = { handleObjectInteraction: (sp) => handed.push(sp), gameAlert() {}, keyring: null };
     const handle = realMethod('handleInteractiveItem', {
-        window: win, notepadCount: () => 0, scrollingAncestor: () => null, iconFocusMark: () => null,
+        window: win, HELPDESK_FORM_TYPE: 'helpdesk_form', notepadCount: () => 0, scrollingAncestor: () => null, iconFocusMark: () => null,
         isNetworkScreenContainer: () => false, armNetworkReturn() {}, scheduleNetworkReturnCheck() {}
     });
     handle.call(screen(self), item, null);

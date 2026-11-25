@@ -289,10 +289,20 @@ module BreakEscape
       assert game.record_planted_item!('kit_stick', 'lena_pc')
     end
 
-    test 'the plant proof is refused under a relay session and under a locked admin session' do
+    # S5 ruling B (unit 02): a relay has the rights of the account relayed. A relayed administrator
+    # overrides the policy (with the row); a relayed user-level account does not (a relay never steps up).
+    test 'the plant proof under a relay session follows the relayed account, and is refused under a locked admin session' do
       build
       set_session('sam_pc', { 'id' => 'sam', 'via' => 'credential', 'relay' => true })
+      assert_equal 'admin', game.session_access('sam_pc')
+      assert game.record_planted_item!('kit_stick', 'sam_pc')
+      assert_equal 1, usb_rows.size
+
+      build(usb_scenario(admins: %w[lena jake]))
+      set_session('sam_pc', { 'id' => 'sam', 'via' => 'credential', 'relay' => true })
+      assert_equal 'user', game.session_access('sam_pc')
       refute game.record_planted_item!('kit_stick', 'sam_pc')
+      assert_empty usb_rows
 
       build
       sign_in_sam

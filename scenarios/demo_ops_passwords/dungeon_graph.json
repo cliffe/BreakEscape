@@ -1,0 +1,762 @@
+{
+  "scenario": "demo_ops_passwords",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "lock_delphine_pc",
+      "label": "Delphine's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_jun_pc",
+      "label": "Jun's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_hot_desk",
+      "label": "Hot desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_graham_pc",
+      "label": "Graham's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_partner_pc",
+      "label": "Julian's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_delphine_arvanitis",
+      "label": "Delphine Arvanitis sign-in<br/>(darvanitis)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_jun_watanabe",
+      "label": "Jun Watanabe sign-in<br/>(jwatanabe)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_niamh_doherty",
+      "label": "Niamh Doherty sign-in<br/>(ndoherty)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_graham_whitfield",
+      "label": "Graham Whitfield sign-in<br/>(gwhitfield)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_room",
+      "label": "IT room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_deskadmin",
+      "label": "Desk administrator sign-in<br/>(deskadmin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_julian_sallow",
+      "label": "Julian Sallow sign-in<br/>(jsallow)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "partner_office",
+      "label": "Partner's office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "clue_social_intelfacts_delphine_dog_name",
+      "label": "social/intelFacts/delphine dog name",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_rooms_office_npcs_1_feed_posts_0",
+      "label": "rooms/office/npcs[1]/feed/posts[0]",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_social_intelfacts_delphine_dog_year",
+      "label": "social/intelFacts/delphine dog year",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_it_poster",
+      "label": "IT poster",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "signin_printer_svc",
+      "label": "Printer service sign-in<br/>(svc_printer)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Merrin & Sallow office network<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "implant_partner_pc",
+      "label": "Implant: partner_pc<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "device_kit_badusb",
+      "label": "Keystroke device<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "workaround_jun_watanabe_0",
+      "label": "Jun Watanabe: uses the hot desk, at 60",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "outage_jun_pc_off",
+      "label": "jun_pc_off<br/>(outage)",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_signin_log",
+      "label": "Sign-in log<br/>signin_ok, signin_fail, signin_lockout, session_end, session_lock, admin_profile_read, usb_install_overridden, credentials_harvested, signin_refused",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_signin_log_pc",
+      "label": "Sign-in log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_delphine_cached_partner",
+      "label": "Delphine Arvanitis hash<br/>(darvanitis)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_delphine_hash",
+      "label": "Delphine Arvanitis hash<br/>(darvanitis)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_delphine_record_file",
+      "label": "delphine_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_desk_rounds_hash",
+      "label": "Desk administrator hash<br/>(deskadmin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_desk_rounds_record_file",
+      "label": "desk_rounds_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_graham_hash",
+      "label": "Graham Whitfield hash<br/>(gwhitfield)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_graham_record_file",
+      "label": "graham_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_julian_cached_partner",
+      "label": "Julian Sallow hash<br/>(jsallow)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_julian_hash",
+      "label": "Julian Sallow hash<br/>(jsallow)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_julian_record_file",
+      "label": "julian_record.dat",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_jun_cached",
+      "label": "Jun Watanabe hash<br/>(jwatanabe)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_niamh_cached_hot_desk",
+      "label": "Niamh Doherty hash<br/>(ndoherty)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_printer_admin",
+      "label": "Printer service password<br/>(svc_printer)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_printer_admin_note",
+      "label": "Printer admin.txt",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "crackpw_delphine_arvanitis",
+      "label": "Delphine Arvanitis password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_delphine_photo",
+      "label": "Photo on Delphine's desk",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "crack_feed_delphine_arvanitis_delphine_post_1",
+      "label": "Delphine Arvanitis feed post delphine_post_1",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_deskadmin",
+      "label": "Desk administrator password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_graham_whitfield",
+      "label": "Graham Whitfield password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_julian_sallow",
+      "label": "Julian Sallow password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_jun_watanabe",
+      "label": "Jun Watanabe password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crack_feed_jun_watanabe_jun_post_1",
+      "label": "Jun Watanabe feed post jun_post_1",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "crackpw_niamh_doherty",
+      "label": "Niamh Doherty password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@delphine_pc",
+      "label": "Delphine's PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@jun_pc",
+      "label": "Jun's PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@hot_desk",
+      "label": "Hot desk PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@graham_pc",
+      "label": "Graham's PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@partner_pc",
+      "label": "Julian's PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "lock_delphine_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_jun_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "lock_graham_pc",
+      "soft": false
+    },
+    {
+      "from": "partner_office",
+      "to": "lock_partner_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_delphine_arvanitis",
+      "soft": false
+    },
+    {
+      "from": "signin_delphine_arvanitis",
+      "to": "lock_delphine_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_jun_watanabe",
+      "soft": false
+    },
+    {
+      "from": "signin_jun_watanabe",
+      "to": "lock_jun_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_jun_watanabe",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_niamh_doherty",
+      "soft": false
+    },
+    {
+      "from": "signin_niamh_doherty",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_graham_whitfield",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_delphine_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_jun_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_graham_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "lock_partner_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_deskadmin",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "lock_delphine_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "lock_jun_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "partner_office",
+      "to": "signin_julian_sallow",
+      "soft": false
+    },
+    {
+      "from": "signin_julian_sallow",
+      "to": "lock_partner_pc",
+      "soft": false
+    },
+    {
+      "from": "clue_social_intelfacts_delphine_dog_name",
+      "to": "signin_delphine_arvanitis",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "clue_rooms_office_npcs_1_feed_posts_0",
+      "to": "signin_delphine_arvanitis",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "clue_social_intelfacts_delphine_dog_year",
+      "to": "signin_delphine_arvanitis",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "office",
+      "to": "clue_it_poster",
+      "soft": false
+    },
+    {
+      "from": "clue_it_poster",
+      "to": "signin_delphine_arvanitis",
+      "soft": false,
+      "label": "clue"
+    },
+    {
+      "from": "it_room",
+      "to": "signin_printer_svc",
+      "soft": false
+    },
+    {
+      "from": "signin_printer_svc",
+      "to": "signin_graham_whitfield",
+      "soft": false,
+      "label": "shared with printer_svc"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_delphine_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_graham_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_hot_desk",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_jun_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_partner_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "partner_office",
+      "to": "implant_partner_pc",
+      "soft": false,
+      "label": "at USB socket by the partner's PC"
+    },
+    {
+      "from": "office",
+      "to": "device_kit_badusb",
+      "soft": false
+    },
+    {
+      "from": "device_kit_badusb",
+      "to": "implant_partner_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_partner_pc",
+      "to": "implant_partner_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_partner_pc",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "outage_jun_pc_off",
+      "to": "workaround_jun_watanabe_0",
+      "soft": false
+    },
+    {
+      "from": "workaround_jun_watanabe_0",
+      "to": "lock_hot_desk",
+      "soft": false,
+      "label": "open session"
+    },
+    {
+      "from": "office",
+      "to": "kitchen",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "it_room",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "partner_office",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "reader_signin_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_signin_log",
+      "to": "reader_signin_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "cred_src_delphine_record_file",
+      "to": "cred_delphine_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_src_desk_rounds_record_file",
+      "to": "cred_desk_rounds_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_src_graham_record_file",
+      "to": "cred_graham_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_src_julian_record_file",
+      "to": "cred_julian_hash",
+      "soft": false
+    },
+    {
+      "from": "cred_src_printer_admin_note",
+      "to": "cred_printer_admin",
+      "soft": false
+    },
+    {
+      "from": "cred_delphine_cached_partner",
+      "to": "crackpw_delphine_arvanitis",
+      "soft": false,
+      "label": "crack (medium)"
+    },
+    {
+      "from": "cred_src_delphine_photo",
+      "to": "crackpw_delphine_arvanitis",
+      "soft": false,
+      "label": "crack (medium)"
+    },
+    {
+      "from": "crack_feed_delphine_arvanitis_delphine_post_1",
+      "to": "crackpw_delphine_arvanitis",
+      "soft": false,
+      "label": "crack (medium)"
+    },
+    {
+      "from": "cred_delphine_hash",
+      "to": "crackpw_delphine_arvanitis",
+      "soft": false,
+      "label": "crack (medium)"
+    },
+    {
+      "from": "cred_desk_rounds_hash",
+      "to": "crackpw_deskadmin",
+      "soft": false,
+      "label": "crack"
+    },
+    {
+      "from": "cred_graham_hash",
+      "to": "crackpw_graham_whitfield",
+      "soft": false,
+      "label": "crack"
+    },
+    {
+      "from": "cred_julian_cached_partner",
+      "to": "crackpw_julian_sallow",
+      "soft": false,
+      "label": "crack"
+    },
+    {
+      "from": "cred_julian_hash",
+      "to": "crackpw_julian_sallow",
+      "soft": false,
+      "label": "crack"
+    },
+    {
+      "from": "cred_jun_cached",
+      "to": "crackpw_jun_watanabe",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "crack_feed_jun_watanabe_jun_post_1",
+      "to": "crackpw_jun_watanabe",
+      "soft": false,
+      "label": "crack (easy)"
+    },
+    {
+      "from": "cred_niamh_cached_hot_desk",
+      "to": "crackpw_niamh_doherty",
+      "soft": false,
+      "label": "crack"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@delphine_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "admin@delphine_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@jun_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "admin@jun_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@hot_desk",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_deskadmin",
+      "to": "admin@hot_desk",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@graham_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_graham_whitfield",
+      "to": "admin@partner_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "admin@hot_desk",
+      "to": "cred_niamh_cached_hot_desk",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "admin@hot_desk",
+      "to": "cred_jun_cached",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "workaround_jun_watanabe_0",
+      "to": "cred_jun_cached",
+      "soft": false,
+      "label": "borrow"
+    },
+    {
+      "from": "admin@partner_pc",
+      "to": "cred_julian_cached_partner",
+      "soft": false,
+      "label": "collect"
+    },
+    {
+      "from": "admin@partner_pc",
+      "to": "cred_delphine_cached_partner",
+      "soft": false,
+      "label": "collect"
+    }
+  ]
+}

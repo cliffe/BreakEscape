@@ -1,0 +1,624 @@
+{
+  "scenario_brief": "TEST: Ops second step on any lock\n\nA test office for the second step on a lock (S8c). A PC with a request to Moira's phone and, inside it, an archive that wants a number matched on Gordon's phone; a locker; a safe that wants a code from Priya's device; a cabinet whose owner never passes; a card door to the records room; a key door to the plant room that Gordon opens; and Gordon's own briefcase. Nothing to solve.",
+  "endGoal": "Test only: compare a second step on an object, a door, an NPC-opened door and a carried item.",
+  "disableAttacks": true,
+  "startRoom": "office",
+  "startPosition": {
+    "x": 7,
+    "y": 7
+  },
+  "npcNeedsSeed": "test_ops_lock_step",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+  "logSources": {
+    "step_audit": {
+      "title": "Sign-in audit",
+      "events": [
+        "mfa_challenge",
+        "mfa_code_ok",
+        "mfa_code_wrong",
+        "mfa_code_locked",
+        "mfa_expired",
+        "mfa_prompt_sent",
+        "mfa_prompt_approved",
+        "mfa_prompt_denied"
+      ]
+    }
+  },
+  "social": {
+    "osint": {
+      "sites": [
+        {
+          "id": "friendface",
+          "type": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "profiles": [
+            {
+              "person": "gordon",
+              "name": "Gordon Pike",
+              "bio": "Site manager.",
+              "posts": [
+                {
+                  "id": "gordon_authored",
+                  "text": "New rota is up."
+                }
+              ]
+            },
+            {
+              "person": "dana",
+              "name": "Dana Reeve",
+              "bio": "Finance.",
+              "posts": [
+                {
+                  "id": "dana_authored",
+                  "text": "Month end again."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "globalVariables": {
+    "se_osint_state": {}
+  },
+  "gameClock": {
+    "start": "Tue 08:30",
+    "rate": 1
+  },
+  "objectives": [
+    {
+      "aimId": "step_beats",
+      "title": "Try each second step on a lock",
+      "description": "Test only. Nothing here ticks by itself.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "s1_step_open",
+          "title": "Open a lock past its second step",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "connections": {
+        "north": "records_room",
+        "east": "plant_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "moira_pc",
+          "name": "Moira's PC",
+          "host": "REC01",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "Harrowgate-Rec-27",
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "secondStep": {
+            "kind": "push",
+            "owner": "moira"
+          },
+          "observations": "A desk PC in the office. A tag on the monitor reads Moira.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "records_note",
+              "name": "Records note",
+              "takeable": true,
+              "readable": true,
+              "text": "Test note from the records PC.",
+              "observations": "A folded sheet."
+            },
+            {
+              "type": "zip_archive",
+              "id": "audit_zip",
+              "name": "quarterly_export.zip",
+              "takeable": false,
+              "locked": true,
+              "lockType": "password",
+              "requires": "Lanternfield-Zip-58",
+              "showKeyboard": true,
+              "maxAttempts": 5,
+              "secondStep": {
+                "kind": "push_number_match",
+                "owner": "gordon"
+              },
+              "observations": "A password-protected archive on the desktop.",
+              "contents": [
+                {
+                  "type": "text_file",
+                  "id": "audit_extract",
+                  "name": "export_summary.txt",
+                  "takeable": false,
+                  "readable": true,
+                  "text": "Test export. Nothing here but a line to show the archive opened.",
+                  "observations": "A short text file."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "moira_locker",
+          "name": "Staff locker",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "4817",
+          "secondStep": {
+            "kind": "push",
+            "owner": "moira"
+          },
+          "observations": "A staff locker with a keypad.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "locker_memo",
+              "name": "Locker memo",
+              "takeable": true,
+              "readable": true,
+              "text": "Test memo from the staff locker.",
+              "observations": "A folded sheet."
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "priya_safe",
+          "name": "Wall safe",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "2603",
+          "secondStep": {
+            "kind": "code",
+            "owner": "priya"
+          },
+          "observations": "A small wall safe with a keypad.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "safe_memo",
+              "name": "Safe memo",
+              "takeable": true,
+              "readable": true,
+              "text": "Test memo from the wall safe.",
+              "observations": "A folded sheet."
+            }
+          ]
+        },
+        {
+          "type": "filing_cabinet",
+          "id": "dana_cabinet",
+          "name": "Finance cabinet",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "Cedarmoor-Fin-91",
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "secondStep": {
+            "kind": "push_number_match",
+            "owner": "dana"
+          },
+          "observations": "A filing cabinet with a keypad lock.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "cabinet_memo",
+              "name": "Cabinet memo",
+              "takeable": true,
+              "readable": true,
+              "text": "Test memo from the finance cabinet.",
+              "observations": "A folded sheet."
+            }
+          ]
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "audit_log_pc",
+          "name": "Audit log terminal",
+          "position": {
+            "x": 2,
+            "y": 5
+          },
+          "takeable": false,
+          "observations": "A terminal showing the building's sign-in audit log.",
+          "minigameData": {
+            "logSource": "step_audit"
+          }
+        },
+        {
+          "type": "keycard",
+          "id": "records_card",
+          "name": "Spare card",
+          "card_id": "RECORDS-01",
+          "position": {
+            "x": 8,
+            "y": 7
+          },
+          "takeable": true,
+          "observations": "A spare card from the front desk."
+        },
+        {
+          "type": "bin",
+          "id": "courier_box",
+          "name": "Courier box",
+          "sprite": "bin10",
+          "position": {
+            "x": 3,
+            "y": 7
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Put the briefcase in the box?",
+              "confirmLabel": "Put it in",
+              "cancelLabel": "Keep it",
+              "onConfirm": [
+                {
+                  "type": "remove_item",
+                  "item": "gordon_briefcase"
+                }
+              ]
+            }
+          ],
+          "observations": "A courier box for parcels going out."
+        },
+        {
+          "type": "notes1",
+          "id": "note_moira_pc",
+          "name": "Note: Records PC login",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Records PC password: Harrowgate-Rec-27",
+          "observations": "A note stuck under a monitor."
+        },
+        {
+          "type": "notes1",
+          "id": "note_audit_zip",
+          "name": "Note: Archive password",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Archive password: Lanternfield-Zip-58",
+          "observations": "A note pinned to the partition."
+        },
+        {
+          "type": "notes1",
+          "id": "note_moira_locker",
+          "name": "Note: Staff locker code",
+          "position": {
+            "x": 2,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Staff locker code: 4817",
+          "observations": "A note taped to a shelf."
+        },
+        {
+          "type": "notes1",
+          "id": "note_priya_safe",
+          "name": "Note: Wall safe code",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Wall safe code: 2603",
+          "observations": "A note on the wall by the safe."
+        },
+        {
+          "type": "notes1",
+          "id": "note_dana_cabinet",
+          "name": "Note: Finance cabinet password",
+          "position": {
+            "x": 7,
+            "y": 7
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Finance cabinet password: Cedarmoor-Fin-91",
+          "observations": "A note under a mug."
+        },
+        {
+          "type": "notes1",
+          "id": "note_briefcase",
+          "name": "Note: Briefcase code",
+          "position": {
+            "x": 5,
+            "y": 7
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Briefcase code: 7340",
+          "observations": "A note on the desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_start",
+          "name": "Sign: Start here",
+          "position": {
+            "x": 4,
+            "y": 2
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Second step test. Every lock here takes a first factor from a note, then asks the owner for a second step. The records room is north, the plant room east.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "moira",
+          "displayName": "Moira Hale",
+          "npcType": "person",
+          "position": {
+            "x": 4,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_lock_step/ink/moira.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "awareness": "low",
+          "habits": {
+            "approvesPrompts": "pestered",
+            "promptPatience": 3
+          }
+        },
+        {
+          "id": "gordon",
+          "displayName": "Gordon Pike",
+          "npcType": "person",
+          "position": {
+            "x": 6,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_lock_step/ink/gordon.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "awareness": "high",
+          "unlockable": [
+            "plant_room"
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "gordon_phone",
+              "name": "Gordon's phone",
+              "owner": "gordon",
+              "takeable": true,
+              "observations": "A mobile phone."
+            },
+            {
+              "type": "briefcase",
+              "id": "gordon_briefcase",
+              "name": "Gordon's briefcase",
+              "droppable": true,
+              "takeable": true,
+              "locked": true,
+              "lockType": "pin",
+              "requires": "7340",
+              "secondStep": {
+                "kind": "push",
+                "owner": "gordon"
+              },
+              "observations": "A leather briefcase with a keypad lock.",
+              "contents": [
+                {
+                  "type": "notes1",
+                  "id": "board_minutes",
+                  "name": "Board minutes",
+                  "takeable": true,
+                  "readable": true,
+                  "text": "Test minutes from the briefcase.",
+                  "observations": "A folded sheet."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "priya",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_ops_lock_step/ink/priya.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "awareness": "medium",
+          "itemsHeld": [
+            {
+              "type": "code_device",
+              "id": "priya_device",
+              "name": "Code device",
+              "owner": "priya",
+              "takeable": true,
+              "observations": "A small code generator with a name label on the back."
+            }
+          ]
+        },
+        {
+          "id": "dana",
+          "displayName": "Dana Reeve",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_ops_lock_step/ink/dana.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "awareness": "high",
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "dana_phone",
+              "name": "Dana's phone",
+              "owner": "dana",
+              "takeable": true,
+              "observations": "A mobile phone."
+            }
+          ]
+        }
+      ]
+    },
+    "records_room": {
+      "type": "room_ceo",
+      "door_sign": "Records room",
+      "connections": {
+        "south": "office"
+      },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": [
+        "RECORDS-01"
+      ],
+      "secondStep": {
+        "kind": "push",
+        "owner": "moira"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "records_memo",
+          "name": "Records memo",
+          "position": {
+            "x": 4,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Test memo for the records room.",
+          "observations": "A memo on the shelf."
+        }
+      ]
+    },
+    "plant_room": {
+      "type": "room_servers",
+      "door_sign": "Plant room",
+      "connections": {
+        "west": "office"
+      },
+      "locked": true,
+      "lockType": "key",
+      "requires": "plant_room_key",
+      "keyPins": [
+        40,
+        60,
+        30,
+        50
+      ],
+      "difficulty": "medium",
+      "secondStep": {
+        "kind": "push",
+        "owner": "moira"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "plant_memo",
+          "name": "Plant memo",
+          "position": {
+            "x": 4,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Test memo for the plant room.",
+          "observations": "A memo on the rack."
+        }
+      ]
+    }
+  }
+}

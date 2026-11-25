@@ -1,0 +1,4 @@
+[prompt|msf > ]use training/filehold/update_lag; check
+[note|[*]] Checking 10.20.0.10:445
+[ok|[+]] 10.20.0.10:445 - The target appears to be vulnerable.
+  f1  Confirmed

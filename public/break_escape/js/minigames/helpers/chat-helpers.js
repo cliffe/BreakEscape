@@ -105,12 +105,16 @@ export async function processGameActionTags(tags, ui, options = {}) {
                             if (unlockResult.success) {
                                 if (ui) ui.showNotification(`🔓 Door unlocked: ${getRoomDisplayName(param)}`, 'success');
                                 console.log('✅ Door unlock successful:', unlockResult);
+                            } else if (unlockResult.secondStepCancelled) {
+                                // The second step was cancelled: nothing to show
+                                console.log('Door second step cancelled:', unlockResult.roomId);
                             } else {
                                 const errorMsg = `⚠️ Failed to unlock: ${getRoomDisplayName(param)} - ${unlockResult.error || 'Unknown error'}`;
                                 if (ui) ui.showNotification(errorMsg, 'warning');
                                 console.warn('⚠️ Door unlock failed:', unlockResult);
                             }
                         }).catch(error => {
+                            if (error?.body?.reason === 'second_step_cancelled') return;
                             const errorMsg = `⚠️ Door unlock error: ${error.message}`;
                             if (ui) ui.showNotification(errorMsg, 'error');
                             console.error('⚠️ Door unlock exception:', error);
@@ -251,7 +255,31 @@ export async function processGameActionTags(tags, ui, options = {}) {
                         result.message = launch.message;
                     }
                     break;
-                    
+
+                case 'helpdesk_request':
+                    {
+                        // # helpdesk_request:<deskId>: opens the request form for that desk (the
+                        // `helpdesk_form` starter) with trigger_minigame's timing: once the line
+                        // carrying the tag is read, and the chat returns on a normal close, by
+                        // which time the result is in the global helpdesk_<deskId>_result for
+                        // the next ink line to read. No pcId: this is a request in person.
+                        const deskId = (param || '').trim();
+                        const known = deskId && typeof window.helpdeskClient?.formFor === 'function'
+                            && window.helpdeskClient.formFor(deskId);
+                        if (!known) {
+                            result.message = `⚠️ helpdesk_request: no desk "${deskId}"; nothing opened`;
+                            console.warn(result.message);
+                        } else if (!window.inkMinigameLaunch) {
+                            result.message = '⚠️ Minigame launcher not loaded';
+                            console.warn(result.message);
+                        } else {
+                            const launch = window.inkMinigameLaunch.request(`helpdesk_form ${JSON.stringify({ deskId })}`);
+                            result.success = launch.success;
+                            result.message = launch.message;
+                        }
+                    }
+                    break;
+
                 case 'influence_increased':
                     {
                         const npcId = window.currentConversationNPCId;

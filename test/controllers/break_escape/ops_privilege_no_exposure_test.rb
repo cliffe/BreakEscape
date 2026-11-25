@@ -1,5 +1,6 @@
 require 'test_helper'
 require_relative '../../support/network_ops_scenario'
+require_relative 'ops_privilege_scenario_test'
 
 module BreakEscape
   # Ops S5a unit 15 (OPS_PRIVILEGE_ACCOUNTS_PLAN.md section 7, S5a part): at each step of a run on the
@@ -148,6 +149,105 @@ module BreakEscape
       assert_equal 'user', level('bay_pc')
       get game_path('container/bay_pc'), as: :json
       OWNER_STRINGS.each { |t| refute_includes response.body, t }
+    end
+  end
+
+  # Ops S5bc unit 19 (S5BC brief 4.6, "never" list): the run of the S5b, ruling A and ruling B beats
+  # on the real scenario; at the start and after every beat the bootstrap, every room answer, a sync
+  # body, each desktop, GET /keyring and every collect answer so far carry none of the never-list and
+  # no hash id or password before it is earned.
+  class OpsPrivilegeCachedNoExposureTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+    include OpsPrivilegeBeats
+
+    NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
+    HASH_FOR_PAIR = { 'bay_pc|olu' => 'baypc_olu', 'bay_pc|uma' => 'baypc_uma',
+                      'hot_desk|priya' => 'hotdesk_priya', 'hot_desk|sam' => 'hotdesk_sam',
+                      'desk_a|deskadmin' => 'desk_a_deskadmin', 'desk_b|deskadmin' => 'desk_b_deskadmin',
+                      'lab_pc|labadmin' => 'lab_labadmin' }.freeze
+    PAIR_PATTERN = /\b(?:bay_pc|hot_desk|desk_a|desk_b|lab_pc)\|[a-z_]+/.freeze
+    NEVER_PASSWORDS = %w[Harbourlight-Olu-08 Tidewater-Priya-31 Granary-Sam-47 Winter2026 q8-Fen-31-Lab].freeze
+    # S5c: an account-only account's words (id and username are the same string) appear in no answer until a collect at one of its PCs
+    ACCOUNT_ONLY_WORDS = { 'deskadmin' => ['deskadmin', 'Desk administrator'], 'labadmin' => ['labadmin', 'Lab administrator'] }.freeze
+    ACCOUNT_ONLY_PCS = { 'deskadmin' => %w[desk_a|deskadmin desk_b|deskadmin], 'labadmin' => %w[lab_pc|labadmin] }.freeze
+    PASSWORD_OWNER = { 'Harbourlight-Olu-08' => 'olu', 'Tidewater-Priya-31' => 'priya', 'Granary-Sam-47' => 'sam',
+                       'Winter2026' => 'deskadmin', 'q8-Fen-31-Lab' => 'labadmin' }.freeze
+
+    teardown { travel_back }
+
+    # R1-SERVER1: the three PCs that cache the account-only accounts list them in `access.people`, so every
+    # room, desktop and container answer of the run proves the list never names an account-only id.
+    def beats_scenario
+      data = super
+      data['rooms'].each_value do |room|
+        Array(room['objects']).each do |o|
+          case o['id']
+          when 'desk_a', 'desk_b' then o['access']['people'] = %w[deskadmin adel]
+          when 'lab_pc' then o['access']['people'] = %w[labadmin adel]
+          end
+        end
+      end
+      data
+    end
+
+    def keys_of(node, out = [])
+      case node
+      when Hash then node.each { |k, v| out << k.to_s; keys_of(v, out) }
+      when Array then node.each { |v| keys_of(v, out) }
+      end
+      out
+    end
+
+    def fetched
+      list = []
+      get b_path('scenario'), as: :json
+      list << ['bootstrap', response.body, false]
+      b_game.scenario_data['rooms'].each_key do |room|
+        get b_path("room/#{room}"), as: :json
+        list << ["room #{room}", response.body, false]
+      end
+      put b_path('sync_state'), params: { playerState: {} }, as: :json
+      list << ['sync', response.body, false]
+      %w[bay_pc hot_desk sam_pc store_pc desk_a desk_b lab_pc].each do |pc|
+        get b_path("container/#{pc}"), as: :json
+        list << ["container #{pc}", response.body, false]
+        get b_path("container/#{pc}"), params: { relay: 1 }, as: :json
+        list << ["relay container #{pc}", response.body, false]
+      end
+      get b_path('keyring'), as: :json
+      list << ['keyring', response.body, true]
+      @answers.each { |name, entry| list << ["recorded #{name}", entry['body'].to_json, name.start_with?('keyring_')] }
+      list
+    end
+
+    def checkpoint(label)
+      earned = b_state['harvestedAccounts'].to_a.filter_map { |pair| HASH_FOR_PAIR[pair] }
+      cracked = b_state['crackedAccounts'].to_a
+      fetched.each do |name, body, keyring|
+        where = "#{label}: #{name}"
+        keys = keys_of(JSON.parse(body))
+        NEVER_KEYS.each { |k| refute_includes keys, k, "#{where} carries the key #{k}" }
+        refute_match PAIR_PATTERN, body, "#{where} carries a pair string"
+        (HASH_FOR_PAIR.values - earned).each { |id| refute_includes body, id, "#{where} names the hash #{id} before its collect" }
+        refute_includes body, 'harvested', "#{where} carries the proof word harvested" unless name.start_with?('recorded collect_')
+        NEVER_PASSWORDS.each do |pw|
+          account = PASSWORD_OWNER[pw]
+          next if keyring && cracked.include?(account) && !name.start_with?('recorded collect_')
+
+          refute_includes body, pw, "#{where} carries the password of #{account} before it is cracked" unless name.start_with?('recorded signin_')
+        end
+        (PASSWORDS + S5C_PASSWORDS).each { |pw| refute_includes body, pw, "#{where} carries a password" } if name.start_with?('recorded collect_')
+        ACCOUNT_ONLY_WORDS.each do |account, words|
+          next if (ACCOUNT_ONLY_PCS[account] & b_state['harvestedAccounts'].to_a).any?
+
+          words.each { |w| refute_includes body, w, "#{where} names the account-only account #{account} before its collect" }
+        end
+      end
+    end
+
+    test 'the run in order leaks nothing from the never list, at the start and after every beat' do
+      play_all_beats
+      refute_empty @answers.keys.grep(/\Acollect_/)
     end
   end
 end

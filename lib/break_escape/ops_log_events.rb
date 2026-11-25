@@ -28,6 +28,7 @@ module BreakEscape
       'signin_fail' => { label: 'SIGN_IN', places: %w[pc], results: %w[fail] },
       'signin_lockout' => { label: 'SIGN_IN', places: %w[pc], results: %w[ok] },
       'signin_refused' => { label: 'SIGN_IN', places: %w[pc], results: %w[denied blocked],
+                            detail: { 'kind' => %w[local domain] }, # S5c
                             save_limit: { 'denied' => 10, 'blocked' => 10 } },
       'session_end' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
       'session_lock' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
@@ -49,6 +50,9 @@ module BreakEscape
       # Privilege (S5a): an admin session reads an owner's profile; an admin session overrides the USB policy.
       'admin_profile_read' => { label: 'ADMIN_READ', places: %w[pc], results: %w[ok], detail: { 'profile' => { id: 'profile' } } },
       'usb_install_overridden' => { label: 'USB_OVERRIDE', places: %w[pc], results: %w[ok], detail: { 'device' => %w[storage hid] } },
+      # Ops S5b: an admin session collects the cached accounts of a PC; `count` is how many hash records arrived
+      # (a number, 1 to 8). No account name, hash or token is a detail value.
+      'credentials_harvested' => { label: 'CRED_COLLECT', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 8 } } },
       # Ops log L3: a jack plugged or unplugged, an access point joined, a share folder opened
       # (OPS_LOG_ROWS_PLAN.md 13.8). No identity on the network rows; the folder row names no file.
       # `merge: false` (L3 R2-1): the link rows never merge into an earlier row, so a plant after an unplug
@@ -56,7 +60,24 @@ module BreakEscape
       'net_link_up' => { label: 'NET_LINK_UP', places: %w[jack], results: %w[ok], merge: false },
       'net_link_down' => { label: 'NET_LINK_DOWN', places: %w[jack], results: %w[ok], merge: false },
       'net_wifi_join' => { label: 'NET_WIFI_JOIN', places: %w[ap], results: %w[ok] },
-      'share_folder_opened' => { label: 'SHARE_OPEN', places: %w[share], results: %w[ok], detail: { 'folder' => { id: 'object' } } }
+      'share_folder_opened' => { label: 'SHARE_OPEN', places: %w[share], results: %w[ok], detail: { 'folder' => { id: 'object' } } },
+      # Ops core S8a: the second step of a sign-in (multi-factor). No code, number or secret is ever a detail value;
+      # a repeat merges into the earlier row. S8c widens the places to an object or a door (a lock's second step); `method` names the first
+      # factor of a lock.
+      'mfa_challenge' => { label: 'MFA', places: %w[pc object door], results: %w[ok], detail: { 'route' => %w[keyboard foothold from],
+                                                                                'method' => %w[key lockpick rfid biometric bluetooth ble pin password combination cryptex npc] } },
+      'mfa_code_ok' => { label: 'MFA', places: %w[pc object door], results: %w[ok] },
+      'mfa_code_wrong' => { label: 'MFA', places: %w[pc object door], results: %w[fail] },
+      'mfa_code_locked' => { label: 'MFA', places: %w[pc object door], results: %w[locked] },
+      'mfa_expired' => { label: 'MFA', places: %w[pc object door], results: %w[expired] },
+      'mfa_prompt_sent' => { label: 'MFA', places: %w[pc object door], results: %w[ok] },
+      'mfa_prompt_approved' => { label: 'MFA', places: %w[pc object door], results: %w[ok], detail: { 'approver' => %w[owner held_phone own_phone] } },
+      'mfa_prompt_denied' => { label: 'MFA', places: %w[pc object door], results: %w[denied] },
+      # S8b helpdesk: a request to a desk, and the two things a desk can do. No typed answer is ever a detail value.
+      'helpdesk_request' => { label: 'HELPDESK', places: %w[desk], results: %w[granted refused blocked],
+                              save_limit: { 'blocked' => 10 }, detail: { 'what' => %w[password mfa] } },
+      'account_password_reset' => { label: 'ACCT_RESET', places: %w[desk], results: %w[ok], detail: { 'agent' => { id: 'npc' } } },
+      'account_mfa_reenrolled' => { label: 'ACCT_MFA', places: %w[desk], results: %w[ok], detail: { 'agent' => { id: 'npc' } } }
     }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
@@ -85,8 +106,8 @@ module BreakEscape
         room: ->(game, id) { OpsLogEvents.room_hash(game, id) && id }
       },
       'object' => {
-        name: ->(game, id) { OpsLogEvents.object_name(game.login_scope_of(id), id) },
-        room: ->(game, id) { game.login_scope_of(id)&.[](:room_id) }
+        name: ->(game, id) { OpsLogEvents.object_name(OpsLogEvents.object_entry(game, id), id) },
+        room: ->(game, id) { OpsLogEvents.object_entry(game, id)&.[](:room_id) }
       },
       'pc' => {
         name: ->(game, id) { OpsLogEvents.object_name(game.find_login_pc(id), id) },
@@ -147,6 +168,11 @@ module BreakEscape
       'foothold' => {
         name: ->(game, id) { OpsLogEvents.foothold_name(game, id) },
         room: ->(_game, _id) { nil }
+      },
+      # A helpdesk by its scenario id, shown by its NPC's name, else the id (S8b). A desk has no room.
+      'desk' => {
+        name: ->(game, id) { OpsLogEvents.desk_named(game, id) },
+        room: ->(_game, _id) { nil }
       }
     }.freeze
 
@@ -156,6 +182,86 @@ module BreakEscape
       rooms = game.scenario_data.is_a?(Hash) ? game.scenario_data['rooms'] : nil
       room = rooms.is_a?(Hash) ? rooms[id.to_s] : nil
       room.is_a?(Hash) ? room : nil
+    end
+
+    # Where an object id really lives, as { object:, room_id: } (room_id nil when no room holds it).
+    # The sign-in resolver answers for room objects, their contents and profiles; after it, every
+    # gated object at any authored home (LockStepModel.each_lock_step: an NPC's itemsHeld, the start
+    # inventory, a grant), any other NPC-held item, then the player's own state: what they carry and
+    # a copy they dropped (a room's objects_added). Nil when the id is held nowhere.
+    #
+    # Which room a row belongs to: a room object, its place in the room. An item the player holds
+    # belongs to no room (it goes with them); a copy they dropped belongs to the room it lies in;
+    # only an item still with its NPC, or authored in a profile or share, is placed by where the
+    # scenario put it. So a held or dropped item is asked before the authored homes.
+    def object_entry(game, id)
+      return nil if id.to_s.empty? || !game.scenario_data.is_a?(Hash)
+
+      # A gated object the player took is asked about first: it goes with them, wherever it was authored
+      taken = game.second_step_ids.include?(id.to_s) ? player_carried_entry(game, id) : nil
+      taken || game.login_scope_of(id) || player_carried_entry(game, id) || gated_object_entry(game, id) ||
+        npc_held_entry(game, id) || player_object_entry(game, id)
+    end
+
+    # The player's own copy: in the inventory (no room) or dropped in a room (that room). No start-item
+    # fallback: an item the scenario starts the player with but that is gone from them is not theirs.
+    def player_carried_entry(game, id)
+      state = game.player_state.is_a?(Hash) ? game.player_state : {}
+      found = find_in_tree(state['inventory'], id)
+      return { object: found, room_id: nil } if found
+
+      (state['room_states'].is_a?(Hash) ? state['room_states'] : {}).each do |room_id, rs|
+        found = rs.is_a?(Hash) && find_in_tree(rs['objects_added'], id)
+        return { object: found, room_id: room_id } if found
+      end
+      nil
+    end
+
+    def gated_object_entry(game, id)
+      hit = LockStepModel.each_lock_step(game.scenario_data).find { |e| e[:kind] == :object && e[:id] == id.to_s }
+      hit && { object: hit[:lockable], room_id: hit[:room] }
+    end
+
+    def npc_held_entry(game, id)
+      data = game.scenario_data
+      rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
+      rooms.each do |room_id, room|
+        next unless room.is_a?(Hash)
+
+        Array(room['npcs']).each do |npc|
+          found = npc.is_a?(Hash) && find_in_tree(npc['itemsHeld'], id)
+          return { object: found, room_id: room_id } if found
+        end
+      end
+      LockStepModel.headless_held(data).each do |_npc_id, held|
+        found = find_in_tree(held, id)
+        return { object: found, room_id: nil } if found
+      end
+      nil
+    end
+
+    def player_object_entry(game, id)
+      state = game.player_state.is_a?(Hash) ? game.player_state : {}
+      found = find_in_tree(state['inventory'], id) || find_in_tree(game.scenario_data['startItemsInInventory'], id)
+      return { object: found, room_id: nil } if found
+
+      (state['room_states'].is_a?(Hash) ? state['room_states'] : {}).each do |room_id, rs|
+        found = rs.is_a?(Hash) && find_in_tree(rs['objects_added'], id)
+        return { object: found, room_id: room_id } if found
+      end
+      nil
+    end
+
+    # The first hash in a list (or inside any item's contents / itemsHeld) whose id is this one.
+    def find_in_tree(list, id)
+      Array(list).each do |o|
+        next unless o.is_a?(Hash)
+        return o if o['id'].to_s == id.to_s
+
+        found = find_in_tree(o['contents'], id) || find_in_tree(o['itemsHeld'], id)
+        return found if found
+      end
+      nil
     end
 
     def object_name(info, id)
@@ -183,6 +289,14 @@ module BreakEscape
       game.account_npcs.find do |npc|
         game.class.normalise_username(npc['creds']['username']) == wanted
       end
+    end
+
+    def desk_named(game, id)
+      desks = game.scenario_data.is_a?(Hash) ? game.scenario_data['helpdesks'] : nil
+      desk = desks.is_a?(Hash) ? desks[id.to_s] : nil
+      return nil unless desk.is_a?(Hash)
+
+      npc_named(game, desk['npc']) || id.to_s
     end
 
     def npc_named(game, id)
@@ -290,7 +404,9 @@ module BreakEscape
       owner = pc && profile_owner(game, game.scenario_data['accountProfiles'][id.to_s])
       picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts' if pc
       shown = pc && !BreakEscape::NetworkModel.headless?(pc) && game.remote_screen(pc) == 'tiles'
-      owner && shown && picker == 'accounts' && BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
+      # An account-only account has no tile at any sign-in screen (S5c), so its name is never shown.
+      owner && !BreakEscape::AccessIdentities.account_only?(owner) && shown && picker == 'accounts' &&
+        BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
     end
 
     def foothold_name(game, id)

@@ -1,0 +1,33 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "desk_pc",
+          "kind": "pc",
+          "name": "Desk PC",
+          "host": "LAB-01",
+          "sprite": "pc_desktop",
+          "headless": false,
+          "remoteSignIn": false,
+          "session": {
+            "via": "technique",
+            "displayName": "Sam",
+            "access": "admin",
+            "openHere": true
+          }
+        }
+      ],
+      "networks": []
+    }
+  ]
+}

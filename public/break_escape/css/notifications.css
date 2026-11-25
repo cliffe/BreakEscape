@@ -119,6 +119,31 @@
 
 /* The close X looks like every other close X (.game-modal-close unthemed, the themed list in
    ui-themes.css). The body of a toast lets clicks through; only the X takes them. */
+.notification-action {
+    display: block;
+    margin: 8px 0 0;
+    padding: 6px 10px;
+    background: #2c3e50;
+    color: white;
+    border: 2px solid #ecf0f1;
+    border-radius: 0;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    line-height: 1.3;
+    pointer-events: auto;
+}
+
+.notification-action:hover {
+    background: #34495e;
+}
+
+.notification-action:focus-visible,
+.notification-close:focus-visible {
+    outline: 3px solid #f1c40f;
+    outline-offset: 2px;
+}
+
 .notification-close:hover {
     background: #c0392b;
 }

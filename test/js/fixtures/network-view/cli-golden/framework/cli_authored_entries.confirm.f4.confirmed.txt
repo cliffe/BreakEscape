@@ -1,0 +1,4 @@
+[prompt|msf > ]use training/viewline/stock_account; check
+[note|[*]] Checking 10.40.0.4:554
+[ok|[+]] 10.40.0.4:554 - The target appears to be vulnerable.
+  f4  Confirmed
