@@ -64,7 +64,12 @@ export async function enterWorld(world, deps = {}) {
         if (!room) throw new Error(`room "${world.room}" did not load`);
         const at = roomTarget(room, world.spawn);
         placeAt(player, at.x, at.y, deps);
-        if (world.costume) await (deps.applyCostume ?? applyCostume)(world.costume, deps.costumeDeps);
+        // Costume ownership (E2): only a costume this call put on is taken off on the way out, so a
+        // wearable (which shares the costume record) stays on through the hand-back.
+        if (world.costume) {
+            const on = await (deps.applyCostume ?? applyCostume)(world.costume, deps.costumeDeps);
+            if (on === true && origin) origin.costumed = true;
+        }
         return true;
     } catch (e) {
         console.error('[episode] could not enter the world room:', e);
@@ -88,10 +93,12 @@ export async function leaveWorld(world, deps = {}) {
     } catch (e) {
         console.error('[episode] could not return the player to the start room:', e);
     }
-    try {
-        await (deps.removeCostume ?? removeCostume)(deps.costumeDeps);
-    } catch (e) {
-        console.error('[episode] could not remove the costume:', e);
+    if (back.costumed === true) {
+        try {
+            await (deps.removeCostume ?? removeCostume)(deps.costumeDeps);
+        } catch (e) {
+            console.error('[episode] could not remove the costume:', e);
+        }
     }
     return true;
 }

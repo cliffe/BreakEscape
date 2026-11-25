@@ -1154,12 +1154,26 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         return isStr(v) ? v : null;
     }
 
+    /**
+     * E2: end a world hold. Writes the hold global true (a delta, once; a no-op when it already
+     * is) so the mappings gated on it disarm, whatever ended the hold.
+     */
+    _writeHold(name) {
+        if (!isStr(name) || this.globals?.[name]) return;
+        this.deps.write(name, true, { openChat: false });
+        win().stateSync?.sync?.();
+    }
+
     /** On a reopen at the call's write stage with its outcome set, the call is over: move on. */
     _settleCall() {
         if (this.state.stage !== 'write' || !this._callId) return;
         const outcome = this._callOutcome();
         if (!outcome) return;
         stopCallWatch(this.episode.id);
+        // E2: a reload or early reopen while held settles the hold here (the stage state does
+        // not yet record the call), so the flip opens with the global true.
+        const hu = worldFor(this.episode)?.holdUntil;
+        if (hu) this._writeHold(hu);
         const written = completeStage(this.episode, this.state, 'write', { sent: sentFromCall(this._callId, outcome) });
         this._saveState(skipMfaIfUnlanded(this.episode, written, outcome));
         this.pauseAfter = null;
@@ -1183,7 +1197,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * a watcher waits for the outcome global and for every overlay to close, then holds the
      * call for the flip and reopens the runner.
      */
-    _launchCall(params, handBack = null) {
+    _launchCall(params, handBack = null, world = null) {
         const callId = params.callId;
         const spec = (Array.isArray(this.social.pretextNpcs) ? this.social.pretextNpcs : [])
             .find((c) => isObj(c) && c.callId === callId) || null;
@@ -1206,6 +1220,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (child) {
             watchCall({
                 episode: this.episode, callId, before, reopen, handBack,
+                hold: world?.holdUntil ? { until: world.holdUntil, maxMs: world.holdMaxMs } : null,
+                now: () => this.deps.now(),
+                writeHold: (name) => this._writeHold(name),
                 globals: () => this.params.globals || win().gameState?.globalVariables || null,
                 save: (state) => { this.deps.write(stateKey(this.episode.id), state, { openChat: false }); win().stateSync?.sync?.(); },
                 schedule: this.deps.schedule, clearScheduled: this.deps.clearScheduled
@@ -1235,7 +1252,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         try { placed = await this.deps.enterWorld(world); } catch (e) { console.error('[episode] world entry failed:', e); }
         if (!placed) return fail();
         this._launching = 'write'; // read by returnParams() while launchChild builds returnTo
-        const child = this._launchCall(params, back);
+        const child = this._launchCall(params, back, world);
         this._launching = null;
         return child || fail();
     }
@@ -1248,6 +1265,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const world = worldFor(this.episode);
         if (!world || !worldAway.has(this.episode.id)) return;
         worldAway.delete(this.episode.id);
+        // E2: a reopen inside the hold (the kiosk reached during the grace) ends it here.
+        if (world.holdUntil && this._callOutcome()) this._writeHold(world.holdUntil);
         Promise.resolve(this.deps.leaveWorld(world)).catch((e) => console.error('[episode] world hand-back failed:', e));
     }
 
@@ -1385,8 +1404,15 @@ export function stopCallWatch(episodeId) {
  * debrief have closed), write the write stage done with the call held, and reopen the runner.
  * If the runner is open again first (the prep card was closed), the watch ends. `handBack`
  * (optional, ENG-05a) runs before the reopen and when the watch gives up. Exposed for the tests.
+ *
+ * E2, the hold: `hold` is `{ until, maxMs }` (a global name and a cap). The outcome then no
+ * longer hands back at once. The clock starts when the outcome is first seen; the watch waits
+ * until the global `until` is truthy or `maxMs` has passed, and, as before, until no overlay is
+ * open (a chat still open at the cap is waited out). When the hold ends on the cap, `writeHold`
+ * writes the global true first, so scenario mappings gated on it disarm. Then hand-back and
+ * reopen run once, as without a hold. Without `hold` nothing here changes.
  */
-export function watchCall({ episode, callId, before = null, reopen = {}, handBack = null, globals, save, schedule, clearScheduled }) {
+export function watchCall({ episode, callId, before = null, reopen = {}, handBack = null, hold = null, now = Date.now, writeHold = null, globals, save, schedule, clearScheduled }) {
     stopCallWatch(episode.id);
     const w = win();
     const key = callOutcomeKey(callId);
@@ -1394,6 +1420,9 @@ export function watchCall({ episode, callId, before = null, reopen = {}, handBac
     let heard = false;
     let timer = null;
     let ticks = 0;
+    let endedAt = null; // E2: when the outcome was first seen
+    const holdOpen = (g) => !!hold && !g[hold.until];
+    const endHold = (g) => { if (hold && !g[hold.until]) { try { writeHold?.(hold.until); } catch (e) { console.error('[episode] hold write failed:', e); } } };
     const onEvent = () => { heard = true; };
     const stop = () => {
         if (timer !== null) clearScheduled?.(timer);
@@ -1409,8 +1438,12 @@ export function watchCall({ episode, callId, before = null, reopen = {}, handBac
         const g = globals() || {};
         const outcome = isStr(g[key]) ? g[key] : null;
         const ended = outcome && (heard || outcome !== before);
-        if (ended && !current) {
+        if (ended && hold && endedAt === null) endedAt = now();
+        // Held: not over until the global is true or the cap has passed (and no overlay is open).
+        const held = ended && holdOpen(g) && now() - endedAt < hold.maxMs;
+        if (ended && !current && !held) {
             stopCallWatch(episode.id);
+            endHold(g);
             const finish = () => {
                 const written = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
                     { sent: sentFromCall(callId, outcome) });
@@ -1432,6 +1465,7 @@ export function watchCall({ episode, callId, before = null, reopen = {}, handBac
         }
         if (++ticks > CALL_WAIT_LIMIT) {
             stopCallWatch(episode.id);
+            endHold(g);
             if (typeof handBack === 'function') Promise.resolve().then(handBack).catch(() => {});
             return;
         }

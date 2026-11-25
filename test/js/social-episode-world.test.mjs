@@ -295,3 +295,195 @@ test('a room that will not load rolls everything back and reports false', async 
     assert.deepEqual(s.costume.filter((c) => c[0] === 'on'), [], 'no costume for a room never entered');
     assert.equal(s.player.x, 100);
 });
+
+// ── E2: the world hold (world.holdUntil / world.holdMaxMs) ─────────────────────
+
+const HOLD = { ...WORLD, holdUntil: 'e12_world_done', holdMaxMs: 20000 };
+let clock = 0;
+const openHold = (ep) => startEpisodeRunner({ scenarioData: { name: 'Kiosk', minigameData: { episodeId: ep.id } } },
+    { deps: { ...baseDeps, ...worldDeps, now: () => clock } });
+const leaves = () => log.filter((l) => l.startsWith('leave')).length;
+const flips = () => log.filter((l) => l === 'flip').length;
+const gv = () => window.gameState.globalVariables;
+// Begin the call in the lobby and let it end with `outcome`, leaving the chat open.
+async function startHeld(ep) {
+    setup(ep);
+    clock = 1000;
+    openHold(ep);
+    click('.epr-launch');
+    await flush();
+    beginCall();
+    await flush();
+    gv()[outcomeKey] = 'got_it';
+    fire(`global_variable_changed:${outcomeKey}`, { name: outcomeKey, value: 'got_it' });
+}
+
+test('E2 worldFor: holdUntil needs a positive holdMaxMs; a hold with no cap is dropped; absent adds no keys', () => {
+    assert.deepEqual(M.worldFor(episode(HOLD)).holdUntil, 'e12_world_done');
+    assert.equal(M.worldFor(episode(HOLD)).holdMaxMs, 20000);
+    assert.equal('holdUntil' in M.worldFor(episode({ ...WORLD, holdUntil: 'x' })), false, 'no cap: no hold');
+    assert.equal('holdUntil' in M.worldFor(episode({ ...WORLD, holdUntil: 'x', holdMaxMs: 0 })), false);
+    assert.equal('holdUntil' in M.worldFor(episode({ ...WORLD, holdUntil: 'x', holdMaxMs: 'soon' })), false);
+    assert.equal('holdUntil' in M.worldFor(episode(WORLD)), false);
+});
+
+test('E2: the hold waits for the global, then hands back once', async () => {
+    const ep = episode(HOLD);
+    await startHeld(ep);
+    cur().requestClose(); // the chat closes
+    clock += 5000;
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 0, 'held: the outcome alone does not hand back');
+    assert.equal(flips(), 0);
+    assert.notEqual(scene(), 'episode-runner');
+    gv().e12_world_done = true; // the scenario's mapping ends the beat
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 1);
+    assert.equal(flips(), 1);
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(stored(ep.id).sent.outcome, 'got_it');
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 1, 'once');
+    assert.equal(errors.length, 0, errors.join('\n'));
+});
+
+test('E2: holdMaxMs ends the hold, writes the global true, and hands back once', async () => {
+    const ep = episode(HOLD);
+    await startHeld(ep);
+    cur().requestClose();
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 0);
+    clock += 19999;
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 0, 'one ms short of the cap');
+    assert.equal(gv().e12_world_done, undefined);
+    clock += 1;
+    runTimers();
+    await flush();
+    assert.equal(gv().e12_world_done, true, 'the cap writes the global true');
+    assert.equal(leaves(), 1);
+    assert.equal(flips(), 1);
+    clock += 60000;
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 1, 'never twice');
+    assert.equal(errors.length, 0, errors.join('\n'));
+});
+
+test('E2: a cap that falls while a chat is open waits for the chat to close, then writes and hands back', async () => {
+    const ep = episode(HOLD);
+    await startHeld(ep); // the phone chat is still open
+    runTimers(); // the watcher sees the outcome: the hold clock starts
+    clock += 30000;
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 0, 'the chat is open');
+    assert.equal(gv().e12_world_done, undefined, 'nothing written yet');
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 0);
+    cur().requestClose(); // Yusuf's challenge ends
+    runTimers();
+    await flush();
+    assert.equal(gv().e12_world_done, true);
+    assert.equal(leaves(), 1);
+    assert.equal(flips(), 1);
+});
+
+test('E2: a global already set by the chat close is left alone (no second write)', async () => {
+    const ep = episode(HOLD);
+    await startHeld(ep);
+    runTimers();
+    clock += 30000;
+    gv().e12_world_done = 'mapped'; // set by a mapping on the close: not overwritten
+    cur().requestClose();
+    runTimers();
+    await flush();
+    assert.equal(gv().e12_world_done, 'mapped');
+    assert.equal(leaves(), 1);
+});
+
+test('E2: a reload while held writes the global and resumes into the flip', async () => {
+    const ep = episode(HOLD);
+    setup(ep);
+    gv()[outcomeKey] = 'walked_away'; // the call ended; the page reloaded before hand-back
+    clock = 5000;
+    openHold(ep);
+    await flush();
+    assert.equal(gv().e12_world_done, true);
+    assert.ok(stored(ep.id).done.includes('write'));
+    assert.equal(stored(ep.id).sent.outcome, 'walked_away');
+    assert.equal(flips(), 1, 'resumed into the flip');
+    assert.equal(errors.length, 0, errors.join('\n'));
+});
+
+test('E2: the kiosk reached inside the hold stops the watcher, writes the global and goes to the flip', async () => {
+    const ep = episode(HOLD);
+    await startHeld(ep);
+    cur().requestClose(); // the chat closes; the runner opens within the grace
+    openHold(ep);
+    await flush();
+    runTimers(); // the watcher sees the runner and stops
+    await flush();
+    assert.equal(gv().e12_world_done, true);
+    assert.ok(stored(ep.id).done.includes('write'));
+    assert.equal(leaves(), 1, 'the learner is brought back by the open path');
+    assert.equal(flips(), 1);
+    clock += 60000;
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 1, 'the stopped watcher hands back nothing more');
+    assert.equal(flips(), 1);
+});
+
+test('E2: closing the prep card before any call does not write the hold global', async () => {
+    const ep = episode(HOLD);
+    setup(ep);
+    openHold(ep);
+    click('.epr-launch');
+    await flush();
+    cur().requestClose();
+    await flush();
+    assert.equal(leaves() >= 1, true);
+    assert.equal(gv().e12_world_done, undefined, 'a retried call must still be able to hold');
+});
+
+test('E2: a world with no holdUntil hands back as today and writes nothing', async () => {
+    const ep = episode(WORLD);
+    setup(ep);
+    clock = 0;
+    openHold(ep);
+    click('.epr-launch');
+    await flush();
+    beginCall();
+    await flush();
+    await endCall('got_it');
+    assert.equal(leaves(), 1);
+    assert.equal(flips(), 1);
+    assert.equal(Object.keys(gv()).filter((k) => /world_done/.test(k)).length, 0);
+});
+
+test('E2 world-play: a costume this module did not put on is not taken off on hand-back', async () => {
+    // world.costume null: a wearable's costume stays on
+    const s = stage();
+    const noCostume = { room: 'lobby', startRoom: 'training_room', spawn: null, costume: null };
+    await wp.enterWorld(noCostume, s.deps);
+    await wp.leaveWorld(noCostume, s.deps);
+    assert.deepEqual(s.costume, [], 'no costume call at all');
+    // a costume that did not go on (applyCostume false) is not removed either
+    const t = stage();
+    t.deps.applyCostume = async () => false;
+    await wp.enterWorld(WORLD, t.deps);
+    await wp.leaveWorld(WORLD, t.deps);
+    assert.deepEqual(t.costume, []);
+    // the world costume that did go on comes off (the original behaviour)
+    const u = stage();
+    await wp.enterWorld(WORLD, u.deps);
+    await wp.leaveWorld(WORLD, u.deps);
+    assert.deepEqual(u.costume, [['on', 'male_spy_v2'], ['off']]);
+});

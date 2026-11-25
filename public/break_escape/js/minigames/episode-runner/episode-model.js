@@ -569,6 +569,9 @@ export function writeKind(episode) {
  * they wear. Null unless the write stage is a call and `world.room` and `world.startRoom` are
  * both named, so a mail attack or a half-authored block runs the built path.
  *   { room, startRoom, spawn: { x, y } | null, costume: { sprite, talk? } | null }
+ * E2 (the hold): `world.holdUntil` (a global name) with a positive `world.holdMaxMs` adds
+ * `holdUntil` and `holdMaxMs` to the result (only then; a hold with no cap is dropped, since it
+ * could strand the learner, and the validator rejects it).
  */
 export function worldFor(episode) {
     const w = episode?.world;
@@ -576,7 +579,9 @@ export function worldFor(episode) {
     const c = isObj(w.costume) && isStr(w.costume.sprite)
         ? { sprite: w.costume.sprite, ...(isStr(w.costume.talk) ? { talk: w.costume.talk } : {}) } : null;
     const sp = isObj(w.spawn) && Number.isFinite(w.spawn.x) && Number.isFinite(w.spawn.y) ? { x: w.spawn.x, y: w.spawn.y } : null;
-    return { room: w.room, startRoom: w.startRoom, spawn: sp, costume: c };
+    const hold = isStr(w.holdUntil) && Number.isFinite(w.holdMaxMs) && w.holdMaxMs > 0
+        ? { holdUntil: w.holdUntil, holdMaxMs: w.holdMaxMs } : {};
+    return { room: w.room, startRoom: w.startRoom, spawn: sp, costume: c, ...hold };
 }
 
 /**
