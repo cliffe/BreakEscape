@@ -4665,6 +4665,8 @@ def check_recommended_fields(json_data)
       if room['npcs']
         room['npcs'].each_with_index do |npc, idx|
           path = "rooms/#{room_id}/npcs[#{idx}]"
+          # An account-only NPC is an account, not a person in the world: it may not carry a position or behaviour
+          next if npc['accountOnly'] == true
 
           # Phone NPCs should have avatar
           if npc['npcType'] == 'phone' && !npc['avatar']
