@@ -26,6 +26,15 @@ VAR admin_signin_done = false
 VAR profile_read_done = false
 VAR override_done = false
 VAR read_log_done = false
+VAR ask_jun = 0
+VAR jun_pc_off = false
+VAR hot_desk_signin_done = false
+VAR collect_partner_done = false
+VAR see_borrow_done = false
+VAR collect_hot_desk_done = false
+VAR crack_cached_done = false
+VAR local_account_done = false
+VAR local_refused_done = false
 // Ink-local: the opening plays once; each recap plays once; two one-off lines.
 VAR met_ama = false
 VAR told_free_play = false
@@ -41,6 +50,12 @@ VAR recapped_admin = false
 VAR recapped_profile = false
 VAR recapped_override = false
 VAR recapped_log = false
+VAR recapped_collect_partner = false
+VAR recapped_borrow = false
+VAR recapped_collect_hot_desk = false
+VAR recapped_crack_cached = false
+VAR recapped_local = false
+VAR recapped_refused = false
 
 === start ===
 { met_ama:
@@ -85,6 +100,20 @@ What can I help with?
     -> recap
 + { act_evening } [Give me the short version.]
     -> short_version
++ { admin_signin_done and not collect_partner_done } [I collected what Julian's PC remembers.]
+    -> tell_collect_partner
++ { see_borrow_done and hot_desk_signin_done and not collect_hot_desk_done } [I collected at the hot desk.]
+    -> tell_collect_hot_desk
++ { collect_hot_desk_done and not crack_cached_done } [I cracked one of those records.]
+    -> tell_crack_cached
++ { local_account_done and not local_refused_done } [I tried the shared desk account at Julian's PC.]
+    -> tell_local_refused
++ { not act_evening and not jun_pc_off } [Switch Jun's PC off.]
+    -> lever_jun_off
++ { not act_evening and jun_pc_off } [Switch Jun's PC back on.]
+    -> lever_jun_on
++ { not act_evening } [Could you ask Jun what he's been up to?]
+    -> lever_jun_post
 + [I'll have a look round.]
     # speaker:npc
     Go on. I'll be here.
@@ -150,6 +179,26 @@ What can I help with?
     - not override_done:
         # speaker:npc
         Still at Julian's PC as Graham? Plug the keystroke device into the socket beside it.
+    - not collect_partner_done:
+        # speaker:npc
+        Still signed in at Julian's PC as Graham? Use Cached accounts on its desktop, then tell me.
+    - not see_borrow_done:
+        # speaker:npc
+        Ask me to switch Jun's PC off, and watch where he goes. Do it before you call it a day.
+    - not hot_desk_signin_done or not collect_hot_desk_done:
+        # speaker:npc
+        Jun left the hot desk signed in. Sign in there as Graham and use Cached accounts, then tell me.
+    - not crack_cached_done:
+        # speaker:npc
+        Crack one of the records you collected. A weak one falls at once. Then tell me.
+    - not local_account_done:
+        # speaker:npc
+        Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then sign in at Delphine's PC.
+        # speaker:npc
+        Type the name and password under Other user.
+    - not local_refused_done:
+        # speaker:npc
+        Now try the same account at Julian's PC. Look at what the sign-in screen says, then tell me.
     - not read_log_done and not act_evening:
         # speaker:npc
         You've done the hands-on part. Tell me to call it a day.
@@ -204,6 +253,56 @@ Julian's won't fall. Long and random beats guessing.
 An administrator reaches what a user can't. That's the real cost.
 #complete_task:profile_read
 ~ profile_read_done = true
+-> hub.choices
+
+=== tell_collect_partner ===
+# speaker:npc
+Julian's PC remembers who signed in. An administrator gets the stored records, never the passwords.
+#complete_task:collect_partner
+~ collect_partner_done = true
+-> hub.choices
+
+=== tell_collect_hot_desk ===
+# speaker:npc
+Jun's record only turned up because he borrowed the PC. Anyone who signs in leaves something behind.
+#complete_task:collect_hot_desk
+~ collect_hot_desk_done = true
+-> hub.choices
+
+=== tell_crack_cached ===
+# speaker:npc
+Same cracker, new source. A weak password falls whatever the PC.
+#complete_task:crack_cached
+~ crack_cached_done = true
+-> hub.choices
+
+=== tell_local_refused ===
+# speaker:npc
+The sign-in screen names the domain. A domain account works across it. A local account stays on its own PCs.
+# speaker:npc
+So the shared account falls on every desk it's on, and not on Julian's.
+#complete_task:local_refused
+~ local_refused_done = true
+-> hub.choices
+
+=== lever_jun_off ===
+# speaker:npc
+I'll flick the switch at the wall. Watch what Jun does.
+#set_global:jun_pc_off:true
+~ jun_pc_off = true
+-> hub.choices
+
+=== lever_jun_on ===
+# speaker:npc
+Back on again.
+#set_global:jun_pc_off:false
+~ jun_pc_off = false
+-> hub.choices
+
+=== lever_jun_post ===
+# speaker:npc
+I'll ask Jun what he's been up to. Give him a minute.
+~ ask_jun = ask_jun + 1
 -> hub.choices
 
 === cooler ===
@@ -293,12 +392,30 @@ The staff won't be back once they've gone home. Seen everything you wanted?
 { read_log_done and not recapped_log:
     ~ c = c + 1
 }
+{ collect_partner_done and not recapped_collect_partner:
+    ~ c = c + 1
+}
+{ see_borrow_done and not recapped_borrow:
+    ~ c = c + 1
+}
+{ collect_hot_desk_done and not recapped_collect_hot_desk:
+    ~ c = c + 1
+}
+{ crack_cached_done and not recapped_crack_cached:
+    ~ c = c + 1
+}
+{ local_account_done and not recapped_local:
+    ~ c = c + 1
+}
+{ local_refused_done and not recapped_refused:
+    ~ c = c + 1
+}
 ~ return c
 
 // Each ticked beat is recapped once, newest first, at most two per ask.
 === recap ===
 ~ temp said = 0
-{ not earn_facts_done and not get_records_done and not crack_guessable_done and not crack_reused_done and not crack_strong_done and not user_signin_done and not usb_refused_done and not admin_signin_done and not profile_read_done and not override_done and not read_log_done:
+{ not earn_facts_done and not get_records_done and not crack_guessable_done and not crack_reused_done and not crack_strong_done and not user_signin_done and not usb_refused_done and not admin_signin_done and not profile_read_done and not override_done and not read_log_done and not collect_partner_done and not see_borrow_done and not collect_hot_desk_done and not crack_cached_done and not local_account_done and not local_refused_done:
     # speaker:npc
     Nothing to look back on yet. Have a go first.
     -> hub.choices
@@ -307,6 +424,42 @@ The staff won't be back once they've gone home. Seen everything you wanted?
     # speaker:npc
     That's all of it so far. Ask for the short version at the end.
     -> hub.choices
+}
+{ said < 2 and local_refused_done and not recapped_refused:
+    ~ recapped_refused = true
+    ~ said = said + 1
+    # speaker:npc
+    The shared account was refused where it doesn't belong. A local account stays local.
+}
+{ said < 2 and local_account_done and not recapped_local:
+    ~ recapped_local = true
+    ~ said = said + 1
+    # speaker:npc
+    One shared desk password opened every desk it covered. That's why it must not be weak.
+}
+{ said < 2 and crack_cached_done and not recapped_crack_cached:
+    ~ recapped_crack_cached = true
+    ~ said = said + 1
+    # speaker:npc
+    A remembered record falls like any other. It only needed one fact.
+}
+{ said < 2 and collect_hot_desk_done and not recapped_collect_hot_desk:
+    ~ recapped_collect_hot_desk = true
+    ~ said = said + 1
+    # speaker:npc
+    The hot desk remembered Jun because he'd sat there.
+}
+{ said < 2 and see_borrow_done and not recapped_borrow:
+    ~ recapped_borrow = true
+    ~ said = said + 1
+    # speaker:npc
+    Jun couldn't work, so he borrowed a PC and left it signed in.
+}
+{ said < 2 and collect_partner_done and not recapped_collect_partner:
+    ~ recapped_collect_partner = true
+    ~ said = said + 1
+    # speaker:npc
+    A PC keeps a record of who used it. An administrator can collect them.
 }
 { said < 2 and read_log_done and not recapped_log:
     ~ recapped_log = true
@@ -387,6 +540,8 @@ People share what a guesser needs, and a stolen record falls to it.
 A reused password opens more than one account. A long random one doesn't fall.
 # speaker:npc
 A user's sign-in opens one desk. An administrator's opens other people's.
+# speaker:npc
+A PC remembers who used it, and a shared local password falls wherever it's used.
 # speaker:npc
 And the log remembers all of it.
 -> hub.choices

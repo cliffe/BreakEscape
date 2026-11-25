@@ -8,14 +8,14 @@ Ops demo: passwords. A box of old password records has turned up in the confiden
 
 | Metric | Value |
 |---|---|
-| Story aims | 3 |
-| Total tasks | 11 (0 optional) |
+| Story aims | 4 |
+| Total tasks | 17 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 5 |
+| Physical locks | 6 |
 | AND-gate convergences | 0 |
 | Rooms | 5 |
-| Puzzle graph nodes / edges | 39 / 49 |
-| Story graph nodes / edges | 3 / 0 |
+| Puzzle graph nodes / edges | 55 / 77 |
+| Story graph nodes / edges | 4 / 0 |
 
 ## Critical Path
 
@@ -74,13 +74,16 @@ flowchart TD
 
   lock_delphine_pc["Delphine's PC<br/>Sign-in"]
   lock_jun_pc["Jun's PC<br/>Sign-in"]
+  lock_hot_desk["Hot desk PC<br/>Sign-in"]
   lock_graham_pc["Graham's PC<br/>Sign-in"]
   lock_partner_pc["Julian's PC<br/>Sign-in"]
   signin_delphine_arvanitis{"Delphine Arvanitis sign-in<br/>(darvanitis)"}
   office("Office")
   signin_jun_watanabe{"Jun Watanabe sign-in<br/>(jwatanabe)"}
+  signin_niamh_doherty{"Niamh Doherty sign-in<br/>(ndoherty)"}
   signin_graham_whitfield{"Graham Whitfield sign-in<br/>(gwhitfield)"}
   it_room("IT room")
+  signin_deskadmin{"Desk administrator sign-in<br/>(deskadmin)"}
   signin_julian_sallow{"Julian Sallow sign-in<br/>(jsallow)"}
   partner_office("Partner's office")
   clue_social_intelfacts_delphine_dog_name{"social/intelFacts/delphine dog name"}
@@ -91,40 +94,62 @@ flowchart TD
   net_office_lan("Merrin & Sallow office network<br/>Network")
   implant_partner_pc["Implant: partner_pc<br/>(implant)"]
   device_kit_badusb{"Keystroke device<br/>(implant device)"}
+  workaround_jun_watanabe_0>"Jun Watanabe: uses the hot desk, at 60"]
+  outage_jun_pc_off((" + "))
   kitchen("Kitchen")
-  log_signin_log[("Sign-in log<br/>signin_ok, signin_fail, signin_lockout, session_end, session_lock, admin_profile_read, usb_install_overridden")]
+  log_signin_log[("Sign-in log<br/>signin_ok, signin_fail, signin_lockout, session_end, session_lock, admin_profile_read, usb_install_overridden, credentials_harvested, signin_refused")]
   reader_signin_log_pc{"Sign-in log terminal<br/>(log reader)"}
+  cred_delphine_cached_partner{"Delphine Arvanitis hash<br/>(darvanitis)"}
   cred_delphine_hash{"Delphine Arvanitis hash<br/>(darvanitis)"}
   cred_src_delphine_record_file{"delphine_record.dat"}
+  cred_deskadmin_hash{"Desk administrator hash<br/>(deskadmin)"}
+  cred_src_deskadmin_record_file{"desk_rounds_record.dat"}
   cred_graham_hash{"Graham Whitfield hash<br/>(gwhitfield)"}
   cred_src_graham_record_file{"graham_record.dat"}
+  cred_julian_cached_partner{"Julian Sallow hash<br/>(jsallow)"}
   cred_julian_hash{"Julian Sallow hash<br/>(jsallow)"}
   cred_src_julian_record_file{"julian_record.dat"}
+  cred_jun_cached{"Jun Watanabe hash<br/>(jwatanabe)"}
+  cred_niamh_cached_hot_desk{"Niamh Doherty hash<br/>(ndoherty)"}
   cred_printer_admin{"Printer service password<br/>(svc_printer)"}
   cred_src_printer_admin_note{"Printer admin.txt"}
   crackpw_delphine_arvanitis{"Delphine Arvanitis password"}
   cred_src_delphine_photo{"Photo on Delphine's desk"}
   crack_feed_delphine_arvanitis_delphine_post_1{"Delphine Arvanitis feed post delphine_post_1"}
+  crackpw_deskadmin{"Desk administrator password"}
   crackpw_graham_whitfield{"Graham Whitfield password"}
   crackpw_julian_sallow{"Julian Sallow password"}
+  crackpw_jun_watanabe{"Jun Watanabe password"}
+  crack_feed_jun_watanabe_jun_post_1{"Jun Watanabe feed post jun_post_1"}
+  crackpw_niamh_doherty{"Niamh Doherty password"}
   admin_at_delphine_pc{"Delphine's PC<br/>Administrator session"}
   admin_at_jun_pc{"Jun's PC<br/>Administrator session"}
+  admin_at_hot_desk{"Hot desk PC<br/>Administrator session"}
   admin_at_graham_pc{"Graham's PC<br/>Administrator session"}
   admin_at_partner_pc{"Julian's PC<br/>Administrator session"}
 
   office --> lock_delphine_pc
   office --> lock_jun_pc
+  office --> lock_hot_desk
   it_room --> lock_graham_pc
   partner_office --> lock_partner_pc
   office --> signin_delphine_arvanitis
   signin_delphine_arvanitis --> lock_delphine_pc
   office --> signin_jun_watanabe
   signin_jun_watanabe --> lock_jun_pc
+  signin_jun_watanabe --> lock_hot_desk
+  office --> signin_niamh_doherty
+  signin_niamh_doherty --> lock_hot_desk
   it_room --> signin_graham_whitfield
   signin_graham_whitfield --> lock_delphine_pc
   signin_graham_whitfield --> lock_jun_pc
+  signin_graham_whitfield --> lock_hot_desk
   signin_graham_whitfield --> lock_graham_pc
   signin_graham_whitfield --> lock_partner_pc
+  it_room --> signin_deskadmin
+  signin_deskadmin --> lock_delphine_pc
+  signin_deskadmin --> lock_jun_pc
+  signin_deskadmin --> lock_hot_desk
   partner_office --> signin_julian_sallow
   signin_julian_sallow --> lock_partner_pc
   clue_social_intelfacts_delphine_dog_name -->|clue| signin_delphine_arvanitis
@@ -136,6 +161,7 @@ flowchart TD
   signin_printer_svc -->|shared with printer_svc| signin_graham_whitfield
   net_office_lan -->|exposes| lock_delphine_pc
   net_office_lan -->|exposes| lock_graham_pc
+  net_office_lan -->|exposes| lock_hot_desk
   net_office_lan -->|exposes| lock_jun_pc
   net_office_lan -->|exposes| lock_partner_pc
   partner_office -->|at USB socket by the partner's PC| implant_partner_pc
@@ -143,29 +169,49 @@ flowchart TD
   device_kit_badusb -->|held| implant_partner_pc
   lock_partner_pc -->|session at PC| implant_partner_pc
   implant_partner_pc --> net_office_lan
+  outage_jun_pc_off --> workaround_jun_watanabe_0
+  workaround_jun_watanabe_0 -->|open session| lock_hot_desk
   office --> kitchen
   office --> it_room
   office --> partner_office
   it_room --> reader_signin_log_pc
   log_signin_log -.- reader_signin_log_pc
   cred_src_delphine_record_file --> cred_delphine_hash
+  cred_src_deskadmin_record_file --> cred_deskadmin_hash
   cred_src_graham_record_file --> cred_graham_hash
   cred_src_julian_record_file --> cred_julian_hash
   cred_src_printer_admin_note --> cred_printer_admin
-  cred_delphine_hash -->|crack (medium)| crackpw_delphine_arvanitis
+  cred_delphine_cached_partner -->|crack (medium)| crackpw_delphine_arvanitis
   cred_src_delphine_photo -->|crack (medium)| crackpw_delphine_arvanitis
   crack_feed_delphine_arvanitis_delphine_post_1 -->|crack (medium)| crackpw_delphine_arvanitis
+  cred_delphine_hash -->|crack (medium)| crackpw_delphine_arvanitis
+  cred_deskadmin_hash -->|crack| crackpw_deskadmin
   cred_graham_hash -->|crack| crackpw_graham_whitfield
+  cred_julian_cached_partner -->|crack| crackpw_julian_sallow
   cred_julian_hash -->|crack| crackpw_julian_sallow
+  cred_jun_cached -->|crack (easy)| crackpw_jun_watanabe
+  crack_feed_jun_watanabe_jun_post_1 -->|crack (easy)| crackpw_jun_watanabe
+  cred_niamh_cached_hot_desk -->|crack| crackpw_niamh_doherty
   signin_graham_whitfield -->|administrator| admin_at_delphine_pc
+  signin_deskadmin -->|administrator| admin_at_delphine_pc
   signin_graham_whitfield -->|administrator| admin_at_jun_pc
+  signin_deskadmin -->|administrator| admin_at_jun_pc
+  signin_graham_whitfield -->|administrator| admin_at_hot_desk
+  signin_deskadmin -->|administrator| admin_at_hot_desk
   signin_graham_whitfield -->|administrator| admin_at_graham_pc
   signin_graham_whitfield -->|administrator| admin_at_partner_pc
+  admin_at_hot_desk -->|collect| cred_niamh_cached_hot_desk
+  admin_at_hot_desk -->|collect| cred_jun_cached
+  workaround_jun_watanabe_0 -->|borrow| cred_jun_cached
+  admin_at_partner_pc -->|collect| cred_julian_cached_partner
+  admin_at_partner_pc -->|collect| cred_delphine_cached_partner
 
-  class lock_delphine_pc,lock_jun_pc,lock_graham_pc,lock_partner_pc,implant_partner_pc lock
-  class signin_delphine_arvanitis,signin_jun_watanabe,signin_graham_whitfield,signin_julian_sallow,signin_printer_svc,device_kit_badusb,cred_delphine_hash,cred_graham_hash,cred_julian_hash,cred_printer_admin,crackpw_delphine_arvanitis,crack_feed_delphine_arvanitis_delphine_post_1,crackpw_graham_whitfield,crackpw_julian_sallow,admin_at_delphine_pc,admin_at_jun_pc,admin_at_graham_pc,admin_at_partner_pc key
+  class lock_delphine_pc,lock_jun_pc,lock_hot_desk,lock_graham_pc,lock_partner_pc,implant_partner_pc lock
+  class signin_delphine_arvanitis,signin_jun_watanabe,signin_niamh_doherty,signin_graham_whitfield,signin_deskadmin,signin_julian_sallow,signin_printer_svc,device_kit_badusb,cred_delphine_cached_partner,cred_delphine_hash,cred_deskadmin_hash,cred_graham_hash,cred_julian_cached_partner,cred_julian_hash,cred_jun_cached,cred_niamh_cached_hot_desk,cred_printer_admin,crackpw_delphine_arvanitis,crack_feed_delphine_arvanitis_delphine_post_1,crackpw_deskadmin,crackpw_graham_whitfield,crackpw_julian_sallow,crackpw_jun_watanabe,crack_feed_jun_watanabe_jun_post_1,crackpw_niamh_doherty,admin_at_delphine_pc,admin_at_jun_pc,admin_at_hot_desk,admin_at_graham_pc,admin_at_partner_pc key
   class office,it_room,partner_office,net_office_lan,kitchen room
-  class clue_social_intelfacts_delphine_dog_name,clue_rooms_office_npcs_1_feed_posts_0,clue_social_intelfacts_delphine_dog_year,clue_it_poster,reader_signin_log_pc,cred_src_delphine_record_file,cred_src_graham_record_file,cred_src_julian_record_file,cred_src_printer_admin_note,cred_src_delphine_photo item
+  class clue_social_intelfacts_delphine_dog_name,clue_rooms_office_npcs_1_feed_posts_0,clue_social_intelfacts_delphine_dog_year,clue_it_poster,reader_signin_log_pc,cred_src_delphine_record_file,cred_src_deskadmin_record_file,cred_src_graham_record_file,cred_src_julian_record_file,cred_src_printer_admin_note,cred_src_delphine_photo item
+  class workaround_jun_watanabe_0 action
+  class outage_jun_pc_off gate
   class log_signin_log note
   class node_start start
 ```
@@ -195,9 +241,10 @@ flowchart TD
   aim_morning{{"Morning: the facts"}}
   aim_midday{{"Midday: crack and sign in"}}
   aim_evening{{"Evening: the trail"}}
+  aim_afternoon_cache{{"Afternoon: what a PC remembers"}}
 
 
-  class aim_morning,aim_midday,aim_evening aim
+  class aim_morning,aim_midday,aim_evening,aim_afternoon_cache aim
 ```
 
 ## Story + Puzzle (Integrated)
@@ -228,13 +275,16 @@ flowchart TD
 
   lock_delphine_pc["Delphine's PC<br/>Sign-in"]
   lock_jun_pc["Jun's PC<br/>Sign-in"]
+  lock_hot_desk["Hot desk PC<br/>Sign-in"]
   lock_graham_pc["Graham's PC<br/>Sign-in"]
   lock_partner_pc["Julian's PC<br/>Sign-in"]
   signin_delphine_arvanitis{"Delphine Arvanitis sign-in<br/>(darvanitis)"}
   office("Office")
   signin_jun_watanabe{"Jun Watanabe sign-in<br/>(jwatanabe)"}
+  signin_niamh_doherty{"Niamh Doherty sign-in<br/>(ndoherty)"}
   signin_graham_whitfield{"Graham Whitfield sign-in<br/>(gwhitfield)"}
   it_room("IT room")
+  signin_deskadmin{"Desk administrator sign-in<br/>(deskadmin)"}
   signin_julian_sallow{"Julian Sallow sign-in<br/>(jsallow)"}
   partner_office("Partner's office")
   clue_social_intelfacts_delphine_dog_name{"social/intelFacts/delphine dog name"}
@@ -245,43 +295,66 @@ flowchart TD
   net_office_lan("Merrin & Sallow office network<br/>Network")
   implant_partner_pc["Implant: partner_pc<br/>(implant)"]
   device_kit_badusb{"Keystroke device<br/>(implant device)"}
+  workaround_jun_watanabe_0>"Jun Watanabe: uses the hot desk, at 60"]
+  outage_jun_pc_off((" + "))
   kitchen("Kitchen")
-  log_signin_log[("Sign-in log<br/>signin_ok, signin_fail, signin_lockout, session_end, session_lock, admin_profile_read, usb_install_overridden")]
+  log_signin_log[("Sign-in log<br/>signin_ok, signin_fail, signin_lockout, session_end, session_lock, admin_profile_read, usb_install_overridden, credentials_harvested, signin_refused")]
   reader_signin_log_pc{"Sign-in log terminal<br/>(log reader)"}
+  cred_delphine_cached_partner{"Delphine Arvanitis hash<br/>(darvanitis)"}
   cred_delphine_hash{"Delphine Arvanitis hash<br/>(darvanitis)"}
   cred_src_delphine_record_file{"delphine_record.dat"}
+  cred_deskadmin_hash{"Desk administrator hash<br/>(deskadmin)"}
+  cred_src_deskadmin_record_file{"desk_rounds_record.dat"}
   cred_graham_hash{"Graham Whitfield hash<br/>(gwhitfield)"}
   cred_src_graham_record_file{"graham_record.dat"}
+  cred_julian_cached_partner{"Julian Sallow hash<br/>(jsallow)"}
   cred_julian_hash{"Julian Sallow hash<br/>(jsallow)"}
   cred_src_julian_record_file{"julian_record.dat"}
+  cred_jun_cached{"Jun Watanabe hash<br/>(jwatanabe)"}
+  cred_niamh_cached_hot_desk{"Niamh Doherty hash<br/>(ndoherty)"}
   cred_printer_admin{"Printer service password<br/>(svc_printer)"}
   cred_src_printer_admin_note{"Printer admin.txt"}
   crackpw_delphine_arvanitis{"Delphine Arvanitis password"}
   cred_src_delphine_photo{"Photo on Delphine's desk"}
   crack_feed_delphine_arvanitis_delphine_post_1{"Delphine Arvanitis feed post delphine_post_1"}
+  crackpw_deskadmin{"Desk administrator password"}
   crackpw_graham_whitfield{"Graham Whitfield password"}
   crackpw_julian_sallow{"Julian Sallow password"}
+  crackpw_jun_watanabe{"Jun Watanabe password"}
+  crack_feed_jun_watanabe_jun_post_1{"Jun Watanabe feed post jun_post_1"}
+  crackpw_niamh_doherty{"Niamh Doherty password"}
   admin_at_delphine_pc{"Delphine's PC<br/>Administrator session"}
   admin_at_jun_pc{"Jun's PC<br/>Administrator session"}
+  admin_at_hot_desk{"Hot desk PC<br/>Administrator session"}
   admin_at_graham_pc{"Graham's PC<br/>Administrator session"}
   admin_at_partner_pc{"Julian's PC<br/>Administrator session"}
   aim_morning{{"Morning: the facts"}}
   aim_midday{{"Midday: crack and sign in"}}
   aim_evening{{"Evening: the trail"}}
+  aim_afternoon_cache{{"Afternoon: what a PC remembers"}}
 
   office --> lock_delphine_pc
   office --> lock_jun_pc
+  office --> lock_hot_desk
   it_room --> lock_graham_pc
   partner_office --> lock_partner_pc
   office --> signin_delphine_arvanitis
   signin_delphine_arvanitis --> lock_delphine_pc
   office --> signin_jun_watanabe
   signin_jun_watanabe --> lock_jun_pc
+  signin_jun_watanabe --> lock_hot_desk
+  office --> signin_niamh_doherty
+  signin_niamh_doherty --> lock_hot_desk
   it_room --> signin_graham_whitfield
   signin_graham_whitfield --> lock_delphine_pc
   signin_graham_whitfield --> lock_jun_pc
+  signin_graham_whitfield --> lock_hot_desk
   signin_graham_whitfield --> lock_graham_pc
   signin_graham_whitfield --> lock_partner_pc
+  it_room --> signin_deskadmin
+  signin_deskadmin --> lock_delphine_pc
+  signin_deskadmin --> lock_jun_pc
+  signin_deskadmin --> lock_hot_desk
   partner_office --> signin_julian_sallow
   signin_julian_sallow --> lock_partner_pc
   clue_social_intelfacts_delphine_dog_name -->|clue| signin_delphine_arvanitis
@@ -293,6 +366,7 @@ flowchart TD
   signin_printer_svc -->|shared with printer_svc| signin_graham_whitfield
   net_office_lan -->|exposes| lock_delphine_pc
   net_office_lan -->|exposes| lock_graham_pc
+  net_office_lan -->|exposes| lock_hot_desk
   net_office_lan -->|exposes| lock_jun_pc
   net_office_lan -->|exposes| lock_partner_pc
   partner_office -->|at USB socket by the partner's PC| implant_partner_pc
@@ -300,31 +374,51 @@ flowchart TD
   device_kit_badusb -->|held| implant_partner_pc
   lock_partner_pc -->|session at PC| implant_partner_pc
   implant_partner_pc --> net_office_lan
+  outage_jun_pc_off --> workaround_jun_watanabe_0
+  workaround_jun_watanabe_0 -->|open session| lock_hot_desk
   office --> kitchen
   office --> it_room
   office --> partner_office
   it_room --> reader_signin_log_pc
   log_signin_log -.- reader_signin_log_pc
   cred_src_delphine_record_file --> cred_delphine_hash
+  cred_src_deskadmin_record_file --> cred_deskadmin_hash
   cred_src_graham_record_file --> cred_graham_hash
   cred_src_julian_record_file --> cred_julian_hash
   cred_src_printer_admin_note --> cred_printer_admin
-  cred_delphine_hash -->|crack (medium)| crackpw_delphine_arvanitis
+  cred_delphine_cached_partner -->|crack (medium)| crackpw_delphine_arvanitis
   cred_src_delphine_photo -->|crack (medium)| crackpw_delphine_arvanitis
   crack_feed_delphine_arvanitis_delphine_post_1 -->|crack (medium)| crackpw_delphine_arvanitis
+  cred_delphine_hash -->|crack (medium)| crackpw_delphine_arvanitis
+  cred_deskadmin_hash -->|crack| crackpw_deskadmin
   cred_graham_hash -->|crack| crackpw_graham_whitfield
+  cred_julian_cached_partner -->|crack| crackpw_julian_sallow
   cred_julian_hash -->|crack| crackpw_julian_sallow
+  cred_jun_cached -->|crack (easy)| crackpw_jun_watanabe
+  crack_feed_jun_watanabe_jun_post_1 -->|crack (easy)| crackpw_jun_watanabe
+  cred_niamh_cached_hot_desk -->|crack| crackpw_niamh_doherty
   signin_graham_whitfield -->|administrator| admin_at_delphine_pc
+  signin_deskadmin -->|administrator| admin_at_delphine_pc
   signin_graham_whitfield -->|administrator| admin_at_jun_pc
+  signin_deskadmin -->|administrator| admin_at_jun_pc
+  signin_graham_whitfield -->|administrator| admin_at_hot_desk
+  signin_deskadmin -->|administrator| admin_at_hot_desk
   signin_graham_whitfield -->|administrator| admin_at_graham_pc
   signin_graham_whitfield -->|administrator| admin_at_partner_pc
+  admin_at_hot_desk -->|collect| cred_niamh_cached_hot_desk
+  admin_at_hot_desk -->|collect| cred_jun_cached
+  workaround_jun_watanabe_0 -->|borrow| cred_jun_cached
+  admin_at_partner_pc -->|collect| cred_julian_cached_partner
+  admin_at_partner_pc -->|collect| cred_delphine_cached_partner
 
-  class lock_delphine_pc,lock_jun_pc,lock_graham_pc,lock_partner_pc,implant_partner_pc lock
-  class signin_delphine_arvanitis,signin_jun_watanabe,signin_graham_whitfield,signin_julian_sallow,signin_printer_svc,device_kit_badusb,cred_delphine_hash,cred_graham_hash,cred_julian_hash,cred_printer_admin,crackpw_delphine_arvanitis,crack_feed_delphine_arvanitis_delphine_post_1,crackpw_graham_whitfield,crackpw_julian_sallow,admin_at_delphine_pc,admin_at_jun_pc,admin_at_graham_pc,admin_at_partner_pc key
+  class lock_delphine_pc,lock_jun_pc,lock_hot_desk,lock_graham_pc,lock_partner_pc,implant_partner_pc lock
+  class signin_delphine_arvanitis,signin_jun_watanabe,signin_niamh_doherty,signin_graham_whitfield,signin_deskadmin,signin_julian_sallow,signin_printer_svc,device_kit_badusb,cred_delphine_cached_partner,cred_delphine_hash,cred_deskadmin_hash,cred_graham_hash,cred_julian_cached_partner,cred_julian_hash,cred_jun_cached,cred_niamh_cached_hot_desk,cred_printer_admin,crackpw_delphine_arvanitis,crack_feed_delphine_arvanitis_delphine_post_1,crackpw_deskadmin,crackpw_graham_whitfield,crackpw_julian_sallow,crackpw_jun_watanabe,crack_feed_jun_watanabe_jun_post_1,crackpw_niamh_doherty,admin_at_delphine_pc,admin_at_jun_pc,admin_at_hot_desk,admin_at_graham_pc,admin_at_partner_pc key
   class office,it_room,partner_office,net_office_lan,kitchen room
-  class clue_social_intelfacts_delphine_dog_name,clue_rooms_office_npcs_1_feed_posts_0,clue_social_intelfacts_delphine_dog_year,clue_it_poster,reader_signin_log_pc,cred_src_delphine_record_file,cred_src_graham_record_file,cred_src_julian_record_file,cred_src_printer_admin_note,cred_src_delphine_photo item
+  class clue_social_intelfacts_delphine_dog_name,clue_rooms_office_npcs_1_feed_posts_0,clue_social_intelfacts_delphine_dog_year,clue_it_poster,reader_signin_log_pc,cred_src_delphine_record_file,cred_src_deskadmin_record_file,cred_src_graham_record_file,cred_src_julian_record_file,cred_src_printer_admin_note,cred_src_delphine_photo item
+  class workaround_jun_watanabe_0 action
+  class outage_jun_pc_off gate
   class log_signin_log note
-  class aim_morning,aim_midday,aim_evening aim
+  class aim_morning,aim_midday,aim_evening,aim_afternoon_cache aim
   class node_start start
 ```
 
@@ -406,29 +500,36 @@ flowchart TD
   rc_office_coffee_9{"Office Coffee Station"}
   rc_office_coffee_socket_10{"Wall socket"}
   rc_tour_notice_11{"Things to try"}
-  rc_npc_ama_owusu_12("Ama Owusu")
-  rc_npc_delphine_arvanitis_13("Delphine Arvanitis")
-  rc_delphine_arvanitis_phone_14{"Delphine's phone"}
-  rc_npc_jun_watanabe_15("Jun Watanabe")
-  rc_npc_niamh_doherty_16("Niamh Doherty")
-  rc_niamh_doherty_phone_17{"Niamh's phone"}
-  rc_feed_kiosk_18{"Office feed tablet"}
-  rc_fridge_19{"Fridge"}
-  rc_microwave_20{"Microwave"}
-  rc_kitchen_coffee_21{"Kitchen Coffee Station"}
-  rc_water_cooler_22{"Water Cooler"}
-  rc_washing_up_tray_23{"Washing-up Tray"}
-  rc_graham_pc_24{"Graham's PC"}
-  rc_secure_bin_25[["Confidential-waste bin"]]
-  rc_delphine_record_file_26{"delphine_record.dat"}
-  rc_graham_record_file_27{"graham_record.dat"}
-  rc_julian_record_file_28{"julian_record.dat"}
-  rc_signin_log_pc_29{"Sign-in log terminal"}
-  rc_npc_graham_whitfield_30("Graham Whitfield")
-  rc_npc_printer_service_31("Printer service")
-  rc_partner_pc_32{"Julian's PC"}
-  rc_partner_pc_socket_33{"USB socket by the partner's PC"}
-  rc_npc_julian_sallow_34("Julian Sallow")
+  rc_hot_desk_12{"Hot desk PC"}
+  rc_jun_pc_socket_13{"Wall socket by Jun's desk"}
+  rc_npc_ama_owusu_14("Ama Owusu")
+  rc_npc_delphine_arvanitis_15("Delphine Arvanitis")
+  rc_delphine_arvanitis_phone_16{"Delphine's phone"}
+  rc_npc_jun_watanabe_17("Jun Watanabe")
+  rc_jun_watanabe_phone_18{"Jun's phone"}
+  rc_npc_niamh_doherty_19("Niamh Doherty")
+  rc_niamh_doherty_phone_20{"Niamh's phone"}
+  rc_feed_kiosk_21{"Office feed tablet"}
+  rc_fridge_22{"Fridge"}
+  rc_microwave_23{"Microwave"}
+  rc_kitchen_coffee_24{"Kitchen Coffee Station"}
+  rc_water_cooler_25{"Water Cooler"}
+  rc_washing_up_tray_26{"Washing-up Tray"}
+  rc_graham_pc_27{"Graham's PC"}
+  rc_secure_bin_28[["Confidential-waste bin"]]
+  rc_delphine_record_file_29{"delphine_record.dat"}
+  rc_graham_record_file_30{"graham_record.dat"}
+  rc_julian_record_file_31{"julian_record.dat"}
+  rc_desk_rota_32{"IT rota sheet"}
+  rc_backups_cabinet_33[["Old backups cabinet"]]
+  rc_deskadmin_record_file_34{"desk_rounds_record.dat"}
+  rc_signin_log_pc_35{"Sign-in log terminal"}
+  rc_npc_graham_whitfield_36("Graham Whitfield")
+  rc_npc_printer_service_37("Printer service")
+  rc_npc_desk_administrator_38("Desk administrator")
+  rc_partner_pc_39{"Julian's PC"}
+  rc_partner_pc_socket_40{"USB socket by the partner's PC"}
+  rc_npc_julian_sallow_41("Julian Sallow")
 
   office --> kitchen
   office --> it_room
@@ -444,33 +545,40 @@ flowchart TD
   office --> rc_office_coffee_9
   office --> rc_office_coffee_socket_10
   office --> rc_tour_notice_11
-  office --> rc_npc_ama_owusu_12
-  office --> rc_npc_delphine_arvanitis_13
-  rc_npc_delphine_arvanitis_13 --> rc_delphine_arvanitis_phone_14
-  office --> rc_npc_jun_watanabe_15
-  office --> rc_npc_niamh_doherty_16
-  rc_npc_niamh_doherty_16 --> rc_niamh_doherty_phone_17
-  kitchen --> rc_feed_kiosk_18
-  kitchen --> rc_fridge_19
-  kitchen --> rc_microwave_20
-  kitchen --> rc_kitchen_coffee_21
-  kitchen --> rc_water_cooler_22
-  kitchen --> rc_washing_up_tray_23
-  it_room --> rc_graham_pc_24
-  it_room --> rc_secure_bin_25
-  rc_secure_bin_25 --> rc_delphine_record_file_26
-  rc_secure_bin_25 --> rc_graham_record_file_27
-  rc_secure_bin_25 --> rc_julian_record_file_28
-  it_room --> rc_signin_log_pc_29
-  it_room --> rc_npc_graham_whitfield_30
-  it_room --> rc_npc_printer_service_31
-  partner_office --> rc_partner_pc_32
-  partner_office --> rc_partner_pc_socket_33
-  partner_office --> rc_npc_julian_sallow_34
+  office --> rc_hot_desk_12
+  office --> rc_jun_pc_socket_13
+  office --> rc_npc_ama_owusu_14
+  office --> rc_npc_delphine_arvanitis_15
+  rc_npc_delphine_arvanitis_15 --> rc_delphine_arvanitis_phone_16
+  office --> rc_npc_jun_watanabe_17
+  rc_npc_jun_watanabe_17 --> rc_jun_watanabe_phone_18
+  office --> rc_npc_niamh_doherty_19
+  rc_npc_niamh_doherty_19 --> rc_niamh_doherty_phone_20
+  kitchen --> rc_feed_kiosk_21
+  kitchen --> rc_fridge_22
+  kitchen --> rc_microwave_23
+  kitchen --> rc_kitchen_coffee_24
+  kitchen --> rc_water_cooler_25
+  kitchen --> rc_washing_up_tray_26
+  it_room --> rc_graham_pc_27
+  it_room --> rc_secure_bin_28
+  rc_secure_bin_28 --> rc_delphine_record_file_29
+  rc_secure_bin_28 --> rc_graham_record_file_30
+  rc_secure_bin_28 --> rc_julian_record_file_31
+  it_room --> rc_desk_rota_32
+  it_room --> rc_backups_cabinet_33
+  rc_backups_cabinet_33 --> rc_deskadmin_record_file_34
+  it_room --> rc_signin_log_pc_35
+  it_room --> rc_npc_graham_whitfield_36
+  it_room --> rc_npc_printer_service_37
+  it_room --> rc_npc_desk_administrator_38
+  partner_office --> rc_partner_pc_39
+  partner_office --> rc_partner_pc_socket_40
+  partner_office --> rc_npc_julian_sallow_41
 
   class office,kitchen,it_room,partner_office room
-  class rc_delphine_pc_1,rc_jun_pc_2,rc_niamh_laptop_3,rc_delphine_photo_4,rc_desk_usb_port_5,rc_printer_admin_note_7,rc_it_poster_8,rc_office_coffee_9,rc_office_coffee_socket_10,rc_tour_notice_11,rc_delphine_arvanitis_phone_14,rc_niamh_doherty_phone_17,rc_feed_kiosk_18,rc_fridge_19,rc_microwave_20,rc_kitchen_coffee_21,rc_water_cooler_22,rc_washing_up_tray_23,rc_graham_pc_24,rc_delphine_record_file_26,rc_graham_record_file_27,rc_julian_record_file_28,rc_signin_log_pc_29,rc_partner_pc_32,rc_partner_pc_socket_33 item
-  class rc_printer_cupboard_6,rc_secure_bin_25 container
-  class rc_npc_ama_owusu_12,rc_npc_delphine_arvanitis_13,rc_npc_jun_watanabe_15,rc_npc_niamh_doherty_16,rc_npc_graham_whitfield_30,rc_npc_printer_service_31,rc_npc_julian_sallow_34 npc
+  class rc_delphine_pc_1,rc_jun_pc_2,rc_niamh_laptop_3,rc_delphine_photo_4,rc_desk_usb_port_5,rc_printer_admin_note_7,rc_it_poster_8,rc_office_coffee_9,rc_office_coffee_socket_10,rc_tour_notice_11,rc_hot_desk_12,rc_jun_pc_socket_13,rc_delphine_arvanitis_phone_16,rc_jun_watanabe_phone_18,rc_niamh_doherty_phone_20,rc_feed_kiosk_21,rc_fridge_22,rc_microwave_23,rc_kitchen_coffee_24,rc_water_cooler_25,rc_washing_up_tray_26,rc_graham_pc_27,rc_delphine_record_file_29,rc_graham_record_file_30,rc_julian_record_file_31,rc_desk_rota_32,rc_deskadmin_record_file_34,rc_signin_log_pc_35,rc_partner_pc_39,rc_partner_pc_socket_40 item
+  class rc_printer_cupboard_6,rc_secure_bin_28,rc_backups_cabinet_33 container
+  class rc_npc_ama_owusu_14,rc_npc_delphine_arvanitis_15,rc_npc_jun_watanabe_17,rc_npc_niamh_doherty_19,rc_npc_graham_whitfield_36,rc_npc_printer_service_37,rc_npc_desk_administrator_38,rc_npc_julian_sallow_41 npc
   class node_start start
 ```

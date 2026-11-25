@@ -29,7 +29,9 @@
     "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Quiet one today, isn't it?", "Have you tried the new sandwich place?"],
     "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
     "grumble_gone": ["Missed it."],
-    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."]
+    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."],
+    "station_fail": ["My PC's dead. Brilliant.", "Why is it off?"],
+    "wk_borrow": ["I'll use the hot desk."]
   },
 
   "actionIcons": {
@@ -60,7 +62,21 @@
     "admin_signin_done": false,
     "profile_read_done": false,
     "override_done": false,
-    "read_log_done": false
+    "read_log_done": false,
+    "se_intel_jun_cat_name": false,
+    "ask_jun": 0,
+    "jun_pc_off": false,
+    "hot_desk_signin_done": false,
+    "collect_partner_done": false,
+    "see_borrow_done": false,
+    "collect_hot_desk_done": false,
+    "crack_cached_done": false,
+    "local_account_done": false,
+    "local_refused_done": false
+  },
+
+  "resources": {
+    "staff_mail": { "kind": "email", "name": "Staff email" }
   },
 
   "startItemsInInventory": [
@@ -130,6 +146,45 @@
       "proof": { "held": "julian_record_file" },
       "crack": { "password": "strong" }
     },
+    "jun_cached": {
+      "kind": "hash",
+      "account": "jun_watanabe",
+      "label": "Record: Jun (hot desk)",
+      "salted": false,
+      "proof": { "harvested": "hot_desk" },
+      "crack": { "password": "guessable", "facts": ["jun_cat_name"], "difficulty": "easy" }
+    },
+    "niamh_cached_hot_desk": {
+      "kind": "hash",
+      "account": "niamh_doherty",
+      "label": "Record: Niamh (hot desk)",
+      "proof": { "harvested": "hot_desk" },
+      "crack": { "password": "common" }
+    },
+    "delphine_cached_partner": {
+      "kind": "hash",
+      "account": "delphine_arvanitis",
+      "label": "Record: Delphine (partner PC)",
+      "salted": true,
+      "crackSeconds": 10,
+      "proof": { "harvested": "partner_pc" },
+      "crack": { "password": "guessable", "facts": ["delphine_dog_name", "delphine_dog_year"], "difficulty": "medium" }
+    },
+    "julian_cached_partner": {
+      "kind": "hash",
+      "account": "julian_sallow",
+      "label": "Record: Julian (partner PC)",
+      "salted": true,
+      "proof": { "harvested": "partner_pc" },
+      "crack": { "password": "strong" }
+    },
+    "deskadmin_hash": {
+      "kind": "hash",
+      "account": "deskadmin",
+      "label": "Record: shared desk account",
+      "proof": { "held": "deskadmin_record_file" },
+      "crack": { "password": "common" }
+    },
     "printer_admin": {
       "kind": "password",
       "account": "printer_svc",
@@ -178,11 +233,18 @@
         "subject": "delphine_arvanitis",
         "source": "delphine_post_1",
         "text": "Delphine's dog came home in 2016."
+      },
+      "jun_cat_name": {
+        "label": "Jun's cat",
+        "subject": "jun_watanabe",
+        "source": "jun_post_1",
+        "text": "Jun's cat is called Biscuit."
       }
     },
     "people": [
       { "id": "delphine_arvanitis", "forms": { "first": "Delphine", "full": "Delphine Arvanitis" } },
-      { "id": "niamh_doherty", "forms": { "first": "Niamh", "full": "Niamh Doherty" } }
+      { "id": "niamh_doherty", "forms": { "first": "Niamh", "full": "Niamh Doherty" } },
+      { "id": "jun_watanabe", "forms": { "first": "Jun", "full": "Jun Watanabe" } }
     ],
     "osint": {
       "sites": [
@@ -207,6 +269,14 @@
               "posts": [
                 { "id": "niamh_authored", "text": "Month end again. Send biscuits." }
               ]
+            },
+            {
+              "person": "jun_watanabe",
+              "name": "Jun Watanabe",
+              "bio": "Office assistant. First job, so be kind.",
+              "posts": [
+                { "id": "jun_authored", "text": "Learning where everything lives. Slowly." }
+              ]
             }
           ]
         }
@@ -217,7 +287,7 @@
   "logSources": {
     "signin_log": {
       "title": "Sign-in log",
-      "events": ["signin_ok", "signin_fail", "signin_lockout", "session_end", "session_lock", "admin_profile_read", "usb_install_overridden"],
+      "events": ["signin_ok", "signin_fail", "signin_lockout", "session_end", "session_lock", "admin_profile_read", "usb_install_overridden", "credentials_harvested", "signin_refused"],
       "seedRows": [
         { "id": "s1", "at": "Mon 17:32", "event": "signin_ok", "as": "graham_whitfield", "where": { "kind": "pc", "id": "graham_pc" }, "result": "ok" },
         { "id": "s2", "at": "Tue 02:10", "event": "signin_fail", "as": "administrator", "where": { "kind": "pc", "id": "graham_pc" }, "result": "fail" },
@@ -267,6 +337,21 @@
       "tasks": [
         { "taskId": "read_log", "title": "Find your own trail in the sign-in log, and flag the night-time failure", "type": "custom", "status": "active" }
       ]
+    },
+    {
+      "aimId": "afternoon_cache",
+      "title": "Afternoon: what a PC remembers",
+      "description": "Do this before you call it a day: Jun leaves with the others. Signing in, the borrow and the shared desk account tick by themselves; tell Ama about each collect, each crack and the refusal.",
+      "status": "active",
+      "order": 3,
+      "tasks": [
+        { "taskId": "collect_partner", "title": "At the partner's PC as Graham, collect the accounts it remembers", "type": "custom", "status": "active" },
+        { "taskId": "see_borrow", "title": "Switch Jun's PC off and watch him borrow the hot desk", "type": "custom", "status": "active" },
+        { "taskId": "collect_hot_desk", "title": "Sign in at the hot desk as Graham and collect what it remembers", "type": "custom", "status": "active" },
+        { "taskId": "crack_cached", "title": "Crack one of the records you collected", "type": "custom", "status": "active" },
+        { "taskId": "local_account", "title": "Sign in at Delphine's PC with the shared desk account", "type": "custom", "status": "active" },
+        { "taskId": "local_refused", "title": "Try the shared desk account at the partner's PC", "type": "custom", "status": "active" }
+      ]
     }
   ],
 
@@ -294,6 +379,7 @@
           "lockType": "login",
           "loginPicker": "accounts",
           "access": { "people": ["delphine_arvanitis"], "roles": ["it"] },
+          "domain": "merrin",
           "affordance": { "satisfies": "work", "useSeconds": 5 },
           "observations": "Delphine's desk PC."
         },
@@ -309,7 +395,9 @@
           "lockType": "login",
           "loginPicker": "accounts",
           "access": { "people": ["jun_watanabe"], "roles": ["it"] },
-          "affordance": { "satisfies": "work", "useSeconds": 5 },
+          "domain": "merrin",
+          "offWhen": "jun_pc_off",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
           "observations": "Jun's desk PC."
         },
         {
@@ -443,7 +531,56 @@
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Read what Delphine posts on the office feed in the kitchen.\n- Take the photo from her desk while she is away.\nMidday:\n- Look round the kitchen, the IT room and the partner's office, then ask Ama to send them to lunch.\n- Take the stored records from the bin in the IT room.\n- Crack them: one will, one will after a wait, one never will.\n- Sign in at Delphine's PC, then try the stick in her desk port.\n- Sign in at the partner's PC as Graham, an administrator, and open the client files.\n- Still signed in there, try the keystroke device in the socket beside the PC.\n- Tell Ama what you find as you go.\nEvening:\n- Call it a day, then read the sign-in log in the IT room."
+          "text": "Morning:\n- Read what Delphine posts on the office feed in the kitchen.\n- Take the photo from her desk while she is away.\nMidday:\n- Look round the kitchen, the IT room and the partner's office, then ask Ama to send them to lunch.\n- Take the stored records from the bin in the IT room.\n- Crack them: one will, one will after a wait, one never will.\n- Sign in at Delphine's PC, then try the stick in her desk port.\n- Sign in at the partner's PC as Graham, an administrator, and open the client files.\n- Still signed in there, try the keystroke device in the socket beside the PC.\n- Tell Ama what you find as you go.\nAfternoon, before you call it a day:\n- Still an administrator at the partner's PC, use Cached accounts on its desktop.\n- Ask Ama to switch Jun's PC off, watch him borrow the hot desk, then sign in there as Graham and collect again.\n- Crack what you collected.\n- Find the shared desk account's record in the IT room, crack it, and try it at Delphine's PC and then at the partner's PC.\nEvening:\n- Call it a day, then read the sign-in log in the IT room."
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk",
+          "name": "Hot desk PC",
+          "host": "MS-HOT-01",
+          "sprite": "pc_desktop",
+          "position": { "x": 6, "y": 7.5 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "people": ["jun_watanabe", "niamh_doherty"], "roles": ["it"] },
+          "domain": "merrin",
+          "cachedAccounts": [{ "npc": "niamh_doherty" }, { "npc": "jun_watanabe", "after": "borrow" }],
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "observations": "A shared desk PC that nobody owns. Staff use it when theirs is out of action."
+        },
+        {
+          "type": "power_socket2",
+          "id": "jun_pc_socket",
+          "name": "Wall socket by Jun's desk",
+          "position": { "x": 8.65625, "y": 5.5 },
+          "spriteVariants": [{ "condition": "globalVars.jun_pc_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.jun_pc_off",
+              "text": "Switch off Jun's PC at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "jun_pc_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "Jun's PC is off. Watch what he does about it." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.jun_pc_off",
+              "text": "Switch Jun's PC back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "jun_pc_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "Jun's PC is back on." }
+              ]
+            }
+          ]
         }
       ],
       "npcs": [
@@ -473,7 +610,12 @@
             { "eventPattern": "usb_refused:desk_usb_port", "cooldown": 0, "completeTask": "usb_refused", "setGlobal": { "usb_refused_done": true } },
             { "eventPattern": "pc_signed_in:partner_pc", "condition": "data.username === 'gwhitfield'", "cooldown": 0, "completeTask": "admin_signin", "setGlobal": { "admin_signin_done": true } },
             { "eventPattern": "network_foothold_gained", "onceOnly": true, "delayMs": 2500, "cooldown": 0, "completeTask": "override", "setGlobal": { "override_done": true }, "bark": "His PC blocks devices, but an administrator's session let it through. That window's the office network. Close it for today." },
-            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } }
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } },
+            { "eventPattern": "npc_workaround:jun_watanabe", "condition": "data.phase === 'done' && data.do === 'borrow_session'", "cooldown": 0, "completeTask": "see_borrow", "setGlobal": { "see_borrow_done": true } },
+            { "eventPattern": "pc_signed_in:hot_desk", "condition": "data.username === 'gwhitfield'", "cooldown": 0, "setGlobal": { "hot_desk_signin_done": true } },
+            { "eventPattern": "pc_signed_in:delphine_pc", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } },
+            { "eventPattern": "pc_signed_in:jun_pc", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } },
+            { "eventPattern": "pc_signed_in:hot_desk", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } }
           ]
         },
         {
@@ -490,7 +632,7 @@
           "voice": { "name": "Despina", "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite, a little chatty. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "reception",
-          "creds": { "username": "darvanitis", "password": "Pepper2016" },
+          "creds": { "username": "darvanitis", "password": "Pepper2016", "accountKind": "domain", "domain": "merrin" },
           "habits": { "password": "guessable", "passwordPattern": "it_poster" },
           "needsHome": "delphine_pc",
           "needsDeferMin": 0.5,
@@ -543,21 +685,50 @@
           "voice": { "name": "Puck", "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
-          "creds": { "username": "jwatanabe", "password": "Marlow-Quarry-Tide-71" },
-          "habits": { "password": "strong" },
+          "creds": { "username": "jwatanabe", "password": "Biscuit123", "accountKind": "domain", "domain": "merrin" },
+          "habits": { "screen": { "lockChance": 0 } },
+          "workNeeds": ["+staff_mail"],
+          "frustration": { "perFail": 35 },
+          "workarounds": [{ "at": 60, "do": "borrow_session", "pc": "hot_desk" }],
           "needsHome": "jun_pc",
           "needsDeferMin": 0.5,
           "needsSpeed": 80,
           "needs": {
             "caffeine": { "decayPerMin": 10, "urgentAt": 40, "initial": 70 },
             "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 },
+            "social_media": { "decayPerMin": 15, "urgentAt": 40, "initial": 70 },
             "hunger": { "decayPerMin": 5, "urgentAt": 40, "initial": 90 }
           },
-          "chatter": { "coffee": ["Third one today. Don't judge.", "Did you see that new rota?"] },
+          "chatter": {
+            "coffee": ["Third one today. Don't judge.", "Did you see that new rota?"],
+            "station_fail": ["It's dead. Of course it's dead.", "Who switched my PC off?", "I only just saved that."],
+            "work_fail": ["I can't work like this.", "Right. That's it. The hot desk."]
+          },
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "jun_watanabe_phone",
+              "name": "Jun's phone",
+              "takeable": true,
+              "owner": "jun_watanabe",
+              "observations": "Jun's mobile, open on the office feed."
+            }
+          ],
+          "feed": {
+            "site": "office_feed",
+            "person": "jun_watanabe",
+            "order": "facts_first",
+            "posts": [
+              { "id": "jun_post_1", "text": "Adopted a cat at the weekend. Biscuit has already claimed the good chair.", "fact": "jun_cat_name", "date": "Tuesday" },
+              { "id": "jun_post_2", "text": "Day three of finding the stationery cupboard. Still lost.", "date": "Tuesday" }
+            ]
+          },
           "eventMappings": [
             { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
-            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false },
+            { "eventPattern": "global_variable_changed:ask_jun", "cooldown": 0, "needs": { "set": { "social_media": 20 } } },
+            { "eventPattern": "global_variable_changed:jun_pc_off", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "work": 20 } } }
           ]
         },
         {
@@ -574,8 +745,7 @@
           "voice": { "name": "Kore", "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
-          "creds": { "username": "ndoherty", "password": "Cobalt-Fennel-Rook-38" },
-          "habits": { "password": "strong" },
+          "creds": { "username": "ndoherty", "password": "Welcome2024", "accountKind": "domain", "domain": "merrin" },
           "needsHome": "niamh_laptop",
           "needsSpeed": 70,
           "needs": {
@@ -700,6 +870,7 @@
           "lockType": "login",
           "loginPicker": "accounts",
           "access": { "roles": ["it"] },
+          "domain": "merrin",
           "affordance": { "satisfies": "work", "useSeconds": 5 },
           "observations": "Graham's desk PC."
         },
@@ -742,6 +913,38 @@
           ]
         },
         {
+          "type": "notice_board1",
+          "id": "desk_rota",
+          "name": "IT rota sheet",
+          "position": { "x": 6, "y": 0.7 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "IT rota, Tuesdays: desk rounds on the shared desk account.\nCovers: Delphine's desk, Jun's desk and the hot desk.\nNot covered: the partner's PC, Graham's PC.\nA copy of that account's stored record is in the old backups cabinet.",
+          "observations": "A rota sheet pinned beside the door."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "backups_cabinet",
+          "name": "Old backups cabinet",
+          "position": { "x": 8.2, "y": 2.6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cabinet of old backup printouts. Nobody has opened it in a year.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "deskadmin_record_file",
+              "name": "desk_rounds_record.dat",
+              "takeable": true,
+              "readable": false,
+              "credential": "deskadmin_hash",
+              "observations": "A stored account record. It is not readable as it stands."
+            }
+          ]
+        },
+        {
           "type": "ops_log_terminal",
           "id": "signin_log_pc",
           "name": "Sign-in log terminal",
@@ -775,7 +978,7 @@
           "voice": { "name": "Umbriel", "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind, a little tired of the same password questions. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "it",
-          "creds": { "username": "gwhitfield", "password": "Brindle-Copper-Gate-52", "admin": true },
+          "creds": { "username": "gwhitfield", "password": "Brindle-Copper-Gate-52", "admin": true, "accountKind": "domain", "domain": "merrin" },
           "habits": { "password": "reused" },
           "needsHome": "graham_pc",
           "needsDeferMin": 0.5,
@@ -807,6 +1010,15 @@
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "service",
           "creds": { "username": "svc_printer", "password": "Brindle-Copper-Gate-52" }
+        },
+        {
+          "id": "deskadmin",
+          "displayName": "Desk administrator",
+          "npcType": "person",
+          "accountOnly": true,
+          "staff": false,
+          "role": "it",
+          "creds": { "username": "deskadmin", "password": "Spring2026", "admin": true, "accountKind": "local", "localTo": ["delphine_pc", "jun_pc", "hot_desk"] }
         }
       ]
     },
@@ -831,6 +1043,8 @@
           "loginPicker": "accounts",
           "policy": "partner",
           "access": { "people": ["julian_sallow"], "roles": ["it"] },
+          "domain": "merrin",
+          "cachedAccounts": [{ "npc": "julian_sallow" }, { "npc": "delphine_arvanitis" }],
           "affordance": { "satisfies": "work", "useSeconds": 5 },
           "observations": "The partner's PC. A tag on the monitor reads Julian."
         },
@@ -873,7 +1087,7 @@
           "voice": { "name": "Rasalgethi", "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "partner",
-          "creds": { "username": "jsallow", "password": "Ferrous-Lantern-Quill-84" },
+          "creds": { "username": "jsallow", "password": "Ferrous-Lantern-Quill-84", "accountKind": "domain", "domain": "merrin" },
           "habits": { "password": "strong" },
           "eventMappings": [
             { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "delayMs": 3000, "cooldown": 0, "fireOnlyWhenLoaded": true, "setVisible": false },
