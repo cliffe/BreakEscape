@@ -2207,6 +2207,21 @@ export class PasswordMinigame extends MinigameScene {
         if ('headless' in info) s.headless = !!info.headless;
         if ('remoteScreen' in info) s.remoteScreen = info.remoteScreen || null;
         if ('host' in info && info.host) s.host = info.host;
+        if (typeof info.domain === 'string' && info.domain.trim() && info.domain.trim() !== s.domain) {
+            // S5c: the remote answer names the PC's domain; show it under the title as the keyboard screen does
+            s.domain = info.domain.trim();
+            const domEl = this.gameContainer?.querySelector?.('.signin-domain');
+            if (domEl) domEl.textContent = `Domain: ${s.domain}`;
+            else {
+                const title = this.gameContainer?.querySelector?.('.signin-title');
+                if (title) {
+                    const div = document.createElement('div');
+                    div.className = 'signin-domain';
+                    div.textContent = `Domain: ${s.domain}`;
+                    title.after(div);
+                }
+            }
+        }
         if ('tiles' in info) s.tiles = Array.isArray(info.tiles) ? info.tiles : [];
         if ('captured' in info) s.captured = Array.isArray(info.captured) ? info.captured : [];
         if ('keyring' in info) s.keyring = Array.isArray(info.keyring) ? info.keyring : [];

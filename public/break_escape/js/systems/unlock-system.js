@@ -937,6 +937,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
                 headless: !!answer?.headless,
                 remoteScreen: answer?.remoteScreen,
                 host: answer?.host || hostLabel,
+                // S5c: the server sends the PC's domain on this answer (a host row of the view carries none)
+                domain: domainOf(answer),
                 tiles: Array.isArray(answer?.loginAccounts) ? answer.loginAccounts : []
             };
         } catch (error) {
@@ -975,7 +977,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             ...(loginDone ? {
                 ...(loginAns.failed ? {} : { picker: loginAns.picker }),
                 headless: loginAns.headless, remoteScreen: loginAns.remoteScreen,
-                host: loginAns.host, tiles: loginAns.tiles, accountsFailed: !!loginAns.failed
+                host: loginAns.host, tiles: loginAns.tiles, accountsFailed: !!loginAns.failed,
+                ...(loginAns.domain ? { domain: loginAns.domain } : {})
             } : { accountsFailed: false }),
             captured: captureAns.list,
             capturedFailed: captureAns.failed,

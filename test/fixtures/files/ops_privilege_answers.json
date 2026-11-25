@@ -2300,5 +2300,54 @@
         }
       }
     }
+  },
+  "remote_lockable_bay_pc": {
+    "status": 200,
+    "body": {
+      "pc_id": "bay_pc",
+      "host": "BAY01",
+      "headless": false,
+      "loginPicker": "accounts",
+      "remoteScreen": "tiles",
+      "loginAccounts": [
+        {
+          "username": "omarsh",
+          "displayName": "Olu Marsh",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "pnair",
+          "displayName": "Priya Nair",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "sokoro",
+          "displayName": "Sam Okoro",
+          "portrait": "assets/characters/male_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "umaquay",
+          "displayName": "Uma Quayle",
+          "portrait": "assets/characters/female_office_worker_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "adelwick",
+          "displayName": "Adel Wick",
+          "portrait": "assets/characters/male_nerd_talk.png",
+          "avatar": null
+        },
+        {
+          "username": "rmenon-adm",
+          "displayName": "Ravi Menon",
+          "portrait": "assets/characters/male_nerd_talk.png",
+          "avatar": null
+        }
+      ],
+      "domain": "northwind"
+    }
   }
 }

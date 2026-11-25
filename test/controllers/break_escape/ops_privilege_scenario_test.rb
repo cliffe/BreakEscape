@@ -238,6 +238,19 @@ module BreakEscape
       checkpoint('beat 8')
     end
 
+    # S5c: the remote sign-in screen's tile answer for the bay PC, over the office foothold, carries the PC's
+    # domain (the client test signin-domain.test.mjs reads this answer by name).
+    def beat_remote_domain
+      post b_path('inventory'), params: { action_type: 'add', item: { type: 'pc', id: 'kit_dropbox', name: 'Network drop box' } }, as: :json
+      assert_response :success, response.body
+      post b_path('network/plant'), params: { jack_id: 'office_port' }, as: :json
+      assert_response :success, response.body
+      get b_path('login_accounts'), params: { pc_id: 'bay_pc', foothold: 'jack_office_port' }, as: :json
+      assert_response :success, response.body
+      body = name_answer('remote_lockable_bay_pc')
+      assert_equal 'northwind', body['domain'], body.to_s
+    end
+
     # beat 9 and 10: ruling B
     def beat_relay
       b_take('text_file', 'adel_assist_code', 'Adel assist code.txt')
@@ -342,6 +355,7 @@ module BreakEscape
       beat_shared_local_admin
       beat_hardened_lab
       beat_domain_admin
+      beat_remote_domain
       @answers
     end
   end

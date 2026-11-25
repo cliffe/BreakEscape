@@ -131,19 +131,32 @@ test('a hostile domain is text, not markup', () => {
     mg.cleanup();
 });
 
-// Waits for the server commit that adds `domain` to the remote lockable answer and re-records ops_privilege_answers.json
-// (a recorded host row named 'remote_lockable_bay_pc' is expected); until it lands the recorded answer does not exist.
-test('a remote sign-in screen names the domain too', { todo: 'server commit adding domain to the remote lockable answer has not landed' }, async () => {
-    const started = [];
+// The real remote path: unlock-system.js asks ApiClient.loginAccounts (answered with the server's recorded
+// remote sign-in answer for the bay PC, which carries `domain`), then the real password minigame redraws.
+test('a remote sign-in screen names the domain too', async () => {
     window.breakEscapeConfig = { gameId: 3 };
-    window.ApiClient = { loginAccounts: async () => ({ loginAccounts: [] }), get: async () => ({}) };
+    window.ApiClient = { loginAccounts: async () => privilegeAnswer('remote_lockable_bay_pc'), get: async () => ({}) };
     window.pcSessions = { has: () => false, get: () => null, screenShown() {} };
     window.networkLinks = { get: () => ({ name: 'L' }), lastView: () => ({ hosts: [] }) };
-    window.MinigameFramework = { mainGameScene: {}, startMinigame: (type, c, params) => { started.push(params); return null; } };
-    const row = privilegeAnswer('remote_lockable_bay_pc');
+    window.gameAlert = () => {};
+    window.playUISound = () => {};
+    document.body.innerHTML = '<div id="mg"></div>';
+    let mg = null;
+    window.MinigameFramework = {
+        mainGameScene: {},
+        currentMinigame: null,
+        endMinigame: () => {},
+        startMinigame: (type, c, params) => {
+            mg = new PasswordMinigame(document.getElementById('mg'), params);
+            window.MinigameFramework.currentMinigame = mg;
+            mg.init();
+            mg.start();
+            return mg;
+        }
+    };
+    const row = { id: 'bay_pc', name: 'Bay desk PC', host: 'BAY01', sprite: 'pc_desktop' };
     await openLoginSignIn(remoteLockable(row, 'jack_office_port'));
-    assert.equal(started[0].signIn.domain, 'northwind');
-    const mg = render({ ...started[0].signIn, picker: false });
+    assert.equal(mg.signIn.domain, 'northwind');
     assert.equal(document.querySelector('.signin-domain')?.textContent, 'Domain: northwind');
     mg.cleanup();
 });
