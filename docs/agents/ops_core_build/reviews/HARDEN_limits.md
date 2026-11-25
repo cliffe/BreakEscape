@@ -49,7 +49,7 @@ Rule kept throughout: the scanner is never loosened to make a run pass. Every al
 - The wrong-code count is cleared only by a pass answer, so after a password unlock a later honest lock by codes is reported.
 - The lock allowance accepts `attemptsLeft` as `0.0` (a one-line `Integer` check, separate).
 - A desktop is judged only for a keyboard password session, never again after a pass (desktop rows are GETs).
-- The host label of a remote sign-in is the answer's own word; a tag mismatch is a finding, agreement is still trusted.
+- The host label of a remote sign-in is the answer's own word; a label that is not the tagged PC's own label (its `host`, else its `name`) rejects the tag, whether the label is unknown, shared or another PC's (R1-m2, fail closed); agreement is still trusted.
 - `bodyText` and `dom` pages not read; sessions from before the first file.
 - **Tag refutation residual.** A sign-in tag moved to admitting PC B is not refuted when the over-counting present map holds the account at its real PC A (held now, or seen there with no later answer naming A that shows it gone, or A is "holder unknown"); it can earn `admin:B`. Any later answer about B showing another account or no session ends the step before that answer is judged. Closed only by a `pcId` on the 200 sign-in answer (not built).
 - **K1 residuals.** (a) A promotion that leaves no answer of its own (`viaPass`, or an ungated object unlock in a route room) keeps the room shut for the scanner, so a later gate there is reported (fails closed). Closed only by a `roomId` on the 200 object-unlock answer (not built). (b) The key changes no shipped scenario's result today: only `lab_physical_pentest` and `test_gate_tailgate` have route rooms and neither has a lock step.
@@ -60,3 +60,25 @@ Rule kept throughout: the scanner is never loosened to make a run pass. Every al
 ## Real captures (U6)
 
 C1 to C3 tagged and C5 untagged are recorded; C4 was not recorded (see `test/fixtures/files/access_leak/tagged/README.md`). The lock-step tag cases (T14, T15) use rows from real server answers tagged by the recorder's rule.
+
+## Decisions and records added at review round 1 (2026-11-25)
+
+- **U4 decision (owner question 1): YES, decided by the orchestrator on 2026-11-25.** An unpromoted route room's door open and `GET room` answers carry `routeRoom: true`. It is a non-secret marker of state the player can already see (the room refuses its objects). U4 (`2afca8969`) stands. Section 9 of the brief records the same.
+- **U4 section 7 item 7 runs.** U4 reported only `bin/ops-golden-compare` (45 runs, 0 failures; reviewer re-run, same result). The payload scan and the opened-state scan the brief names were not recorded by U4 and are not claimed here.
+- **U8 stage check (recorded by review R1, run at head `e1dde1015`):** `access-leak-check.rb` with no entries on the dev games: C1 (242), C2 (243), C3 (241) exit 0 "no leaks found"; C5 (227) exit 2 by default and exit 0 with `--untagged --signin hana@code_pc1#1 --signin cal@plain_pc#1`; C1 with `--signin` or `--logout` exit 2; C2 with an unmatched `--resume` exits 2 on the unused entry; C1 with `--untagged` exit 2. C4 was not recorded.
+- **U6 README line.** "No leaks found on C1 to C3 with the current CLI" was first true at the R1 run above (the U6 commit predates `tag_problem` in the CLI). C2's harvest rules need the game record (`cachedAt`); the library alone gives harvest findings on it, which `access_leak_scanner_tags_mode_test.rb` pins (no tag finding, no unused entry).
+- **R1-m3.** The desk rules now read the checked tag (`mfa_tag_for`), as the second-step close does, so a rejected tag closes the same steps in both (change in `helpdesk_leak_rules.rb`).
+- **R1-m5.** `hand_tag_problem` is removed; `tag_problem(files, mode)` is the only entry.
+
+## U1b handover: each 3.3 path and the test that covers it
+
+Tests are in `test/unit/access_leak_scanner_tags_mfa_test.rb` unless named.
+
+- Cross-PC refutation: T6 (moved tag refuted by the real PC desktop), its honest twin, T6c, T6k, the keyboard-password requirement.
+- First answer about the tagged PC: T6g (desktop, no session, deadline not passed), another account at the PC, the sessions-map variant (T6m variant), T6l (deadline, two halves).
+- Ends that are not refutations: T6d (token deadline passed), T6m (sessions map omits the PC; three sign-in shapes; a locked session of the same account).
+- Window closes: T6f (two cases), a 403 desktop, a lock, `endedPcIds`, a bodyless sign-in row.
+- Windows that never open: an `mfaRequired` answer, a `pc: null` success, a rejected tag.
+- Present map: T6e (second-step scenario, plus the privilege-rule variants in `access_leak_scanner_tags_mode_test.rb`: admin and non-admin, with and without `--resume`), T6h, T6i, T6j (neither rule set active), the tagged-logout and untagged-logout cases.
+- No effect on earn state: the "changes no earn state" test and the `@mfa_at` / `@tg_present` test.
+- Tag rejection and placement: P5, T6b (both halves), the rejected pass, T9, P7 and P10, P2, T7, P8 (a) and (b), T15b.

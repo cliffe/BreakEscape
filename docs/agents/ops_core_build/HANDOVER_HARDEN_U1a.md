@@ -8,7 +8,7 @@ Base commit: `97414316c` (branch `ops-hardening`, after U5). Files: `tools/playt
 - `AccessLeakScanner.tag_route_kind(row)` (`:pc`, `:hash`, nil), `.tag_route_name(row)`, `.tag_value_ok?(value, id_key)`.
 - `AccessLeakScanner.tag_problem(files, mode = :auto)` -> problem string or nil. `files` is `{label => rows}` or `[[label, rows]]`.
   `mode` is `:required`, `:absent` or `:auto`. `.tag_analysis(files, mode)` -> `{problem:, run: :tagged|:untagged|:none}`.
-  `hand_tag_problem(files)` stays as `tag_problem(files, :auto)` (U7's `access_leak_scanner_mfa_r2_test.rb` still calls it); remove with U8.
+  `hand_tag_problem` was removed at review R1 (R1-m5); use `tag_problem`.
 - `scan(lines, ..., tags: :auto)`: raises `ArgumentError` with the problem; also when `signins:` or `logouts:` is non-empty on a tagged run
   (`resumes:` allowed). Sets `@tags_on` (false at construction).
 - Readers (private): `row_pc_tag_raw(row)` (the id as written), `row_pc_tag(row)` (only a sign-in PC of the scenario; nil when `@tags_on` is

@@ -189,10 +189,52 @@ class AccessLeakScannerTagsModeTest < ActiveSupport::TestCase
     assert_nil AccessLeakScanner.tag_problem({ 'cap.jsonl' => [row] }, :auto)
   end
 
-  test 'hand_tag_problem is the :auto check' do
-    assert_nil AccessLeakScanner.hand_tag_problem([['cap.jsonl', [adel_login(1, 'bay_pc')]]])
-    assert_match(/cap.jsonl row 1 holds a `login` tag/,
-                 AccessLeakScanner.hand_tag_problem([['cap.jsonl', [bay_desktop(1).merge('login' => { 'pcId' => 'bay_pc' })]]]))
+  # ---- T6e on the privilege rules: the present map with an admin and a non-admin account, with and without --resume ------------
+
+  def priv_desktop(second, pc_id, session_account, status: 200, access: nil)
+    row = bay_desktop(second)
+    row['path'] = "#{BASE}/container/#{pc_id}"
+    row['status'] = status
+    row['body'] = if status == 200
+                    sess = { 'npcId' => session_account, 'via' => 'password' }
+                    sess['access'] = access if access
+                    { 'container_id' => pc_id, 'contents' => [], 'session' => sess }
+                  else
+                    { 'error' => 'no', 'reason' => 'off' }
+                  end
+    row
+  end
+
+  def priv_signin(second, tag, account, access: nil)
+    body = { 'success' => true, 'npcId' => account, 'username' => account, 'displayName' => account, 'via' => 'password' }
+    body['access'] = access if access
+    at({ 'method' => 'POST', 'path' => "#{BASE}/login", 'status' => 200, 'pc' => pc(tag), 'body' => body }, second)
+  end
+
+  # the account kept at B through a 403 `off`, a tagged sign-in at A, then B's desktop first: clean, whichever kind of account and
+  # with or without a --resume entry (the tags do not reach a resumed session, and the map keeps the account at B)
+  [['admin', 'deskadmin', 'desk_a', 'desk_b', 'admin'], ['non-admin', 'priya', 'bay_pc', 'sam_pc', nil]].each do |kind, who, a, b, access|
+    [false, true].each do |resume|
+      test "T6e (privilege rules): #{kind} account, #{resume ? 'with' : 'without'} a --resume entry, is clean" do
+        rows = [priv_signin(1, b, who, access: access), priv_desktop(2, b, who, access: access),
+                priv_desktop(3, b, nil, status: 403),
+                priv_signin(4, a, who, access: access), priv_desktop(5, b, who, access: access)]
+        opts = resume ? { resumes: ["#{who}@#{b}@#{rows.last['t']}"] } : {}
+        scanner, findings = scan(rows, **opts)
+        assert_empty tag_rules(findings), "#{kind} resume=#{resume}"
+      end
+    end
+  end
+
+  # R1-m9: the real tagged capture C2 (test_ops_privilege, dev game 243) is read by the library. With no game record the harvest rules
+  # report what only the game's `cachedAt` record clears (the CLI, with the game, is clean), so only the tag rules are held to nothing.
+  test 'the real tagged capture C2 is accepted in the required mode and raises no tag finding' do
+    c2 = File.readlines(File.join(FIXTURES, 'access_leak/tagged/c2_test_ops_privilege_game243.jsonl')).map { |l| JSON.parse(l) }
+    assert_nil AccessLeakScanner.tag_problem({ 'c2.jsonl' => c2 }, :required)
+    scanner, findings = scan(c2, tags: :required)
+    assert_empty tag_rules(findings)
+    assert_empty scanner.unused_entries
+    assert_equal %w[harvest_hash harvest_unearned log_row ops_string], findings.map(&:rule).uniq.sort
   end
 
   test 'T16: a tagged file and an untagged file of one run are refused, in either order' do

@@ -449,12 +449,6 @@ class AccessLeakScanner
     tag_analysis(files, mode)[:problem]
   end
 
-  # Thin alias of `tag_problem(files, :auto)` (every refusal, either mode read as it is). The CLI calls `tag_problem` with its own
-  # mode; this stays only for older callers. A top-level `login` key is refused (the recorder writes `pc`, never `login`).
-  def self.hand_tag_problem(files)
-    tag_problem(files, :auto)
-  end
-
   attr_reader :passwords, :items
 
   # served_npcs: when given, the NPC ids whose password the server would serve from
@@ -4687,9 +4681,13 @@ class AccessLeakScanner
           npc = @priv_npcs[body['npcId']]
           return [:rejected, nil] unless npc && BreakEscape::CredentialModel.pc_admits_account?(@priv_pcs[tag], npc)
 
+          # R1-m2: a remote sign-in's host label must be the tagged PC's own label; a shared or unknown label fails closed
           label = body['host']
-          by_label = label.is_a?(String) ? @ops_host_by_label[label] : nil
-          return [:rejected, nil] if by_label && by_label != tag
+          if label.is_a?(String)
+            pc = @priv_pcs[tag]
+            own = pc.is_a?(Hash) ? (pc['host'].presence || pc['name']) : nil
+            return [:rejected, nil] unless own == label
+          end
         end
       when 'lock_session'
         return [:rejected, nil] if body['pcId'].is_a?(String) && body['pcId'] != tag

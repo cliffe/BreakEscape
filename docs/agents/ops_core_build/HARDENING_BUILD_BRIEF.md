@@ -18,8 +18,8 @@ naming PCs by hand.
 3. The cross-PC refutation stays, on its own over-counting present map ("present now" wording, R5-m3). A sessions map that
    shows no session at a tagged PC is an end, never a refutation (R5-1). Only a `success: true` sign-in answer opens a window
    (R5-m1).
-4. Owner questions (section 9) take the recommended answer until the owner says otherwise, **except question 1**: U4 (the
-   server key `routeRoom`) is built only after the owner says yes. Without it U3's K1 reader is inert, and that is fine.
+4. Owner questions (section 9) take the recommended answer until the owner says otherwise, **except question 1**, answered YES on 2026-11-25: U4 (the
+   server key `routeRoom`) was built only after that yes. Without it U3's K1 reader is inert, and that is fine.
 5. Recorded residuals (section 2.4) stay recorded; no unit closes them.
 
 ## Rules for every builder
@@ -828,6 +828,8 @@ first few calls and appended to after each check.
    `lab_physical_pentest` and `test_gate_tailgate` have route rooms, neither has a lock step, and the lock rules are inert without
    one, so no shipped scenario's check changes; it guards future scenarios and churns golden fixtures. Recommended: yes, but low
    priority; a no is also reasonable. Without it, limit C5 item 7 stays, and U4 is dropped.
+   **Decision (orchestrator, 2026-11-25): YES.** An unpromoted route room's door and `GET room` answers carry `routeRoom: true`; it is a
+   non-secret marker of state the player can already see (the room refuses its objects). U4 stands.
    **1 b (round 3).** A second, separate key would close the K1 residual: `roomId` on the 200 object answer of `POST /unlock`
    (section 2.4). Recommended: no for now (fails closed, no shipped scenario affected). If yes, it is its own small server unit
    with controller tests (key present only for an authored object, absent for a runtime one), plus a lock-rules reader and the
