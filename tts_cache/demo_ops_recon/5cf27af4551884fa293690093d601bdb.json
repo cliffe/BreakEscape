@@ -1,0 +1,13 @@
+{
+  "key": "5cf27af4551884fa293690093d601bdb",
+  "npc": "chidi_okeke",
+  "text": "Is there any milk left?",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:46:15Z"
+}

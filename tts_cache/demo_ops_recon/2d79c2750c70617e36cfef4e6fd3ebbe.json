@@ -1,0 +1,13 @@
+{
+  "key": "2d79c2750c70617e36cfef4e6fd3ebbe",
+  "npc": "ama_owusu",
+  "text": "A technique fits one kind of weakness, and a saved link works like a password.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:35:59Z"
+}

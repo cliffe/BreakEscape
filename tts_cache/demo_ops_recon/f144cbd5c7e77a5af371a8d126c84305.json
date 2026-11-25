@@ -1,0 +1,13 @@
+{
+  "key": "f144cbd5c7e77a5af371a8d126c84305",
+  "npc": "ama_owusu",
+  "text": "Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them. Last thing, unplug the box.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:42:29Z"
+}

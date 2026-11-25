@@ -1,0 +1,13 @@
+{
+  "key": "bdd95790dc0dd92f54eb7e31da61bbb2",
+  "npc": "zainab_hussain",
+  "text": "Did you see the car park email?",
+  "voice": "Achernar",
+  "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:55:15Z"
+}

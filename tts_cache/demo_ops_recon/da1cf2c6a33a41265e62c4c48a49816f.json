@@ -1,0 +1,13 @@
+{
+  "key": "da1cf2c6a33a41265e62c4c48a49816f",
+  "npc": "jun_watanabe",
+  "text": "This machine takes forever.",
+  "voice": "Puck",
+  "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:49:20Z"
+}

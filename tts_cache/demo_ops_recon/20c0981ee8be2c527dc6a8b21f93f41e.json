@@ -1,0 +1,13 @@
+{
+  "key": "20c0981ee8be2c527dc6a8b21f93f41e",
+  "npc": "agnieszka_duda",
+  "text": "Whoever set it up did it from my PC, and nobody's touched it since.",
+  "voice": "Callirrhoe",
+  "style": "Merrin & Sallow's part-time bookkeeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:37:57Z"
+}

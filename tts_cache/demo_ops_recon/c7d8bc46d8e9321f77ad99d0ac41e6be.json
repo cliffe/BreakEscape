@@ -1,0 +1,13 @@
+{
+  "key": "c7d8bc46d8e9321f77ad99d0ac41e6be",
+  "npc": "zainab_hussain",
+  "text": "Quiet one today, isn't it?",
+  "voice": "Achernar",
+  "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:55:52Z"
+}
