@@ -353,3 +353,4 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - m09 v3: edit a2e8c4428 (Noor re-cut). Render stopped for the reframe. A Sonnet agent is reframing m09 and m10 to integer scales (edit lists only; ffmpeg-only checks while CA0 captures). After it reports and CA0's B5 capture ends (about 00:50): remotion stills check, render m09 v3 (scratchpad render6.sh + enc_v3.sh), v3 tab on page B.
 - CA0 is capturing B5 (ca19, ca20) on :3456/:147 until about 00:50: no renders or encodes until CA0 pings.
 - Walk-in case f agent still running.
+- 23:40: reframe landed (ea6fcd4db; ending_wide fix 2b53823b6). Walk-in case f fixed (0e95ea0b1, tests 3dc1fb798, handover ee57c2349; a–f pass, c r2 fade is the whole-room-in-view case on the owner form). m10 A/B re-run at the final commit is running (Sonnet, walkproof7). Then: merge main into fix/npc-walk-live, train-check when CA0 frees the machine, GREEN hash to AC0.
