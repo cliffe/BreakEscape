@@ -4193,6 +4193,8 @@ module BreakEscape
 
     def find_npc_in_scenario(npc_id)
       npc = TtsLineResolver.find_npc(@game.scenario_data, npc_id)
+      # S5c: an account with no person behind it answers as an id the scenario does not have.
+      npc = nil if AccessIdentities.account_only?(npc)
       return npc if npc
 
       available_npcs = []

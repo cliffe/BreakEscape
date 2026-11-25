@@ -52,8 +52,10 @@ module BreakEscape
         store << pair
         added << pair
       end
-      player_state['harvestedAccounts'] = store
       unless added.empty?
+        # Written only when something was added: an older save has no such key, and a dirty record
+        # cannot take the lock the keyring stamp needs.
+        player_state['harvestedAccounts'] = store
         write_log_row!('credentials_harvested', as: { account: session_identity(pc_id).dig('creds', 'username') },
                                                 where: { kind: 'pc', id: pc['id'] }, detail: { 'count' => added.length })
         save!

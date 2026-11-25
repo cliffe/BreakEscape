@@ -304,7 +304,9 @@ module BreakEscape
       owner = pc && profile_owner(game, game.scenario_data['accountProfiles'][id.to_s])
       picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts' if pc
       shown = pc && !BreakEscape::NetworkModel.headless?(pc) && game.remote_screen(pc) == 'tiles'
-      owner && shown && picker == 'accounts' && BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
+      # An account-only account has no tile at any sign-in screen (S5c), so its name is never shown.
+      owner && !BreakEscape::AccessIdentities.account_only?(owner) && shown && picker == 'accounts' &&
+        BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
     end
 
     def foothold_name(game, id)

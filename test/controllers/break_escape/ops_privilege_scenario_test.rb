@@ -792,6 +792,26 @@ module BreakEscape
       assert_equal 1, rows('technique_used').size
     end
 
+    # R1-SERVER8: a technique's session grant is judged against the PC's admission, kind included, at run time.
+    test 'a technique grant for a local account on a PC outside its localTo gives no session' do
+      data = scenario
+      data['rooms'].each_value do |room|
+        Array(room['objects']).each do |o|
+          next unless o['id'] == 'store_pc'
+
+          o['services'].each { |svc| svc['weaknesses'].each { |w| w['grants']['session']['account'] = 'deskadmin' if w.dig('grants', 'session') } } if o['services']
+        end
+      end
+      build(data)
+      survey_records
+      sign_in('store_pc', *UMA, foothold: OFFICE)
+      body = ops_technique(OFFICE, FINDING, 'card_stale')
+      assert_response :unprocessable_entity, body.to_s
+      assert_equal 'no_grant', body['reason']
+      assert_equal 'user', level('store_pc')
+      assert_empty rows('technique_used')
+    end
+
     test 'a relay session (the assist code) does not meet the need and the card refuses' do
       build
       survey_records
