@@ -57,6 +57,7 @@ One track per mission. Before choosing, read this table; after the edit is final
 | m07 Architect's Gambit | "Shadow Tide" | 60 s from 0.05 s (its quiet intro) | see its analysis file | 60 s trailer v2 (shipped 2026-11-24) | the drop window at 92.1 s | |
 | m08 The Mole | Noir "Shadowline Protocol" | 60 s from 109.406 s | see its analysis file | 60 s trailer v1 (shipped 2026-11-24) | | |
 | m09 Digital Archaeology | SpyAgro "Action Dub" (`SpyAgro/Action Dub.mp3`) | 60 s from 0.0 s, 2 s fade-out (no natural end) | 120 (`action_dub_60.json`) | 60 s trailer v1 (in review) | Hybrid Attack 0, Hybrid Attack 2, Shadow Protocol (original) | lift on the Mission card at 10.7 s; Hybrid Attack 1/2 left for m10 |
+| m10 Full Disclosure | SpyAgro "Hybrid Attack 1" (`SpyAgro/Hybrid Attack 1.mp3`) | 60 s from 98.599 s (a downbeat), track decays at its end; fade-out 1 s | 140 (`hybrid_attack_1_60.json`) | 60 s trailer v1 (in planning) | Hybrid Attack 2 from 122.4 s; Hybrid Attack 1 from 76.317 s (analysis best) | drop 5.1 s under the hook; lift and strongest hit on the Mission card at 10.28/10.92 s; lift 17.14 s on the mechanic card; hit 34.28 s in `It Goes / at Six` |
 | Whole-game trailer | unassigned (suggestion for the user to hear: a Vocals-set track such as "Safetynet in the Smoke") | | | | | must not reuse a mission's track |
 
 Not tied to a mission: the m01 slideshow used Noir "Shadow In E Minor" (the slideshow video was dropped; the track is free to use).
