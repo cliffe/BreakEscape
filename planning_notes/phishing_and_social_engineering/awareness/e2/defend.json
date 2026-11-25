@@ -140,7 +140,7 @@
           "subject": "Job application",
           "time": "10:10",
           "body": "Dear Hiring Manager,\nPlease find my CV attached for the vacancy.\nFor my privacy the document is protected. When it opens, click Enable Editing and then Enable Content at the top of the page, and the CV will appear.\nRegards,\nJordan Kerr",
-          "attachments": [ { "id": "cv", "label": "CV_JKerr_protected.docx", "kind": "document" } ],
+          "attachments": [ { "id": "cv", "label": "CV_JKerr_protected.doc", "kind": "document" } ],
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "jordan.kerr.cv@hastypost.example" },
           "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
           "truth": {
