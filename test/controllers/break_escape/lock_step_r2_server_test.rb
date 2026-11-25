@@ -168,6 +168,24 @@ module BreakEscape
       end
     end
 
+    test 'a never-met headless email record is no opener; once met it is' do
+      [true, false].each do |locked|
+        data = door_scenario(locked: locked)
+        data['social'] = { 'characters' => { 'ghost' => { 'channels' => { 'email' => 'ghost' },
+                                                           'emailRecord' => { 'unlockable' => ['lab'] } } } }
+        build_step_game(data, 'encounteredNPCs' => %w[amy])
+        body = unlock('door', 'lab', 'ghost', 'npc')[1]
+        assert_equal 'amy', body['opener'], "locked=#{locked}" if body['secondStep']
+        assert_not_includes JSON.generate(game_state['npcStepGrants'] || {}), 'ghost'
+        assert_not_includes JSON.generate(bootstrap.last.dig('rooms', 'lab')), 'ghost'
+      end
+      data = door_scenario(locked: false)
+      data['social'] = { 'characters' => { 'ghost' => { 'channels' => { 'email' => 'ghost' },
+                                                         'emailRecord' => { 'unlockable' => ['lab'] } } } }
+      build_step_game(data, 'encounteredNPCs' => %w[amy ghost])
+      assert_equal 'ghost', unlock('door', 'lab', 'ghost', 'npc')[1]['opener']
+    end
+
     test 'an NPC the player has not met is no opener' do
       build_step_game(door_scenario(locked: false), 'encounteredNPCs' => %w[amy])
       body = unlock('door', 'lab', 'carl', 'npc')[1]

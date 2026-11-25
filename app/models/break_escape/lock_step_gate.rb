@@ -39,7 +39,9 @@ module BreakEscape
       # Only an NPC the player has met whose `unlockable` lists this door counts (validate_npc_unlock); any
       # other string is never stored or echoed, and the owner is named.
       door_npc = target[:subject][:kind] == 'door' && method.to_s == 'npc'
-      named = door_npc && !opener.to_s.empty? && validate_npc_unlock(opener.to_s, target[:subject][:id])
+      # A headless email record counts only once met (validate_npc_unlock alone takes it as met).
+      named = door_npc && !opener.to_s.empty? && Array(player_state['encounteredNPCs']).include?(opener.to_s) &&
+              validate_npc_unlock(opener.to_s, target[:subject][:id])
       opener_id = named ? opener.to_s : owner
       fresh = !(record.is_a?(Hash) && record['kind'] == kind)
       # A step with no owner can never pass: answer the gate, keep no record (every action then 404s)
