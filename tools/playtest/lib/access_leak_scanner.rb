@@ -3573,7 +3573,7 @@ class AccessLeakScanner
 
   CRACK_NEVER_KEYS = %w[crack passwordPattern passwordDifficulty earnedFacts crackRuns crackStarted crackedAccounts].freeze
   CRACK_CREDENTIAL_KEYS = %w[kind account token source proof].freeze
-  CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted].freeze
+  CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted heldItem].freeze
   CRACK_ROW_STATUSES = %w[ready running infeasible cracked].freeze
   CRACK_ACCOUNT_KEYS = %w[npcId username displayName].freeze
   CRACK_ENTRY_KEYS = %w[id kind source account label password gainedAt forThisPc accepted].freeze
@@ -3896,6 +3896,7 @@ class AccessLeakScanner
     return false unless row['label'] == crack_record_label(record[:entry]) && row['kind'] == 'hash'
     return false unless row['account'] == crack_account_block(record[:npc]) && row['salted'] == record[:resolved][:salted]
     return false unless crack_token_ok?(row['token'], record) && crack_scope_keys_ok?(row)
+    return false if row.key?('heldItem') && !crack_held_item_ok?(row['heldItem'], record[:entry])
     return false if row['status'] == 'cracked' && !crack_account_granted?(record[:account])
     return false if row['status'] == 'infeasible' && !(record[:klass] == 'strong' && @crack_infeasible_seen)
 
@@ -3904,6 +3905,12 @@ class AccessLeakScanner
 
     # R2-L4: running only for a salted record of a crackable class, within its own wait, after a running answer
     crack_waiting_record?(record) && @crack_running_seen && wait.is_a?(Integer) && wait.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
+  end
+
+  # R1-A1: heldItem names the file the record's held proof needs, and the capture shows the player holding it.
+  def crack_held_item_ok?(item, entry)
+    BreakEscape::CredentialModel.proof_kind(entry['proof']) == 'held' && item.is_a?(String) &&
+      item == entry.dig('proof', 'held') && @mfa_taken.include?(item)
   end
 
   # The token shape; given a game that can say it, the token it would show for this record (Game#crack_token is pure).
