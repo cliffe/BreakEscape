@@ -182,7 +182,12 @@ module LockStepLeakRules
 
       objects = ls_server_ids(room['objects'], room_id)
       held = Array(room['npcs']).flat_map { |n| n.is_a?(Hash) && n['id'].is_a?(String) ? [n['id']] + ls_server_ids(n['itemsHeld'], n['id'], held: true) : [] }
-      @ls_room_ids[room_id] = objects.to_set
+      # R4-2: an object the server can move out of its room (an NPC's carry with needsTag, a takeable, a player drop) is no proof of
+      # which room an answer served: leave its ids (and its contents') out of the room proof
+      movable = Array(room['objects']).each_with_index.flat_map do |o, i|
+        o.is_a?(Hash) && (o['needsTag'] || o['takeable']) ? ls_server_ids(Array.new(i) + [o], room_id) : []
+      end
+      @ls_room_ids[room_id] = (objects - movable).to_set
       @ls_known_ids.merge(objects + held)
     end
   end
@@ -249,11 +254,19 @@ module LockStepLeakRules
           root['type'] == 'door' && root['roomData'].is_a?(Hash)
       ids = (ls_ids(root['roomData']['objects']) + ls_ids(root['roomData']['npcs'])).to_set
       rooms = @ls_room_ids.select { |_room, room_ids| !(room_ids & ids).empty? }.keys
-      if rooms.size == 1
+      if root['alreadyOpen'] == true && rooms.size > 1
+        nil # R4-2: an open that was already done proves nothing new, and a player drop can put ids of two rooms in one
+      elsif rooms.size == 1
         @ls_rooms << rooms.first
       elsif rooms.size > 1
         add.call('lock_step_content', 'lockstep:room:mixed', '$')
       end
+    elsif root && info[:method] == 'POST' && info[:path].match?(%r{/games/[^/]+/npc_workaround\z}) && root['roomId'].is_a?(String) &&
+          root['roomData'].is_a?(Hash) && @ls_prop_doors.include?(root['roomId'])
+      # R4-3: a prop_door the scenario authors opens its room (serve_opened_room); an ordinary room's own ids prove it
+      ids = (ls_ids(root['roomData']['objects']) + ls_ids(root['roomData']['npcs'])).to_set
+      rooms = @ls_room_ids.select { |_room, room_ids| !(room_ids & ids).empty? }.keys
+      @ls_rooms << root['roomId'] if rooms == [root['roomId']]
     end
   end
 
@@ -275,12 +288,18 @@ module LockStepLeakRules
     rooms.each do |room_id, room|
       next unless room.is_a?(Hash)
 
-      stations = Array(room['objects']) + Array(room['npcs']).flat_map { |n| n.is_a?(Hash) ? Array(n['itemsHeld']) : [] }
-      stations.each do |station|
+      # R4-4: a station's id is the one the server stamps (`<room>_<type>_<i>`, `<npc>_held_<i>`), never its name
+      stations = Array(room['objects']).each_with_index.map { |o, i| [o, o.is_a?(Hash) ? (o['id'].nil? ? "#{room_id}_#{o['type']}_#{i}" : o['id']) : nil] } +
+                 Array(room['npcs']).flat_map do |n|
+                   next [] unless n.is_a?(Hash)
+
+                   Array(n['itemsHeld']).each_with_index.map { |o, i| [o, o.is_a?(Hash) ? (o['id'].nil? ? "#{n['id']}_held_#{i}" : o['id']) : nil] }
+                 end
+      stations.each do |station, stamped_id|
         next unless station.is_a?(Hash) && station['flagRewards']
 
         rewards = station['flagRewards'].is_a?(Hash) ? station['flagRewards'].values : Array(station['flagRewards'])
-        station_id = station['id'] || station['name'] # the server's flag_station_id
+        station_id = stamped_id # the server's flag_station_id
 
         rewards.each do |r|
           next unless r.is_a?(Hash)
@@ -413,7 +432,7 @@ module LockStepLeakRules
   def ls_judge_state_keys(body, add)
     mfa_walk(body) do |hash, path, _parent|
       # R3-SCANNER3: a headless owner's record must not tell the player whether it approves prompts
-      if @ls_active && path.match?(/social\.characters\.[^.]+\.emailRecord\z|social\.mailClient\.contacts\[\d+\]\z/)
+      if @ls_active && path.match?(/social\.characters\.[^.]+\.emailRecord\z|social\.mailClient\.contacts\[\d+\](\.emailRecord)?\z/)
         %w[awareness promptPatience].each { |k| add.call('mfa_secret', "mfa:key:#{k}", safe_path("#{path}.#{k}")) if hash.key?(k) }
       end
       hash.each_key do |key|
@@ -688,7 +707,9 @@ module LockStepLeakRules
       ids = ls_ids(hash['roomData']['objects']) + ls_ids(hash['roomData']['npcs'])
       # owner decision (2026-11-24, R3-SCANNER2): only the root room data of a 200 POST unlock door open that lists no object and no NPC
       # carries nothing a rule could protect; everywhere else id-less room data belongs to every shut gated door
-      unknown = loose && (ids.to_set & @ls_known_ids).empty? && !(ids.empty? && door_open)
+      # R4-1: "no objects and no NPCs" means both lists absent or empty, not "no string ids" (id-less entries are content)
+      empty_room = door_open && Array(hash['roomData']['objects']).empty? && Array(hash['roomData']['npcs']).empty?
+      unknown = loose && (ids.to_set & @ls_known_ids).empty? && !empty_room
       @ls_locks.each do |key, l|
         next unless l[:type] == 'door'
 
@@ -835,6 +856,7 @@ module LockStepLeakRules
       end
       next unless r.is_a?(Hash) && r['type'] == 'unlock_door' && r['success'] == true && r['room_id'].is_a?(String)
 
+      @ls_rooms << r['room_id'] if @ls_reward_doors.include?(r['room_id']) # R4-3: the reward ran unlock_room!
       key = "door:#{r['room_id']}"
       @ls_opened << key if @ls_locks.key?(key) && @ls_reward_doors.include?(r['room_id'])
     end
