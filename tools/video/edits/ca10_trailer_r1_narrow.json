@@ -263,8 +263,8 @@
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.42,
-                    "zoom": 1.25
+                    "cy": 0.5,
+                    "zoom": 1.0
                 },
                 "1:1": {
                     "cx": 0.5,
@@ -309,8 +309,8 @@
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.42,
-                    "zoom": 1.25
+                    "cy": 0.5,
+                    "zoom": 1.0
                 },
                 "1:1": {
                     "cx": 0.5,
@@ -541,14 +541,30 @@
                     "zoom": 1.5
                 },
                 "9:16": {
-                    "cx": 0.46,
+                    "cx": 0.64,
                     "cy": 0.5,
-                    "zoom": 0.65
+                    "zoom": 1.15
                 },
                 "1:1": {
-                    "cx": 0.46,
+                    "cx": 0.59,
                     "cy": 0.5,
                     "zoom": 1.1
+                }
+            },
+            "pushin": {
+                "start": 0,
+                "end": 1,
+                "from_zoom": 1,
+                "to_zoom": 1,
+                "focus_by_aspect": {
+                    "9:16": {
+                        "x": 0.46,
+                        "y": 0.5
+                    },
+                    "1:1": {
+                        "x": 0.335,
+                        "y": 0.5
+                    }
                 }
             }
         },
@@ -588,8 +604,8 @@
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.52,
-                    "zoom": 0.75
+                    "cy": 0.5,
+                    "zoom": 0.77
                 },
                 "1:1": {
                     "cx": 0.5,
@@ -635,12 +651,12 @@
                     "zoom": 1.9
                 },
                 "9:16": {
-                    "cx": 0.36,
+                    "cx": 0.305,
                     "cy": 0.5,
                     "zoom": 1.0
                 },
                 "1:1": {
-                    "cx": 0.38,
+                    "cx": 0.32,
                     "cy": 0.5,
                     "zoom": 1.5
                 }
@@ -668,7 +684,7 @@
             },
             "ca": {
                 "name": "Fake downloads and checks",
-                "tagline": "Play the attack \u00b7 Learn to stop it",
+                "tagline": "Play the attack · Learn to stop it",
                 "hacktivity": "Hacktivity",
                 "cta": "Learn on Hacktivity.co.uk",
                 "layout": {
