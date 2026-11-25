@@ -60,7 +60,8 @@ Pass: `how: 'walked'`; `walk.state` showed `farRoom: 'walk_store'`; no `door_ope
 Note: an unloaded room always sits behind a closed door in this engine, so the unloaded-room route is case (c).
 
 ### (c) Closed unlocked door, unloaded room: `walk_courier`
-1. Check `{"cmd":"eval","fn":"() => !!window.rooms.walk_annex"}` is `false` (never visited).
+0. Start the game with `tools/playtest/new-game.sh 281 --unlock walk_annex`. The room endpoint answers 403 for a room not in unlockedRooms, so a never-unlocked annex cannot load and the courier fades at the doorway (the cause of the first failed case c).
+1. Check `{"cmd":"eval","fn":"() => !!window.rooms.walk_annex"}` is `false` (unlocked, not loaded).
 2. Screenshot `c-start`; set `call_courier` to true.
 3. Within 3 s `window.rooms.walk_annex` exists (the walker loaded it). Screenshot `c-mid` while walking.
 4. Wait for `npc_arrived:walk_courier`; screenshot `c-end`.

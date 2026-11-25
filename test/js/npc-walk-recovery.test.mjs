@@ -252,3 +252,34 @@ test('makeEnv view(): manager.scene, then pathfindingManager.scene, then game.sc
         if (had) Object.defineProperty(globalThis, 'window', had); else delete globalThis.window;
     }
 });
+
+// ── far-room load ────────────────────────────────────────────────────────────
+
+test('a refused room load (server 403) ends the wait at once: doorway fade, no 3 s dead time', async () => {
+    const w = world({ dockLoaded: false });
+    w.dockLoadsOnRequest = false;                 // loadRoom resolves, the room never appears
+    const b = w.addNpc('guard');
+    const t0 = w.clock;
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    for (let i = 0; i < 10; i++) await flush();
+    assert.ok(w.clock - t0 < 1000, `waited ${w.clock - t0} ms`);
+    assert.equal(b.sprite.body.center.x, 320, 'at the doorway');
+    b.arrive();
+    assert.equal(await p, 'faded');
+});
+
+test('a slow room load that finishes inside the wait still walks in', async () => {
+    const w = world({ dockLoaded: false });
+    const b = w.addNpc('guard');
+    let release;
+    w.manager._walkEnv.wait = async (ms) => { w.advance(ms); await flush(); };   // one poll per macrotask
+    w.manager._walkEnv.loadRoom = () => new Promise((r) => { release = () => { w.loadDock(); r(); }; });
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    for (let i = 0; i < 5; i++) await flush();
+    release();
+    for (let i = 0; i < 5; i++) await flush();
+    assert.equal(b.roomId, 'dock');
+    assert.ok(b.sprite.body.center.x > 340, 'spawned in the loaded dock');
+    b.arrive({ x: 160, y: 160 });
+    assert.equal(await p, 'walked');
+});

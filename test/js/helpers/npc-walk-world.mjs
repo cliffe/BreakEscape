@@ -82,6 +82,8 @@ export function world({ locked = false, closed = false, annex = false, dockLoade
         emits, fades, rooms, pfm, npcs, npcManager, visibility, manager, loads, opened, view, player: null,
         dockLoadsOnRequest: true, openedOpts: [], doorSprite,
         get syncs() { return syncs; },
+        get clock() { return clock; },
+        loadDock,
         setHostile(h) { hostile = h; },
         advance(ms) { clock += ms; },
         addNpc(id, { visible = false, at = { x: 160, y: 160 } } = {}) {

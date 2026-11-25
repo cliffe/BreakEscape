@@ -294,11 +294,15 @@ export function installNpcWalk(manager, env = {}) {
     async function ensureLoaded(roomId) {
         const ready = () => !!E.rooms()[roomId] && !!roomBounds(roomId);
         if (ready()) return true;
-        try { const p = E.loadRoom(roomId); p?.catch?.(() => {}); } catch (e) { return false; }
+        // loadRoom settles when the load is over. It resolves without a room when the server
+        // refuses (403 for a room the player never unlocked): stop then, do not wait out the 3 s.
+        let settled = false;
+        try { const p = E.loadRoom(roomId); Promise.resolve(p).catch(() => {}).then(() => { settled = true; }); } catch (e) { return false; }
         const t0 = E.now();
         while (E.now() - t0 < WALK_LOAD_WAIT_MS) {
             await E.wait(100);
             if (ready()) return true;
+            if (settled) { await E.wait(0); return ready(); }
         }
         return ready();
     }
