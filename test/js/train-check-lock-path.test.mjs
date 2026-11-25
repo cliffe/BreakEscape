@@ -139,3 +139,21 @@ test('8 dry mode leaves no lock file and starts nothing', () => {
     assert.equal(existsSync(join(outdir, 'summary.txt')), false);
     assert.deepEqual(lockFilesUnder(root), []);
 });
+
+// R1-C1: a lock that cannot be opened or taken stops the train (exit 2); it never runs unlocked.
+// TRAIN_CHECK_LOCK_ONLY=1 makes the script exit 0 right after it holds the lock.
+test('R1-C1 an unopenable lock file exits 2, an openable one exits 0', () => {
+  const bad = run(wt, { env: { TRAIN_CHECK_PRINT_LOCK: '0', TRAIN_CHECK_LOCK_ONLY: '1', TESTS_LOCK: join(root, 'no', 'such', 'dir', 'x.lock') } });
+  assert.equal(bad.status, 2, bad.stdout + bad.stderr);
+  assert.match(bad.stderr, /cannot open the lock file/);
+  const good = run(wt, { env: { TRAIN_CHECK_PRINT_LOCK: '0', TRAIN_CHECK_LOCK_ONLY: '1', TESTS_LOCK: join(root, 'ok.lock') } });
+  assert.equal(good.status, 0, good.stdout + good.stderr);
+});
+
+test('R1-C1 a lock that flock cannot take exits 2', () => {
+  const d = join(root, 'noflock'); mkdirSync(d, { recursive: true });
+  writeFileSync(join(d, 'flock'), '#!/bin/bash\nexit 1\n'); chmodSync(join(d, 'flock'), 0o755);
+  const r = run(wt, { path: d, env: { TRAIN_CHECK_PRINT_LOCK: '0', TRAIN_CHECK_LOCK_ONLY: '1', TESTS_LOCK: join(root, 'ok2.lock') } });
+  assert.equal(r.status, 2, r.stdout + r.stderr);
+  assert.match(r.stderr, /cannot take the lock/);
+});

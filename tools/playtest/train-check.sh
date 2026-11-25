@@ -93,8 +93,9 @@ if [ "${TRAIN_CHECK_PRINT_LOCK:-0}" = 1 ]; then
   exit 0
 fi
 if [ "$TESTS_LOCK" != none ]; then
-  exec 9>"$TESTS_LOCK"
-  flock 9
+  exec 9>"$TESTS_LOCK" || { echo "cannot open the lock file $TESTS_LOCK: set TESTS_LOCK" >&2; exit 2; }
+  flock 9 || { echo "cannot take the lock $TESTS_LOCK" >&2; exit 2; }
+  [ "${TRAIN_CHECK_LOCK_ONLY:-0}" = 1 ] && exit 0
 else
   echo "WARNING: TESTS_LOCK=none; another train check or test batch may share the test database" >&2
   NOLOCK_WARN=1

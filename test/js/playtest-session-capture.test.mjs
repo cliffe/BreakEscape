@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -369,4 +369,22 @@ test('C2 no row ever carries a login key; the tag functions never throw', async 
   }
   assert.equal(pcTag({ postData() { throw new Error('x'); } }), null);
   assert.equal(hashTag({ postData() { throw new Error('x'); } }, { search: '?%' }), null);
+});
+
+// R1-C2: the Rails tag tests (recorder_tags_scanner_*_test.rb) read their `pc` and `hash` tags from this fixture, a capture the
+// recorder itself wrote. This test rebuilds it and fails if the recorder's output no longer matches the file.
+// To refresh after a recorder change: UPDATE_RECORDER_TAGS=1 bin/test-js test/js/playtest-session-capture.test.mjs
+test('R1-C2 the recorder tag fixture is what the recorder writes', async () => {
+  const PCS = ['code_pc1', 'plain_pc', 'bay_pc', 'store_pc', 'lobby_cabinet'];
+  const HASHES = ['dana_hash', 'farah_hash', 'sparedesk_hash', 'eli_hash'];
+  const { file, cap } = fresh();
+  for (const id of PCS) cap.onResponse(res(G + '/login', { method: 'POST', body: CRACK_ANSWER, postData: JSON.stringify({ pc_id: id }) }));
+  for (const id of HASHES) cap.onResponse(res(G + '/crack', { method: 'POST', body: CRACK_ANSWER, postData: JSON.stringify({ hash_id: id, facts: [] }) }));
+  await cap.flush();
+  const rows = lines(file).map(({ pc, hash }) => (pc ? { pc } : { hash }));
+  assert.equal(rows.length, PCS.length + HASHES.length);
+  const text = rows.map(r => JSON.stringify(r)).join('\n') + '\n';
+  const path = join(root, 'test/fixtures/files/recorder_tag_rows.jsonl');
+  if (process.env.UPDATE_RECORDER_TAGS) writeFileSync(path, text);
+  assert.equal(readFileSync(path, 'utf8'), text);
 });

@@ -23,6 +23,15 @@ module BreakEscape
       File.readlines(File.join(FIXTURES, 'ops_mfa_real_capture_rows.jsonl')).map { |l| JSON.parse(l) }.sort_by { |r| r['n'] }
     end
 
+    # R1-C2: the tag is the recorder's own output (recorder_tag_rows.jsonl, rebuilt and checked by test/js/playtest-session-capture.test.mjs),
+    # looked up by PC id; a missing id fails here rather than being made up.
+    def recorder_pc_tag(pc_id)
+      @recorder_tags ||= File.readlines(File.join(FIXTURES, 'recorder_tag_rows.jsonl')).map { |l| JSON.parse(l) }
+      row = @recorder_tags.find { |r| r.dig('pc', 'pcId') == pc_id }
+      assert row, "the recorder fixture has no pc tag for #{pc_id}"
+      row['pc']
+    end
+
     def pc_route?(row)
       row['method'] == 'POST' && PC_ROUTES.any? { |r| row['path'].end_with?("/#{r}") }
     end
@@ -48,7 +57,7 @@ module BreakEscape
       assert_equal [[], []], base, 'the untagged run is clean'
       bare_base = scan(plain, scenario)
       assert_equal [['mfa_session', 'mfa:session:cal'], ['mfa_session', 'mfa:session:hana']], bare_base.first.map { |f| f[1, 2] }.uniq.sort
-      { 'with the PC' => ->(r) { { 'pcId' => MFA_PCS.fetch(r['n']) } }, 'unreadable' => ->(_r) { nil } }.each do |label, pc_for|
+      { 'with the PC' => ->(r) { recorder_pc_tag(MFA_PCS.fetch(r['n'])) }, 'unreadable' => ->(_r) { nil } }.each do |label, pc_for|
         rows = tagged(plain, &pc_for)
         assert_equal 5, rows.count { |r| r.key?('pc') }, label
         assert_nil AccessLeakScanner.hand_tag_problem({ 'capture.jsonl' => rows }), "#{label}: the tag is not refused"
@@ -58,7 +67,7 @@ module BreakEscape
     end
 
     test 'a tag that names a different PC from the capture changes nothing, because the scanner does not read it yet' do
-      rows = tagged(mfa_rows) { |_r| { 'pcId' => 'plain_pc' } }
+      rows = tagged(mfa_rows) { |_r| recorder_pc_tag('plain_pc') }
       assert_equal [[], []], scan(rows, scenario, signins: NAMES)
     end
 
@@ -85,7 +94,7 @@ module BreakEscape
           copy = Marshal.load(Marshal.dump(row))
           if pc_route?(copy)
             ahead = rows[i..].find { |r| r['path'].to_s =~ %r{/container/(\w+)\z} }
-            copy['pc'] = { 'pcId' => ahead ? ahead['path'][%r{/container/(\w+)\z}, 1] : 'bay_pc' }
+            copy['pc'] = recorder_pc_tag(ahead ? ahead['path'][%r{/container/(\w+)\z}, 1] : 'bay_pc')
           end
           copy
         end
