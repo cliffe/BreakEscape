@@ -1,0 +1,13 @@
+{
+  "key": "5d2c0a490889447b193ad1be69feef6e",
+  "npc": "ama_owusu",
+  "text": "Next time Graham's away from his desk, try that password on his PC. Same password, typed by hand.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:34:14Z"
+}

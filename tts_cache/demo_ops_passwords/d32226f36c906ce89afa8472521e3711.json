@@ -1,0 +1,13 @@
+{
+  "key": "d32226f36c906ce89afa8472521e3711",
+  "npc": "graham_whitfield",
+  "text": "Missed it.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind, a little tired of the same password questions. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:58:27Z"
+}

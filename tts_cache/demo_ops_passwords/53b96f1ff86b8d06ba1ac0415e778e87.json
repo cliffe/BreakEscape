@@ -1,0 +1,13 @@
+{
+  "key": "53b96f1ff86b8d06ba1ac0415e778e87",
+  "npc": "ama_owusu",
+  "text": "Walk round the kitchen, the IT room and the partner's office first.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:31:16Z"
+}

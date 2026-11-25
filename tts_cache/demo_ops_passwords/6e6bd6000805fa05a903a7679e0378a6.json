@@ -1,0 +1,13 @@
+{
+  "key": "6e6bd6000805fa05a903a7679e0378a6",
+  "npc": "ama_owusu",
+  "text": "Sign in at the hot desk as Graham and collect what it remembers, then tell me.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:33:01Z"
+}

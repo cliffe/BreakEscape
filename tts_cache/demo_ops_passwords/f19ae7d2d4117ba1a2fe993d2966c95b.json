@@ -1,0 +1,13 @@
+{
+  "key": "f19ae7d2d4117ba1a2fe993d2966c95b",
+  "npc": "ama_owusu",
+  "text": "If you pressed Crack before you had the note, run it again now.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:31:56Z"
+}
