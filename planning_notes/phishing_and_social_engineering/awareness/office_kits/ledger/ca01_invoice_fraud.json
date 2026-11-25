@@ -2,13 +2,13 @@
  "scenario": "ca01_invoice_fraud",
  "lists": {
   "host": [
-   {"k": null, "h": "a2de4077"},
-   {"k": null, "h": "a8a7d6de"},
-   {"k": "quiet_on", "h": "dffdbba4"},
-   {"k": "attack_done", "h": "85cab95c"},
-   {"k": "defend_done", "h": "a5b78c33"},
-   {"k": "caught", "h": "dc6d8ac6"},
-   {"k": "quiet_off_debrief", "h": "cd25b97c"}
+   {"k": null, "h": "07f8d965"},
+   {"k": null, "h": "da951785"},
+   {"k": "quiet_on", "h": "3b634b70"},
+   {"k": "attack_done", "h": "b2cc5f79"},
+   {"k": "defend_done", "h": "b4bf2bdc"},
+   {"k": "caught", "h": "5dcc3a48"},
+   {"k": "quiet_off_debrief", "h": "056f47fe"}
   ]
  }
 }

@@ -2,14 +2,14 @@
  "scenario": "ca04_exec_whaling_defend",
  "lists": {
   "host": [
-   {"k": null, "h": "ba2f964f"},
-   {"k": "quiet_on", "h": "ade0a91e"},
-   {"k": "defend_done", "h": "1852f5b0"},
-   {"k": "caught", "h": "7f4a568b"},
-   {"k": "quiet_off_debrief", "h": "5656c7fd"}
+   {"k": null, "h": "2a4c6732"},
+   {"k": "quiet_on", "h": "95f9b858"},
+   {"k": "defend_done", "h": "5e9b5eaf"},
+   {"k": "caught", "h": "8d87df3a"},
+   {"k": "quiet_off_debrief", "h": "2c786843"}
   ],
   "npc:kit_julian_sallow": [
-   {"k": "chg_defend_done_knot_ca04_react", "h": "1695ba09"}
+   {"k": "chg_defend_done_knot_ca04_react", "h": "8fc46f35"}
   ]
  }
 }

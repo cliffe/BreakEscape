@@ -2,35 +2,35 @@
  "scenario": "ca07_voice_ceo",
  "lists": {
   "host": [
-   {"k": null, "h": "c53b8f14"},
-   {"k": null, "h": "a14cacbe"},
-   {"k": "quiet_on", "h": "908ce938"},
-   {"k": "attack_done", "h": "ce1399f7"},
-   {"k": "defend_done", "h": "b86be27f"},
-   {"k": "caught", "h": "9b0d3eeb"},
-   {"k": "quiet_off_debrief", "h": "c4e8bcc0"},
-   {"k": "quiet_off_debrief_seen", "h": "a1c84a2a"},
-   {"k": "step_away", "h": "d77866cf"},
-   {"k": "chg_ca07_call_choice", "h": "53924af5"}
+   {"k": null, "h": "b0b31048"},
+   {"k": null, "h": "9aa5d15e"},
+   {"k": "quiet_on", "h": "71ce28cf"},
+   {"k": "attack_done", "h": "5eb7a24b"},
+   {"k": "defend_done", "h": "954ec9b2"},
+   {"k": "caught", "h": "e0ca7462"},
+   {"k": "quiet_off_debrief", "h": "934c6fcc"},
+   {"k": "quiet_off_debrief_seen", "h": "4c323673"},
+   {"k": "step_away", "h": "4e5b0b4f"},
+   {"k": "chg_ca07_call_choice", "h": "e045de76"}
   ],
   "npc:kit_graham_whitfield": [
-   {"k": "chg_out_sets_ca07_there", "h": "770fbd25"},
-   {"k": "chg_out", "h": "2c4fe339"},
-   {"k": "chg_ca07_there_knot_ca07_call", "h": "81cc1c2b"},
-   {"k": "chg_ca07_there_sets_ca07_asked", "h": "44193237"},
-   {"k": "conversation_closed_graham_whitfield_sets_ca07_call_choice", "h": "b1b47865"},
-   {"k": "chg_ca07_call_choice_sets_ca07_moved", "h": "9c46b0ac"},
-   {"k": "chg_ca07_call_choice_sets_ca07_done", "h": "e35a1f34"},
-   {"k": "chg_ca07_moved_sets_ca07_done", "h": "cd91251a"},
-   {"k": "chg_ca07_done_sets_ca07_call_choice", "h": "030596e5"},
-   {"k": "chg_ca07_there_knot_ca07_call~rearm", "h": "fae94b12"},
-   {"k": "chg_ca07_there_sets_ca07_asked~rearm", "h": "49da0d00"},
-   {"k": "chg_ca07_there_sets_ca07_asked~rearm_cue", "h": "e134a399"}
+   {"k": "chg_out_sets_ca07_there", "h": "cd610333"},
+   {"k": "chg_out", "h": "ed899379"},
+   {"k": "chg_ca07_there_knot_ca07_call", "h": "6eab1b58"},
+   {"k": "chg_ca07_there_sets_ca07_asked", "h": "316a6101"},
+   {"k": "conversation_closed_graham_whitfield_sets_ca07_call_choice", "h": "f5738839"},
+   {"k": "chg_ca07_call_choice_sets_ca07_moved", "h": "4c5078e4"},
+   {"k": "chg_ca07_call_choice_sets_ca07_done", "h": "a99683ff"},
+   {"k": "chg_ca07_moved_sets_ca07_done", "h": "396ee8bd"},
+   {"k": "chg_ca07_done_sets_ca07_call_choice", "h": "f2e8c765"},
+   {"k": "chg_ca07_there_knot_ca07_call~rearm", "h": "e2131033"},
+   {"k": "chg_ca07_there_sets_ca07_asked~rearm", "h": "d36e0314"},
+   {"k": "chg_ca07_there_sets_ca07_asked~rearm_cue", "h": "c8201c4a"}
   ],
   "npc:kit_gwen_pritchard": [
-   {"k": "chg_out", "h": "85a74b6e"},
-   {"k": "chg_out_2", "h": "866a6e77"},
-   {"k": "chg_ca07_done", "h": "14db6b59"}
+   {"k": "chg_out", "h": "8d1c7ea7"},
+   {"k": "chg_out_2", "h": "79a3b145"},
+   {"k": "chg_ca07_done", "h": "1e1d19dc"}
   ]
  }
 }

@@ -2,16 +2,16 @@
  "scenario": "test_ca12_fallback",
  "lists": {
   "host": [
-   {"k": null, "h": "66bd0b43"},
-   {"k": null, "h": "2cee25f7"},
-   {"k": "quiet_on", "h": "316f407a"},
-   {"k": "attack_done", "h": "d9e95fa4"},
-   {"k": "defend_done", "h": "75449e95"},
-   {"k": "caught", "h": "46dc1cca"},
-   {"k": "quiet_off_debrief", "h": "e65b2a78"}
+   {"k": null, "h": "501cdd17"},
+   {"k": null, "h": "ff4e056e"},
+   {"k": "quiet_on", "h": "ee9704ff"},
+   {"k": "attack_done", "h": "3a1ca384"},
+   {"k": "defend_done", "h": "dc17d87d"},
+   {"k": "caught", "h": "49f17eee"},
+   {"k": "quiet_off_debrief", "h": "dce8b7f9"}
   ],
   "npc:kit_camila_ospina": [
-   {"k": "chg_defend_done", "h": "edd7b5b5"}
+   {"k": "chg_defend_done", "h": "ca68d9e7"}
   ]
  }
 }

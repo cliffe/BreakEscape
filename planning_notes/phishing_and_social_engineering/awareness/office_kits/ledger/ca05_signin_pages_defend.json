@@ -2,14 +2,14 @@
  "scenario": "ca05_signin_pages_defend",
  "lists": {
   "host": [
-   {"k": null, "h": "5b422591"},
-   {"k": "quiet_on", "h": "068601c7"},
-   {"k": "defend_done", "h": "011aedd7"},
-   {"k": "caught", "h": "66badfa3"},
-   {"k": "quiet_off_debrief", "h": "71ba7234"}
+   {"k": null, "h": "f08fbc47"},
+   {"k": "quiet_on", "h": "4554df27"},
+   {"k": "defend_done", "h": "d55994e7"},
+   {"k": "caught", "h": "009c38f0"},
+   {"k": "quiet_off_debrief", "h": "080d5c18"}
   ],
   "npc:kit_darren_price": [
-   {"k": "chg_defend_done_knot_ca05_react", "h": "6965beb7"}
+   {"k": "chg_defend_done_knot_ca05_react", "h": "75e5402b"}
   ]
  }
 }

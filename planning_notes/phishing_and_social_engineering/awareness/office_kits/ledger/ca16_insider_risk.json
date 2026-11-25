@@ -2,37 +2,37 @@
  "scenario": "ca16_insider_risk",
  "lists": {
   "host": [
-   {"k": null, "h": "77a737c1"},
-   {"k": "quiet_on", "h": "22f3d315"},
-   {"k": "attack_done", "h": "84227627"},
-   {"k": "defend_done", "h": "66965570"},
-   {"k": "caught", "h": "2934716c"},
-   {"k": "quiet_off_debrief", "h": "ac2d5b39"},
-   {"k": "quiet_off_debrief_seen", "h": "370175e7"},
-   {"k": "step_away", "h": "a31bf53c"}
+   {"k": null, "h": "c1ab1eb5"},
+   {"k": "quiet_on", "h": "469771e5"},
+   {"k": "attack_done", "h": "76554dff"},
+   {"k": "defend_done", "h": "40b5ade6"},
+   {"k": "caught", "h": "087da52d"},
+   {"k": "quiet_off_debrief", "h": "d6f0da33"},
+   {"k": "quiet_off_debrief_seen", "h": "207d87fa"},
+   {"k": "step_away", "h": "7d708104"}
   ],
   "npc:kit_darren_price": [
-   {"k": "chg_ca16_out", "h": "e265c4da"},
-   {"k": "chg_ca16_done", "h": "1b2563bb"}
+   {"k": "chg_ca16_out", "h": "911c9dca"},
+   {"k": "chg_ca16_done", "h": "97ad334b"}
   ],
   "npc:kit_niamh_doherty": [
-   {"k": "chg_ca16_out", "h": "071d1f46"},
-   {"k": "chg_ca16_out_2", "h": "5d61c450"},
-   {"k": "npc_use_failed_niamh_doherty_sets_ca16_signin_failed", "h": "54e67870"},
-   {"k": "chg_ca16_signin_failed", "h": "d30e82cf"},
-   {"k": "chg_ca16_signin_failed_2", "h": "c6ba76e7"},
-   {"k": "npc_arrived_niamh_doherty_sets_ca16_there", "h": "5b2d5324"},
-   {"k": "chg_ca16_there_knot_ca16_signin", "h": "d59b6925"},
-   {"k": "chg_ca16_there_sets_ca16_asked", "h": "6a0c1698"},
-   {"k": "conversation_closed_niamh_doherty_sets_ca16_signin_choice", "h": "105f9493"},
-   {"k": "chg_ca16_signin_choice", "h": "493acc8b"},
-   {"k": "chg_ca16_signin_choice_sets_ca16_done", "h": "edd770c5"},
-   {"k": "chg_ca16_done_sets_ca16_signin_choice", "h": "51da2eff"},
-   {"k": "chg_ca16_done", "h": "1b2563bb"},
-   {"k": "chg_ca16_done_2", "h": "f59a3027"},
-   {"k": "chg_ca16_there_knot_ca16_signin~rearm", "h": "a0d1e2c8"},
-   {"k": "chg_ca16_there_sets_ca16_asked~rearm", "h": "63dc536d"},
-   {"k": "chg_ca16_there_sets_ca16_asked~rearm_cue", "h": "b9f24cba"}
+   {"k": "chg_ca16_out", "h": "47403fe9"},
+   {"k": "chg_ca16_out_2", "h": "2d476209"},
+   {"k": "npc_use_failed_niamh_doherty_sets_ca16_signin_failed", "h": "544d4cac"},
+   {"k": "chg_ca16_signin_failed", "h": "ba7e2a19"},
+   {"k": "chg_ca16_signin_failed_2", "h": "187fb870"},
+   {"k": "npc_arrived_niamh_doherty_sets_ca16_there", "h": "dfe63d21"},
+   {"k": "chg_ca16_there_knot_ca16_signin", "h": "524199e3"},
+   {"k": "chg_ca16_there_sets_ca16_asked", "h": "5c1fc22f"},
+   {"k": "conversation_closed_niamh_doherty_sets_ca16_signin_choice", "h": "42be8d9e"},
+   {"k": "chg_ca16_signin_choice", "h": "9a3832f5"},
+   {"k": "chg_ca16_signin_choice_sets_ca16_done", "h": "ea189adf"},
+   {"k": "chg_ca16_done_sets_ca16_signin_choice", "h": "478231f8"},
+   {"k": "chg_ca16_done", "h": "97ad334b"},
+   {"k": "chg_ca16_done_2", "h": "d678f211"},
+   {"k": "chg_ca16_there_knot_ca16_signin~rearm", "h": "ec526857"},
+   {"k": "chg_ca16_there_sets_ca16_asked~rearm", "h": "f015ec94"},
+   {"k": "chg_ca16_there_sets_ca16_asked~rearm_cue", "h": "343a42cf"}
   ]
  }
 }

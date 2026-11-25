@@ -43,9 +43,9 @@ identity must not be guessed from content on each run. With a ledger the record 
 the kit no longer has is a drop (tail only), a new key is added last. No ledger: the keys are inferred once and
 stored. After a hand edit of a shell's mapping list (ledger out of step) run
        python3 apply_training_room.py [--repo <checkout>] --rebuild-ledger [shell ...]
-Each ledger entry is {"k": key-or-null, "h": 8-hex hash of the record as written, _kitKey stripped}; a kit record
+Each ledger entry is {"k": key-or-null, "h": 8-hex hash of the key plus the record as written, _kitKey stripped}; a kit record
 that no longer matches its hash, or a hand record that is a kit record, raises KitMergeError (run --rebuild-ledger
-after checking). A --kit run writes a changed ledger to <outdir>/<shell>/kit_ledger.json: copy it with the shell.
+after checking; it also adopts a hand record equal to the kit's output for a key, labelling it with that key; an old-format ledger is refused the same way). A --kit run writes a changed ledger to <outdir>/<shell>/kit_ledger.json: copy it with the shell.
 
 The outdir is required: the tool never writes into scenarios/ (generate into scratch, diff, copy back what
 you mean to change). A shell holding hand-written kit content that the kit data would not write back is

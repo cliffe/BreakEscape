@@ -184,7 +184,7 @@ class R3Findings(LedgerBase):
                 'onceOnly': True, 'setGlobal': {'hand_flag': True}}
         self.hosts(sc).append(hand)
         led = {**self.ledger, 'host': self.ledger['host'] + [None],
-               '_hashes': {**self.ledger['_hashes'], 'host': self.ledger['_hashes']['host'] + [ok.record_hash(hand)]}}
+               '_hashes': {**self.ledger['_hashes'], 'host': self.ledger['_hashes']['host'] + [ok.record_hash(hand, None)]}}
 
         def edit(bk):
             by_key(bk, 'chg_ca02_asked')['condition'] = by_key(bk, 'chg_ca02_asked')['condition'] + ' && true'
@@ -288,8 +288,59 @@ class HashChecks(LedgerBase):
         self.hosts(sc).pop(i)
         self.hosts(sc).insert(0, copy.deepcopy(self.hosts(self.sc)[i]))
         led['host'].insert(0, None)
-        led['_hashes']['host'].insert(0, ok.record_hash(self.hosts(sc)[0]))
+        led['_hashes']['host'].insert(0, ok.record_hash(self.hosts(sc)[0], None))
         self.refuses(None, sc=sc, ledger=led)
+
+    def test_m1_swapping_only_the_k_fields_of_two_ledger_entries_is_refused(self):
+        led = copy.deepcopy(self.ledger)
+        led['host'][3], led['host'][4] = led['host'][4], led['host'][3]     # hashes kept
+        msg = self.refuses(None, ledger=led)
+        self.assertIn('no longer matches the ledger', msg)
+
+    def test_m1_the_hash_covers_the_key_and_a_null_hand_entry_still_checks(self):
+        rec = self.hosts(self.sc)[3]
+        self.assertNotEqual(ok.record_hash(rec, 'a'), ok.record_hash(rec, 'b'))
+        self.assertNotEqual(ok.record_hash(rec, 'a'), ok.record_hash(rec, None))
+        led = copy.deepcopy(self.ledger)
+        led['host'][3] = None           # a kit entry nulled, hash kept: it now reads as a hand record
+        self.refuses(None, ledger=led)
+        led = copy.deepcopy(self.ledger)
+        i = led['host'].index('caught')
+        led['host'][i] = None
+        self.refuses(None, ledger=led)  # hand entry holding a kit record
+
+    def test_m2_an_old_format_or_mixed_ledger_is_refused_and_names_rebuild(self):
+        with open(ok.ledger_path(SID)) as f:
+            doc = json.load(f)
+        for mutate in (lambda lists: [lists.__setitem__(k, [e['k'] for e in v]) for k, v in list(lists.items())],
+                       lambda lists: lists.__setitem__('host', [e['k'] for e in lists['host']])):
+            d2 = copy.deepcopy(doc)
+            mutate(d2['lists'])
+            with tempfile.TemporaryDirectory() as d, mock.patch.object(ok, 'LEDGER_DIR', d):
+                with open(ok.ledger_path(SID), 'w') as f:
+                    json.dump(d2, f)
+                with self.assertRaises(ok.KitMergeError) as a:
+                    ok.load_ledger(SID)
+                self.assertIn('--rebuild-ledger', str(a.exception))
+
+    def test_m3_rebuild_adopts_a_hand_record_that_equals_the_kits_output_and_the_next_run_passes(self):
+        sc = copy.deepcopy(self.sc)
+        moved = copy.deepcopy(self.hosts(sc)[0])        # hand idx 0, now also written by the kit
+        added = {**copy.deepcopy(moved), ok.KEY: 'moved_from_hand'}
+
+        def edit(bk):
+            bk['mappings'].append(copy.deepcopy(added))
+        self.refuses(edit, sc=sc, text='--rebuild-ledger')
+        text = json.dumps(sc, indent=2)
+        with mock.patch.object(ok, 'build', edited_build(edit)):
+            led = atr.infer_shell_ledger(text, self.kit, self.row)
+        self.assertEqual(led['host'][0], 'moved_from_hand')
+        self.assertEqual(led['host'][1:], self.ledger['host'][1:])
+        got, led2 = self.apply(edit, sc=sc, ledger=led)
+        self.assertEqual(self.hosts(got), self.hosts(sc))               # nothing appended twice
+        self.assertEqual(led2['host'], led['host'])
+        got2, led3 = self.apply(edit, sc=got, ledger=led2)               # and it stays stable
+        self.assertEqual(led3, led2)
 
     def test_the_ledger_file_is_one_entry_per_line_and_round_trips(self):
         with tempfile.TemporaryDirectory() as d:

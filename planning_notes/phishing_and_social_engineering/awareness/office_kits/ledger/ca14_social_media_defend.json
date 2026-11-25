@@ -2,14 +2,14 @@
  "scenario": "ca14_social_media_defend",
  "lists": {
   "host": [
-   {"k": null, "h": "f36b9710"},
-   {"k": "quiet_on", "h": "16153cbc"},
-   {"k": "defend_done", "h": "a0883c61"},
-   {"k": "caught", "h": "53aeae74"},
-   {"k": "quiet_off_debrief", "h": "8ddc7cec"}
+   {"k": null, "h": "47ccdf9b"},
+   {"k": "quiet_on", "h": "3591a0b7"},
+   {"k": "defend_done", "h": "aa307338"},
+   {"k": "caught", "h": "07c93206"},
+   {"k": "quiet_off_debrief", "h": "0c902a98"}
   ],
   "npc:kit_delphine_arvanitis": [
-   {"k": "chg_defend_done_knot_ca14_react", "h": "b5bd6d81"}
+   {"k": "chg_defend_done_knot_ca14_react", "h": "a524cc0e"}
   ]
  }
 }

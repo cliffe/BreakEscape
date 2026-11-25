@@ -2,12 +2,12 @@
  "scenario": "ca20_remote_and_mobile_working",
  "lists": {
   "host": [
-   {"k": null, "h": "e6305c61"},
-   {"k": "quiet_on", "h": "9b1006a4"},
-   {"k": "attack_done", "h": "a3d63f49"},
-   {"k": "defend_done", "h": "bf3c8990"},
-   {"k": "caught", "h": "66f08f5b"},
-   {"k": "quiet_off_debrief", "h": "8cfb8e95"}
+   {"k": null, "h": "e9c6c7f2"},
+   {"k": "quiet_on", "h": "5c9f4f6b"},
+   {"k": "attack_done", "h": "a67ecc77"},
+   {"k": "defend_done", "h": "a18c57f1"},
+   {"k": "caught", "h": "5ea11506"},
+   {"k": "quiet_off_debrief", "h": "566dd058"}
   ]
  }
 }

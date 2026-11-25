@@ -2,14 +2,14 @@
  "scenario": "ca17_acceptable_use_defend",
  "lists": {
   "host": [
-   {"k": null, "h": "402a2b4b"},
-   {"k": "quiet_on", "h": "6b91cce1"},
-   {"k": "defend_done", "h": "1ca05f2a"},
-   {"k": "caught", "h": "25e4aa6a"},
-   {"k": "quiet_off_debrief", "h": "a8c83845"}
+   {"k": null, "h": "427e2a14"},
+   {"k": "quiet_on", "h": "439d1f0f"},
+   {"k": "defend_done", "h": "d543c0e8"},
+   {"k": "caught", "h": "bcadaf8b"},
+   {"k": "quiet_off_debrief", "h": "6dc1ed3c"}
   ],
   "npc:kit_fatima_begum": [
-   {"k": "chg_defend_done_knot_ca17_react", "h": "deaefe32"}
+   {"k": "chg_defend_done_knot_ca17_react", "h": "47146533"}
   ]
  }
 }

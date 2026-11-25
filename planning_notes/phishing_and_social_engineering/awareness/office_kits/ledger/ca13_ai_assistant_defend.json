@@ -2,15 +2,15 @@
  "scenario": "ca13_ai_assistant_defend",
  "lists": {
   "host": [
-   {"k": null, "h": "5dc66f3f"},
-   {"k": null, "h": "14386cef"},
-   {"k": "quiet_on", "h": "996b93d7"},
-   {"k": "defend_done", "h": "0a341573"},
-   {"k": "caught", "h": "d8318ccb"},
-   {"k": "quiet_off_debrief", "h": "f0337517"}
+   {"k": null, "h": "072e644f"},
+   {"k": null, "h": "badd94f0"},
+   {"k": "quiet_on", "h": "d27cbe1e"},
+   {"k": "defend_done", "h": "ba986237"},
+   {"k": "caught", "h": "4de91111"},
+   {"k": "quiet_off_debrief", "h": "98cafb31"}
   ],
   "npc:kit_graham_whitfield": [
-   {"k": "chg_defend_done_knot_ca13_react", "h": "a4e71e0b"}
+   {"k": "chg_defend_done_knot_ca13_react", "h": "a3f013c5"}
   ]
  }
 }

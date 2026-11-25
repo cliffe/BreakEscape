@@ -2,14 +2,14 @@
  "scenario": "ca08_after_the_click_defend",
  "lists": {
   "host": [
-   {"k": null, "h": "e130100a"},
-   {"k": "quiet_on", "h": "dea2d809"},
-   {"k": "defend_done", "h": "30fed694"},
-   {"k": "caught", "h": "9bcd115b"},
-   {"k": "quiet_off_debrief", "h": "d8cdced9"}
+   {"k": null, "h": "39e702f7"},
+   {"k": "quiet_on", "h": "d99fc088"},
+   {"k": "defend_done", "h": "53705abe"},
+   {"k": "caught", "h": "2b67242c"},
+   {"k": "quiet_off_debrief", "h": "6a5006cf"}
   ],
   "npc:kit_darren_price": [
-   {"k": "chg_defend_done_knot_ca08_react", "h": "8665a115"}
+   {"k": "chg_defend_done_knot_ca08_react", "h": "4792b222"}
   ]
  }
 }
