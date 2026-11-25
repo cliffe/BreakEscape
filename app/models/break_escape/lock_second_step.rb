@@ -154,6 +154,19 @@ module BreakEscape
 
     private
 
+    # Whether a live, unpassed code step names this owner (S8c): the old device's code is still
+    # needed there. Read-only: it reads the map directly, so no tidy, no key created, no save.
+    def live_lock_code_step?(npc_id)
+      map = player_state['lockSteps']
+      return false unless map.is_a?(Hash)
+
+      now = mfa_now
+      map.each_value.any? do |rec|
+        rec.is_a?(Hash) && rec['kind'] == 'code' && rec['npcId'] == npc_id && rec['passed'] != true &&
+          now - rec['at'].to_i <= MfaModel::PENDING_SECONDS
+      end
+    end
+
     def gated_without_id?(object)
       object.is_a?(Hash) && object['id'].to_s.empty? && !BreakEscape::LockStepModel.lock_step(object).nil?
     end
