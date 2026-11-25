@@ -1,0 +1,263 @@
+<%
+  # Test scenario for NPC walk-in / walk-out (docs/agents/NPC_WALK_IN_OUT_PLAN.md).
+  # Six cases, one NPC each, all in the ward. Proof steps: docs/agents/NPC_WALK_IN_OUT_PROOF_SCRIPT.md.
+  ink = "scenarios/test_npc_walk_in_out/ink/walker.ink.json"
+%>
+{
+  "scenario_id": "test_npc_walk_in_out",
+  "scenario_name": "Test: NPC Walk-in and Walk-out",
+  "scenario_brief": "NPC WALK-IN / WALK-OUT TEST\n\nSix NPCs come and go in the ward. None of them should pop into view: each walks in from out of sight, or walks off and is hidden once out of sight. A fade is only the fallback for a locked route.\n\n(a) Cleaner: walks in from off-screen in the ward when you first enter it.\n(b) Stock clerk: walks in from the store (north) through the open doorway once call_clerk is set.\n(c) Courier: walks in from the annex (east, never visited) through its closed door once call_courier is set.\n(d) Auditor: the vault (west) is locked, so he fades in at the doorway once call_auditor is set.\n(e) Porter: barks, then walks out to the store once porter_leave is set.\n(f) Inspector: picking up the inspection notice brings him in from the lobby; the conversation opens when he arrives.",
+  "endGoal": "Watch each NPC walk in or out without popping into view.",
+  "startRoom": "walk_lobby",
+  "globalVariables": {
+    "call_clerk": false,
+    "call_courier": false,
+    "call_auditor": false,
+    "porter_leave": false
+  },
+  "rooms": {
+    "walk_lobby": {
+      "type": "room_office",
+      "door_sign": "Lobby",
+      "connections": {
+        "north": "walk_ward"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "id": "walk_test_instructions",
+          "name": "Walk Test Instructions",
+          "takeable": false,
+          "readable": true,
+          "text": "WALK-IN / WALK-OUT TEST\n\nGo north into the ward. The cleaner walks in from off-screen (a).\nVisit the store (north of the ward) and come back, then press CALL CLERK (b).\nPress CALL COURIER: he comes from the annex to the east (c).\nPress CALL AUDITOR: the vault is locked, so he fades in at its door (d).\nPress SEND PORTER: he says goodbye and walks out to the store (e).\nPick up the inspection notice: the inspector walks in from the lobby and talks to you (f).\n\nVault PIN: 4321"
+        }
+      ]
+    },
+    "walk_ward": {
+      "type": "room_m10_hall",
+      "door_sign": "Ward",
+      "connections": {
+        "north": "walk_store",
+        "east": "walk_annex",
+        "west": "walk_vault",
+        "south": "walk_lobby"
+      },
+      "npcs": [
+        {
+          "id": "walk_cleaner",
+          "displayName": "Cleaner",
+          "npcType": "person",
+          "position": { "x": 7, "y": 6.5 },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "<%= ink %>",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            {
+              "eventPattern": "room_entered:walk_ward",
+              "onceOnly": true,
+              "walkIn": { "from": "offscreen" }
+            }
+          ]
+        },
+        {
+          "id": "walk_clerk",
+          "displayName": "Stock Clerk",
+          "npcType": "person",
+          "position": { "x": 10, "y": 6 },
+          "spriteSheet": "male_telecom_v2",
+          "storyPath": "<%= ink %>",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:call_clerk",
+              "condition": "value === true",
+              "onceOnly": true,
+              "walkIn": { "from": "walk_store" }
+            }
+          ]
+        },
+        {
+          "id": "walk_courier",
+          "displayName": "Courier",
+          "npcType": "person",
+          "position": { "x": 15, "y": 6 },
+          "spriteSheet": "courier_hivis",
+          "storyPath": "<%= ink %>",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:call_courier",
+              "condition": "value === true",
+              "onceOnly": true,
+              "walkIn": { "from": "walk_annex" }
+            }
+          ]
+        },
+        {
+          "id": "walk_auditor",
+          "displayName": "Auditor",
+          "npcType": "person",
+          "position": { "x": 4, "y": 6 },
+          "spriteSheet": "male_spy_v2",
+          "storyPath": "<%= ink %>",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:call_auditor",
+              "condition": "value === true",
+              "onceOnly": true,
+              "walkIn": { "from": "walk_vault" }
+            }
+          ]
+        },
+        {
+          "id": "walk_porter",
+          "displayName": "Porter",
+          "npcType": "person",
+          "position": { "x": 13, "y": 6.5 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "<%= ink %>",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:porter_leave",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "Right, that's my shift. I'm off to the store."
+            },
+            {
+              "eventPattern": "global_variable_changed:porter_leave",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "walkOut": { "to": "walk_store" }
+            }
+          ]
+        },
+        {
+          "id": "walk_inspector",
+          "displayName": "Inspector",
+          "npcType": "person",
+          "position": { "x": 11, "y": 7 },
+          "spriteSheet": "female_security_guard_v2",
+          "storyPath": "<%= ink %>",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            {
+              "eventPattern": "item_picked_up:notes",
+              "onceOnly": true,
+              "fireOnlyWhenLoaded": true,
+              "walkIn": { "from": "walk_lobby" },
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/hospital1.png",
+              "targetKnot": "arrival"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "id": "btn_call_clerk",
+          "name": "CALL CLERK",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Calls the stock clerk in from the store.",
+          "triggerOnInteract": [ { "type": "set_global", "key": "call_clerk", "value": true } ]
+        },
+        {
+          "type": "pc",
+          "id": "btn_call_courier",
+          "name": "CALL COURIER",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Calls the courier in from the annex.",
+          "triggerOnInteract": [ { "type": "set_global", "key": "call_courier", "value": true } ]
+        },
+        {
+          "type": "pc",
+          "id": "btn_call_auditor",
+          "name": "CALL AUDITOR",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Calls the auditor in from the locked vault.",
+          "triggerOnInteract": [ { "type": "set_global", "key": "call_auditor", "value": true } ]
+        },
+        {
+          "type": "pc",
+          "id": "btn_send_porter",
+          "name": "SEND PORTER",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Ends the porter's shift.",
+          "triggerOnInteract": [ { "type": "set_global", "key": "porter_leave", "value": true } ]
+        },
+        {
+          "type": "notes",
+          "id": "walk_notice",
+          "name": "Inspection Notice",
+          "takeable": true,
+          "readable": true,
+          "text": "Inspection today. The inspector will come and find you."
+        }
+      ]
+    },
+    "walk_store": {
+      "type": "room_office",
+      "door_sign": "Store",
+      "connections": {
+        "south": "walk_ward"
+      },
+      "objects": []
+    },
+    "walk_annex": {
+      "type": "room_office",
+      "door_sign": "Annex",
+      "connections": {
+        "west": "walk_ward"
+      },
+      "objects": []
+    },
+    "walk_vault": {
+      "type": "room_office",
+      "door_sign": "Vault",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "4321",
+      "connections": {
+        "east": "walk_ward"
+      },
+      "objects": []
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "obj_walk_cases",
+      "title": "Watch the walkers",
+      "description": "Each NPC walks in or out without popping into view.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "task_walk_a", "title": "(a) Cleaner walks in from off-screen", "type": "custom", "status": "active" },
+        { "taskId": "task_walk_b", "title": "(b) Clerk walks in from the store", "type": "custom", "status": "active" },
+        { "taskId": "task_walk_c", "title": "(c) Courier walks in from the annex", "type": "custom", "status": "active" },
+        { "taskId": "task_walk_d", "title": "(d) Auditor fades in at the locked vault door", "type": "custom", "status": "active" },
+        { "taskId": "task_walk_e", "title": "(e) Porter barks and walks out", "type": "custom", "status": "active" },
+        { "taskId": "task_walk_f", "title": "(f) Inspector walks in and talks", "type": "custom", "status": "active" }
+      ]
+    }
+  ]
+}

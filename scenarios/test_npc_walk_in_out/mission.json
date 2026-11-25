@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: NPC Walk-in and Walk-out",
+  "description": "Six NPCs walk in from out of view (same room off-screen, through an open doorway, through a closed door from an unloaded room, a locked route that falls back to a doorway fade, a conversation on arrival) or walk out after a bark.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "npc_walk_in_out",
+  "test_objective": "Verify walkIn / walkOut mappings: no NPC appears or vanishes in view, each ends at its position (or gone), npc_arrived / npc_left fire"
+}
