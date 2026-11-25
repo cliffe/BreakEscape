@@ -368,7 +368,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
         const byG = globalEntry(strings, globals);
         heading.textContent = byG && isStr(byG.heading) ? byG.heading : str(strings, 'flipMissedHeading');
         if (byG) {
-            root.appendChild(el('p', 'aw-defender-line', byG.line));
+            root.appendChild(el('p', `aw-defender-line${landed ? ' aw-landed-no-tells' : ''}`, byG.line));
         } else {
             const line = landed && isStr(strings?.flipLandedNoTells) ? strings.flipLandedNoTells : str(strings, 'flipMissed');
             root.appendChild(el('p', `aw-lead aw-missed${landed ? ' aw-landed-no-tells' : ''}`, line));
