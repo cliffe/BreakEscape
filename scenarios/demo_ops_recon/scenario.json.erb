@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "Ops demo: on the network. A working day at Merrin & Sallow. Fenlow Managed IT has been asked to show what an outsider could see from one spare network socket. Ama Owusu hosts. While the office gets on with its day, plug a drop box in when nobody is at the hot desk, list what answers on the network, look at what each machine runs, test which reported weaknesses are real, and use the technique cards you are handed. Graham in IT shows you the network log at the end. Authorised practice in a fictional office; nothing to break and no combat.",
+  "scenario_brief": "Ops demo: on the network. A working day at Merrin & Sallow. Fenlow Managed IT has been asked to show what an outsider could see from one spare network port. Ama Owusu hosts. While the office gets on with its day, plug a drop box in when nobody is at the hot desk, list what answers on the network, look at what each machine runs, test which reported weaknesses are real, and use the technique cards you are handed. Graham in IT shows you the network log at the end. Authorised practice in a fictional office; nothing to break and no combat.",
   "endGoal": "Demo only: see what the network shows, then read your own trail in the network log.",
   "startRoom": "office",
   "startPosition": { "x": 5, "y": 6 },
@@ -187,7 +187,10 @@
     "use_card_done": false,
     "terminal_view_done": false,
     "open_share_done": false,
-    "read_log_done": false
+    "read_log_done": false,
+    "server_room_seen": false,
+    "file_server_seen": false,
+    "jun_caught": false
   },
 
   "startItemsInInventory": [
@@ -289,7 +292,7 @@
           "lockType": "login",
           "access": { "people": ["jun_watanabe"] },
           "policy": "desk",
-          "observations": "The hot desk. Jun sits here, next to the wall port.",
+          "observations": "The hot desk. Jun sits here, next to the network port.",
           "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 }
         },
         {
@@ -309,15 +312,15 @@
         {
           "type": "pc",
           "id": "hotdesk_jack",
-          "name": "Live wall network port",
+          "name": "Hot desk network port",
           "sprite": "network_rack1",
           "network": "office_lan",
-          "position": { "x": 3.5, "y": 6.4 },
+          "position": { "x": 3.0, "y": 5.9 },
           "takeable": false,
           "networkJack": true,
           "affordance": false,
           "linkName": "Drop box: hot desk",
-          "jackConfirm": "Plug the drop box into the hot desk's wall port?",
+          "jackConfirm": "Plug the drop box into the hot desk's network port?",
           "plantedSprite": "pi_cluster1",
           "requiresItemHint": "A live network port at the hot desk. You need the drop box in hand to plug it in.",
           "observations": "A live network port beside the hot desk."
@@ -328,14 +331,15 @@
           "name": "Office printer",
           "position": { "x": 8.3, "y": 3.0 },
           "takeable": false,
-          "observations": "The office printer. Agnieszka prints from here.",
+          "observations": "The office printer. Agnieszka's PC prints to it.",
           "offWhen": "printer_off"
         },
         {
           "type": "power_socket2",
           "id": "printer_socket",
-          "name": "Wall socket",
+          "name": "Printer wall socket",
           "position": { "x": 9.0, "y": 3.9 },
+          "observations": "The printer's plug, at the wall.",
           "spriteVariants": [{ "condition": "globalVars.printer_off", "value": "power_socket_off2" }],
           "takeable": false,
           "triggerOnInteract": [
@@ -370,7 +374,7 @@
           "position": { "x": 8.0, "y": 5.2 },
           "takeable": false,
           "locked": false,
-          "observations": "A cupboard of printer supplies and setup notes, by Agnieszka's side of the office.",
+          "observations": "A cupboard of printer supplies and setup notes, just below the printer.",
           "contents": [
             {
               "type": "technique_card",
@@ -395,8 +399,9 @@
         {
           "type": "power_socket2",
           "id": "office_coffee_socket",
-          "name": "Wall socket",
+          "name": "Coffee wall socket",
           "position": { "x": 8.65625, "y": 7.0625 },
+          "observations": "The coffee machine's plug, at the wall.",
           "spriteVariants": [{ "condition": "globalVars.office_coffee_off", "value": "power_socket_off2" }],
           "takeable": false,
           "triggerOnInteract": [
@@ -444,7 +449,7 @@
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Ask Ama to send them for coffee, then plug the drop box in at the hot desk while it is empty.\n- Sweep the office network, then scan the printer.\nMidday:\n- Check the printer's admin page and test both findings.\n- Take the card from the printer cupboard and use it on the real one.\n- Look at the file server in the Terminal.\nEvening:\n- Ask Ama to call it a day, then talk to Zainab in the kitchen.\n- Open the shared drive, then read the network log with Graham."
+          "text": "Morning:\n- Ask Ama to send them for coffee, then plug the drop box into the hot desk's network port while Jun is away.\n- Sweep the office network, then scan the printer.\nMidday:\n- Check the printer's admin page and test both findings.\n- Take the card from the printer cupboard and use it on the real one.\n- Look at the file server in the Terminal, then tell Ama what it said.\nEvening:\n- Look in on the kitchen and the server room, then ask Ama to call it a day.\n- Talk to Zainab (server room, then the kitchen coffee).\n- Open the shared drive, then read the network log with Graham."
         }
       ],
       "npcs": [
@@ -476,7 +481,16 @@
             { "eventPattern": "network_share_opened:shared_drive", "cooldown": 0, "completeTask": "open_share", "setGlobal": { "open_share_done": true } },
             { "eventPattern": "network_device_unplugged:hotdesk_jack", "onceOnly": true, "cooldown": 0, "bark": "Unplugged. Every session through that box has ended with it." },
             { "eventPattern": "global_variable_changed:printer_off", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "bark": "Printer's off. It won't answer on the network now." },
-            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": true } }
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": true } },
+            { "eventPattern": "room_entered:server_room", "cooldown": 0, "setGlobal": { "server_room_seen": true } },
+            { "eventPattern": "network_host_scanned:file_server", "cooldown": 0, "setGlobal": { "file_server_seen": true } },
+            { "eventPattern": "network_foothold_gained:kitchen_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "That works too. Nobody's watching the kitchen port." },
+            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_printer_done !== true", "cooldown": 0, "bark": "That's everything that answers. Pick the printer and scan it." },
+            { "eventPattern": "global_variable_changed:scan_printer_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_both_done !== true", "cooldown": 0, "bark": "The admin page is the one to look at. Check it, then test what it reports." },
+            { "eventPattern": "global_variable_changed:confirm_both_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_card_done !== true", "cooldown": 0, "bark": "One real, one false alarm. There's a technique card in the printer cupboard." },
+            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "The printer kept a saved link to Agnieszka's PC. Try it from her row." },
+            { "eventPattern": "global_variable_changed:file_server_seen", "condition": "data.value === true && data.oldValue !== true && globalVars.terminal_view_done !== true", "cooldown": 0, "bark": "That's the file server. Come and tell me what it said." },
+            { "eventPattern": "global_variable_changed:open_share_done", "condition": "data.value === true && data.oldValue !== true && globalVars.read_log_done !== true", "cooldown": 0, "bark": "You're in the shared drive. Graham can show you how that looked." }
           ]
         },
         {
@@ -535,8 +549,10 @@
             { "eventPattern": "npc_left_post:chidi_okeke", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
-            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?" },
-            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "setGlobal": { "jun_caught": true } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false },
+            { "eventPattern": "npc_left_post:jun_watanabe", "cooldown": 0, "setGlobal": { "jun_caught": false } },
+            { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance !== null && data.playerDistance <= 80 && globalVars.jun_caught !== true", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?" }
           ]
         },
         {
@@ -594,7 +610,7 @@
           "networkJack": true,
           "affordance": false,
           "linkName": "Drop box: kitchen",
-          "jackConfirm": "Plug the drop box into the kitchen's wall port?",
+          "jackConfirm": "Plug the drop box into the kitchen's network port?",
           "plantedSprite": "pi_cluster1",
           "requiresItemHint": "A live network port in the kitchen. You need the drop box in hand to plug it in.",
           "observations": "A live network port on the kitchen wall."
@@ -782,7 +798,7 @@
           "name": "Network log PC",
           "position": { "x": 6.2, "y": 2.8 },
           "takeable": false,
-          "observations": "A terminal showing the office network log. Somebody has marked one morning row as odd.",
+          "observations": "A terminal showing the office network log.",
           "minigameData": {
             "logSource": "network_log",
             "anomaly": { "rowId": "s2" },

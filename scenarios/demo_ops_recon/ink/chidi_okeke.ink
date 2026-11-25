@@ -15,15 +15,13 @@ Hiya. Can't stop long, I've a report due.
 # speaker:npc
 Still here, still busy.
 - (choices)
-+ [Do you always lock your screen?]
++ [Is the network slow for you too?]
     # speaker:npc
-    If I'm away for more than ten seconds, yes.
-    # speaker:npc
-    That's long enough for someone to have a nose.
+    Only since about seven. Graham says it's nothing.
     -> choices
 + [Who sits at the hot desk?]
     # speaker:npc
-    Jun, mostly. The socket there is live, which is handy for laptops.
+    Jun, mostly. The network port there is live, which is handy for laptops.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

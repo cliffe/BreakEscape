@@ -19,11 +19,11 @@ Yes?
     # speaker:npc
     Whoever gets in first. I just like the window.
     # speaker:npc
-    I leave my things here when I go for coffee, so I notice if anything's moved.
+    I leave my things here when I go for coffee. I'd notice someone at my desk.
     -> choices
-+ [What's the socket for?]
++ [What's the port by your desk for?]
     # speaker:npc
-    The wall socket by my feet? It's a live network port. Anyone can plug a laptop in.
+    The one by my feet? It's a live network port. Anyone can plug a laptop in.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

@@ -2,6 +2,7 @@
 // log_offer: evening only. The cooler exchange knot is copied from office_life_showcase.
 
 VAR act_evening = false
+VAR read_log_done = false
 // met_graham: ink-local first-meeting flag (see ama_owusu.ink).
 VAR met_graham = false
 
@@ -18,13 +19,11 @@ Now then. You'll be the visitor Ama mentioned.
 # speaker:npc
 Go on, then.
 - (choices)
-+ { act_evening } [Want to see what you looked like from here?]
++ { act_evening and not read_log_done } [Ama said you'd show me the network log.]
     -> log_offer
 + [Do you get away from your desk much?]
     # speaker:npc
     Only for the cooler. It's where you hear things.
-    # speaker:npc
-    My screen locks itself, mind. IT set it to twenty seconds.
     -> choices
 + [What do you keep an eye on?]
     # speaker:npc
@@ -40,11 +39,11 @@ Go on, then.
 
 === log_offer ===
 # speaker:npc
-Go on, have a look. The network log PC is just there.
+Want to see what you looked like from here? The network log PC's just there.
 # speaker:npc
 Every sweep, scan and test you did is a row. Find your own.
 # speaker:npc
-Then see if you can spot the one that isn't you. Something odd came in before you did.
+Before you got here, someone swept the whole network from the kitchen port. Find that sweep and flag it.
 -> hub
 
 // Played once by the needs system when Graham and Agnieszka chat at the cooler

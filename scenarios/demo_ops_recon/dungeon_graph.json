@@ -76,7 +76,7 @@
     },
     {
       "id": "jack_hotdesk_jack",
-      "label": "Live wall network port<br/>Network jack",
+      "label": "Hot desk network port<br/>Network jack",
       "kind": "lock",
       "optional": false
     },

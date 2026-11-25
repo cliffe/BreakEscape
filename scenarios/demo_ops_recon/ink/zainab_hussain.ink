@@ -42,7 +42,7 @@ Still here.
 
 === card_offer ===
 # speaker:npc
-Everyone's gone, so I can talk. You're the one doing the network check?
+Everyone's gone, so I can talk. Ama said you're doing the network check.
 ~ zainab_card_given = true
 #set_global:zainab_card_given:true
 #give_item:technique_card
@@ -50,4 +50,6 @@ Everyone's gone, so I can talk. You're the one doing the network check?
 Here, take this card. It's for a known update gap on the file server.
 # speaker:npc
 It only fits a weakness that is real, and that you've tested.
+# speaker:npc
+There's another card in my tool roll, in the server room. Help yourself.
 -> hub

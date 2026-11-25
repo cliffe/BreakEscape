@@ -8,7 +8,7 @@ VAR met_agnieszka = false
 }
 ~ met_agnieszka = true
 # speaker:npc
-Hi. Somebody has to keep this place tidy.
+Hi. I'm Agnieszka. The printer's mine, more or less.
 -> hub
 
 === hub ===
@@ -24,6 +24,8 @@ Yes? Just tidying.
 + [Do you use the printer much?]
     # speaker:npc
     All day. When it's off I have to wait, and I don't like waiting.
+    # speaker:npc
+    Whoever set it up did it from my PC, and nobody's touched it since.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

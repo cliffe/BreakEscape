@@ -5,5 +5,5 @@
   "collection": "test_scenarios",
   "estimated_duration_minutes": 15,
   "test_type": "ops_demo",
-  "test_objective": "Show discovery, scanning, findings, technique cards, the Terminal and Panels views with realism text, and the network log, inside office life."
+  "test_objective": "Show discovery, scanning, findings, technique cards, the Terminal and Panels views, and the network log, inside office life."
 }

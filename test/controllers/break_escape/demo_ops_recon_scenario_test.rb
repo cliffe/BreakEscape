@@ -25,6 +25,8 @@ module BreakEscape
     CAMERA_DECOY = 'lobby_camera.stream.stream_label'.freeze
     AGNIESZKA = ['aduda', 'Gorsefield-Ag-8213'].freeze
     GRAHAM = ['gwhitfield', 'Tarnbeck-Gra-6390'].freeze
+    OFF_HOST_STATUS = 403
+    OFF_HOST_REASON = 'not_responding'.freeze
     ROOMS = %w[office kitchen server_room it_room].freeze
     CARDS = {
       'card_factory' => ['Technique card: factory accounts', 'printer_cupboard'],
@@ -171,7 +173,8 @@ module BreakEscape
       assert_equal [], block
       assert_equal 1, own_rows.size
       assert_equal 'net_link_up', own_rows.first['event']
-      assert_equal 'jack', own_rows.first['where']['kind'] if own_rows.first['where'].is_a?(Hash)
+      assert_kind_of Hash, own_rows.first['where']
+      assert_equal 'jack', own_rows.first['where']['kind']
       unplug(JACK)
       assert_response :success, response.body
       assert_empty state['footholds'].to_h
@@ -233,7 +236,7 @@ module BreakEscape
       assert_equal 'confirmed', by[PRINTER_REAL]
       assert_equal 2, rows('finding_confirmed').size
       ops_confirm(FOOT, 'printer_host.admin_page.no_such')
-      refute_equal 200, response.status
+      assert_response :not_found
       assert_equal 2, rows('finding_confirmed').size
     end
 
@@ -295,6 +298,10 @@ module BreakEscape
                                              item: { type: 'technique_card', id: 'card_update_gap', name: 'Technique card: known update gap' } }, as: :json
       assert_response :success, response.body
       assert_includes held_ids, 'card_update_gap'
+      post game_path('inventory'), params: { action_type: 'add', source_npc_id: 'zainab_hussain',
+                                             item: { type: 'technique_card', id: 'card_open_settings', name: 'Technique card: left-open settings' } }, as: :json
+      refute_equal 200, response.status, 'Zainab does not hold the settings card: it is in her tool roll'
+      refute_includes held_ids, 'card_open_settings'
       take_card('card_open_settings')
     end
 
@@ -305,6 +312,14 @@ module BreakEscape
       assert_response :success, response.body
       take_card('card_open_settings')
       refused(LINK, 'card_open_settings', 'need_unmet')
+      refused(RELEASE, 'card_open_settings', 'false_positive')
+      ops_scan(FOOT, host_id: 'lobby_camera')
+      assert_response :success, response.body
+      ops_check(FOOT, host_id: 'lobby_camera', service: 'stream')
+      assert_response :success, response.body
+      ops_confirm(FOOT, CAMERA_DECOY)
+      assert_response :success, response.body
+      refused(CAMERA_DECOY, 'card_open_settings', 'false_positive')
       first = granted(UPDATE, 'card_update_gap')
       assert_equal 'session', first['grant']
       assert_equal({ 'id' => 'agnieszka_duda', 'via' => 'technique', 'foothold' => FOOT, 'access' => 'user', 'technique' => UPDATE },
@@ -359,15 +374,17 @@ module BreakEscape
 
     # ---- free play: the printer switched off -----------------------------------------------------------
 
-    test 'free play: with the printer switched off at the wall the sweep does not list it and the scan is refused' do
+    test 'free play: with the printer switched off at the wall the sweep lists it as not answering and the scan is refused' do
       plugged
       set_global('printer_off', true)
       ops_scan(FOOT, network_id: 'office_lan')
       assert_response :success, response.body
       assert_equal false, host_row('printer_host')['responding'], 'switched off at the wall: the row is listed but does not answer'
       assert_nil host_row('printer_host')['services']
-      ops_scan(FOOT, host_id: 'printer_host')
-      refute_equal 200, response.status
+      body = ops_scan(FOOT, host_id: 'printer_host')
+      assert_equal OFF_HOST_STATUS, response.status, body.to_s
+      assert_equal OFF_HOST_REASON, body['reason'], body.to_s
+      assert_nil host_row('printer_host')['services']
     end
 
     # ---- R8: the log -----------------------------------------------------------------------------------
@@ -440,8 +457,18 @@ module BreakEscape
       end
       take_rec('technique_card', 'card_factory', 'Technique card: factory accounts', container: 'printer_cupboard')
       take_rec('pc', 'kit_dropbox', 'Network drop box')
+      plant('kitchen_jack')
+      rec
+      unplug('kitchen_jack')
+      rec
       plant(JACK)
       rec
+      set_global('printer_off', true)
+      ops_scan(FOOT, network_id: 'office_lan')
+      rec
+      ops_scan(FOOT, host_id: 'printer_host')
+      rec
+      set_global('printer_off', false)
       ops_scan(FOOT, network_id: 'office_lan')
       rec
       %w[printer_host file_server lobby_camera chidi_pc].each do |host|
@@ -456,14 +483,22 @@ module BreakEscape
       rec
       network_view(FOOT)
       rec
+      ops_technique(FOOT, PRINTER_REAL, 'card_factory')
+      rec # not_confirmed
       [PRINTER_REAL, PRINTER_FALSE, UPDATE, LINK, RELEASE, CAMERA_DECOY].each do |id|
         ops_confirm(FOOT, id)
         rec
       end
       ops_technique(FOOT, PRINTER_FALSE, 'card_factory')
       rec
+      ops_technique(FOOT, UPDATE, 'card_factory')
+      rec # wrong_class
+      container('shared_drive', foothold: FOOT)
+      rec # foothold alone
       ops_technique(FOOT, PRINTER_REAL, 'card_factory')
       rec
+      container('shared_drive', foothold: FOOT)
+      rec # with the printer saved connection
       get game_path('keyring'), as: :json
       rec
       post game_path('login'), params: { pc_id: 'agnieszka_pc', credential: 'print_admin', foothold: FOOT }, as: :json
@@ -472,8 +507,12 @@ module BreakEscape
       rec
       take_rec('technique_card', 'card_update_gap', 'Technique card: known update gap', npc: 'zainab_hussain')
       take_rec('technique_card', 'card_open_settings', 'Technique card: left-open settings', container: 'zainab_tool_roll')
+      ops_technique(FOOT, LINK, 'card_open_settings')
+      rec # need_unmet
       ops_technique(FOOT, UPDATE, 'card_update_gap')
       rec
+      container('shared_drive', foothold: FOOT)
+      rec # the user session as Agnieszka
       ops_technique(FOOT, LINK, 'card_open_settings')
       rec
       network_view(FOOT)

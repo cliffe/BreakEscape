@@ -2,7 +2,7 @@
 
 # demo_ops_recon — Scenario Graph Reference
 
-Ops demo: on the network. A working day at Merrin & Sallow. Fenlow Managed IT has been asked to show what an outsider could see from one spare network socket. Ama Owusu hosts. While the office gets on with its day, plug a drop box in when nobody is at the hot desk, list what answers on the network, look at what each machine runs, test which reported weaknesses are real, and use the technique cards you are handed. Graham in IT shows you the network log at the end. Authorised practice in a fictional office; nothing to break and no combat.
+Ops demo: on the network. A working day at Merrin & Sallow. Fenlow Managed IT has been asked to show what an outsider could see from one spare network port. Ama Owusu hosts. While the office gets on with its day, plug a drop box in when nobody is at the hot desk, list what answers on the network, look at what each machine runs, test which reported weaknesses are real, and use the technique cards you are handed. Graham in IT shows you the network log at the end. Authorised practice in a fictional office; nothing to break and no combat.
 
 ## Scenario Statistics
 
@@ -85,7 +85,7 @@ flowchart TD
   signin_graham_whitfield{"Graham Whitfield sign-in<br/>(gwhitfield)"}
   it_room("IT room")
   device_kit_dropbox{"Network drop box<br/>(rogue device)"}
-  jack_hotdesk_jack["Live wall network port<br/>Network jack"]
+  jack_hotdesk_jack["Hot desk network port<br/>Network jack"]
   net_office_lan("Office network<br/>Network<br/>(sweep to list)")
   jack_kitchen_jack["Kitchen wall network port<br/>Network jack"]
   kitchen("Kitchen")
@@ -237,7 +237,7 @@ flowchart TD
   signin_graham_whitfield{"Graham Whitfield sign-in<br/>(gwhitfield)"}
   it_room("IT room")
   device_kit_dropbox{"Network drop box<br/>(rogue device)"}
-  jack_hotdesk_jack["Live wall network port<br/>Network jack"]
+  jack_hotdesk_jack["Hot desk network port<br/>Network jack"]
   net_office_lan("Office network<br/>Network<br/>(sweep to list)")
   jack_kitchen_jack["Kitchen wall network port<br/>Network jack"]
   kitchen("Kitchen")
@@ -395,13 +395,13 @@ flowchart TD
   rc_chidi_pc_1{"Chidi's PC"}
   rc_jun_pc_2{"Hot desk PC"}
   rc_agnieszka_pc_3{"Agnieszka's PC"}
-  rc_hotdesk_jack_4{"Live wall network port"}
+  rc_hotdesk_jack_4{"Hot desk network port"}
   rc_office_printer_5{"Office printer"}
-  rc_printer_socket_6{"Wall socket"}
+  rc_printer_socket_6{"Printer wall socket"}
   rc_printer_cupboard_7[["Printer cupboard"]]
   rc_card_factory_8{"Technique card: factory accounts"}
   rc_office_coffee_9{"Office Coffee Station"}
-  rc_office_coffee_socket_10{"Wall socket"}
+  rc_office_coffee_socket_10{"Coffee wall socket"}
   rc_office_mugs_11{"Abandoned Mugs"}
   rc_tour_notice_12{"Things to try"}
   rc_npc_ama_owusu_13("Ama Owusu")
