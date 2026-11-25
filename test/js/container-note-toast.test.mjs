@@ -388,3 +388,20 @@ test('R3 m2: a network error on a reopened desktop toasts the note once, with th
     assert.ok(idx(/Could not load the desktop/) >= 0, `error toast raised: ${JSON.stringify(alerts)}`);
     assert.ok(alerts.filter(a => /your notes/.test(a[0])).length === 1, `note toast once: ${JSON.stringify(alerts)}`);
 });
+
+test('a non-takeable note opened from a session device is not added to the inventory; a takeable one is', () => {
+    for (const [takeable, expected] of [[false, 0], [true, 1]]) {
+        setup();
+        const adds = [];
+        window.addToInventory = (s) => { adds.push(s); };
+        window.handleObjectInteraction = (sprite) => { sprite.scenarioData.takeable = false; }; // as interactions.js does
+        const note = { id: 'box_note', type: 'notes', name: 'Desk note', takeable, readable: true, text: 'x' };
+        const mg = new ContainerMinigame(document.getElementById('mg'), {
+            title: 'Box', containerItem: SAFE(), contents: [note, noteOf('n2', 'Other')], isTakeable: false });
+        mg.complete = () => {};
+        mg.handleInteractiveItem(note, null);
+        returnToContainerAfterNotes();
+        assert.equal(adds.length, expected, `takeable ${takeable}: add calls`);
+        delete window.addToInventory; delete window.handleObjectInteraction;
+    }
+});
