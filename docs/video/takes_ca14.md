@@ -81,7 +81,17 @@ Lorna's portrait sheets were mirrored (commit 0f9fb5843), so t07_lorna_photo and
 
 In-game proof for Lorna was read on ca12 t13 (see takes_ca12.md): `visemeSheet.image` is `lorna_easton_visemes.png`, 896x128, timeline set, `flipped` true.
 
-## t11_risky_card_narrow: dry run and capture (25 Nov)
+## t11_risky_card_narrow: retake (25 Nov, supersedes the first capture below)
+
+The first capture (v1, in `tmp/delete/ca14_t11_v1/`) clipped the message body behind the stacked buttons. Fix (take framing only, game UI untouched): `NARROW_INBOX_CSS` lives in `tools/video/takes/ca14/t10_dm_inbox.mjs` (video tooling, shared with t10b), so t11 adds its own `T11_FIT_CSS` after it: Trust / Report / Delete in one row with the hint lines (`.tri-verdict-hint`) hidden. t10b keeps the stack. The whole message ("[New account, created last week, no other posts.] ... overview of the systems your firm uses and who runs your IT?") and its 09:14 stamp are now in frame above the buttons (message pane 354 to 618 px, buttons 696 to 768 px; logged as a `fit` mark). The script also calls `spriteCheck` (strict in a real run) and marks `risky-card-open` by polling for the card text outside the list rows every 30 ms, with no settle sleep. Commit c63ff5ee7.
+
+Dry runs: 3 (games 13475 to 13477), all PASS; frames viewed (both halves of the tell readable, buttons whole). Capture (game 13478, display :147, keyless :3456, `female_office_worker_v2`): passed first time, **11.34 s**, drop **0.73 %**, A/V offset -77 / -87 ms (corrected), `fullFrame` true, no problems. `~/video-takes-local/ca14/takes/t11_risky_card_narrow.trimmed.mkv` (+ markers, check, contact).
+
+Marks (trimmed s): player-sprite 0.45 (`female_office_worker_v2`), kiosk-open 2.94, phone-open 4.13, start 5.14, **list-up 5.15**, rect:list (680,20,560x900) 5.31, frame:list-up 5.31, **risky-card-open 7.63**, fit 7.86, frame:tell-visible 7.86, **tell-visible 7.86**, **tell-hold-end 10.86**, end 10.86. Frame checks: the card appears in the luminance step at **7.67 s** (mark 7.63, so the mark is now on the picture; it was 0.55 s late before); the frame at 9.0 s shows the full message and the three buttons, no verdict, no flags. The list is static from about 5.3 to 7.6 (Jordan Vale row outlined, previews blank).
+
+Retime for the sample C edit lists (not edited), new against old: list-up 5.15 (was 4.95, +0.20); first usable in point 5.15 to 5.31; card on screen 7.67 (was 7.30, +0.37); `tell-visible` / `freezeAt` 7.86 (was 7.85, +0.01); tell-hold-end 10.86 (was 10.85, +0.01); take length 11.34 (was 11.30). If the cut is "list-up to tell-visible, then freeze 3.0 s", in = 5.15, out = 7.86, freezeAt = 7.86: the card is on screen from 7.67, so the last 0.19 s before the freeze shows the card arriving; to start the freeze on a fully drawn card keep freezeAt at 7.86 or later. The in to out span is 2.71 s (was 2.90 s), so the C list loses 0.19 s unless the hold is lengthened.
+
+## t11_risky_card_narrow: first capture (25 Nov, v1, superseded by the retake above)
 
 Dry runs (headless, `BE_DRY=1`, keyless :3456, drill and privacy seeds, fresh game each): attempt 1 FAIL (game 13468, script reason): `setup()` read `episode_e14_social_media_state` from the client globals, which holds the string `"[object Object]"` for an object seed (probe on game 13469), so every seeded game failed its own entry check. The kiosk still offers "Open the phone", so the server state is right. Fix (script only): the done/drill/privacy check runs only when the global parses to an object, and defend-complete is still refused. Attempt 2 PASS (game 13473): six rows, Jordan Vale present, card opens, tell and systems request in the card text, no verdict.
 
