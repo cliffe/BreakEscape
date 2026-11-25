@@ -48,7 +48,7 @@ export default async (page, bridge, mark) => {
   mark('cam-freeze', await stopFollow(page));
   await openKiosk(page, bridge, mark); mark('kiosk-open');
   if (!(await waitButton(page, /Look up/, 10000))) throw new Error('step-away panel never showed; buttons: ' + JSON.stringify(await (await import('./_ca13.mjs')).buttons(page)));
-  await sleep(1000);
+  await sleep(550); // was 1000: the camera freeze and its marks pushed every later mark 0.47 s later than 25 Nov; this keeps G1/G2 on the 25 Nov times
   const g0 = (await bridge.getState()).globals || {};
   mark('globals-before-look-up', { kit_quiet: g0.kit_quiet, kit_ca13_out: g0.kit_ca13_out, kit_ca13_there: g0.kit_ca13_there });
   mark('look_up'); await pressButton(page, /Look up/);
