@@ -156,3 +156,43 @@ Validator 0 errors, 27 warnings (the earlier 26 plus one suggestion: `stick_over
 - 3.2 says Delphine "loses the light Mediterranean lilt"; the access tour's block for her has the same lilt, so only her role words changed.
 - Barks cannot sit on a mapping that ticks (a stale-step condition would also skip the tick), so they are separate mappings on the `<task>_done` globals, as recon does.
 - 2.5 says the P8b stick refusal event is unchanged; true, and `usb_refused` still ticks `usb_refused` only for a user or no session.
+
+## Tour round 1 fixes
+
+Sources: `planning/TOUR_IMPL_REVIEW_R1.md` (3 majors, 8 minors), `planning/TOUR_DIALOGUE_REVIEW_R1.md` (4 majors, 13 minors), playtest 1 (game 288, morning and midday) and the cracker run (game 290). No audio exists, so every rewrite is free.
+
+### Implementation review
+
+- **M1 board.** "Things to try" now follows the panel: midday gains the P8b line; the afternoon runs P10, P11a (collect at the hot desk as Graham), P11b (switch Jun's PC off and watch the borrow), P11c (collect again), P12, P13/P14. "Still..." became "Back at the partner's PC as Graham".
+- **M2 P13.** Ama's second P13 line names the coffee lever and the sign-out: "Ask me to send them for coffee. Sign out first if you're still in as Graham, then type the name and password under Other user." PLAYTEST P13 says why (her PC refuses while she sits at it).
+- **M3 live check and timings.** Game 294 (port 3072, `new-game.rb`): P6b's bark, P1's bark, the new recap line and P8b end to end (coffee, Graham at Delphine's PC, the plant, the bark, a `usb_install_overridden` row at `delphine_pc`; leak check 0 findings, ops log OK). PLAYTEST "Expected timings" is now a table of measured seconds from games 288, 290 and 294. Not measured: Jun's borrow (no tour run reached P11b); the table says so.
+- **m1** fixed by the dialogue rewrites (the toast is no longer named in speech); PLAYTEST and the runbook say "a single record" and "Hash collected (2)".
+- **m2** P7 bark: "...The taskbar said Administrator."
+- **m3** P11c pointer: "Collect at the hot desk again, as Graham, then tell me. And ask me to switch Jun's PC back on, or he'll keep coming back." PLAYTEST P11c restores Start, "Switch user", the Graham tile, and no longer says Jun's session was displaced.
+- **m4** The reply is chosen by what the player says, not when they say it: "I collected at the hot desk." only before the borrow; after it, "...before Jun borrowed it." (the one-record knot) and "...after Jun borrowed it." (the two-record knot that ticks both). The tell-time divert in `tell_collect_hot_desk` is gone. Pinned in the test.
+- **m5** `play_whole_run` now plays P8b (Graham signs in at Delphine's PC, the stick goes in) so the leak scan judges it; it also checks two override rows in the log.
+- **m6** covered by the P14 pointer rewrite.
+- **m7** `desk_usb_port` gains a first action, a `hint` with `condition: "!globalVars.usb_refused_done"`, and the confirm gains `condition: "globalVars.usb_refused_done"`: before P6b, an administrator's session gets a pointer back to the refusal instead of spending the stick. The server's plant check reads the confirm's `remove_item` at any depth, so it is unchanged. Pinned in the test.
+- **m8** P13 bark: "...It works on the desks it covers."
+
+### Dialogue review
+
+All four majors and m1 to m12 taken as suggested: M1 (`tell_local_refused` now gives the real reason, and the refusal recap sets a domain account against a local one), M2 (hot desk recap about Niamh), M3 (both report-backs, no toast), M4 (P13 and P14 pointers say to sign out), m1 ("Back at..."), m2 (no "then sign out"), m3 (one warning, the skip goes straight to home time; the choice is now "Skip the rest and call it a day anyway." since "them" lost its referent), m4, m5, m6, m7, m8, m9, m10, m11 (all five), m12 (afternoon report-backs moved up beside the midday ones), and the concision trim of the collect recap. tagdiff against HEAD: the only structural changes are the hot desk choices (one gate changed, two choices added, the divert removed), the new `day_end_go` knot that both the confirm and the skip reach, and the hub's choice count (22 to 24); the rest is prose. loopcheck clean from `start` and from an afternoon state.
+
+Where I differ: m6 suggested "Her password got you in, but not past the USB block. A user can't change that rule." P6b also ticks with no session at all (the client refuses the stick either way), and game 294 played it that way, so the line would be false; it is now "A user can't get past the USB block, and can't change the rule either."
+
+m13: `planning/VOICED_LINES.md` is regenerated from `TtsLineExtractor` (`tools/video/scout/dump-lines.rb`): 300 lines, longest 25 words. The extractor files the 25 shared chatter lines once per voice, so they appear under every NPC. `printer_svc` is not listed (no voice).
+
+### Playtest and cracker run
+
+- **Barks "not seen" (playtest 1).** Not a fault: in the office the bark is Ama's speech bubble over her head (game 294: `lastRoute` `bubble` for P6b), and away from her it is a toast held until the minigame closes (game 294: the P1 bark showed as a toast after the bin closed). PLAYTEST "Harness notes" now says where to look.
+- **P1 pointer wording.** PLAYTEST P1 now gives Ama's exact lines before and after lunch.
+- **Coffee wait missed.** PLAYTEST says to arm the wait with the lever or poll `atPost`; she may queue the coffee for up to about 15 s.
+- **Runbook.** The leak check takes no `--signin` (recorder tags); the old `crack_row` fault note is replaced; the second FAIL seed row is Tue 08:01; Crack indices are read from `getState`; games come from `new-game.rb`. PLAYTEST setup likewise.
+- **Not mine to fix** (engine, outside this showcase): the printer cupboard opening on a walk past it and blocking `enter` (`minigame-active`), and the capture-log toast naming the note ("Printer service's password, in Printer admin.txt."), which is the capture log's standard wording.
+
+### Checks
+
+Ink 7/7 compiled; validator 0 errors, 27 warnings (unchanged); dialoguelint 0 ERROR, 1 CHECK (`crowded-hub`, now 24 choices, explained above); mapping index drift 0 failures; graph regenerated (unchanged); the scenario's Rails test below.
+
+Rails `demo_ops_passwords_scenario_test.rb` (shared lock): 52 runs, 1483 assertions, 0 failures, 0 errors; both whole-run leak scans (morning to P9 with P8b, and with the afternoon appended) at 0 findings and every named sign-in used. Adding P8b's sign-in made Graham's hot desk sign-ins his third and fourth, so the afternoon now numbers them from the run's own counts instead of fixed #2 and #3 (the scanner refused the clash). `bin/ops-golden-compare`: 45 runs, 0 failures.

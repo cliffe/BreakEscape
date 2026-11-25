@@ -540,9 +540,14 @@ module BreakEscape
       end
       assert_includes day, 'lever_day_refused'
       refute_includes day, 'read_log_done', 'the gate never waits for the evening task'
-      assert_includes ink, '+ { hot_desk_signin_done and not collect_hot_desk_done } [I collected at the hot desk.]'
+      assert_includes ink, '+ { hot_desk_signin_done and not see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk.]'
+      # round 1 m4: once the borrow is seen the player says which came first, so the reply is true of what they saw
+      assert_includes ink, "+ { hot_desk_signin_done and see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk before Jun borrowed it.]\n    -> tell_collect_hot_desk\n"
+      assert_includes ink, "+ { hot_desk_signin_done and see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk after Jun borrowed it.]\n    -> tell_collect_hot_desk_late\n"
       assert_includes ink, '+ { see_borrow_done and collect_hot_desk_done and not collect_after_borrow_done } [I collected there again.]'
       assert_includes ink, '+ { not act_evening and not jun_pc_off and collect_hot_desk_done } [Switch Jun\'s PC off.]'
+      refuse = ink[/=== lever_day_refused ===.*?(?====)/m]
+      assert_includes refuse, '-> day_end_go', 'the skip goes straight home, with no second warning (round 1 m3)'
       late = ink[/=== tell_collect_hot_desk_late ===.*?(?====)/m]
       assert_includes late, '#complete_task:collect_after_borrow', 'a borrow-first collect ticks both beats'
       assert_includes late, '#complete_task:collect_hot_desk'
@@ -581,7 +586,11 @@ module BreakEscape
       build
       port = scenario['rooms']['office']['objects'].find { |o| o['id'] == 'desk_usb_port' }
       assert_equal 'delphine_pc', port['portOf']
-      assert_includes port['triggerOnInteract'].first['onConfirm'], { 'type' => 'set_global', 'key' => 'stick_override', 'value' => true }
+      confirm = port['triggerOnInteract'].find { |a| a['type'] == 'confirm_action' }
+      assert_includes confirm['onConfirm'], { 'type' => 'set_global', 'key' => 'stick_override', 'value' => true }
+      # round 1 m7: the confirm waits for P6b, and an administrator's session before it gets a pointer back
+      assert_equal 'globalVars.usb_refused_done', confirm['condition']
+      assert_equal '!globalVars.usb_refused_done', port['triggerOnInteract'].first['condition']
       body = remove('kit_stick', 'desk_usb_port')
       assert_response :unprocessable_entity, body.to_s
       assert_includes held_ids, 'kit_stick'
@@ -735,12 +744,19 @@ module BreakEscape
         body = implant
         assert_equal true, body['success'], body.to_s
         network_view('implant_partner_pc')
+        # P8b (round 1 m5): the same stick in Graham's session at Delphine's PC goes through, so the scan judges it too
+        body = sign.call('delphine_pc', [GRAHAM[0], row('graham_whitfield.cracked')['password']])
+        assert_equal 'admin', body['access']
+        body = remove('kit_stick', 'desk_usb_port')
+        assert_response :success, body.to_s
+        refute_includes held_ids, 'kit_stick'
+        @signin_counts = counts   # the afternoon numbers Graham's later sign-ins on from these
         # reload, then P9
         bootstrap_scenario
         desktop_ids('partner_pc')
         reader = reader_rows
         assert_includes reader['rows'].map { |r| r['id'] }, 's2'
-        assert_includes reader['rows'].map { |r| r['event'] }, 'USB_OVERRIDE'
+        assert_equal 2, reader['rows'].count { |r| r['event'] == 'USB_OVERRIDE' }, 'the keystroke device and the stick each leave an override row'
         assert_equal %w[delphine_arvanitis graham_whitfield], state['crackedAccounts'].sort
         assert_equal 2, state['crackRuns']['julian_hash']
       end
@@ -1107,12 +1123,12 @@ module BreakEscape
         # P11: the hot desk before and after the borrow
         body = sign_in('hot_desk', *GRAHAM)
         assert body['success'], body.to_s
-        @signins << "#{body['npcId']}@hot_desk##{2}"
+        @signins << "#{body['npcId']}@hot_desk##{@signin_counts[body['npcId']] += 1}"
         assert_equal %w[niamh_doherty], harvest('hot_desk')['harvested'].map { |r| r['npcId'] }
         make_jun_borrow
         body = sign_in('hot_desk', *GRAHAM)
         assert body['success'], body.to_s
-        @signins << "#{body['npcId']}@hot_desk##{3}"
+        @signins << "#{body['npcId']}@hot_desk##{@signin_counts[body['npcId']] += 1}"
         assert_equal %w[jun_watanabe], harvest('hot_desk')['harvested'].map { |r| r['npcId'] }
         # P12
         assert_equal 'cracked', crack('niamh_cached_hot_desk')['status']

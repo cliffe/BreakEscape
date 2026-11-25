@@ -432,7 +432,7 @@
           "sprite": "network_rack1",
           "position": { "x": 6.4, "y": 2.6 },
           "takeable": false,
-          "_comment": "Keep the confirm below although the client refuses first: its remove_item is what makes this port a plant target that the server's usb_refused check then refuses. portOf: an administrator's session at Delphine's PC lets the stick through (tour P8b); set_global is what ticks stick_override.",
+          "_comment": "The hint first (round 1 m7): until the refusal (P6b) is seen, an administrator's session gets a pointer back to it instead of the confirm, so P8b cannot spend the stick before P6b. Keep the confirm below although the client refuses first: its remove_item is what makes this port a plant target that the server's usb_refused check then refuses. portOf: an administrator's session at Delphine's PC lets the stick through (tour P8b); set_global is what ticks stick_override.",
           "policy": "desk",
           "portOf": "delphine_pc",
           "observations": "A USB port on the desk, wired to the desk policy.",
@@ -441,7 +441,14 @@
           "requiresItemHint": "You would need a USB stick to plug in here.",
           "triggerOnInteract": [
             {
+              "type": "hint",
+              "condition": "!globalVars.usb_refused_done",
+              "title": "Desk port",
+              "message": "Try the stick here first without an administrator's session, to see what the desk policy does. Sign out, then plug it in."
+            },
+            {
               "type": "confirm_action",
+              "condition": "globalVars.usb_refused_done",
               "text": "Plug the stick into the desk port?",
               "confirmLabel": "Plug it in",
               "cancelLabel": "Leave it",
@@ -539,7 +546,7 @@
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Read what Delphine posts on the office feed in the kitchen.\n- Take the photo from her desk while she is away.\nMidday:\n- Look round the kitchen, the IT room and the partner's office, then ask Ama to send them to lunch.\n- Take the stored records from the bin in the IT room.\n- Crack them: one will, one will after a wait, one never will.\n- Sign in at Delphine's PC, then try the stick in her desk port.\n- Sign in at the partner's PC as Graham, an administrator, and open the client files.\n- Still signed in there, try the keystroke device in the socket beside the PC.\n- Tell Ama what you find as you go.\nAfternoon, before you call it a day:\n- Still an administrator at the partner's PC, use Cached accounts on its desktop.\n- Ask Ama to switch Jun's PC off, watch him borrow the hot desk, then sign in there as Graham and collect again.\n- Crack what you collected.\n- Find the shared desk account's record in the IT room, crack it, and try it at Delphine's PC and then at the partner's PC.\nEvening:\n- Call it a day, then read the sign-in log in the IT room."
+          "text": "Morning:\n- Read what Delphine posts on the office feed in the kitchen.\n- Take the photo from her desk while she is away.\nMidday:\n- Look round the kitchen, the IT room and the partner's office, then ask Ama to send them to lunch.\n- Take the stored records from the bin in the IT room.\n- Crack them: one will, one will after a wait, one never will.\n- Sign in at Delphine's PC, then try the stick in her desk port.\n- Sign in at the partner's PC as Graham, an administrator, and open the client files.\n- Back at the partner's PC as Graham, try the keystroke device in the socket beside it.\n- Send them for coffee, then sign in at Delphine's PC as Graham and try the stick in her port again.\n- Tell Ama what you find as you go.\nAfternoon, before you call it a day:\n- Back at the partner's PC as Graham, use Cached accounts on its desktop.\n- Sign in at the hot desk as Graham and collect what it remembers.\n- Ask Ama to switch Jun's PC off and watch him borrow the hot desk.\n- Collect at the hot desk again, as Graham.\n- Crack one of the records you collected.\n- Find the shared desk account's record in the IT room, crack it, and try it at Delphine's PC and then at the partner's PC.\nEvening:\n- Call it a day, then read the sign-in log in the IT room."
         },
         {
           "type": "pc",
@@ -613,7 +620,7 @@
             { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId.includes('_record_file')", "cooldown": 0, "completeTask": "get_records", "setGlobal": { "get_records_done": true } },
             { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
             { "eventPattern": "npc_posted:delphine_arvanitis", "onceOnly": true, "cooldown": 0, "bark": "Delphine's posted on the office feed. Have a read." },
-            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "onceOnly": true, "delayMs": 6000, "cooldown": 0, "bark": "Lunch. Graham's off to the kitchen, and Julian's gone to his client lunch." },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "onceOnly": true, "delayMs": 6000, "cooldown": 0, "bark": "Graham's off to the kitchen, and Julian's gone to his client lunch." },
             { "eventPattern": "pc_signed_in:delphine_pc", "condition": "data.username === 'darvanitis'", "cooldown": 0, "completeTask": "user_signin", "setGlobal": { "user_signin_done": true } },
             { "eventPattern": "usb_refused:desk_usb_port", "cooldown": 0, "completeTask": "usb_refused", "setGlobal": { "usb_refused_done": true } },
             { "eventPattern": "pc_signed_in:partner_pc", "condition": "data.username === 'gwhitfield'", "cooldown": 0, "completeTask": "admin_signin", "setGlobal": { "admin_signin_done": true } },
@@ -625,12 +632,12 @@
             { "eventPattern": "pc_signed_in:jun_pc", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } },
             { "eventPattern": "pc_signed_in:hot_desk", "condition": "data.username !== 'darvanitis' && data.username !== 'jwatanabe' && data.username !== 'gwhitfield' && data.username !== 'jsallow' && data.username !== 'ndoherty'", "cooldown": 0, "completeTask": "local_account", "setGlobal": { "local_account_done": true } },
             { "eventPattern": "global_variable_changed:stick_override", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "completeTask": "stick_override", "setGlobal": { "stick_override_done": true }, "bark": "Same stick, same port. Signed in as an administrator, the policy let it through, and the log keeps an override row." },
-            { "eventPattern": "global_variable_changed:get_records_done", "condition": "data.value === true && data.oldValue !== true && globalVars.crack_guessable_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Three stored records, scrambled. None shows a password. Cracking is guessing, checked against them." },
-            { "eventPattern": "global_variable_changed:user_signin_done", "condition": "data.value === true && data.oldValue !== true && globalVars.usb_refused_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Her tile said Cracked and filled the password in for you. A cracked password works like any you hold. And no Administrator on the taskbar." },
+            { "eventPattern": "global_variable_changed:get_records_done", "condition": "data.value === true && data.oldValue !== true && globalVars.crack_guessable_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Stored records, scrambled. None shows a password. Cracking is guessing, checked against them." },
+            { "eventPattern": "global_variable_changed:user_signin_done", "condition": "data.value === true && data.oldValue !== true && globalVars.usb_refused_done !== true", "onceOnly": true, "cooldown": 0, "bark": "A cracked password works like any other, and the PC even offered it. She's an ordinary user, so no Administrator on the taskbar." },
             { "eventPattern": "global_variable_changed:usb_refused_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The desk policy refused the stick. That's a rule doing its job." },
-            { "eventPattern": "global_variable_changed:admin_signin_done", "condition": "data.value === true && data.oldValue !== true && globalVars.profile_read_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Graham is an administrator, so this session is one. Look at the taskbar." },
+            { "eventPattern": "global_variable_changed:admin_signin_done", "condition": "data.value === true && data.oldValue !== true && globalVars.profile_read_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Graham is an administrator, so this session is one. The taskbar said Administrator." },
             { "eventPattern": "global_variable_changed:see_borrow_done", "condition": "data.value === true && data.oldValue !== true && globalVars.collect_after_borrow_done !== true", "onceOnly": true, "cooldown": 0, "bark": "His PC was down, so he borrowed the hot desk. That's a workaround, and it leaves something behind." },
-            { "eventPattern": "global_variable_changed:local_account_done", "condition": "data.value === true && data.oldValue !== true && globalVars.local_refused_done !== true", "onceOnly": true, "cooldown": 0, "bark": "A shared desk account, cracked like any other. It works on Delphine's PC." }
+            { "eventPattern": "global_variable_changed:local_account_done", "condition": "data.value === true && data.oldValue !== true && globalVars.local_refused_done !== true", "onceOnly": true, "cooldown": 0, "bark": "A shared desk account, cracked like any other. It works on the desks it covers." }
           ]
         },
         {

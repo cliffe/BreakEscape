@@ -43,9 +43,9 @@ Expect `Keyless server up on :3026 (TTS disabled).` (a harmless `dirname` messag
 
 2.2 Make a FRESH game (never edit an existing game row):
 
-    cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_access_signin demo_ops_passwords
+    cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb demo_ops_passwords
 
-Expect a line `GAME_ID=<number>`. Write that number as `<ID>`. If the command aborts, stop and record it.
+Expect a line `URL_PATH=/break_escape/games/<number>`. Write that number as `<ID>`. If the command aborts, stop and record it.
 
 2.3 Start the browser session with response capture:
 
@@ -88,7 +88,7 @@ Screenshots: `{"cmd":"screenshot","path":"/data/tmp/scratch/crack-pw/beatNN.png"
 - `{"cmd":"mg","action":"close"}`, `openInventoryItem Capture log`, `getState`. Expect a SIGN-INS row `Cracked password / Cracked / Delphine Arvanitis / darvanitis / <password>`, and Delphine's hash row reading `Cracked`.
 
 **Beat 5. Graham's, before the note: a countdown, then no match.** Do not take the printer note in this beat.
-- With the log open press Graham's `Crack` (index 2 now: Julian's is index 1, Delphine's row has no button). Press `Crack` in the cracker, with no pick. `getState`.
+- With the log open press Graham's `Crack` (read the indices from `getState` first: in game 183 Graham's was index 2 and Julian's 1, in game 290 they were in row order, Graham 1 and Julian 2; Delphine's row has no button). Press `Crack` in the cracker, with no pick. `getState`.
 - Expect `Working on it... 20s` and the header showing `Salted`. Screenshot `beat05.png`.
 - Pause `{"cmd":"waitFor","kind":"global","name":"__nope","timeoutMs":23000}` (third argument 120), then `getState`. Expect `No match`. Screenshot `beat05a.png`.
 
@@ -96,11 +96,11 @@ Screenshots: `{"cmd":"screenshot","path":"/data/tmp/scratch/crack-pw/beatNN.png"
 - `{"cmd":"mg","action":"close"}`, `{"cmd":"enter","room":"office"}` (skip if already there), `{"cmd":"moveToNear","id":"printer_cupboard"}`, `{"cmd":"interact","id":"printer_cupboard"}`, wait 1.5 s, `getState`. Expect the container `Printer cupboard` with `Printer admin.txt`.
 - `{"cmd":"mg","action":"take","args":["Printer admin.txt"]}`, `{"cmd":"mg","action":"close"}`.
 - `openInventoryItem Capture log`, `getState`. Expect a new SIGN-INS row `Password in a file / Found / Printer service / svc_printer / Type it from Printer admin.txt.` (no password shown). A toast `New in your capture log: Printer service's password, in Printer admin.txt.`
-- Press Graham's `Crack` (index 2) again, then `Crack`: expect `Working on it... 20s`. Screenshot `beat06.png`. Pause 23000 ms, `getState`. Expect `Cracked` and `Graham Whitfield (gwhitfield): <password>`. Screenshot `beat06a.png`. Redact the password.
+- Press Graham's `Crack` again (by its row, as above), then `Crack`: expect `Working on it... 20s`. Screenshot `beat06.png`. Pause 23000 ms, `getState`. Expect `Cracked` and `Graham Whitfield (gwhitfield): <password>`. Screenshot `beat06a.png`. Redact the password.
 - Close, reopen the log, `getState`: Graham's hash row `Cracked`; a SIGN-INS row for him.
 
 **Beat 7. Julian's: never.**
-- Press Julian's `Crack` (index 1), then `Crack`, `getState`. Expect `No match`. Screenshot `beat07.png`.
+- Press Julian's `Crack` (by its row), then `Crack`, `getState`. Expect `No match`. Screenshot `beat07.png`.
 - Press `Crack` again, `getState`. Expect exactly `This one will not fall to guessing. Try another way in.` Screenshot `beat07a.png`.
 - Close, reopen the log, `getState`. Expect Julian's row `Not feasible` and no `Crack` button on it. Screenshot `beat07b.png`.
 
@@ -112,7 +112,7 @@ Screenshots: `{"cmd":"screenshot","path":"/data/tmp/scratch/crack-pw/beatNN.png"
 - `{"cmd":"mg","action":"clickText","args":["Sign in"]}`, wait 2 s, `getState`. Expect `Signed in as Delphine Arvanitis.` Then
   `{"cmd":"eval","fn":"() => document.querySelector('.pc-taskbar-admin')?.textContent ?? null"}` must return `null` (no Administrator). Screenshot `beat08a.png`. `{"cmd":"mg","action":"close"}`.
 
-**Beat 9. Checks in the game.** `{"cmd":"sync"}`. Go to the IT room, `{"cmd":"moveToNear","id":"signin_log_pc"}`, `{"cmd":"interact","id":"signin_log_pc"}`, `getState`. Expect the title `Sign-in log`, the six seed rows (`Mon 17:32` to `Tue 08:09`, among them two `FAIL` rows at `Tue 02:10` and `Tue 02:12`) and one row for Delphine's sign-in (`SIGN_IN`, identity `darvanitis`, `Delphine's PC`, `OK`). There must be NO row for any crack, take or feed post. Screenshot `beat09.png`. Close.
+**Beat 9. Checks in the game.** `{"cmd":"sync"}`. Go to the IT room, `{"cmd":"moveToNear","id":"signin_log_pc"}`, `{"cmd":"interact","id":"signin_log_pc"}`, `getState`. Expect the title `Sign-in log`, the six seed rows (`Mon 17:32` to `Tue 08:09`, among them two `FAIL` rows: `Tue 02:10` as `administrator` on Graham's PC, the night-time one, and `Tue 08:01` as Delphine, a morning typo; game 290) and one row for Delphine's sign-in (`SIGN_IN`, identity `darvanitis`, `Delphine's PC`, `OK`). There must be NO row for any crack, take or feed post. Screenshot `beat09.png`. Close.
 
 **Beat 10. Crack a collected cached hash (added with P-S5).** Graham's tile is Cracked from beat 6, so no typing. A record collected from a PC's cache is cracked by the same cracker; Niamh's falls at once with no pick, which is the lesson (a weak password falls whatever the PC).
 - `{"cmd":"mg","action":"close"}`, `{"cmd":"moveToNear","id":"hot_desk"}`, `{"cmd":"interact","id":"hot_desk"}`, `getState`. Expect the sign-in screen with the line `Domain: merrin`. If the toast `Someone's in the way.` shows, wait a few seconds and repeat.
@@ -125,11 +125,11 @@ Then stop the session (section 5) and run section 4.
 
 ## 4. Checks (after the session is stopped)
 
-Leak check over the capture file (two keyboard sign-ins, named: Delphine's in beat 8, Graham's at the hot desk in beat 10):
+Leak check over the capture file. The recorder tags each sign-in with its PC, so the check takes no `--signin` entry (game 290: with them it exits 2, "a capture with recorder tags takes no --signin or --logout entry"):
 
-    cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <ID> --signin delphine_arvanitis@delphine_pc#1 --signin graham_whitfield@hot_desk#1 /data/tmp/scratch/crack-pw/responses-<ID>.jsonl > /data/tmp/scratch/crack-pw/leak-check-<ID>.txt 2>&1; echo "EXIT=$?"
+    cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <ID> /data/tmp/scratch/crack-pw/responses-<ID>.jsonl > /data/tmp/scratch/crack-pw/leak-check-<ID>.txt 2>&1; echo "EXIT=$?"
 
-Known fault until the scanner is updated (do not fix it, record it): each `GET /keyring` answer holding a hash row gives a `crack_row` finding, `owner=crack:row`, `at=$.entries[N]`, because the server's row now carries a `heldItem` key (the held file's id) that the scanner's list `CRACK_ROW_KEYS` in `tools/playtest/lib/access_leak_scanner.rb` does not name. In the last run (game 175) all findings were of that one kind (12 findings, rules `crack_row` only). Record the count, the set of rule names, and whether any finding has another rule or a different owner: that would be a real finding.
+The old `crack_row` fault (the hash row's `heldItem` key, 12 findings in game 175) is fixed in the scanner: game 290 gave 0 findings of any kind. Any finding now is a real one: record its rule, owner and path.
 
     cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <ID> --ops-log > /data/tmp/scratch/crack-pw/verify-ops-log-<ID>.txt 2>&1; echo "EXIT=$?"
     cd /data/be-ops-follow && env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <ID> --access > /data/tmp/scratch/crack-pw/verify-access-<ID>.txt 2>&1; echo "EXIT=$?"
@@ -166,8 +166,8 @@ Write `/data/tmp/scratch/crack-pw/RESULTS.md` with these sections, in this order
 
 Beats and entry points the guided tour now sends the player to. Run them in this game state; every cracker rule above still holds.
 
-- **P4, from the held file.** Ama's pointer now says "crack Graham's record from the file in your inventory". After taking `graham_record.dat` and the printer note, open the file in the inventory tray: it offers Crack (the same cracker, salted, about 20 seconds). Press it before the note and the verdict is "No match" (fixed when the run starts); take the note and press again. Expect "The cracker finished by itself when the wait ran out" in Ama's follow-up (the tell-Ama choice "I cracked Graham's record.").
-- **P11a, from the toast.** After the hot desk collect (Graham signed in at `hot_desk`, "Cached accounts"), the toast "Hash collected" names one record (Niamh's) and has a Crack button. Press it: the cracker opens on that row; Niamh's falls at once with nothing picked. Then tell Ama "I collected at the hot desk." (answer: "One record, Niamh's. The toast has a Crack button when it names one record. Try it.").
-- **P11c, the second toast.** After Jun's borrow (lever "Switch Jun's PC off." after P11a), sign in again at the hot desk (the borrow displaced the first session), "Cached accounts": the toast names one record, Jun's (Niamh's was collected before). Its Crack button opens Jun's row; with no fact it says one fact is missing; with "Jun's cat" (from his feed post) it cracks. Tell Ama "I collected there again."
-- **When the borrow came first.** Collecting once after the borrow lists two records and the toast has no Crack button (it names two). Use the capture log rows instead.
+- **P4, from the held file.** Ama's pointer now says "crack Graham's record from the file in your inventory". After taking `graham_record.dat` and the printer note, open the file in the inventory tray: it offers Crack (the same cracker, salted, about 20 seconds). Press it before the note and the verdict is "No match" (fixed when the run starts); take the note and press again. Expect "Graham's password was the printer account's too." in Ama's follow-up (the tell-Ama choice "I cracked Graham's record.").
+- **P11a, from the toast.** After the hot desk collect (Graham signed in at `hot_desk`, "Cached accounts"), the toast "Hash collected" is a single record (Niamh's) and has a Crack button. Press it: the cracker opens on that row; Niamh's falls at once with nothing picked. Then tell Ama "I collected at the hot desk." (answer: "One record, Niamh's. Whoever uses a PC leaves a record behind.").
+- **P11c, the second toast.** After Jun's borrow (lever "Switch Jun's PC off." after P11a), the borrow ended your session and Jun left his open: at the hot desk use Start, "Switch user", the Graham tile, then "Cached accounts": the toast is a single record, Jun's (Niamh's was collected before). Its Crack button opens Jun's row; with no fact it says one fact is missing; with "Jun's cat" (from his feed post) it cracks. Tell Ama "I collected there again."
+- **When the borrow came first.** Collecting once after the borrow lists two records and the toast, "Hash collected (2)", has no Crack button. Use the capture log rows instead.
 - Passwords are never written to RESULTS.md; write `[redacted N chars]`.
