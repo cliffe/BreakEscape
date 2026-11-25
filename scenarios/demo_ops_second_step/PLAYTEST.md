@@ -1,6 +1,6 @@
 # demo_ops_second_step: scripted playtest ("What a second step stops")
 
-Demo scenario for the second sign-in step (A22), inside a working office at Merrin & Sallow. Three runs (A to C) and, with S8b, a fourth (D), each 10 to 15 minutes, each from a fresh game. The host is Ama Owusu in Reception. No code, number or password is written on any sign: passwords are read from the notes, the card and the screens the beats name, and the six digits only from the fob on screen.
+Demo scenario for the second sign-in step (A22), inside a working office at Merrin & Sallow. Three runs (A to C), with S8b a fourth (D) and with S8c a fifth (E), each 10 to 15 minutes, each from a fresh game. The host is Ama Owusu in Reception. No code, number or password is written on any sign: passwords are read from the notes, the card and the screens the beats name, and the six digits only from the fob on screen.
 
 Wording in this file follows the game's rule: it says what to do, and which button to press only where a click path needs it.
 
@@ -40,10 +40,10 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
 ## The places and the people
 
 - **Reception** (start, south): Ama Owusu (the host, near the start), Lorna Easton at her desk ("Lorna's PC", left), the "Visitor kiosk" and the "Kiosk login card" beside it (right), Niamh Doherty on the stool by the kiosk. A door north to the Office.
-- **Office** (north of Reception): three desks with PCs, left to right "Darren's PC", "Anjali's PC", "Yusuf's PC"; "Anjali's code fob" (on her desk when she is away); "Yusuf's phone" (by the "Office Coffee Station", bottom right, when he is away); "Office printer" and its "Printer wall socket"; "Wall socket" for the coffee machine; the "Things to try" board. Doors: west to the Kitchen, east to the IT room.
+- **Office** (north of Reception): three desks with PCs, left to right "Darren's PC", "Anjali's PC", "Yusuf's PC"; "Anjali's code fob" (on her desk when she is away); "Yusuf's phone" (by the "Office Coffee Station", bottom right, when he is away); "Office printer" and its "Printer wall socket"; "Wall socket" for the coffee machine; the "Things to try" board (now on the middle of the north wall). Doors: west to the Kitchen, east to the IT room, and (S8c) two in the north wall: the left one to the "Records room", the right one to the "Archive store". S8c adds, in the Office: "Gwen's desk" and "Gwen's desk drawer" (an unlocked drawer with a note), a "Side table" by the east wall with "Gwen's phone" on its charger when she is away, "Fatima's desk", the "Records index wall switch" (left wall), "Darren's desk drawer" (holds a key) and, once Fatima has propped it, a fire extinguisher by the Archive store door. In Reception, by the front desk: "Darren's case". In the Kitchen: the "Facilities notice" (two door codes). People: Gwen Pritchard and Fatima Begum in the Office. The two new rooms are shut doors until opened.
 - **Kitchen** (west): fridge, microwave, "Kitchen Coffee Station", "Water Cooler", "Washing-up Tray". Staff go here for water (Anjali, Niamh) and for lunch. Opening it sets `kitchen_seen`; Ama barks "That's the kitchen. Come back to me and I can send them for coffee."
 - **IT room** (east): Thandiwe Moyo, "Thandiwe's laptop", the "Approvals log terminal".
-- Ama's hub choices (all in her conversation): "What's next?", "Could I have Lorna's sign-in?", "I read Anjali's note.", "Send them for coffee.", "Switch the printer off.", "Send them to lunch.", "Call it a day." (then "Yes, call it a day."), "What did that show?", "Give me the short version." The levers can be pressed in any order once the Kitchen has been opened; "Send them for coffee" can be pressed again and again. "Send them to lunch" fires once only.
+- Ama's hub choices (all in her conversation; S8c adds "Switch the records index off."): "What's next?", "Could I have Lorna's sign-in?", "I read Anjali's note.", "Send them for coffee.", "Switch the printer off.", "Send them to lunch.", "Call it a day." (then "Yes, call it a day."), "What did that show?", "Give me the short version." The levers can be pressed in any order once the Kitchen has been opened; "Send them for coffee" can be pressed again and again. "Send them to lunch" fires once only.
 - Keep the Cake in the inventory until M5 is done: dropped in the Office it becomes a 12-second lunch for Darren, and his screen then stays open.
 - The objectives panel has three aims, Morning, Midday and Evening. Tasks tick on their own when a beat has happened; none gates anything.
 
@@ -125,12 +125,42 @@ A fresh game, never "Call it a day" (the desk works in the evening too, but Darr
 5. Click Ama, "What did that show?": three more lines (the two things about Darren anyone could read, the phone move, the desk that never said whether the name was real).
 6. Checks: `verify-run --access` shows Darren's password reset and Yusuf's step reset; `--ops-log` passes; the leak check exits 0, with no `--signin` entry.
 
+## Run E: doors, a safe and a case (M14 to M17, added by S8c)
+
+A fresh game, never "Call it a day" (Darren must still be on shift for M17, and Gwen for M14). The player's own phone is not involved: the approvals are Gwen's, Anjali's and Darren's. Open the Office and the Kitchen first (the gate), read the "Facilities notice" in the Kitchen (record the two codes as "from the facilities notice": never copied into a sign, the ink or a line), then go back to Reception. The scenario's lock steps are the ones of `test_ops_lock_step` on a room and an object: the pane opens by itself over the pad when the first factor is right; the X closes it silently; "Send again" is greyed for 2 seconds.
+
+The order is M15, M14, M16, M17. M15 comes first so that Gwen's phone is not yet in the inventory when the archive store's pane opens: with her phone held, that pane shows "Check Gwen Pritchard's phone" in place of an unanswered request, and approving there would open the store with the step and leave the prop nothing to skip. If Gwen's phone is already held, close the archive pane with the X (do not approve) or drop the phone first.
+
+1. **M15, the propped door.** Click the right-hand door in the Office's north wall ("Archive store"). In the pad type the archive store's code from the notice, press Enter.
+   - See: a pane titled "Archive store": "A request was sent to Gwen Pritchard's phone." and "Requests sent: 1". No "Check ... phone" button (the phone is not held). Click the X (silent). Gwen never answers however often you press "Send again".
+   - Click Ama, choose "Switch the records index off." (or use the "Records index wall switch" in the Office and confirm). Watch Fatima Begum: she goes to her desk, the index is down, she grumbles ("Index is down. Again."), tries again after about 25 seconds and then, at her second failure, says "Not tapping that code all day.", walks to the door and a fire extinguisher appears against it. Record the seconds from the switch-off to the door opening (not yet measured; the validator's estimate is about 40 seconds of outage plus the walk).
+   - See: the Archive store door opens with no code and no pane; walk in: "Archive boxes". The task "Walk into the archive store through a door someone propped" ticks on `door_propped:archive_store`.
+   - Server: one `mfa_challenge` and one `mfa_prompt_sent` row at the door `archive_store`, no `mfa_prompt_approved` row there.
+2. **M14, the records room.** Click Ama, choose "Send them for coffee." (Gwen's caffeine is set with everyone else's). Wait for Gwen to leave her desk; "Gwen's phone" is now on the "Side table" by the east wall (the validator calls a loose phone "no check" on purpose). Click the left-hand door in the Office's north wall ("Records room"), type the records room code from the notice, press Enter.
+   - See: a pane "Records room": "A request was sent to Gwen Pritchard's phone." "Requests sent: 1". Press "Send again" a few times: Gwen never approves (record how many you pressed).
+   - Close the pane with the X, pick up the phone from the side table, click the door and type the code again: the pane reopens and the request count carries on. Click "Check Gwen Pritchard's phone" in the pane: a card named "Records room" with "Approve" and "Deny". Click "Approve".
+   - See: the pane closes and the door opens with the toast "Door opened with ..."; walk in: "Records safe". The task "Open the records room with its code and Gwen's approval" ticks.
+   - Server: `mfa_challenge`, several `mfa_prompt_sent` and one `mfa_prompt_approved` (approver `held_phone`) at the door `records_room`.
+3. **M16, the safe.** Click "Gwen's desk drawer" in the Office (it is not locked) and take "Note: records safe"; read it (the safe's PIN: record "from Gwen's drawer note"). Click Ama, "Send them for coffee." and wait for `npc_left_post:anjali_rao`; take "Anjali's code fob" from her desk. Go to the Records room, click "Records safe", type the PIN from the note, press Enter.
+   - See: a pane "Records safe": "Enter the code from Anjali Rao's device." with a six-digit field and "Read code", "Verify". Type 000000 and Verify: "Incorrect code". Click "Read code": six digits and a countdown; click "Use this code", then "Verify".
+   - See: the pane closes and the safe opens: "Safe papers". The task "Open the records safe with its code and Anjali's fob" ticks.
+   - Server: one `mfa_code_wrong` and one `mfa_code_ok` at the object `records_safe`. Anjali's fob has not been reset by any beat, so it is live (do not run M12 for her).
+4. **M17, the carried case.** In the Office click "Darren's desk drawer" and take "Darren's case key". In Reception click "Darren's case" (by the front desk): it joins the inventory, locked. Open the inventory tray menu of the case, choose "Unlock" (the key is used), then the pane "Darren's case": "A request was sent to Darren Price's phone." "Requests sent: 1".
+   - Click the X. In the tray choose "Drop here" (toast "Dropped Darren's case"), click the case on the floor to pick it up again ("Picked up Darren's case"). Choose "Unlock" again: "Requests sent: 2" (the count carries on). Do that once more (drop, pick up, "Unlock") and press "Send again": the third request is approved at once, the pane closes and the case opens: "Case papers". The task "Carry Darren's case away until he approves opening it" ticks (it does not tick "Wear someone down until they approve a sign-in": that is Darren's PC only).
+   - Server: three `mfa_prompt_sent` and one `mfa_prompt_approved` (approver `owner`) at the object `darren_case`.
+5. Click Ama, "What did that show?": four more lines (the phone and the door, the propped door, the fob and the safe, the case that travelled). "What's next?" names the next undone lock beat.
+6. Checks: `verify-run --access` and `--ops-log` pass (the log shows `door` and `object` rows beside the `pc` ones); the leak check exits 0 with no `--signin` entry. The Rails scan over the same routes reports nothing (see BUILD_REPORT).
+
+A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16 (Anjali goes home with her fob). Gwen and Fatima have no evening mapping and stay.
+
 ## Things a tester sees that are not faults
 
 - Toasts arrive late: "Picked up Lorna's sign-in card" and "Overheard: Yusuf Demir" can appear after the event they report, even after a sign-out, and the overheard toast repeats for each time Yusuf asks (the share repeats while the printer stays off).
 - The session tools' `converse` with a named choice repeats that choice until the branch is spent ("Send them for coffee." five times, "What did that show?" three times, Thandiwe's line three times). That is the harness; a player sees each line once.
 - `verify-run --access` prints a habits block marked not for a blind tester: do not read it until the run is finished.
 - No lever says when nobody moves; see the coffee note in Run A step 3.
+- Only Gwen can approve the two doors, and she never does by habit: a door that "does nothing" however many times "Send again" is pressed is the beat, not a fault. The archive store opens by Fatima's prop with no code, no pane and no row of an approval.
+- The records room and the archive store are shut doors on the map until they are opened; Gwen's and Fatima's desks stand in the Office all the time (a person behind a locked door is never simulated).
 
 ## Free play
 

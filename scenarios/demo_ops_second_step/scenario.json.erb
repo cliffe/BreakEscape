@@ -1,6 +1,6 @@
 <%
 # demo_ops_second_step (wave 1, unit S-S): SHOWCASE_PLAN.md sections 4, 7.1 to 7.4, 7.7 to 7.9 and
-# contract 8.3.1. S8b appended (7.5, helpdesk); nothing from 7.6 (second step on locks).
+# contract 8.3.1. S8b appended (7.5, helpdesk); S8c appended (7.6, second step on locks).
 # Each password is one literal, written once here and interpolated where the clue shows it
 # (an NPC's creds are server-only). None appears in any ink or chatter line.
 lorna_pw  = "Easton-Fenlow-26"
@@ -11,6 +11,11 @@ niamh_pw  = "Dohertree-Nia-14"
 # S8b: the one password the helpdesk issues (Darren's), and each account's two recovery answers.
 # Each is one literal here, interpolated only into creds.recovery and the clue texts (Darren's badge, the kitchen board).
 darren_reset = "Pricesafe-Rst-81"
+# S8c: the three PINs. Each is one literal here, interpolated into the lock's own requires and its one clue
+# (the facilities notice in the kitchen for the two doors, Gwen's drawer note for the safe). None is in any ink or chatter line.
+records_pin = "5821"
+archive_pin = "3074"
+safe_pin    = "6419"
 rec = {
   lorna:  { staff_no: "40118", manager: "Eleanor Marsh" },
   darren: { staff_no: "40371", manager: "Marcus Hale" },
@@ -67,6 +72,12 @@ rec = {
       "kind": "printer",
       "object": "office_printer",
       "offWhen": "printer_off"
+    },
+    "index_service": {
+      "name": "Index service",
+      "kind": "records",
+      "object": "fatima_desk",
+      "offWhen": "records_index_off"
     }
   },
 
@@ -167,7 +178,14 @@ rec = {
     "helpdesk_it_desk_result": "",
     "reset_password_done": false,
     "reenrol_done": false,
-    "desk_refuses_done": false
+    "desk_refuses_done": false,
+    "archive_door_propped": false,
+    "records_index_off": false,
+    "gwen_phone_left": false,
+    "door_step_done": false,
+    "propped_done": false,
+    "safe_step_done": false,
+    "case_step_done": false
   },
 
   "objectives": [
@@ -218,6 +236,19 @@ rec = {
         { "taskId": "reset_password", "title": "Get a password reset at the IT desk", "type": "custom", "status": "active" },
         { "taskId": "reenrol", "title": "Move someone's sign-in approvals to your own phone", "type": "custom", "status": "active" },
         { "taskId": "desk_refuses", "title": "Get refused by the desk until it stops listening", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "late_locks",
+      "title": "Late: doors, safes and cases",
+      "description": "A second step can sit on a locked door, a safe or a case, not only on a sign-in. Each task ticks when you have seen it happen.",
+      "status": "active",
+      "order": 4,
+      "tasks": [
+        { "taskId": "door_step", "title": "Open the records room with its code and Gwen's approval", "type": "custom", "status": "active" },
+        { "taskId": "propped", "title": "Walk into the archive store through a door someone propped", "type": "custom", "status": "active" },
+        { "taskId": "safe_step", "title": "Open the records safe with its code and Anjali's fob", "type": "custom", "status": "active" },
+        { "taskId": "case_step", "title": "Carry Darren's case away until he approves opening it", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -278,6 +309,34 @@ rec = {
           "position": { "x": 7.2, "y": 4.8 },
           "takeable": false,
           "observations": "A stool beside the visitor kiosk."
+        },
+        {
+          "type": "briefcase",
+          "id": "darren_case",
+          "name": "Darren's case",
+          "position": { "x": 5.3, "y": 3.5 },
+          "takeable": true,
+          "droppable": true,
+          "locked": true,
+          "lockType": "key",
+          "requires": "darren_case_key",
+          "keyPins": [45, 30, 55, 40],
+          "difficulty": "easy",
+          "secondStep": { "kind": "push", "owner": "darren_price" },
+          "observations": "Darren's briefcase, left at the front desk for the courier. It has a key lock.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "case_papers",
+              "name": "Case papers",
+              "takeable": true,
+              "readable": true,
+              "readDisplay": "gameDisplay",
+              "addToNotes": false,
+              "text": "Rota drafts and a lunch order for the fifth floor. Nothing important.",
+              "observations": "A folded sheaf of papers."
+            }
+          ]
         }
       ],
       "npcs": [
@@ -324,7 +383,11 @@ rec = {
             { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's popped out. If it's a quick coffee, his screen stays open." },
             { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Darren's gone to lunch. His screen will be locked." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } },
-            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'blocked'", "cooldown": 0, "completeTask": "desk_refuses", "setGlobal": { "desk_refuses_done": true } }
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'blocked'", "cooldown": 0, "completeTask": "desk_refuses", "setGlobal": { "desk_refuses_done": true } },
+            { "eventPattern": "mfa_approved:gwen_pritchard", "condition": "data.targetType === 'door' && data.targetId === 'records_room'", "cooldown": 0, "completeTask": "door_step", "setGlobal": { "door_step_done": true } },
+            { "eventPattern": "door_propped:archive_store", "cooldown": 0, "completeTask": "propped", "setGlobal": { "propped_done": true } },
+            { "eventPattern": "mfa_approved:anjali_rao", "condition": "data.targetType === 'object' && data.targetId === 'records_safe'", "cooldown": 0, "completeTask": "safe_step", "setGlobal": { "safe_step_done": true } },
+            { "eventPattern": "mfa_approved:darren_price", "condition": "data.targetType === 'object' && data.targetId === 'darren_case'", "cooldown": 0, "completeTask": "case_step", "setGlobal": { "case_step_done": true } }
           ]
         },
         {
@@ -388,7 +451,7 @@ rec = {
     "office": {
       "type": "room_office",
       "door_sign": "Office",
-      "connections": { "south": "reception", "west": "kitchen", "east": "it_room" },
+      "connections": { "south": "reception", "west": "kitchen", "east": "it_room", "north": ["records_room", "archive_store"] },
       "objects": [
         {
           "type": "pc",
@@ -566,14 +629,133 @@ rec = {
           "type": "notice_board1",
           "id": "tour_notice",
           "name": "Things to try",
-          "position": { "x": 8.1875, "y": 0.6875 },
+          "position": { "x": 5.1875, "y": 0.6875 },
           "wallMounted": true,
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- Read the note under Anjali's keyboard while she is away.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\n- Use Darren's screen while he is out for coffee.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room.\nAfternoon:\n- Ask Thandiwe for a password reset for Darren and a sign-in approval reset for Yusuf.\n- Ask for a reset for Lorna with wrong answers until the desk stops listening."
+          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- Read the note under Anjali's keyboard while she is away.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\n- Use Darren's screen while he is out for coffee.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room.\nAfternoon:\n- Ask Thandiwe for a password reset for Darren and a sign-in approval reset for Yusuf.\n- Ask for a reset for Lorna with wrong answers until the desk stops listening.\nLate:\n- Read the facilities notice in the kitchen, then try the records room door while Gwen is away.\n- Ask Ama to switch the records index off and watch Fatima.\n- Gwen's drawer holds a note for the records safe. Anjali's fob gives its code.\n- Darren's case, by the front desk: carry it off, put it down, pick it up, and keep asking."
+        },
+        {
+          "type": "exec_desk1",
+          "id": "gwen_desk",
+          "name": "Gwen's desk",
+          "position": { "x": 4.4, "y": 6.0 },
+          "takeable": false,
+          "observations": "Gwen Pritchard's desk. Records manager."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "gwen_drawer",
+          "name": "Gwen's desk drawer",
+          "position": { "x": 5.6, "y": 6.0 },
+          "takeable": false,
+          "locked": false,
+          "observations": "The drawer by Gwen's desk. It is not locked.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "safe_note",
+              "name": "Note: records safe",
+              "takeable": true,
+              "readable": true,
+              "readDisplay": "gameDisplay",
+              "addToNotes": false,
+              "text": "Records safe keypad: <%= safe_pin %>. It also wants the code from Anjali's fob. Keep it in here.",
+              "observations": "A sticky note in Gwen's handwriting."
+            }
+          ]
+        },
+        {
+          "type": "hce_console_table1",
+          "id": "side_table",
+          "name": "Side table",
+          "position": { "x": 9.0, "y": 5.5 },
+          "takeable": false,
+          "observations": "A side table by the east wall with a phone charger on it."
+        },
+        {
+          "type": "phone_friendface",
+          "id": "gwen_phone",
+          "name": "Gwen's phone",
+          "owner": "gwen_pritchard",
+          "position": { "x": 9.0, "y": 5.0 },
+          "takeable": true,
+          "leftBehindChance": 1,
+          "revealOnGlobal": "gwen_phone_left",
+          "observations": "Gwen's mobile, on the charger on the side table."
+        },
+        {
+          "type": "exec_desk1",
+          "id": "fatima_desk",
+          "name": "Fatima's desk",
+          "position": { "x": 4.2, "y": 8.4 },
+          "takeable": false,
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "observations": "Fatima Begum's desk. She keeps the records index here."
+        },
+        {
+          "type": "power_socket2",
+          "id": "records_index_socket",
+          "name": "Records index wall switch",
+          "position": { "x": 1.15625, "y": 6.0625 },
+          "spriteVariants": [{ "condition": "globalVars.records_index_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.records_index_off",
+              "text": "Switch the records index off at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "records_index_off", "value": true },
+                { "type": "hint", "title": "Wall switch", "message": "The records index is switched off. Anyone who needs it will find it down." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.records_index_off",
+              "text": "Switch the records index back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "records_index_off", "value": false },
+                { "type": "hint", "title": "Wall switch", "message": "The records index is switched on." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "fire_extinguisher1",
+          "id": "archive_wedge",
+          "name": "Fire extinguisher, propping the archive store door",
+          "position": { "x": 9.0, "y": 2.2 },
+          "takeable": false,
+          "revealOnGlobal": "archive_door_propped",
+          "observations": "A fire extinguisher wedged against the archive store door to hold it open."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "darren_drawer",
+          "name": "Darren's desk drawer",
+          "position": { "x": 3.6, "y": 3.4 },
+          "takeable": false,
+          "locked": false,
+          "observations": "The drawer by Darren's desk. It is not locked.",
+          "contents": [
+            {
+              "type": "key",
+              "id": "darren_case_key",
+              "name": "Darren's case key",
+              "takeable": true,
+              "opens_lock": "darren_case_key",
+              "keyPins": [45, 30, 55, 40],
+              "observations": "A small key on a ring with a plastic tag marked Case."
+            }
+          ]
         }
       ],
       "npcs": [
@@ -685,6 +867,61 @@ rec = {
             { "eventPattern": "global_variable_changed:coffee_call", "fireOnlyWhenLoaded": true, "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "global_variable_changed:act_evening", "fireOnlyWhenLoaded": true, "condition": "data.value === true", "cooldown": 0, "setVisible": false }
           ]
+        },
+        {
+          "id": "gwen_pritchard",
+          "displayName": "Gwen Pritchard",
+          "npcType": "person",
+          "position": { "x": 4.4, "y": 7.0 },
+          "spriteSheet": "gwen_pritchard",
+          "spriteTalk": "assets/characters/gwen_pritchard_talk.png",
+          "spriteVisemes": "assets/characters/gwen_pritchard_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/gwen_pritchard.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Vindemiatrix", "style": "Records manager at Merrin & Sallow, in her 50s, dry and exact, fond of a tidy filing system. Speak with a consistent Welsh-influenced British accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "habits": { "approvesPrompts": "never" },
+          "needsHome": "gwen_desk",
+          "needsSpeed": 80,
+          "needsDeferMin": 0.5,
+          "needs": {
+            "caffeine": { "decayPerMin": 12, "urgentAt": 40, "initial": 70 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "condition": "globalVars.coffee_call > 0", "cooldown": 300000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:coffee_call", "fireOnlyWhenLoaded": true, "cooldown": 0, "needs": { "set": { "caffeine": 10 } } }
+          ]
+        },
+        {
+          "id": "fatima_begum",
+          "displayName": "Fatima Begum",
+          "npcType": "person",
+          "position": { "x": 4.2, "y": 9.2 },
+          "spriteSheet": "fatima_begum",
+          "spriteTalk": "assets/characters/fatima_begum_talk.png",
+          "spriteVisemes": "assets/characters/fatima_begum_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/fatima_begum.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Zephyr", "style": "Records clerk at Merrin & Sallow, in her late 20s, quick and cheerful, always carrying something. Speak with a consistent northern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "needsHome": "fatima_desk",
+          "needsSpeed": 85,
+          "needsDeferMin": 0.5,
+          "workNeeds": ["+index_service"],
+          "frustration": { "perFail": 35 },
+          "workarounds": [{ "at": 60, "do": "prop_door", "door": "archive_store", "prop": "archive_wedge", "setGlobal": "archive_door_propped" }],
+          "needs": {
+            "work": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 }
+          },
+          "chatter": {
+            "work_fail": ["Index is down. Again."],
+            "wk_prop_door": ["Not tapping that code all day."]
+          }
         }
       ]
     },
@@ -752,6 +989,19 @@ rec = {
           "addToNotes": false,
           "observations": "",
           "text": "Staff board.\nOperations (Darren Price, Yusuf Demir) report to Marcus Hale.\nFire marshals this month: Yusuf Demir, staff no. <%= rec[:yusuf][:staff_no] %>. Print jobs over twenty pages go through Operations."
+        },
+        {
+          "type": "notice_board1",
+          "id": "facilities_notice",
+          "name": "Facilities notice",
+          "position": { "x": 4.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Facilities. New keypad codes. Records room: <%= records_pin %>. Archive store: <%= archive_pin %>. Both doors also ask for Gwen's approval on her phone. Please do not copy these onto the doors."
         }
       ],
       "npcs": []
@@ -808,6 +1058,69 @@ rec = {
           "needsSpeed": 80
         }
       ]
+    },
+
+    "records_room": {
+      "type": "room_lw_records",
+      "door_sign": "Records room",
+      "connections": { "south": "office" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "<%= records_pin %>",
+      "secondStep": { "kind": "push", "owner": "gwen_pritchard" },
+      "objects": [
+        {
+          "type": "safe",
+          "id": "records_safe",
+          "name": "Records safe",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "<%= safe_pin %>",
+          "secondStep": { "kind": "code", "owner": "anjali_rao" },
+          "observations": "A wall safe with a keypad. It also wants a code from a fob.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "safe_papers",
+              "name": "Safe papers",
+              "takeable": true,
+              "readable": true,
+              "readDisplay": "gameDisplay",
+              "addToNotes": false,
+              "text": "Share certificates and a spare set of building plans.",
+              "observations": "A bundle of papers from the safe."
+            }
+          ]
+        }
+      ],
+      "npcs": []
+    },
+
+    "archive_store": {
+      "type": "room_office",
+      "door_sign": "Archive store",
+      "connections": { "south": "office" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "<%= archive_pin %>",
+      "secondStep": { "kind": "push", "owner": "gwen_pritchard" },
+      "objects": [
+        {
+          "type": "lw_deed_boxes",
+          "id": "archive_boxes",
+          "name": "Archive boxes",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Archive boxes, 2009 to 2019. Fatima's labels: invoices, leases, old rotas.",
+          "observations": "Rows of archive boxes with Fatima's labels."
+        }
+      ],
+      "npcs": []
     }
   }
 }

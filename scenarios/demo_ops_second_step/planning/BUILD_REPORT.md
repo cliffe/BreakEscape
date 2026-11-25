@@ -112,3 +112,60 @@ An append: scenario fields, ink, objectives, new test cases and PLAYTEST beats M
 - **Leak scan.** A new last case passes every answer of a played helpdesk run (M11 to M13, grants, stale password, own phone, the stop) through the scanner, given the game, and asserts no findings. The 8.4 step 5 S8c exception does not apply yet (no lock steps). The older whole-run scan case is unchanged and still passes.
 - **Rule 6 grep.** Each recovery answer and Darren's reset password appears only in the erb's literals, `creds`, the badge and board texts (Darren's and Yusuf's answers; the reset password nowhere readable) and the test's constants.
 - **Browser.** Every beat is reachable by clicking; the form is also on Darren's desktop. A Haiku Run D is still to be played.
+
+## Unit S-8c (wave 3): second step on locks append (SHOWCASE_PLAN.md 7.6, `ops-lock2` on main)
+
+An append: scenario fields, ink, objectives, new test cases, PLAYTEST Run E (M14 to M17), VOICED_LINES, mission.json duration 25. The existing test cases pass unchanged except one assertion (see "Where the plan needed a change", item 6).
+
+### Probes
+
+- **Ticks probe (the `mfa_approved` detail for a lock).** The detail is `{ npcId, targetType, targetId, by }`. The gate answer's canonical `targetType` is `door` or `object` (the server's, `docs/ACCESS_AND_NETWORKS.md` A25), and the client builds the subject key `${answer.targetType}:${answer.targetId}` (`public/break_escape/js/systems/lock-step.js:106,127`), which `subjectDetail` turns into `{ targetType, targetId }` (`public/break_escape/js/systems/mfa-client.js:74-78`); `emitBoth('mfa_approved', npcId, { npcId, ...subjectDetail(parsed), by })` fires `mfa_approved` and `mfa_approved:<owner npc id>` (`mfa-client.js:259-267`, the suffix by `emitBoth`, `:80-84`). So: a door gives `targetType: 'door'`, `targetId: 'records_room'` (the room key); the safe gives `'object'`, `'records_safe'`; the case gives `'object'`, `'darren_case'`. A Rails test pins the gate answers that carry those two values for each (`S8c M14`, `M16`, `M17`); the browser emission itself is not played here (the three mappings and the `door_propped` one are not exercised until a browser run). No lock approval had to fall back to an ink tick. The PC form carries `pcId` and no `targetId`, so Ama's existing `pestered` mapping (`data.pcId === 'darren_pc'`) cannot tick on the case, and the new `case_step` mapping (`targetType === 'object' && targetId === 'darren_case'`) cannot tick on a PC.
+- **P7** (does a held-up second step raise Fatima's frustration): no. Frustration is written only by `POST npc_frustration` reports of a failed work use (`app/models/break_escape/npc_frustration.rb`); the lock step routes never touch `npcFrustration`. The test asserts `player_state['npcFrustration']` stays `{}` after the gate and five unanswered requests at the records room. The records-index lever stays the forcing route.
+
+### Fields
+
+- Rooms: `records_room` (`room_lw_records`, PIN, `secondStep` push, owner Gwen) and `archive_store` (`room_office`, PIN, `secondStep` push, owner Gwen), both off the Office's north wall: `office.connections.north: ["records_room", "archive_store"]`. Gwen Pritchard (records manager, `approvesPrompts: "never"`, caffeine and hunger needs, desk `gwen_desk`, drawer `gwen_drawer` holding the safe PIN note, `gwen_phone` on a side table with `leftBehindChance` 1 and global `gwen_phone_left`) and Fatima Begum (records clerk, work need on the new resource `index_service`, `frustration.perFail` 35, `prop_door` at 60 on `archive_store` with the wedge `archive_wedge` revealed by `archive_door_propped`). Locks: `records_safe` (PIN, `secondStep` code, owner Anjali, her fob from M6), `darren_case` (key lock, `keyPins`, key in `darren_drawer`, `secondStep` push, owner Darren, takeable and droppable). New object `facilities_notice` (kitchen, both door PINs), `records_index_socket` wall switch with an Ama lever, `fatima_desk`, `gwen_desk`, `side_table`, Fatima's boxes in the archive store.
+- Ink: Ama gains the lever `lever_index`, four `whats_next` branches, four recap lines and a short-version line; new short chats `gwen_pritchard.ink` and `fatima_begum.ink`. New aim `late_locks` (`door_step`, `propped`, `safe_step`, `case_step`), four mappings at the end of Ama's array (on `mfa_approved:gwen_pritchard` with the door condition, `door_propped:archive_store`, `mfa_approved:anjali_rao` for the safe and `mfa_approved:darren_price` for the case), and new globals `archive_door_propped`, `records_index_off`, `gwen_phone_left` and the four `<task>_done`.
+
+### Where the plan needed a change
+
+1. **`darren_case` is by the front desk in Reception, not under Darren's desk in the Office.** The leak scanner treats a lock in any room other than the start room as inside a shut room unless a door unlock proved that room open; an ungated room is opened by `GET room/<id>`, which the scanner does not count (`tools/playtest/lib/lock_step_leak_rules.rb:233-236,246-252`). The first whole-run scan with the case in the Office gave five findings, all on `darren_case`: `lock_step_answer` `lockstep:gate:room:object:darren_case` (the gate), `lockstep:refusal:mfa/prompt` twice, `lockstep:pass:no-gate`, and `lock_step_content` `lockstep:open:object:darren_case` (the open). None was `mfa_secret` or `mfa_session`. With the case in the start room (Reception) the scan judges the case in full and reports nothing. The scanner gap is for the owner of `tools/playtest/lib` (a lock in an ungated non-start room is always flagged); not touched here.
+2. **The archive store is a second north door, not a south-west one.** The Office's south wall leads to Reception, and an array `south: ["reception", "archive_store"]` would place the store on top of Reception (the start room is placed first, so the array's only unplaced room is placed single, south of the Office). `north: ["records_room", "archive_store"]` places the two side by side (`positionNorthMultiple`) with the doors on the engine's own two-door spacing, so the left door is the records room and the right one the archive store. `scripts/check_door_alignment.py` reports `UNMODELLED multi` for it, as for `lab_physical_pentest`; the engine aligns each child's south door to its index in the array (`placeSouthDoorSingle`, `doors.js:165-190`). Not seen in a browser: check the two doors line up in Run E. The "Things to try" board moved from x 8.19 to x 5.19 so it does not sit on the right-hand door.
+3. **The resource id is `index_service` (name "Index service"), not `records_index`.** The leak scanner's `network_string` rule flagged `GET room/office` for the resource id appearing in the object id `records_index_socket` (the printer pair uses `print_service` for the same reason). The global stays `records_index_off`.
+4. **Positions are by hand** from the room size; nothing was rendered. Check Gwen's and Fatima's desks, the side table, the wall switch and the wedge against the existing furniture in the first browser run.
+5. **No Haiku Run E has been played**; the timings (the index off to the door open; Gwen's coffee trip) are not measured. The validator's own estimate for Fatima is about 40 seconds of outage, plus her walk.
+6. **One existing assertion changed**, because the cast grew: the shape case's list of NPC ids now includes `fatima_begum` and `gwen_pritchard` (the list is the scenario's cast; the 25 other existing cases pass untouched).
+
+### Validator
+
+`ruby scripts/validate_scenario.rb scenarios/demo_ops_second_step/scenario.json.erb`: 0 errors, 37 warnings (S-8b: 24). The 13 new ones:
+
+- Of the 13, the plain ones are the standard "need target is in another room" notes for Gwen (caffeine, hunger), the `fatima_begum` work info and outage lines, and recommended-observation notes for the new objects. Same kind as in S-8b. The ones that need a reason:
+- `item 'darren_case' is droppable without a needsTag`: intended. The case must be droppable for the carried-lock beat (M17); no NPC is meant to react to it.
+- `mfa: Friendface phone 'gwen_phone' lies loose`: intended (M14), like `yusuf_phone`.
+- `work: fatima_begum's workaround 0 (prop_door): her own card and role do not open 'archive_store'`: accepted. Fatima holds no card; what she is dodging is the PIN and Gwen's approval, which the validator cannot read. The "someone props a door they could not open" reading is the teaching point.
+- `office life V8: office-life items is 5, above its cap of 4`: the left-behind items are the fob, Yusuf's phone, Darren's badge, Gwen's phone and the cake. Reason: Gwen's phone must be a left-behind item (it is the beat); the badge (S-8b) and the others cannot fold into it; the cap is a sync budget and the run is one scenario with eleven people. Reveal globals 4/6, small keys 27/64, onceOnly 6/10, workaround slots 3/4.
+- `objective wiring: ama_owusu has two mappings for mfa_approved:darren_price (indices 10, 21), onceOnly at 10`: accepted. The two conditions are exclusive (`data.pcId === 'darren_pc'` for `pestered`, `targetType === 'object' && targetId === 'darren_case'` for `case_step`), which the validator cannot read.
+- `UNMODELLED multi-door connection office.north`: see item 2.
+- Dialogue lint: 0 ERROR, one `crowded-hub` check (Ama's hub now offers up to 11 choices at once, 6 conditional). Not folded: each lever and recap choice is a beat's own. Advisory.
+- `lock step:` rows: none. No `never passes`, no gated own text, no tableItems warning.
+
+### Checks
+
+- Ink: `scripts/compile-ink.sh demo_ops_second_step` compiled 9 files, 0 failed; dialoguelint 0 ERROR.
+- `tools/check_mapping_index_drift.rb main scenarios/demo_ops_second_step/scenario.json.erb`: 0 failures (the scenario is not on main, so 0 scenarios compared).
+- `scripts/check_door_alignment.py`: the three single connections OK, the north array UNMODELLED.
+- Scenario test (36 runs, 706 assertions, 0 failures): the 25 earlier cases plus 11 new ones (shape, no exposure, M14, M15 three cases, M16 two, M17 two, the whole-run scan). `bin/ops-golden-compare`: 39 runs, 0 failures.
+- Dungeon graph regenerated by the validator for this scenario only.
+
+### Leak scan (8.4 step 5)
+
+The S8c exception did not arise: over the whole lock run (the archive store's PIN and request, Fatima's prop, the records room with Gwen's phone, the safe with a wrong and the right fob code, the case with a drop and a pick-up between requests) the scanner reports 0 findings of every rule, including `mfa_secret` and `mfa_session`. So the test asserts the plain zero. The docs line that lists the limit (`docs/ACCESS_AND_NETWORKS.md` A25, "Leak scanner") is still there: the limit stays recorded as open, but no answer here tripped it (all lock answers echo `targetType` and `targetId`, and no PC-form answer was dropped). The older whole-run case and the S8b helpdesk case are unchanged and still report 0.
+
+### Rule 6 grep
+
+Each PIN (records room 5821, archive store 3074, safe 6419) appears twice in the rendered scenario: the lock's own `requires` and its one clue (the facilities notice for the two doors; Gwen's drawer note for the safe). None is in any ink, chatter, objective, dungeon graph or planning file; in the test they are constants.
+
+### Browser
+
+Every beat is reachable by clicking (the codes from the notice and the drawer note; Gwen's phone from the side table after the coffee lever; Anjali's fob after the same lever; the case key from Darren's drawer; the case by the front desk). Not played: see item 5.

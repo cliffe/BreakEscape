@@ -3,6 +3,30 @@
   "start_room": "reception",
   "nodes": [
     {
+      "id": "door_records_room",
+      "label": "Records room<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "records_room",
+      "label": "Records room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_archive_store",
+      "label": "Archive store<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "archive_store",
+      "label": "Archive store",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "lock_lorna_pc",
       "label": "Lorna's PC<br/>Sign-in",
       "kind": "lock",
@@ -11,6 +35,12 @@
     {
       "id": "lock_visitor_kiosk",
       "label": "Visitor kiosk<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_darren_case",
+      "label": "Darren's case<br/>Key lock",
       "kind": "lock",
       "optional": false
     },
@@ -29,6 +59,12 @@
     {
       "id": "lock_yusuf_pc",
       "label": "Yusuf's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_records_safe",
+      "label": "Records safe<br/>PIN lock",
       "kind": "lock",
       "optional": false
     },
@@ -93,6 +129,18 @@
       "optional": false
     },
     {
+      "id": "workaround_fatima_begum_0",
+      "label": "Fatima Begum: props the door, at 60",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "outage_records_index_off",
+      "label": "records_index_off<br/>(outage)",
+      "kind": "gate",
+      "optional": false
+    },
+    {
       "id": "kitchen",
       "label": "Kitchen",
       "kind": "room",
@@ -147,6 +195,24 @@
       "optional": false
     },
     {
+      "id": "npc_darren_price",
+      "label": "Darren Price",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_gwen_pritchard",
+      "label": "Gwen Pritchard",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_anjali_rao",
+      "label": "Anjali Rao",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "desk_it_desk_lorna_easton_mfa",
       "label": "Thandiwe Moyo<br/>resets second step",
       "kind": "key",
@@ -191,6 +257,16 @@
   ],
   "edges": [
     {
+      "from": "door_records_room",
+      "to": "records_room",
+      "soft": false
+    },
+    {
+      "from": "door_archive_store",
+      "to": "archive_store",
+      "soft": false
+    },
+    {
       "from": "reception",
       "to": "lock_lorna_pc",
       "soft": false
@@ -198,6 +274,11 @@
     {
       "from": "reception",
       "to": "lock_visitor_kiosk",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "lock_darren_case",
       "soft": false
     },
     {
@@ -213,6 +294,11 @@
     {
       "from": "office",
       "to": "lock_yusuf_pc",
+      "soft": false
+    },
+    {
+      "from": "records_room",
+      "to": "lock_records_safe",
       "soft": false
     },
     {
@@ -294,6 +380,17 @@
       "label": "said to anjali_rao"
     },
     {
+      "from": "outage_records_index_off",
+      "to": "workaround_fatima_begum_0",
+      "soft": false
+    },
+    {
+      "from": "workaround_fatima_begum_0",
+      "to": "door_archive_store",
+      "soft": false,
+      "label": "propped open"
+    },
+    {
       "from": "reception",
       "to": "office",
       "soft": false
@@ -346,6 +443,45 @@
       "to": "lock_yusuf_pc",
       "soft": false,
       "label": "second step"
+    },
+    {
+      "from": "office",
+      "to": "npc_darren_price",
+      "soft": false
+    },
+    {
+      "from": "npc_darren_price",
+      "to": "lock_darren_case",
+      "soft": false,
+      "label": "second step: push"
+    },
+    {
+      "from": "office",
+      "to": "npc_gwen_pritchard",
+      "soft": false
+    },
+    {
+      "from": "npc_gwen_pritchard",
+      "to": "door_records_room",
+      "soft": false,
+      "label": "second step: push"
+    },
+    {
+      "from": "office",
+      "to": "npc_anjali_rao",
+      "soft": false
+    },
+    {
+      "from": "npc_anjali_rao",
+      "to": "lock_records_safe",
+      "soft": false,
+      "label": "second step: code"
+    },
+    {
+      "from": "npc_gwen_pritchard",
+      "to": "door_archive_store",
+      "soft": false,
+      "label": "second step: push"
     },
     {
       "from": "it_room",

@@ -157,7 +157,8 @@ module BreakEscape
       assert_equal({ 'front' => 'push', 'floor' => 'push', 'finance' => 'code', 'ops' => 'push_number_match', 'kiosk' => 'push' },
                    data['policies'].transform_values { |p| p['mfa'] })
       npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }
-      assert_equal %w[ama_owusu anjali_rao darren_price lorna_easton niamh_doherty thandiwe_moyo yusuf_demir], npcs.map { |n| n['id'] }.sort
+      assert_equal %w[ama_owusu anjali_rao darren_price fatima_begum gwen_pritchard lorna_easton niamh_doherty thandiwe_moyo yusuf_demir],
+                   npcs.map { |n| n['id'] }.sort # S8c adds Gwen and Fatima
       assert_equal %w[niamh_doherty], npcs.select { |n| n.dig('creds', 'mfa') == false }.map { |n| n['id'] }
       habit = ->(id) { npcs.find { |n| n['id'] == id }.dig('habits', 'approvesPrompts') }
       assert_equal %w[never pestered never], %w[lorna_easton darren_price yusuf_demir].map(&habit)
@@ -769,6 +770,454 @@ module BreakEscape
       assert_equal 'blocked', @marks[:blocked]['body']['reason']
       assert_not_includes @marks[:refused]['body'].to_json, 'leaston'
       assert_not_includes @marks[:boot_end]['body'].to_json, DARREN_NEW
+    end
+
+    # ---- S8c appended: a second step on locks (M14 to M17). Every case above is unchanged. ---------------------------
+
+    RECORDS_PIN = '5821'.freeze
+    ARCHIVE_PIN = '3074'.freeze
+    SAFE_PIN = '6419'.freeze
+    GWEN_PHONE = ['gwen_phone', 'phone_friendface', "Gwen's phone"].freeze
+    FOB = ['anjali_fob', 'code_device', "Anjali's code fob"].freeze
+    CASE = ['darren_case', 'briefcase', "Darren's case"].freeze
+    CASE_KEY = ['darren_case_key', 'key', "Darren's case key"].freeze
+    LOCK_SECRETS = [RECORDS_PIN, ARCHIVE_PIN, SAFE_PIN].freeze
+    LOCK_NPCS = (PEOPLE + %w[gwen_pritchard fatima_begum]).freeze
+
+    def meet_lock_cast
+      game = Game.find(@game.id)
+      game.player_state['encounteredNPCs'] = LOCK_NPCS.dup
+      game.save!
+    end
+
+    def unlock_lock(type, id, attempt, method, extra = {})
+      post game_path('unlock'), params: { targetType: type, targetId: id, attempt: attempt, method: method }.merge(extra), as: :json
+      response.parsed_body
+    end
+
+    def lock_prompt(type, id)
+      post game_path('mfa/prompt'), params: { target_type: type, target_id: id }, as: :json
+      response.parsed_body
+    end
+
+    def lock_approve(type, id, params = {})
+      post game_path('mfa/approve'), params: { target_type: type, target_id: id }.merge(params), as: :json
+      response.parsed_body
+    end
+
+    def lock_verify(type, id, code)
+      post game_path('mfa/verify'), params: { target_type: type, target_id: id, code: code }, as: :json
+      response.parsed_body
+    end
+
+    def lock_phone(npc, type, id)
+      get game_path('mfa/phone'), params: { npc_id: npc, target_type: type, target_id: id }, as: :json
+      response.parsed_body
+    end
+
+    def open_rooms
+      Array(state['unlockedRooms'])
+    end
+
+    def gate_rows(event, kind, id)
+      rows(event).select { |r| r.dig('where', 'kind') == kind && r.dig('where', 'id') == id }
+    end
+
+    # M14 in full: the PIN, Gwen's phone from the charger, the approval, the open
+    def open_records_room
+      gate = unlock_lock('door', 'records_room', RECORDS_PIN, 'pin')
+      assert_equal true, gate['secondStep'], gate.to_s
+      take(*GWEN_PHONE)
+      assert_response :success, response.body
+      lock_approve('door', 'records_room')
+      assert_response :success, response.body
+      unlock_lock('door', 'records_room', RECORDS_PIN, 'pin')
+      assert_includes open_rooms, 'records_room'
+    end
+
+    # A failed use of the records index, as the needs runner reports it (the index is down)
+    def index_fail
+      { npc_id: 'fatima_begum', event: 'fail', need: 'work', object_id: 'fatima_desk', missing: [{ id: 'index_service', why: 'down' }] }
+    end
+
+    def index_failure
+      post game_path('npc_frustration'), params: { reports: [index_fail] }, as: :json
+      assert_response :success, response.body
+      response.parsed_body['answers'].first
+    end
+
+    def switch_index_off!
+      put game_path('sync_state'), params: { globalVariables: { 'records_index_off' => true } }, as: :json
+      assert_response :success, response.body
+    end
+
+    def hand_over_prop
+      switch_index_off!
+      first = index_failure
+      later(25)
+      second = index_failure
+      [first, second]
+    end
+
+    test 'S8c: the two doors, the safe and the case, their owners, the prop and the clue texts are in the scenario' do
+      data = scenario
+      rooms = data['rooms']
+      assert_equal({ 'kind' => 'push', 'owner' => 'gwen_pritchard' }, rooms['records_room']['secondStep'])
+      assert_equal({ 'kind' => 'push', 'owner' => 'gwen_pritchard' }, rooms['archive_store']['secondStep'])
+      assert_equal %w[pin pin], %w[records_room archive_store].map { |r| rooms[r]['lockType'] }
+      assert_equal [RECORDS_PIN, ARCHIVE_PIN], %w[records_room archive_store].map { |r| rooms[r]['requires'] }
+      assert_equal [%w[records_room archive_store]], [rooms['office']['connections']['north']]
+      objects = rooms.values.flat_map { |r| Array(r['objects']) }.to_h { |o| [o['id'], o] }
+      assert_equal({ 'kind' => 'code', 'owner' => 'anjali_rao' }, objects['records_safe']['secondStep'])
+      assert_equal 'pin', objects['records_safe']['lockType']
+      assert_equal({ 'kind' => 'push', 'owner' => 'darren_price' }, objects['darren_case']['secondStep'])
+      assert_equal 'key', objects['darren_case']['lockType']
+      assert objects['darren_case']['takeable'] && objects['darren_case']['droppable']
+      assert_equal 'darren_case_key', objects['darren_case']['requires']
+      key = objects['darren_drawer']['contents'].first
+      assert_equal ['darren_case_key', objects['darren_case']['keyPins']], [key['opens_lock'], key['keyPins']]
+      assert_equal false, objects['darren_drawer']['locked']
+      assert_equal false, objects['gwen_drawer']['locked']
+      assert_equal 'gwen_pritchard', objects['gwen_phone']['owner']
+      assert_equal 'office', rooms.find { |_, r| Array(r['objects']).any? { |o| o['id'] == 'gwen_phone' } }.first
+      assert_equal 'archive_door_propped', objects['archive_wedge']['revealOnGlobal']
+      assert_equal 'office', rooms.find { |_, r| Array(r['objects']).any? { |o| o['id'] == 'archive_wedge' } }.first
+      assert_equal false, data['globalVariables']['archive_door_propped']
+      assert_equal({ 'name' => 'Index service', 'kind' => 'records', 'object' => 'fatima_desk', 'offWhen' => 'records_index_off' },
+                   data['resources']['index_service'])
+      npcs = rooms.values.flat_map { |r| Array(r['npcs']) }.to_h { |n| [n['id'], n] }
+      assert_equal 'never', npcs['gwen_pritchard'].dig('habits', 'approvesPrompts')
+      assert_equal [{ 'at' => 60, 'do' => 'prop_door', 'door' => 'archive_store', 'prop' => 'archive_wedge', 'setGlobal' => 'archive_door_propped' }],
+                   npcs['fatima_begum']['workarounds']
+      assert_equal %w[gwen_pritchard fatima_begum], rooms['office']['npcs'].map { |n| n['id'] }.last(2)
+      assert_nil npcs['gwen_pritchard']['creds'], 'Gwen and Fatima sign in at no PC, so the helpdesk rule does not reach them'
+      assert_nil npcs['fatima_begum']['creds']
+      assert_equal %w[door_step propped safe_step case_step], data['objectives'].last['tasks'].map { |t| t['taskId'] }
+      assert_equal 'late_locks', data['objectives'].last['aimId']
+      # each PIN: its lock, and one clue each (the two doors on the kitchen notice, the safe in Gwen's drawer)
+      texts = scenario_texts
+      assert_includes texts['facilities_notice'], RECORDS_PIN
+      assert_includes texts['facilities_notice'], ARCHIVE_PIN
+      assert_not_includes texts['facilities_notice'], SAFE_PIN
+      note = objects['gwen_drawer']['contents'].first
+      assert_includes note['text'], SAFE_PIN
+      assert_equal 'kitchen', rooms.find { |_, r| Array(r['objects']).any? { |o| o['id'] == 'facilities_notice' } }.first
+      ink = Dir[File.join(File.dirname(SCENARIO_PATH), 'ink', '*.json')].map { |f| File.read(f) }.join
+      LOCK_SECRETS.each { |secret| assert_not_includes ink, secret }
+      chatter = [data['chatter'], npcs.values.map { |n| n['chatter'] }].to_json
+      LOCK_SECRETS.each { |secret| assert_not_includes chatter, secret }
+    end
+
+    test 'S8c: nothing the browser is sent names a PIN of a gated lock or the contents of the records room' do
+      get game_path('scenario'), as: :json
+      body = response.parsed_body.to_json
+      [RECORDS_PIN, ARCHIVE_PIN, SAFE_PIN, 'safe_papers', 'case_papers', 'Share certificates', 'darren_case_key"'].each do |word|
+        assert_not_includes body, word, word
+      end
+      %w[lockSteps npcStepGrants mfaPrompts mfaAccounts].each { |key| assert_not_includes body, key }
+      get game_path('room/records_room'), as: :json
+      assert_not_includes response.body, 'records_safe'
+      assert_not_includes open_rooms, 'records_room'
+    end
+
+    test 'S8c M14: the right PIN gives the gate and no room, Gwen never approves, her phone from the charger approves, then the door opens' do
+      meet_lock_cast
+      get game_path('room/records_room'), as: :json
+      assert_not_includes response.body, 'records_safe', 'no room data before both checks'
+      wrong = unlock_lock('door', 'records_room', ARCHIVE_PIN, 'pin')
+      assert_response :unprocessable_entity
+      assert_equal({ 'success' => false, 'message' => 'Invalid attempt' }, wrong)
+      assert_equal 0, gate_rows('mfa_challenge', 'door', 'records_room').size, 'a wrong PIN starts no step'
+      gate = unlock_lock('door', 'records_room', RECORDS_PIN, 'pin')
+      assert_equal({ 'success' => false, 'secondStep' => true, 'kind' => 'push', 'targetType' => 'door', 'targetId' => 'records_room',
+                     'npcId' => 'gwen_pritchard' }, gate)
+      assert_equal 'no-store', response.headers['Cache-Control']
+      assert_not_includes open_rooms, 'records_room'
+      get game_path('room/records_room'), as: :json
+      assert_not_includes response.body, 'records_safe'
+      assert_equal 'pin', gate_rows('mfa_challenge', 'door', 'records_room').first.dig('detail', 'method')
+      # Gwen never approves, however often she is asked (P7: nor does the asking raise anyone's frustration)
+      5.times do |i|
+        later(3)
+        sent = lock_prompt('door', 'records_room')
+        assert_equal false, sent['success'], "request #{i + 1} is not approved"
+        assert_equal i + 1, sent['promptsSent']
+      end
+      assert_equal({}, state['npcFrustration'] || {}, 'P7: a held-up second step writes no frustration for anyone')
+      assert_equal 5, count('mfa_prompt_sent')
+      assert_equal 0, count('mfa_prompt_approved')
+      # the phone is not held yet: no list, no approval
+      lock_phone('gwen_pritchard', 'door', 'records_room')
+      assert_response :forbidden
+      lock_approve('door', 'records_room')
+      assert_response :forbidden
+      assert_not_includes open_rooms, 'records_room'
+      take(*GWEN_PHONE)
+      assert_response :success, response.body
+      listed = lock_phone('gwen_pritchard', 'door', 'records_room')
+      assert_response :success
+      assert_equal 1, listed['requests'].size
+      assert_equal %w[n name targetId targetType], listed['requests'].first.keys.sort
+      assert_equal 5, listed['requests'].first['n']
+      passed = lock_approve('door', 'records_room')
+      assert_response :success
+      assert_equal({ 'success' => true, 'stepPassed' => true, 'approvedBy' => 'player', 'targetType' => 'door', 'targetId' => 'records_room' }, passed)
+      assert_not_includes open_rooms, 'records_room', 'the pass alone opens nothing'
+      opened = unlock_lock('door', 'records_room', RECORDS_PIN, 'pin')
+      assert_response :success
+      assert_equal true, opened['success']
+      assert opened['roomData'].is_a?(Hash)
+      assert_includes open_rooms, 'records_room'
+      assert_equal 1, gate_rows('mfa_prompt_approved', 'door', 'records_room').size
+      assert_equal({ 'approver' => 'held_phone' }, gate_rows('mfa_prompt_approved', 'door', 'records_room').first['detail'])
+      assert_not_includes Game.find(@game.id).player_state['opsLog'].to_json, RECORDS_PIN
+    end
+
+    test 'S8c M15: the archive store takes PIN and request, then Fatima props it and the room opens with no step and no approval row' do
+      meet_lock_cast
+      gate = unlock_lock('door', 'archive_store', ARCHIVE_PIN, 'pin')
+      assert_equal %w[push door archive_store gwen_pritchard], gate.values_at('kind', 'targetType', 'targetId', 'npcId')
+      assert_equal 1, lock_prompt('door', 'archive_store')['promptsSent']
+      get game_path('room/archive_store'), as: :json
+      assert_not_includes response.body, 'archive_boxes', 'shut'
+      assert_not_includes open_rooms, 'archive_store'
+      # the index goes off; Fatima fails twice (perFail 35, at 60) and is handed the prop
+      first, second = hand_over_prop
+      assert_nil first['run'], 'one failure is a warning only'
+      run = second['run']
+      assert run, second.to_s
+      assert_equal 'prop_door', run['do']
+      assert_equal 'archive_store', run['door']
+      assert_equal 'archive_wedge', run['prop']
+      later(5)
+      workaround_done('fatima_begum', run)
+      assert_response :success, response.body
+      body = response.parsed_body
+      assert_equal 'archive_store', body['roomId']
+      assert body['roomData'].is_a?(Hash), 'the prop serves the room with no step'
+      assert_includes open_rooms, 'archive_store'
+      assert_equal 0, gate_rows('mfa_prompt_approved', 'door', 'archive_store').size, 'nothing was approved: the prop skipped the step'
+      assert_equal 1, count('mfa_prompt_sent')
+      get game_path('room/archive_store'), as: :json
+      assert_response :success
+      assert_includes response.body, 'archive_boxes'
+      # the door stays open for the mission and the wedge's global is set
+      assert_equal 'archive_door_propped', body['setGlobal']
+      assert_equal true, state['globalVariables']['archive_door_propped']
+      unlock_lock('door', 'archive_store', ARCHIVE_PIN, 'pin')
+      assert_response :success
+      assert_equal true, response.parsed_body['success'], 'no gate any more'
+    end
+
+    test 'S8c M15: with the index on, Fatima is never handed the prop; the records room stays shut and her door too' do
+      meet_lock_cast
+      post game_path('npc_frustration'), params: { reports: [index_fail] }, as: :json
+      answer = response.parsed_body['answers'].first
+      assert_nil answer['run'] if answer
+      assert_not_includes open_rooms, 'archive_store'
+      assert_not_includes open_rooms, 'records_room'
+    end
+
+    test 'S8c M15: the prop opens only the archive store; the records room still wants both checks' do
+      meet_lock_cast
+      _first, second = hand_over_prop
+      later(5)
+      workaround_done('fatima_begum', second['run'])
+      assert_includes open_rooms, 'archive_store'
+      assert_not_includes open_rooms, 'records_room'
+      gate = unlock_lock('door', 'records_room', RECORDS_PIN, 'pin')
+      assert_equal true, gate['secondStep'], 'the other door keeps its step'
+      assert_not_includes open_rooms, 'records_room'
+    end
+
+    test 'S8c M16: the safe wants its PIN, then the code from Anjali\'s fob; nothing inside is listed before the pass' do
+      meet_lock_cast
+      # the safe is inside the records room: shut until that door has opened
+      refused = unlock_lock('object', 'records_safe', SAFE_PIN, 'pin')
+      assert_response :unprocessable_entity
+      assert_equal({ 'success' => false, 'message' => 'Invalid attempt' }, refused)
+      open_records_room
+      wrong = unlock_lock('object', 'records_safe', ARCHIVE_PIN, 'pin')
+      assert_response :unprocessable_entity
+      assert_equal 0, gate_rows('mfa_challenge', 'object', 'records_safe').size
+      gate = unlock_lock('object', 'records_safe', SAFE_PIN, 'pin')
+      assert_equal({ 'success' => false, 'secondStep' => true, 'kind' => 'code', 'targetType' => 'object', 'targetId' => 'records_safe',
+                     'npcId' => 'anjali_rao' }, gate)
+      get game_path('container/records_safe'), as: :json
+      assert_response :not_found
+      assert_not_includes response.body, 'safe_papers'
+      # no fob yet: the route says so
+      lock_verify('object', 'records_safe', '123456')
+      assert_response :forbidden
+      assert_equal({ 'success' => false, 'error' => 'no such device' }, response.parsed_body)
+      take(*FOB)
+      assert_response :success, response.body
+      code = device_code
+      assert_match(/\A\d{6}\z/, code)
+      bad = lock_verify('object', 'records_safe', wrong_for(code))
+      assert_response :unprocessable_entity
+      assert_equal true, bad['mfaIncorrect']
+      assert_not_includes bad.keys, 'attemptsLeft'
+      good = lock_verify('object', 'records_safe', code)
+      assert_response :success
+      assert_equal({ 'success' => true, 'stepPassed' => true, 'targetType' => 'object', 'targetId' => 'records_safe' }, good)
+      get game_path('container/records_safe'), as: :json
+      assert_response :not_found, 'the pass alone opens nothing'
+      opened = unlock_lock('object', 'records_safe', SAFE_PIN, 'pin')
+      assert_response :success
+      assert_equal %w[safe_papers], opened['contents'].map { |c| c['id'] }
+      assert_equal 1, gate_rows('mfa_code_ok', 'object', 'records_safe').size
+      assert_equal 1, gate_rows('mfa_code_wrong', 'object', 'records_safe').size
+      assert_not_includes Game.find(@game.id).player_state['opsLog'].to_json, SAFE_PIN
+    end
+
+    test 'S8c M16: the fob is still live after the helpdesk beats, and the safe\'s code comes from the same device as the PC\'s' do
+      meet_lock_cast
+      open_records_room
+      ask('ydemir', 'mfa', YUSUF_ANSWERS)
+      ask('dprice', 'password', DARREN_ANSWERS)
+      unlock_lock('object', 'records_safe', SAFE_PIN, 'pin')
+      take(*FOB)
+      lock_verify('object', 'records_safe', device_code)
+      assert_equal true, response.parsed_body['stepPassed']
+    end
+
+    test 'S8c M17: the carried case keeps its request count over a drop and a pick-up, and Darren approves on the third request' do
+      meet_lock_cast
+      unlock_lock('object', 'darren_drawer', nil, 'unlocked')
+      assert_response :success, response.body
+      get game_path('container/darren_drawer'), as: :json
+      assert_response :success
+      assert_equal %w[darren_case_key], response.parsed_body['contents'].map { |c| c['id'] }
+      take(*CASE_KEY)
+      assert_response :success, response.body
+      take(*CASE)
+      assert_response :success, response.body
+      get game_path('container/darren_case'), as: :json
+      assert_response :not_found, 'shut: nothing inside is on offer'
+      gate = unlock_lock('object', 'darren_case', 'key', 'key')
+      assert_equal({ 'success' => false, 'secondStep' => true, 'kind' => 'push', 'targetType' => 'object', 'targetId' => 'darren_case',
+                     'npcId' => 'darren_price' }, gate)
+      assert_equal 1, lock_prompt('object', 'darren_case')['promptsSent']
+      drop_case
+      take(*CASE)
+      assert_response :success, response.body
+      again = unlock_lock('object', 'darren_case', 'key', 'key')
+      assert_equal true, again['secondStep']
+      assert_equal 1, Game.find(@game.id).player_state['lockSteps']['object:darren_case']['n'], 'the count carried on'
+      later(3)
+      assert_equal 2, lock_prompt('object', 'darren_case')['promptsSent']
+      drop_case
+      take(*CASE)
+      later(3)
+      third = lock_prompt('object', 'darren_case')
+      assert_response :success
+      assert_equal({ 'success' => true, 'stepPassed' => true, 'approvedBy' => 'owner', 'targetType' => 'object', 'targetId' => 'darren_case' },
+                   third.slice('success', 'stepPassed', 'approvedBy', 'targetType', 'targetId'))
+      get game_path('container/darren_case'), as: :json
+      assert_response :not_found, 'the pass alone opens nothing'
+      opened = unlock_lock('object', 'darren_case', 'key', 'key')
+      assert_equal %w[case_papers], opened['contents'].map { |c| c['id'] }
+      assert_equal 3, count('mfa_prompt_sent')
+      assert_equal({ 'approver' => 'owner' }, gate_rows('mfa_prompt_approved', 'object', 'darren_case').first['detail'])
+      # M5's mapping must not tick on this approval: it carries no pcId (the lock form), so `data.pcId === 'darren_pc'` is false
+      assert_equal 0, rows('mfa_prompt_approved').count { |r| r.dig('where', 'kind') == 'pc' && r.dig('where', 'id') == 'darren_pc' }
+    end
+
+    test 'S8c M17: without the key the case does not open, and a wrong key lock method is refused' do
+      meet_lock_cast
+      take(*CASE)
+      unlock_lock('object', 'darren_case', 'key', 'key')
+      assert_response :unprocessable_entity, 'no key held: the first factor fails and no step starts'
+      assert_equal 0, gate_rows('mfa_challenge', 'object', 'darren_case').size
+      unlock_lock('object', 'darren_case', '0000', 'pin')
+      assert_response :unprocessable_entity
+    end
+
+    def drop_case
+      post game_path('update_room'), params: { roomId: 'reception', actionType: 'add_object', sourceType: 'player_drop',
+                                               data: { type: 'briefcase', id: 'darren_case', name: "Darren's case", position: { x: 4, y: 4 } } },
+                                     as: :json
+      assert_response :success, response.body
+      post game_path('inventory'), params: { action_type: 'remove', item: { id: 'darren_case' } }, as: :json
+      assert_response :success, response.body
+    end
+
+    # ---- the leak scanner over a played lock run -------------------------------------------------------------------
+
+    def run_lock_game
+      meet_lock_cast
+      get_row('scenario', {}, :boot0)
+      ROOMS.each { |room| get_row("room/#{room}", {}, nil) }
+      # M15 first (Run E): the archive store's PIN and one request, then Fatima's prop
+      post_row('unlock', { targetType: 'door', targetId: 'archive_store', attempt: ARCHIVE_PIN, method: 'pin' }, :archive_gate)
+      post_row('mfa/prompt', { target_type: 'door', target_id: 'archive_store' }, :archive_prompt)
+      put game_path('sync_state'), params: { globalVariables: { 'records_index_off' => true } }, as: :json
+      rec(:index_off)
+      post_row('npc_frustration', { reports: [index_fail] }, nil)
+      later(25)
+      post_row('npc_frustration', { reports: [index_fail] }, :fatima_handed)
+      later(5)
+      run = @marks[:fatima_handed]['body']['answers'].first['run']
+      post_row('npc_workaround', { npc_id: 'fatima_begum', index: run['index'], hand: run['hand'] }, :prop_open)
+      get_row('room/archive_store', {}, :archive_room)
+      # M14: the records room, Gwen never answers, her phone from the charger
+      post_row('unlock', { targetType: 'door', targetId: 'records_room', attempt: RECORDS_PIN, method: 'pin' }, :records_gate)
+      post_row('mfa/prompt', { target_type: 'door', target_id: 'records_room' }, :records_prompt1)
+      later(3)
+      post_row('mfa/prompt', { target_type: 'door', target_id: 'records_room' }, :records_prompt2)
+      take_row('gwen_phone', 'phone_friendface', "Gwen's phone", :take_gwen_phone)
+      get_row('mfa/phone', { npc_id: 'gwen_pritchard', target_type: 'door', target_id: 'records_room' }, :gwen_phone)
+      post_row('mfa/approve', { target_type: 'door', target_id: 'records_room' }, :records_pass)
+      post_row('unlock', { targetType: 'door', targetId: 'records_room', attempt: RECORDS_PIN, method: 'pin' }, :records_open)
+      # M16: the safe, a wrong code, the fob's code
+      post_row('unlock', { targetType: 'object', targetId: 'records_safe', attempt: SAFE_PIN, method: 'pin' }, :safe_gate)
+      take_row('anjali_fob', 'code_device', "Anjali's code fob", :take_fob)
+      get_row('mfa/device', { item_id: 'anjali_fob' }, :fob_code)
+      right = @marks[:fob_code]['body']['code']
+      post_row('mfa/verify', { target_type: 'object', target_id: 'records_safe', code: wrong_for(right) }, :safe_wrong)
+      post_row('mfa/verify', { target_type: 'object', target_id: 'records_safe', code: right }, :safe_pass)
+      post_row('unlock', { targetType: 'object', targetId: 'records_safe', attempt: SAFE_PIN, method: 'pin' }, :safe_open)
+      # M17: the case, a drop and a pick-up between the requests, Darren's approval
+      post_row('unlock', { targetType: 'object', targetId: 'darren_drawer', method: 'unlocked' }, nil)
+      get_row('container/darren_drawer', {}, :drawer)
+      take_row('darren_case_key', 'key', "Darren's case key", :take_key)
+      take_row('darren_case', 'briefcase', "Darren's case", :take_case)
+      post_row('unlock', { targetType: 'object', targetId: 'darren_case', attempt: 'key', method: 'key' }, :case_gate)
+      post_row('mfa/prompt', { target_type: 'object', target_id: 'darren_case' }, :case_prompt1)
+      drop_case_row
+      take_row('darren_case', 'briefcase', "Darren's case", nil)
+      later(3)
+      post_row('mfa/prompt', { target_type: 'object', target_id: 'darren_case' }, :case_prompt2)
+      later(3)
+      post_row('mfa/prompt', { target_type: 'object', target_id: 'darren_case' }, :case_pass)
+      post_row('unlock', { targetType: 'object', targetId: 'darren_case', attempt: 'key', method: 'key' }, :case_open)
+      get_row('scenario', {}, :boot_end)
+      @log
+    end
+
+    def drop_case_row
+      post_row('update_room', { roomId: 'reception', actionType: 'add_object', sourceType: 'player_drop',
+                                data: { type: 'briefcase', id: 'darren_case', name: "Darren's case", position: { x: 4, y: 4 } } }, nil)
+      post_row('inventory', { action_type: 'remove', item: { id: 'darren_case' } }, nil)
+    end
+
+    # The plan's 8.4 step 5 S8c exception (the older mfa_secret and mfa_session rules may flag an honest answer that echoes a lock)
+    # did not arise: the scanner reports nothing of any rule over this run, so the plain zero stands. The docs still list the limit.
+    test 'S8c: the leak scanner over the whole played lock run reports nothing, and the run holds every earned answer' do
+      run_lock_game
+      assert_operator @log.length, :>, 30
+      assert_equal [], scan(@log).map { |f| [f.line, f.rule, f.owner, f.route] }
+      assert_equal 'gwen_pritchard', @marks[:archive_gate]['body']['npcId']
+      assert @marks[:prop_open]['body']['roomData'], 'the prop opens the archive store'
+      assert_equal 'player', @marks[:records_pass]['body']['approvedBy']
+      assert @marks[:records_open]['body']['roomData']
+      assert_match(/\A\d{6}\z/, @marks[:fob_code]['body']['code'])
+      assert_equal %w[safe_papers], @marks[:safe_open]['body']['contents'].map { |c| c['id'] }
+      assert_equal 'owner', @marks[:case_pass]['body']['approvedBy']
+      assert_equal %w[case_papers], @marks[:case_open]['body']['contents'].map { |c| c['id'] }
+      assert_equal 422, @marks[:safe_wrong]['status']
+      LOCK_SECRETS.each { |secret| assert_not_includes @marks[:boot_end]['body'].to_json, secret }
     end
   end
 end

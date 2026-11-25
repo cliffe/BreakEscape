@@ -24,6 +24,11 @@ VAR read_log_done = false // Synced scenario global
 VAR reset_password_done = false // Synced scenario global
 VAR reenrol_done = false // Synced scenario global
 VAR desk_refuses_done = false // Synced scenario global
+VAR records_index_off = false // Synced scenario global
+VAR door_step_done = false // Synced scenario global
+VAR propped_done = false // Synced scenario global
+VAR safe_step_done = false // Synced scenario global
+VAR case_step_done = false // Synced scenario global
 // met_ama is ink-local: the opening plays once, later talks open at the hub.
 VAR met_ama = false
 
@@ -54,6 +59,8 @@ What can I help with?
     -> lever_printer
 + { not act_midday } [Send them to lunch.]
     -> lever_lunch
++ { not records_index_off } [Switch the records index off.]
+    -> lever_index
 + { not act_evening } [Call it a day.]
     -> lever_day_end
 + [What did that show?]
@@ -127,6 +134,24 @@ What can I help with?
     - not desk_refuses_done:
         # speaker:npc
         Try Lorna's username at the desk, and answer wrongly until it stops listening.
+    - not door_step_done:
+        # speaker:npc
+        Facilities pinned two new door codes on the kitchen board. The records room also wants Gwen's approval.
+        # speaker:npc
+        Send them for coffee, then take Gwen's phone from the office charger and approve.
+    - not propped_done:
+        # speaker:npc
+        Fatima props the archive store door when the records index is down. Ask me to switch it off.
+        # speaker:npc
+        Try that door first and close its pane with the X, or the prop has nothing to skip.
+    - not safe_step_done:
+        # speaker:npc
+        Gwen keeps the records safe's code in her drawer. The safe also asks for a code from Anjali's fob.
+    - not case_step_done:
+        # speaker:npc
+        Darren's case is by the front desk, and its key is in his drawer.
+        # speaker:npc
+        Carry it off, put it down, pick it up, and keep asking him.
     - not act_evening:
         # speaker:npc
         Nearly done. Tell me when to call it a day.
@@ -193,6 +218,14 @@ Lunchtime, then. Some of them will be away for a while.
 # exit_conversation
 -> END
 
+=== lever_index ===
+# speaker:npc
+Records index off. Let's see what Fatima does about it.
+#set_global:records_index_off:true
+~ records_index_off = true
+# exit_conversation
+-> END
+
 === lever_day_end ===
 # speaker:npc
 Seen everything you wanted? Staff won't be back once they've gone home.
@@ -212,7 +245,7 @@ Seen everything you wanted? Staff won't be back once they've gone home.
 
 === recap ===
 {
-    - not see_note_done and not see_temper_note_done and not overhear_done and not step_holds_done and not open_screen_done and not fob_done and not number_match_done and not pestered_done and not exempt_done and not read_log_done and not reset_password_done and not reenrol_done and not desk_refuses_done:
+    - not see_note_done and not see_temper_note_done and not overhear_done and not step_holds_done and not open_screen_done and not fob_done and not number_match_done and not pestered_done and not exempt_done and not read_log_done and not reset_password_done and not reenrol_done and not desk_refuses_done and not door_step_done and not propped_done and not safe_step_done and not case_step_done:
         # speaker:npc
         Nothing to look back on yet. Try one of the things on the board.
         -> hub.choices
@@ -265,6 +298,22 @@ Seen everything you wanted? Staff won't be back once they've gone home.
     # speaker:npc
     After three wrong answers the desk stopped listening, and never said whether the name was real.
 }
+{ door_step_done:
+    # speaker:npc
+    A door asked for the same second step as a sign-in, and Gwen's phone was the weak point.
+}
+{ propped_done:
+    # speaker:npc
+    A propped door skips every step. Fatima wedged it because the index was down.
+}
+{ safe_step_done:
+    # speaker:npc
+    The safe's code came from Anjali's fob, so whoever holds the fob holds the step.
+}
+{ case_step_done:
+    # speaker:npc
+    Darren's case went with you. The requests followed it until he gave in.
+}
 { read_log_done:
     # speaker:npc
     Those night-time requests mean someone else had Darren's password first.
@@ -284,4 +333,6 @@ It holds when the owner ignores the request.
 It gives way to a worn-down approver, a fob on a desk or a phone by the coffee machine, and it never covers a screen left open.
 # speaker:npc
 And the helpdesk can undo it for anyone who can answer facts from a badge and a board.
+# speaker:npc
+A door, a safe or a case can ask for it too, and a propped door skips it.
 -> hub.choices

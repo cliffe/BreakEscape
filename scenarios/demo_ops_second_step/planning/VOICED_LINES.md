@@ -195,3 +195,36 @@ Nothing prints a variable or contains a password, staff number, manager name or 
 | ama_owusu | recap | Yusuf's approvals went to your phone, so his second step now answers to you. | 14 |
 | ama_owusu | recap | After three wrong answers the desk stopped listening, and never said whether the name was real. | 16 |
 | ama_owusu | short_version | And the helpdesk can undo it for anyone who can answer facts from a badge and a board. | 18 |
+
+
+## S8c appends (second step on locks, SHOWCASE_PLAN.md 7.6): new lines, text only
+
+Nothing prints a variable or contains a PIN, a code or a password. The three door and safe codes are on the kitchen notice and Gwen's drawer note only (scenario text, not voiced). Ama's new hub choice ("Switch the records index off.") and Gwen's and Fatima's player choices are not voiced.
+
+| NPC | Knot | Line | Words |
+|---|---|---|---|
+| ama_owusu | whats_next | Facilities pinned two new door codes on the kitchen board. The records room also wants Gwen's approval. | 18 |
+| ama_owusu | whats_next | Send them for coffee, then take Gwen's phone from the office charger and approve. | 14 |
+| ama_owusu | whats_next | Fatima props the archive store door when the records index is down. Ask me to switch it off. | 17 |
+| ama_owusu | whats_next | Try that door first and close its pane with the X, or the prop has nothing to skip. | 17 |
+| ama_owusu | whats_next | Gwen keeps the records safe's code in her drawer. The safe also asks for a code from Anjali's fob. | 19 |
+| ama_owusu | whats_next | Darren's case is by the front desk, and its key is in his drawer. | 13 |
+| ama_owusu | whats_next | Carry it off, put it down, pick it up, and keep asking him. | 12 |
+| ama_owusu | lever_index | Records index off. Let's see what Fatima does about it. | 10 |
+| ama_owusu | recap | A door asked for the same second step as a sign-in, and Gwen's phone was the weak point. | 18 |
+| ama_owusu | recap | A propped door skips every step. Fatima wedged it because the index was down. | 14 |
+| ama_owusu | recap | The safe's code came from Anjali's fob, so whoever holds the fob holds the step. | 15 |
+| ama_owusu | recap | Darren's case went with you. The requests followed it until he gave in. | 13 |
+| ama_owusu | short_version | A door, a safe or a case can ask for it too, and a propped door skips it. | 16 |
+| gwen_pritchard | start | Records. You need the door code, and you need my say-so. | 11 |
+| gwen_pritchard | hub | What can I do for you? | 6 |
+| gwen_pritchard | hub | A code can be copied. A request to my phone is meant to be harder. | 14 |
+| gwen_pritchard | hub | When I'm away from my desk it sits on the charger by the east wall. Old habit. | 16 |
+| gwen_pritchard | hub | Mind the boxes. | 3 |
+| fatima_begum | start | Sorry, boxes. Mind your feet. | 5 |
+| fatima_begum | hub | Need something? | 2 |
+| fatima_begum | hub | I keep the archive and its index. When the index is down I can't find a thing. | 16 |
+| fatima_begum | hub | Old rotas and leases. Every visit needs a code and Gwen's approval, which is a pain with my arms full. | 20 |
+| fatima_begum | hub | Thanks. Careful on the way out. | 6 |
+| fatima_begum | chatter work_fail | Index is down. Again. | 4 |
+| fatima_begum | chatter wk_prop_door | Not tapping that code all day. | 6 |
