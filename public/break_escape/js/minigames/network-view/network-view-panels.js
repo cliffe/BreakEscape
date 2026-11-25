@@ -592,7 +592,9 @@ export class PanelsRenderer {
         let check = '';
         if (offersCheck(row)) {
             const { busy, text } = this.controlText('check', checkTarget(row.id, s.name));
-            check = `<button type="button" class="minigame-button network-row-action network-check" data-action="check"${busy ? ' disabled' : ''}>${text}</button>`;
+            // A host with several services shows several Check buttons: each says which it checks
+            const named = !busy && rowServices(row).length > 1 ? `${text} ${escapeHtml(s.label || s.name)}` : text;
+            check = `<button type="button" class="minigame-button network-row-action network-check" data-action="check"${busy ? ' disabled' : ''}>${named}</button>`;
         }
         return `<li class="network-service${findings.length ? ' network-service-with-findings' : ''}" data-service="${escapeHtml(s.name)}"><span class="network-service-line">${escapeHtml(serviceLine(s))}</span>${check}${findings.length ? `<ul class="network-findings">${findings.map(f => this.findingHtml(row, f)).join('')}</ul>` : ''}</li>`;
     }
