@@ -1,6 +1,37 @@
 # Trailer update (m01 + m02, spy avatars), resume note for the orchestrator
 
-## State 24 Nov, evening (READ THIS FIRST; older sections below are history)
+## State 25 Nov, early (READ THIS FIRST; everything below is history)
+
+Account switch hand-off. Branch video/trailers-m01-m02-spies, worktree .claude/worktrees/v-trailers-1120, merged with main to a2ae50dda (f5a952bcb). Nothing of mine is running: no agents, renders, takes or encodes. Avatar female_hacker_hood_v2 (checked). Review page v32 https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea (tabs m01mus, m09v1, m10v1 are the open ones). Scratchpad (may be wiped): /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/aa7bde54-8454-4f29-a091-6d65a3d0b927/scratchpad (render6.sh, run.sh, add_m10tab.py as a tab template, review/, m10chk/).
+
+Peers: AC0 "uds:/run/user/1000/cc-socks/3710521.sock" (trains; send hashes). CA0 "uds:/run/user/1000/cc-socks/3747875.sock" (shares the machine: ask before any capture/render/encode; CA0 will ask me for a B3 capture slot on display 147/:3456 soon). Never commit on main; stage explicit paths.
+
+QUOTA LOW (owner): scripted takes/re-takes, frame and loudness checks, lint, lookups and digests go to Haiku or Grok; Sonnet/Opus only for judgement, design, review and writing. Don't slow down.
+
+Uncommitted on purpose (owner decides): docs/video/edits/M10_TRAILER60_OUTLINE.md plan section and the m10 row in docs/video/recipes/README.md. Leave unstaged.
+
+### Owner verdicts 25 Nov (via AC0): m09 v1 REVISE, m10 v1 REVISE, m01 v14 music decided
+MUSIC SWAP: m09 takes SpyAction/Midnight Trigger.mp3 from 93.0 (m01's preview used 92.994). m01 takes m09 v1's track, SpyAgro/Action Dub.mp3 (m09 v1 used start 0.0, quiet start, lift on the Mission card; alternative window 0.695 lifts at 10.0, analysis action_dub_60.json). Derek's darker line stays. So: m01 v15 = v14 re-fitted to Action Dub (cards/cuts on its beat grid), render 3 aspects; after sign-off export + rebuild HT game-level .vtt from the m01 .srt (HT trailer files: check AC0's S1/S2 agent is done first).
+
+m09 v1 -> v2 (tools/video/edits/m09_trailer60.json):
+1. Noor (noor_cover, 13.7-17.9 out, take t12_noor_cover): visemes glitchy, nose moves. Fix as CA0 did in 0f9fb5843: `tools/pixellab_pipeline.py` pick with `--top <row>` re-picked from the same talk frames (see the pixellab-character-pipeline SKILL line it added). Commit the visemes as a GAME CHANGE hash, then re-take t12 (Haiku), then re-cut.
+2. Drop card_vig ("Vigenère / Cipher").
+3. 0:35 Dillard pops into the stacks aisle (take t17 at ~14.4 s, no walk-in; portrait opens 15.0, line 15.28-19.6). Plan: start the dillard shot at take 15.0 so the pop is gone and his line stays (shot ~5 s). If the owner meant drop Dillard entirely, the engine fix below + a re-take is the other route; say which on the page.
+4. Face flash starts at 0:11, after Netherton's line (line ends 10.32 out): extend hook_netherton, flash ~10.4-11.5, card after.
+5. Console OK (one scroll). Move vig_password (t15 9.9, password form) to sit after card_real and before real_hacking.
+6. Re-fit everything to Midnight Trigger beats (lost 1.2 s card + ~1 s Dillard: fill from existing takes, takes_m09.md lists usable ones).
+
+m10 v1 -> v2 (tools/video/edits/m10_trailer60.json):
+1. Remove the four flash_* shots after the hook (8.4-10.27). Keep the hook (Netherton's first sentence), the "Now it's my turn." VO, HaX breaker line, Hybrid Attack 1.
+2. gallery_bark (t16 7.6, 0:26): the gallery guard says "Camera's dead again. I'll go and look." (scenario.json.erb:4192, eventMappings bark on room_entered:gallery) then vanishes. Owner: he must walk off / out of frame (fade only as fallback), IN THE GAME and in the trailer -> needs the engine fix below, then re-take t16 (Haiku), re-cut.
+3. Crescendo (42.33-46.53, 17 cuts) too zoomed: NPCs not in frame. Lower zooms / re-centre every cr_* shot, check frames per aspect.
+4. Tesseract (ending_wide/ending_close, t14): redo visemes AND a new talk init/rest pose with his glasses clearer. Memory rule: make 4 alternative talk inits for the owner to pick (send to AC0 for the decisions page) before generating visemes --from-talk. Then re-take t14 (Haiku), re-cut.
+
+ENGINE (owner): NPCs appear/vanish in place (m09 Dillard, m10 gallery guard, ca12 Camila: docs/IDEAS_BACKLOG.md ~line 94). Task ONE subagent (Sonnet is fine for design+implementation under low quota; Opus/Sonnet review) to design a single fix: arrive by walking in from out of view (door / off-screen), leave by walking out of frame, fade only as fallback. New feature rules: unit tests, a focused test scenario, live browser proof (memory new-features-need-full-tests, fix-claims-need-live-proof); own BE worktree made by hand; ports :3026/:3027 only. Show/hide path: systems/apply-actions.js (setVisible), behavior.initiallyHidden, scripts/validate_scenario.rb:4321 area. CA0 touches door-gates.js, the CA step-away runner, world.holdUntil and the validator + dungeon graph generator: agreed order = my fix lands on main first, CA0 merges after. Send CA0 the agent's exact file list before it writes code (told CA0 25 Nov). Then apply to m09 Dillard, m10 gallery guard (and offer ca12 to CA0).
+
+Suggested order: launch engine agent + Noor --top visemes + Tesseract 4 inits at once; meanwhile re-fit m01 v15 to Action Dub and render (ask CA0 first); then m09 v2 after Noor re-take; m10 v2 after the engine fix + t16 re-take and the Tesseract pick + t14 re-take. Page tabs: m01 v15, m09 v2, m10 v2; hashes to AC0.
+
+## State 24 Nov, evening (history)
 Rig: keyless server :3025, display :113, both mine. Takes via scratchpad run.sh (`MISSION=<m>`); renders via scratchpad render6.sh. Check running work with `ps -eo pid,etime,args | grep -E "run-take|render6" | grep -v grep` (pgrep -f matches itself). Avatar must read female_hacker_hood_v2 (`psql -X -At -U deploy -d break_escape_development -c "select selected_sprite from break_escape_player_preferences where id=1"`).
 Review page v22 https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea (file docs/video/review/trailers_spies_review.html; tab = CUTS block + nav button + `let current`; asset ids in scratchpad review/asset_ids_1124.txt).
 
