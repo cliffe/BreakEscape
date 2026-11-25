@@ -208,7 +208,7 @@ export function holdRecentNotifications(now = Date.now(), { dismissStale = true 
         .filter((el) => el._toast && !el._toast.pulled)
         .map((el) => ({ el, ...el._toast }));
     const pulled = pickRecentHoldable(shown, now);
-    pulled.forEach(({ el, message, type, title, duration, html, verbatim, whole, brief, immediate }) => {
+    pulled.forEach(({ el, message, type, title, duration, html, verbatim, whole, brief, immediate, action }) => {
         el._toast.pulled = true;
         if (el.parentNode) el.parentNode.removeChild(el);
         // seen = true: already on screen once, so it is replayed once and never pulled again
@@ -216,6 +216,7 @@ export function holdRecentNotifications(now = Date.now(), { dismissStale = true 
         heldNotifications.push([message, type, title, duration, true, {
             html: html === true, verbatim: verbatim === true,
             whole: whole === true, brief: brief === true, immediate: immediate === true,
+            ...(action ? { action } : {}),
         }]);
     });
     // Toasts still waiting for a place go behind the pulled ones now, so they keep their
@@ -248,6 +249,8 @@ export function toastDuration(type, duration) {
 // escaped every piece of author text in it. options.plainText is accepted and changes nothing.
 // options.immediate: skip the queue behind other toasts (action feedback that must not arrive late).
 // options.whole: lift the phone's two-line limit for this toast and nothing else.
+// options.action = { label, onPress }: one optional button after the message. label is a non-empty
+// string (shown as text), onPress a function; it runs once on a press (errors caught) and the toast goes.
 // options.verbatim: the message exactly as given, with no " -- " dash display,
 // for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
@@ -792,9 +795,15 @@ export function dwellForBacklog(type, duration, backlog, low = false, message = 
  * whatever else is set: those carry something to read or copy and are not dropped, cut short
  * or closed early. (title is accepted for the old signature and not used.)
  */
+/** The toast's action ({ label, onPress }) when both parts are valid, else null. */
+export function validToastAction(options) {
+    const a = options?.action;
+    return a && typeof a.label === 'string' && a.label !== '' && typeof a.onPress === 'function' ? a : null;
+}
+
 export function isLowPriorityToast(type, title, options = {}) {
     if (!HOLDABLE_TYPES.has(type) || options?.low !== true) return false;
-    return !(options.brief === true || options.immediate === true || options.whole === true
+    return !(validToastAction(options) || options.brief === true || options.immediate === true || options.whole === true
         || options.verbatim === true || options.hint === true || options.keep === true);
 }
 
@@ -996,6 +1005,8 @@ function renderNotification(message, type, title, duration, seen = false, option
     }
     notificationContent += plainText ? '<div class="notification-message"></div>'
         : `<div class="notification-message">${displayDashes(message).replace(/\n/g, "<br>")}</div>`;
+    const action = validToastAction(options);
+    if (action) notificationContent += '<button type="button" class="notification-action"></button>';
     notificationContent += `<button type="button" class="notification-close" aria-label="Close">×</button>`;
     
     if (duration > 0) {
@@ -1019,7 +1030,8 @@ function renderNotification(message, type, title, duration, seen = false, option
     // teaching line) is read whole, with none of brief's push-aside or skipped limit (K3b R1 m2)
     if (options?.whole === true) notification.classList.add('whole');
     notification._toast = { message, type, title, duration, shownAt: overPanel ? null : Date.now(), seen, html: !plainText, verbatim,
-        whole: options?.whole === true, low, brief: options?.brief === true, immediate: options?.immediate === true };
+        whole: options?.whole === true, low, brief: options?.brief === true, immediate: options?.immediate === true,
+        action: action || null };
     // Marks the toast for hud-lanes, which steps the others aside for it as for a brief one (no styling)
     if (options?.immediate === true) notification.classList.add('immediate');
     notification._onLaneYield = laneYieldHandler(notification);
@@ -1068,6 +1080,26 @@ function renderNotification(message, type, title, duration, seen = false, option
         removeNotification(notification);
     });
 
+    // The action button: same key handling as the X. A press runs onPress once (errors caught)
+    // and the toast goes.
+    const actionBtn = action ? notification.querySelector('.notification-action') : null;
+    if (actionBtn) {
+        actionBtn.textContent = action.label;
+        actionBtn.addEventListener('keydown', (e) => {
+            if (e?.key === 'Enter' || e?.key === ' ') e?.stopPropagation?.();
+        });
+        actionBtn.addEventListener('keyup', (e) => {
+            if (e?.key === ' ') e?.stopPropagation?.();
+        });
+        let pressed = false;
+        actionBtn.addEventListener('click', () => {
+            if (pressed) return;
+            pressed = true;
+            try { action.onPress(); } catch (err) { console.error('[toasts] action failed:', err); }
+            removeNotification(notification);
+        });
+    }
+
     return notification;
 }
 
@@ -1091,6 +1123,8 @@ export function removeNotification(notification) {
     }
     const closeBtn = notification.querySelector?.('.notification-close');
     if (closeBtn?.style) closeBtn.style.pointerEvents = 'none';
+    const actionBtn = notification.querySelector?.('.notification-action');
+    if (actionBtn?.style) actionBtn.style.pointerEvents = 'none';
 
     // Take the node out of the DOM after 300 ms; the timer now only paces refreshHover and
     // showNextWaiting, it is not an animation
