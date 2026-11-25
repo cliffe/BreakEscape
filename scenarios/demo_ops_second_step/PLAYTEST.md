@@ -1,6 +1,6 @@
 # demo_ops_second_step: scripted playtest ("What a second step stops")
 
-Demo scenario for the second sign-in step (A22), inside a working office at Merrin & Sallow. Three runs, each 10 to 15 minutes, each from a fresh game. The host is Ama Owusu in Reception. No code, number or password is written on any sign: passwords are read from the notes, the card and the screens the beats name, and the six digits only from the fob on screen.
+Demo scenario for the second sign-in step (A22), inside a working office at Merrin & Sallow. Three runs (A to C) and, with S8b, a fourth (D), each 10 to 15 minutes, each from a fresh game. The host is Ama Owusu in Reception. No code, number or password is written on any sign: passwords are read from the notes, the card and the screens the beats name, and the six digits only from the fob on screen.
 
 Wording in this file follows the game's rule: it says what to do, and which button to press only where a click path needs it.
 
@@ -105,6 +105,25 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
    - See: the last task ticks (Evening: the trail). No code, number or password appears in any row.
 6. Click Ama and choose "What did that show?" then "Give me the short version.": a one-line recap per ticked beat (the log line says the night burst means someone else had Darren's password first) and a four-line summary. Check that no line names a password.
 7. Run the three checks listed in Setup. Expected: `verify-run --access` and `--ops-log` pass; the leak check exits 0.
+
+## Run D: the helpdesk (M11 to M13, added by S8b)
+
+A fresh game, never "Call it a day" (the desk works in the evening too, but Darren's badge and Yusuf's sign-in need staff to take turns away from their desks). Open the Office and the Kitchen first, then press Ama's "Send them for coffee." so Darren's badge is on his desk. The form works wherever Thandiwe is: the desk needs only that she exists, has been met and is not knocked out, so M11 and M12 also work from the form on Darren's desktop.
+
+1. **Gather the answers (each from its place).** Meet Thandiwe in the IT room first (click her once). While Darren is away from his desk (coffee trip), click "Darren's ID badge", take it and open it from the inventory: his staff number (record "from Darren's badge"). In the Kitchen read the "Staff board": his line manager, and Yusuf's staff number (record "from the kitchen board"). Lorna's and Anjali's answers are written nowhere: the validator's four warnings say so, on purpose.
+2. **M11, a password reset.** Click Thandiwe and choose "I need a password reset.". The "IT request form" opens: type `dprice` as the username, "A password reset" under "Ask for", Darren's two answers (the number and the manager, in any case), click Send.
+   - See: "Password reset. New password:" with the new password; Thandiwe says "That matches. The new password is on your form."; task "Get a password reset at the IT desk" ticks. The keyring lists a "Reset" sign-in for Darren.
+   - Try Darren's old note password at his PC (the note shows only after M2): refused, counted like any wrong password. Type the new one: his second step meets you (the push pane), as before.
+   - Server: `helpdesk_request` granted, `account_password_reset` ok, in the approvals log (`verify-run --ops-log`).
+3. **M12, a sign-in approval reset.** Click Thandiwe, choose "I need a sign-in approval reset." (or use the form on Darren's desktop while his screen is open, M8). Username `ydemir`, "A sign-in approval reset", Yusuf's two answers, Send.
+   - See: "Sign-in approvals now come to your phone."; task "Move someone's sign-in approvals to your own phone" ticks.
+   - Go to "Yusuf's PC" while he is away and the screen is locked; sign in with the password you overheard (M3). The step pane now has a "My phone" button where it showed his phone. Press it, choose the number that matches. His desktop opens.
+   - Yusuf's own phone, taken from beside the coffee machine, now lists nothing for him. Anjali is never reset in this run: her fob stays live for the lock steps appended later.
+   - Server: `account_mfa_reenrolled` ok, `mfa_prompt_approved` with approver `own_phone`.
+4. **M13, the desk says no.** After M11 and M12 (the stop counts by the typed username and a grant clears it, so never use `dprice` or `ydemir` here). Click Thandiwe, "I need a password reset.", username `leaston`, any two wrong answers: "The desk could not verify you. Tries left: 2." Send again twice more: "Tries left: 1.", then "Tries left: 0.". The next request says the desk is not taking requests for that account, with a time. The task "Get refused by the desk until it stops listening" ticks on that answer. The refusal never says whether the name exists: try `nobody.here` and compare the wording and the count.
+   - Wait five minutes of real time and the desk listens to `leaston` again (optional).
+5. Click Ama, "What did that show?": three more lines (the two things about Darren anyone could read, the phone move, the desk that never said whether the name was real).
+6. Checks: `verify-run --access` shows Darren's password reset and Yusuf's step reset; `--ops-log` passes; the leak check exits 0, with no `--signin` entry.
 
 ## Things a tester sees that are not faults
 

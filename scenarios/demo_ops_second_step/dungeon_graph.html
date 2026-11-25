@@ -138,15 +138,15 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
       puzzle-lock chains). The critical path above shows the minimum mandatory sequence to reach mission completion.
     </div>
     <table>
-      <tr><th>Aims (story objectives)</th><td class="val">3</td></tr>
-      <tr><th>Total tasks</th><td class="val">10</td></tr>
-      <tr><th>Optional tasks</th><td class="val">0 / 10</td></tr>
+      <tr><th>Aims (story objectives)</th><td class="val">4</td></tr>
+      <tr><th>Total tasks</th><td class="val">13</td></tr>
+      <tr><th>Optional tasks</th><td class="val">0 / 13</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">5</td></tr>
       <tr><th>Rooms</th><td class="val">4</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">24 / 30</td></tr>
-      <tr><th>Story nodes / edges</th><td class="val">3 / 0</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">31 / 47</td></tr>
+      <tr><th>Story nodes / edges</th><td class="val">4 / 0</td></tr>
     </table>
   </div>
 
@@ -192,13 +192,20 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
   workaround_yusuf_demir_0>"Yusuf Demir: says the login out loud, at 50"]
   kitchen("Kitchen")
   it_room("IT room")
-  log_mfa_log[("Sign-in and approvals<br/>signin_ok, signin_fail, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied")]
+  log_mfa_log[("Sign-in and approvals<br/>signin_ok, signin_fail, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied, helpdesk_request, account_password_reset, account_mfa_reenrolled")]
   reader_mfa_log_pc{"Approvals log terminal<br/>(log reader)"}
   cred_lorna_login{"Lorna Easton password<br/>(leaston)"}
   cred_src_lorna_login_card{"Lorna's sign-in card"}
   mfa_approve_darren_pc_darren_price{"owner approves (pestered)"}
   cred_src_anjali_fob{"Anjali's code fob"}
   cred_src_yusuf_phone{"Yusuf's phone"}
+  desk_it_desk_lorna_easton_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_it_desk_darren_price_password{"Thandiwe Moyo<br/>resets password"}
+  clue_darren_badge{"Darren's ID badge"}
+  clue_staff_board{"Staff board"}
+  desk_it_desk_darren_price_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_it_desk_anjali_rao_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_it_desk_yusuf_demir_mfa{"Thandiwe Moyo<br/>resets second step"}
 
   reception --> lock_lorna_pc
   reception --> lock_visitor_kiosk
@@ -230,14 +237,31 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
   mfa_approve_darren_pc_darren_price -->|second step| lock_darren_pc
   cred_src_anjali_fob -->|second step| lock_anjali_pc
   cred_src_yusuf_phone -->|second step| lock_yusuf_pc
+  it_room --> desk_it_desk_lorna_easton_mfa
+  desk_it_desk_lorna_easton_mfa -->|second step| lock_lorna_pc
+  it_room --> desk_it_desk_darren_price_password
+  office --> clue_darren_badge
+  clue_darren_badge -->|answer| desk_it_desk_darren_price_password
+  kitchen --> clue_staff_board
+  clue_staff_board -->|answer| desk_it_desk_darren_price_password
+  desk_it_desk_darren_price_password -->|password reset| lock_darren_pc
+  it_room --> desk_it_desk_darren_price_mfa
+  clue_darren_badge -->|answer| desk_it_desk_darren_price_mfa
+  clue_staff_board -->|answer| desk_it_desk_darren_price_mfa
+  desk_it_desk_darren_price_mfa -->|second step| lock_darren_pc
+  it_room --> desk_it_desk_anjali_rao_mfa
+  desk_it_desk_anjali_rao_mfa -->|second step| lock_anjali_pc
+  it_room --> desk_it_desk_yusuf_demir_mfa
+  clue_staff_board -->|answer| desk_it_desk_yusuf_demir_mfa
+  desk_it_desk_yusuf_demir_mfa -->|second step| lock_yusuf_pc
 
   class lock_lorna_pc,lock_visitor_kiosk,lock_darren_pc,lock_anjali_pc,lock_yusuf_pc lock
-  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price key
+  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price,desk_it_desk_lorna_easton_mfa,desk_it_desk_darren_price_password,desk_it_desk_darren_price_mfa,desk_it_desk_anjali_rao_mfa,desk_it_desk_yusuf_demir_mfa key
   class reception,office,kitchen,it_room room
   class workaround_darren_price_0,workaround_yusuf_demir_0 action
   class outage_printer_off gate
   class log_mfa_log note
-  class reader_mfa_log_pc,cred_src_lorna_login_card,cred_src_anjali_fob,cred_src_yusuf_phone item
+  class reader_mfa_log_pc,cred_src_lorna_login_card,cred_src_anjali_fob,cred_src_yusuf_phone,clue_darren_badge,clue_staff_board item
   class node_start start`,
       story:      `flowchart TD
 
@@ -259,9 +283,10 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
   aim_morning{{"Morning: passwords escape"}}
   aim_midday{{"Midday: the second step"}}
   aim_evening{{"Evening: the trail"}}
+  aim_afternoon_helpdesk{{"Afternoon: the helpdesk"}}
 
 
-  class aim_morning,aim_midday,aim_evening aim`,
+  class aim_morning,aim_midday,aim_evening,aim_afternoon_helpdesk aim`,
       integrated: `flowchart TD
 
   classDef room      fill:#0f2d2d,stroke:#22ddcc,color:#a0ffee
@@ -300,16 +325,24 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
   workaround_yusuf_demir_0>"Yusuf Demir: says the login out loud, at 50"]
   kitchen("Kitchen")
   it_room("IT room")
-  log_mfa_log[("Sign-in and approvals<br/>signin_ok, signin_fail, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied")]
+  log_mfa_log[("Sign-in and approvals<br/>signin_ok, signin_fail, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied, helpdesk_request, account_password_reset, account_mfa_reenrolled")]
   reader_mfa_log_pc{"Approvals log terminal<br/>(log reader)"}
   cred_lorna_login{"Lorna Easton password<br/>(leaston)"}
   cred_src_lorna_login_card{"Lorna's sign-in card"}
   mfa_approve_darren_pc_darren_price{"owner approves (pestered)"}
   cred_src_anjali_fob{"Anjali's code fob"}
   cred_src_yusuf_phone{"Yusuf's phone"}
+  desk_it_desk_lorna_easton_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_it_desk_darren_price_password{"Thandiwe Moyo<br/>resets password"}
+  clue_darren_badge{"Darren's ID badge"}
+  clue_staff_board{"Staff board"}
+  desk_it_desk_darren_price_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_it_desk_anjali_rao_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_it_desk_yusuf_demir_mfa{"Thandiwe Moyo<br/>resets second step"}
   aim_morning{{"Morning: passwords escape"}}
   aim_midday{{"Midday: the second step"}}
   aim_evening{{"Evening: the trail"}}
+  aim_afternoon_helpdesk{{"Afternoon: the helpdesk"}}
 
   reception --> lock_lorna_pc
   reception --> lock_visitor_kiosk
@@ -341,15 +374,32 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
   mfa_approve_darren_pc_darren_price -->|second step| lock_darren_pc
   cred_src_anjali_fob -->|second step| lock_anjali_pc
   cred_src_yusuf_phone -->|second step| lock_yusuf_pc
+  it_room --> desk_it_desk_lorna_easton_mfa
+  desk_it_desk_lorna_easton_mfa -->|second step| lock_lorna_pc
+  it_room --> desk_it_desk_darren_price_password
+  office --> clue_darren_badge
+  clue_darren_badge -->|answer| desk_it_desk_darren_price_password
+  kitchen --> clue_staff_board
+  clue_staff_board -->|answer| desk_it_desk_darren_price_password
+  desk_it_desk_darren_price_password -->|password reset| lock_darren_pc
+  it_room --> desk_it_desk_darren_price_mfa
+  clue_darren_badge -->|answer| desk_it_desk_darren_price_mfa
+  clue_staff_board -->|answer| desk_it_desk_darren_price_mfa
+  desk_it_desk_darren_price_mfa -->|second step| lock_darren_pc
+  it_room --> desk_it_desk_anjali_rao_mfa
+  desk_it_desk_anjali_rao_mfa -->|second step| lock_anjali_pc
+  it_room --> desk_it_desk_yusuf_demir_mfa
+  clue_staff_board -->|answer| desk_it_desk_yusuf_demir_mfa
+  desk_it_desk_yusuf_demir_mfa -->|second step| lock_yusuf_pc
 
   class lock_lorna_pc,lock_visitor_kiosk,lock_darren_pc,lock_anjali_pc,lock_yusuf_pc lock
-  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price key
+  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price,desk_it_desk_lorna_easton_mfa,desk_it_desk_darren_price_password,desk_it_desk_darren_price_mfa,desk_it_desk_anjali_rao_mfa,desk_it_desk_yusuf_demir_mfa key
   class reception,office,kitchen,it_room room
   class workaround_darren_price_0,workaround_yusuf_demir_0 action
   class outage_printer_off gate
   class log_mfa_log note
-  class reader_mfa_log_pc,cred_src_lorna_login_card,cred_src_anjali_fob,cred_src_yusuf_phone item
-  class aim_morning,aim_midday,aim_evening aim
+  class reader_mfa_log_pc,cred_src_lorna_login_card,cred_src_anjali_fob,cred_src_yusuf_phone,clue_darren_badge,clue_staff_board item
+  class aim_morning,aim_midday,aim_evening,aim_afternoon_helpdesk aim
   class node_start start`,
       rooms:      `flowchart TD
 
@@ -414,27 +464,30 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
   rc_lorna_login_card_6{"Lorna's sign-in card"}
   rc_npc_lorna_easton_7("Lorna Easton")
   rc_npc_niamh_doherty_8("Niamh Doherty")
-  rc_darren_pc_9{"Darren's PC"}
-  rc_anjali_pc_10{"Anjali's PC"}
-  rc_yusuf_pc_11{"Yusuf's PC"}
-  rc_anjali_fob_12{"Anjali's code fob"}
-  rc_yusuf_phone_13{"Yusuf's phone"}
-  rc_office_printer_14{"Office printer"}
-  rc_office_printer_socket_15{"Printer wall socket"}
-  rc_office_coffee_16{"Office Coffee Station"}
-  rc_office_coffee_socket_17{"Wall socket"}
-  rc_tour_notice_18{"Things to try"}
-  rc_npc_darren_price_19("Darren Price")
-  rc_npc_anjali_rao_20("Anjali Rao")
-  rc_npc_yusuf_demir_21("Yusuf Demir")
-  rc_fridge_22{"Fridge"}
-  rc_microwave_23{"Microwave"}
-  rc_kitchen_coffee_24{"Kitchen Coffee Station"}
-  rc_water_cooler_25{"Water Cooler"}
-  rc_washing_up_tray_26{"Washing-up Tray"}
-  rc_mfa_log_pc_27{"Approvals log terminal"}
-  rc_thandiwe_laptop_28{"Thandiwe's laptop"}
-  rc_npc_thandiwe_moyo_29("Thandiwe Moyo")
+  rc_darren_pc_9[["Darren's PC"]]
+  rc_darren_form_10{"IT request form"}
+  rc_anjali_pc_11{"Anjali's PC"}
+  rc_yusuf_pc_12{"Yusuf's PC"}
+  rc_anjali_fob_13{"Anjali's code fob"}
+  rc_yusuf_phone_14{"Yusuf's phone"}
+  rc_darren_badge_15{"Darren's ID badge"}
+  rc_office_printer_16{"Office printer"}
+  rc_office_printer_socket_17{"Printer wall socket"}
+  rc_office_coffee_18{"Office Coffee Station"}
+  rc_office_coffee_socket_19{"Wall socket"}
+  rc_tour_notice_20{"Things to try"}
+  rc_npc_darren_price_21("Darren Price")
+  rc_npc_anjali_rao_22("Anjali Rao")
+  rc_npc_yusuf_demir_23("Yusuf Demir")
+  rc_fridge_24{"Fridge"}
+  rc_microwave_25{"Microwave"}
+  rc_kitchen_coffee_26{"Kitchen Coffee Station"}
+  rc_water_cooler_27{"Water Cooler"}
+  rc_washing_up_tray_28{"Washing-up Tray"}
+  rc_staff_board_29{"Staff board"}
+  rc_mfa_log_pc_30{"Approvals log terminal"}
+  rc_thandiwe_laptop_31{"Thandiwe's laptop"}
+  rc_npc_thandiwe_moyo_32("Thandiwe Moyo")
 
   reception --> office
   office --> kitchen
@@ -448,30 +501,34 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
   reception --> rc_npc_lorna_easton_7
   reception --> rc_npc_niamh_doherty_8
   office --> rc_darren_pc_9
-  office --> rc_anjali_pc_10
-  office --> rc_yusuf_pc_11
-  office --> rc_anjali_fob_12
-  office --> rc_yusuf_phone_13
-  office --> rc_office_printer_14
-  office --> rc_office_printer_socket_15
-  office --> rc_office_coffee_16
-  office --> rc_office_coffee_socket_17
-  office --> rc_tour_notice_18
-  office --> rc_npc_darren_price_19
-  office --> rc_npc_anjali_rao_20
-  office --> rc_npc_yusuf_demir_21
-  kitchen --> rc_fridge_22
-  kitchen --> rc_microwave_23
-  kitchen --> rc_kitchen_coffee_24
-  kitchen --> rc_water_cooler_25
-  kitchen --> rc_washing_up_tray_26
-  it_room --> rc_mfa_log_pc_27
-  it_room --> rc_thandiwe_laptop_28
-  it_room --> rc_npc_thandiwe_moyo_29
+  rc_darren_pc_9 --> rc_darren_form_10
+  office --> rc_anjali_pc_11
+  office --> rc_yusuf_pc_12
+  office --> rc_anjali_fob_13
+  office --> rc_yusuf_phone_14
+  office --> rc_darren_badge_15
+  office --> rc_office_printer_16
+  office --> rc_office_printer_socket_17
+  office --> rc_office_coffee_18
+  office --> rc_office_coffee_socket_19
+  office --> rc_tour_notice_20
+  office --> rc_npc_darren_price_21
+  office --> rc_npc_anjali_rao_22
+  office --> rc_npc_yusuf_demir_23
+  kitchen --> rc_fridge_24
+  kitchen --> rc_microwave_25
+  kitchen --> rc_kitchen_coffee_26
+  kitchen --> rc_water_cooler_27
+  kitchen --> rc_washing_up_tray_28
+  kitchen --> rc_staff_board_29
+  it_room --> rc_mfa_log_pc_30
+  it_room --> rc_thandiwe_laptop_31
+  it_room --> rc_npc_thandiwe_moyo_32
 
   class reception,office,kitchen,it_room room
-  class rc_lorna_pc_1,rc_visitor_kiosk_2,rc_kiosk_card_3,rc_kiosk_stool_4,rc_lorna_login_card_6,rc_darren_pc_9,rc_anjali_pc_10,rc_yusuf_pc_11,rc_anjali_fob_12,rc_yusuf_phone_13,rc_office_printer_14,rc_office_printer_socket_15,rc_office_coffee_16,rc_office_coffee_socket_17,rc_tour_notice_18,rc_fridge_22,rc_microwave_23,rc_kitchen_coffee_24,rc_water_cooler_25,rc_washing_up_tray_26,rc_mfa_log_pc_27,rc_thandiwe_laptop_28 item
-  class rc_npc_ama_owusu_5,rc_npc_lorna_easton_7,rc_npc_niamh_doherty_8,rc_npc_darren_price_19,rc_npc_anjali_rao_20,rc_npc_yusuf_demir_21,rc_npc_thandiwe_moyo_29 npc
+  class rc_lorna_pc_1,rc_visitor_kiosk_2,rc_kiosk_card_3,rc_kiosk_stool_4,rc_lorna_login_card_6,rc_darren_form_10,rc_anjali_pc_11,rc_yusuf_pc_12,rc_anjali_fob_13,rc_yusuf_phone_14,rc_darren_badge_15,rc_office_printer_16,rc_office_printer_socket_17,rc_office_coffee_18,rc_office_coffee_socket_19,rc_tour_notice_20,rc_fridge_24,rc_microwave_25,rc_kitchen_coffee_26,rc_water_cooler_27,rc_washing_up_tray_28,rc_staff_board_29,rc_mfa_log_pc_30,rc_thandiwe_laptop_31 item
+  class rc_npc_ama_owusu_5,rc_npc_lorna_easton_7,rc_npc_niamh_doherty_8,rc_npc_darren_price_21,rc_npc_anjali_rao_22,rc_npc_yusuf_demir_23,rc_npc_thandiwe_moyo_32 npc
+  class rc_darren_pc_9 container
   class node_start start`
     };
     const rendered = {};

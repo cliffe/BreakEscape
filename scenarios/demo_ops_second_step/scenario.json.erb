@@ -1,6 +1,6 @@
 <%
 # demo_ops_second_step (wave 1, unit S-S): SHOWCASE_PLAN.md sections 4, 7.1 to 7.4, 7.7 to 7.9 and
-# contract 8.3.1. Nothing from 7.5 (helpdesk) or 7.6 (second step on locks).
+# contract 8.3.1. S8b appended (7.5, helpdesk); nothing from 7.6 (second step on locks).
 # Each password is one literal, written once here and interpolated where the clue shows it
 # (an NPC's creds are server-only). None appears in any ink or chatter line.
 lorna_pw  = "Easton-Fenlow-26"
@@ -8,6 +8,15 @@ darren_pw = "Pricewell-Dar-58"
 anjali_pw = "Raobank-Anj-73"
 yusuf_pw  = "Demirgate-Yus-39"
 niamh_pw  = "Dohertree-Nia-14"
+# S8b: the one password the helpdesk issues (Darren's), and each account's two recovery answers.
+# Each is one literal here, interpolated only into creds.recovery and the clue texts (Darren's badge, the kitchen board).
+darren_reset = "Pricesafe-Rst-81"
+rec = {
+  lorna:  { staff_no: "40118", manager: "Eleanor Marsh" },
+  darren: { staff_no: "40371", manager: "Marcus Hale" },
+  anjali: { staff_no: "40226", manager: "Eleanor Marsh" },
+  yusuf:  { staff_no: "40459", manager: "Marcus Hale" }
+}
 %>
 {
   "scenario_brief": "DEMO: Ops second steps\n\nMerrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow Managed IT wants to show the staff what it does and what it does not stop. Over one working day you will see passwords escape through ordinary habits, then see the second step hold, give way and be skipped.",
@@ -66,7 +75,7 @@ niamh_pw  = "Dohertree-Nia-14"
   "logSources": {
     "mfa_log": {
       "title": "Sign-in and approvals",
-      "events": ["signin_ok", "signin_fail", "mfa_challenge", "mfa_code_ok", "mfa_code_wrong", "mfa_code_locked", "mfa_expired", "mfa_prompt_sent", "mfa_prompt_approved", "mfa_prompt_denied"],
+      "events": ["signin_ok", "signin_fail", "mfa_challenge", "mfa_code_ok", "mfa_code_wrong", "mfa_code_locked", "mfa_expired", "mfa_prompt_sent", "mfa_prompt_approved", "mfa_prompt_denied", "helpdesk_request", "account_password_reset", "account_mfa_reenrolled"],
       "seedRows": [
         { "id": "s1", "at": "Mon 08:41", "event": "mfa_challenge", "as": "anjali_rao", "where": { "kind": "pc", "id": "anjali_pc" }, "result": "ok" },
         { "id": "s2", "at": "Mon 08:42", "event": "mfa_code_ok", "as": "anjali_rao", "where": { "kind": "pc", "id": "anjali_pc" }, "result": "ok" },
@@ -85,6 +94,18 @@ niamh_pw  = "Dohertree-Nia-14"
         { "id": "s15", "at": "Tue 01:50", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
         { "id": "s16", "at": "Tue 01:51", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" }
       ]
+    }
+  },
+
+  "helpdesks": {
+    "it_desk": {
+      "npc": "thandiwe_moyo",
+      "verify": "questions",
+      "questions": ["staff_no", "manager"],
+      "minCorrect": 2,
+      "maxTries": 3,
+      "resets": ["password", "mfa"],
+      "questionLabels": { "staff_no": "Staff number", "manager": "Line manager" }
     }
   },
 
@@ -141,7 +162,12 @@ niamh_pw  = "Dohertree-Nia-14"
     "number_match_done": false,
     "pestered_done": false,
     "exempt_done": false,
-    "read_log_done": false
+    "read_log_done": false,
+    "darren_badge_left": false,
+    "helpdesk_it_desk_result": "",
+    "reset_password_done": false,
+    "reenrol_done": false,
+    "desk_refuses_done": false
   },
 
   "objectives": [
@@ -180,6 +206,18 @@ niamh_pw  = "Dohertree-Nia-14"
       "order": 2,
       "tasks": [
         { "taskId": "read_log", "title": "Read the approvals log and flag the odd burst", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "afternoon_helpdesk",
+      "title": "Afternoon: the helpdesk",
+      "description": "Thandiwe's desk can reset a password or move a second step to your own phone, for anyone who can answer two questions about the person. Each task ticks when you have seen it happen.",
+      "status": "active",
+      "order": 3,
+      "tasks": [
+        { "taskId": "reset_password", "title": "Get a password reset at the IT desk", "type": "custom", "status": "active" },
+        { "taskId": "reenrol", "title": "Move someone's sign-in approvals to your own phone", "type": "custom", "status": "active" },
+        { "taskId": "desk_refuses", "title": "Get refused by the desk until it stops listening", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -285,7 +323,8 @@ niamh_pw  = "Dohertree-Nia-14"
             { "eventPattern": "npc_left_post:yusuf_demir", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's phone is by the coffee machine." },
             { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's popped out. If it's a quick coffee, his screen stays open." },
             { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Darren's gone to lunch. His screen will be locked." },
-            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } }
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } },
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'blocked'", "cooldown": 0, "completeTask": "desk_refuses", "setGlobal": { "desk_refuses_done": true } }
           ]
         },
         {
@@ -304,7 +343,7 @@ niamh_pw  = "Dohertree-Nia-14"
           "role": "reception",
           "awareness": "high",
           "habits": { "approvesPrompts": "never" },
-          "creds": { "username": "leaston", "password": "<%= lorna_pw %>" },
+          "creds": { "username": "leaston", "password": "<%= lorna_pw %>", "recovery": { "staff_no": "<%= rec[:lorna][:staff_no] %>", "manager": "<%= rec[:lorna][:manager] %>" } },
           "needsHome": "lorna_pc",
           "needsSpeed": 85,
           "needs": {
@@ -366,7 +405,10 @@ niamh_pw  = "Dohertree-Nia-14"
           "access": { "people": ["darren_price"] },
           "policy": "floor",
           "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
-          "observations": "Darren's desk PC. A tag on the monitor reads Darren."
+          "observations": "Darren's desk PC. A tag on the monitor reads Darren.",
+          "contents": [
+            { "type": "helpdesk_form", "id": "darren_form", "name": "IT request form", "desk": "it_desk" }
+          ]
         },
         {
           "type": "pc",
@@ -422,6 +464,21 @@ niamh_pw  = "Dohertree-Nia-14"
           "leftBehindChance": 1,
           "revealOnGlobal": "yusuf_phone_left",
           "observations": "Yusuf's mobile, left on the side by the coffee machine."
+        },
+        {
+          "type": "id_badge",
+          "id": "darren_badge",
+          "name": "Darren's ID badge",
+          "owner": "darren_price",
+          "position": { "x": 2.9, "y": 3.5 },
+          "takeable": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "leftBehindChance": 1,
+          "revealOnGlobal": "darren_badge_left",
+          "text": "Merrin & Sallow. Darren Price, Operations. Staff no. <%= rec[:darren][:staff_no] %>.",
+          "observations": "Darren's staff ID on a lanyard, left on his desk."
         },
         {
           "type": "photocopier1",
@@ -516,7 +573,7 @@ niamh_pw  = "Dohertree-Nia-14"
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- Read the note under Anjali's keyboard while she is away.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\n- Use Darren's screen while he is out for coffee.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room."
+          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- Read the note under Anjali's keyboard while she is away.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away, and ask for the approval twice.\n- Use Darren's screen while he is out for coffee.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room.\nAfternoon:\n- Ask Thandiwe for a password reset for Darren and a sign-in approval reset for Yusuf.\n- Ask for a reset for Lorna with wrong answers until the desk stops listening."
         }
       ],
       "npcs": [
@@ -534,7 +591,7 @@ niamh_pw  = "Dohertree-Nia-14"
           "voice": { "name": "Orus", "style": "Operations coordinator at Merrin & Sallow, in his 40s, easily flustered and quick to give in. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
-          "creds": { "username": "dprice", "password": "<%= darren_pw %>" },
+          "creds": { "username": "dprice", "password": "<%= darren_pw %>", "resetPassword": "<%= darren_reset %>", "recovery": { "staff_no": "<%= rec[:darren][:staff_no] %>", "manager": "<%= rec[:darren][:manager] %>" } },
           "habits": { "approvesPrompts": "pestered", "promptPatience": 3, "screen": { "lockIfAwayOverSeconds": 90 } },
           "needsHome": "darren_pc",
           "needsSpeed": 85,
@@ -575,7 +632,7 @@ niamh_pw  = "Dohertree-Nia-14"
           "voice": { "name": "Kore", "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
-          "creds": { "username": "arao", "password": "<%= anjali_pw %>" },
+          "creds": { "username": "arao", "password": "<%= anjali_pw %>", "recovery": { "staff_no": "<%= rec[:anjali][:staff_no] %>", "manager": "<%= rec[:anjali][:manager] %>" } },
           "habits": { "writesDown": true },
           "needsHome": "anjali_pc",
           "needsSpeed": 90,
@@ -604,7 +661,7 @@ niamh_pw  = "Dohertree-Nia-14"
           "voice": { "name": "Iapetus", "style": "Operations analyst at Merrin & Sallow, in his 30s, friendly and a little scatty. Speak with a consistent London accent with a light Turkish inflection throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
-          "creds": { "username": "ydemir", "password": "<%= yusuf_pw %>" },
+          "creds": { "username": "ydemir", "password": "<%= yusuf_pw %>", "recovery": { "staff_no": "<%= rec[:yusuf][:staff_no] %>", "manager": "<%= rec[:yusuf][:manager] %>" } },
           "habits": { "approvesPrompts": "never" },
           "needsHome": "yusuf_pc",
           "needsSpeed": 85,
@@ -682,6 +739,19 @@ niamh_pw  = "Dohertree-Nia-14"
           "takeable": false,
           "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
           "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        },
+        {
+          "type": "notice_board1",
+          "id": "staff_board",
+          "name": "Staff board",
+          "position": { "x": 7.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Staff board.\nOperations (Darren Price, Yusuf Demir) report to Marcus Hale.\nFire marshals this month: Yusuf Demir, staff no. <%= rec[:yusuf][:staff_no] %>. Print jobs over twenty pages go through Operations."
         }
       ],
       "npcs": []

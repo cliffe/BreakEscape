@@ -21,6 +21,9 @@ VAR number_match_done = false // Synced scenario global
 VAR pestered_done = false // Synced scenario global
 VAR exempt_done = false // Synced scenario global
 VAR read_log_done = false // Synced scenario global
+VAR reset_password_done = false // Synced scenario global
+VAR reenrol_done = false // Synced scenario global
+VAR desk_refuses_done = false // Synced scenario global
 // met_ama is ink-local: the opening plays once, later talks open at the hub.
 VAR met_ama = false
 
@@ -111,6 +114,19 @@ What can I help with?
     - not exempt_done:
         # speaker:npc
         Read the card at the visitor desk and sign in there.
+    - not reset_password_done:
+        # speaker:npc
+        Thandiwe runs the IT desk. Ask her for a password reset.
+        # speaker:npc
+        Darren's badge on his desk has his staff number. His manager is on the kitchen board.
+    - not reenrol_done:
+        # speaker:npc
+        Ask Thandiwe for a sign-in approval reset, for Yusuf.
+        # speaker:npc
+        His answers are on the kitchen board. Then sign in at his PC with your own phone.
+    - not desk_refuses_done:
+        # speaker:npc
+        Try Lorna's username at the desk, and answer wrongly until it stops listening.
     - not act_evening:
         # speaker:npc
         Nearly done. Tell me when to call it a day.
@@ -196,7 +212,7 @@ Seen everything you wanted? Staff won't be back once they've gone home.
 
 === recap ===
 {
-    - not see_note_done and not see_temper_note_done and not overhear_done and not step_holds_done and not open_screen_done and not fob_done and not number_match_done and not pestered_done and not exempt_done and not read_log_done:
+    - not see_note_done and not see_temper_note_done and not overhear_done and not step_holds_done and not open_screen_done and not fob_done and not number_match_done and not pestered_done and not exempt_done and not read_log_done and not reset_password_done and not reenrol_done and not desk_refuses_done:
         # speaker:npc
         Nothing to look back on yet. Try one of the things on the board.
         -> hub.choices
@@ -237,6 +253,18 @@ Seen everything you wanted? Staff won't be back once they've gone home.
     # speaker:npc
     The visitor desk account has no second step at all.
 }
+{ reset_password_done:
+    # speaker:npc
+    The desk asked two things about Darren that anyone could read. That was the whole check.
+}
+{ reenrol_done:
+    # speaker:npc
+    Yusuf's approvals went to your phone, so his second step now answers to you.
+}
+{ desk_refuses_done:
+    # speaker:npc
+    After three wrong answers the desk stopped listening, and never said whether the name was real.
+}
 { read_log_done:
     # speaker:npc
     Those night-time requests mean someone else had Darren's password first.
@@ -254,4 +282,6 @@ A second step adds a thing you must also have.
 It holds when the owner ignores the request.
 # speaker:npc
 It gives way to a worn-down approver, a fob on a desk or a phone by the coffee machine, and it never covers a screen left open.
+# speaker:npc
+And the helpdesk can undo it for anyone who can answer facts from a badge and a board.
 -> hub.choices

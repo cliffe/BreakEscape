@@ -171,3 +171,27 @@ Changed lines (old, then new):
 
 - Ama lever_coffee, new second line: "Give them a minute or two. If nobody moves, ask me again." (the lever gave no sign when staff were on a retry wait)
 - Thandiwe log_offer: "Look for Lorna's unanswered ones, and Darren's approval." -> "Look for requests nobody answered, and any approval." (a player who skipped the Lorna beat has no Lorna rows)
+
+
+## S8b appends (helpdesk, SHOWCASE_PLAN.md 7.5): new lines, text only
+
+Nothing prints a variable or contains a password, staff number, manager name or reset password. Thandiwe's two new hub choices ("I need a password reset.", "I need a sign-in approval reset.") are player choices, not voiced.
+
+| NPC | Knot | Line | Words |
+|---|---|---|---|
+| thandiwe_moyo | reset_request | Fill in the form. Two answers off the file and I'll sort it. | 13 |
+| thandiwe_moyo | reset_verdict (granted) | That matches. The new password is on your form. | 9 |
+| thandiwe_moyo | reset_verdict / reenrol_verdict (blocked) | I'm not taking any more requests for that one just now. | 11 |
+| thandiwe_moyo | reset_verdict / reenrol_verdict (refused) | That doesn't match what I have on file. | 8 |
+| thandiwe_moyo | reset_verdict / reenrol_verdict (other) | I can't do that one. | 5 |
+| thandiwe_moyo | reenrol_request | Same form. Pick the approval reset this time. | 8 |
+| thandiwe_moyo | reenrol_verdict (granted) | Done. Their approvals come to your phone now. | 8 |
+| ama_owusu | whats_next | Thandiwe runs the IT desk. Ask her for a password reset. | 11 |
+| ama_owusu | whats_next | Darren's badge on his desk has his staff number. His manager is on the kitchen board. | 16 |
+| ama_owusu | whats_next | Ask Thandiwe for a sign-in approval reset, for Yusuf. | 9 |
+| ama_owusu | whats_next | His answers are on the kitchen board. Then sign in at his PC with your own phone. | 17 |
+| ama_owusu | whats_next | Try Lorna's username at the desk, and answer wrongly until it stops listening. | 13 |
+| ama_owusu | recap | The desk asked two things about Darren that anyone could read. That was the whole check. | 16 |
+| ama_owusu | recap | Yusuf's approvals went to your phone, so his second step now answers to you. | 14 |
+| ama_owusu | recap | After three wrong answers the desk stopped listening, and never said whether the name was real. | 16 |
+| ama_owusu | short_version | And the helpdesk can undo it for anyone who can answer facts from a badge and a board. | 18 |

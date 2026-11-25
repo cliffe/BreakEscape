@@ -1,5 +1,6 @@
 require 'test_helper'
 require_relative '../../support/network_ops_scenario'
+require_relative '../../support/helpdesk_answer_shapes'
 require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 
 module BreakEscape
@@ -14,6 +15,7 @@ module BreakEscape
   class DemoOpsSecondStepScenarioTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include NetworkOpsRequests
+    include HelpdeskAnswerShapes
 
     SCENARIO_PATH = File.expand_path('../../../scenarios/demo_ops_second_step/scenario.json.erb', __dir__)
     T0 = Time.zone.at(1_800_000_000)
@@ -25,6 +27,12 @@ module BreakEscape
     NIAMH = ['ndoherty', 'Dohertree-Nia-14'].freeze
     PCS = { 'lorna_pc' => LORNA, 'darren_pc' => DARREN, 'anjali_pc' => ANJALI, 'yusuf_pc' => YUSUF }.freeze
     ROOMS = %w[reception office kitchen it_room].freeze
+    DARREN_NEW = 'Pricesafe-Rst-81'.freeze
+    DARREN_ANSWERS = { 'staff_no' => '40371', 'manager' => 'Marcus Hale' }.freeze
+    YUSUF_ANSWERS = { 'staff_no' => '40459', 'manager' => 'Marcus Hale' }.freeze
+    LORNA_ANSWERS = { 'staff_no' => '40118', 'manager' => 'Eleanor Marsh' }.freeze
+    ANJALI_ANSWERS = { 'staff_no' => '40226', 'manager' => 'Eleanor Marsh' }.freeze
+    WRONG = { 'staff_no' => '00000', 'manager' => 'Nobody' }.freeze
     PEOPLE = %w[ama_owusu lorna_easton niamh_doherty darren_price anjali_rao yusuf_demir thandiwe_moyo].freeze
 
     def scenario
@@ -551,6 +559,216 @@ module BreakEscape
       assert_equal 422, @marks[:cancel]['status']
       assert_equal 'anjali_rao', @marks[:boot_end]['body']['sessions']['anjali_pc']['npcId']
       assert_not_includes @marks[:boot_end]['body'].to_json, 'mfaPending'
+    end
+
+    # ---- S8b appended: the helpdesk (M11 to M13). Every case above is unchanged. -------------------------------
+
+    def ask(username, what, answers, desk: 'it_desk', pc: nil)
+      params = { desk_id: desk, username: username, what: what, answers: answers }
+      params[:pc_id] = pc if pc
+      post game_path('helpdesk/request'), params: params, as: :json
+      response.parsed_body
+    end
+
+    def ask_row(username, what, answers, mark = nil, pc: nil)
+      params = { desk_id: 'it_desk', username: username, what: what, answers: answers }
+      params[:pc_id] = pc if pc
+      post_row('helpdesk/request', params, mark)
+    end
+
+    def scenario_texts
+      data = scenario
+      data['rooms'].values.flat_map { |r| Array(r['objects']) }.select { |o| o['readable'] }.to_h { |o| [o['id'], o['text']] }
+    end
+
+    test 'S8b: the desk, the recovery answers and Darren\'s reset password are in the scenario; only the labels reach the browser' do
+      data = scenario
+      desk = data['helpdesks']['it_desk']
+      assert_equal 'thandiwe_moyo', desk['npc']
+      assert_equal %w[staff_no manager], desk['questions']
+      assert_equal 2, desk['minCorrect']
+      assert_equal %w[password mfa], desk['resets']
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.to_h { |n| [n['id'], n] }
+      { 'lorna_easton' => LORNA_ANSWERS, 'darren_price' => DARREN_ANSWERS, 'anjali_rao' => ANJALI_ANSWERS,
+        'yusuf_demir' => YUSUF_ANSWERS }.each { |id, answers| assert_equal answers, npcs[id].dig('creds', 'recovery'), id }
+      assert_nil npcs['niamh_doherty']['creds']['recovery']
+      assert_equal DARREN_NEW, npcs['darren_price'].dig('creds', 'resetPassword')
+      %w[lorna_easton anjali_rao yusuf_demir].each { |id| assert_nil npcs[id]['creds']['resetPassword'], id }
+      form = data['rooms']['office']['objects'].find { |o| o['id'] == 'darren_pc' }['contents'].first
+      assert_equal({ 'type' => 'helpdesk_form', 'id' => 'darren_form', 'name' => 'IT request form', 'desk' => 'it_desk' }, form)
+      get game_path('scenario'), as: :json
+      body = response.parsed_body
+      assert_equal %w[npc questionLabels resets], body['helpdeskForms']['it_desk'].keys.sort
+      [*DARREN_ANSWERS.values, *LORNA_ANSWERS.values, *YUSUF_ANSWERS.values, *ANJALI_ANSWERS.values, DARREN_NEW].each do |secret|
+        assert_not_includes body.to_json, secret
+      end
+      # the clue texts: Darren's number on his badge, his manager and Yusuf's answers on the board; Lorna's and Anjali's nowhere
+      texts = scenario_texts
+      assert_includes texts['darren_badge'], DARREN_ANSWERS['staff_no']
+      assert_includes texts['staff_board'], DARREN_ANSWERS['manager']
+      assert_includes texts['staff_board'], YUSUF_ANSWERS['staff_no']
+      read = texts.values.join("\n")
+      (LORNA_ANSWERS.values + ANJALI_ANSWERS.values + [DARREN_NEW]).each { |secret| assert_not_includes read, secret }
+      ink = Dir[File.join(File.dirname(SCENARIO_PATH), 'ink', '*.json')].map { |f| File.read(f) }.join
+      (DARREN_ANSWERS.values + YUSUF_ANSWERS.values + LORNA_ANSWERS.values + ANJALI_ANSWERS.values + [DARREN_NEW]).each do |secret|
+        assert_not_includes ink, secret
+      end
+    end
+
+    test 'S8b M11: the reset hands Darren a new password, the old note is stale, the new one reaches his second step' do
+      note = accounts('darren_pc')
+      assert_nil note['postitNote'], 'no note until the temper beat'
+      ask('dprice', 'password', DARREN_ANSWERS.merge('manager' => 'marcus  HALE'))
+      assert_answer_shape('helpdesk.granted_password', response)
+      assert_equal DARREN_NEW, response.parsed_body['password']
+      assert_equal 'darren_price', response.parsed_body['npcId']
+      get game_path('keyring'), as: :json
+      assert_equal DARREN_NEW, response.parsed_body['entries'].find { |e| e['id'] == 'darren_price.reset' }&.fetch('password')
+      refused = sign_in('darren_pc', *DARREN)
+      assert_not refused['success'], 'the old password is stale after the reset'
+      assert_nil state['sessions']['darren_pc']
+      body = sign_in('darren_pc', 'dprice', DARREN_NEW)
+      assert_equal true, body['mfaRequired'], 'a new password still meets the second step'
+      assert_equal 1, count('account_password_reset')
+      assert_equal 1, rows('helpdesk_request').count { |r| r['result'] == 'granted' }
+      assert_equal 1, rows('account_password_reset').size
+    end
+
+    test 'S8b M11: one right answer of two is not enough, and the refusal names no one' do
+      ask('dprice', 'password', { 'staff_no' => DARREN_ANSWERS['staff_no'], 'manager' => 'Nobody' })
+      assert_answer_shape('helpdesk.refused', response)
+      assert_equal 2, response.parsed_body['triesLeft']
+      ask('no.such.person', 'password', WRONG)
+      assert_answer_shape('helpdesk.refused', response)
+      assert_equal 2, response.parsed_body['triesLeft'], 'a name nobody has gets the same count'
+      assert_equal 0, count('account_password_reset')
+      assert_nil state['accountResets']
+    end
+
+    test 'S8b M12: the reset moves Yusuf\'s step to the player\'s phone; his old phone no longer approves' do
+      body = sign_in('yusuf_pc', *YUSUF)
+      assert_equal true, body['mfaRequired']
+      assert_nil body['ownPhone']
+      ask('ydemir', 'mfa', YUSUF_ANSWERS)
+      assert_answer_shape('helpdesk.granted_mfa', response)
+      assert_equal 'yusuf_demir', response.parsed_body['npcId']
+      assert_equal true, state['accountResets']['yusuf_demir']['mfa']
+      assert_nil state['accountResets']['yusuf_demir']['password'], 'a step reset gives no password'
+      body = sign_in('yusuf_pc', *YUSUF)
+      assert_equal true, body['mfaRequired']
+      assert_equal true, body['ownPhone']
+      post game_path('mfa/prompt'), params: { pc_id: 'yusuf_pc' }, as: :json
+      assert_answer_shape('prompt.waiting_own', response)
+      # the left-behind phone lists nothing now, and a plain approve is refused
+      take('yusuf_phone', 'phone_friendface', "Yusuf's phone")
+      get game_path('mfa/phone'), params: { npc_id: 'yusuf_demir' }, as: :json
+      assert_empty Array(response.parsed_body['requests'])
+      post game_path('mfa/approve'), params: { pc_id: 'yusuf_pc' }, as: :json
+      assert_response :forbidden
+      assert_nil state['sessions']['yusuf_pc']
+      body = sign_in('yusuf_pc', *YUSUF)
+      shown = body['number']
+      post game_path('mfa/prompt'), params: { pc_id: 'yusuf_pc' }, as: :json
+      get game_path('mfa/phone'), params: { own: 1 }, as: :json
+      assert_response :success, response.body
+      request_row = response.parsed_body['requests'].first
+      assert_equal 'yusuf_pc', request_row['pcId']
+      assert_equal 3, request_row['numbers'].size, 'the own phone shows the number-match choices'
+      assert_includes request_row['numbers'], shown
+      post "#{game_path('mfa/approve')}?own=1", params: { pc_id: 'yusuf_pc', number: shown }, as: :json
+      assert_equal 'own_phone', response.parsed_body['approvedBy']
+      assert_equal 'yusuf_demir', state['sessions']['yusuf_pc']['id']
+      assert_equal 1, count('account_mfa_reenrolled')
+    end
+
+    test 'S8b M12: Anjali is not re-enrolled by any beat, so her fob stays live' do
+      sign_in('anjali_pc', *ANJALI)
+      take('anjali_fob', 'code_device', "Anjali's code fob")
+      get game_path('mfa/device'), params: { item_id: 'anjali_fob' }, as: :json
+      assert_match(/\A\d{6}\z/, response.parsed_body['code'])
+      ask('ydemir', 'mfa', YUSUF_ANSWERS)
+      ask('dprice', 'password', DARREN_ANSWERS)
+      get game_path('mfa/device'), params: { item_id: 'anjali_fob' }, as: :json
+      assert_match(/\A\d{6}\z/, response.parsed_body['code'], 'the other resets leave her fob live')
+      assert_nil state['accountResets']['anjali_rao']
+    end
+
+    test 'S8b M13: three wrong answers for Lorna stop the desk for her name, a right answer then is blocked, five minutes lift it' do
+      ask('leaston', 'password', WRONG)
+      assert_answer_shape('helpdesk.refused', response)
+      assert_equal 2, response.parsed_body['triesLeft']
+      ask('leaston', 'password', WRONG)
+      assert_equal 1, response.parsed_body['triesLeft']
+      ask('leaston', 'password', WRONG)
+      assert_answer_shape('helpdesk.refused_last', response)
+      ask('leaston', 'password', LORNA_ANSWERS)
+      assert_answer_shape('helpdesk.blocked', response)
+      assert_equal %w[refused refused refused blocked], rows('helpdesk_request').flat_map { |r| [r['result']] * (r['n'] || 1) }
+      assert state['helpdeskTries']['it_desk|leaston']['stoppedAt']
+      assert_equal 0, count('account_password_reset')
+      # the stop is per name: Lorna has no reset password, so a right answer for her would grant nothing, and Darren's name is still heard
+      ask('dprice', 'password', DARREN_ANSWERS)
+      assert_answer_shape('helpdesk.granted_password', response)
+      later(HelpdeskModel::DESK_STOP_SECONDS)
+      ask('leaston', 'password', WRONG)
+      assert_answer_shape('helpdesk.refused', response)
+      assert_equal 2, response.parsed_body['triesLeft'], 'the lifted stop starts the count again'
+    end
+
+    test 'S8b: the form on Darren\'s desktop is served only while his session is open, and the grant is for the typed name' do
+      ask('dprice', 'password', DARREN_ANSWERS, pc: 'darren_pc')
+      assert_response :unprocessable_entity, 'no session at Darren\'s PC'
+      assert_equal 'unavailable', response.parsed_body['reason']
+      assert_equal 0, count('account_password_reset')
+      claim('darren_pc')
+      get game_path('container/darren_pc'), as: :json
+      assert_response :success, response.body
+      form = response.parsed_body['contents'].find { |i| i['id'] == 'darren_form' }
+      assert_equal %w[desk id name type], form.keys.sort
+    end
+
+    # ---- the leak scanner over a played helpdesk run -------------------------------------------------------------
+
+    def run_helpdesk_game
+      get_row('scenario', {}, :boot0)
+      ROOMS.each { |room| get_row("room/#{room}", {}, nil) }
+      take_row('darren_badge', 'id_badge', "Darren's ID badge", :take_badge)
+      get_row('keyring', {}, :keyring0)
+      # M11: Darren's reset, then the stale and the new password
+      ask_row('dprice', 'password', DARREN_ANSWERS, :grant_password)
+      get_row('keyring', {}, :keyring1)
+      sign_in_row('darren_pc', DARREN, :old_password)
+      sign_in_row('darren_pc', ['dprice', DARREN_NEW], :new_password)
+      # M12: Yusuf's step moves to the player's phone
+      sign_in_row('yusuf_pc', YUSUF, :yusuf_required)
+      ask_row('ydemir', 'mfa', YUSUF_ANSWERS, :grant_mfa)
+      sign_in_row('yusuf_pc', YUSUF, :yusuf_own)
+      post_row('mfa/prompt', { pc_id: 'yusuf_pc' }, :yusuf_prompt)
+      get_row('mfa/phone', { own: 1 }, :own_phone)
+      post "#{game_path('mfa/approve')}?own=1", params: { pc_id: 'yusuf_pc', number: @marks[:yusuf_own]['body']['number'] }, as: :json
+      rec(:own_approve)
+      # M13, last on purpose: the stop on Lorna's name
+      ask_row('leaston', 'password', WRONG, :refused)
+      ask_row('leaston', 'password', WRONG)
+      ask_row('leaston', 'password', WRONG, :refused_last)
+      ask_row('leaston', 'password', WRONG, :blocked)
+      get_row('scenario', {}, :boot_end)
+      @log
+    end
+
+    test 'S8b: the leak scanner over a played helpdesk run reports nothing, and every grant matches its shared shape' do
+      run_helpdesk_game
+      assert_operator @log.length, :>, 20
+      findings = scan(@log).map { |f| [f.line, f.rule, f.owner, f.route] }
+      assert_equal [], findings
+      assert_equal DARREN_NEW, @marks[:grant_password]['body']['password']
+      assert_equal 'darren_price.reset', @marks[:keyring1]['body']['entries'].find { |e| e['id'] == 'darren_price.reset' }&.fetch('id')
+      assert_nil @marks[:keyring0]['body']['entries'].find { |e| e['id'] == 'darren_price.reset' }
+      assert_equal 'own_phone', @marks[:own_approve]['body']['approvedBy']
+      assert_equal 422, @marks[:blocked]['status']
+      assert_equal 'blocked', @marks[:blocked]['body']['reason']
+      assert_not_includes @marks[:refused]['body'].to_json, 'leaston'
+      assert_not_includes @marks[:boot_end]['body'].to_json, DARREN_NEW
     end
   end
 end

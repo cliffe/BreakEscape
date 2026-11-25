@@ -106,7 +106,7 @@
     },
     {
       "id": "log_mfa_log",
-      "label": "Sign-in and approvals<br/>signin_ok, signin_fail, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied",
+      "label": "Sign-in and approvals<br/>signin_ok, signin_fail, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied, helpdesk_request, account_password_reset, account_mfa_reenrolled",
       "kind": "note",
       "optional": false
     },
@@ -144,6 +144,48 @@
       "id": "cred_src_yusuf_phone",
       "label": "Yusuf's phone",
       "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_lorna_easton_mfa",
+      "label": "Thandiwe Moyo<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_darren_price_password",
+      "label": "Thandiwe Moyo<br/>resets password",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "clue_darren_badge",
+      "label": "Darren's ID badge",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_staff_board",
+      "label": "Staff board",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_darren_price_mfa",
+      "label": "Thandiwe Moyo<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_anjali_rao_mfa",
+      "label": "Thandiwe Moyo<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_it_desk_yusuf_demir_mfa",
+      "label": "Thandiwe Moyo<br/>resets second step",
+      "kind": "key",
       "optional": false
     }
   ],
@@ -301,6 +343,101 @@
     },
     {
       "from": "cred_src_yusuf_phone",
+      "to": "lock_yusuf_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_it_desk_lorna_easton_mfa",
+      "soft": false
+    },
+    {
+      "from": "desk_it_desk_lorna_easton_mfa",
+      "to": "lock_lorna_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_it_desk_darren_price_password",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "clue_darren_badge",
+      "soft": false
+    },
+    {
+      "from": "clue_darren_badge",
+      "to": "desk_it_desk_darren_price_password",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "kitchen",
+      "to": "clue_staff_board",
+      "soft": false
+    },
+    {
+      "from": "clue_staff_board",
+      "to": "desk_it_desk_darren_price_password",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "desk_it_desk_darren_price_password",
+      "to": "lock_darren_pc",
+      "soft": false,
+      "label": "password reset"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_it_desk_darren_price_mfa",
+      "soft": false
+    },
+    {
+      "from": "clue_darren_badge",
+      "to": "desk_it_desk_darren_price_mfa",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "clue_staff_board",
+      "to": "desk_it_desk_darren_price_mfa",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "desk_it_desk_darren_price_mfa",
+      "to": "lock_darren_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_it_desk_anjali_rao_mfa",
+      "soft": false
+    },
+    {
+      "from": "desk_it_desk_anjali_rao_mfa",
+      "to": "lock_anjali_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_it_desk_yusuf_demir_mfa",
+      "soft": false
+    },
+    {
+      "from": "clue_staff_board",
+      "to": "desk_it_desk_yusuf_demir_mfa",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "desk_it_desk_yusuf_demir_mfa",
       "to": "lock_yusuf_pc",
       "soft": false,
       "label": "second step"
