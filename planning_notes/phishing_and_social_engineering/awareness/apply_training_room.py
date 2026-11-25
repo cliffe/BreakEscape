@@ -474,7 +474,9 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     # social.awarenessEpisode.stepAway
     social = _member(text, _root(text), 'social')[0]
     epa = _member(text, social, 'awarenessEpisode')[0]
-    text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] else [])
+    # a hand-written `stepAways` list stands in for it: never add `stepAway` beside the list (validator: both set)
+    has_list = any(k == 'stepAways' for k, _, _ in _members(text, epa))
+    text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] and not has_list else [])
     # social.triageSets[0].outcome.messageGlobals (the row's keyMessage)
     if not office_kit.is_convention(row):    # the convention form (ca00) has no triage set
         oc = _first_set_outcome(text)

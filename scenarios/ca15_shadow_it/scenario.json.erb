@@ -640,6 +640,9 @@
       },
       "strings": {
         "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
+        "worldBeatHeading": "One from the red-team kit",
+        "worldBeat": "Nilesh has something for you. Look up from the kiosk; your place is saved.",
+        "worldBeatWaiting": "Still out there. Carry on whenever you like.",
         "weakestTells": "The risks most often missed: {names} ({counts} each).",
         "weakestTell": "The risk most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the inbox is scored.",
@@ -761,7 +764,28 @@
           "launchButton": "Open the Swap Shop"
         }
       },
-      "stepAway": true
+      "stepAways": [
+        {
+          "id": "red_stick",
+          "after": "mistake",
+          "event": "episode_world_beat",
+          "readyGlobal": null,
+          "doneGlobal": "ca15_drop_done",
+          "pickedKey": "worldBeatPicked",
+          "strings": "worldBeat",
+          "facilitated": false,
+          "resumeOnDone": true
+        },
+        {
+          "id": "found_stick",
+          "after": "defend",
+          "event": "episode_step_away",
+          "readyGlobal": "kit_defend_done",
+          "doneGlobal": null,
+          "pickedKey": "stepAwayPicked",
+          "strings": "stepAway"
+        }
+      ]
     },
     "awareness": {
       "ruleOfThumb": {

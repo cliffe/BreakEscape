@@ -646,6 +646,18 @@ def _kit_caught_verdicts(outcome):
     return {k: v for k, v in mcv.items() if k in ids} if isinstance(mcv, dict) else {}
 
 
+def has_step_away(episode):
+    """True when an awarenessEpisode carries the kit's step-away: the legacy `stepAway: true`, or a hand-written
+    `stepAways` list (plan E3) with a post-defend `episode_step_away` beat. The two are exclusive (the validator
+    rejects both set), and the kit never adds `stepAway` beside a `stepAways` list."""
+    if not isinstance(episode, dict):
+        return False
+    if isinstance(episode.get('stepAways'), list):
+        return any(isinstance(b, dict) and b.get('after') == 'defend' and b.get('event') == 'episode_step_away'
+                   for b in episode['stepAways'])
+    return episode.get('stepAway') is True
+
+
 def strip_kit(sc, host_id=None):
     """A deep copy of a parsed shell with every kit-owned member removed."""
     sc = copy.deepcopy(sc)
@@ -680,6 +692,8 @@ def strip_kit(sc, host_id=None):
             sc[key] = [r for r in sc[key] if not is_kit_member(r)]
         if key in sc and not sc[key]:
             del sc[key]
+    # `stepAway` is the kit's; a `stepAways` list is hand-written (it also holds the shell's own world beats),
+    # so it stays through strip and apply, and apply_kit then adds no `stepAway` beside it.
     sc['social']['awarenessEpisode'].pop('stepAway', None)
     oc = key_outcome(sc)
     if _kit_caught_verdicts(oc):
@@ -754,7 +768,7 @@ def apply_kit(sc, kit, row, host_id=None):
             else:
                 after.append((key, b[key]))
     out = _insert_after(out, 'globalVariables', after)
-    if b['stepAway']:
+    if b['stepAway'] and 'stepAways' not in out['social']['awarenessEpisode']:
         out['social']['awarenessEpisode']['stepAway'] = True
     if b.get('messageGlobals'):
         oc = key_outcome(out)
@@ -799,7 +813,7 @@ def kit_owned(sc, host_id=None):
         'mappings': [m for m in host.get('eventMappings', []) if is_kit_mapping(m)],
         'scenario': {**{k: sc[k] for k in KIT_TOP_KEYS if k in sc},
                      **({'chatter': kit_chatter(sc)} if kit_chatter(sc) else {})},
-        'stepAway': sc['social']['awarenessEpisode'].get('stepAway') is True,
+        'stepAway': has_step_away(sc['social']['awarenessEpisode']),
     }
     mg = _kit_message_globals(key_outcome(sc))
     if mg:

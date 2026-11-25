@@ -271,6 +271,22 @@ class ApplyToTwin(unittest.TestCase):
         kiosk = [o for o in out['rooms']['training_room']['objects'] if o['type'] == 'kiosk'][0]
         self.assertEqual(kiosk['observationVariants'][0]['condition'], ok.KIOSK_FINISHED)
 
+    def test_stepaways_list_stands_in_for_stepaway(self):
+        """A hand-written stepAways list with a post-defend beat is the row's step-away: kit_owned reports it,
+        apply_kit adds no stepAway beside it, and strip_kit keeps the list (it also holds the shell's own beats)."""
+        beats = [{'id': 'red_stick', 'after': 'mistake', 'event': 'episode_world_beat'},
+                 {'id': 'found_stick', 'after': 'defend', 'event': 'episode_step_away'}]
+        sc = twin_shell()
+        sc['social']['awarenessEpisode']['stepAways'] = beats
+        self.assertTrue(ok.has_step_away(sc['social']['awarenessEpisode']))
+        self.assertFalse(ok.has_step_away({'stepAways': beats[:1]}))
+        self.assertTrue(ok.has_step_away({'stepAway': True}))
+        out = ok.apply_kit(sc, ok.load_kit('brightwell_foods'), row(stepAway=True))
+        self.assertNotIn('stepAway', out['social']['awarenessEpisode'])
+        self.assertEqual(out['social']['awarenessEpisode']['stepAways'], beats)
+        self.assertNotIn('stepAway', ok.strip_kit(out)['social']['awarenessEpisode'])
+        self.assertEqual(ok.strip_kit(out)['social']['awarenessEpisode']['stepAways'], beats)
+
     def test_patch_kiosk_touches_only_the_finished_variant(self):
         sc = ok.apply_kit(twin_shell(), ok.load_kit('brightwell_foods'), row(stepAway=True))
         kiosk = [o for o in sc['rooms']['training_room']['objects'] if o['type'] == 'kiosk'][0]
