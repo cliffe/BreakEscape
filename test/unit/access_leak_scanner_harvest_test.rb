@@ -4,8 +4,8 @@ require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 
 # Ops S5bc unit 15: the leak scanner's cached-account, account-only and relay-admin rules. One capture per rule that must be
 # flagged, and its nearest clean twin. The recorder keeps no request body, so the collect's PC is the `pcId` the server's 200
-# answer names (R1-L11). The admin sign-in rows here carry a `login.pcId` tag for brevity: the recorder does NOT write that
-# tag (R1-L17), so a real run earns the step by one PC admitting the account or by a `--signin` entry; see the review test.
+# answer names (R1-L11). The admin sign-in rows here carry the recorder's `pc` tag ({ pcId }), and every other PC-route row of a scan
+# with one carries `pc: null`; an untagged run earns the step by one PC admitting the account or by a `--signin` entry (see the review test).
 class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
   BASE = '/break_escape/games/1'.freeze
 
@@ -52,7 +52,7 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
 
   def admin_signin(pc = 'profile_pc', npc = 'dana')
     row({ 'success' => true, 'npcId' => npc, 'username' => 'x', 'displayName' => 'x', 'via' => 'password' },
-        path: 'login', method: 'POST', extra: { 'login' => { 'pcId' => pc } })
+        path: 'login', method: 'POST', extra: { 'pc' => { 'pcId' => pc } })
   end
 
   # a row as the server builds it: the account's own display name, username and avatar (R1-L8 ties a credited row to them)
@@ -67,8 +67,21 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
     row(body, path: 'harvest_credentials', method: 'POST', status: status)
   end
 
+  PC_ROUTES = %w[login logout lock_session mfa/verify mfa/prompt mfa/approve].freeze
+
+  # A scan with a `pc` tag on any row is of a tagged capture: the recorder writes the key on every POST to a PC route,
+  # so every other such row carries `pc: null` (unplaced), and no row is placed by a name given by hand.
+  def tagged_run(rows)
+    return rows unless rows.any? { |r| r.is_a?(Hash) && r.key?('pc') }
+
+    rows.map do |r|
+      pc_route = r.is_a?(Hash) && r['method'] == 'POST' && PC_ROUTES.any? { |route| r['path'].to_s.end_with?("/#{route}") }
+      pc_route && !r.key?('pc') ? r.merge('pc' => nil) : r
+    end
+  end
+
   def scan(rows, scenario: data, game: nil)
-    lines = rows.each_with_index.map { |r, i| ['r.jsonl', i + 1, r] }
+    lines = tagged_run(rows).each_with_index.map { |r, i| ['r.jsonl', i + 1, r] }
     AccessLeakScanner.new(scenario, game: game).scan(lines)
   end
 

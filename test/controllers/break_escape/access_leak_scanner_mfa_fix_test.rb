@@ -3,7 +3,7 @@ require_relative 'access_leak_scanner_mfa_real_test'
 module BreakEscape
   # Ops S8a fix, leak scanner review R1 (R1-L1 to R1-L14): each case is a copy of the real run of
   # `access_leak_scanner_mfa_real_test.rb` (`run_game`), doctored the way the review's scratch attempts did, or the honest run
-  # as the browser records it (no `login` tag: the recorder writes none). The honest cases must report nothing; each answer
+  # as an untagged browser capture holds it (no `pc` key on any row; read with `tags: :absent`) or as the recorder's tags write it. The honest cases must report nothing; each answer
   # the server would never give must be a finding.
   class AccessLeakScannerMfaFixTest < AccessLeakScannerMfaRealTest
     AccessLeakScannerMfaRealTest.instance_methods(false).grep(/\Atest_/).each { |m| undef_method m }
@@ -32,12 +32,14 @@ module BreakEscape
       @log.map { |r| deep(r) }
     end
 
-    # The run as the browser recorder writes it: no `login` tag on any row.
+    # The run as an untagged capture holds it: no `pc` tag on any row (it is read with names and `tags: :absent`).
     def browser_run
-      copy.each { |r| r.delete('login') }
+      copy.each { |r| r.delete('pc') }
     end
 
+    # A scan that passes names is of an untagged capture: the names and the recorder's tags never sit together.
     def scan_all(rows, data: scenario, **opts)
+      opts = { tags: :absent }.merge(opts) if opts[:signins] || opts[:logouts]
       scanner = AccessLeakScanner.new(data)
       findings = scanner.scan(rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] }, **opts)
       [findings, scanner]
@@ -49,7 +51,10 @@ module BreakEscape
 
     def row(method, tail, body, extra = {})
       base = @marks[:lock]['path'].sub(%r{/lock_session\z}, '')
-      { 't' => '2026-01-01T01:00:00.000Z', 'method' => method, 'path' => "#{base}/#{tail}", 'status' => 200, 'body' => body }.merge(extra)
+      made = { 't' => '2026-01-01T01:00:00.000Z', 'method' => method, 'path' => "#{base}/#{tail}", 'status' => 200, 'body' => body }
+      # a POST to a PC route carries the recorder's `pc` key (null when it names no PC)
+      made['pc'] = nil if method == 'POST' && PC_ROUTE_RE.match?(made['path'])
+      made.merge(extra)
     end
 
     def sessions_of(mark)
@@ -58,7 +63,7 @@ module BreakEscape
 
     # ---- R1-L1: --signin, --logout and the unnamed browser run --------------------------------------------------------
 
-    test 'R1-L1 the honest browser run (no login tags) is clean with the two names and reports the two sessions without them' do
+    test 'R1-L1 the honest browser run (no pc tags) is clean with the two names and reports the two sessions without them' do
       run_game
       assert_equal [SESSION.call('cal'), SESSION.call('hana')].sort, mfa_of(browser_run)
       findings, scanner = scan_all(browser_run, signins: %w[hana@code_pc1#1 cal@plain_pc#1])
@@ -75,9 +80,9 @@ module BreakEscape
     test 'R1-L1 a name earns no session by itself: the step PC still needs the step or a real lock' do
       run_game
       # the unlock with no lock before it, named at the step PC
-      assert_includes mfa_of(without(:lock).each { |r| r.delete('login') }, signins: %w[hana@code_pc1#1 cal@plain_pc#1]), SESSION.call('hana')
+      assert_includes mfa_of(without(:lock).each { |r| r.delete('pc') }, signins: %w[hana@code_pc1#1 cal@plain_pc#1]), SESSION.call('hana')
       # the whole step left out, the sign-in named at the step PC
-      assert_includes mfa_of(without(:hana_required, :wrong_code, :pass_code, :lock).each { |r| r.delete('login') }, signins: %w[hana@code_pc1#1 cal@plain_pc#1]), SESSION.call('hana')
+      assert_includes mfa_of(without(:hana_required, :wrong_code, :pass_code, :lock).each { |r| r.delete('pc') }, signins: %w[hana@code_pc1#1 cal@plain_pc#1]), SESSION.call('hana')
       # Cal's sign-in at Shipping PC left unnamed could be the push PC's
       assert_includes mfa_of(browser_run, signins: %w[hana@code_pc1#1]), SESSION.call('cal')
     end
@@ -97,9 +102,9 @@ module BreakEscape
       # a row that is not there
       _f, scanner = scan_all(browser_run, signins: %w[hana@code_pc1#1 cal@plain_pc#1 cal@plain_pc#2])
       assert_equal ['cal@plain_pc#2 (--signin)'], scanner.unused_entries
-      # the name given to a row that a tag or a host label already placed is not used
-      _f, scanner = scan_all(copy, signins: %w[hana@code_pc1#1])
-      assert_equal ['hana@code_pc1#1 (--signin)'], scanner.unused_entries
+      # a name beside the recorder's tags is refused: the tags name the PCs, so a name can never sit beside one
+      error = assert_raises(ArgumentError) { scan_all(copy, signins: %w[hana@code_pc1#1], tags: :auto) }
+      assert_match(/takes no --signin or --logout entry/, error.message)
     end
 
     test 'R1-L1 a name pointing at a PC with no step is refuted when the next rows show the step PC desktop' do
@@ -108,7 +113,7 @@ module BreakEscape
       desk = ->(pc) { row('GET', "container/#{pc}", { 'session' => session }) }
       # a bypass: the step left out, Hana's sign-in at Accounts PC (a finding) ...
       bypass = lambda do
-        rows = without(:hana_required, :wrong_code, :pass_code, :lock).each { |r| r.delete('login') }
+        rows = without(:hana_required, :wrong_code, :pass_code, :lock).each { |r| r.delete('pc') }
         [rows, rows.index { |r| r['body'] == @marks[:unlock]['body'] }]
       end
       rows, i = bypass.call
@@ -139,7 +144,7 @@ module BreakEscape
         i = rows.index { |r| r['body'] == @marks[:cal_pass]['body'] }
         j = rows.index { |r| r['body'] == @marks[:ines_pass]['body'] }
         # the desktop of the PC the sign-out was at shows nobody: the answer that confirms the named logout
-        rows.insert(j + 1, row('POST', 'logout', { 'success' => true }), row('GET', 'scenario', listing.call('push_pc' => cal_session)),
+        rows.insert(j + 1, row('POST', 'logout', { 'success' => true }).except('pc'), row('GET', 'scenario', listing.call('push_pc' => cal_session)),
                     row('GET', 'container/code_pc2', { 'container_id' => 'code_pc2', 'contents' => [], 'session' => nil }))
         [rows, i, j]
       end
@@ -174,12 +179,12 @@ module BreakEscape
       rows = copy
       rows.insert(idx(:ines_pass) + 1, row('POST', 'lock_session', { 'success' => true, 'pcId' => 'code_pc2', 'locked' => true }))
       j = rows.index { |r| r['body'].is_a?(Hash) && r['body']['npcId'] == 'svc_sync' }
-      rows.insert(j + 1, row('POST', 'login', deep(@marks[:ines_pass]['body']), 'login' => { 'pcId' => 'code_pc2' }))
+      rows.insert(j + 1, row('POST', 'login', deep(@marks[:ines_pass]['body']), 'pc' => { 'pcId' => 'code_pc2' }))
       assert_includes mfa(scan(rows)), SESSION.call('ines')
       # an endedPcIds entry takes it away too
       rows = copy
       i = idx(:lock)
-      rows.insert(i + 1, row('POST', 'login', { 'success' => true, 'npcId' => 'svc_sync', 'via' => 'password', 'endedPcIds' => ['code_pc1'] }, 'login' => { 'pcId' => 'plain_pc' }))
+      rows.insert(i + 1, row('POST', 'login', { 'success' => true, 'npcId' => 'svc_sync', 'via' => 'password', 'endedPcIds' => ['code_pc1'] }, 'pc' => { 'pcId' => 'plain_pc' }))
       assert_includes mfa(scan(rows)), SESSION.call('hana')
     end
 
@@ -216,7 +221,7 @@ module BreakEscape
       invite = lambda do |body = {}|
         rows = without(:lock)
         r = rows.find { |x| x['path'].end_with?('/login') && x['body'].is_a?(Hash) && x['body']['npcId'] == 'hana' && x['body']['via'] == 'password' }
-        r['login'] = { 'pcId' => 'code_pc1' }
+        r['pc'] = { 'pcId' => 'code_pc1' }
         r['body'] = { 'success' => true, 'npcId' => 'hana', 'username' => 'hquill', 'displayName' => 'Hana Quill', 'via' => 'credential',
                       'kind' => 'assist_invite', 'label' => 'Invite', 'relay' => true, 'host' => 'ACC01' }.merge(body)
         rows
@@ -261,7 +266,7 @@ module BreakEscape
       rows = lockless.call; un.call(rows)['status'] = 201
       assert_includes mfa(scan(rows)), SESSION.call('hana')
       # an answer with no account that is at a PC that owes no step is not a finding
-      rows = lockless.call; r = un.call(rows); r['body'].delete('npcId'); r['login'] = { 'pcId' => 'plain_pc' }
+      rows = lockless.call; r = un.call(rows); r['body'].delete('npcId'); r['pc'] = { 'pcId' => 'plain_pc' }
       assert_equal [], mfa(scan(rows))
       # a session-shaped answer on a path the scanner cannot place
       rows = lockless.call; r = un.call(rows); r['path'] = r['path'].sub(%r{/login\z}, '/somewhere/else')
@@ -325,7 +330,7 @@ module BreakEscape
       rows = copy
       rows.insert(idx(:nia_required), extra)
       rows.delete_at(rows.index { |r| r['body'] == @marks[:nia_required2]['body'] && r['t'] == @marks[:nia_required2]['t'] })
-      rows[rows.index { |r| r['body'] == @marks[:cancel]['body'] }]['login'] = { 'pcId' => 'match_pc' }
+      rows[rows.index { |r| r['body'] == @marks[:cancel]['body'] }]['pc'] = { 'pcId' => 'match_pc' }
       assert_includes mfa(scan(rows)), SESSION.call('nia')
       # the code kind is closed by an expired verify only
       rows = copy
@@ -439,7 +444,7 @@ module BreakEscape
       assert_includes mfa(scan(rows)), SESSION.call('hana')
       # a tagged logout names its PC
       rows = copy
-      rows[k]['login'] = { 'pcId' => 'code_pc2' }
+      rows[k]['pc'] = { 'pcId' => 'code_pc2' }
       rows.insert(k + 1, deep(@marks[:boot_signed]))
       assert_equal [], mfa(scan(rows))
     end
@@ -455,8 +460,9 @@ module BreakEscape
     test 'R1-L12 a step answer must name the PC its row is tagged with; a path and a query that disagree earn nothing' do
       run_game
       rows = copy
-      rows[idx(:cal_required)]['login'] = { 'pcId' => 'plain_pc' }
-      assert_includes mfa(scan(rows)), ['mfa_secret', 'mfa:answer:mfaRequired']
+      rows[idx(:cal_required)]['pc'] = { 'pcId' => 'plain_pc' }
+      # the tag disagrees with the answer's pcId: the tag is the finding (rule ops_tag), no longer a second-step answer finding
+      assert_includes scan(rows).map { |f| [f.rule, f.owner] }, ['ops_tag', 'tag:login']
       rows = copy
       rows[idx(:ines_device)]['path'] += '?item_id=hana_device&x=1'
       assert_includes mfa(scan(rows)), ['mfa_secret', 'mfa:key:code']
@@ -470,11 +476,13 @@ module BreakEscape
       rows = copy
       two = deep(@marks[:ines_required]); two['body']['npcId'] = 'hana'
       rows.insert(idx(:hana_required), two)
+      # the pass answer names no PC (`pc: null`) with two steps open: reported
+      rows[rows.index { |r| r['body'] == @marks[:pass_code]['body'] }]['pc'] = nil
       assert_includes mfa(scan(rows)), SESSION.call('hana')
-      rows[rows.index { |r| r['body'] == @marks[:pass_code]['body'] }]['login'] = { 'pcId' => 'code_pc1' }
+      rows[rows.index { |r| r['body'] == @marks[:pass_code]['body'] }]['pc'] = { 'pcId' => 'code_pc1' }
       assert_equal [], mfa(scan(rows))
       # a tag naming the other PC does not close the step at this one
-      rows[rows.index { |r| r['body'] == @marks[:pass_code]['body'] && r['login'] }]['login'] = { 'pcId' => 'code_pc2' }
+      rows[rows.index { |r| r['body'] == @marks[:pass_code]['body'] && r['pc'] }]['pc'] = { 'pcId' => 'code_pc2' }
       assert_includes mfa(scan(rows)), SESSION.call('hana')
     end
 
@@ -484,7 +492,7 @@ module BreakEscape
       plain = data['rooms'].values.flat_map { |rm| Array(rm['objects']) }.find { |o| o['id'] == 'plain_pc' }
       plain['policy'] = '  '
       data['defaultPolicy'] = 'code_gate'
-      hana = { 'method' => 'POST', 'path' => @marks[:unlock]['path'], 'status' => 200, 'body' => deep(@marks[:unlock]['body']), 'login' => { 'pcId' => 'plain_pc' } }
+      hana = { 'method' => 'POST', 'path' => @marks[:unlock]['path'], 'status' => 200, 'body' => deep(@marks[:unlock]['body']), 'pc' => { 'pcId' => 'plain_pc' } }
       assert_includes mfa(scan_all([hana], data: data).first), SESSION.call('hana')
       plain['policy'] = 'plain_gate'
       assert_equal [], mfa(scan_all([hana], data: data).first)
