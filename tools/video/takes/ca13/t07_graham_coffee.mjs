@@ -6,12 +6,19 @@
 //   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca13_ai_assistant t07_graham_coffee \
 //     "--set episode_e13_ai_assistant_state={\"done\":[\"brief\",\"write\",\"flip\",\"defend\"]} --set episode_e13_ai_assistant_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e13_ai_assistant_defend_percent=60 --set kit_quiet=true" \
 //     "--hide-hud --zoom-step 1"
-// Marks: player-sprite, npc-start, post-set, follow-on, need-set, walk-start (left-post), arrive (at-station), trip-distance, return-start, back, follow-off, cam-summary, npc-end, end.
+// Marks: player-sprite, aside-start, aside-end (player x/y, movedPx, durS; walk-start must stay near 2.87 s), frame:aside, npc-start, post-set, follow-on, need-set, walk-start (left-post), arrive (at-station), trip-distance, return-start, back, follow-off, cam-summary, npc-end, end.
 import { sleep, prepare, checkSprite } from './_ca13.mjs';
+import { keyLegs } from '../lib/walklib.mjs';
+import { SPEED } from '../ca01/_ca01.mjs';
 import { followNpc, followPlayer, camState, triggerNeed, waitNpcMoved, npcPos } from '../lib/camlib.mjs';
 
 const NPC = 'kit_graham_whitfield';
 const MIN_TRIP_PX = 120;
+/** Retake 26 Nov (owner: "3 characters standing too close together, have the player stand aside"). The player spawns at (6.6, 3.6) tiles, right beside Gwen and Agnieszka, and the 9:16 crop
+ *  (zoom 1.125) shows that corner at the edit's 2.95 s in-point. The camera is on Graham, so the player can walk without moving the frame. Straight down would cross Graham's route to the
+ *  coffee station (his post (100,187) to (240,214) px), so the player goes down 44 px (clears the kiosk) then right 32 px: about (7.6, 5.0) tiles, about 2 tiles from the pair, 1.5+ tiles above
+ *  his line. The walk (about 0.6 s) starts right after the caffeine trigger and overlaps Graham's 1.4 s start-up, so walk-start stays near 2.87 s and the edit's 2.95 in-point is unchanged. */
+const ASIDE_DOWN_PX = 44, ASIDE_RIGHT_PX = 32;
 let POST = { x: 0, y: 0 }; // set from his settled start point in the default export
 
 const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
@@ -79,6 +86,13 @@ export default async (page, bridge, mark) => {
   try {
     mark('follow-on'); await followNpc(page, NPC, { lerp: 0.08 });
     await triggerNeed(page, NPC, 'caffeine', 5); mark('need-set', { need: 'caffeine', level: 5 });
+    const p0 = (await bridge.getState()).player; mark('aside-start', { x: Math.round(p0.x), y: Math.round(p0.y) });
+    const tA = Date.now();
+    await keyLegs(bridge, [['down', p0.y + ASIDE_DOWN_PX], ['right', p0.x + ASIDE_RIGHT_PX]], SPEED, mark);
+    const p1 = (await bridge.getState()).player;
+    mark('aside-end', { x: Math.round(p1.x), y: Math.round(p1.y), movedPx: Math.round(dist(p0, p1)), durS: (Date.now() - tA) / 1000, cam: await camState(page) });
+    mark('frame:aside');
+    if (dist(p0, p1) < 40) throw new Error('player did not walk aside (moved < 40 px)');
     if (!(await waitNpcMoved(page, NPC, 24, 30000))) throw new Error(`Graham never left his post (${POST.x},${POST.y}) within 30 s of the caffeine trigger`);
     mark('walk-start', await npcPos(page, NPC));
     const arr = await settle(page, NPC, 30000);

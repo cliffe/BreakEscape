@@ -101,3 +101,15 @@ Dry-run checks before the real capture: (a) `aside-end` movedPx 60 to 66, atS un
 Real capture: pass, dropPct 0.45, A/V offset -75/-70 ms (constant, corrected), fullFrame true, length 20.14 s. Marks (trimmed s), 25 Nov then 26 Nov: look_up 3.489 / 3.351; bark1_start 5.082 / 5.007; G1 audio-start 5.094 / 5.113; bark2_start 10.583 / 10.457; G2 audio-start 10.559 / 10.461; audio-end 19.109 / 19.048; bark2_end 19.316 / 19.193. G1 speech (5.257 on 25 Nov) is now about 5.28 and G2 (10.858) about 10.76: the edit list needs no shift (G1 +0.02, G2 -0.10; the in-point 10.56 now sits 0.2 s before G2 instead of 0.3, out 19.04 still 0.3 s past the speech end). Old files are in tmp/delete/ca13_t06_old/.
 
 **t07_graham_coffee needs the same fix.** Frame at its edit in-point (2.95 s): the player stands shoulder to shoulder with Gwen (right of her, same row), the same crowding the owner flagged, in the open office view. The t06 setup does not carry over (t07 is a separate fresh game and its script has no walk-aside). Not recaptured in this slot.
+
+**t07 (prepared, not yet captured).** Script `tools/video/takes/ca13/t07_graham_coffee.mjs`. Used span: source 2.95 to 5.35 s in both edit lists. The 16:9 and 1:1 crops (cy 0.75, zoom 2) start below the trio (frames at 2.95 and 5.35 s show the trio at the top, outside the crop), so only the 9:16 window (cx 0.443, cy 0.556, zoom 1.125) shows the player beside Gwen. The camera follows Graham, so the player can move without scrolling the frame. Change: right after `triggerNeed` the player walks down 44 px (clears the kiosk) then right 32 px, to about (7.6, 5.0) tiles, about 2 tiles from the pair and 1.5+ tiles above Graham's route to the coffee station (straight down would cross it). The walk takes about 0.6 s inside Graham's 1.4 s start-up, so walk-start (2.87 s on 25 Nov) and the 2.95 in-point should not move. New marks: aside-start, aside-end, frame:aside. The take throws if the player moved less than 40 px.
+
+Dry run (keyless server, display :147, fresh game; do not run while another session uses the machine):
+
+```
+BE_DRY=1 BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca13_ai_assistant t07_graham_coffee \
+  "--set episode_e13_ai_assistant_state={\"done\":[\"brief\",\"write\",\"flip\",\"defend\"]} --set episode_e13_ai_assistant_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e13_ai_assistant_defend_percent=60 --set kit_quiet=true" \
+  "--hide-hud --zoom-step 1"
+```
+
+Capture: the same command without `BE_DRY=1`. Checks: (a) `aside-end` movedPx 50 to 56, durS under 1.0; (b) `walk-start` within 0.15 s of 2.87 and `arrive` near 5.46, trip at least 120 px; (c) frames at 2.95, 4.0 and 5.35 s: player clearly apart from Gwen and Agnieszka, not on Graham's route, and Graham's path unblocked; (d) player inside the 9:16 window. If Graham stalls on the player, shorten ASIDE_RIGHT_PX. Then replace `t07_graham_coffee.trimmed.mkv` and markers in `~/video-takes-local/ca13/takes/` and re-measure the cue if walk-start moved more than 0.1 s.
