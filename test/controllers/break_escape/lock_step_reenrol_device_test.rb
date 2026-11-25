@@ -167,7 +167,7 @@ module BreakEscape
         _status, body = mfa('verify', "object:#{SAM_CODE}", code: '000000')
         break if body['dropped'] || body['expired'] || body['codeLocked']
       end
-      assert_nil game_state['lockSteps'][ "object:#{SAM_CODE}"]
+      assert_nil game_state['lockSteps']["object:#{SAM_CODE}"]
       unenrolled?
     end
 

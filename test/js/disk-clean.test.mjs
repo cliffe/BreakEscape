@@ -231,7 +231,9 @@ test('with no settings file only <checkout>/.claude/worktrees is considered and 
   delete env.CLEAN_CONF;
   const out = sh(join(t.repo, 'tools', 'disk-clean.sh'), [], { env }).stdout;
   assert.match(out, /settings none \(defaults\); categories: worktrees logs/);
-  assert.doesNotMatch(out, /wt-landed|train|scratch|foo-/);
+  // Judge the listed items only: the header line names the checkout path, which may contain any word.
+  const listed = out.split('\n').filter((l) => !/^(checkout|settings)\b/.test(l)).join('\n').split(t.T).join('');
+  assert.doesNotMatch(listed, /wt-landed|train|scratch|foo-/);
   const r = sh(join(t.repo, 'tools', 'safe-rm.sh'), [`${t.scratch}/old`], { env, check: false });
   assert.equal(r.status, 1);
   assert.ok(existsSync(`${t.scratch}/old`));
