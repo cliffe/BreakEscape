@@ -52,7 +52,7 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # `callback` desk's grant for an account whose phone the run held at every refusal so far, from a desk that covers the account for every
 # reset kind it offers, is clear of a stop seen elsewhere (such a desk cannot stop that name; see `hd_callback_clear_of_stops?`).
 #
-# LIMITS (the recorder keeps no request bodies): (1) a stop on any desk or username stops every grant until it runs out, because
+# LIMITS (the recorder keeps no request bodies): (1) a stop on any desk or username stops every grant until it runs out (except the proven call-back case above), because
 # a refusal names no username, so a grant for another account inside that time is not credited: the scripted playtest plays its
 # refusals last. The stop rule therefore depends on playtest ORDER (a refusal row is `{reason, triesLeft}` or `{reason, retryIn}`
 # on a path with no query and nothing in it names the desk or the username). Two ways to close it, both leaving every answer for
