@@ -9,7 +9,7 @@ Ops demo: on the network. A working day at Merrin & Sallow. Fenlow Managed IT ha
 | Metric | Value |
 |---|---|
 | Story aims | 3 |
-| Total tasks | 8 (0 optional) |
+| Total tasks | 10 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 10 |
 | AND-gate convergences | 0 |

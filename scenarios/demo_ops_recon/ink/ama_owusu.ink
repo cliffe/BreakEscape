@@ -22,9 +22,15 @@ VAR scan_printer_done = false
 VAR confirm_both_done = false
 VAR use_card_done = false
 VAR terminal_view_done = false
+VAR remote_signin_done = false
+VAR unplug_done = false
+VAR box_at_kitchen = false
+VAR printer_off = false
 VAR open_share_done = false
 VAR read_log_done = false
 VAR met_ama = false
+// skip_day: the player chose "Skip them and call it a day anyway." (ink-local, as skip_late in the second-step showcase).
+VAR skip_day = false
 
 === start ===
 { met_ama:
@@ -68,6 +74,8 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         Find the hot desk and its network port. Plug the drop box in while Jun is away from it.
         # speaker:npc
         Jun goes for coffee now and then, or I can send him and Chidi. Be off the port before he's back.
+        # speaker:npc
+        If Jun comes back while you're at his port, he'll ask what you're doing.
     - not sweep_done:
         # speaker:npc
         Open the drop box in your inventory and sweep the office network. See what answers.
@@ -77,9 +85,16 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
     - not confirm_both_done:
         # speaker:npc
         Check the printer's admin page. It reports two weaknesses. Test both to see which is real.
+        { not printer_off:
+            # speaker:npc
+            Want to see an outage? Switch the printer off at its wall socket and sweep again. Then switch it back on.
+        }
     - not use_card_done:
         # speaker:npc
         There's a technique card in the printer cupboard. Use it on the weakness that's real.
+    - not remote_signin_done:
+        # speaker:npc
+        Open the sign-in control on Agnieszka's PC row and connect with the printer's saved link.
     - not terminal_view_done:
         # speaker:npc
         Now try the file server the same way, in the Terminal view. Same moves, typed.
@@ -106,6 +121,9 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
     - not read_log_done:
         # speaker:npc
         Go and see Graham in IT. He'll show you the network log.
+    - not unplug_done:
+        # speaker:npc
+        Last thing. Go back to the {box_at_kitchen: kitchen|hot desk} port and unplug the box.
     - else:
         # speaker:npc
         That's the lot. Ask for the short version, or stay and look round.
@@ -138,6 +156,42 @@ Lunch, then. Staff drift off their desks, Jun included. They only go the once.
     Look in on the kitchen and the server room first. Zainab works in the server room, and she'll want the kitchen later.
     -> hub
 }
+~ temp seen_file_server = terminal_view_done
+~ temp morning_done = plug_in_done and sweep_done and scan_printer_done
+~ temp midday_done = confirm_both_done and use_card_done and remote_signin_done and seen_file_server
+{ not skip_day and not (morning_done and midday_done):
+    # speaker:npc
+    Not yet. Some of the day's steps are still undone, and staff won't be back once they've gone home.
+    { not plug_in_done:
+        # speaker:npc
+        You haven't plugged the drop box in.
+    }
+    { not sweep_done:
+        # speaker:npc
+        You haven't swept the network.
+    }
+    { not scan_printer_done:
+        # speaker:npc
+        You haven't scanned the printer.
+    }
+    { not confirm_both_done:
+        # speaker:npc
+        You haven't tested both printer weaknesses.
+    }
+    { not use_card_done:
+        # speaker:npc
+        You haven't used the card on the real one.
+    }
+    { not remote_signin_done:
+        # speaker:npc
+        You haven't signed in to Agnieszka's PC.
+    }
+    { not terminal_view_done:
+        # speaker:npc
+        You haven't looked at the file server in the Terminal.
+    }
+    -> lever_day_refused
+}
 # speaker:npc
 Seen what you wanted? Once they've gone home, it's just Zainab and Graham.
 + [Yes, call it a day.]
@@ -152,6 +206,15 @@ Seen what you wanted? Once they've gone home, it's just Zainab and Graham.
     # speaker:npc
     Take your time.
     -> hub
+
+=== lever_day_refused ===
++ [Skip them and call it a day anyway.]
+    ~ skip_day = true
+    -> lever_day_end
++ [Not yet.]
+    # speaker:npc
+    Take your time.
+    -> hub.choices
 
 === terminal_talk ===
 # speaker:npc
@@ -171,7 +234,9 @@ Good. What did the file server say?
 
 === terminal_ticked ===
 # speaker:npc
-Panels and Terminal are two views of the same thing. Switch between them any time.
+Same findings, same names, printed the way a console prints them. Its scan came back as a table, lined up in columns.
+# speaker:npc
+Switch to Panels and back again. The Terminal keeps its log for as long as the view is open.
 #complete_task:terminal_view
 ~ terminal_view_done = true
 -> hub
@@ -181,9 +246,9 @@ Panels and Terminal are two views of the same thing. Switch between them any tim
 Which part?
 + [The morning.]
     -> recap_morning
-+ { confirm_both_done or use_card_done or terminal_view_done } [Midday.]
++ { confirm_both_done or use_card_done or remote_signin_done or terminal_view_done } [Midday.]
     -> recap_midday
-+ { open_share_done or read_log_done } [The evening.]
++ { open_share_done or read_log_done or unplug_done } [The evening.]
     -> recap_evening
 
 === recap_morning ===
@@ -208,6 +273,10 @@ The drop box on the port gave you a foothold. No password needed, only a free ca
     # speaker:npc
     The card turned the printer's factory account into a saved link to Agnieszka's PC.
 }
+{ remote_signin_done:
+    # speaker:npc
+    The saved connection was as good as a password. Keep that in mind when a printer stores one.
+}
 { terminal_view_done:
     # speaker:npc
     The Terminal showed the same findings, typed, with each machine's address and banner.
@@ -222,6 +291,10 @@ The drop box on the port gave you a foothold. No password needed, only a free ca
 { read_log_done:
     # speaker:npc
     The log kept every step you took, so someone could spot you afterwards.
+}
+{ unplug_done:
+    # speaker:npc
+    A foothold lasts only while the box is plugged in. What you found stays with you.
 }
 -> hub
 

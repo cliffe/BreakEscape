@@ -103,3 +103,28 @@ Inputs: `IMPL_REVIEW_R2.md` (six minors) and the run 2 playtest (16 differences)
 Scenario test in the scanner batch: the cause was not reproduced (the batch passed on three seeds, 59569, 1, 2, before and after). The shared state found is the request-scoped store `OpsLog::Current.issued_secrets` (left set by the MFA tests, which make the log guard refuse a row that equals an issued secret) and a frozen clock from `travel_to`. The recon test now clears both, and the ops log overlay, in `setup` and `teardown`. Proof run: `access_leak_scanner*_test.rb` plus the recon test, seeds 1 and 2: 166 runs, 3386 assertions, 0 failures. The leak scan reports 0.
 
 Checks: ink compiles (6 of 6); validator 0 errors, 24 warnings (unchanged); dialoguelint no findings; `tools/check_mapping_index_drift.rb main`: 0 failures; `bin/ops-golden-compare`: 27 runs, 0 failures; dungeon graph regenerated.
+
+## Showcase tour U1 (2026-11-25)
+
+Plan: `docs/agents/ops_core_build/SHOWCASE_TOUR_PLAN.md` 2.3, with review R4. Owner's answers of 2026-11-25 (section 5 of the plan, recorded there as decided by R4): yes to `demo_ops_terminal` and the freeze; mission rows may be re-seeded in dev (standalone and Hacktivity's seed both fine); yes to the voice spend after the dialogue sign-off; yes to the helpdesk call as the last unit.
+
+### Probe answers
+| Probe | Answer |
+|---|---|
+| `via` on the Agnieszka PC sign-in from the saved connection | `credential` (`pc-sessions.js:835`); the event is `pc_signed_in:agnieszka_pc` (the suffix is the pcId, `:371`). Live: ticked `remote_signin` and barked. |
+| technique session `via` and `npcId` on the file server | `via` `technique` (`pc-sessions.js:753`), pcId is the host id `file_server`; `npcId` is the grant's account, `agnieszka_duda` then `graham_whitfield` (scenario grants). Not clicked live this round (evening beats); read from code. |
+| Does `endedPcIds` list every PC the "ended every session" line claims | Yes: new Rails test `tour R8c probe` shows an unplug after the saved-connection login and the update-gap session ends exactly `agnieszka_pc` and `file_server`. |
+| Does an unplug before the share neither tick nor spend the once-only bark | A failed condition does not spend a once-only mapping (R3 review, `npc-manager.js:1561-1592`); the new mapping carries `globalVars.open_share_done === true`. Not clicked live. |
+| Jun and the hot desk window, Zainab's trip lengths | Unchanged: no routine number was touched, so not re-measured. |
+
+### Changes
+New tasks `remote_signin` (midday, between `use_card` and `terminal_view`) and `unplug` (evening, last), with globals `remote_signin_done`, `unplug_done`, `box_at_kitchen` declared in the scenario and as ink VARs; the new mappings are appended (indices 28 onward), the changed barks (R1 to R5, `open_share`, unplug) are changed in place; the existing unplug mapping gains the condition, task and global. Appended: kitchen unplug, the two `box_at_kitchen` trackers, `remote_signin`, its bark, the two technique-session barks, the log bark, the false-card pointer. Ama's ink: "What's next?" lines for R1 (Jun), R3b, R5c and R8c (inline `{box_at_kitchen: kitchen|hot desk}`), the "Call it a day" gate (one fixed line per undone beat, `lever_day_refused`), the R6 and R6c lines in `terminal_ticked`, recap lines. The board lists the new beats. Voice styles of Chidi, Jun, Agnieszka and Graham now name Merrin & Sallow (voice names, ages and accents kept); `ttsPregenerateChatter` is set. No audio generated. New voiced lines are listed in `VOICED_LINES.md` under "Tour round".
+
+### Checks
+Ink compiles (6 of 6); validator 0 errors, 26 warnings (the 24 listed before plus two objective-wiring warnings: the appended `box_at_kitchen` mappings share `network_foothold_gained:hotdesk_jack` and `:kitchen_jack` with the `onceOnly` plug-in mappings, which is intended: the plug-in tick fires once, the position tracker every time); dialoguelint 0 ERROR; mapping drift 0 failures; tagdiff changes explained above; Rails test 24 runs, 0 failures, leak scan 0; `bin/ops-golden-compare` 45 runs, 0 failures; graph regenerated.
+
+### Where the plan was wrong
+- 2.3 says the R6 line is in the "typed" register; the validator's realism-wording check flags "typed" beside "scan", so the line says "printed the way a console prints them".
+- The plan's gate says "the list of undone beats"; a single line cannot hold seven optional fragments without many voiced variants, so each undone beat is its own fixed line.
+- The two wiring warnings above are unavoidable with the plan's appended position mappings.
+- `plug_in` still ticks on the first plug-in only; `box_at_kitchen` is what tracks later moves, as planned.

@@ -1,6 +1,6 @@
 # demo_ops_recon: scripted playtest ("What's on the network?")
 
-A demo scenario (15 minutes): a working day at Merrin & Sallow, in which the player plugs a drop box in at the hot desk, lists and scans what answers on the office network, tests which reported weaknesses are real, uses technique cards, and reads their own trail in the network log. The plan is `docs/agents/ops_core_build/SHOWCASE_PLAN.md` section 5; the beats R1 to R8 below are its table 5.4. Three runs (A morning, B midday, C evening), each 10 to 15 minutes, in one game or in three fresh ones. Run B ends with a reload check and the Terminal-lasts check.
+A demo scenario (about 20 minutes guided): a working day at Merrin & Sallow, in which the player plugs a drop box in at the hot desk, lists and scans what answers on the office network, tests which reported weaknesses are real, uses technique cards, and reads their own trail in the network log. The plan is `docs/agents/ops_core_build/SHOWCASE_PLAN.md` section 5; the beats R1 to R8 below are its table 5.4. Three runs (A morning, B midday, C evening), each 10 to 15 minutes, in one game or in three fresh ones. Run B ends with a reload check and the Terminal-lasts check.
 
 The request-level checks (the same 404 for a real and an invented host before the sweep, every refusal code, the share refused before the admin session and served after it, the log rows, the unplug) are in `test/controllers/break_escape/demo_ops_recon_scenario_test.rb`, and the leak scanner over a whole run is its last test. This script plays only what a player can click. It sends no forged or replayed request.
 
@@ -66,6 +66,33 @@ Log: source `network_log`, three seed rows 07:10, 07:12, 07:14, all from the kit
 - **Ama's barks** after each beat (sweep, scan, both confirms, the card, the file server scan, the share) are held while the network view is open and show when it closes, one every 2.5 s; a bark whose next step is already done is dropped as stale. Read them from `npcManager` conversation history if the bubble has gone (`isBark` messages).
 - **After a click** wait for `pending` to go away (about a second).
 - **Reload.** `{"cmd":"sync"}`, then `{"cmd":"eval","fn":"() => { location.reload(); return true; }"}`, wait about 15 s, then `{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}`.
+
+## Guided path (the tour, 2026-11-25)
+
+Play only what Ama points at. After each tick she barks one "what you just saw" line (held while the network view is open, shown when it closes). Order is the same on the panel, the "Things to try" board and "What's next?". Live-checked in game 283 on :3051 (stopped); beats marked (static) are asserted in the Rails test or a story run, not clicked this round.
+
+| Beat | Pointer (Ama, "What's next?") | Action | Tick | What you just saw (bark) |
+|---|---|---|---|---|
+| R1 | Find the hot desk port, plug in while Jun is away; "If Jun comes back while you're at his port, he'll ask what you're doing." | Plug in at the hot desk (or kitchen) port | `plug_in` on `network_foothold_gained:hotdesk_jack` or `:kitchen_jack`; `box_at_kitchen` set by an appended mapping at each | "You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network." (kitchen: its own wording). Live: kitchen bark seen, `box_at_kitchen` true |
+| R2 | Sweep the office network | Sweep | `sweep` | "Those are the machines that answered. One spare port showed you every PC, the printer, a camera and a file share. Scan the printer next." (live) |
+| R3 | Scan the printer | Scan | `scan_printer` | "Each tile is something the printer offers, with its product and version. The admin page is the one to check." (live) |
+| R3b | Optional, while `printer_off` is false: "Want to see an outage? Switch the printer off at its wall socket and sweep again. Then switch it back on." | Wall socket, re-sweep | none | existing "Printer's off. It won't answer on the network now." |
+| R4 | Check the admin page, test both | Check, confirm both | `confirm_both` | "Two reports that looked the same. Only testing showed which was real and why the other was a false alarm. There's a technique card in the printer cupboard." (live) |
+| R5 | Cupboard card, use on the real one | Take card, Use | `use_card` | "The card fitted the real weakness. ... that link is in your keyring now." then "Try the same card on the false one, if you like. It won't take. Then open Agnieszka's PC row and connect with that saved link." (live; the false card answered "That finding turned out to be false.") |
+| R5c | "Open the sign-in control on Agnieszka's PC row and connect with the printer's saved link." | Sign-in tile "Agnieszka Duda, Saved", "Printer's saved link" | `remote_signin` on `pc_signed_in:agnieszka_pc` (via `credential`; any sign-in there counts) | "That's her desktop, and you never knew her password. A saved connection works like one." (live) |
+| R6 | "Now try the file server the same way, in the Terminal view. Same moves, typed." then tell Ama | Terminal, scan, tell Ama | `terminal_view` (ink tag) | in the knot: "Same findings, same names, printed the way a console prints them. Its scan came back as a table, lined up in columns." then "Switch to Panels and back again. The Terminal keeps its log for as long as the view is open." (ticked live; the new lines are in the served ink) |
+| Gate | "Call it a day" | Only after kitchen and server room are seen | none | Until `plug_in`, `sweep`, `scan_printer`, `confirm_both`, `use_card`, `remote_signin`, `terminal_view` are done she says "Not yet." and one line per undone beat, with "Skip them and call it a day anyway." (story run: refusal lists exactly the undone beats; skip reaches "Seen what you wanted?"; all done passes straight through) |
+| R7a | as now (Zainab's card) | Use "Known update gap" on the update finding | none (bark only) | `pc_signed_in:file_server` with `via technique`, `npcId agnieszka_duda`: "A session on the file server as Agnieszka, an ordinary user. The red frame means a technique got you in, not a sign-in." (static) |
+| R7b | as now (tool roll card) | Use "Left-open settings" | none (bark only) | same event, `npcId graham_whitfield`: "Now you're Graham, an administrator. The user session was what that weakness needed first." (static) |
+| R7c | as now | Open the shared drive from the file server desktop | `open_share` | "The shared drive opens only for Graham. The foothold and Agnieszka's session weren't enough. Now see Graham for the log." (static) |
+| R8 | Go and see Graham | Flag the 07:12 row | `read_log` | "Every move you made is in that log, after the stranger's. ... Then ask me what's next." (static) |
+| R8c | "Last thing. Go back to the kitchen or hot desk port (by where the box is) and unplug the box." | Unplug at the port | `unplug`: `network_device_unplugged:hotdesk_jack` or `:kitchen_jack` with `open_share_done` true (an unplug before the share neither ticks nor spends the once-only line) | "Unplugging ended every session that ran through the box. Your keyring keeps what you found." (static) |
+
+Time: about 20 minutes. Measured waits: the lever windows (coffee run, lunch) were not re-measured this round (no change to any routine number); the live run used the kitchen port so no wait on Jun. The evening beats R7 to R8c were not clicked this round: run them from a game that has done R1 to R6.
+
+Not in the tour: the realism text (`demo_ops_terminal` shows it), tokens and the assist invite (`demo_ops_terminal`), passwords and cracking (`demo_ops_passwords`), second steps (`demo_ops_second_step`). Free play: A5 printer socket, Jun caught at his desk, reload check, B7 and B8 below.
+
+The three runs below keep the harness detail of each beat.
 
 ## Run A: morning (R1 to R4)
 

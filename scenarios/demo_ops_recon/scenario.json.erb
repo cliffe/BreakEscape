@@ -8,6 +8,7 @@
   "showPressingNeeds": true,
   "officePresets": true,
   "roomTone": true,
+  "ttsPregenerateChatter": true,
   "disableAttacks": true,
   "lighting": { "enabled": true, "defaultMode": "on" },
 
@@ -190,7 +191,10 @@
     "read_log_done": false,
     "server_room_seen": false,
     "file_server_seen": false,
-    "jun_caught": false
+    "jun_caught": false,
+    "remote_signin_done": false,
+    "unplug_done": false,
+    "box_at_kitchen": false
   },
 
   "startItemsInInventory": [
@@ -239,6 +243,7 @@
       "tasks": [
         { "taskId": "confirm_both", "title": "Test both of the printer's reported weaknesses", "type": "custom", "status": "active" },
         { "taskId": "use_card", "title": "Use a technique on the one that is real", "type": "custom", "status": "active" },
+        { "taskId": "remote_signin", "title": "Sign in to Agnieszka's PC with the printer's saved connection", "type": "custom", "status": "active" },
         { "taskId": "terminal_view", "title": "Look at the file server in the Terminal", "type": "custom", "status": "active" }
       ]
     },
@@ -250,7 +255,8 @@
       "order": 2,
       "tasks": [
         { "taskId": "open_share", "title": "Open the shared drive", "type": "custom", "status": "active" },
-        { "taskId": "read_log", "title": "Find yourself in the network log", "type": "custom", "status": "active" }
+        { "taskId": "read_log", "title": "Find yourself in the network log", "type": "custom", "status": "active" },
+        { "taskId": "unplug", "title": "Unplug the drop box and see what ends", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -460,7 +466,7 @@
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Ask Ama to send them for coffee, then plug the drop box into the hot desk's network port while Jun is away.\n- Sweep the office network, then scan the printer.\nMidday:\n- Check the printer's admin page and test both findings.\n- Take the card from the printer cupboard and use it on the real one.\n- Look at the file server in the Terminal, then tell Ama what it said.\nEvening:\n- Look in on the kitchen and the server room, then ask Ama to call it a day.\n- Talk to Zainab (server room, then the kitchen coffee).\n- Open the shared drive, then read the network log with Graham."
+          "text": "Morning:\n- Ask Ama to send them for coffee, then plug the drop box into the hot desk's network port while Jun is away.\n- Sweep the office network, then scan the printer.\nMidday:\n- Check the printer's admin page and test both findings.\n- Take the card from the printer cupboard and use it on the real one, then try it on the false one.\n- Sign in to Agnieszka's PC from her row, with the printer's saved connection.\n- Look at the file server in the Terminal, then tell Ama what it said.\nEvening:\n- Look in on the kitchen and the server room, then ask Ama to call it a day.\n- Talk to Zainab (server room, then the kitchen coffee).\n- Open the shared drive, then read the network log with Graham.\n- Last, unplug the drop box and see what ends."
         }
       ],
       "npcs": [
@@ -482,7 +488,7 @@
             { "eventPattern": "game_loaded", "cooldown": 0, "setGlobal": { "kitchen_seen": false, "server_room_seen": false } },
             { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
             { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
-            { "eventPattern": "network_foothold_gained:hotdesk_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "You're in. Now see what answers." },
+            { "eventPattern": "network_foothold_gained:hotdesk_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network." },
             { "eventPattern": "network_swept", "cooldown": 0, "completeTask": "sweep", "setGlobal": { "sweep_done": true } },
             { "eventPattern": "network_host_scanned:printer_host", "cooldown": 0, "completeTask": "scan_printer", "setGlobal": { "scan_printer_done": true } },
             { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'confirmed'", "cooldown": 0, "setGlobal": { "r4_real_seen": true } },
@@ -491,18 +497,27 @@
             { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'false' && globalVars.r4_real_seen === true", "cooldown": 0, "completeTask": "confirm_both", "setGlobal": { "confirm_both_done": true } },
             { "eventPattern": "network_technique_used", "condition": "data.grant === 'credential'", "cooldown": 0, "completeTask": "use_card", "setGlobal": { "use_card_done": true } },
             { "eventPattern": "network_share_opened:shared_drive", "cooldown": 0, "completeTask": "open_share", "setGlobal": { "open_share_done": true } },
-            { "eventPattern": "network_device_unplugged:hotdesk_jack", "onceOnly": true, "cooldown": 0, "bark": "Unplugged. Every session through that box has ended with it." },
+            { "eventPattern": "network_device_unplugged:hotdesk_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.open_share_done === true", "completeTask": "unplug", "setGlobal": { "unplug_done": true }, "bark": "Unplugging ended every session that ran through the box. Your keyring keeps what you found." },
             { "eventPattern": "global_variable_changed:printer_off", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "bark": "Printer's off. It won't answer on the network now." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": true } },
             { "eventPattern": "room_entered:server_room", "cooldown": 0, "setGlobal": { "server_room_seen": true } },
             { "eventPattern": "network_host_scanned:file_server", "cooldown": 0, "setGlobal": { "file_server_seen": true } },
-            { "eventPattern": "network_foothold_gained:kitchen_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "That works too. Nobody's watching the kitchen port." },
-            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_printer_done !== true", "cooldown": 0, "bark": "That's everything that answers. Pick the printer and scan it." },
-            { "eventPattern": "global_variable_changed:scan_printer_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_both_done !== true", "cooldown": 0, "bark": "The admin page is the one to look at. Check it, then test what it reports." },
-            { "eventPattern": "global_variable_changed:confirm_both_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_card_done !== true", "cooldown": 0, "bark": "One real, one false alarm. There's a technique card in the printer cupboard." },
-            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "The printer kept a saved link to Agnieszka's PC. Try it from her row." },
+            { "eventPattern": "network_foothold_gained:kitchen_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "That works too. Nobody's watching the kitchen port. The box is your foothold there, and anything it can reach, you can look at." },
+            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_printer_done !== true", "cooldown": 0, "bark": "Those are the machines that answered. One spare port showed you every PC, the printer, a camera and a file share. Scan the printer next." },
+            { "eventPattern": "global_variable_changed:scan_printer_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_both_done !== true", "cooldown": 0, "bark": "Each tile is something the printer offers, with its product and version. The admin page is the one to check." },
+            { "eventPattern": "global_variable_changed:confirm_both_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_card_done !== true", "cooldown": 0, "bark": "Two reports that looked the same. Only testing showed which was real and why the other was a false alarm. There's a technique card in the printer cupboard." },
+            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "The card fitted the real weakness. The printer had kept a saved link to Agnieszka's PC, and that link is in your keyring now." },
             { "eventPattern": "global_variable_changed:file_server_seen", "condition": "data.value === true && data.oldValue !== true && globalVars.terminal_view_done !== true", "cooldown": 0, "bark": "That's the file server. Try it in the Terminal too, then tell me what it said." },
-            { "eventPattern": "global_variable_changed:open_share_done", "condition": "data.value === true && data.oldValue !== true && globalVars.read_log_done !== true", "cooldown": 0, "bark": "You're in the shared drive. Graham can show you how that looked." }
+            { "eventPattern": "global_variable_changed:open_share_done", "condition": "data.value === true && data.oldValue !== true && globalVars.read_log_done !== true", "cooldown": 0, "bark": "The shared drive opens only for Graham. The foothold and Agnieszka's session weren't enough. Now see Graham for the log." },
+            { "eventPattern": "network_device_unplugged:kitchen_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.open_share_done === true", "completeTask": "unplug", "setGlobal": { "unplug_done": true }, "bark": "Unplugging ended every session that ran through the box. Your keyring keeps what you found." },
+            { "eventPattern": "network_foothold_gained:kitchen_jack", "cooldown": 0, "setGlobal": { "box_at_kitchen": true } },
+            { "eventPattern": "network_foothold_gained:hotdesk_jack", "cooldown": 0, "setGlobal": { "box_at_kitchen": false } },
+            { "eventPattern": "pc_signed_in:agnieszka_pc", "cooldown": 0, "completeTask": "remote_signin", "setGlobal": { "remote_signin_done": true } },
+            { "eventPattern": "global_variable_changed:remote_signin_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "That's her desktop, and you never knew her password. A saved connection works like one." },
+            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'agnieszka_duda'", "cooldown": 0, "bark": "A session on the file server as Agnieszka, an ordinary user. The red frame means a technique got you in, not a sign-in." },
+            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'graham_whitfield'", "cooldown": 0, "bark": "Now you're Graham, an administrator. The user session was what that weakness needed first." },
+            { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true && globalVars.unplug_done !== true", "cooldown": 0, "bark": "Every move you made is in that log, after the stranger's. Whoever reads it can see you, the way you saw them. Then ask me what's next." },
+            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true && globalVars.remote_signin_done !== true", "cooldown": 0, "bark": "Try the same card on the false one, if you like. It won't take. Then open Agnieszka's PC row and connect with that saved link." }
           ]
         },
         {
@@ -516,7 +531,7 @@
           "storyPath": "scenarios/demo_ops_recon/ink/chidi_okeke.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Zubenelgenubi", "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Zubenelgenubi", "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
           "creds": { "username": "cokeke", "password": "Fernwick-Chi-3047" },
@@ -545,7 +560,7 @@
           "storyPath": "scenarios/demo_ops_recon/ink/jun_watanabe.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Puck", "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Puck", "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
           "creds": { "username": "jwatanabe", "password": "Larkmoor-Jun-5521" },
@@ -578,7 +593,7 @@
           "storyPath": "scenarios/demo_ops_recon/ink/agnieszka_duda.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Callirrhoe", "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Callirrhoe", "style": "Merrin & Sallow's part-time bookkeeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
           "creds": { "username": "aduda", "password": "Gorsefield-Ag-8213" },
@@ -834,7 +849,7 @@
           "storyPath": "scenarios/demo_ops_recon/ink/graham_whitfield.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Umbriel", "style": "Merrin & Sallow's IT coordinator, in his early 60s, unhurried and kind; he looks after the office network. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Umbriel", "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind; he looks after the office network. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "it",
           "creds": { "username": "gwhitfield", "password": "Tarnbeck-Gra-6390", "admin": true },
