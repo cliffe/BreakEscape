@@ -5,6 +5,7 @@
 // `crackFacts` as pickable chips. The player picks up to four (none is allowed) and presses Crack; the scene posts
 // { hash_id, facts } to /crack and draws the answer. The server decides everything; this scene holds
 // no password and no recipe, and every string reaches the page through textContent.
+// When a wait ends the scene finishes by itself (one automatic post, no facts); Finish is only a retry.
 //
 // Params: { hashId, keyring?, api?, intelFacts?, now? }  (the last four are for tests)
 

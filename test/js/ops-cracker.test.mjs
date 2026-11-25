@@ -36,6 +36,7 @@ const ROW = { id: 'h1', kind: 'hash', source: 'registry', token: 'N4L9-E9K3-8PBA
     account: { npcId: 'dana', username: 'dana.k', displayName: 'Dana K' } };
 const FACTS = { pet: { label: 'Her dog is called Biscuit' }, year: { label: 'Born in 1990' } };
 const fresh = (over = {}) => M.initialState({ row: ROW, crackFacts: ['pet', 'year'], intelFacts: FACTS, ...over });
+const FIX = JSON.parse(readFileSync(join(here, 'fixtures/ops_crack/answers.json'), 'utf8'));
 const view = (s, now = 0) => M.viewOf(s, now, refusalText);
 
 // ---- model ---------------------------------------------------------------------------------
@@ -43,7 +44,8 @@ const view = (s, now = 0) => M.viewOf(s, now, refusalText);
 test('the model renders each status', () => {
     let s = fresh();
     assert.match(view(s).message, /Pick the facts you think it was built from/);
-    assert.equal(M.STATUS_TEXT.ready_to_finish, 'Ready to finish. Press Finish to see the result.');
+    assert.equal(M.STATUS_TEXT.fetching, 'The wait is over. Fetching the result...');
+    assert.equal(M.STATUS_TEXT.retry, 'The result did not arrive. Press Finish to try again.');
     const ans = (a, now = 0, seq = 1) => M.acceptAnswer(s, seq, { success: true, ...a }, now);
     assert.equal(view(ans({ status: 'nomatch' })).message, 'No match');
     assert.equal(view(ans({ status: 'infeasible' })).message, 'This one will not fall to guessing. Try another way in.');
@@ -54,7 +56,7 @@ test('the model renders each status', () => {
     assert.match(view(run, 0).message, /Working on it/);
     assert.equal(view(run, 0).progress, 0);
     assert.ok(view(run, 30000).progress > 0.49 && view(run, 30000).progress < 0.51);
-    assert.match(view(run, 60000).message, /Ready to finish/);
+    assert.match(view(run, 60000).message, /Fetching the result/);
     assert.equal(view(run, 60000).crackLabel, 'Finish');
     assert.equal(view(s).token, 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q');
     assert.equal(view(M.initialState({ row: { ...ROW, salted: true } })).salted, true);
@@ -335,10 +337,67 @@ test('R1-C12: a missing row says so, cannot post, and an unknown status cannot b
     assert.equal(view(odd).message, refusalText('unknown_status'));
 });
 
-test('R1-C13: the ready-to-finish line names the Finish button', () => {
-    const run = M.acceptAnswer(fresh(), 1, { success: true, status: 'running', readyInSeconds: 5 }, 0);
-    assert.match(view(run, 5000).message, /Press Finish/);
-    assert.equal(view(run, 5000).crackLabel, 'Finish');
+test('R1-C13: the two end-of-wait lines each appear in exactly their state', () => {
+    const first = M.buildRequest(fresh());
+    const run = M.acceptAnswer(first.state, first.seq, { ...FIX.crackRunning, readyInSeconds: 5 }, 0);
+    const due = view(run, 5000);
+    assert.equal(due.message, M.STATUS_TEXT.fetching, 'automatic post due');
+    assert.doesNotMatch(due.message, /Press/);
+    assert.equal(due.crackLabel, 'Finish');
+    const sent = M.buildRequest(run, { auto: true }).state;
+    assert.equal(view(sent, 5000).message, M.STATUS_TEXT.fetching, 'in flight');
+    assert.doesNotMatch(view(sent, 5000).message, /Press/);
+    assert.equal(view(sent, 5000).crackEnabled, false);
+    const back = M.acceptAnswer(sent, sent.seq, { ...FIX.crackRunning, readyInSeconds: 0 }, 5000);
+    assert.equal(view(back, 5000).message, M.STATUS_TEXT.retry, 'gone, nothing in flight, still running');
+    assert.match(view(back, 5000).message, /Press Finish/);
+    assert.equal(view(back, 5000).crackEnabled, true);
+    // a refusal keeps its precedence
+    const refused = M.acceptAnswer(sent, sent.seq, FIX.crackRefusal, 5000);
+    assert.equal(view(refused, 5000).message, 'You no longer hold this hash.');
+    assert.equal(view(refused, 5000).crackEnabled, true);
+});
+
+test('A4: at the deadline the scene posts once with no press, shows the first line, then the answer', async () => {
+    let release;
+    const { m, host, calls, setClock } = open({ answers: [FIX.crackRunning] });
+    host.querySelector('.ops-cracker-go').click();
+    await settle();
+    m.params.api = (body) => { calls.push(body); return new Promise((r) => { release = r; }); };
+    setClock(10500);
+    m._tick(); m._tick();
+    assert.equal(calls.length, 2);
+    assert.deepEqual(calls[1].facts, []);
+    assert.match(host.textContent, /The wait is over\. Fetching the result\.\.\./);
+    assert.doesNotMatch(host.textContent, /Press/);
+    release(FIX.crackCracked);
+    await settle();
+    assert.match(host.textContent, /Cracked/);
+    m.cleanup();
+});
+
+test('A4: a refused automatic post shows the retry line and one press posts again', async () => {
+    const { m, host, calls, setClock } = open({ answers: [FIX.crackRunning, new Error('down'), FIX.crackNomatch] });
+    host.querySelector('.ops-cracker-go').click();
+    await settle();
+    setClock(10500);
+    m._tick(); await settle();
+    m._tick(); await settle();
+    assert.equal(calls.length, 2, 'one automatic post only');
+    assert.match(host.textContent, /The link did not answer\. Try again\./, 'the refusal line wins');
+    host.querySelector('.ops-cracker-go').click();
+    await settle();
+    assert.equal(calls.length, 3);
+    assert.match(host.textContent, /No match/);
+    m.cleanup();
+});
+
+test('A4: reopening a scene after the wait posts once', async () => {
+    const { m, calls, setClock } = open({ row: { ...ROW, status: 'running', readyInSeconds: 0 }, answers: [FIX.crackCracked] });
+    setClock(600);
+    m._tick(); m._tick(); await settle();
+    assert.equal(calls.length, 1);
+    m.cleanup();
 });
 
 test('R1-C21: hostile display name, username and token stay text', () => {
