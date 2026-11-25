@@ -222,8 +222,139 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
       _dir, index = copy_catalog(tmp)
       rows = File.readlines(index).grep(/\A\| (sample|other)_note/)
       assert_equal 2, rows.length
-      rows.each { |r| assert_match(/\| [0-9a-f]{12} \|\s*\z/, r) }
+      rows.each { |r| assert_match(/\| [0-9a-f]{12} \| (?:[0-9a-f]{12}|-) \|\s*\z/, r) }
       assert_not_includes File.read(index), 'Quillmark'
+    end
+  end
+
+  # ---- the mirror rule and the content freeze (follow-up B5) ----------------------------------
+
+  def link_scenarios(tmp, links)
+    root = File.join(tmp, 'scen')
+    links.each do |name, ids|
+      FileUtils.mkdir_p(File.join(root, name))
+      weaknesses = ids.map { |id| { 'realism' => id } }
+      File.write(File.join(root, name, 'scenario.json'), JSON.generate('rooms' => { 'a' => { 'weaknesses' => weaknesses } }))
+    end
+    root
+  end
+
+  def write_index(dir, index, scenarios)
+    problems = check_realism_catalog(dir, index_path: index, scenarios_dir: scenarios, write_index: true)
+    assert_empty errors(problems).map(&:to_s)
+  end
+
+  def row_of(index, id)
+    File.readlines(index).find { |l| l.start_with?("| #{id} ") }
+  end
+
+  def check_with(dir, index, scenarios)
+    errors(check_realism_catalog(dir, index_path: index, scenarios_dir: scenarios)).map { |p| [p.rule, p.field] }
+  end
+
+  test 'a script that mirrors its id is an error unless the id already has a row in the index' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      assert_empty check_copy(dir, index)
+      # an id with no row is not exempt, however the look-alike is spelt
+      { 'fresh_note' => 'fresh-note', 'plain_note' => 'plainnote' }.each do |id, script|
+        edit_entries(dir) do |e|
+          e[id] = e['other_note'].merge('module' => "auxiliary/gather/quillmark/#{id}", 'script' => script)
+        end
+      end
+      assert_equal %w[script_mirrors_id] * 2, check_copy(dir, index)
+      edit_entries(dir) { |e| e['fresh_note']['script'] = 'fresh-note-tool' }
+      assert_equal %w[script_mirrors_id], check_copy(dir, index)
+    end
+  end
+
+  test 'a first index cannot exempt a mirrored script' do
+    problems = errors(run_check('script_mirrors_id'))
+    assert(problems.any? { |p| p.rule == 'script_mirrors_id' && p.field == 'script' })
+  end
+
+  test 'a digest is written only for a link from a scenario that is not a test scenario, and it stays' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      only_test = link_scenarios(tmp, 'test_alpha' => %w[sample_note other_note])
+      write_index(dir, index, only_test)
+      assert_match(/\| - \|\s*\z/, row_of(index, 'sample_note'))
+      assert_match(/\| - \|\s*\z/, row_of(index, 'other_note'))
+
+      shipped = link_scenarios(tmp, 'test_alpha' => %w[sample_note], 'm99_real' => %w[sample_note])
+      write_index(dir, index, shipped)
+      digest = row_of(index, 'sample_note')[/\| ([0-9a-f]{12}) \|\s*\z/, 1]
+      assert digest, row_of(index, 'sample_note')
+      assert_equal digest, realism_content(JSON.parse(File.read(Dir.glob(File.join(dir, '*.json')).first))['entries']['sample_note'])
+      assert_match(/\| - \|\s*\z/, row_of(index, 'other_note'))
+
+      # the link is removed: the digest stays
+      write_index(dir, index, NO_SCENARIOS)
+      assert_includes row_of(index, 'sample_note'), "| #{digest} |"
+    end
+  end
+
+  test 'a frozen entry fails when its output or advisories change, and an unfrozen one may change' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      shipped = link_scenarios(tmp, 'm99_real' => %w[sample_note])
+      write_index(dir, index, shipped)
+      assert_empty check_with(dir, index, shipped)
+      edit_entries(dir) { |e| e['sample_note']['output'] = ['State: another state line.', 'Disclosed: 0000-02-02.'] }
+      assert_equal [%w[index_content_changed content]], check_with(dir, index, shipped)
+      edit_entries(dir) do |e|
+        e['sample_note']['output'] = ['State: sample state line.', 'Disclosed: 0000-01-01.']
+        e['sample_note']['advisories'] = ['CVE-0000-22222']
+      end
+      assert_equal [%w[index_content_changed content]], check_with(dir, index, shipped)
+      # other_note has a `-` row: its output and advisories may change
+      edit_entries(dir) do |e|
+        e['sample_note']['advisories'] = ['CVE-0000-11111']
+        e['other_note']['output'] = ['State: changed line.']
+        e['other_note']['advisories'] = ['CVE-0000-33333', 'CVE-0000-44444']
+      end
+      assert_empty check_with(dir, index, shipped)
+    end
+  end
+
+  test 'a five-column index still reads and is written back with six columns; a six-column row needs its content cell' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      lines = File.readlines(index).map do |l|
+        l.sub(/ \| (?:[0-9a-f]{12}|-) \|\s*\z/, " |\n").sub('| identity | content |', '| identity |').sub('| --- | --- | --- | --- | --- | --- |', '| --- | --- | --- | --- | --- |')
+      end
+      File.write(index, lines.join)
+      assert_empty check_copy(dir, index), 'a five-column index reads'
+      write_index(dir, index, NO_SCENARIOS)
+      assert_includes File.read(index), '| identity | content |'
+      assert_match(/\| [0-9a-f]{12} \| - \|\s*\z/, row_of(index, 'sample_note'))
+      text = File.readlines(index)
+      i = text.index { |l| l.start_with?('| sample_note') }
+      File.write(index, text.dup.tap { |l| l[i] = l[i].sub(/ \| - \|\s*\z/, " |\n") }.join)
+      assert_includes check_copy(dir, index), 'index_row_unreadable'
+    end
+  end
+
+  test 'the history check finds a digest that was cleared or changed' do
+    Dir.mktmpdir do |tmp|
+      repo = File.join(tmp, 'repo')
+      FileUtils.mkdir_p(File.join(repo, 'docs'))
+      dir, index = copy_catalog(tmp)
+      shipped = link_scenarios(tmp, 'm99_real' => %w[sample_note])
+      write_index(dir, index, shipped)
+      path = File.join(repo, 'docs/REALISM_CATALOG_INDEX.md')
+      git(repo, 'init', '-q')
+      FileUtils.cp(index, path)
+      git(repo, 'add', '.')
+      git(repo, 'commit', '-q', '-m', 'index with a digest')
+      assert_empty index_history_problems(repo)
+      original = File.read(path)
+      File.write(path, original.sub(/ \| [0-9a-f]{12} \|(\s*)\z/, ' | - |\1'))
+      assert(index_history_problems(repo).any? { |m| m.include?('sample_note') && m.include?('content') })
+      File.write(path, original.sub(/ \| [0-9a-f]{12} \|(\s*)\z/, ' | aaaaaaaaaaaa |\1'))
+      assert(index_history_problems(repo).any? { |m| m.include?('sample_note') && m.include?('content') })
+      File.write(path, original)
+      assert_empty index_history_problems(repo)
     end
   end
 
@@ -254,6 +385,9 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
 
           problems << "#{id} changed form since #{rev[0, 9]}" if row[:form] != now[id][:form]
           problems << "#{id} changed identity since #{rev[0, 9]}" if row[:identity] && row[:identity] != now[id][:identity]
+          if row[:content] && row[:content] != '-' && row[:content] != now[id][:content]
+            problems << "#{id} changed content since #{rev[0, 9]}"
+          end
         end
       end
     end
@@ -353,11 +487,11 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
       dir, index = copy_catalog(tmp)
       lines = File.readlines(index)
       i = lines.index { |l| l.start_with?('| sample_note') }
-      File.write(index, lines.dup.tap { |l| l[i] = l[i].sub(/ \| [0-9a-f]{12} \|\s*\z/, " |\n") }.join)
+      File.write(index, lines.dup.tap { |l| l[i] = l[i].sub(/ \| [0-9a-f]{12} \| (?:[0-9a-f]{12}|-) \|\s*\z/, " |\n") }.join)
       assert_includes check_copy(dir, index), 'index_row_unreadable'
       File.write(index, lines.dup.tap { |l| l[i] = " #{l[i]}" }.join)
       assert_empty check_copy(dir, index), 'an indented but intact row is read'
-      File.write(index, lines.dup.tap { |l| l.delete_at(i) }.then { |l| l.insert(i, " | gone_note | f.json | advisories 1, output 1, a/1 | - | 0123456789ab |\n") }.join)
+      File.write(index, lines.dup.tap { |l| l.delete_at(i) }.then { |l| l.insert(i, " | gone_note | f.json | advisories 1, output 1, a/1 | - | 0123456789ab | - |\n") }.join)
       assert_includes check_copy(dir, index), 'index_id_missing'
     end
   end
