@@ -52,3 +52,7 @@ Seeds (`SEEDS` in `_ca20.mjs`): defend = `--set episode_e20_remote_and_mobile_wo
 ## Unverified
 
 - A real recording with BE_SPRITE (the dry runs use the hooded sprite); Fatima's first walk; the room shot's static fallback (Chidi walked every time); t03n was dry-run once. t05n re-run after the row-0 focus fix: row 0 background rgba(0,0,0,0), list and card frames viewed. The t06 park uses the hooded dry-run sprite; check the real sprite stands acceptably at the top right.
+
+## Open decision: v1b drop (taken by default, 25 Nov)
+
+The script keeps v1b ("Two days on the road.") with v1c; its only fallback is to drop v1b if the voiced take runs long. Default taken: keep v1b. This affects only the narration, not any take: t02_brief (1 to 7.9 s) serves either wording, so no take script changes. Revisit at the edit if v1b + v1c overruns the 6.9 s topic shot.
