@@ -49,3 +49,13 @@ Script changes: hook row text and speaker (Anjali), in = audio start - 0.3 s, 3.
 
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t09_anjali_cooler (new) | step-away flags, kit_ca10_out not set | `followNpc(kit_anjali_rao)`; `triggerNeed(thirst, 5)`; she walks from (7.4,8.3) to the cooler (tile 8.2,5.6, drinks 20 s); `followPlayer` | follow-start, left-post, at-cooler, follow-end | hook (her chat is the current hook: this is a movement lead-in) | Trip not observed in the survey (estimated 40 s unforced); forced trip not proved here, only the ca13 equivalent. The cooler chatter never fires for a lone drinker (see Hook decision). After Look up, a `patrolOverride` sends her back to (7.4,8.3): a trip in progress ends with a walk home, a second movement shot (unproven) |
+
+Dry run 25 Nov (step-away flags, headless, BE_DRY=1): PASS on attempt 3, game 13377. Attempts 1 and 2 (games 13375, 13376) stopped at the post check: Anjali stood at (245,233) on both fresh games, not at the surveyed (237,266). The take now uses her settled start position as her post (settle, 8 s limit) and logs `post-set`. Attempt 3: she walks from (245,233) 1.7 s after the thirst trigger, stops at (269,213) 1.1 s later, about 35 px short of the cooler tile (262,179), waits about 23 s and is back at (245,233). Camera: 102 samples while following, scroll start (-236,-38), end (-288,-72), range 21 by 20, back on the player at the end. The trip is a short step, not a walk to the cooler: check the cooler point before recording. Frames not looked at.

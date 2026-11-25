@@ -42,3 +42,15 @@ Look up at 3.10 s; G1 bubble 4.65, audio start 4.79 (+1.69), dur 4.64; G2 audio 
 
 | take | length | drop % | key marks | notes |
 |---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t07_graham_coffee (replaces t07_agnieszka_coffee; dry run PASS 25 Nov) | step-away seed with `kit_quiet=true`; `kit_ca13_out` not set | `followNpc(kit_graham_whitfield, lerp 0.08)`; `triggerNeed(caffeine, 5)`; he walks from his settled post (100,187) to the coffee station (arrive 240,214, 143 px), hold; back to his post; `followPlayer` | post-set, follow-on, need-set, walk-start, arrive, trip-distance, return-start, back, cam-summary, end | office or cold open | After `kit_ca13_out` her `patrolOverride` returns her to tile (6,3): record the trip before Look up. t06_graham_step_away: start the camera on Agnieszka for the first 2 s (her recall walk), then `followPlayer`: unproven |
+
+Dry run 25 Nov (step-away seed with kit_quiet=true, headless, BE_DRY=1): FAIL after 2 attempts. Attempt 1 (game 13378, committed script): `Agnieszka is not on her post at take start: {x:276,y:209}`; the surveyed post (192,97) was never seen. Attempt 2 (game 13379, post taken from her settled start point): she starts at (277,208), walks to (249,213), arrives 1.1 s later, waits about 33 s, walks back towards (235,176) and settles at (214,79). Error: `Agnieszka did not get back to her post: {x:214,y:79}`. No camera summary was logged. Her start point is 33 px from the station (244,209), so the trip reads as a short step, and her routine takes her well away from that point afterwards. The take needs a decision on her post and her entry state before a third run. The committed script is restored (no net change).
+
+Dry run 25 Nov, t07_graham_coffee (step-away seed with kit_quiet=true, headless, BE_DRY=1, keyless :3456, game 13380, attempt 1 of 3): PASS. Graham's start and post (100,187); target the coffee station, arrive (240,214), trip 143 px (minimum 120); return-start (210,187); back on the post (100,187). Camera start (-381,-87) (first followed sample), end (-269,-155) after the glide back to the player; scroll covered 128 px in x and 32 px in y while following. Agnieszka's take is replaced: the kit's needsHome for her is the training room, and the take proved only that she leaves her post, not that she returns.
