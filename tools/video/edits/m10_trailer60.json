@@ -94,19 +94,19 @@
    "note": "hook: Netherton, silencedetect voice 79.40-83.57; in 80.40, J-cut pre 1.1 (audio from 79.30), L-cut post 0.9 (to 83.70, inside the pause before the next sentence). Bar cropped in 16:9. t10 is a monolith: never outside 79.30-83.70 here.",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.72,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.72,
-     "cy": 0.39,
-     "zoom": 1.3
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -157,17 +157,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.42,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.45,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -221,18 +221,18 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.0
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.7,
-     "cy": 0.435,
-     "zoom": 1.15
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.7,
-     "cy": 0.43,
-     "zoom": 1.2
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -302,19 +302,19 @@
    "note": "Netherton portrait, voice 263.77-266.13; pre 1.25 (audio from 263.717, inside the pause after the previous line). Picture is Netherton only: no frame names the sleeper. Bar says WREN (a codename).",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.66,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.72,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.72,
-     "cy": 0.39,
-     "zoom": 1.3
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -386,17 +386,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.2
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -429,17 +429,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.6
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -490,17 +490,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.6
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.6
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -531,19 +531,19 @@
    "note": "gallery guard bark, voice 7.88-9.19 + 10.00-10.91; two rooms in frame: crop to the gallery and the guard with his bubble. Framing is a guess: check.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.3
+     "cx": 0.64,
+     "cy": 0.52,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.64,
+     "cy": 0.55,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.64,
      "cy": 0.5,
-     "zoom": 1.2
+     "zoom": 1
     }
    },
    "audio": {
@@ -615,17 +615,17 @@
     "16:9": {
      "cx": 0.55,
      "cy": 0.45,
-     "zoom": 1.3
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.55,
      "cy": 0.45,
-     "zoom": 1.0
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.55,
      "cy": 0.45,
-     "zoom": 1.2
+     "zoom": 1
     }
    },
    "audio": {
@@ -703,17 +703,17 @@
     "16:9": {
      "cx": 0.45,
      "cy": 0.38,
-     "zoom": 2.0
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.45,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.45,
      "cy": 0.38,
-     "zoom": 1.9
+     "zoom": 2
     }
    },
    "audio": {
@@ -765,19 +765,19 @@
    "note": "release console screen: times only (early access 04:00, release 06:00 UTC, now 03:30); 9:16 and 1:1 framed to the panel's full width. Tesseract's \"Now it's my turn.\" runs as a vo cue.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
+     "cx": 0.49,
      "cy": 0.5,
-     "zoom": 2.0
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.49,
      "cy": 0.5,
-     "zoom": 0.62
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.49,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -810,17 +810,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.6
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.3
+     "zoom": 1
     }
    },
    "audio": {
@@ -851,19 +851,19 @@
    "note": "tunnel guard portrait, voice 13.02-14.82; crop the toast (about 13 s) or accept; out before the choices (15.44)",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.735,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.79,
-     "cy": 0.39,
-     "zoom": 1.5
+     "cx": 0.72,
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -912,19 +912,19 @@
    "note": "tight on the grapple, fight sound from the take; out before the swing lands (no KO)",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.5
+     "cx": 0.53,
+     "cy": 0.48,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.53,
+     "cy": 0.48,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.2
+     "zoom": 1
     }
    },
    "audio": {
@@ -955,19 +955,19 @@
    "note": "crescendo cut: mid-pick, pins setting. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
+     "cx": 0.395,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.395,
      "cy": 0.5,
-     "zoom": 0.57
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.395,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -1000,17 +1000,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.75
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -1043,17 +1043,17 @@
     "16:9": {
      "cx": 0.499,
      "cy": 0.499,
-     "zoom": 1.6
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.499,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cy": 0.499,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.499,
      "cy": 0.499,
-     "zoom": 1.6
+     "zoom": 2
     }
    },
    "audio": {
@@ -1086,17 +1086,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 2.2
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.25
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 2.2
+     "zoom": 1
     }
    },
    "audio": {
@@ -1127,19 +1127,19 @@
    "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.53,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cx": 0.7,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.7,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.7,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1170,19 +1170,19 @@
    "note": "crescendo cut: Kowalczyk face, bar OFF in every aspect (it names her); only here, between team faces, far from the WREN card. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.53,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cx": 0.718,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.718,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.718,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1213,19 +1213,19 @@
    "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.53,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cx": 0.708,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.708,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.708,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1257,18 +1257,18 @@
    "framing": {
     "16:9": {
      "cx": 0.499,
-     "cy": 0.498,
-     "zoom": 1.1
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.499,
      "cy": 0.5,
-     "zoom": 0.57
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.499,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -1301,17 +1301,17 @@
     "16:9": {
      "cx": 0.499,
      "cy": 0.499,
-     "zoom": 1.6
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.499,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cy": 0.499,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.499,
      "cy": 0.499,
-     "zoom": 1.6
+     "zoom": 2
     }
    },
    "audio": {
@@ -1344,17 +1344,17 @@
     "16:9": {
      "cx": 0.499,
      "cy": 0.498,
-     "zoom": 2.05
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.499,
-     "cy": 0.5,
-     "zoom": 0.85
+     "cy": 0.498,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.499,
      "cy": 0.498,
-     "zoom": 1.55
+     "zoom": 2
     }
    },
    "audio": {
@@ -1385,19 +1385,19 @@
    "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.53,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cx": 0.705,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.705,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.705,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1430,17 +1430,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.75
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -1471,19 +1471,19 @@
    "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.53,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cx": 0.698,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.698,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.698,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1514,19 +1514,19 @@
    "note": "crescendo cut: face, bar OFF in every aspect (the bar may name the character). Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.53,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cx": 0.708,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.708,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.708,
-     "cy": 0.416,
-     "zoom": 1.2
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1559,17 +1559,17 @@
     "16:9": {
      "cx": 0.499,
      "cy": 0.499,
-     "zoom": 2.4
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.499,
-     "cy": 0.5,
-     "zoom": 0.75
+     "cy": 0.499,
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.499,
      "cy": 0.499,
-     "zoom": 1.35
+     "zoom": 1
     }
    },
    "audio": {
@@ -1601,18 +1601,18 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.37,
-     "zoom": 1.35
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.455,
-     "zoom": 1.1
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.37,
-     "zoom": 1.35
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "audio": {
@@ -1644,18 +1644,18 @@
    "framing": {
     "16:9": {
      "cx": 0.499,
-     "cy": 0.498,
-     "zoom": 1.1
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.499,
      "cy": 0.5,
-     "zoom": 0.57
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.499,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -1686,19 +1686,19 @@
    "note": "Tesseract portrait wide, voice 12.13-16.57; pre 2.3 (audio from 12.1333); bar cropped in 16:9",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.73,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.73,
-     "cy": 0.39,
-     "zoom": 1.3
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1749,17 +1749,17 @@
     "16:9": {
      "cx": 0.74,
      "cy": 0.2,
-     "zoom": 3.0
+     "zoom": 3
     },
     "9:16": {
      "cx": 0.73,
      "cy": 0.3,
-     "zoom": 1.8
+     "zoom": 1.6875
     },
     "1:1": {
      "cx": 0.73,
      "cy": 0.25,
-     "zoom": 2.2
+     "zoom": 2
     }
    },
    "audio": {
