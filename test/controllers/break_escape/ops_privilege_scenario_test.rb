@@ -100,6 +100,12 @@ module BreakEscape
       name ? name_answer(name) : response.parsed_body
     end
 
+    def b_room(id, name)
+      get b_path("room/#{id}"), as: :json
+      assert_response :success, response.body
+      name_answer(name)
+    end
+
     def b_state
       Game.find(@game.id).player_state
     end
@@ -137,6 +143,7 @@ module BreakEscape
     def beat_collect_at_bay
       body = b_login('bay_pc', ADEL_LOGIN, 'signin_admin_bay')
       assert_equal 'admin', body['access']
+      b_keyring('keyring_before_collect')
       b_collect('bay_pc', 'collect_bay_first')
       assert_response :success
       checkpoint('beat 2 first collect')
@@ -268,6 +275,8 @@ module BreakEscape
       assert_equal 'deskadmin', row['username']
       assert_nil row['portrait']
       assert_equal 'desk_a_deskadmin', row['hashId']
+      b_collect('desk_a', 'collect_desk_a_repeat')
+      assert_response :success
       b_logout('desk_a')
       checkpoint('beat 11')
       b_take('notes1', 'it_rota_poster', 'IT rota poster')
@@ -277,6 +286,7 @@ module BreakEscape
       body = b_login('desk_b', DESKADMIN_LOGIN, 'signin_deskadmin_desk_b')
       assert body['success'], body.to_s
       assert_equal 'admin', body['access']
+      b_container('desk_b', 'desktop_deskadmin_desk_b')
       b_collect('desk_b', 'collect_desk_b_deskadmin')
       assert_response :success
       assert_equal %w[desk_b_deskadmin], response.parsed_body['harvested'].map { |r| r['hashId'] }
@@ -317,6 +327,8 @@ module BreakEscape
       body = b_login('desk_a', RAVI_LOGIN, 'signin_ravi_desk_a_refused')
       assert_equal false, body['success']
       assert_response :unprocessable_entity
+      # The PC objects as the server sends them (the sign-in screens read their domain from these)
+      %w[lobby bay it_room].each { |room| b_room(room, "room_#{room}") }
       checkpoint('beat 14')
     end
 

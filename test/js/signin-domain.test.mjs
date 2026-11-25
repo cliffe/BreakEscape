@@ -10,6 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
+import { privilegeAnswer } from './support/privilege-answers.mjs';
 
 for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {};
 
@@ -49,14 +50,11 @@ const stubs = {
 };
 let usrc = readFileSync(join(js, 'systems/unlock-system.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) usrc = usrc.split(`'${spec}'`).join(`'${url}'`);
-const { openLoginSignIn, domainOf } = await import(dataUrl(usrc));
+const { openLoginSignIn, domainOf, remoteLockable } = await import(dataUrl(usrc));
 
-// PC objects as the scenario authors them (test_ops_privilege: hot_desk and desk_a carry a domain)
-const PCS = [
-    { id: 'hot_desk', type: 'pc', lockType: 'login', name: 'Hot desk PC', domain: 'northwind' },
-    { id: 'desk_a', type: 'pc', lockType: 'login', name: 'Desk A', domain: 'northwind' },
-    { id: 'lab_pc', type: 'pc', lockType: 'login', name: 'Lab PC' }
-];
+// The PC objects as the server sends them (recorded room answers of the real scenario): bay_pc and hot_desk carry a domain, desk_a and lab_pc none
+const PCS = ['room_lobby', 'room_bay', 'room_it_room'].flatMap(n => privilegeAnswer(n).room.objects)
+    .filter(o => ['hot_desk', 'bay_pc', 'desk_a', 'lab_pc'].includes(o.id));
 
 function screenFor(pcData, { remote = false } = {}) {
     const started = [];
@@ -92,16 +90,15 @@ test('domainOf: a non-blank string, trimmed, else null', () => {
 });
 
 test('unlock-system hands the PC domain to the sign-in screen', async () => {
-    const params = await screenFor({ id: 'desk_a', type: 'pc', name: 'Desk A', domain: 'northwind' });
-    assert.equal(params.signIn.domain, 'northwind');
-    const none = await screenFor({ id: 'lab_pc', type: 'pc', name: 'Lab PC' });
-    assert.equal(none.signIn.domain, null);
+    const byId = Object.fromEntries(PCS.map(p => [p.id, p]));
+    for (const id of ['hot_desk', 'bay_pc']) assert.equal((await screenFor(byId[id])).signIn.domain, 'northwind', id);
+    for (const id of ['desk_a', 'lab_pc']) assert.equal((await screenFor(byId[id])).signIn.domain, null, id);
 });
 
 test('the sign-in screen shows "Domain: northwind" for a domain PC ', () => {
     const pcs = PCS;
     const withDomain = pcs.filter(p => typeof p.domain === 'string');
-    assert.equal(withDomain.length, 2);
+    assert.deepEqual(withDomain.map(p => p.id).sort(), ['bay_pc', 'hot_desk']);
     for (const pc of withDomain) {
         const mg = render({ pcId: pc.id, pcName: pc.name, domain: pc.domain });
         const line = document.querySelector('.signin-domain');
@@ -134,9 +131,21 @@ test('a hostile domain is text, not markup', () => {
     mg.cleanup();
 });
 
-test('a remote sign-in screen names the domain too', () => {
-    const mg = render({ pcId: 'p', pcName: 'P', domain: 'northwind', picker: false, remote: { footholdId: 'f', linkName: null }, host: 'P' });
-    assert.equal(document.querySelector('.signin-domain')?.textContent, 'Domain: northwind');
+test('a remote sign-in screen (a host row of the network view) has no domain line: the row carries none', async () => {
+    // The real remoteLockable and openLoginSignIn: a network host row is a closed list of keys, and no domain is among them
+    const started = [];
+    window.breakEscapeConfig = { gameId: 3 };
+    window.ApiClient = { loginAccounts: async () => ({ loginAccounts: [] }), get: async () => ({}) };
+    window.pcSessions = { has: () => false, get: () => null, screenShown() {} };
+    window.networkLinks = { get: () => ({ name: 'L' }), lastView: () => ({ hosts: [] }) };
+    window.MinigameFramework = { mainGameScene: {}, startMinigame: (type, c, params) => { started.push(params); return null; } };
+    const bay = PCS.find(p => p.id === 'bay_pc');
+    const lk = remoteLockable({ id: bay.id, name: bay.name, host: bay.host, domain: bay.domain }, 'jack_office_port');
+    assert.equal('domain' in lk.scenarioData, false);
+    await openLoginSignIn(lk);
+    assert.equal(started[0].signIn.domain, undefined);
+    const mg = render({ ...started[0].signIn, picker: false });
+    assert.equal(document.querySelector('.signin-domain'), null);
     mg.cleanup();
 });
 

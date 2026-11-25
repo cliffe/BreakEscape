@@ -68,8 +68,12 @@ function base(loginBody) {
 }
 
 async function open(pcId) {
-    window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, statusText: '200', json: async () => ({ contents: [] }) });
-    const item = { scenarioData: { id: pcId, type: 'pc', name: 'Desk PC', host: 'DESK-B', locked: true, lockType: 'login', observations: 'A desk PC.' } };
+    // The recorded desktop answer of the session held at that PC, and the PC object the room answer holds
+    const desktop = privilegeAnswer(pcId === 'desk_a' ? 'desktop_admin_desk_a' : 'desktop_deskadmin_desk_b');
+    window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, statusText: '200', json: async () => desktop });
+    const pc = privilegeAnswer('room_it_room').room.objects.find(o => o.id === pcId);
+    assert.ok(pc, `the recorded it_room answer holds ${pcId}`);
+    const item = { scenarioData: pc };
     const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'PC', containerItem: item, contents: null, isTakeable: false, desktopMode: true });
     window.MinigameFramework.currentMinigame = mg;
     await mg.init();

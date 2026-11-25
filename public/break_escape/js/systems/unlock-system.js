@@ -893,7 +893,6 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             pcName: data.host && data.name && data.host !== data.name ? `${data.name} (${data.host})` : hostLabel,
             picker: false,
             tiles: [],
-            domain: domainOf(data),
             current: held && held.via !== 'claim' ? held : null,
             // A locked held session pre-chooses its own account, as the local screen does; a
             // refused Connect (K3b) pre-chooses the credential's account and shows the refusal

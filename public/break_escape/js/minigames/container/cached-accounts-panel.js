@@ -12,6 +12,8 @@ export const CACHED_ACCOUNTS_BUTTON_TEXT = 'Cached accounts';
 export const CACHED_ACCOUNTS_NOTHING_NEW_TEXT = 'Nothing new is cached here.';
 export const CACHED_ACCOUNTS_HASH_TEXT = 'hash';
 export const CACHED_ACCOUNTS_CRACK_TEXT = 'Crack';
+export const CACHED_ACCOUNTS_CRACKED_TEXT = 'cracked';
+export const CACHED_ACCOUNTS_OPEN_TEXT = 'Open';
 export const CACHED_ACCOUNTS_NOTE_TEXT = 'The password comes from cracking the hash.';
 export const CACHED_ACCOUNTS_STYLE_ID = 'cached-accounts-style';
 
@@ -73,6 +75,15 @@ function headshotBox(doc, row) {
     return box;
 }
 
+/** The ids of the hash records the keyring already lists as cracked (display only: the server decides a crack). */
+export function crackedHashIds(entries) {
+    const ids = new Set();
+    for (const e of (Array.isArray(entries) ? entries : [])) {
+        if (e && e.kind === 'hash' && e.status === 'cracked' && typeof e.id === 'string') ids.add(e.id);
+    }
+    return ids;
+}
+
 /** One held account: `li.cached-account-row`. */
 export function buildCachedAccountRow(doc, row, openCracker) {
     const li = el(doc, 'li', 'cached-account-row');
@@ -125,6 +136,19 @@ export function mountCachedAccountsPanel(host, { pcId, route = null, isAdmin = (
     let busy = false;
     let gone = false;
 
+    // A row whose hash the keyring lists as cracked reads "cracked" with an "Open" button (R1-CLIENT7)
+    const markCracked = (entries) => {
+        const cracked = crackedHashIds(entries);
+        if (!cracked.size) return;
+        for (const li of list.querySelectorAll('.cached-account-row')) {
+            if (!cracked.has(li.dataset.hashId)) continue;
+            const tag = li.querySelector('.cached-account-tag');
+            const btn = li.querySelector('.cached-account-crack');
+            if (tag) tag.textContent = CACHED_ACCOUNTS_CRACKED_TEXT;
+            if (btn) btn.textContent = CACHED_ACCOUNTS_OPEN_TEXT;
+        }
+    };
+
     const showRows = (rows) => {
         list.replaceChildren();
         for (const r of (Array.isArray(rows) ? rows : [])) if (r && typeof r === 'object') list.appendChild(buildCachedAccountRow(doc, r, open));
@@ -147,14 +171,19 @@ export function mountCachedAccountsPanel(host, { pcId, route = null, isAdmin = (
             });
             let body = null;
             try { body = await response.json(); } catch (e) { /* no body */ }
-            if (gone) return body;
             if (!response.ok || !body || body.success !== true) {
-                status.textContent = refusalText(body?.reason);
+                if (!gone) status.textContent = refusalText(body?.reason);
                 return body;
             }
-            showRows(body.held);
-            status.textContent = Array.isArray(body.harvested) && body.harvested.length ? '' : CACHED_ACCOUNTS_NOTHING_NEW_TEXT;
-            try { await (refreshKeyring ? refreshKeyring() : window.keyring?.refresh?.()); } catch (e) { /* the keyring asks again later */ }
+            // The server has added the pairs: the keyring hears of it even when the desktop closed
+            // while the request was out (R1-CLIENT8); nothing is drawn then.
+            if (!gone) {
+                showRows(body.held);
+                status.textContent = Array.isArray(body.harvested) && body.harvested.length ? '' : CACHED_ACCOUNTS_NOTHING_NEW_TEXT;
+            }
+            let entries = null;
+            try { entries = await (refreshKeyring ? refreshKeyring() : window.keyring?.refresh?.()); } catch (e) { /* the keyring asks again later */ }
+            if (!gone) markCracked(Array.isArray(entries) ? entries : window.keyring?.latest);
             return body;
         } catch (e) {
             if (!gone) status.textContent = refusalText('unknown');

@@ -208,8 +208,12 @@ export function findLine(entry, { captureLog = false } = {}) {
  */
 export function findToastText(entries, { captureLog = null } = {}) {
     const opts = { captureLog: !!captureLog };
-    const lines = (Array.isArray(entries) ? entries : []).map(e => findLine(e, opts)).filter(Boolean);
-    if (!lines.length) return null;
+    const all = (Array.isArray(entries) ? entries : []).map(e => findLine(e, opts)).filter(Boolean);
+    if (!all.length) return null;
+    // The same line for several finds (two hashes collected at once) is one line with its count
+    const counts = new Map();
+    for (const l of all) counts.set(l, (counts.get(l) || 0) + 1);
+    const lines = [...counts].map(([l, n]) => (n > 1 ? `${l} (${n})` : l));
     if (lines.length > 2) return [lines[0], lines[1], findMoreLine(lines.length - 2)].join('\n');
     return lines.join('\n');
 }
