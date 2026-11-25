@@ -1,5 +1,16 @@
 # Trailer update (m01 + m02, spy avatars), resume note for the orchestrator
 
+## State 26 Nov, ~00:30 (READ THIS FIRST)
+
+Review page B (this account, owned): https://claude.ai/artifact/8UFHWa6tf6XjfAZVw6aarv, source docs/video/review/trailers_spies_review_b.html (54c81bb96), tabs m01v15 + m09v2, docs feedback/m01_trailer_v15 and feedback/m09_trailer_v2. Republish the same path for new tabs (m10 v2, m09 v3); upload assets with url + asset:true. AC0 has link + hash. Renders m01 v15 / m09 v2 all 60.00 s, -14.0 LUFS, TP -1.5; review copies in scratchpad review_b/.
+MACHINE: CA0 took it (~23:00) for B4 captures (ca18, :3456/:147, ~1 h). HOLD captures/renders/encodes/train-check until CA0 pings. My Noor m09 t12 re-take agent was stopped before recording; restart it after the ping (brief: MISSION=m09 scratchpad run.sh, same sprite/flags as the original take files in ~/video-takes-local/m09/takes/t12_noor_cover.*; then pull face frames; then re-cut noor_cover and render m09 v3).
+Mission row: test_npc_walk_in_out = id 281 (created by a one-scenario rails runner, AC0 told).
+WALK-IN (critical path) now on branch fix/npc-walk-live, worktree .claude/worktrees/npc-walk-fix (feat/npc-walk-in-out + main b08448986 + fixes). Proof worktree .claude/worktrees/npc-walk-proof (detached e9e972a16, can be removed). Fix commits: e9e972a16, 257185488, a9a9ad1b4, e39ca1b3f, 528b1e676, f72d751b2, b98f3ba76, 6a665d1e3, 3ba8a5f56, ad01566b3 (handover sections in docs/agents/NPC_WALK_IN_OUT_HANDOVER.md). Causes fixed: closed door beyond DOOR_OPEN_PX (m09 stall), walkers 1 tile short (arriveWithin), bridge __test.walk clash (now __test.npcWalk), out-leg stop-short + edge exit cells (deep picks WALK_PICK_DEPTH_PX), walkers may squeeze past the player (m10 stall = guard shoving player), how 'walked' for unseen hides. Case c needs `new-game.sh 281 --unlock walk_annex` (server 403 on never-unlocked rooms; owner question: serve such rooms as route rooms? default no, doorway fade). Proof viewport 800x420 (800x600 shows whole lobby -> fade is correct). At 3ba8a5f56: m10 A/B PASS, a-e PASS, f FAIL (spawn cell where body overlaps a wall).
+Running: Sonnet agent fixing case f (body-fit spawn + walk-in stall respawn), then a-f twice + m10 A/B, results scratchpad walkproof6/RESULTS.md.
+Next when f passes: (after CA0's ping) `tools/playtest/train-check.sh <npc-walk-fix worktree> <outdir> <port>`; merge main first if it moved; GREEN hash to AC0 ("LIVE AC0: Break Escape access model work"); tell CA0 the commit. Then m10 t16 re-take + m10 v2 render.
+Owner questions to send AC0 (with context): (1) walk-in from a never-unlocked room = doorway fade vs serve route room; (2) small fully visible rooms -> doorway fades are common on big windows.
+Tesseract: waiting on owner pick (E default) via AC0; no paid PixelLab before that.
+
 ## State 25 Nov, ~21:00 (READ THIS FIRST)
 
 New account. Routing per AGENTS.md (Grok dropped by owner): Haiku scripted/checks, Sonnet default, Opus 5.5 (opus55 type) on purpose. AC0 wants ~5 agents running on my side; keep going on defaults, owner decisions go to AC0 WITH images/before-after/why.
