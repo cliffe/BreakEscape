@@ -7,13 +7,13 @@ Two sample preview formats for the ca14 course (Social media and oversharing), f
 | sample | edit lists | take windows | length |
 |---|---|---|---|
 | A card loop, silent, no text | `ca14_sample_loop.json` (16:9), `ca14_sample_loop_1x1.json` | 16:9 `t03_attack_run` 14.2 to 19.8 s; 1:1 `t03b_attack_run_narrow` 14.0 to 19.6 s (both: Dani's Friendface profile, two Pin clicks, "Noted" lines appear) | 5.6 s, 5.2 s after the loop crossfade |
-| C spot the tell, 9:16 and 1:1 | `ca14_sample_tell.json` (9:16), `ca14_sample_tell_1x1.json` | `t10b_dm_inbox_narrow` 13.15 to 19.35 s (list, pointer to row, card opens at 4.0 s), then the last frame held 3.0 s (`freezeAt` 19.3), then end plate 5.8 s ("Play to find out" / "Social media and oversharing") | 15.0 s |
+| C spot the tell, 9:16 and 1:1 | `ca14_sample_tell.json` (9:16), `ca14_sample_tell_1x1.json` | `t11_risky_card_narrow` (not yet run; in/out TODO from its marks: list-up to tell-visible, then the last frame held 3.0 s with `freezeAt`), then end plate 5.8 s ("Play to find out" / "Social media and oversharing") | 15.0 s |
 
 Caption "What gives it away?" is a `vo` cue with no file (burned caption, 4.3 to 9.2 s, no voice). Music bed: PeaceFolk "Gently Decaying Again" from 102.341 s, gain -12 dB, fade in 0.5 s, out 2.0 s.
 
 ### Known problems (read before rendering)
 
-1. **C shows a genuine message.** ca14 has no filmed phishing card. The only card in the takes is Thandiwe Moyo's real floor-plan DM (t10/t10b). Under "What gives it away?" it is misleading. Needs a new take opening a risky row (rows with bracketed account notes are the tells, so a card with its note hidden), or the owner accepts the stand-in for format comparison only.
+1. **C needs the t11 capture.** `t11_risky_card_narrow` opens Jordan Vale's fake-recruiter DM (tell: "[New account, created last week, no other posts.]" and a request for the firm's systems and who runs IT). It has not been run (machine reserved for captures); the edit lists point at it with placeholder times marked TODO. Replace them from the logged marks after capture. End-plate check: no verdict or answer is shown, only the message.
 2. **A cannot match its ends.** The pins accumulate, so the first frame (no pins) and last (two pins) differ. The 0.4 s crossfade covers the state change. No take window fixes that.
 3. A 1:1 (and C) crop framings are copied from `ca14_trailer_r1_narrow.json`, not yet checked on a render.
 

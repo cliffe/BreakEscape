@@ -52,7 +52,7 @@
     "type": "cut"
    },
    "source": {
-    "file": "t10b_dm_inbox_narrow.trimmed.mkv",
+    "file": "t11_risky_card_narrow.trimmed.mkv",
     "in": 13.15,
     "out": 19.35
    },
@@ -78,7 +78,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "SAMPLE C: six-row list (previews blanked), pointer to the Thandiwe Moyo row, card opens at 4.0 s. Trust/Report/Delete shown, none pressed, no verdict or tell. PROBLEM: this filmed card is the GENUINE floor-plan DM; ca14 has no filmed phishing card. Needs a new take or a swap before render (see PREVIEW_SAMPLES.md)"
+    "note": "SAMPLE C: TODO in/out are placeholders from t10b; retime from t11_risky_card_narrow marks (list-up .. tell-visible) after capture. Opens Jordan Vale's fake-recruiter DM; tell is the account note and the systems request. Trust/Report/Delete shown, none pressed, no verdict."
    }
   },
   {
@@ -89,7 +89,7 @@
     "type": "cut"
    },
    "source": {
-    "file": "t10b_dm_inbox_narrow.trimmed.mkv",
+    "file": "t11_risky_card_narrow.trimmed.mkv",
     "in": 19.3,
     "out": 22.3
    },
@@ -116,7 +116,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "SAMPLE C: frozen last frame of the card (picture only), holds the card under the caption"
+    "note": "SAMPLE C: TODO freezeAt and in/out placeholders; set to t11 tell-visible + 3 s. Frozen last frame of the risky card"
    }
   },
   {
