@@ -1,4 +1,4 @@
-[head|#  ][head|Name                            ][head|Alias  ][head|Description]
-1  training/filehold/update_lag    f1     Storage service behind its fixes
-2  training/filehold/release_line  f2     Storage release line reported old
-3  training/filehold/link_setting  f3     Storage link setting left open
+[head|# ][head|Name ][head|Alias ][head|Description]
+1 training/filehold/update_lag f1 Storage service behind its fixes
+2 training/filehold/release_line f2 Storage release line reported old
+3 training/filehold/link_setting f3 Storage link setting left open

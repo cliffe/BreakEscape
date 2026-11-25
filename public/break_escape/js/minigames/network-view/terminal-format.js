@@ -82,6 +82,8 @@ export const LOG_HARD_CAP = LOG_CAP * 4;
 const CONTROL_CHARS = /[\u0000-\u001F\u007F-\u009F\u2028\u2029\u202A-\u202E\u2066-\u2069]/g;
 const REPLACEMENT = '\uFFFD';
 
+/** The widest a table column may be, in characters (a span's `w`). */
+export const MAX_CELL_WIDTH = 80;
 const span = (text, cls) => (cls ? { text: String(text), cls } : { text: String(text) });
 const note = (text) => [span(text, 'note')];
 const str = (v) => String(v ?? '');
@@ -118,6 +120,7 @@ export function cleanText(v) {
 function cleanSpan(s) {
     const out = { text: cleanText(isObj(s) ? s.text : s) };
     if (isObj(s) && CLASSES.includes(s.cls)) out.cls = s.cls;
+    if (isObj(s) && Number.isInteger(s.w) && s.w >= 1 && s.w <= MAX_CELL_WIDTH) out.w = s.w;
     return out;
 }
 
@@ -229,16 +232,23 @@ function joinSpans(list) {
     return out;
 }
 
-/** A table as lines: a head line, then a line per row; a cell is a string or a list of spans. */
+/** A table as lines: a head line, then a line per row; a cell is a string or a list of spans.
+ *  Every cell but the last is one span (its value and one space) with `w`, the column's width. */
 function tableLines(head, rows, indent = '') {
     const widths = head.map((h, i) => Math.max(h.length, ...rows.map(r => cellWidth(r[i] ?? ''))));
     const build = (cells, cls) => {
         const out = indent ? [span(indent)] : [];
         cells.forEach((c, i) => {
-            out.push(...(cls ? [span(c, cls)] : cellSpans(c)));
-            if (i < cells.length - 1) out.push(span(' '.repeat(widths[i] - cellWidth(c) + 2)));
+            if (i < cells.length - 1) {
+                const text = cellSpans(c).map(s => s.text).join('');
+                const cell = cls ? span(`${text} `, cls) : span(`${text} `, cellSpans(c)[0]?.cls);
+                cell.w = Math.min(MAX_CELL_WIDTH, widths[i] + 2);
+                out.push(cell);
+            } else {
+                out.push(...(cls ? [span(c, cls)] : cellSpans(c)));
+            }
         });
-        const kept = out.filter(s => s.text !== '');
+        const kept = out.filter(s => s.text !== '' && !(s.w === undefined && s.text.trim() === ''));
         while (kept.length && kept[kept.length - 1].text.trim() === '') kept.pop();
         return kept;
     };

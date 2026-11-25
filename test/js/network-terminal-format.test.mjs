@@ -445,3 +445,69 @@ test('show: with no address or range served the listing is the old one', () => {
     const all = flat(FMT.formatListing(plain));
     assert.ok(!all.includes('ADDRESS') && !all.includes('10.'), all);
 });
+
+// ---------------------------------------------------------------------------------------------
+// One span per cell (Ops follow-up B3)
+// ---------------------------------------------------------------------------------------------
+
+/** The table lines of a list of lines: those holding at least one cell span (a span with a width). */
+const cellLines = (lines) => lines.filter(l => l.some(s => s.w !== undefined));
+/** Checks that hold for every table: one span per cell, one space, no layout by spaces, equal widths down a column. */
+function assertCells(lines, label) {
+    const rows = cellLines(lines);
+    assert.ok(rows.length >= 2, `${label}: a head and a row`);
+    const cells = rows.map(l => l.filter(s => s.w !== undefined));
+    for (const r of cells) {
+        for (const s of r) {
+            assert.ok(Number.isInteger(s.w) && s.w >= 1 && s.w <= 80, `${label}: w ${s.w}`);
+            assert.ok(s.text.endsWith(' ') && !s.text.endsWith('  ') && !/ {2}/.test(s.text), `${label}: one space in ${JSON.stringify(s.text)}`);
+            assert.ok(s.w >= s.text.length + 1 || s.w === 80, `${label}: w holds the value and a gap`);
+        }
+    }
+    // each run of table lines (a table) has one width per column
+    let runFirst = null;
+    lines.forEach((l, i) => {
+        const own = l.filter(s => s.w !== undefined);
+        if (!own.length) { runFirst = null; return; }
+        if (!runFirst || (l.some(s => s.cls === 'head') && own.length && !(lines[i - 1] || []).some(s => s.w !== undefined))) runFirst = own;
+        own.forEach((s, k) => assert.equal(s.w, runFirst[k].w, `${label}: column ${k}`));
+    });
+    for (const l of rows) for (const s of l) assert.ok(!/ {2}/.test(s.w === undefined ? s.text.trim() : s.text), `${label}: no padding spaces`);
+}
+
+test('tables: one span per cell with a width, equal down every column', () => {
+    assertCells(FMT.formatListing(swept), 'listing');
+    assertCells(FMT.formatListing(tech), 'techniques');
+    const serviced = FMT.formatListing(states);
+    assert.ok(cellLines(serviced).length > 0);
+});
+
+test('tables: a cell with a control character still has it replaced, and the width stays', () => {
+    const v = clone(swept);
+    const target = [...v.hosts, ...(v.networks || []).flatMap(b => b.hosts || [])].find(r => r.kind === 'pc');
+    target.name = 'Ann\u001B[31mX';
+    const log = fresh();
+    for (const l of FMT.formatListing(v)) FMT.appendLine(log, l);
+    const t = text(log.lines).join('\n');
+    assert.ok(log.lines.some(l => l.some(s => s.w !== undefined)));
+    assert.ok(!t.includes('\u001B'));
+    assert.ok(t.includes('Ann�[31mX'));
+});
+
+test('appendLine keeps a good w and drops a bad one', () => {
+    const log = fresh();
+    const base = log.lines.length;
+    for (const w of [1, 6, 80]) FMT.appendLine(log, [{ text: 'a ', w }]);
+    for (const w of [0, 81, 2.5, '6', null, NaN, -3, Infinity]) FMT.appendLine(log, [{ text: 'a ', w }]);
+    const got = log.lines.slice(base).map(l => l[0]);
+    assert.deepEqual(got.slice(0, 3).map(s => s.w), [1, 6, 80]);
+    for (const s of got.slice(3)) assert.ok(!('w' in s), `dropped ${JSON.stringify(s)}`);
+});
+
+test('the log reads as cells joined by single spaces, and the cap still holds', () => {
+    const log = fresh();
+    FMT.appendLine(log, [{ text: 'PORT ', w: 7 }, { text: 'STATE ', w: 8 }, { text: 'SERVICE' }]);
+    assert.equal(text(log.lines).at(-1), 'PORT STATE SERVICE');
+    for (let i = 0; i < 400; i += 1) FMT.appendLine(log, [{ text: `c${i} `, w: 6 }, { text: 'x' }]);
+    assert.ok(log.lines.length <= 300, 'the cap holds');
+});

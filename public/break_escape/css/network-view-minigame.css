@@ -862,6 +862,10 @@ button.network-finding-alias:hover { background: #1b3a4d; }
 
 /* A span is a cell or a word: padded by the text it carries, kept on the line it began on */
 .network-term-span { display: inline; }
+/* A table cell: one span, as wide as its column (min-width in ch is set by the renderer), spaces kept */
+.network-term-cell { display: inline-block; white-space: pre; vertical-align: top; }
+.network-term-row { white-space: pre; overflow-wrap: normal; }
+.network-term-log:has(.network-term-row) { overflow-x: auto; }
 .network-term-span.prompt { color: #9ee6ff; }
 .network-term-span.head { color: #ffe680; }
 .network-term-span.ok { color: #a8f0b0; }

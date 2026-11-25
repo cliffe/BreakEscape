@@ -231,10 +231,14 @@ export class TerminalRenderer {
         let added = false;
         for (let i = from; i < lines.length; i++) {
             const el = doc.createElement('div');
-            el.className = 'network-term-line-out';
+            el.className = lines[i].some(s => s.w !== undefined) ? 'network-term-line-out network-term-row' : 'network-term-line-out';
             for (const s of lines[i]) {
                 const part = doc.createElement('span');
-                part.className = s.cls ? `network-term-span ${s.cls}` : 'network-term-span';
+                const cls = ['network-term-span'];
+                if (s.w !== undefined) cls.push('network-term-cell');
+                if (s.cls) cls.push(s.cls);
+                part.className = cls.join(' ');
+                if (s.w !== undefined && Number.isInteger(s.w)) part.style.minWidth = `${s.w}ch`;
                 part.textContent = s.text;
                 el.appendChild(part);
             }

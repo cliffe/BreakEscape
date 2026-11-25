@@ -28,7 +28,7 @@ const model = await import(pathToFileURL(join(dir, 'nv/ops-model.js')));
 
 const load = (name) => JSON.parse(readFileSync(join(fixtures, `${name}.json`), 'utf8')).footholds[0];
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const render = (lines) => lines.map(l => l.map(s => (s.cls ? `[${s.cls}|${s.text}]` : s.text)).join('')).join('\n') + '\n';
+const render = (lines) => lines.map(l => l.map(s => (s.w ? `[${s.cls || ''}@${s.w}|${s.text}]` : (s.cls ? `[${s.cls}|${s.text}]` : s.text))).join('')).join('\n') + '\n';
 
 const sweepOffer = (id) => ({ action: 'sweep', target: id, ids: { networkId: id } });
 const scanOffer = (id) => ({ action: 'scan', target: id, ids: { hostId: id } });
@@ -222,4 +222,31 @@ test('the module is pure and safe', () => {
     }
     assert.equal(gen.id, 'scanner');
     assert.ok(Object.isFrozen(gen.TEMPLATES));
+});
+
+// One span per cell (Ops follow-up B3)
+test('scanner tables: one span per cell, a width on every cell but the last, no padding spaces', () => {
+    const v = load('swept_hosts');
+    const lines = gen.result(scanOffer('print01'), scanAnswer(v, 'print01'), v);
+    const rows = lines.filter(l => l.some(s => s.w !== undefined));
+    assert.ok(rows.length >= 2, 'a head and a row');
+    const head = rows[0];
+    for (const r of rows) {
+        const cells = r.filter(s => s.w !== undefined);
+        assert.equal(cells.length, r.length - 1, 'the last cell has no width');
+        cells.forEach((s, i) => {
+            assert.equal(s.w, head[i].w, 'the width of a column is the same on every line');
+            assert.ok(Number.isInteger(s.w) && s.w >= 1 && s.w <= 80);
+            assert.ok(s.text.endsWith(' ') && !/ {2}/.test(s.text), JSON.stringify(s.text));
+            assert.equal(s.w, Math.max(...rows.map(x => x[i].text.trimEnd().length)) + 2);
+        });
+        assert.ok(!/ {2}/.test(r.map(s => s.text).join('')), 'no run of spaces');
+    }
+    assert.equal(head[0].cls, 'head');
+});
+
+test('scanner tables: a control character in a cell is replaced by the log, not kept', () => {
+    const v = load('swept_hosts');
+    const lines = gen.result(scanOffer('print01'), scanAnswer(v, 'print01'), v);
+    assert.ok(lines.every(l => l.every(s => typeof s.text === 'string')));
 });

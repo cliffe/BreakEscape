@@ -83,10 +83,11 @@ export function moduleFor(view, findingId) {
 
 const target = (m) => `${m.host}:${m.port ?? ''}`;
 
-/** A table as lines: a head line and one line per row, a span per cell, columns padded. */
+/** A table as lines: a head line and one line per row, a span per cell, one span per cell with its width `w`. */
 function table(head, rows) {
     const widths = head.map((h, i) => Math.max(h.length, ...rows.map(r => str(r[i]).length)));
-    const cells = (r, cls) => r.map((c, i) => span(i === r.length - 1 ? str(c) : str(c).padEnd(widths[i] + 2), cls));
+    const cells = (r, cls) => r.map((c, i) => (i === r.length - 1
+        ? span(str(c), cls) : { ...span(`${str(c)} `, cls), w: Math.min(80, widths[i] + 2) }));
     return [cells(head, 'head'), ...rows.map(r => cells(r))];
 }
 

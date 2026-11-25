@@ -22,9 +22,11 @@ for (const r of [...withCli.hosts, ...withCli.networks[0].hosts]) {
 }
 
 const show = (lines) => lines.map(l => l.map(s => (s.cls ? `[${s.cls}|${s.text}]` : s.text)).join('')).join('\n') + '\n';
+// The golden form also shows a cell's width: `[cls@w|text]`
+const showW = (lines) => lines.map(l => l.map(s => (s.w ? `[${s.cls || ''}@${s.w}|${s.text}]` : (s.cls ? `[${s.cls}|${s.text}]` : s.text))).join('')).join('\n') + '\n';
 function golden(name, lines) {
     const file = join(GOLD, `${name}.txt`);
-    const got = show(lines);
+    const got = showW(lines);
     if (process.env.UPDATE_GOLDEN === '1' && !existsSync(file)) writeFileSync(file, got);
     assert.equal(got, readFileSync(file, 'utf8'), name);
 }
@@ -241,4 +243,24 @@ test('R1-C11: sessions names the account only where Panels do: a locked session 
     for (const r of rows) { r.kind = 'pc'; r.session.locked = true; }
     assert.ok(!text(open).includes(who), text(open));
     assert.ok(text(open).includes('Locked'));
+});
+
+// One span per cell (Ops follow-up B3)
+test('framework tables: one span per cell, a width on every cell but the last, no padding spaces', () => {
+    const tables = [F.search(states), F.showOptions(states, mode('f1')), F.sessions(states)].filter(t => t.length);
+    for (const lines of tables) {
+        const rows = lines.filter(l => l.some(s => s.w !== undefined));
+        if (rows.length < 2) continue;
+        for (const r of rows) {
+            r.forEach((s, i) => {
+                if (i === r.length - 1) { assert.equal(s.w, undefined, 'the last cell has no width'); return; }
+                assert.equal(s.w, rows[0][i].w, 'one width per column');
+                assert.ok(s.w >= 1 && s.w <= 80 && Number.isInteger(s.w));
+                assert.ok(s.text.endsWith(' ') && !/ {2}/.test(s.text), JSON.stringify(s.text));
+            });
+        }
+        assert.equal(rows[0][0].cls, 'head');
+    }
+    assert.ok(F.search(states).some(l => l.some(s => s.w !== undefined)), 'search draws cells');
+    assert.ok(F.showOptions(states, mode('f1')).some(l => l.some(s => s.w !== undefined)), 'options draws cells');
 });

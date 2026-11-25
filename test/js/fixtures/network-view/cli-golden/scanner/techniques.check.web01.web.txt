@@ -2,8 +2,8 @@
 [note|Running vuln scripts on 80/tcp (web)]
 [head|Nmap scan report for ][head|web01]
 [ok|Host is up.]
-[head|PORT     STATE   SERVICE]
-80/tcp   open    web
+[head@8|PORT ][head@7|STATE ][head|SERVICE]
+[@8|80/tcp ][@7|open ]web
 [note|| ][head|web-unpatched:]
 [note||   ]Out of date High on web
 [note||     ][note|Finding: ]f10
