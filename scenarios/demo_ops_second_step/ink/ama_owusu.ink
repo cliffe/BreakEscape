@@ -232,13 +232,7 @@ Records index off. Let's see what Fatima does about it.
 { not skip_late and not (reset_password_done and reenrol_done and desk_refuses_done and door_step_done and propped_done and safe_step_done and case_step_done):
     # speaker:npc
     Not yet. Some of the afternoon and late things are still undone, and staff won't be back once they've gone home.
-    + [Skip them and call it a day anyway.]
-        ~ skip_late = true
-        -> lever_day_end
-    + [Not yet.]
-        # speaker:npc
-        Take your time.
-        -> hub.choices
+    -> lever_day_refused
 }
 # speaker:npc
 Seen everything you wanted? Staff won't be back once they've gone home.
@@ -251,6 +245,15 @@ Seen everything you wanted? Staff won't be back once they've gone home.
     ~ act_evening = true
     # exit_conversation
     -> END
++ [Not yet.]
+    # speaker:npc
+    Take your time.
+    -> hub.choices
+
+=== lever_day_refused ===
++ [Skip them and call it a day anyway.]
+    ~ skip_late = true
+    -> lever_day_end
 + [Not yet.]
     # speaker:npc
     Take your time.
