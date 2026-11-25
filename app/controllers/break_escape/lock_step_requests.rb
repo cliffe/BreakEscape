@@ -92,10 +92,10 @@ module BreakEscape
     # The open answer of a GATED lock names the lock it opened (the request's own canonical
     # targetType and targetId, as the /mfa answers echo them). An ungated lock gets nothing.
     def lock_step_open_echo(target_type, target_id, resolved)
-      type = lock_step_type(target_type)
-      return {} unless lock_step_info(type, target_id, resolved)
+      info = lock_step_info(lock_step_type(target_type), target_id, resolved)
+      return {} unless info
 
-      { targetType: type, targetId: target_id }
+      { targetType: info[:subject][:kind], targetId: info[:subject][:id] }
     end
 
     # lock_step_for for the lock this request names, or nil when it has no step
@@ -173,6 +173,21 @@ module BreakEscape
 
       resolved = lock_step_resolve_id(item['id'].to_s)
       lock_step_scope_refused?(resolved)
+    end
+
+    # True when the lookup of a take failed in a way that would tell a gated thing from an invented
+    # one: the item sits in a container that is gated and shut or below a closed step, or it is a
+    # gated item an NPC the player has not met holds. Reads only; the caller answers as for an invented item.
+    def lock_step_take_error_hidden?(error)
+      location = @collectible_location
+      return false if error.blank? || !location.is_a?(Hash) || @game.second_step_ids.empty?
+
+      case location[:type]
+      when 'container' then location[:container_id].present? && lock_step_container_refused?(location[:container_id])
+      when 'npc' then error.start_with?('NPC not encountered') && @collectible_item.is_a?(Hash) &&
+                      @game.second_step_ids.include?(@collectible_item['id'].to_s)
+      else false
+      end
     end
 
     # ---- /mfa/* ----

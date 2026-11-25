@@ -59,7 +59,8 @@ module BreakEscape
       return false unless gated
 
       home = step_object_homes[gated['id']]
-      home.present? && !room_unlocked?(home)
+      # A route room the player slipped into is not unreached: the route-room refusal answers it
+      home.present? && !room_unlocked?(home) && !in_npc_route_room?(home)
     end
 
     private

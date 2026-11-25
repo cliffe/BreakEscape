@@ -30,7 +30,8 @@ module BreakEscape
           'hall' => { 'type' => 'room_office', 'connections' => { 'north' => 'vault', 'east' => 'cell' },
                       'npcs' => [{ 'id' => 'amy', 'displayName' => 'Amy',
                                    'habits' => { 'approvesPrompts' => 'pestered', 'promptPatience' => 3 } },
-                                 { 'id' => 'bob', 'displayName' => 'Bob' }],
+                                 { 'id' => 'bob', 'displayName' => 'Bob' },
+                                 { 'id' => 'gordon', 'displayName' => 'Gordon', 'unlockable' => ['cell'] }],
                       'objects' => [lock('locker', 'push', 'amy'), lock('safe', 'push_number_match', 'amy'),
                                     lock('cab', 'code', 'bob'), outer,
                                     { 'type' => 'notes', 'id' => 'plain', 'name' => 'Plain', 'locked' => true,
@@ -46,7 +47,8 @@ module BreakEscape
     def build_game
       Game.create!(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
                    scenario_data: scenario,
-                   player_state: { 'currentRoom' => 'hall', 'unlockedRooms' => ['hall'], 'inventory' => [] })
+                   player_state: { 'currentRoom' => 'hall', 'unlockedRooms' => ['hall'], 'inventory' => [],
+                                   'encounteredNPCs' => %w[amy bob gordon] })
     end
 
     setup do

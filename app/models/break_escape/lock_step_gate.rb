@@ -36,15 +36,22 @@ module BreakEscape
       kind = target[:step]['kind']
       # The NPC that opened the door by the `npc` factor (the request's attempt, the caller has
       # judged it); the step's owner when the caller names none. The grant and the answer name it.
-      opener_id = opener.to_s.empty? ? owner : opener.to_s
+      # Only an NPC the player has met whose `unlockable` lists this door counts (validate_npc_unlock); any
+      # other string is never stored or echoed, and the owner is named.
+      door_npc = target[:subject][:kind] == 'door' && method.to_s == 'npc'
+      named = door_npc && !opener.to_s.empty? && validate_npc_unlock(opener.to_s, target[:subject][:id])
+      opener_id = named ? opener.to_s : owner
       fresh = !(record.is_a?(Hash) && record['kind'] == kind)
       # A step with no owner can never pass: answer the gate, keep no record (every action then 404s)
       if fresh && !owner.empty?
         record = issue_second_step!(map, target[:key], owner, kind, 'npcId' => owner)
         write_log_row!('mfa_challenge', as: { npc: owner }, where: lock_step_where(target),
                                         detail: GATE_METHODS.include?(method.to_s) ? { 'method' => method.to_s } : nil)
-        note_npc_step_grant!(target[:subject][:id], opener_id) if target[:subject][:kind] == 'door' && method.to_s == 'npc'
+        note_npc_step_grant!(target[:subject][:id], opener_id) if door_npc && (named || opener.to_s.empty?)
         save!
+      elsif named && player_state.dig('npcStepGrants', npc_step_grant_key(target[:subject][:id])) != opener_id
+        # a repeat gate by another allowed opener: the server remembers who opened the door last
+        note_npc_step_grant!(target[:subject][:id], opener_id)
       end
 
       lock_step_gate_body(target, record, owner, kind, method, opener_id)

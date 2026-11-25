@@ -7799,9 +7799,15 @@ module BreakEscape
 
       records = []
       social['characters'].each_value { |c| records << c['emailRecord'] if c.is_a?(Hash) } if social['characters'].is_a?(Hash)
-      Array(social.dig('mailClient', 'contacts')).each { |c| records << c['emailRecord'] if c.is_a?(Hash) }
+      mail = social['mailClient']
+      contacts = mail.is_a?(Hash) ? mail['contacts'] : nil
+      contacts.each { |c| records << c['emailRecord'] if c.is_a?(Hash) } if contacts.is_a?(Array)
       records.each do |record|
-        next unless record.is_a?(Hash) && record.key?('habits')
+        next unless record.is_a?(Hash)
+
+        # `awareness` picks the preset prompt habit when none is authored (MfaModel.prompt_habit)
+        record.delete('awareness')
+        next unless record.key?('habits')
 
         habits = record['habits']
         kept = habits.is_a?(Hash) ? habits.slice(*SHIPPED_HABIT_KEYS) : {}

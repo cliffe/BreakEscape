@@ -183,7 +183,9 @@ module BreakEscape
     def object_entry(game, id)
       return nil if id.to_s.empty? || !game.scenario_data.is_a?(Hash)
 
-      game.login_scope_of(id) || player_carried_entry(game, id) || gated_object_entry(game, id) ||
+      # A gated object the player took is asked about first: it goes with them, wherever it was authored
+      taken = game.second_step_ids.include?(id.to_s) ? player_carried_entry(game, id) : nil
+      taken || game.login_scope_of(id) || player_carried_entry(game, id) || gated_object_entry(game, id) ||
         npc_held_entry(game, id) || player_object_entry(game, id)
     end
 

@@ -1446,7 +1446,7 @@ module BreakEscape
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
           # S8c unit 14: an item below a closed step, or out of reach, reads as an invented item
-          if lock_step_take_refused?(@collectible_item)
+          if lock_step_take_refused?(@collectible_item) || lock_step_take_error_hidden?(validation_error)
             validation_error = "Item not found in scenario: #{item['type']}"
           end
           if validation_error
