@@ -594,7 +594,7 @@ test('E2: the load-time settle does nothing without a hold, an outcome, or with 
 
 test('main.js runs the load-time settle on game_loaded', () => {
     const main = readFileSync(join(js, 'main.js'), 'utf8');
-    assert.match(main, /import \{ settleHeldWorld \} from '\.\/systems\/episode-starter\.js'/);
+    assert.match(main, /import \{ settleHeldWorld(, startStepAwayWatchFromState)? \} from '\.\/systems\/episode-starter\.js'/);
     assert.match(main, /once\('game_loaded'[\s\S]{0,160}settleHeldWorld\(window\)/);
 });
 

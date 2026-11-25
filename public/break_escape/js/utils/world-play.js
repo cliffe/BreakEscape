@@ -37,6 +37,43 @@ function placeAt(player, x, y, deps) {
     player.body?.reset?.(x, y);
 }
 
+/**
+ * E3: put the player at `spot` ({ x, y }): cancel any walk-to-point, then place. The one helper
+ * behind `leaveWorld` (the call's origin) and the step-away return (the spot recorded at Look up).
+ * Returns true when the player was placed.
+ */
+export function returnPlayerTo(spot, deps = {}) {
+    const player = deps.player ?? win().player;
+    if (!player || !spot || !Number.isFinite(spot.x) || !Number.isFinite(spot.y)) return false;
+    placeAt(player, spot.x, spot.y, deps);
+    return true;
+}
+
+// E3: where the learner stood when they picked Look up on a resumeOnDone beat, or null. Kept apart
+// from `origin`, so worldActive() and the call hand-back never read it.
+let stepAwaySpot = null;
+
+/** Record the step-away spot ({ x, y }); anything else clears it. */
+export function setStepAwaySpot(spot) {
+    stepAwaySpot = spot && Number.isFinite(spot.x) && Number.isFinite(spot.y) ? { x: spot.x, y: spot.y } : null;
+}
+
+export function getStepAwaySpot() {
+    return stepAwaySpot ? { ...stepAwaySpot } : null;
+}
+
+/** Forget the spot without moving anyone. */
+export function clearStepAwaySpot() {
+    stepAwaySpot = null;
+}
+
+/** Move the learner to the recorded spot, then forget it. True when they were moved. */
+export function returnToStepAwaySpot(deps = {}) {
+    const spot = stepAwaySpot;
+    stepAwaySpot = null;
+    return spot ? returnPlayerTo(spot, deps) : false;
+}
+
 function roomTarget(room, spawn) {
     const pos = room.position || { x: 0, y: 0 };
     if (spawn && Number.isFinite(spawn.x) && Number.isFinite(spawn.y)) {
@@ -91,7 +128,7 @@ export async function leaveWorld(world, deps = {}) {
     const back = origin;
     origin = null;
     try {
-        if (player) placeAt(player, back.x, back.y, deps);
+        if (player) returnPlayerTo(back, deps);
     } catch (e) {
         console.error('[episode] could not return the player to the start room:', e);
     }

@@ -8,7 +8,7 @@ import { loadCanvasFonts } from './utils/canvas-fonts.js';
 // Bluetooth scanner is now handled as a minigame
 // Biometrics is now handled as a minigame
 import { startLockpickingMinigame } from './systems/minigame-starters.js';
-import { settleHeldWorld } from './systems/episode-starter.js';
+import { settleHeldWorld, startStepAwayWatchFromState } from './systems/episode-starter.js';
 import { initializeDebugSystem } from './systems/debug.js';
 import { initializeUI } from './ui/panels.js';
 import { initializeModals } from './ui/modals.js';
@@ -213,6 +213,11 @@ function initializeGame() {
     if (window.eventDispatcher) {
         window.eventDispatcher.once('game_loaded', () => {
             try { settleHeldWorld(window); } catch (err) { console.warn('[BreakEscape] hold settle failed:', err); }
+        });
+        // E3: a step-away beat with resumeOnDone whose Look up was picked before the reload gets its
+        // watcher back (a pure function of the saved episode state; see startStepAwayWatchFromState).
+        window.eventDispatcher.once('game_loaded', () => {
+            startStepAwayWatchFromState(window).catch((err) => console.warn('[BreakEscape] step-away watch restart failed:', err));
         });
     }
 

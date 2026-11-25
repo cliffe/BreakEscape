@@ -65,16 +65,110 @@ export const STEP_AWAY_READY_GLOBAL = 'kit_defend_done';
 /** EC1: the event Look up emits; the host's one mapping on it starts the room's chain. */
 export const STEP_AWAY_EVENT = 'episode_step_away';
 
+/** E3: the event a beat after any stage but defend emits on Look up. */
+export const WORLD_BEAT_EVENT = 'episode_world_beat';
+/** E3: how long after a beat's done global lands (and no overlay is open) the watcher returns the learner. */
+export const RESUME_GRACE_MS = 4000;
+const BEAT_VIA = Object.freeze(['lookup', 'carry', 'resumed']);
+// Episode-state keys a beat's pickedKey must not shadow.
+const RESERVED_STATE_KEYS = Object.freeze(['v', 'variant', 'stage', 'done', 'sent', 'defend', 'mistakeChoices', 'drill', 'concern',
+    'privacy', 'sandbox', 'assistant', 'defendProgress', 'debriefSeen']);
+
+/** The legacy `stepAway: true` as the one post-defend beat it stands for (E3). */
+const LEGACY_BEAT = Object.freeze({
+    id: 'found_stick', after: 'defend', event: STEP_AWAY_EVENT, readyGlobal: STEP_AWAY_READY_GLOBAL, doneGlobal: null,
+    pickedKey: 'stepAwayPicked', strings: 'stepAway', facilitated: true, resumeOnDone: false
+});
+
 /**
- * EC1: whether this episode takes the step-away panel (awarenessEpisode.stepAway true). Only a
- * full episode whose debrief follows its defend stage: never a twin (defendOnly), a brief or a
- * check mission, whatever is authored.
+ * E3: the step-away beats this episode runs, cleaned, in stage order. `stepAway: true` is the
+ * single post-defend beat (after defend, episode_step_away, ready on kit_defend_done, stepAwayPicked,
+ * strings.stepAway); `stepAways` is the authored list (and wins when both are set). Only a full,
+ * non-check episode has beats. A beat is kept when its `after` is a stage this episode runs but
+ * not the last, its `pickedKey` is a plain name that no state field uses, and `id`, `after` and
+ * `pickedKey` are each unseen so far; the beat after defend must be followed by the debrief and
+ * is the only one that may emit episode_step_away. `resumeOnDone` needs a `doneGlobal`.
+ * Shape: { id, after, event, readyGlobal|null, doneGlobal|null, pickedKey, strings, facilitated, resumeOnDone }.
+ */
+export function stepAwayBeats(episode) {
+    if (isCheck(episode) || variantOf(episode) !== 'full') return [];
+    const stages = stagesFor(episode);
+    let raw = [];
+    if (Array.isArray(episode?.stepAways)) raw = episode.stepAways;
+    else if (episode?.stepAway === true) raw = [LEGACY_BEAT];
+    const out = [];
+    const ids = new Set();
+    const afters = new Set();
+    const keys = new Set();
+    for (const b of raw) {
+        if (!isObj(b) || !isStr(b.id) || !isStr(b.after)) continue;
+        const at = stages.indexOf(b.after);
+        if (at < 0 || at === stages.length - 1) continue;
+        const isDefend = b.after === 'defend';
+        if (isDefend && !(stages.indexOf('debrief') > at)) continue;
+        const pickedKey = isStr(b.pickedKey) ? b.pickedKey : (isDefend ? 'stepAwayPicked' : 'worldBeatPicked');
+        if (!/^[A-Za-z][A-Za-z0-9]{0,39}$/.test(pickedKey) || RESERVED_STATE_KEYS.includes(pickedKey) || /Via$/.test(pickedKey)) continue;
+        if (ids.has(b.id) || afters.has(b.after) || keys.has(pickedKey)) continue;
+        const event = isStr(b.event) ? b.event : (isDefend ? STEP_AWAY_EVENT : WORLD_BEAT_EVENT);
+        if (event === STEP_AWAY_EVENT && !isDefend) continue;
+        const doneGlobal = isStr(b.doneGlobal) ? b.doneGlobal : null;
+        if (b.resumeOnDone === true && !doneGlobal) continue;
+        ids.add(b.id); afters.add(b.after); keys.add(pickedKey);
+        out.push({
+            id: b.id, after: b.after, event,
+            readyGlobal: isStr(b.readyGlobal) ? b.readyGlobal : null,
+            doneGlobal, pickedKey,
+            strings: isStr(b.strings) ? b.strings : (isDefend ? 'stepAway' : 'worldBeat'),
+            facilitated: b.facilitated !== false,
+            resumeOnDone: b.resumeOnDone === true
+        });
+    }
+    return out.sort((a, c) => stages.indexOf(a.after) - stages.indexOf(c.after));
+}
+
+/** E3: the beat that follows defend (the one the debrief hold and the triage reopen read), or null. */
+export function postDefendBeat(episode) {
+    return stepAwayBeats(episode).find((b) => b.after === 'defend') || null;
+}
+
+/** E3: the beat that follows `stage`, or null. */
+export function beatAfter(episode, stage) {
+    return stepAwayBeats(episode).find((b) => b.after === stage) || null;
+}
+
+/** E3: the stage that follows `after` in this episode's list, or null. */
+export function stageFollowing(episode, after) {
+    const stages = stagesFor(episode);
+    const at = stages.indexOf(after);
+    return at >= 0 && at < stages.length - 1 ? stages[at + 1] : null;
+}
+
+/**
+ * EC1: whether this episode takes the post-defend step-away panel (`stepAway: true`, or a
+ * `stepAways` beat after defend). Only a full episode whose debrief follows its defend stage:
+ * never a twin (defendOnly), a brief or a check mission, whatever is authored. A list of only
+ * earlier beats leaves the defend-time behaviours (the hold, the re-emit, debriefSeen) off.
  */
 export function stepAwayOn(episode) {
-    if (episode?.stepAway !== true || isCheck(episode) || variantOf(episode) !== 'full') return false;
-    const stages = stagesFor(episode);
-    const at = stages.indexOf('defend');
-    return at >= 0 && stages.indexOf('debrief') > at;
+    return postDefendBeat(episode) !== null;
+}
+
+/** E3: whether the episode has any beat (the post-defend one or an earlier one). */
+export function hasStepAwayBeats(episode) {
+    return stepAwayBeats(episode).length > 0;
+}
+
+/**
+ * E3: the beat a game load must start the resumeOnDone watcher for, from the saved episode state
+ * alone: a `resumeOnDone` beat whose `<pickedKey>Via` is "lookup" (Look up was picked and the
+ * next stage has not started). Null otherwise: carry, resumed or unset never start it.
+ */
+export function resumeBeatFromState(episode, raw) {
+    if (!isObj(raw)) return null;
+    for (const beat of stepAwayBeats(episode)) {
+        if (beat.resumeOnDone && raw[`${beat.pickedKey}Via`] === 'lookup') return beat;
+    }
+    return null;
 }
 
 /** Whether the episode's debrief comes after `stage` in its stage list. */
@@ -514,7 +608,12 @@ export function readState(episode, raw) {
     // EC1 (d): a step-away episode's debrief was closed (any route), so the success screen may open.
     if (src.debriefSeen === true && stepAwayOn(episode)) state.debriefSeen = true;
     // The step-away prompt (Look up / Carry on) was answered; one boolean, written once.
-    if (src.stepAwayPicked === true && stepAwayOn(episode)) state.stepAwayPicked = true;
+    // E3: each beat's own picked flag (one boolean) and, for a resumeOnDone beat, its Via (one short string).
+    for (const beat of stepAwayBeats(episode)) {
+        if (src[beat.pickedKey] === true) state[beat.pickedKey] = true;
+        const via = src[`${beat.pickedKey}Via`];
+        if (beat.resumeOnDone && BEAT_VIA.includes(via)) state[`${beat.pickedKey}Via`] = via;
+    }
     state.stage = nextStage(episode, state);
     return state;
 }
