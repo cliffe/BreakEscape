@@ -3,21 +3,21 @@
 // flags <task>_done are scenario globals synced in when the conversation starts.
 // Ticks by ink: see_note (knot tell_note). All other tasks tick by mapping.
 
-VAR coffee_call = 0
-VAR printer_off = false
-VAR act_midday = false
-VAR act_evening = false
-VAR lorna_card_given = false
-VAR see_note_done = false
-VAR see_temper_note_done = false
-VAR overhear_done = false
-VAR step_holds_done = false
-VAR open_screen_done = false
-VAR fob_done = false
-VAR number_match_done = false
-VAR pestered_done = false
-VAR exempt_done = false
-VAR read_log_done = false
+VAR coffee_call = 0 // Synced scenario global
+VAR printer_off = false // Synced scenario global
+VAR act_midday = false // Synced scenario global
+VAR act_evening = false // Synced scenario global
+VAR lorna_card_given = false // Synced scenario global
+VAR see_note_done = false // Synced scenario global
+VAR see_temper_note_done = false // Synced scenario global
+VAR overhear_done = false // Synced scenario global
+VAR step_holds_done = false // Synced scenario global
+VAR open_screen_done = false // Synced scenario global
+VAR fob_done = false // Synced scenario global
+VAR number_match_done = false // Synced scenario global
+VAR pestered_done = false // Synced scenario global
+VAR exempt_done = false // Synced scenario global
+VAR read_log_done = false // Synced scenario global
 // met_ama is ink-local: the opening plays once, later talks open at the hub.
 VAR met_ama = false
 
@@ -110,9 +110,9 @@ What can I help with?
 -> hub.choices
 
 === give_lorna_card ===
+#give_item:text_file
 # speaker:npc
 Here's Lorna's sign-in. Use it at her desk when she's away.
-#give_item:text_file
 ~ lorna_card_given = true
 # speaker:npc
 Her PC will send a request to her phone each time.

@@ -1,5 +1,5 @@
 // Thandiwe Moyo, IT support. log_offer is offered in the evening (act_evening).
-VAR act_evening = false
+VAR act_evening = false // Synced scenario global
 VAR met_thandiwe = false
 
 === start ===
