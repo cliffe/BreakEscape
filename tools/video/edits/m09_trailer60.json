@@ -1421,12 +1421,12 @@
     "in": 12.4833,
     "out": 16.15
    },
-   "note": "J-cut: Sorensen's voice (onset 10.4) starts 2.1 s under the crescendo end; picture joins mid-line at 12.45; portrait wide, bar cropped in 16:9",
+   "note": "J-cut: Sorensen's voice (onset 10.4) starts 2.1 s under the crescendo end; picture joins mid-line at 12.45; portrait wide, bar cropped in 16:9; integer scale 25 Nov: 16:9 at 2x (cy 0.28) so the name bar stays cropped",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cx": 0.73,
+     "cy": 0.28,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.73,
