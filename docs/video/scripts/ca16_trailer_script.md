@@ -89,3 +89,12 @@ Owner decisions are parked; each question below takes its recommended default so
 ## Timing pass (25 Nov)
 
 Applied from `ca16_trailer_review_r2_timing.md` (0 B, 3 M, 5 m): open card 5.1 to 5.4 s with v1 (ca12 clip) at card start plus 0.02 s; `concern` shortened 5.5 to 5.2 s to fund it and windowed to `form-open` +0.3 s to `end` so it opens on the Build step, not the launch panel; total stays 72.1 s; `topic` cutaway 1.6 to 1.3 s and Brief 2.5 to 2.8 s so "insider risk" lands on the heading; `t05` and `t03` holds left as "measure at dry run" (no recorded values yet); `niamh_end` note added. Not applied: dropping `led_page` (m6), re-cropping Hana (m5). v10 re-voiced and v1 copied in the VO pass below.
+
+## VO pass (25 Nov)
+
+Sulafat, gemini-3.8-flash-tts, trimmed and levelled with `tools/video/scripts/trim_vo.py` (`~/video-takes-local/ca16/vo/Sulafat_v2/trim/`). The new v1 is ca12's clip (old kept as `v1_old.mp3`).
+
+| Line | Text | Trimmed s | Shot s | Need s | Fit |
+|---|---|---|---|---|---|
+| v1 | Hacktivity Cyber Aware: Security awareness training you can play. | 5.112 | 5.4 | 5.14 | fits (0.27 spare) |
+| v10 | A colleague's locked out. What would you do? | 2.616 | 5.2 | 2.97 | fits (2.2 spare; shorter than estimated) |

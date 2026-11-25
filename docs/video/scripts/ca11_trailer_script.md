@@ -93,3 +93,12 @@ Owner decisions are parked; each question below takes its recommended default so
 ## Timing pass (25 Nov)
 
 Applied from `ca11_trailer_review_r2_timing.md` (0 B, 2 M, 5 m): open card 5.1 to 5.4 s with v1 (new tagline, ca12 clip) at card start plus 0.02 s; 0.3 s taken from `led_caller` (5.0 to 4.7 s), so total stays 71.7 s and shots from `led_export` on keep their times; take holds lengthened to the measured needs (see "Take holds"); 0.1 s audio fades on the cast clips; status line corrected; v3 contingency noted. Not applied: the optional `t08_yusuf_cooler` cutaway (m5, not agreed). v3 re-voiced and v1 copied from ca12 in the VO pass below.
+
+## VO pass (25 Nov)
+
+Sulafat, gemini-3.8-flash-tts, trimmed and levelled with `tools/video/scripts/trim_vo.py` (`~/video-takes-local/ca11/vo/Sulafat_v2/trim/`). The new v1 is ca12's clip (old kept as `v1_old.mp3`).
+
+| Line | Text | Trimmed s | Shot s | Need s | Fit |
+|---|---|---|---|---|---|
+| v1 | Hacktivity Cyber Aware: Security awareness training you can play. | 5.112 | 5.4 | 5.14 | fits (0.27 spare) |
+| v3 | A 'sister' asks where Bernadette cleans today. | 3.216 | 3.8 | 3.57 | fits (0.23 spare) |

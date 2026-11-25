@@ -110,3 +110,15 @@ VO lines to voice (old -> new):
 ## Timing pass (25 Nov)
 
 Applied from `ca17_trailer_review_r2_timing.md` (0 B, 2 M, 6 m): open card 5.1 to 5.4 s, v1 (ca12 clip) at card start; the 0.3 s comes from `room` (8.0 to 7.7 s); `room_end` in-point fixed at F minus 3.6 s with v9 at in + 0.2 s, shot 5.0 to 5.9 s by the draw (the "71.9 s" branch is gone); the full close line is kept in v10 (the fit rested on an estimate that measurement overturned); `inbox_list` 5.5 to 4.3 s and `inbox_card` 5.5 to 6.7 s; hook and format cuts set from the take's own silencedetect; other-voices check added. Not applied: the optional `bins` and `room` trims (m3). v2, v7, v7b and v9 voiced in the VO pass below; v10 is not in the voiced set and needs its own re-voice.
+
+## VO pass (25 Nov)
+
+Sulafat, gemini-3.8-flash-tts, trimmed and levelled with `tools/video/scripts/trim_vo.py` (`~/video-takes-local/ca17/vo/Sulafat_v2/trim/`). The new v1 is ca12's clip (old kept as `v1_old.mp3`).
+
+| Line | Text | Trimmed s | Shot s | Need s | Fit |
+|---|---|---|---|---|---|
+| v1 | Hacktivity Cyber Aware: Security awareness training you can play. | 5.112 | 5.4 | 5.14 | fits (0.27 spare) |
+| v2 | Then you make the calls. | 1.800 | 3.0 | 2.15 | fits |
+| v7 + v7b | Then six emails to handle. / Some want a rule bent. | 1.968 + 1.608 | 4.3 (list hold) | 0.2 + 1.968 + 0.25 + 1.608 + 0.15 = 4.18 | fits, 0.12 spare: tight after the list hold moved 5.5 to 4.3 s; if the edit drifts, give `inbox_list` 0.2 s from `inbox_card` |
+| v9 | Out in the depot, the day goes on. | 2.160 | 5.0 to 5.9 (room_end) | ends at in + 2.36 = F minus 1.24 | fits, 1.24 s clear of Fatima |
+| v10 | full close | not voiced | 5.5 | about 5.3 | needs its own re-voice |

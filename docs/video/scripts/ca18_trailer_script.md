@@ -91,3 +91,13 @@ VO lines to voice (old -> new):
 ## Timing pass (25 Nov)
 
 Applied from `ca18_trailer_review_r3_timing.md` (0 B, 1 M, 5 m): open card 5.1 to 5.4 s with v1 (ca12 clip) at card start, no offset; the 0.3 s comes from `build` (5.5 to 5.2 s), total stays 71.5 s; `spray` window pinned to marks (in `pass-1` minus 0.3 s, out `result` plus 1.5 s, slot may grow to 7.5 s from `build`); v10 at in plus 0.7 s; hook crop from y 60; `ama_flip` frame checks; `topic` slow scroll. v7 and v10 voiced in the VO pass below.
+
+## VO pass (25 Nov)
+
+Sulafat, gemini-3.8-flash-tts, trimmed and levelled with `tools/video/scripts/trim_vo.py` (`~/video-takes-local/ca18/vo/Sulafat_v2/trim/`). The new v1 is ca12's clip (old kept as `v1_old.mp3`).
+
+| Line | Text | Trimmed s | Shot s | Need s | Fit |
+|---|---|---|---|---|---|
+| v1 | Hacktivity Cyber Aware: Security awareness training you can play. | 5.112 | 5.4 | 5.14 | fits (0.27 spare) |
+| v7 | Defend the practice. | 1.608 | 2.4 | 1.96 | fits (0.44 spare) |
+| v10 | At Lorna's desk. | 1.080 | placed at in + 0.7 s | ends about `press` + 0.98 s | fits; 0.58 s clear of L1 (earliest `press` + 1.56 s) |
