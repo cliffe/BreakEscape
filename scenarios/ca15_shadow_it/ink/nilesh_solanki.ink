@@ -83,7 +83,7 @@ VAR ca15_drop_said = false
 === red_stick ===
 Nilesh Solanki: Before we flip, one from the red-team kit. A stick, no label, no note. #delivery: stepping into the red-team host role, conspiratorial but light
 Nilesh Solanki: It's a safe tracker, booked in with IT. It only tells us who opened it. #delivery: stepping into the red-team host role, conspiratorial but light
-#give_item:ca15_red_stick
+#give_item:usb_storage_swivel:ca15_red_stick
 Nilesh Solanki: Leave it next door, somewhere people stop. Then watch who picks it up. #delivery: stepping into the red-team host role, conspiratorial but light
 ~ ca15_drop_given = true
 + [Why would anyone plug in a stranger's stick?]
