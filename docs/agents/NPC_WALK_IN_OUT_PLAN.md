@@ -176,3 +176,14 @@ Not edited: `door-gates.js`, `lighting.js`, `state-sync.js`, server `game.rb`/`g
 4. m10 guard's exit: `server_hall` past the player, or a doorway fade at the locked `core` door? [`server_hall`.]
 5. Deferred speech lost on a reload mid-walk: acceptable, or persist a pending flag? [Acceptable; no new synced state.]
 6. Ship the pop check as WARN or INFO? [Decide on the hit count; INFO if more than about ten outside the three cases.]
+
+## 13. Orchestrator decisions and scope change (2026-11-25)
+
+1. Load an unlocked far room so an NPC can walk in from it: yes. Fade at the doorway only if the route is locked.
+2. The player cannot talk to an NPC who is walking out: agreed.
+3. Dillard enters from `loading_dock`: agreed. The map shows no nearer unloaded room out of the camera's view (`reading_room` is the other choice, and it is neither nearer nor better hidden).
+4. The m10 gallery guard leaves via `server_hall`: agreed. The camera line belongs to `monitor_guard`, not `farah_guard`. `farah_guard` also vanishes on gallery entry (`setVisible: false` on `room_entered:gallery`), so she is converted too: she walks out to `server_hall` when Imran is talked round (an appended mapping), and her entry mapping becomes a `walkOut` in place.
+5. Speech held for arrival is lost on a reload mid-walk: accepted. No new synced state.
+6. Pop check: WARN only if it flags nothing but the known cases across all scenarios, otherwise INFO. Known cases must not turn the train RED.
+
+Scope change: **ca12 is dropped.** Do not edit `office_kits/merrin_sallow.json`, the ca12 scenarios, their defend twin or `test_ca12_fallback`: CA0 converts Camila after this lands. Do not touch `door-gates.js`, `lighting.js`, `state-sync.js` or the server controllers. In section 11 the ca12 lines no longer apply. Added to the edited list: `public/break_escape/js/core/game.js` (a dynamic import that installs `npc-walk.js`, so no harness copy list changes) and `public/break_escape/js/systems/interactions.js` (no talk while walking out). Section 9's ca12 part and section 10's ca12 proof are CA0's. Implementation details settled during stage A are in `docs/agents/NPC_WALK_IN_OUT_HANDOVER.md`.
