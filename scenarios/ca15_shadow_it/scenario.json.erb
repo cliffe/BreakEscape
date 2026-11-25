@@ -46,7 +46,16 @@
           "title": "Sort the shortcuts",
           "type": "custom",
           "status": "active"
-        },
+        }
+      ]
+    },
+    {
+      "aimId": "red_team_drop_aim",
+      "title": "Try the red-team drop",
+      "description": "Nilesh's test: leave the red stick somewhere people stop, and see who picks it up.",
+      "status": "locked",
+      "order": 1,
+      "tasks": [
         {
           "taskId": "drop_the_stick",
           "title": "Leave the red-team stick where someone will find it",
@@ -1058,6 +1067,7 @@
               "eventPattern": "global_variable_changed:ca15_drop_given",
               "condition": "value === true && !globalVars.ca15_drop_done",
               "onceOnly": true,
+              "unlockAim": "red_team_drop_aim",
               "unlockTask": [
                 "drop_the_stick",
                 "watch_who_finds_it"
