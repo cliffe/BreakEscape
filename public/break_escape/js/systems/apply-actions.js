@@ -507,9 +507,11 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
             // start_patrol sets off a patrol authored with `patrol.startDeferred: true` (or any
             // authored patrol); resume_patrol hands an NPC back its patrol after a patrolOverride
             // or goToAndStay left it standing (a no-op while it is still on its patrol; false
-            // while a deferred patrol has not started). Neither is saved: after a reload a
-            // started patrol is off again. For one that must survive a reload, author
-            // `patrol.startWhen` (a global condition, read every tick) instead of start_patrol.
+            // while a deferred patrol has not started). start_patrol is also a no-op while that
+            // patrol is already running. Neither is saved: after a reload a patrol started by
+            // start_patrol is off again, and one restarted by resume_patrol is back on its authored
+            // patrol (or off, if deferred). For a start that must survive a reload, author
+            // `patrol.startWhen` instead and make it false once the NPC should stand.
             // Both refuse an NPC that is mid walk-in/walk-out, and both tell the needs and
             // seating systems the NPC was moved (as goToAndStay does).
             // action: { type: 'start_patrol' | 'resume_patrol', npc: '<npcId>', speed? }

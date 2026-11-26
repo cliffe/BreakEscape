@@ -393,6 +393,9 @@ export class NPCBehaviorManager {
     startPatrol(npcId, opts) {
         const b = this.behaviors.get(npcId);
         if (!b) { console.warn(`⚠️ startPatrol: no behavior for ${npcId}`); return false; }
+        // Already walking its patrol: a repeat (set_global fires global_variable_changed even for
+        // the same value) must not restart it from waypoint 0 (E4 R2 m2)
+        if (!b.config.patrol.startDeferred && b.config.patrol.enabled && !b._patrolOverridden && !b._stopOnArrival) return false;
         return b.restartAuthoredPatrol({ ...opts, why: 'start_patrol' });
     }
 
@@ -414,9 +417,10 @@ export class NPCBehaviorManager {
     /**
      * patrol.startWhen (E4 R1 M1): a deferred patrol that starts itself once its condition holds
      * (utils/global-condition.js grammar, read from window so this file keeps no import). Read
-     * every manager tick, so it starts at once after a reload when the restored globals already
-     * satisfy it, and a start_patrol action has no reload gap to leave. One shot: the restart
-     * clears startDeferred.
+     * every manager tick, so after a reload it starts on the first tick once the restored globals
+     * satisfy it, which a start_patrol action cannot do. One shot per page load: the restart
+     * clears startDeferred. A patrolOverride stop is not saved either, so the condition should
+     * turn false when the NPC must stand.
      */
     _tickStartWhen() {
         for (const b of this.behaviors.values()) {
@@ -431,9 +435,12 @@ export class NPCBehaviorManager {
                     continue;
                 }
             }
+            if (b._walk) continue;   // a walk-in/walk-out owns the move: retry after it (E4 R2 m1)
             let holds = false;
             try { holds = b._startWhenFn(window.gameState?.globalVariables || {}) === true; } catch (e) { /* not yet */ }
-            if (holds) b.restartAuthoredPatrol({ why: 'startWhen' });
+            if (holds && !b.restartAuthoredPatrol({ why: 'startWhen' })) {
+                b._startWhenBad = true;   // refused for good (no authored patrol): warn once, not every frame
+            }
         }
     }
 
@@ -1571,11 +1578,12 @@ export class NPCBehavior {
 
                 // Reached end of path? Choose new target
                 if (this.pathIndex >= this.currentPath.length) {
-                    if (this._stopOnArrival && this.patrolTarget?.isTemporary) {
+                    if (this._stopOnArrival && (this.patrolTarget?.isTemporary || this.patrolTarget?.gateApproach)) {
                         // The end of a bump's sidestep leg, not of the move: the proximity guard above
                         // already handled being near the destination, so this is short of it. Drop the
                         // sidestep and head for the real destination; the move keeps its owner and id,
-                        // and the arrival fires there, once.
+                        // and the arrival fires there, once. A leg back to a shut gate (gateApproach,
+                        // E4 R2 M1) ends the same way: the next choice plans to the stop through it.
                         this.config.patrol.waypoints = this.config.patrol.waypoints.filter(wp => !wp.isTemporary);
                         this.config.patrol.waypointIndex = 0;
                         this.patrolTarget = null;
@@ -2352,6 +2360,9 @@ export class NPCBehavior {
                     this.pathFollowingActive = true; // Path is ready, start following
                     console.log(`✅ [${this.npcId}] Path calculated: ${path.length} waypoints to target`);
                 } else {
+                    // A stop beyond a shut gate of his own (E4 R2 M1): walk back to the gate first,
+                    // as the route branch does, or he retries from where he stands for ever
+                    if (this._stopOnArrival && this._approachRouteGate(pathfindingManager, null)) return;
                     // Waypoint is unreachable — back off before retrying so we don't flood
                     // the pathfinding queue every 50ms. 2 s gives the scene time to settle
                     // (e.g. an NPC or object that was blocking a tile may have moved).

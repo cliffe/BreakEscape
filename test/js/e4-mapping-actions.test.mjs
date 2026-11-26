@@ -507,3 +507,77 @@ test('M3: a drop whose save rejects is still taken back; one picked up meanwhile
     assert.deepEqual(removed, [['a', 'stick']], 'the server is still told, idempotently');
     cleanRooms();
 });
+
+// ===================================================================== round 2 fixes (E4 review R2)
+test('R2 M1: a route walker sent beyond a shut gate walks back to the gate, and the leg that ends there is not an arrival', () => {
+    const b = routeWalker();
+    b.config.patrol.waypointMode = 'sequential';
+    b.config.patrol.waypointIndex = 0;
+    b.sprite = { x: 100, y: 100, body: { setVelocity() {} } };
+    b.playAnimation = () => {};
+    b._triggerGoToStayArrival = () => { b._arrived = (b._arrived || 0) + 1; };
+    b.pathfindingManager = {
+        findNearestWalkableWorldCell: (x, y) => ({ x, y }),
+        findNearestWalkableStartCell: () => ({ x: 100, y: 100 }),
+        findWorldPath() {}
+    };
+    // the far side of a shut gate: the stop has no path, the gate's approach spot does
+    b._planMovePath = (pfm, fx, fy, tx, ty, cb) => {
+        b._planned.push([tx, ty]);
+        cb(tx === 64 && ty === 96 ? [] : [{ x: tx, y: ty }]);
+    };
+    window.doorGates = { approachPoint: () => ({ x: 140, y: 100 }) };
+    try {
+        quietSync(() => b.goToAndStay(64, 96, 80, {}));
+        quietSync(() => b.chooseWaypointTarget(2000));
+        assert.deepEqual(b._planned, [[64, 96], [140, 100]], 'the stop failed, then the approach spot is planned');
+        assert.equal(b.patrolTarget?.gateApproach, true, 'heading for the gate');
+        assert.equal(b._pathRetryAfter, 0, 'no back-off while there is a gate to walk to');
+        // reaching the spot: no arrival, the stop is chosen again
+        b.pathIndex = b.currentPath.length - 1;
+        b.npcBodyPos = () => ({ x: 140, y: 100 });
+        b.sprite.x = 140; b.sprite.y = 100;
+        b.currentPath = [{ x: 140, y: 100 }]; b.pathIndex = 0;
+        quietSync(() => b.updatePatrol ? b.updatePatrol(3000) : null);
+    } finally { delete window.doorGates; }
+    assert.equal(b._arrived, undefined, 'the approach leg is not the arrival');
+});
+
+test('R2 m1: a startWhen that holds is not retried every tick during a walk, and a refused restart warns once', async () => {
+    await quietSync(() => import(dataUrl(readFileSync(join(js, 'utils/global-condition.js'), 'utf8'))));
+    window.gameState = { globalVariables: { go: true } };
+    const mgr = new NPCBehaviorManager({}, {});
+    const b = patroller({ waypoints: WAYPOINTS, speed: 50, startWhen: 'globalVars.go' });
+    mgr.behaviors.set('jun', b);
+    let calls = 0;
+    const real = b.restartAuthoredPatrol.bind(b);
+    b.restartAuthoredPatrol = (o) => { calls++; return real(o); };
+    b._walk = { id: 1 };
+    quietSync(() => { mgr._tickStartWhen(); mgr._tickStartWhen(); });
+    assert.equal(calls, 0, 'a walk-in is not asked to restart');
+    delete b._walk;
+    b._authoredPatrol = null;   // no authored patrol: refused for good
+    quietSync(() => { mgr._tickStartWhen(); mgr._tickStartWhen(); mgr._tickStartWhen(); });
+    assert.equal(calls, 1, 'asked once, then left alone');
+    window.gameState = { globalVariables: {} };
+});
+
+test('R2 m2: start_patrol on a patrol that is already running does nothing', () => {
+    const mgr = new NPCBehaviorManager({}, {});
+    const b = patroller({ waypoints: WAYPOINTS, speed: 50 });
+    mgr.behaviors.set('jun', b);
+    assert.equal(b.config.patrol.enabled, true);
+    b.config.patrol.waypointIndex = 1;
+    assert.equal(quietSync(() => mgr.startPatrol('jun', {})), false, 'running: no restart');
+    assert.equal(b.config.patrol.waypointIndex, 1, 'still on its segment');
+    assert.equal(b._cancelled, undefined);
+    b._patrolOverridden = true;   // stopped by an override: a start does restart it
+    assert.equal(quietSync(() => mgr.startPatrol('jun', {})), true);
+    assert.equal(b.config.patrol.waypointIndex, 0);
+});
+
+test('R2 m4: the reload docs name the stop half', () => {
+    const schema = readFileSync(join(sys, '../../../../scripts/scenario-schema.json'), 'utf8');
+    assert.match(schema, /A stop \(patrolOverride\) is not saved/);
+    assert.match(schema, /start_patrol action or patrol\.startWhen sets it off/);
+});
