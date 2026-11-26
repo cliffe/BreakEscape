@@ -58,7 +58,7 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
     -> lever_lunch
 + { not act_evening } [Call it a day.]
     -> lever_day_end
-+ { file_server_seen and not terminal_view_done } [I looked at the file server in the Terminal.]
++ { file_server_seen and not terminal_view_done } [I've scanned the file server.]
     -> terminal_talk
 + { plug_in_done } [What did that show?]
     -> recap

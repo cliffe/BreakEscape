@@ -504,7 +504,6 @@
             { "eventPattern": "network_technique_used", "condition": "data.grant === 'credential'", "cooldown": 0, "completeTask": "use_card", "setGlobal": { "use_card_done": true } },
             { "eventPattern": "network_share_opened:shared_drive", "cooldown": 0, "completeTask": "open_share", "setGlobal": { "open_share_done": true } },
             { "eventPattern": "network_device_unplugged:hotdesk_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.open_share_done === true", "completeTask": "unplug", "setGlobal": { "unplug_done": true }, "bark": "Unplugging ended every session that ran through the box. Your keyring keeps what you found. Come and see me for the short version." },
-            { "eventPattern": "network_service_checked", "onceOnly": true, "cooldown": 0, "condition": "data.hostId === 'printer_host' && globalVars.printer_fix_told === true", "bark": "Fixed. Once the setting changes, the finding stops being reported, and the card won't take it." },
             { "eventPattern": "global_variable_changed:printer_off", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "bark": "Printer's off. It won't answer on the network now. A sweep only finds what's switched on." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": true } },
             { "eventPattern": "room_entered:server_room", "cooldown": 0, "setGlobal": { "server_room_seen": true } },
@@ -525,7 +524,8 @@
             { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'graham_whitfield'", "cooldown": 0, "bark": "Now you're Graham, an administrator. The user session was what that weakness needed first. Open the shared drive from his desktop." },
             { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true && globalVars.unplug_done !== true", "cooldown": 0, "bark": "Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them. Last thing, unplug the box." },
             { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true && globalVars.unplug_done === true", "cooldown": 0, "bark": "Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them." },
-            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true && globalVars.remote_signin_done !== true", "cooldown": 0, "bark": "The false one won't take that card, if you want to try. Then press Sign in on Agnieszka's PC and pick the saved link, not a password." }
+            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true && globalVars.remote_signin_done !== true", "cooldown": 0, "bark": "The false one won't take that card, if you want to try. Then press Sign in on Agnieszka's PC and pick the saved link, not a password." },
+            { "eventPattern": "network_service_checked", "onceOnly": true, "cooldown": 0, "condition": "data.hostId === 'printer_host' && globalVars.printer_fix_told === true", "bark": "Fixed. Once the setting changes, the finding stops being reported, and the card won't take it." }
           ]
         },
         {
