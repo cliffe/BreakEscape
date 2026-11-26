@@ -258,6 +258,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_records_office', 'rooms/room_lw_records_office.json'); // lab_physical_pentest records office (from room_lw_ceo; grey-green vinyl floor, exec decor replaced with filing runs, records counter, key cabinet, ledger shelves, sorting table)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
     this.load.tilemapTiledJSON('room_lw_accounts', 'rooms/room_lw_accounts.json'); // lab_physical_pentest 20x10 accounts open plan (Ledgerwell oatmeal office shell, room_lw_tiles_20); replaces room_lw_records for open_plan
+    this.load.tilemapTiledJSON('room_tarrowby_open_plan', 'rooms/room_tarrowby_open_plan.json'); // ca15 Tarrowby 20x10 open plan: room_lw_accounts' layout, Tarrowby shell and signs (build_aw_rooms.py open_plan)
     this.load.tilemapTiledJSON('room_test_desk_seating', 'rooms/room_test_desk_seating.json'); // test_desk_seating: desks with swivel/static chairs from the front, behind and side (seat-box experiments)
     this.load.tilemapTiledJSON('room_lw_postroom', 'rooms/room_lw_postroom.json'); // lab_physical_pentest P1 post & print room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_hall geometry)
     this.load.tilemapTiledJSON('room_lw_comms', 'rooms/room_lw_comms.json'); // lab_physical_pentest P3 comms cupboard (5x6 back-of-house shell, room_lw_concrete floor; from room_lw_store geometry)
@@ -372,6 +373,7 @@ export function preload() {
     this.load.image('room_lw_boards', 'tiles/rooms/room_lw_boards.png'); // lab_physical_pentest identity shell: oak boards, green runner (front of house)
     this.load.image('room_lw_tiles', 'tiles/rooms/room_lw_tiles.png'); // identity shell: oatmeal carpet tiles (offices)
     this.load.image('room_lw_tiles_20', 'tiles/rooms/room_lw_tiles_20.png'); // identity shell: oatmeal carpet tiles, 20-wide (room_lw_accounts open plan)
+    this.load.image('room_tarrowby_open_plan_20', 'tiles/rooms/room_tarrowby_open_plan_20.png'); // ca15 open plan: room_aw_tarrowby's shell widened to 20 tiles
     this.load.image('room_lw_vinyl', 'tiles/rooms/room_lw_vinyl.png'); // identity shell: grey-green vinyl (records)
     this.load.image('room_lw_concrete', 'tiles/rooms/room_lw_concrete.png'); // identity shell: painted concrete (back of house)
     this.load.image('room_lw_oxblood', 'tiles/rooms/room_lw_oxblood.png'); // identity shell: oxblood carpet with the table mark (kit room)
