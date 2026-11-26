@@ -30,7 +30,7 @@ import * as framework from './cli-gen/framework-console.js';
 // Texts only the Terminal prints
 // ---------------------------------------------------------------------------------------------
 
-export const OPENING_TEXT = 'Type help, or pick a command below. This console is made up: every product and name in it is invented.';
+export const OPENING_TEXT = 'Type help, or pick a command below. This console is a simulation: the tool names are real, but the machines, products and results are made up and nothing touches a real network.';
 export const STRIP_LABEL = 'Commands:';
 export const CHANGE_LINE_TEXT = '-- network changed. show lists it again --';
 export const PROMPT_LABEL = 'Type a command';
