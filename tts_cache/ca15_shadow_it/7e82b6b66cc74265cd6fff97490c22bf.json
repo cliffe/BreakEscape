@@ -1,0 +1,13 @@
+{
+  "key": "7e82b6b66cc74265cd6fff97490c22bf",
+  "npc": "ca15_niamh_doherty",
+  "text": "Printer's jammed again.",
+  "voice": "Leda",
+  "style": "Tarrowby's operations assistant, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:17:22Z"
+}

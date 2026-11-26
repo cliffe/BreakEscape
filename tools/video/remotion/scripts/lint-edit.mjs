@@ -234,6 +234,20 @@ tl.shots.forEach((s, i) => {
       const fr = framingAt(s, a, 1); const [w, h] = (edit.aspects || ASPECTS)[a];
       // zoom < 1 is a letterbox: allowed while the source is not shrunk (scale >= 1, so 9:16 down to 0.5625); never in 16:9.
       if (fr.zoom < 1 && (a === '16:9' || Math.max(w / (edit.source_size || [1920, 1080])[0], h / (edit.source_size || [1920, 1080])[1]) * fr.zoom < 1 - 1e-6)) E(id, `${a}: zoom ${fr.zoom} shrinks the source (letterbox allowed only while scale >= 1, never in 16:9)`);
+      // pixel-art scale (warning only): output scale s = max(w/sw, h/sh) x zoom should be a whole number. Clips are exempt (no painted-art marker exists, so all source.type "clip" shots skip); `scaleOk: true` silences a reviewed shot.
+      if (s.source?.type !== 'clip' && s.scaleOk !== true) {
+        const [sw0, sh0] = edit.source_size || [1920, 1080]; const s0 = Math.max(w / sw0, h / sh0);
+        const f0 = framingAt(s, a, 0), f1 = framingAt(s, a, 1); const fmt = (v) => String(+v.toFixed(4));
+        const sug = (k) => [...new Set([Math.max(1, Math.floor(k)), Math.max(1, Math.ceil(k))])].map((n) => fmt(n / s0)).join(', ');
+        const seen = new Set();
+        for (const f of [f0, f1]) {
+          const sc = s0 * f.zoom; if (seen.has(fmt(f.zoom))) continue; seen.add(fmt(f.zoom));
+          if (Math.abs(sc - Math.round(sc)) < 1e-3) continue;
+          if (Math.abs(sc * 2 - Math.round(sc * 2)) < 1e-3) W(id, `${a}: half-integer scale s=${fmt(sc)}: OK only for map-only shots with no DOM text and an even source origin (zoom ${fmt(f.zoom)}; "scaleOk": true once reviewed)`);
+          else W(id, `${a}: non-integer pixel scale s=${fmt(sc)} (${a}, zoom ${fmt(f.zoom)}); use zoom ${sug(sc)} ("scaleOk": true once reviewed)`);
+        }
+        if (Math.abs(f0.zoom - f1.zoom) > 1e-6) W(id, `${a}: animated zoom passes through non-integer scales (zoom ${fmt(f0.zoom)} to ${fmt(f1.zoom)}); the pixels shimmer mid-move ("scaleOk": true once reviewed)`);
+      }
       if (s.pushin?.crops_ui) {
         const r = visibleRect(fr, w, h, edit.source_size || [1920, 1080]);
         const ui = s.pushin.ui_bottom_fraction ?? 0.22;

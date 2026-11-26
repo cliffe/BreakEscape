@@ -204,24 +204,24 @@ test('approachPoint: on open floor, stopping short of the spot still leaves the 
     }
 });
 
-test('a gate on a side door is declined with one warning and stays an ordinary door', () => {
+test('a gate on a side door registers (E1): both sprites join, with no warning', () => {
     const gates = new DoorGates();
-    const side = { x: 500, y: 500, active: true, body: { enable: true },
-        doorProperties: { roomId: 'east', connectedRoom: 'west', direction: 'west', worldX: 500, worldY: 500, isSideDoor: true } };
+    const mk = (roomId, connectedRoom, direction, x) => ({ x, y: 500, active: true, body: { enable: true },
+        doorProperties: { roomId, connectedRoom, direction, worldX: x, worldY: 500, isSideDoor: true } });
+    const east = mk('hall', 'store', 'east', 500);
+    const west = mk('store', 'hall', 'west', 532);
     const warnings = [];
     const realWarn = console.warn;
     console.warn = (m) => warnings.push(String(m));
     try {
-        assert.equal(gates.register(side, { openFor: ['guard'] }), false);
+        assert.equal(gates.register(east, { openFor: ['guard'] }), true);
+        assert.equal(gates.register(west, null), true);
     } finally { console.warn = realWarn; }
-    assert.equal(warnings.length, 1);
-    assert.match(warnings[0], /east -> west/);
-    assert.equal(gates.isGate(side), false);
-    assert.equal(side.doorProperties.gate, undefined);
-    assert.equal(gates.groups.size, 0);
-    assert.equal(gates.pending.size, 0, 'nor waits to join one');
-    assert.equal(gates.approachPoint('guard', { x: 700, y: 520 }), null);
-    assert.equal(side.body.enable, true);
+    assert.equal(warnings.length, 0);
+    assert.equal(gates.isGate(east), true);
+    assert.equal(gates.isGate(west), true);
+    assert.equal(gates.groups.size, 1);
+    assert.equal(east.doorProperties.gateKey, west.doorProperties.gateKey);
 });
 
 test('a guard held at a barred gate turns back after GUARD_TURN_BACK_MS, once', () => {
@@ -233,7 +233,7 @@ test('a guard held at a barred gate turns back after GUARD_TURN_BACK_MS, once', 
     assert.equal(behaviour.turnBacks.length, 0, 'not yet');
     gates.update(1000 + GUARD_TURN_BACK_MS);
     assert.equal(behaviour.turnBacks.length, 1, 'turned back');
-    assert.deepEqual(behaviour.turnBacks[0], { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100 });
+    assert.deepEqual(behaviour.turnBacks[0], { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, cx: 100, cy: 100 });
     assert.deepEqual(events.map(e => e[0]), ['door_gate_guard_turned_back']);
     assert.equal(events[0][1].npcId, 'guard');
     assert.equal(a.body.enable, true, 'and the gate stayed shut');

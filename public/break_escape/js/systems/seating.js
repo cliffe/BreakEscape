@@ -2199,6 +2199,16 @@ function staticFacesToward(seat, from, to) {
     return d <= 67;
 }
 
+/**
+ * True when `c` (a chairsNear entry) is the multi-place static seat (sofa, bench) the need itself
+ * targets. Its face point is the sofa centre, which lies behind a south-facing sofa for anyone
+ * arriving at its front corners, so the facing test would turn them away. A single chair keeps it.
+ */
+function isTargetSofa(c, obj) {
+    if (!obj?.id || c.seat.kind !== 'static' || !c.seat.places) return false;
+    return (c.obj.objectId ?? c.obj.scenarioData?.id) === obj.id;
+}
+
 /** Feet points of every other needs NPC's post (their chairs aren't taken or fetched). */
 function otherPosts(npcId) {
     const out = [];
@@ -2471,7 +2481,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         return false;
     };
     const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
-        .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
+        .find(c => free(c) && (c.seat.kind === 'swivel' || isTargetSofa(c, obj) || staticFacesToward(c.seat, feet, toward)));
     if (near) {
         if (retry) {
             if (!postRetryAllowed('seat', behavior._seatRetries)) return giveUp();

@@ -9,8 +9,17 @@
 // Keep _defend_percent under 85 (85 and over sets kit_caught). Hook cut: in = G1 audio start - 0.15, out = in + 2.6 (first sentence ends 2.18 s in the file). Office: in = G2 start - 0.3, out = G2 speech end + 0.3.
 // The world bubble is hidden for the whole take (HIDE_BUBBLES, Phaser container patched); the edit burns captions (G1 sentence 1 only, G2 in full). Mark `bubble-hidden-check` logs visible/alpha per bubble.
 // Marks: player-sprite, kiosk-open, globals-before-look-up, look_up, bubble-start/end:kit_graham_whitfield (text), bark1_start, bark2_start, bark2_end,
-//   audio-start/end:<npc> (clip length and how far it got), tts (each POST /tts: status, bytes), person-chat-opened (only if the ask opens a chat), frame:t+N, end, globals-end.
+//   cam-before-freeze, cam-freeze, aside-start, aside-end (player x/y px, camera scroll, atS = seconds after Look up; must be < 1.4), frame:aside, audio-start/end:<npc> (clip length and how far it got), tts (each POST /tts: status, bytes), person-chat-opened (only if the ask opens a chat), frame:t+N, end, globals-end.
 import { sleep, prepare, openKiosk, pressButton, waitButton, watchBubbles, checkSprite, watchTts, watchBarkAudio } from './_ca13.mjs';
+import { keyLegs } from '../lib/walklib.mjs';
+import { SPEED } from '../ca01/_ca01.mjs';
+import { stopFollow, camState } from '../lib/camlib.mjs';
+
+/** Retake 26 Nov (owner: "3 characters standing too close together, have the player stand aside"). The player spawns at (6.6, 3.6) tiles, shoulder to shoulder with Gwen and Agnieszka,
+ *  and must stay there until the kiosk is open (kiosk interact range is 1 tile). The camera is locked on the player, so it is frozen first (player has not moved: the frame is exactly the
+ *  25 Nov one, the edit's crops still fit) and the player then walks ASIDE_DOWN_PX straight down (about 2 tiles, 3x screen scale = about 190 px) right after Look up, finished well before
+ *  G1 (about +1.6 s after Look up). Straight down is open carpet (Graham's desk is 4 tiles left, the kiosk 1 tile right, chairs lower right), keeps the player at the kiosk side and in frame. */
+const ASIDE_DOWN_PX = 64;
 
 /** The world bubble is a Phaser container (not DOM), so CSS cannot reach it: every bubble box (existing and future, via _make) has setVisible forced to false and alpha 0. The says/pages
  *  state the take's marks read is untouched. Decided 23 Nov: Graham's bubble is hidden for the whole take; the edit burns the captions. */
@@ -35,13 +44,24 @@ export default async (page, bridge, mark) => {
   const tw = watchTts(page, mark);
   await checkSprite(page, mark);
   if (!(await page.evaluate(HIDE_BUBBLES))) throw new Error('npcWorldBubbles not ready: cannot hide the bubble');
+  const cam0 = await camState(page); mark('cam-before-freeze', { scrollX: Math.round(cam0.scrollX), scrollY: Math.round(cam0.scrollY), zoom: cam0.zoom, player: cam0.player });
+  mark('cam-freeze', await stopFollow(page));
   await openKiosk(page, bridge, mark); mark('kiosk-open');
   if (!(await waitButton(page, /Look up/, 10000))) throw new Error('step-away panel never showed; buttons: ' + JSON.stringify(await (await import('./_ca13.mjs')).buttons(page)));
-  await sleep(1000);
+  await sleep(750); // was 1000: the camera freeze and its marks pushed every later mark 0.47 s later than 25 Nov; this keeps G1/G2 on the 25 Nov times
   const g0 = (await bridge.getState()).globals || {};
   mark('globals-before-look-up', { kit_quiet: g0.kit_quiet, kit_ca13_out: g0.kit_ca13_out, kit_ca13_there: g0.kit_ca13_there });
   mark('look_up'); await pressButton(page, /Look up/);
-  const t0 = Date.now(); let hid1 = false, b1 = false, b2 = false, b2end = false, chat = false, next = 2;
+  const t0 = Date.now();
+  // Walk aside once the kiosk panel has gone (the panel closes on Look up), not before: G1 is about +1.6 s, the walk takes about 0.5 s.
+  for (let i = 0; i < 20 && (await bridge.getState()).activeMinigame; i++) await sleep(50);
+  const p0 = (await bridge.getState()).player; mark('aside-start', { x: Math.round(p0.x), y: Math.round(p0.y) });
+  await keyLegs(bridge, [['down', p0.y + ASIDE_DOWN_PX]], SPEED, mark);
+  const p1 = (await bridge.getState()).player, cam1 = await camState(page);
+  mark('aside-end', { x: Math.round(p1.x), y: Math.round(p1.y), movedPx: Math.round(Math.hypot(p1.x - p0.x, p1.y - p0.y)), scrollX: Math.round(cam1.scrollX), scrollY: Math.round(cam1.scrollY), atS: (Date.now() - t0) / 1000 });
+  mark('frame:aside');
+  if (Math.hypot(p1.x - p0.x, p1.y - p0.y) < 48) { await bw.stop(); await aw.stop(); tw.stop(); throw new Error('player did not walk aside (moved < 48 px)'); }
+  let hid1 = false, b1 = false, b2 = false, b2end = false, chat = false, next = 2;
   const open = () => page.evaluate(() => !!(window.npcWorldBubbles && window.npcWorldBubbles.says && [...window.npcWorldBubbles.says.values()].some(s => /Just send it\?/.test((s.pages || []).join(' ')))));
   while (Date.now() - t0 < 40000) {
     const el = (Date.now() - t0) / 1000;

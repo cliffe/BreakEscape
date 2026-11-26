@@ -322,6 +322,7 @@ export class NPCBehaviorManager {
             y: player.body?.center.y ?? player.y
         };
 
+        this._tickStartWhen();
         for (const [npcId, behavior] of this.behaviors) {
             behavior.update(time, delta, playerPos);
         }
@@ -385,6 +386,61 @@ export class NPCBehaviorManager {
             behavior.goToAndStay(worldX, worldY, speed, opts);
         } else {
             console.warn(`⚠️ goToAndStay: no behavior for ${npcId}`);
+        }
+    }
+
+    /** Start an NPC's authored patrol (apply-actions start_patrol). Returns true when it started. */
+    startPatrol(npcId, opts) {
+        const b = this.behaviors.get(npcId);
+        if (!b) { console.warn(`⚠️ startPatrol: no behavior for ${npcId}`); return false; }
+        // Already walking its patrol: a repeat (set_global fires global_variable_changed even for
+        // the same value) must not restart it from waypoint 0 (E4 R2 m2)
+        if (!b.config.patrol.startDeferred && b.config.patrol.enabled && !b._patrolOverridden && !b._stopOnArrival) return false;
+        return b.restartAuthoredPatrol({ ...opts, why: 'start_patrol' });
+    }
+
+    /** Hand an NPC back its authored patrol after an override (apply-actions resume_patrol). */
+    resumePatrol(npcId, opts) {
+        const b = this.behaviors.get(npcId);
+        if (!b) { console.warn(`⚠️ resumePatrol: no behavior for ${npcId}`); return false; }
+        // A patrol that was never started is start_patrol's job (E4 R1 m2)
+        if (b.config.patrol.startDeferred) {
+            console.warn(`⚠️ resumePatrol: ${npcId} has not started its deferred patrol yet (use start_patrol)`);
+            return false;
+        }
+        // Still on it: patrol on and no move in flight. Any goToAndStay, a needs move included,
+        // counts as off the patrol (E4 R1 M2)
+        if (!b._patrolOverridden && b.config.patrol.enabled && !b._stopOnArrival) return false;
+        return b.restartAuthoredPatrol({ ...opts, why: 'resume_patrol' });
+    }
+
+    /**
+     * patrol.startWhen (E4 R1 M1): a deferred patrol that starts itself once its condition holds
+     * (utils/global-condition.js grammar, read from window so this file keeps no import). Read
+     * every manager tick, so after a reload it starts on the first tick once the restored globals
+     * satisfy it, which a start_patrol action cannot do. One shot per page load: the restart
+     * clears startDeferred. A patrolOverride stop is not saved either, so the condition should
+     * turn false when the NPC must stand.
+     */
+    _tickStartWhen() {
+        for (const b of this.behaviors.values()) {
+            const patrol = b.config?.patrol;
+            if (!patrol?.startDeferred || !patrol.startWhen || b._startWhenBad) continue;
+            if (!b._startWhenFn) {
+                if (typeof window.parseActionCondition !== 'function') continue;   // not loaded yet: next tick
+                b._startWhenFn = window.parseActionCondition(patrol.startWhen);
+                if (!b._startWhenFn) {
+                    b._startWhenBad = true;
+                    console.warn(`⚠️ [${b.npcId}] patrol.startWhen "${patrol.startWhen}" is not in the condition grammar`);
+                    continue;
+                }
+            }
+            if (b._walk) continue;   // a walk-in/walk-out owns the move: retry after it (E4 R2 m1)
+            let holds = false;
+            try { holds = b._startWhenFn(window.gameState?.globalVariables || {}) === true; } catch (e) { /* not yet */ }
+            if (holds && !b.restartAuthoredPatrol({ why: 'startWhen' })) {
+                b._startWhenBad = true;   // refused for good (no authored patrol): warn once, not every frame
+            }
         }
     }
 
@@ -466,7 +522,7 @@ export class NPCBehaviorManager {
             if (!window.npcHostileSystem?.isNPCKO?.(npcId)) behavior.setHostile(true);
         }
         // If revealing and patrol is configured, enable it
-        if (visible && behavior.config.patrol.waypoints?.length > 0) {
+        if (visible && behavior.config.patrol.waypoints?.length > 0 && !behavior.config.patrol.startDeferred) {
             behavior.config.patrol.enabled = true;
         }
         
@@ -519,6 +575,8 @@ export class NPCBehavior {
         }
 
         this.config = this.parseConfig(config || {});
+        this._authoredPatrol = JSON.parse(JSON.stringify(this.config.patrol));   // restartAuthoredPatrol (start_patrol / resume_patrol)
+        this._patrolOverridden = false;   // set by a goToAndStay from a script (resume_patrol)
 
         // State
         this.currentState = 'idle';
@@ -700,7 +758,15 @@ export class NPCBehavior {
         };
 
         // Auto-enable patrol if waypoints or bounds are provided but enabled not explicitly set
-        if (!config.patrol?.enabled && (config.patrol?.waypoints?.length > 0 || config.patrol?.bounds)) {
+        // patrol.startDeferred: authored and validated now, but stands still until a start_patrol
+        // action (apply-actions.js) sets it off; auto-enable below is how validation runs on it
+        // patrol.startWhen "<condition>" implies startDeferred and starts it itself (_tickStartWhen)
+        const startWhen = typeof config.patrol?.startWhen === 'string' && config.patrol.startWhen.trim()
+            ? config.patrol.startWhen : null;
+        const deferredPatrol = config.patrol?.startDeferred === true || !!startWhen;
+        if (deferredPatrol) merged.patrol.startDeferred = true;
+        if (startWhen) merged.patrol.startWhen = startWhen;
+        if ((!config.patrol?.enabled && (config.patrol?.waypoints?.length > 0 || config.patrol?.bounds)) || deferredPatrol) {
             merged.patrol.enabled = true;
             console.log(`🤖 Auto-enabled patrol for ${this.npcId} (waypoints/bounds detected)`);
         }
@@ -766,7 +832,56 @@ export class NPCBehavior {
             }
         }
 
+        if (deferredPatrol) merged.patrol.enabled = false;
         return merged;
+    }
+
+    /**
+     * Put the NPC back on its authored patrol (the config as parseConfig left it): the
+     * waypoints, route, bounds and speed, from the first waypoint. Cancels a goToAndStay
+     * that is still walking. For a route walker it starts at the segment in the room it
+     * stands in. Returns false when no patrol was authored.
+     */
+    restartAuthoredPatrol({ speed, why = 'patrol' } = {}) {
+        const snap = this._authoredPatrol;
+        if (!snap || !(snap.waypoints?.length || (snap.multiRoom && snap.route?.length) || snap.bounds || snap.worldBounds)) {
+            console.warn(`⚠️ [${this.npcId}] ${why}: no authored patrol`);
+            return false;
+        }
+        // An NPC mid walk-in/walk-out stays on the walk: it owns the move (npc-walk.js) and would
+        // call cancelMove again, or fade the NPC out. Refuse rather than fight it.
+        if (this._walk) {
+            console.warn(`⚠️ [${this.npcId}] ${why}: refused, a walk-in/walk-out is in progress`);
+            return false;
+        }
+        // Tell the systems that own a move, as goToAndStay does: the needs job is aborted and
+        // suspended (else its 3 s re-issue overwrites the waypoints), a chair fetch is dropped
+        window.npcNeedsSystem?.onExternalMove?.(this.npcId, 'patrol');
+        window.seating?.cancelFetch?.(this, `move:${why}`);
+        window.seating?.unseatNPC?.(this);
+        this.cancelMove();
+        const fresh = JSON.parse(JSON.stringify(snap));
+        const patrol = this.config.patrol;
+        Object.assign(patrol, fresh, { enabled: true, startDeferred: false, waypointIndex: 0, currentSegmentIndex: 0 });
+        if (patrol.multiRoom && patrol.route?.length) {
+            const i = patrol.route.findIndex(seg => seg.room === this.roomId);
+            patrol.currentSegmentIndex = i >= 0 ? i : 0;
+        }
+        if (Number(speed) > 0) patrol.speed = Number(speed);
+        this._patrolOverridden = false;
+        this.patrolTarget = null;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.pathFollowingActive = false;
+        this.patrolReachedTime = 0;
+        this.lastPatrolChange = 0;
+        this._pendingRouteAction = null;
+        this._routeWait = null;
+        this._routeUse = null;
+        this._useHeld = null;
+        this.returningHome = false;
+        console.log(`🚶 [${this.npcId}] ${why}: authored patrol restarted`);
+        return true;
     }
 
     /**
@@ -1463,11 +1578,12 @@ export class NPCBehavior {
 
                 // Reached end of path? Choose new target
                 if (this.pathIndex >= this.currentPath.length) {
-                    if (this._stopOnArrival && this.patrolTarget?.isTemporary) {
+                    if (this._stopOnArrival && (this.patrolTarget?.isTemporary || this.patrolTarget?.gateApproach)) {
                         // The end of a bump's sidestep leg, not of the move: the proximity guard above
                         // already handled being near the destination, so this is short of it. Drop the
                         // sidestep and head for the real destination; the move keeps its owner and id,
-                        // and the arrival fires there, once.
+                        // and the arrival fires there, once. A leg back to a shut gate (gateApproach,
+                        // E4 R2 M1) ends the same way: the next choice plans to the stop through it.
                         this.config.patrol.waypoints = this.config.patrol.waypoints.filter(wp => !wp.isTemporary);
                         this.config.patrol.waypointIndex = 0;
                         this.patrolTarget = null;
@@ -2165,8 +2281,10 @@ export class NPCBehavior {
      */
     chooseWaypointTarget(time) {
         this._resetAvoidForNewTarget(time);   // no pin or back-off step; a live yield hold stays (R8 m1)
-        // Handle multi-room routes
-        if (this.config.patrol.multiRoom && this.config.patrol.route && this.config.patrol.route.length > 0) {
+        // Handle multi-room routes. A move in flight (goToAndStay: a patrolOverride, a needs or
+        // walk move) is a one-waypoint patrol, so a route walker takes the single-room branch
+        // and stops where he was sent, not at the next route waypoint (E4 review R1 B1).
+        if (!this._stopOnArrival && this.config.patrol.multiRoom && this.config.patrol.route && this.config.patrol.route.length > 0) {
             this.chooseWaypointTargetMultiRoom(time);
             return;
         }
@@ -2242,6 +2360,9 @@ export class NPCBehavior {
                     this.pathFollowingActive = true; // Path is ready, start following
                     console.log(`✅ [${this.npcId}] Path calculated: ${path.length} waypoints to target`);
                 } else {
+                    // A stop beyond a shut gate of his own (E4 R2 M1): walk back to the gate first,
+                    // as the route branch does, or he retries from where he stands for ever
+                    if (this._stopOnArrival && this._approachRouteGate(pathfindingManager, null)) return;
                     // Waypoint is unreachable — back off before retrying so we don't flood
                     // the pathfinding queue every 50ms. 2 s gives the scene time to settle
                     // (e.g. an NPC or object that was blocking a tile may have moved).
@@ -2650,6 +2771,7 @@ export class NPCBehavior {
         }
         const patrol = this.config?.patrol;
         if (!patrol?.enabled || !patrol.multiRoom || !patrol.route?.length) return false;
+        if (this._stopOnArrival) return false;   // a move in flight, not the route (E4 R1 B1)
         const target = patrol.route[patrol.currentSegmentIndex]?.room;
         const here = this.roomId;
         if (!target || !here || target === here) return false;
@@ -3516,6 +3638,7 @@ export class NPCBehavior {
         if (opts?.owner !== 'needs' || !sameDest) this._playerPass = null;
         else if (this._playerPass) { this._playerPass.reissued = true; this._playerPass.reissuedAt = null; }
         this._moveOwner = opts?.owner;
+        if (opts?.owner !== 'needs' && opts?.owner !== 'walk') this._patrolOverridden = true;
         // Arrival extras (npc-walk.js): a callback, data spread into npc_arrived, and a
         // silent arrival (a walk-out ends with npc_left, never npc_arrived)
         this._moveOnArrive = typeof opts?.onArrive === 'function' ? opts.onArrive : null;
@@ -3568,6 +3691,12 @@ export class NPCBehavior {
         }];
         this.config.patrol.waypointMode = 'sequential';
         this.config.patrol.waypointIndex = 0;
+        // A route stop mid-way: drop the route's pending action, timed use and wait (E4 R1 B1),
+        // as restartAuthoredPatrol does
+        this._pendingRouteAction = null;
+        this._routeWait = null;
+        this._routeUse = null;
+        this._useHeld = null;
         this.config.patrol.enabled = true;
         this._stopOnArrival = true; // New flag: disable patrol after reaching this waypoint
         this._goToStayDest = { x: worldX, y: worldY }; // Original destination for arrival-tolerance guard

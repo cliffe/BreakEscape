@@ -6,26 +6,26 @@
   "script": {
     "heading": "ca02 trailer script (CV lures)",
     "owner_card": "none yet",
-    "brief": "See docs/video/scripts/ca02_trailer_script.md and docs/video/takes_ca02.md (recorded 25 Nov). Model ca03/ca05 (attack-first). Marks from the 25 Nov takes (trimmed-take seconds, 0.6-1.9 s later than the dry-run windows); Sulafat_v2 VO; PeaceFolk Guitar Motif from 95.545 s (quiet bar 98.07 s = 2.5 s in, lift 100.60 s = 5.05 s in, lull 120.8-125.9 s = 25-30 s in). PROPOSAL: office_life (2.4 s, t09_zainab_drinks, silent) is not in the script; it sits between inbox and office, adds 2.4 s (72.5 s total). Dropped from the script: the Fatima-reply variant (lands stays on the panel). Shot chips: EMAIL BUILDER (the script's APPLICATION EMAIL BUILDER is 25 characters, over the 24 limit)."
+    "brief": "See docs/video/scripts/ca02_trailer_script.md and docs/video/takes_ca02.md (recorded 25 Nov). Model ca03/ca05 (attack-first). Marks from the 25 Nov takes (trimmed-take seconds, 0.6-1.9 s later than the dry-run windows); Sulafat_v2 VO; PeaceFolk Quietly Cinematic from 29.82 s (r1.2; one track per trailer). PROPOSAL: office_life (2.4 s, t09_zainab_drinks, silent) is not in the script; it sits between inbox and office, adds 2.4 s (72.5 s total). Dropped from the script: the Fatima-reply variant (lands stays on the panel). Shot chips: EMAIL BUILDER (the script's APPLICATION EMAIL BUILDER is 25 characters, over the 24 limit)."
   },
   "fps": 30,
   "length": 72.5,
   "music": {
-    "track": "PeaceFolk/Guitar Motif.mp3",
-    "analysis": "guitar_motif_75.json",
-    "start": 95.545,
+    "track": "PeaceFolk/Quietly Cinematic.mp3",
+    "analysis": "quietly_cinematic_75.json",
+    "start": 29.82,
     "length": 72.5,
     "gain_db": -5,
     "fade_in": 0,
     "fade_out": 2.5,
     "alternatives": [
-      "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window)",
-      "PeaceFolk/Quiet Reflection.mp3 @24.016 (used by ca05)"
+      "PeaceFolk/Quietly Cinematic.mp3 @27.183 (best-scored window)",
+      "PeaceFolk/Gently Decaying Again.mp3 @66.975"
     ]
   },
   "beat": {
-    "bpm": 95.0,
-    "period": 0.6316,
+    "bpm": 91.02,
+    "period": 0.6592,
     "offset": 0
   },
   "duck": {
@@ -67,23 +67,23 @@
       "seat": {
         "seat": "full",
         "chip": "THE TRAINING ROOM",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
-          "cx": 0.62,
-          "cy": 0.335,
-          "zoom": 1.5
+          "cx": 0.75,
+          "cy": 0.25,
+          "zoom": 2.0
         },
         "9:16": {
-          "cx": 0.78,
-          "cy": 0.385,
-          "zoom": 1.3
+          "cx": 0.75,
+          "cy": 0.44444,
+          "zoom": 1.125
         },
         "1:1": {
-          "cx": 0.74,
-          "cy": 0.335,
-          "zoom": 1.5
+          "cx": 0.75,
+          "cy": 0.25,
+          "zoom": 2.0
         }
       },
       "lines": [
@@ -99,7 +99,16 @@
         "9:16": true,
         "1:1": true
       },
-      "dialogue": true
+      "dialogue": true,
+      "masks": [
+        {
+          "x": 0,
+          "y": 850,
+          "w": 1920,
+          "h": 230,
+          "color": "#14161c"
+        }
+      ]
     },
     {
       "preset": "ca-open",
@@ -110,7 +119,7 @@
       "ca": {
         "title": "CV lures",
         "company": "Tarrowby Logistics",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "duration": 5.1
     },
@@ -140,22 +149,22 @@
       "seat": {
         "seat": "defend",
         "chip": "THE RECRUITMENT INBOX",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
-          "cx": 0.5,
-          "cy": 0.47,
-          "zoom": 1.1
+          "cx": 0.41667,
+          "cy": 0.33333,
+          "zoom": 2.0
         },
         "9:16": {
           "cx": 0.5,
-          "cy": 0.47,
-          "zoom": 0.6
+          "cy": 0.5,
+          "zoom": 0.5625
         },
         "1:1": {
           "cx": 0.5,
-          "cy": 0.47,
+          "cy": 0.5,
           "zoom": 1.0
         }
       }
@@ -207,23 +216,23 @@
       "seat": {
         "seat": "attack",
         "chip": "OPEN-SOURCE RESEARCH",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
           "cx": 0.5,
-          "cy": 0.5,
-          "zoom": 1.2
+          "cy": 0.38889,
+          "zoom": 2.0
         },
         "9:16": {
           "cx": 0.5,
-          "cy": 0.5,
-          "zoom": 1.0
+          "cy": 0.44444,
+          "zoom": 1.125
         },
         "1:1": {
           "cx": 0.5,
-          "cy": 0.5,
-          "zoom": 1.15
+          "cy": 0.37037,
+          "zoom": 2.0
         }
       }
     },
@@ -253,23 +262,23 @@
       "seat": {
         "seat": "attack",
         "chip": "EMAIL BUILDER",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
-          "cx": 0.5,
-          "cy": 0.48,
-          "zoom": 1.1
+          "cx": 0.5125,
+          "cy": 0.37037,
+          "zoom": 2.0
         },
         "9:16": {
           "cx": 0.5,
-          "cy": 0.42,
-          "zoom": 1.25
+          "cy": 0.5,
+          "zoom": 0.5625
         },
         "1:1": {
           "cx": 0.5,
-          "cy": 0.435,
-          "zoom": 1.25
+          "cy": 0.5,
+          "zoom": 1.0
         }
       }
     },
@@ -299,23 +308,23 @@
       "seat": {
         "seat": "attack",
         "chip": "THE SEND",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
           "cx": 0.5,
-          "cy": 0.48,
-          "zoom": 1.1
+          "cy": 0.25,
+          "zoom": 2.0
         },
         "9:16": {
           "cx": 0.5,
-          "cy": 0.42,
-          "zoom": 1.25
+          "cy": 0.5,
+          "zoom": 0.5625
         },
         "1:1": {
           "cx": 0.5,
-          "cy": 0.435,
-          "zoom": 1.25
+          "cy": 0.5,
+          "zoom": 1.0
         }
       }
     },
@@ -345,23 +354,23 @@
       "seat": {
         "seat": "defend",
         "chip": "YOUR TURN",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
           "cx": 0.5,
-          "cy": 0.5,
-          "zoom": 1.3
+          "cy": 0.30556,
+          "zoom": 2.0
         },
         "9:16": {
           "cx": 0.5,
           "cy": 0.5,
-          "zoom": 0.77
+          "zoom": 0.5625
         },
         "1:1": {
           "cx": 0.5,
           "cy": 0.5,
-          "zoom": 1.2
+          "zoom": 1.0
         }
       }
     },
@@ -393,23 +402,23 @@
       "seat": {
         "seat": "defend",
         "chip": "YOUR TURN",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
-          "cx": 0.64,
-          "cy": 0.335,
-          "zoom": 1.5
+          "cx": 0.75,
+          "cy": 0.25,
+          "zoom": 2.0
         },
         "9:16": {
-          "cx": 0.72,
-          "cy": 0.385,
-          "zoom": 1.3
+          "cx": 0.75,
+          "cy": 0.44444,
+          "zoom": 1.125
         },
         "1:1": {
-          "cx": 0.7,
-          "cy": 0.335,
-          "zoom": 1.5
+          "cx": 0.75,
+          "cy": 0.25,
+          "zoom": 2.0
         }
       },
       "lines": [
@@ -437,7 +446,16 @@
         "9:16": true,
         "1:1": true
       },
-      "dialogue": true
+      "dialogue": true,
+      "masks": [
+        {
+          "x": 0,
+          "y": 850,
+          "w": 1920,
+          "h": 230,
+          "color": "#14161c"
+        }
+      ]
     },
     {
       "id": "blue_card",
@@ -486,7 +504,7 @@
       "seat": {
         "seat": "defend",
         "chip": "THE RECRUITMENT INBOX",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
@@ -496,13 +514,13 @@
         },
         "9:16": {
           "cx": 0.5,
-          "cy": 0.47,
-          "zoom": 0.72
+          "cy": 0.5,
+          "zoom": 0.5625
         },
         "1:1": {
           "cx": 0.5,
-          "cy": 0.47,
-          "zoom": 1.15
+          "cy": 0.5,
+          "zoom": 1.0
         }
       }
     },
@@ -532,37 +550,26 @@
       "seat": {
         "seat": "full",
         "chip": "THE TRAINING ROOM",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
-          "cx": 0.53,
-          "cy": 0.5,
+          "cx": 0.59896,
+          "cy": 0.51852,
           "zoom": 1.5
         },
         "9:16": {
-          "cx": 0.57,
+          "cx": 0.59896,
           "cy": 0.5,
-          "zoom": 1.0
+          "zoom": 0.84375
         },
         "1:1": {
-          "cx": 0.53,
-          "cy": 0.5,
-          "zoom": 1.1
+          "cx": 0.59896,
+          "cy": 0.51852,
+          "zoom": 1.5
         }
       },
-      "pushin": {
-        "start": 0,
-        "end": 1,
-        "from_zoom": 1,
-        "to_zoom": 1,
-        "focus_by_aspect": {
-          "9:16": {
-            "x": 0.49,
-            "y": 0.5
-          }
-        }
-      }
+      "scaleOk": true
     },
     {
       "id": "office",
@@ -573,8 +580,8 @@
       },
       "source": {
         "file": "t07_chidi_prompt.trimmed.mkv",
-        "in": 3.37,
-        "out": 8.97
+        "in": 4.7,
+        "out": 10.3
       },
       "audio": {
         "gain_db": 0,
@@ -587,28 +594,28 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "t07_chidi: panel-up 2.88, Look up pressed 4.40 (1.03 s into the shot), bubble 6.05, audio-start 6.28, speech 6.493-8.312 (silencedetect), bark 2 11.74 and its bubble 11.60 not in; in 3.37 = bark1_start - 2.8, out 8.97 = +2.8; the panel body says 'Look up from the kiosk...' (no tell) and is small at zoom 1.5; crop estimated from contact frames (room x 0.16-0.65, panel x 0.30-0.70), check on the render; world bubble shows the line | CA: spoilers not an issue (owner), no masks"
+        "note": "t07_chidi: panel-up 2.88, Look up pressed 4.40 (1.03 s into the shot), bubble 6.05, audio-start 6.28, speech 6.493-8.312 (silencedetect), bark 2 11.74 and its bubble 11.60 not in; in 3.37 = bark1_start - 2.8, out 8.97 = +2.8; the panel body says 'Look up from the kiosk...' (no tell) and is small at zoom 1.5; crop estimated from contact frames (room x 0.16-0.65, panel x 0.30-0.70), check on the render; world bubble shows the line | CA: spoilers not an issue (owner), no masks | r1.2 in/out 3.37-8.97 -> 4.70-10.30: the Before-the-debrief dialog is on screen until about 4.6 and cannot be framed whole at an integer zoom; bubble 6.05 and bark 11.60 still in/out of the window as before"
       },
       "seat": {
         "seat": "full",
         "chip": "THE TRAINING ROOM",
-        "stripe": "#3b5b8c"
+        "stripe": "#6b4c9a"
       },
       "framing": {
         "16:9": {
-          "cx": 0.43,
-          "cy": 0.55,
-          "zoom": 1.5
+          "cx": 0.33333,
+          "cy": 0.52778,
+          "zoom": 2.0
         },
         "9:16": {
-          "cx": 0.5,
-          "cy": 0.5,
-          "zoom": 0.77
+          "cx": 0.3125,
+          "cy": 0.51852,
+          "zoom": 1.125
         },
         "1:1": {
-          "cx": 0.43,
-          "cy": 0.5,
-          "zoom": 1.0
+          "cx": 0.3125,
+          "cy": 0.53704,
+          "zoom": 2.0
         }
       },
       "lines": [
@@ -624,20 +631,7 @@
         "9:16": true,
         "1:1": true
       },
-      "dialogue": true,
-      "pushin": {
-        "start": 0.3,
-        "end": 0.52,
-        "ease": "inOut",
-        "from_zoom": 1,
-        "to_zoom": 1.56,
-        "focus_by_aspect": {
-          "9:16": {
-            "x": 0.31,
-            "y": 0.5
-          }
-        }
-      }
+      "dialogue": true
     },
     {
       "preset": "ca-close",

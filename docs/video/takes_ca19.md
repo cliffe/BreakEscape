@@ -42,4 +42,26 @@ Seeds (the same strings as `SEEDS` in `_ca19.mjs`; ST = `episode_e19_malware_and
 
 ## Recorded results
 
-(empty until the real run)
+Captured 25 Nov, serial, display :147, keyless server :3456, `BE_SPRITE=female_office_worker_v2`, `--hide-hud --zoom-step 1`. Footage in `~/video-takes-local/ca19/takes/` (`video_out/ca19/takes` symlinked, gitignored). Full scenario id `ca19_malware_and_updates`. Every take passed on the first attempt, no retries. Residuals are the constant-offset-corrected A/V values from `check.json`. Sidecars are drafts (Step 6 not done).
+
+| take | length (s) | drop % | residual A/V start / end (ms) | /tts | contact sheet and notes |
+|---|---|---|---|---|---|
+| t01_anjali_hook | 20.00 | 0.45 | -9 / +9 | 1 request, 200 audio/mpeg | Portrait from about 13 s. The bar prints the whole line (edit crops or captions it). The `interact` mark logged `ok: false` (no-effect-confirmed) at attempt 0, but the portrait came up 0.9 s later. |
+| t02_brief | 10.50 | 0.26 | +5 / -5 | none | Brief. The dashed scope box sits below the crop; keep it out or accept. |
+| t02b_brief_narrow | 10.47 | 0.80 | -4 / +3 | none | Narrow bezel, strip wraps to two rows. |
+| t03_choices_reveal | 34.04 | 0.09 | +2 / -3 | none | Picks, montage, "Later that afternoon". |
+| t03b_choices_reveal_narrow | 34.07 | 0.09 | +9 / -9 | none | Same at narrow width. |
+| t04_flip | 11.70 | 0.24 | +10 / -10 | none | Montage then Defend panel. |
+| t04b_flip_narrow | 11.97 | 0.24 | +6 / -6 | none | Same at narrow width. |
+| t05_inbox_list | 17.44 | 0.51 | -10 / +10 | none | Inbox list and card. |
+| t05b_inbox_list_narrow | 17.80 | 0.50 | +1 / -1 | none | Narrow. Full subjects show on the list (see open items). |
+| t06_lookup_panel | 8.00 | 0.33 | -5 / +4 | none | "Before the debrief", not pressed. |
+| t06b_lookup_panel_narrow | 8.14 | 0.98 | -3 / +2 | none | Passes, but 0.98% dropped is close to the 1% gate. |
+| t07_niamh_end | 13.97 | 0.62 | +8 / -9 | 2 requests, both 200 audio/mpeg | Niamh and Darren's barks (Darren's bubble and speech bar hidden per script). Niamh stands at her desk in the frames. |
+
+**Open items**
+- t06b drop is 0.98%, under the 1% gate but close. Re-record only if the edit needs it.
+- Seated NPCs: Niamh is shown standing at her desk in t07. Not confirmed at full size. Darren not checked. No other take shows an NPC who should sit.
+- On-screen text: the t01 subtitle bar prints the full hook line (crop or caption at the edit, as the script says). The t02 scope box is visible below the crop. The t05 and t05b lists show full subjects, including "Updates installed: restart within a day" in the 9:16 view. Decide crop or accept at the edit.
+- Sidecars (`.take.json`) need Step 6. Full-size frame checks for stance and text not done; contact sheets only.
+- No script changes. The `checkSprite` and `spriteCheck` imports resolve in both ca19 and ca20 (every take module links).

@@ -1135,6 +1135,11 @@ export function updatePlayerMovement() {
         }
     }
 
+    // Depth follows the feet every frame, idle or not: a player placed by setPosition (the start
+    // spot, a returned-to spot) never walked, so the movement paths above never sorted it, and a
+    // walking NPC drew over it from the north.
+    updatePlayerDepth(player.x, player.y);
+
     // Footstep sound: play while moving, stop when idle
     const actuallyMoving = player.body.velocity.x !== 0 || player.body.velocity.y !== 0;
     updateFootstepSound(actuallyMoving);

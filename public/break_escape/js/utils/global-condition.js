@@ -129,4 +129,8 @@ export function evaluateActionCondition(condition, globals = {}) {
 // imported there: that file is copied by many node test harnesses that stub only its
 // known imports (see the note at its top). main.js imports this file so it is always
 // loaded where actions run.
-if (typeof window !== 'undefined') window.evaluateActionCondition = evaluateActionCondition;
+if (typeof window !== 'undefined') {
+  window.evaluateActionCondition = evaluateActionCondition;
+  // door-gates.js reads the parser for a gate's `activeIf` (a null parse means "not in the grammar")
+  window.parseActionCondition = parseActionCondition;
+}

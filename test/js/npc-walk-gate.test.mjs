@@ -295,3 +295,49 @@ test('a usable door never asks the hook', async () => withWarns(async () => {
     b.arrive({ x: 160, y: 160 });
     assert.equal(await p, 'walked');
 }));
+
+// ── A walk-in through a shut gate gets an approach leg (E1 R1 M2) ───────────
+// The lobby sprite's `locked` is the studio's lock, so doorClosed is false; without an approach
+// leg the walk heads for a path that exists only once the gate opens, stalls and fades.
+function gateStub({ openFor = ['guard'], spot = { x: 280, y: 160 } } = {}) {
+    const calls = [];
+    return {
+        calls,
+        isGate: (s) => !!s?.doorProperties?.gateKey,
+        groups: new Map([['k', { cfg: { openFor } }]]),
+        approachPoint(id, from, rooms) {
+            calls.push({ id, from, rooms });
+            return openFor.includes(id) ? spot : null;
+        }
+    };
+}
+
+test('M2: an openFor walker is routed to the approach spot of a shut gate first, then through', async () => withWarns(async () => {
+    const gates = gateStub();
+    const w = world({ locked: true, doorGates: gates });
+    w.doorSprite.doorProperties.gateKey = 'k';
+    const b = w.addNpc('guard');
+    const p = w.manager.walkNPCIn('guard', { from: 'dock' });
+    await settle();
+    assert.equal(gates.calls.length >= 1, true, 'approachPoint asked');
+    assert.ok(gates.calls[0].rooms.includes('dock'), 'the walker\'s room (the far room) is passed');
+    const first = b.moves[0];
+    assert.equal(Math.abs(first.x - 280) <= 8 && Math.abs(first.y - 160) <= 8, true, 'first leg is the approach spot');
+    assert.equal(first.opts.silentArrival, true);
+    assert.equal(b.moves.length, 1, 'the through leg waits for the approach');
+    b.arrive({ x: 280, y: 160 });
+    assert.equal(b.moves.length, 2);
+    assert.equal(b.moves[1].opts.arrivalData.how, 'walked');
+    b.arrive({ x: 160, y: 160 });
+    assert.equal(await p, 'walked');
+}));
+
+test('M2: a walker not on openFor is not routed to the gate', async () => withWarns(async () => {
+    const gates = gateStub({ openFor: ['someone_else'] });
+    const w = world({ locked: true, doorGates: gates });
+    w.doorSprite.doorProperties.gateKey = 'k';
+    const b = w.addNpc('guard');
+    w.manager.walkNPCIn('guard', { from: 'dock' });
+    await settle();
+    assert.equal(b.moves.every((m) => !(Math.abs(m.x - 280) <= 8 && Math.abs(m.y - 160) <= 8)), true);
+}));

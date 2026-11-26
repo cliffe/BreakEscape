@@ -1,0 +1,896 @@
+{
+    "mission": "ca17",
+    "id": "ca17_trailer_r1",
+    "theme": "ca",
+    "title": "Cyber Aware ca17 trailer, round 1 (16:9; 9:16 and 1:1 render from ca17_trailer_r1_narrow.json)",
+    "script": {
+        "heading": "ca17 trailer script (Acceptable use)",
+        "owner_card": "none yet",
+        "brief": "See docs/video/scripts/ca17_trailer_script.md, docs/video/takes_ca17.md and tmp/handover/ca0/HANDOVER_edit_ca17.md. Marks from the 25 Nov takes; Sulafat_v2 VO. DEFAULTS the owner can change: (1) music PeaceFolk Gently Decaying from 66.314 s (own track; calm, matter-of-fact bed for a policy topic); (2) room uses t06 (Chidi walks to the machine) not t02; (3) framing: integer scale (owner rule 25 Nov), all crops 2x; t05b list 9:16 and 1:1 crop the list column, card crops the pane; t04b 9:16 and 1:1 crop to the card at 2x with bin patches P1 and P2 (#f4f6f6); (4) Nilesh's game bar is cropped out (16:9 and 1:1 at 2x above y 850; 9:16 at 2x needs 960 px so a black patch covers y 850-1080) and captions carry the lines; (5) v9 kept although 'depot' repeats in Fatima's line; (6) total 70.11 s; (7) the key-fake inbox row stays visible. Chips: SERVICE DESK, TRAINING ROOM, \"CAN I?\" CARDS, INBOX."
+    },
+    "fps": 30,
+    "length": 70.11,
+    "music": {
+        "track": "PeaceFolk/Gently Decaying.mp3",
+        "analysis": "gently_decaying_75.json",
+        "start": 66.314,
+        "length": 70.11,
+        "gain_db": -5,
+        "fade_in": 0,
+        "fade_out": 2.5,
+        "alternatives": [
+            "PeaceFolk/Gently Decaying.mp3 @60.862",
+            "PeaceFolk/Gently Decaying Again.mp3 @64.356"
+        ]
+    },
+    "beat": {
+        "bpm": 88.04,
+        "period": 0.6815,
+        "offset": 0
+    },
+    "duck": {
+        "db": -10,
+        "attack": 0.12,
+        "release": 0.3
+    },
+    "audio": {
+        "fade_ms": 8,
+        "target_lufs": -14,
+        "true_peak": -1.5
+    },
+    "shots": [
+        {
+            "id": "hook",
+            "type": "gameplay",
+            "duration": 3.88,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t01_nilesh_talk.trimmed.mkv",
+                "in": 10.25,
+                "out": 14.13
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t01: whole four-sentence line prints in the game bar from the first frame (text y 850-1060); every aspect crops above y 850 (16:9 z1.35 y25-825, 9:16 z1.32 y21-839, 1:1 z1.3 y20-851); same frame serves hook and format; speech 10.453-11.645, 12.73-14.05, out 14.13 in the gap | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "SERVICE DESK",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.715625,
+                    "cy": 0.287037,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.715625,
+                    "cy": 0.462963,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.715625,
+                    "cy": 0.287037,
+                    "zoom": 2
+                }
+            },
+            "masks": [
+                {
+                    "x": 0,
+                    "y": 850,
+                    "w": 1920,
+                    "h": 230,
+                    "color": "#000000"
+                }
+            ],
+            "lines": [
+                {
+                    "start": 0.2,
+                    "end": 1.4,
+                    "speaker": "Nilesh",
+                    "text": "Nilesh, service desk."
+                },
+                {
+                    "start": 2.48,
+                    "end": 3.8,
+                    "speaker": "Nilesh",
+                    "text": "Every rule here has a 'because'."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-open",
+            "id": "open",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "title": "Acceptable use",
+                "company": "Tarrowby Logistics",
+                "stripe": "#6b4c9a"
+            },
+            "duration": 5.4
+        },
+        {
+            "id": "room",
+            "type": "gameplay",
+            "duration": 8.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t06_room_end.trimmed.mkv",
+                "in": 10.4,
+                "out": 18.4
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t06 10.4-18.4: fixed camera, silent to 26 s, Chidi gets up at 12.97 and reaches the machine at 15.85; Fatima seated verified at 11.0 s only; t02 3.2-9.0 is the fallback | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.390625,
+                    "cy": 0.675926,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.473958,
+                    "cy": 0.555556,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.505208,
+                    "cy": 0.694444,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "topic",
+            "type": "gameplay",
+            "duration": 3.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_sort_cards.trimmed.mkv",
+                "in": 21.3,
+                "out": 24.7
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 USB card held, bins out of 16:9 crop (z2.8 y185-571); t04b 622 px panel at z0.96; narrow cards patched | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "\"CAN I?\" CARDS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.546296,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "blue_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "defend",
+            "duration": 3.0,
+            "join": {
+                "type": "seam"
+            },
+            "text": [
+                "You sort the everyday moments"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Defend chapter card, title only | CA: spoilers not an issue (owner)"
+            }
+        },
+        {
+            "id": "format",
+            "type": "gameplay",
+            "duration": 6.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t01_nilesh_talk.trimmed.mkv",
+                "in": 14.1,
+                "out": 20.3
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t01: whole four-sentence line prints in the game bar from the first frame (text y 850-1060); every aspect crops above y 850 (16:9 z1.35 y25-825, 9:16 z1.32 y21-839, 1:1 z1.3 y20-851); same frame serves hook and format; sentence 3 speech 14.206-20.11; split by pauses, confirm by ear | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "SERVICE DESK",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.715625,
+                    "cy": 0.287037,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.715625,
+                    "cy": 0.462963,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.715625,
+                    "cy": 0.287037,
+                    "zoom": 2
+                }
+            },
+            "masks": [
+                {
+                    "x": 0,
+                    "y": 850,
+                    "w": 1920,
+                    "h": 230,
+                    "color": "#000000"
+                }
+            ],
+            "lines": [
+                {
+                    "start": 0.1,
+                    "end": 2.53,
+                    "speaker": "Nilesh",
+                    "text": "Sort the cards into Allowed,"
+                },
+                {
+                    "start": 2.62,
+                    "end": 4.54,
+                    "speaker": "Nilesh",
+                    "text": "Not allowed and Ask first,"
+                },
+                {
+                    "start": 4.73,
+                    "end": 6.01,
+                    "speaker": "Nilesh",
+                    "text": "then a short inbox."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "id": "bins",
+            "type": "gameplay",
+            "duration": 4.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_sort_cards.trimmed.mkv",
+                "in": 5.5,
+                "out": 9.5
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 PDF card with three bins in frame, nothing pressed, sweep 5.78-9.37 (t04b 5.53-8.97); no mask (bins are the point) | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "\"CAN I?\" CARDS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.453704,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "card_1",
+            "type": "gameplay",
+            "duration": 3.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_sort_cards.trimmed.mkv",
+                "in": 10.8,
+                "out": 13.8
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 badge card (2-line), cropped to the card, bins out of frame at z2.8; narrow file patches the bins with P2 | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "\"CAN I?\" CARDS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.481481,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.546296,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "card_2",
+            "type": "gameplay",
+            "duration": 3.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_sort_cards.trimmed.mkv",
+                "in": 0.8,
+                "out": 3.8
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 football card (2-line), cropped to the card, bins out of frame at z2.8; narrow file patches the bins with P2 | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "\"CAN I?\" CARDS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.481481,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.546296,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "card_3",
+            "type": "gameplay",
+            "duration": 3.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_sort_cards.trimmed.mkv",
+                "in": 30.35,
+                "out": 33.35
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 login card (2-line), cropped to the card, bins out of frame at z2.8; narrow file patches the bins with P2 | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "\"CAN I?\" CARDS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.481481,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.546296,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "card_4",
+            "type": "gameplay",
+            "duration": 3.6,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_sort_cards.trimmed.mkv",
+                "in": 16.5,
+                "out": 20.1
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 chatbot card (2-line), cropped to the card, bins out of frame at z2.8; narrow file patches the bins with P2 | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "\"CAN I?\" CARDS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.481481,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.546296,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "card_5",
+            "type": "gameplay",
+            "duration": 3.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t04_sort_cards.trimmed.mkv",
+                "in": 25.84,
+                "out": 28.84
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t04 holiday card (1-line), cropped to the card, bins out of frame at z2.8; narrow file patches the bins with P1 | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "\"CAN I?\" CARDS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.481481,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.546296,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "inbox_list",
+            "type": "gameplay",
+            "duration": 4.5,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t05_inbox.trimmed.mkv",
+                "in": 3.0,
+                "out": 7.5
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t05 list, six rows, key-fake row 1 visible with focus ring (owner OK); no verb buttons | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "INBOX",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.259259,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.447917,
+                    "cy": 0.462963,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.447917,
+                    "cy": 0.287037,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "inbox_card",
+            "type": "gameplay",
+            "duration": 5.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t05_inbox.trimmed.mkv",
+                "in": 9.85,
+                "out": 15.25
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t05 'What we monitor and why' open, pane below empty, no verb buttons; 9:16 crops to the card pane at z1.25 | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "INBOX",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.259259,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.583333,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.583333,
+                    "cy": 0.342593,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "room_end",
+            "type": "gameplay",
+            "duration": 5.23,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t06_room_end.trimmed.mkv",
+                "in": 25.48,
+                "out": 30.71
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t06 Fatima joins Chidi, speech 29.31-30.51 (shot 3.83-5.03) 'Depot's heaving today.'; v9 at 0.2-2.36 clear by 1.47 s | CA: spoilers not an issue (owner)"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.4,
+                    "cy": 0.661111,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.541667,
+                    "cy": 0.555556,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.541667,
+                    "cy": 0.731481,
+                    "zoom": 2
+                }
+            },
+            "lines": [
+                {
+                    "start": 3.83,
+                    "end": 5.03,
+                    "speaker": "Fatima",
+                    "text": "Depot's heaving today."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-close",
+            "id": "close",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "name": "Acceptable use",
+                "tagline": "Make the calls · Learn where the line sits",
+                "hacktivity": "Hacktivity",
+                "cta": "Learn on Hacktivity.co.uk",
+                "layout": {
+                    "1:1": {
+                        "mark_y": 0.14
+                    }
+                },
+                "wordmark": [
+                    "HACKTIVITY",
+                    "CYBER AWARE"
+                ]
+            },
+            "duration": 5.5
+        }
+    ],
+    "vo": [
+        {
+            "id": "v1",
+            "start": 3.88,
+            "end": 8.992,
+            "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+            "caption": "Hacktivity Cyber Aware: Security\nawareness training you can play.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v1.mp3"
+        },
+        {
+            "id": "v1b",
+            "start": 9.48,
+            "end": 11.616,
+            "text": "A working day at a haulage firm.",
+            "caption": "A working day at a\nhaulage firm.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v1b.mp3"
+        },
+        {
+            "id": "v1c",
+            "start": 17.48,
+            "end": 20.288,
+            "text": "This episode: acceptable use.",
+            "caption": "This episode:\nacceptable use.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v1c.mp3"
+        },
+        {
+            "id": "v2",
+            "start": 20.88,
+            "end": 22.704,
+            "text": "Then you make the calls.",
+            "caption": "Then you make the calls.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v2.mp3"
+        },
+        {
+            "id": "v3",
+            "start": 34.28,
+            "end": 35.744,
+            "text": "A borrowed badge.",
+            "caption": "A borrowed badge.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v3.mp3"
+        },
+        {
+            "id": "v4",
+            "start": 37.28,
+            "end": 38.864,
+            "text": "Football at lunch.",
+            "caption": "Football at lunch.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v4.mp3"
+        },
+        {
+            "id": "v5",
+            "start": 40.28,
+            "end": 41.408,
+            "text": "A colleague's login.",
+            "caption": "A colleague's login.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v5.mp3"
+        },
+        {
+            "id": "v6",
+            "start": 43.18,
+            "end": 45.772,
+            "text": "A complaint into a free chatbot.",
+            "caption": "A complaint into a\nfree chatbot.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v6.mp3"
+        },
+        {
+            "id": "v6b",
+            "start": 46.78,
+            "end": 49.108,
+            "text": "A laptop on holiday abroad.",
+            "caption": "A laptop on holiday\nabroad.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v6b.mp3"
+        },
+        {
+            "id": "v7",
+            "start": 49.68,
+            "end": 51.552,
+            "text": "Then six emails to handle.",
+            "caption": "Then six emails\nto handle.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v7.mp3"
+        },
+        {
+            "id": "v7b",
+            "start": 51.8,
+            "end": 53.768,
+            "text": "Some want a rule bent.",
+            "caption": "Some want a\nrule bent.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v7b.mp3"
+        },
+        {
+            "id": "v8",
+            "start": 54.38,
+            "end": 56.036,
+            "text": "What would you do with this one?",
+            "caption": "What would you do\nwith this one?",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v8.mp3"
+        },
+        {
+            "id": "v9",
+            "start": 59.58,
+            "end": 61.74,
+            "text": "Out in the depot, the day goes on.",
+            "caption": "Out in the depot,\nthe day goes on.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v9.mp3"
+        },
+        {
+            "id": "v10",
+            "start": 64.71,
+            "end": 69.966,
+            "text": "Make the calls, learn where the line sits, on Hacktivity.co.uk.",
+            "caption": "Make the calls, learn where the\nline sits, on Hacktivity.co.uk.",
+            "file": "/home/cliffe/video-takes-local/ca17/vo/Sulafat_v2/trim/v10.mp3"
+        }
+    ]
+}

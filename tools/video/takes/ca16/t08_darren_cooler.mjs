@@ -5,7 +5,7 @@
 // Entry state: fresh game, --set kit_quiet=true; kit_ca16_out must NOT be set (Look up suspends his needs, and Niamh's mappings take over).
 //   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca16 t08_darren_cooler "--set kit_quiet=true" "--hide-hud --zoom-step 1"
 // Marks: player-sprite, npc-start, post-set, follow-on, need-set, walk-start, arrive, trip-distance, return-start, back, follow-off, cam-summary, npc-end, end.
-import { sleep, prepare, checkSprite } from './_ca16.mjs';
+import { sleep, prepare, spriteCheck } from './_ca16.mjs';
 import { followNpc, followPlayer, camState, triggerNeed, waitNpcMoved, npcPos } from '../lib/camlib.mjs';
 
 const NPC = 'kit_darren_price';
@@ -67,7 +67,7 @@ export async function setup(page, bridge) {
 }
 
 export default async (page, bridge, mark) => {
-  await checkSprite(page, mark);
+  await spriteCheck(page, mark);
   const p0 = await npcPos(page, NPC);
   mark('npc-start', p0);
   const settled = await settle(page, NPC, 8000);

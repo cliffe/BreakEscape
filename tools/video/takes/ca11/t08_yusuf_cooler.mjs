@@ -5,7 +5,7 @@
 // Entry state: fresh game, no flags needed (--set kit_defend_done=true is harmless and matches t01); kit_ca11_out must NOT be set (Look up sets it, then his mapping suspends needs and walks him to the copier tray).
 //   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca11 t08_yusuf_cooler "--set kit_defend_done=true" "--hide-hud --zoom-step 1"
 // Marks: player-sprite, npc-start, post-set, follow-on, need-set, walk-start, arrive, trip-distance, return-start, back, follow-off, cam-summary, npc-end, end.
-import { sleep, prepare, checkSprite } from './_ca11.mjs';
+import { sleep, prepare, spriteCheck } from './_ca11.mjs';
 import { followNpc, followPlayer, camState, triggerNeed, waitNpcMoved, npcPos } from '../lib/camlib.mjs';
 
 const NPC = 'kit_yusuf_demir';
@@ -66,7 +66,7 @@ export async function setup(page, bridge) {
 }
 
 export default async (page, bridge, mark) => {
-  await checkSprite(page, mark);
+  await spriteCheck(page, mark);
   const p0 = await npcPos(page, NPC);
   mark('npc-start', p0);
   const settled = await settle(page, NPC, 8000);

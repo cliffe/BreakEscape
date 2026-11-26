@@ -2069,3 +2069,47 @@ test('R2 m3: a punch cone over a fixed chair calls no kick; over a loose one it 
         }
     } finally { Object.assign(window, saved); }
 });
+
+// ── a rest need sends an NPC to a sofa: she sits from either front corner (ca18 live proof) ──
+// The sofa faces south and its face point is its centre, which is north-west or north-east of
+// anyone at a front corner; staticFacesToward turned her away and she stood 11 s. A sofa the
+// need itself targets skips that test. A chair keeps it.
+function restRig(feetX, feetY, targetId, solid) {
+    const rig = labSeatRig(feetX);
+    rig.sprite.y = feetY;
+    Object.assign(rig.chair, solid);
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.mode = 'job';
+    ns.job = { kind: 'use', targetId, phase: 'using', need: 'rest' };
+    ns.atPost = false;
+    const target = { id: targetId, roomId: 'open_plan', x: rig.chair.x + rig.chair.width / 2, y: rig.chair.y + rig.chair.height / 2,
+        affordance: { satisfies: ['rest'] } };
+    window.npcNeedsSystem.world.getObject = () => target;
+    return rig;
+}
+const SOFA = { x: 216, y: 262, width: 62, height: 38, depth: 10, objectId: 'kit_sofa', texture: { key: 'leather_sofa1' }, scenarioData: { id: 'kit_sofa' } };
+
+test('rest need: arriving at a south-facing sofa\'s lower-right corner sits on the nearest place', () => {
+    const rig = restRig(252, 280, 'kit_sofa', SOFA);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the sofa');
+        assert.equal(Math.round(rig.behavior._seatMove?.target?.x), 259, 'east place (216 + 43)');
+    } finally { rig.restore(); }
+});
+
+test('rest need: arriving at a south-facing sofa\'s lower-left corner sits on the nearest place', () => {
+    const rig = restRig(226, 280, 'kit_sofa', SOFA);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the sofa');
+        assert.equal(Math.round(rig.behavior._seatMove?.target?.x), 235, 'west place (216 + 19)');
+    } finally { rig.restore(); }
+});
+
+test('rest need: a chair the need targets still refuses a sitter who is behind it', () => {
+    // north-facing static chair at (192,160): feet north of it, its centre lies south of them
+    const rig = restRig(200, 152, 'pierce_chair', {});
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'not seated from behind');
+        assert.ok(!rig.behavior._seatMove, 'no walk onto the seat');
+    } finally { rig.restore(); }
+});

@@ -1,0 +1,952 @@
+{
+    "mission": "ca11",
+    "id": "ca11_trailer_r1_narrow",
+    "theme": "ca",
+    "title": "Cyber Aware ca11 trailer, round 1 (narrow-panel takes t03b, t06b, t07c; render 9:16 and 1:1 from this file)",
+    "script": {
+        "heading": "ca11 trailer script (Misdirected data)",
+        "owner_card": "none yet",
+        "brief": "See docs/video/scripts/ca11_trailer_script.md, docs/video/takes_ca11.md and tmp/handover/ca0/HANDOVER_edit_ca11.md. Model ca13. Marks from the 25 Nov takes (trimmed seconds); Sulafat_v2 VO. CA0 decisions: (1) no topic retake: topic is t03 card 1 unpicked, 2.5 s live then freezeAt a static frame for 4.4 s (6.9 s), v1b kept; (2) t03b Choices cards are 720 px panels: 9:16 and 1:1 run at 1x (bars) on topic, pick_caller and pick_export; (2b) owner rule 25 Nov: every framing is an integer output scale (16:9 and 1:1 zoom 1 or 2, 9:16 zoom 0.5625 or 1.125), no push-ins; (3) 08:52 highlighted row accepted; (4) 11:15 card From, To and number visible, no patch; (5) pick holds lengthened with freezeAt: card 1 picked 3.8 s, card 3 picked 4.1 s; (6) t08_yusuf_cooler office-life insert (2.4 s) left out because the total would be 73.97 s, over the 73.5 s cap. Left seat label YOUR CALLS via seat_labels. Stripe is the CA purple #6b4c9a. Hook and office carry burned captions with the speaker name (Yusuf). Chips: THE TRAINING ROOM, A BUSY MORNING, SIX MONTHS LATER, YOUR TURN, CARE LAUNDRY DESK INBOX."
+    },
+    "fps": 30,
+    "length": 71.57,
+    "music": {
+        "track": "PeaceFolk/Quietly Cinematic.mp3",
+        "analysis": "quietly_cinematic_75.json",
+        "start": 95.742,
+        "length": 71.57,
+        "gain_db": -5,
+        "fade_in": 0,
+        "fade_out": 2.5,
+        "alternatives": [
+            "PeaceFolk/Quietly Cinematic.mp3 @29.82",
+            "PeaceFolk/Quiet Reflection.mp3 @49.296"
+        ]
+    },
+    "beat": {
+        "bpm": 91.02,
+        "period": 0.6592,
+        "offset": 0
+    },
+    "duck": {
+        "db": -10,
+        "attack": 0.12,
+        "release": 0.3
+    },
+    "audio": {
+        "fade_ms": 8,
+        "target_lufs": -14,
+        "true_peak": -1.5
+    },
+    "seat_labels": {
+        "attack": "YOUR CALLS",
+        "defend": "DEFENDER"
+    },
+    "shots": [
+        {
+            "id": "hook",
+            "type": "gameplay",
+            "duration": 2.91,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t01_yusuf_hook.trimmed.mkv",
+                "in": 3.52,
+                "out": 6.43
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "lines": [
+                {
+                    "start": 0.55,
+                    "end": 2.75,
+                    "speaker": "Yusuf",
+                    "text": "Handovers go out fast when it's busy."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true,
+            "masks": [
+                {
+                    "x": 665,
+                    "y": 0,
+                    "w": 950,
+                    "h": 22,
+                    "color": "#000000"
+                }
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t01 Yusuf talk: portrait up from 3.455, speech 4.082-6.252, cut 6.43 is 0.18 s after the last word; the bar (sentence 2) sits below every window, burned caption carries sentence 1 | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.71875,
+                    "cy": 0.305556,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.716146,
+                    "cy": 0.444444,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.716146,
+                    "cy": 0.305556,
+                    "zoom": 2.0
+                }
+            }
+        },
+        {
+            "preset": "ca-open",
+            "id": "open",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "title": "Misdirected data",
+                "company": "Carrholme Services",
+                "stripe": "#6b4c9a"
+            },
+            "duration": 5.4
+        },
+        {
+            "id": "topic",
+            "type": "gameplay",
+            "duration": 2.5,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 4.163,
+                "out": 6.663
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t03 card 1 unpicked, live 2.5 s (card appears at 4.1, pick click 8.285) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "A BUSY MORNING",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "topic_hold",
+            "type": "gameplay",
+            "duration": 4.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 6.663,
+                "out": 11.063
+            },
+            "freezeAt": 6.663,
+            "audio": {
+                "gain_db": -60
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "topic hold: freezeAt on card 1 unpicked, static from 4.2 to 8.1 apart from a 89 px blink at 6.0 and 7.5; audio muted so the later pick click is not heard; join with topic is invisible | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "A BUSY MORNING",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "red_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "attack",
+            "duration": 3.0,
+            "join": {
+                "type": "cut"
+            },
+            "text": [
+                "You make four quick choices"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Calls chapter card, title only | CA: spoilers not an issue (owner), no masks"
+            }
+        },
+        {
+            "id": "pick_caller",
+            "type": "gameplay",
+            "duration": 2.9,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 8.03,
+                "out": 10.93
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t03 card 1, pick lands 8.285, picked state static from 9.7 | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "A BUSY MORNING",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "pick_caller_hold",
+            "type": "gameplay",
+            "duration": 0.9,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 10.93,
+                "out": 11.84
+            },
+            "freezeAt": 10.93,
+            "audio": {
+                "gain_db": -60
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "freezeAt on card 1 picked (static 9.7 to 11.0; Next click about 11.5) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "A BUSY MORNING",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "pick_export",
+            "type": "gameplay",
+            "duration": 2.5,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 15.533,
+                "out": 18.033
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t03 card 3 shown 15.42, pick lands 16.447, static from 16.9 | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "A BUSY MORNING",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "pick_export_hold",
+            "type": "gameplay",
+            "duration": 1.6,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 18.033,
+                "out": 19.633
+            },
+            "freezeAt": 18.033,
+            "audio": {
+                "gain_db": -60
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "freezeAt on card 3 picked (static 16.9 to 18.1; Next click about 19.0) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.17 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "A BUSY MORNING",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            }
+        },
+        {
+            "id": "led_page",
+            "type": "gameplay",
+            "duration": 4.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 22.89,
+                "out": 27.09
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "montage, three cards, labels hidden in the take | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "SIX MONTHS LATER",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.0
+                }
+            },
+            "voPos": {
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "led_caller",
+            "type": "gameplay",
+            "duration": 4.7,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 27.09,
+                "out": 31.79
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "punch-in on the caller card | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "SIX MONTHS LATER",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.435185,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.425926,
+                    "zoom": 2.0
+                }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "led_export",
+            "type": "gameplay",
+            "duration": 4.55,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 31.79,
+                "out": 36.34
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "punch-in on the export card; Continue click at 36.392 | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "SIX MONTHS LATER",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.657407,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.666667,
+                    "zoom": 2.0
+                }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "flip",
+            "type": "gameplay",
+            "duration": 3.0,
+            "join": {
+                "type": "flip"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 36.29,
+                "out": 39.32
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Continue then the Defend intro panel (body hidden in the take) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "YOUR TURN",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.481481,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                }
+            }
+        },
+        {
+            "id": "blue_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "defend",
+            "duration": 2.4,
+            "join": {
+                "type": "seam"
+            },
+            "text": [
+                "You sort the desk inbox"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+            }
+        },
+        {
+            "id": "inbox",
+            "type": "gameplay",
+            "duration": 9.45,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t06b_inbox_list_narrow.trimmed.mkv",
+                "in": 5.55,
+                "out": 15.0
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "list then 11:15 card (row click 9.852 wide / 9.778 narrow); 08:52 row highlighted, accepted; 11:15 From/To/number visible (owner) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "CARE LAUNDRY DESK INBOX",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.27037,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.444444,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.27037,
+                    "zoom": 2.0
+                }
+            }
+        },
+        {
+            "id": "panel",
+            "type": "gameplay",
+            "duration": 3.8,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t07c_stepaway_panel_narrow.trimmed.mkv",
+                "in": 3.64,
+                "out": 7.44
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "step-away panel before any click | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2.0
+                }
+            }
+        },
+        {
+            "id": "office",
+            "type": "gameplay",
+            "duration": 7.86,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t07_printout_beat.trimmed.mkv",
+                "in": 4.3,
+                "out": 12.16
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "lines": [
+                {
+                    "start": 2.07,
+                    "end": 3.77,
+                    "speaker": "Yusuf",
+                    "text": "This printout isn't ours."
+                },
+                {
+                    "start": 4.4,
+                    "end": 7.66,
+                    "speaker": "Yusuf",
+                    "text": "It's a care home's resident list, with health notes on it."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true,
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t07 bark 1 only (bark audio 6.099, S1 6.359-8.050, S2 8.703-11.943); bubble hidden, captions burned; sentence 3 starts 12.78 | CA: spoilers not an issue (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.401042,
+                    "cy": 0.425926,
+                    "zoom": 2.0
+                },
+                "9:16": {
+                    "cx": 0.35,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.380208,
+                    "cy": 0.42963,
+                    "zoom": 2.0
+                }
+            }
+        },
+        {
+            "preset": "ca-close",
+            "id": "close",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "name": "Misdirected data",
+                "tagline": "Make the calls · See where they lead",
+                "hacktivity": "Hacktivity",
+                "cta": "Learn on Hacktivity.co.uk",
+                "layout": {
+                    "1:1": {
+                        "mark_y": 0.14
+                    }
+                },
+                "wordmark": [
+                    "HACKTIVITY",
+                    "CYBER AWARE"
+                ]
+            },
+            "duration": 5.5
+        }
+    ],
+    "vo": [
+        {
+            "id": "v1",
+            "start": 2.93,
+            "end": 8.042,
+            "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+            "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v1.mp3"
+        },
+        {
+            "id": "v1b",
+            "start": 8.51,
+            "end": 11.774,
+            "text": "This desk handles other people's details all day.",
+            "caption": "This desk handles other people's\ndetails all day.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v1b.mp3"
+        },
+        {
+            "id": "v1c",
+            "start": 12.02,
+            "end": 14.516,
+            "text": "This episode: misdirected data.",
+            "caption": "This episode:\nmisdirected data.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v1c.mp3"
+        },
+        {
+            "id": "v2",
+            "start": 15.41,
+            "end": 17.93,
+            "text": "First, four quick choices.",
+            "caption": "First, four quick choices.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v2.mp3"
+        },
+        {
+            "id": "v3",
+            "start": 18.41,
+            "end": 21.506,
+            "text": "A 'sister' asks where Bernadette cleans today.",
+            "caption": "A 'sister' asks where\nBernadette cleans today.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v3.mp3"
+        },
+        {
+            "id": "v4",
+            "start": 22.21,
+            "end": 25.162,
+            "text": "The sales director wants the family contact list.",
+            "caption": "The sales director wants\nthe family contact list.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v4.mp3"
+        },
+        {
+            "id": "v5",
+            "start": 26.31,
+            "end": 28.134,
+            "text": "Then see where each one led.",
+            "caption": "Then see where each one led.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v5.mp3"
+        },
+        {
+            "id": "v5b",
+            "start": 30.61,
+            "end": 32.914,
+            "text": "A stranger learned where she would be.",
+            "caption": "A stranger learned where\nshe would be.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v5b.mp3"
+        },
+        {
+            "id": "v5c",
+            "start": 35.21,
+            "end": 39.386,
+            "text": "Three families complained. One wrote to the regulator.",
+            "caption": "Three families complained.\nOne wrote to the regulator.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v5c.mp3"
+        },
+        {
+            "id": "v6",
+            "start": 39.96,
+            "end": 41.544,
+            "text": "Now take the other seat.",
+            "caption": "Now take the other seat.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v6.mp3"
+        },
+        {
+            "id": "v7",
+            "start": 42.76,
+            "end": 44.512,
+            "text": "Sort the desk inbox.",
+            "caption": "Sort the desk inbox.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v7.mp3"
+        },
+        {
+            "id": "v8",
+            "start": 45.16,
+            "end": 47.512,
+            "text": "Six items wait on the desk.",
+            "caption": "Six items wait on the desk.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v8.mp3"
+        },
+        {
+            "id": "v10",
+            "start": 49.76,
+            "end": 51.488,
+            "text": "Whose job is this one?",
+            "caption": "Whose job is this one?",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v10.mp3"
+        },
+        {
+            "id": "v9",
+            "start": 54.61,
+            "end": 57.154,
+            "text": "Then Yusuf finds something at the copier.",
+            "caption": "Then Yusuf finds something\nat the copier.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v9.mp3"
+        },
+        {
+            "id": "v11",
+            "start": 66.27,
+            "end": 70.758,
+            "text": "Make the calls, see where they lead, on Hacktivity.co.uk.",
+            "caption": "Make the calls, see where they\nlead, on Hacktivity.co.uk.",
+            "file": "/home/cliffe/video-takes-local/ca11/vo/Sulafat_v2/trim/v11.mp3"
+        }
+    ]
+}

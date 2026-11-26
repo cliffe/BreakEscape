@@ -6,26 +6,26 @@
  "script": {
   "heading": "ca06 trailer script (Texts and QR codes)",
   "owner_card": "none yet",
-  "brief": "See docs/video/scripts/ca06_trailer_script.md and docs/video/takes_ca06.md (recorded 25 Nov). Model ca02/ca05 (attack-first). Sulafat_v2 VO, no trims; PeaceFolk Guitar Motif from 95.545 s as ca02. DEFAULTS FOR THE OWNER TO CHANGE: (1) music is Guitar Motif at 95.545 s (alternatives in music.alternatives); (2) PROPOSAL office_life slot (t10_fatima_drinks, 2.4 s, silent, between phone_card and office, not in the script; drop it for -2.4 s); (3) the office shot uses t07_notice_beat, not t08, because t08's camera pans back to the player from 14.49 inside Z2's last sentence; (4) hook is t08_zainab_to_notice; (5) notices window 3.5 s (script 3.6), research and notices are two cut shots; (6) chidi_flip 9.0-17.4 (portrait first shows at 9.0). Lands stays on the result panel (Fatima-reply variant off). Shot chips: THE TRAINING ROOM, THE WORK PHONE, OPEN-SOURCE RESEARCH, WRITE THE MESSAGE (placeholder), THE SEND, YOUR TURN."
+  "brief": "See docs/video/scripts/ca06_trailer_script.md and docs/video/takes_ca06.md (recorded 25 Nov). Model ca02/ca05 (attack-first). Sulafat_v2 VO, no trims; PeaceFolk Gently Decaying from 28.151 s (r1.2; one track per trailer). DEFAULTS FOR THE OWNER TO CHANGE: (1) music is Gently Decaying at 28.151 s (alternatives in music.alternatives); (2) PROPOSAL office_life slot (t10_fatima_drinks, 2.4 s, silent, between phone_card and office, not in the script; drop it for -2.4 s); (3) the office shot uses t07_notice_beat, not t08, because t08's camera pans back to the player from 14.49 inside Z2's last sentence; (4) hook is t08_zainab_to_notice; (5) notices window 3.5 s (script 3.6), research and notices are two cut shots; (6) chidi_flip 9.0-17.4 (portrait first shows at 9.0). Lands stays on the result panel (Fatima-reply variant off). Shot chips: THE TRAINING ROOM, THE WORK PHONE, OPEN-SOURCE RESEARCH, WRITE THE MESSAGE (placeholder), THE SEND, YOUR TURN."
  },
  "fps": 30,
  "length": 73.0,
  "music": {
-  "track": "PeaceFolk/Guitar Motif.mp3",
-  "analysis": "guitar_motif_75.json",
-  "start": 95.545,
+  "track": "PeaceFolk/Gently Decaying.mp3",
+  "analysis": "gently_decaying_75.json",
+  "start": 28.151,
   "length": 73.0,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
   "alternatives": [
-   "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window)",
-   "PeaceFolk/Quiet Reflection.mp3 @24.016 (used by ca05)"
+   "PeaceFolk/Gently Decaying.mp3 @17.247",
+   "PeaceFolk/Gently Decaying Again.mp3 @66.975"
   ]
  },
  "beat": {
-  "bpm": 95.0,
-  "period": 0.6316,
+  "bpm": 88.04,
+  "period": 0.6815,
   "offset": 0
  },
  "duck": {
@@ -67,23 +67,23 @@
    "seat": {
     "seat": "full",
     "chip": "THE TRAINING ROOM",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.6,
-     "cy": 0.42,
-     "zoom": 2.2
+     "cx": 0.5,
+     "cy": 0.48148,
+     "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.495,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.5,
+     "cy": 0.48148,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.42,
-     "zoom": 1.6
+     "cy": 0.48148,
+     "zoom": 2.0
     }
    },
    "lines": [
@@ -116,7 +116,7 @@
    "ca": {
     "title": "Texts and QR codes",
     "company": "Tarrowby Logistics",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "duration": 5.1
   },
@@ -146,23 +146,23 @@
    "seat": {
     "seat": "defend",
     "chip": "THE WORK PHONE",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.42,
-     "cy": 0.27,
-     "zoom": 2.2
+     "cx": 0.41667,
+     "cy": 0.30556,
+     "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.35,
-     "cy": 0.3,
-     "zoom": 1.5
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.35,
-     "cy": 0.27,
-     "zoom": 2.0
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
     }
    }
   },
@@ -213,23 +213,23 @@
    "seat": {
     "seat": "attack",
     "chip": "OPEN-SOURCE RESEARCH",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.505,
-     "cy": 0.52,
-     "zoom": 1.6
+     "cx": 0.5,
+     "cy": 0.39815,
+     "zoom": 2.0
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.1
+     "cy": 0.44444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.15
+     "cy": 0.37037,
+     "zoom": 2.0
     }
    }
   },
@@ -259,23 +259,23 @@
    "seat": {
     "seat": "attack",
     "chip": "OPEN-SOURCE RESEARCH",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.505,
-     "cy": 0.52,
-     "zoom": 1.6
+     "cx": 0.5,
+     "cy": 0.39815,
+     "zoom": 2.0
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.1
+     "cy": 0.44444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.15
+     "cy": 0.37037,
+     "zoom": 2.0
     }
    }
   },
@@ -305,23 +305,23 @@
    "seat": {
     "seat": "attack",
     "chip": "WRITE THE MESSAGE",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.38,
-     "zoom": 1.4
+     "cy": 0.37037,
+     "zoom": 2.0
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.385,
-     "zoom": 1.3
+     "cy": 0.5,
+     "zoom": 1.0
     }
    }
   },
@@ -351,23 +351,23 @@
    "seat": {
     "seat": "attack",
     "chip": "THE SEND",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.38,
-     "zoom": 1.4
+     "cy": 0.25926,
+     "zoom": 2.0
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.385,
-     "zoom": 1.3
+     "cy": 0.5,
+     "zoom": 1.0
     }
    }
   },
@@ -397,23 +397,23 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.505,
-     "cy": 0.505,
-     "zoom": 2.2
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.505,
+     "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.78
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.505,
-     "cy": 0.505,
-     "zoom": 1.2
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
     }
    }
   },
@@ -445,23 +445,23 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.64,
-     "cy": 0.335,
-     "zoom": 1.5
+     "cx": 0.72917,
+     "cy": 0.25,
+     "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.72,
-     "cy": 0.385,
-     "zoom": 1.3
+     "cx": 0.72917,
+     "cy": 0.44444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.7,
-     "cy": 0.335,
-     "zoom": 1.5
+     "cx": 0.72917,
+     "cy": 0.25,
+     "zoom": 2.0
     }
    },
    "lines": [
@@ -489,7 +489,16 @@
     "9:16": true,
     "1:1": true
    },
-   "dialogue": true
+   "dialogue": true,
+   "masks": [
+    {
+     "x": 0,
+     "y": 850,
+     "w": 1920,
+     "h": 230,
+     "color": "#14161c"
+    }
+   ]
   },
   {
    "id": "blue_card",
@@ -538,23 +547,23 @@
    "seat": {
     "seat": "defend",
     "chip": "THE WORK PHONE",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.31,
-     "zoom": 1.6
+     "cy": 0.30556,
+     "zoom": 2.0
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.8
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.3,
-     "zoom": 1.4
+     "cy": 0.5,
+     "zoom": 1.0
     }
    }
   },
@@ -584,23 +593,23 @@
    "seat": {
     "seat": "defend",
     "chip": "THE WORK PHONE",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.56,
-     "cy": 0.304,
-     "zoom": 2.8
+     "cx": 0.5,
+     "cy": 0.60926,
+     "zoom": 2.0
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.8
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.61,
-     "zoom": 1.4
+     "cy": 0.5,
+     "zoom": 1.0
     }
    }
   },
@@ -630,23 +639,23 @@
    "seat": {
     "seat": "full",
     "chip": "THE TRAINING ROOM",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.52,
-     "cy": 0.5,
-     "zoom": 1.8
+     "cx": 0.64583,
+     "cy": 0.63889,
+     "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.52,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.64583,
+     "cy": 0.55556,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.52,
-     "cy": 0.5,
-     "zoom": 1.4
+     "cx": 0.64583,
+     "cy": 0.63889,
+     "zoom": 2.0
     }
    }
   },
@@ -678,23 +687,23 @@
    "seat": {
     "seat": "full",
     "chip": "THE TRAINING ROOM",
-    "stripe": "#3b5b8c"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
-     "cx": 0.4,
-     "cy": 0.42,
+     "cx": 0.27083,
+     "cy": 0.44444,
      "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.29,
-     "cy": 0.5,
-     "zoom": 1.1
+     "cx": 0.27083,
+     "cy": 0.44444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.3,
-     "cy": 0.42,
-     "zoom": 1.7
+     "cx": 0.27083,
+     "cy": 0.44444,
+     "zoom": 2.0
     }
    },
    "lines": [

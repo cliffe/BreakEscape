@@ -6,26 +6,26 @@
     "script": {
         "heading": "ca10 trailer script (fake downloads and checks)",
         "owner_card": "none yet",
-        "brief": "See docs/video/scripts/ca10_trailer_script.md, docs/video/takes_ca10.md and tmp/handover/ca0/HANDOVER_edit_ca10.md. Model ca05 (attack-first, same Quayholt room). Marks from the 25 Nov takes (trimmed-take seconds); Sulafat_v2 VO. DEFAULTS the owner can change: (1) music is PeaceFolk Guitar Motif from 95.545 s as ca02 (gain -5, 2.5 s fade-out; ca10 script names no track, the scenario plays PeaceFolk), alternatives in music.alternatives; (2) office_life (2.4 s, t09_darren_cooler, silent) is not in the script, it sits after pages and before step_away, adds 2.4 s (72.7 s total); drop the shot to return to the script's 70.3 s. Hook: bar cropped out in every aspect, sentence 1 only as a burned caption. Lands default cut, Leo's reply not shown. v8b starts 0.25 s after v8a (the script's pages+2.49 would leave a 0.03 s gap). Chips: MORNING OF WEB PAGES (script tab)."
+        "brief": "See docs/video/scripts/ca10_trailer_script.md, docs/video/takes_ca10.md and tmp/handover/ca0/HANDOVER_edit_ca10.md. Model ca05 (attack-first, same Quayholt room). Marks from the 25 Nov takes (trimmed-take seconds); Sulafat_v2 VO. DEFAULTS the owner can change: (1) music is PeaceFolk Quiet Reflection from 72.891 s, own track (gain -5, 2.5 s fade-out; ca10 script names no track, the scenario plays PeaceFolk), alternatives in music.alternatives; (2) office_life (2.4 s, t09_darren_cooler, silent) is not in the script, it sits after pages and before step_away, adds 2.4 s (72.7 s total); drop the shot to return to the script's 70.3 s. Hook: bar cropped out in every aspect, sentence 1 only as a burned caption. Lands default cut, Leo's reply not shown. v8b starts 0.25 s after v8a (the script's pages+2.49 would leave a 0.03 s gap). Chips: MORNING OF WEB PAGES (script tab)."
     },
     "fps": 30,
     "length": 72.7,
     "music": {
-        "track": "PeaceFolk/Guitar Motif.mp3",
-        "analysis": "guitar_motif_75.json",
-        "start": 95.545,
+        "track": "PeaceFolk/Quiet Reflection.mp3",
+        "analysis": "quiet_reflection_75.json",
+        "start": 72.891,
         "length": 72.7,
         "gain_db": -5,
         "fade_in": 0,
         "fade_out": 2.5,
         "alternatives": [
-            "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window)",
-            "PeaceFolk/Quiet Reflection.mp3 @24.016 (used by ca05)"
+            "PeaceFolk/Quiet Reflection.mp3 @15.589",
+            "PeaceFolk/Guitar Motif.mp3 @95.545"
         ]
     },
     "beat": {
-        "bpm": 95.0,
-        "period": 0.6316,
+        "bpm": 142.4,
+        "period": 0.4213,
         "offset": 0
     },
     "duck": {
@@ -67,23 +67,23 @@
             "seat": {
                 "seat": "full",
                 "chip": "THE TRAINING ROOM",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
-                    "cx": 0.68,
-                    "cy": 0.335,
-                    "zoom": 1.5
+                    "cx": 0.729167,
+                    "cy": 0.25,
+                    "zoom": 2
                 },
                 "9:16": {
-                    "cx": 0.68,
-                    "cy": 0.385,
-                    "zoom": 1.3
+                    "cx": 0.729167,
+                    "cy": 0.444444,
+                    "zoom": 1.125
                 },
                 "1:1": {
-                    "cx": 0.68,
-                    "cy": 0.335,
-                    "zoom": 1.5
+                    "cx": 0.729167,
+                    "cy": 0.25,
+                    "zoom": 2
                 }
             },
             "lines": [
@@ -99,7 +99,16 @@
                 "9:16": true,
                 "1:1": true
             },
-            "dialogue": true
+            "dialogue": true,
+            "masks": [
+                {
+                    "x": 0,
+                    "y": 850,
+                    "w": 1920,
+                    "h": 230,
+                    "color": "#14161c"
+                }
+            ]
         },
         {
             "preset": "ca-open",
@@ -110,7 +119,7 @@
             "ca": {
                 "title": "Fake downloads and checks",
                 "company": "Quayholt Insurance",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "duration": 5.1
         },
@@ -140,23 +149,23 @@
             "seat": {
                 "seat": "defend",
                 "chip": "MORNING OF WEB PAGES",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
-                    "cx": 0.5,
-                    "cy": 0.27,
-                    "zoom": 2.0
+                    "cx": 0.416667,
+                    "cy": 0.305556,
+                    "zoom": 2
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.47,
-                    "zoom": 0.6
+                    "cy": 0.5,
+                    "zoom": 0.5625
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.47,
-                    "zoom": 1.0
+                    "cy": 0.5,
+                    "zoom": 1
                 }
             }
         },
@@ -207,23 +216,23 @@
             "seat": {
                 "seat": "attack",
                 "chip": "OPEN-SOURCE RESEARCH",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
-                    "cx": 0.48,
-                    "cy": 0.5,
-                    "zoom": 1.2
+                    "cx": 0.5,
+                    "cy": 0.416667,
+                    "zoom": 2
                 },
                 "9:16": {
-                    "cx": 0.48,
+                    "cx": 0.5,
                     "cy": 0.5,
-                    "zoom": 0.57
+                    "zoom": 0.5625
                 },
                 "1:1": {
-                    "cx": 0.48,
+                    "cx": 0.5,
                     "cy": 0.5,
-                    "zoom": 1.0
+                    "zoom": 1
                 }
             }
         },
@@ -253,23 +262,23 @@
             "seat": {
                 "seat": "attack",
                 "chip": "FAKE-CHECK BUILDER",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
                     "cx": 0.5,
-                    "cy": 0.48,
-                    "zoom": 1.1
+                    "cy": 0.462963,
+                    "zoom": 2
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.5,
-                    "zoom": 1.0
+                    "cy": 0.444444,
+                    "zoom": 1.125
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.435,
-                    "zoom": 1.25
+                    "cy": 0.462963,
+                    "zoom": 2
                 }
             }
         },
@@ -299,23 +308,23 @@
             "seat": {
                 "seat": "attack",
                 "chip": "THE SEND",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
                     "cx": 0.5,
-                    "cy": 0.48,
-                    "zoom": 1.1
+                    "cy": 0.25,
+                    "zoom": 2
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.5,
-                    "zoom": 1.0
+                    "cy": 0.444444,
+                    "zoom": 1.125
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.435,
-                    "zoom": 1.25
+                    "cy": 0.25,
+                    "zoom": 2
                 }
             }
         },
@@ -345,23 +354,23 @@
             "seat": {
                 "seat": "defend",
                 "chip": "YOUR TURN",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
                     "cx": 0.5,
-                    "cy": 0.47,
-                    "zoom": 2.0
+                    "cy": 0.5,
+                    "zoom": 2
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.47,
-                    "zoom": 0.75
+                    "cy": 0.5,
+                    "zoom": 0.5625
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.47,
-                    "zoom": 1.3
+                    "cy": 0.5,
+                    "zoom": 1
                 }
             }
         },
@@ -393,23 +402,23 @@
             "seat": {
                 "seat": "defend",
                 "chip": "YOUR TURN",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
-                    "cx": 0.64,
-                    "cy": 0.335,
-                    "zoom": 1.5
+                    "cx": 0.729167,
+                    "cy": 0.25,
+                    "zoom": 2
                 },
                 "9:16": {
-                    "cx": 0.72,
-                    "cy": 0.385,
-                    "zoom": 1.3
+                    "cx": 0.729167,
+                    "cy": 0.444444,
+                    "zoom": 1.125
                 },
                 "1:1": {
-                    "cx": 0.7,
-                    "cy": 0.335,
-                    "zoom": 1.5
+                    "cx": 0.729167,
+                    "cy": 0.25,
+                    "zoom": 2
                 }
             },
             "lines": [
@@ -437,7 +446,16 @@
                 "9:16": true,
                 "1:1": true
             },
-            "dialogue": true
+            "dialogue": true,
+            "masks": [
+                {
+                    "x": 0,
+                    "y": 850,
+                    "w": 1920,
+                    "h": 230,
+                    "color": "#14161c"
+                }
+            ]
         },
         {
             "id": "blue_card",
@@ -486,23 +504,23 @@
             "seat": {
                 "seat": "defend",
                 "chip": "MORNING OF WEB PAGES",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
                     "cx": 0.5,
-                    "cy": 0.27,
-                    "zoom": 2.0
+                    "cy": 0.5,
+                    "zoom": 1
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.47,
-                    "zoom": 0.72
+                    "cy": 0.5,
+                    "zoom": 0.5625
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.47,
-                    "zoom": 1.15
+                    "cy": 0.5,
+                    "zoom": 1
                 }
             }
         },
@@ -532,39 +550,23 @@
             "seat": {
                 "seat": "full",
                 "chip": "THE TRAINING ROOM",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
-                    "cx": 0.46,
-                    "cy": 0.5,
-                    "zoom": 1.5
+                    "cx": 0.5625,
+                    "cy": 0.555556,
+                    "zoom": 2
                 },
                 "9:16": {
-                    "cx": 0.64,
-                    "cy": 0.5,
-                    "zoom": 1.15
+                    "cx": 0.458333,
+                    "cy": 0.555556,
+                    "zoom": 1.125
                 },
                 "1:1": {
-                    "cx": 0.59,
-                    "cy": 0.5,
-                    "zoom": 1.1
-                }
-            },
-            "pushin": {
-                "start": 0,
-                "end": 1,
-                "from_zoom": 1,
-                "to_zoom": 1,
-                "focus_by_aspect": {
-                    "9:16": {
-                        "x": 0.46,
-                        "y": 0.5
-                    },
-                    "1:1": {
-                        "x": 0.335,
-                        "y": 0.5
-                    }
+                    "cx": 0.458333,
+                    "cy": 0.546296,
+                    "zoom": 2
                 }
             }
         },
@@ -594,23 +596,23 @@
             "seat": {
                 "seat": "full",
                 "chip": "THE TRAINING ROOM",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
                     "cx": 0.5,
-                    "cy": 0.52,
-                    "zoom": 2.0
+                    "cy": 0.5,
+                    "zoom": 2
                 },
                 "9:16": {
                     "cx": 0.5,
                     "cy": 0.5,
-                    "zoom": 0.77
+                    "zoom": 0.5625
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.52,
-                    "zoom": 1.3
+                    "cy": 0.5,
+                    "zoom": 1
                 }
             }
         },
@@ -642,23 +644,23 @@
             "seat": {
                 "seat": "full",
                 "chip": "THE TRAINING ROOM",
-                "stripe": "#3b5b8c"
+                "stripe": "#6b4c9a"
             },
             "framing": {
                 "16:9": {
-                    "cx": 0.38,
-                    "cy": 0.5,
-                    "zoom": 1.9
+                    "cx": 0.307292,
+                    "cy": 0.546296,
+                    "zoom": 2
                 },
                 "9:16": {
-                    "cx": 0.305,
-                    "cy": 0.5,
-                    "zoom": 1.0
+                    "cx": 0.307292,
+                    "cy": 0.518519,
+                    "zoom": 1.125
                 },
                 "1:1": {
-                    "cx": 0.32,
-                    "cy": 0.5,
-                    "zoom": 1.5
+                    "cx": 0.307292,
+                    "cy": 0.518519,
+                    "zoom": 2
                 }
             },
             "lines": [

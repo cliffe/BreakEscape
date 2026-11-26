@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Side-door gate",
+  "description": "Throwaway engine test for E1: a gate on an east-west door with a live window (activeIf). Two switches change the window. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 3,
+  "test_type": "gate_doors",
+  "test_objective": "Verify a gate on a side door: both sprites join, openFor NPC opens it, a barred player stays out inside the window, outside it the gate is inert and his click opens it from either side"
+}

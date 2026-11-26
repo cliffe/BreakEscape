@@ -30,7 +30,7 @@
   "_conceptPanel": {
     "_use": "11 section 3.2 asks for one short concept panel on macros in the debrief, flagged as 'largely blocked now, but the lure still shows up'. strings has no slot for it, so the draft sits here until the debrief view gains one (see the report). The wording avoids dates and versions on purpose: 11's 'Claims to verify' still has the Microsoft rollout to check before any detail goes in learner copy.",
     "_verify": "Re-check the claim against Microsoft Learn ('Macros from the internet are blocked by default in Office') before release; keep the copy this general unless the dates are confirmed.",
-    "text": "Why 'enable content' matters. Office documents can carry macros, small programs that run inside the file. Many organisations now block macros in files that arrive from the internet, so this trick works less often than it used to. The lure still turns up, though, because it only has to work once. Reading a CV in the viewer is always enough; a real CV never needs you to switch anything on."
+    "text": "Why a CV that wants a second step matters. Office documents can carry macros, small programs that run inside the file. Since mid-2022, Office blocks macros in files that come from the internet or email by default, so a booby-trapped CV on its own is stopped behind a red security bar. Attackers now need you to take one more step for them: switch content on, unpack a zip with a password from the email, or follow a 'view my CV' link and sign in. A real CV just opens, in the viewer or in Protected View, Word's read-only mode for files from email, and never needs any of that."
   },
   "_formPairing": {
     "_use": "Item n in hr_form_a matches item n in hr_form_b on phish or genuine, flags, header results and difficulty. Per form: 10 emails (4 phish, 6 genuine); flags enable_content_prompt 1, addressedTo 1, senderTrust 2, secrecy_or_bypass 1, urgencyCalibrated 1, lookalike_domain 2, attachmentPlausible 1 (9 in all). After C2-M6 and C2-m15 neither form scores a header-only tell: the old senderAuth+reply_to_differs spoof row (row 6) is now a visible sender look-alike (senderTrust+lookalike_domain), and both row-8 phish are link look-alikes. Each form's enable-content lure (row 2) is followed by a genuine Word document that asks for nothing (row 3), so both forms teach the same contrast. No message (sender address and subject) appears in both forms or in e2_recruitment_inbox.",
@@ -51,16 +51,16 @@
     {
       "id": "e2_recruitment_inbox",
       "_prefix": "Prefix for the full episode (id e2_cv_lures). The defend-only shell (id e2_cv_lures_defend) sets episode_e2_cv_lures_defend_defend_ instead, as E1 and E5 do. No stage on purpose, as in E1.",
-      "_order": "Each phish is followed by the genuine message it imitates (11 section 4.3): the look-alike link (row 2) by a real CV that is actually attached (row 3), and the enable-content lure (row 4) by a real Word CV that asks for nothing (row 5).",
+      "_order": "Each phish is followed by the genuine message it imitates (11 section 4.3): the look-alike link (row 2) by a real CV that is actually attached (row 3), and the enable-content lure (row 4) by a real Word CV that asks for nothing (row 5). Row 6 is the second-step lure in another wrapper (a password zip, ca02 lesson option A, 25 Nov 2026), and Colin's genuine note closes the set.",
       "title": "Tarrowby recruitment inbox",
-      "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Six messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Seven messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": false,
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
       "channelTells": ["lookalike_domain", "enable_content_prompt"],
-      "flagChips": { "enable_content_prompt": "It asks me to turn on editing or content to see it" },
+      "flagChips": { "enable_content_prompt": "It wants a second step before I can see it" },
       "outcome": { "setGlobalPrefix": "episode_e2_cv_lures_defend_", "passPercent": 0 },
       "messages": [
         {
@@ -140,20 +140,20 @@
           "subject": "Job application",
           "time": "10:10",
           "body": "Dear Hiring Manager,\nPlease find my CV attached for the vacancy.\nFor my privacy the document is protected. When it opens, click Enable Editing and then Enable Content at the top of the page, and the CV will appear.\nRegards,\nJordan Kerr",
-          "attachments": [ { "id": "cv", "label": "CV_JKerr_protected.docx", "kind": "document" } ],
+          "attachments": [ { "id": "cv", "label": "CV_JKerr_protected.doc", "kind": "document" } ],
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "jordan.kerr.cv@hastypost.example" },
-          "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
+          "factorStrings": { "enable_content_prompt": { "redFlag": "The CV stays blank until you switch content on, and the email tells you how" } },
           "truth": {
             "isPhish": true,
             "flags": ["enable_content_prompt", "addressedTo"],
             "perFlagNote": {
-              "enable_content_prompt": "A real CV shows up as soon as you open it. 'Click Enable Editing and then Enable Content' is the step the file needs you to take before it can run anything",
+              "enable_content_prompt": "A real CV shows up as soon as you open it. This one stays blank until you switch content on, and the email tells you how: that switch is the step the file needs before it can run anything",
               "addressedTo": "'Dear Hiring Manager' and 'the vacancy', with no name and no job: it could have gone to any company with any job open"
             },
             "ifTrusted": "Switching on content would let the document run a small program on your computer, which could give whoever sent it a way into Tarrowby's network.",
             "reportReply": "Thanks. That file was set up to run a hidden program once content was switched on. We've blocked the sender and checked nobody else opened it.",
             "whyFine": {
-              "attachmentPlausible": "A Word document is a normal way to send a CV, so the file itself fits. What doesn't fit is being told to enable editing and content before it will show: a real CV never needs that."
+              "attachmentPlausible": "A Word document is a normal way to send a CV, so the file itself fits. What doesn't fit is a CV that stays blank until you switch something on: a real CV never needs that."
             }
           }
         },
@@ -171,10 +171,36 @@
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
+              "enable_content_prompt": "It's a Word file, which is normal for a CV. It opens read-only in Protected View, often with a yellow Enable Editing bar, and you can read the whole CV without pressing it. Nothing asks for a second step.",
               "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
               "senderTrust": "Candidates apply from their personal email, so an mailgrove.example address is normal here.",
               "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
+            }
+          }
+        },
+        {
+          "id": "e2_cv_password_zip",
+          "_note": "Option A's second wrapper: the same 'one more step before the CV shows' tell as row 4, here a password zip from a candidate who names Fatima and the role, so the greeting gives nothing away.",
+          "from": { "name": "Ana Moraru", "address": "ana.moraru@mailgrove.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Night supervisor role: my application",
+          "time": "11:05",
+          "body": "Dear Fatima,\nI saw your post about the night supervisor role, and I'd like to apply. I've run the night shift at a parcel hub for the last three years.\nMy CV has my home address and references in it, so I've put it in a password-protected zip to keep it private. The password is Nights2026.\nMany thanks,\nAna Moraru",
+          "attachments": [ { "id": "cv", "label": "Ana_Moraru_CV.zip", "kind": "archive" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "ana.moraru@mailgrove.example" },
+          "factorStrings": { "enable_content_prompt": { "redFlag": "The CV is locked in a zip, with the password in the email, so you have to unpack it yourself" } },
+          "truth": {
+            "isPhish": true,
+            "flags": ["enable_content_prompt"],
+            "perFlagNote": {
+              "enable_content_prompt": "A real CV just opens. A password sent in the same email protects nothing: it stops the mail filter looking inside the zip, and leaves you to unpack whatever is in there"
+            },
+            "ifTrusted": "Unpacking the zip hands you a file the mail filter never got to check. Open it and it runs a program on your computer, which could give whoever sent it a way into Tarrowby's network and the candidate records.",
+            "reportReply": "Thanks. The zip held a shortcut that runs a program, not a CV. The password was there to stop our mail filter looking inside. We've blocked the sender and checked nobody else opened it.",
+            "whyFine": {
+              "addressedTo": "It names Fatima and the night supervisor role, so it reads like a real applicant. The tell is the zip and its password, not the greeting.",
+              "senderTrust": "Candidates apply from their personal email, so a mailgrove.example address is normal here.",
+              "pretextRelevant": "A CV for a role Tarrowby really advertised is exactly what this inbox expects."
             }
           }
         },
@@ -612,12 +638,12 @@
       "flipMissedHeading": "Nothing to replay this time",
       "flipLandedNoTells": "It opened like any real application, with nothing off to pick up on. Next, the same kind of message lands in a recruitment inbox, and you're the one opening it.",
       "noBlameLine": "Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here points to a busy inbox, and to where to look next time.",
-      "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd using the route in the box below.",
+      "mondayCard": "On Monday: read CVs in the viewer. A real CV never needs macros or Enable Content, so if one asks for that, or for any second step before it will show, don't take it: ask for a plain copy and report it. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd using the route in the box below.",
       "defendOnly": "These were built by people who know exactly what a real application looks like, and opening a CV is a recruiter's job, not a lapse. Any you were caught out by are shown below, with what gave each one away.",
       "conceptPanel": [
         {
-          "heading": "Why 'enable content' matters",
-          "text": "Office documents can carry macros, small programs that run inside the file. Many organisations now block macros in files that arrive from the internet, so this trick works less often than it used to. The lure still turns up, though, because it only has to work once. Reading a CV in the viewer is always enough; a real CV never needs you to switch anything on."
+          "heading": "Why a CV that wants a second step matters",
+          "text": "Office documents can carry macros, small programs that run inside the file. Since mid-2022, Office blocks macros in files that come from the internet or email by default, so a booby-trapped CV on its own is stopped behind a red security bar. Attackers now need you to take one more step for them: switch content on, unpack a zip with a password from the email, or follow a 'view my CV' link and sign in. A real CV just opens, in the viewer or in Protected View, Word's read-only mode for files from email, and never needs any of that."
         },
         {
           "heading": "If one gets opened",
@@ -627,7 +653,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e2_cv_lures_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're covering the recruitment inbox this morning, and six messages are waiting. Some are real applications and some were built to trick you. Sort them, and report anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're covering the recruitment inbox this morning, and seven messages are waiting. Some are real applications and some were built to trick you. Sort them, and report anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: the Tarrowby recruitment inbox."
     }
   }

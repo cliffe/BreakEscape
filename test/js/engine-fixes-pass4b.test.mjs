@@ -74,7 +74,7 @@ test('door interaction goes through the repeat guard before reaching handleUnloc
     const src = readFileSync(join(js, 'systems/doors.js'), 'utf8');
     const fn = src.slice(src.indexOf('async function handleDoorInteraction('), src.indexOf('function unlockDoor('));
     assert.ok(fn.indexOf('isRepeatInteraction(doorSprite)') > 0);
-    assert.ok(fn.indexOf('isRepeatInteraction(doorSprite)') < fn.indexOf("handleUnlock(doorSprite, 'door')"));
+    assert.ok(fn.indexOf('isRepeatInteraction(doorSprite)') < fn.indexOf("handleUnlock(doorSprite, 'door',"));
 });
 
 test('" -- " shows as a spaced en dash; hyphens, flags and "---" are left alone', () => {

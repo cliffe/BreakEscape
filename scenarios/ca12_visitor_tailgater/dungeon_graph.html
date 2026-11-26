@@ -171,7 +171,7 @@
   node_start(("▶"))
   node_start --> training_room
 
-  door_training_room["Studio<br/>Key lock"]
+  door_training_room["Studio<br/>Key lock<br/>gate: live while ca12_world_on && !ca12_world_done<br/>gated: server pass"]
   training_room("Studio")
   grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
   grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
@@ -226,7 +226,7 @@
   node_start(("▶"))
   node_start --> training_room
 
-  door_training_room["Studio<br/>Key lock"]
+  door_training_room["Studio<br/>Key lock<br/>gate: live while ca12_world_on && !ca12_world_done<br/>gated: server pass"]
   training_room("Studio")
   grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
   grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
@@ -262,7 +262,7 @@
   node_start(("▶"))
   node_start --> training_room
 
-  training_room["Studio<br/>(locked)"]
+  training_room["Studio<br/>(locked)<br/>gate: live while ca12_world_on && !ca12_world_done"]
   lobby("Reception")
 
   training_room --> lobby

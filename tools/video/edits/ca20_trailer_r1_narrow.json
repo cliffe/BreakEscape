@@ -1,0 +1,977 @@
+{
+ "mission": "ca20",
+ "id": "ca20_trailer_r1_narrow",
+ "theme": "ca",
+ "title": "Cyber Aware ca20 trailer, round 1 (narrow takes t02n, t03n; t01, t03, t05, t06, t07 wide; render 9:16 and 1:1 from this file)",
+ "script": {
+  "heading": "ca20 trailer script (Working away from the office)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca20_trailer_script.md, docs/video/takes_ca20.md and tmp/handover/ca0/HANDOVER_edit_ca20.md. Sulafat_v2 VO. DEFAULTS the owner can change: (1) music PeaceFolk Gently Decaying Again from 35.541 s (bar-aligned, 29.5 s from the 6.069 start and 28.8 s from 64.356; no gap over 0.3 s below -45 dB in the window; the plan start 119.37 was only 17 s from ca14 at 102.341); (2) integer scale; (3) hook cut at the comma, in 20.70 / out 24.60 (speech 20.95-24.25, \"a bag\" from 24.80), bar masked; (4) the static montage page is shown as a z1 page then three z2 crops (reuse of the same hold, different regions); (5) wide t05 inbox in every aspect (t05n card pane broken); (6) tablet text in beat 3 and the cafe page text left unmasked. Chips: THE TRAINING ROOM, TARROWBY BRIEF, YOUR CALLS, YOUR TURN, ON THE ROAD."
+ },
+ "fps": 30,
+ "length": 70.3,
+ "music": {
+  "track": "PeaceFolk/Gently Decaying Again.mp3",
+  "analysis": "gently_decaying_again_75.json",
+  "start": 35.541,
+  "length": 70.3,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Gently Decaying Again.mp3 @25.061"
+  ]
+ },
+ "beat": {
+  "bpm": 91.62,
+  "period": 0.6549,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "seat_labels": {
+  "attack": "YOUR CALLS",
+  "defend": "DEFENDER"
+ },
+ "shots": [
+  {
+   "type": "gameplay",
+   "id": "hook",
+   "duration": 3.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_zainab_hook.trimmed.mkv",
+    "in": 20.7,
+    "out": 24.6
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t01 hook: line 3 speech onset 20.95 (20.60 and 20.70 still show line 2 text; 0.25 s of digital quiet before), \"hears,\" ends 24.25 with decay to 24.55, gap to 24.80, \"a bag\" starts 24.80; in 20.70, out 24.60 is 0.20 s before \"a\"; bar (name box, text, Skip) masked y 890-1080, caption burned from lines[] | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.695833,
+     "cy": 0.444444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.680208,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "start": 0.25,
+     "end": 3.6,
+     "speaker": "Zainab",
+     "text": "A screen someone reads,\na call someone hears..."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "masks": [
+    {
+     "x": 0,
+     "y": 890,
+     "w": 1920,
+     "h": 190,
+     "color": "#000000"
+    }
+   ]
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Working away from the office",
+    "company": "Tarrowby Logistics",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.4
+  },
+  {
+   "type": "gameplay",
+   "id": "topic",
+   "duration": 5.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02n_brief.trimmed.mkv",
+    "in": 4.3,
+    "out": 9.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Brief panel static (hold to 11.9), paragraph hidden; 16:9 and 1:1 z2 windows end above the dashed scope box (16:9 window y 46-586 vs box y 592; 1:1 on t02n y 80-620 vs box about 620); 9:16 z1.125 on t02n shows the scope box and Start (accepted, authorisation note), bezel 560 trims 10 px each side | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.20 s"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "TARROWBY BRIEF",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.292593,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.324074,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "Make the everyday calls"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack-side chapter card, title only | CA: spoilers not an issue (owner)"
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "pick_train",
+   "duration": 3.2,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 5.73,
+    "out": 8.93
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "beat 1 of 5, unsafe option picked at shot 1.0 s; next card shows later; dark choice panel 714 wide: 16:9 z2 window y 270-810 vs panel (beat 1 y 254-826 trims 16 px of border, no text lost); 9:16 z0.5625 and 1:1 z1 show it whole | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "pick_call",
+   "duration": 3.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 10.76,
+    "out": 13.96
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "beat 2 of 5, unsafe option picked at shot 1.0 s; next card shows later; dark choice panel 714 wide: 16:9 z2 window y 270-810 vs panel (beat 1 y 254-826 trims 16 px of border, no text lost); 9:16 z0.5625 and 1:1 z1 show it whole | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "pick_laptop",
+   "duration": 3.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 15.87,
+    "out": 19.27
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "beat 3 of 5, unsafe option picked at shot 1.0 s; next card shows later; dark choice panel 714 wide: 16:9 z2 window y 270-810 vs panel (beat 1 y 254-826 trims 16 px of border, no text lost); 9:16 z0.5625 and 1:1 z1 show it whole; safe option reads \"Thank them, and take the laptop and tablet with you\" (accepted, seeds Chidi's tablet line) | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "led_page",
+   "duration": 3.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03n_choices_reveal.trimmed.mkv",
+    "in": 25.47,
+    "out": 29.07
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "montage page whole, static from 25.0 (reveal 24.055); three cards, no headline card, no tablet card, no Your call tags; narrow t03n panel 554 wide, cards x 708-1212 (504) at y 345-519, 531-705, 717-891, Continue 918-962; 9:16 z0.5625 with bars (panel over 540 px) | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "voPos": {
+    "1:1": "top"
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "led_train",
+   "duration": 3.7,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03n_choices_reveal.trimmed.mkv",
+    "in": 25.77,
+    "out": 29.47
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "same static page, reuse of source span in the same hold (nothing moves); 16:9 z2 window y 154-694 (heading, cards 1 and 2); 9:16 z1.125 window y 60-1020 (whole stack); 1:1 z2 window y 162-702 (card 1 centred) | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.392593,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 2
+    }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "led_call",
+   "duration": 3.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03n_choices_reveal.trimmed.mkv",
+    "in": 26.07,
+    "out": 29.47
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "same static page; 16:9 z2 window y 316-856 (all three cards); 1:1 z2 window y 348-888 (card 2 centred) | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.542593,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.572222,
+     "zoom": 2
+    }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "led_laptop",
+   "duration": 3.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03n_choices_reveal.trimmed.mkv",
+    "in": 26.47,
+    "out": 30.07
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "same static page; 16:9 z2 window y 478-1018 (cards 2 and 3, Continue); 1:1 z2 window y 534-1074 (card 3 and Continue); both sentences of the laptop card readable | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.692593,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.744444,
+     "zoom": 2
+    }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "flip",
+   "duration": 2,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t03n_choices_reveal.trimmed.mkv",
+    "in": 31.74,
+    "out": 33.74
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend panel (heading Defend, strip ticks 1 to 3, tab 4, Open the pages), paragraph hidden; panel up from 31.033; z2 window shows it whole; 560 bezel trims 10 px each side at z1.125 and z2 | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.54 s"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 3.3,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "Sort the networks and pages"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend-side chapter card, title only | CA: spoilers not an issue (owner)"
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "list",
+   "duration": 4.4,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t05_inbox_list.trimmed.mkv",
+    "in": 5.4,
+    "out": 9.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "wide t05 used in all aspects (t05n card pane broken); six-row list, subjects truncated, empty right pane; out is 0.69 s before the row click (10.487); 9:16 window x 500-1040 y 20-980; 1:1 x 500-1040 y 20-560 | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "ON THE ROAD",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.268519,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.401042,
+     "cy": 0.462963,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.401042,
+     "cy": 0.268519,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "card",
+   "duration": 3.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_inbox_list.trimmed.mkv",
+    "in": 11,
+    "out": 14.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "opened cafe page card (Padlock, URL, Certificate, I accept the terms, Connect) x 836-1358 y 120-397; card static to 15.26; text accepted, no tell; 9:16 window x 826-1366 y 20-980; 1:1 x 826-1366 y 100-640 | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "ON THE ROAD",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.268519,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.570833,
+     "cy": 0.462963,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.570833,
+     "cy": 0.342593,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "room",
+   "duration": 3.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_room.trimmed.mkv",
+    "in": 13.87,
+    "out": 17.67
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t06 silent room, in = walk_start 14.375 - 0.5, out = +3.8; Chidi walks from the table to the drinks machine; frames at 13.87, 14.87, 15.87, 16.87, 17.67 checked in all three windows: 16:9 x 386-1346 y 330-870 (4 px black at right edge), 9:16 x 660-1200 y 0-960 (player, hooded Zainab and kiosk top right, 56 px black foot), 1:1 x 650-1190 y 330-870 (kiosk base at top edge, no player) | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.451042,
+     "cy": 0.555556,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.484375,
+     "cy": 0.444444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.479167,
+     "cy": 0.555556,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "type": "gameplay",
+   "id": "chidi_end",
+   "duration": 5.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_chidi_end.trimmed.mkv",
+    "in": 1.1,
+    "out": 6.6
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t07: opening click 0.68-0.91 before in 1.10, line 1.435-3.151 and 3.552-6.373, silent from 6.406; bar masked y 890-1080, caption burned from lines[] | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.695833,
+     "cy": 0.444444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.680208,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "start": 0.335,
+     "end": 2.05,
+     "speaker": "Chidi",
+     "text": "Half my week's out of the van."
+    },
+    {
+     "start": 2.45,
+     "end": 5.27,
+     "speaker": "Chidi",
+     "text": "You forget what's sat on that\ntablet if you leave it somewhere."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "masks": [
+    {
+     "x": 0,
+     "y": 890,
+     "w": 1920,
+     "h": 190,
+     "color": "#000000"
+    }
+   ]
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Working away from the office",
+    "tagline": "Make the calls · See where they lead",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.1,
+   "end": 8.804,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 9.5,
+   "end": 11.3,
+   "text": "Two days on the road.",
+   "caption": "Two days on the road.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 11.7,
+   "end": 14.7,
+   "text": "This episode: working away from the office.",
+   "caption": "This episode: working away\nfrom the office.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 15.1,
+   "end": 17.716,
+   "text": "First, make the everyday calls.",
+   "caption": "First, make\nthe everyday calls.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 18.2,
+   "end": 20.12,
+   "text": "On the train, a client list.",
+   "caption": "On the train,\na client list.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 21.4,
+   "end": 23.512,
+   "text": "At the café, a client rings.",
+   "caption": "At the café,\na client rings.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v4b",
+   "start": 24.6,
+   "end": 27.336,
+   "text": "A stranger offers to watch your laptop.",
+   "caption": "A stranger offers to watch\nyour laptop.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v4b.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 28,
+   "end": 30.928,
+   "text": "Later that day, see where each one led.",
+   "caption": "Later that day, see\nwhere each one led.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v5b",
+   "start": 31.6,
+   "end": 34.792,
+   "text": "The student behind read three clients' names.",
+   "caption": "The student behind read\nthree clients' names.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v5b.mp3"
+  },
+  {
+   "id": "v5c",
+   "start": 35.3,
+   "end": 38.204,
+   "text": "Everyone in the queue heard the alarm code.",
+   "caption": "Everyone in the queue heard\nthe alarm code.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v5c.mp3"
+  },
+  {
+   "id": "v5d",
+   "start": 38.7,
+   "end": 41.58,
+   "text": "The next table could read your open inbox.",
+   "caption": "The next table could read\nyour open inbox.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v5d.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 42.2,
+   "end": 43.328,
+   "text": "Now it's your turn.",
+   "caption": "Now it's your turn.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v7",
+   "start": 44.2,
+   "end": 47.104,
+   "text": "Sort the networks and pages.",
+   "caption": "Sort the networks\nand pages.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v7.mp3"
+  },
+  {
+   "id": "v8",
+   "start": 47.5,
+   "end": 51.484,
+   "text": "Wi-Fi lists, sign-in pages and device notices.",
+   "caption": "Wi-Fi lists, sign-in pages\nand device notices.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v8.mp3"
+  },
+  {
+   "id": "v9",
+   "start": 51.9,
+   "end": 55.044,
+   "text": "A café's Wi-Fi page. Is it real?",
+   "caption": "A café's Wi-Fi page.\nIs it real?",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v9.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 55.7,
+   "end": 57.86,
+   "text": "At the depot, Chidi stops by.",
+   "caption": "At the depot,\nChidi stops by.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 64.9,
+   "end": 69.388,
+   "text": "Make the calls, see where they lead, on Hacktivity.co.uk.",
+   "caption": "Make the calls, see where\nthey lead, on Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca20/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}
