@@ -1,13 +1,13 @@
 {
-  "key": "f0feaeaa3b03490511bb6136c930b554",
+  "key": "54d8b2ecd82f8ab31ffd934848c115be",
   "npc": "delphine_reception",
-  "text": "Right, a parcel for upstairs. Let me see who's expecting it.",
+  "text": "Go on then, I'll buzz you through. Studio's through the side door on your left.",
   "voice": "Despina",
   "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
   "language": "en-GB",
   "model": "gemini-3.8-flash-tts",
   "scenario": "ca12_visitor_tailgater",
   "source": "generate",
-  "generated": "2026-11-01",
-  "recorded_at": "2026-11-01T06:20:32Z"
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T00:38:46Z"
 }
