@@ -1,7 +1,7 @@
 {
-  "key": "319c32a48f318600f2712eccbfe9fb75",
+  "key": "bbc63e949a8428d63ebf8ebd571f3ea0",
   "npc": "ama_owusu",
-  "text": "This Terminal imitates two tools. A scanner lists what machines run and their likely weaknesses; a console is where testers look weaknesses up. Every name is invented. Zainab's token is a sign-in with no password, and it stops working six minutes from now.",
+  "text": "This Terminal imitates two tools. A scanner lists what machines run and their likely weaknesses; a console is where testers look weaknesses up. The tool names are real; the machines, products and results are made up. Zainab's token is a sign-in with no password, and it stops working six minutes from now.",
   "voice": "Autonoe",
   "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "demo_ops_terminal",
   "source": "generate",
   "generated": "2026-11-26",
-  "recorded_at": "2026-11-26T08:59:07Z"
+  "recorded_at": "2026-11-26T10:40:22Z"
 }
