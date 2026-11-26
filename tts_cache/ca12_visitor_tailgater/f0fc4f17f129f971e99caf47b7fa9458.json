@@ -1,7 +1,7 @@
 {
-  "key": "54d8b2ecd82f8ab31ffd934848c115be",
+  "key": "f0fc4f17f129f971e99caf47b7fa9458",
   "npc": "delphine_reception",
-  "text": "Go on then, I'll buzz you through. Studio's through the side door on your left.",
+  "text": "Go on then. Studio's through the side door on your left.",
   "voice": "Despina",
   "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca12_visitor_tailgater",
   "source": "generate",
   "generated": "2026-11-26",
-  "recorded_at": "2026-11-26T00:38:46Z"
+  "recorded_at": "2026-11-26T01:32:11Z"
 }
