@@ -355,3 +355,11 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - Walk-in case f agent still running.
 - 23:40: reframe landed (ea6fcd4db; ending_wide fix 2b53823b6). Walk-in case f fixed (0e95ea0b1, tests 3dc1fb798, handover ee57c2349; a–f pass, c r2 fade is the whole-room-in-view case on the owner form). m10 A/B re-run at the final commit is running (Sonnet, walkproof7). Then: merge main into fix/npc-walk-live, train-check when CA0 frees the machine, GREEN hash to AC0.
 - 23:55: m10 A/B PASS x2 at ee57c2349 (walkproof7; m10 setup needs --unlock gallery --set gallery_open=true). main not moved. Waiting for CA0's B5 to end, then train-check on ee57c2349, then the m09 v3 render.
+
+## State 26 Nov, ~01:00
+
+- Walk-in fix DONE: final hash d8ff8d580 (fix/npc-walk-live) sent to AC0 for T413. Train-check green apart from ops-unchanged golden; AC0 ruled to re-record m02 and ca12 (pop-check INFO lines only). CA0 told.
+- m09 v3 rendered (60.000 s, -14.0 LUFS, TP -1.49, all three aspects) and encoded to $S/review_b/m09_trailer60_v3_*_review.mp4. Contact sheets checked: integer scales, Noor new take, ending_wide bar hidden in 16:9. NEXT: upload the 3 review copies as assets to page B (https://claude.ai/artifact/8UFHWa6tf6XjfAZVw6aarv), add an m09v3 tab (doc feedback/m09_trailer_v3), republish. Questions for v3: Noor's visemes OK now?; the 9:16 password screen is tiny at 1x (panel 640 px > the 540 px 2x window): keep 1x, or allow 1.5x for UI panels?; whole-number reframe overall (chats zoomed out, 16:9 subtitle bar visible on hook/noor/jesse); verdict.
+- m01 v15 export committed in hacktivity-videos (b155e49, 312afe9); push is with the owner (no credentials here).
+- Machine: VID2 has it now (one 16:9 render), then CA0 (walk-in captures). Ask before any render.
+- Then: m10 t16 gallery-guard re-take after T413 lands (setup needs --unlock gallery --set gallery_open=true to stop the HaX gallery call); Tesseract after the owner's pick; m10 v3 render.
