@@ -3114,7 +3114,7 @@
       "graphHtmlHash": "de1b3c6adbe190aac506506872cbcbea14e5779b2fcf5b11f28adbab5e5484b1"
     },
     "ca12_visitor_tailgater": {
-      "sourceHash": "9844c4d9e2c9ee17baec7b8ca601326a9b87f45937e163f5438594df3f02431d",
+      "sourceHash": "44d97373a52b00f242074726fe3660576ebf9802ed7785b94c84ba654ab0e336",
       "validatorExit": 0,
       "validator": [
         "Validating scenario: <scenarios>/ca12_visitor_tailgater/scenario.json.erb",
