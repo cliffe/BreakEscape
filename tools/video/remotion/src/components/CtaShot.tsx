@@ -2,6 +2,7 @@ import React from 'react';
 import { ClipBg } from './ClipBg';
 import { HexRain } from './HexRain';
 import { GlitchFX } from './GlitchFX';
+import { curtainFronts, frontsClipPolygon, polygonCss } from '../curtain.js';
 import { PIXEL_FONT } from '../fonts';
 import { LogoMorph, logoHeight } from './EndLogos';
 import { staticFile } from 'remotion';
@@ -39,22 +40,24 @@ export const CtaShot: React.FC<{ shot: any; w: number; h: number; frame: number;
   const sz = (f: number) => Math.max(8, Math.round((w * f) / 8) * 8);
   const pl = L.play || { cx: 0.5, cy: 0.44, size: 0.058 }, ul = L.url || { cx: 0.5, cy: 0.58, size: 0.033 };
   // shot.cta_title = { svg?, scale: {aspect: n}, cy: {aspect: frac} }: the game's pixel title above "Play now", integer scale,
-  // crisp black outline (four 0-blur shadows), revealed as the red reaches its top (same front model as the logo), brief glitch on arrival
+  // crisp black outline (four 0-blur shadows), uncovered column by column by the falling red (clip to the curtain's per-column fronts, no glitch)
   const ct = shot.cta_title;
   let titleEl: React.ReactNode = null;
   if (ct) {
     const sc = Math.max(1, Math.round(ct.scale?.[aspect] ?? 10));
     const tw = 57 * sc, th = 25 * sc;
     const tx = Math.round((w - tw) / 2), ty = Math.round(h * (ct.cy?.[aspect] ?? 0.28) - th / 2);
-    const tHit = 0.3 + 0.65 * Math.pow(Math.max(0, ty) / (h + 56), 1 / 1.6);
-    if (frame >= start && p >= tHit) {
-      const ol = Math.max(2, Math.round(sc / 2));
+    const ol = Math.max(2, Math.round(sc / 2)), pad = ol + 2;
+    const cw = cu.cw ?? 20, ch = cu.ch ?? 28;
+    // the title lives in the curtain layer: each column shows it only above that column's front (same fronts as HexRain), so the red wave uncovers it
+    const poly = frame >= start ? frontsClipPolygon(curtainFronts(p, w, h, cw, ch, cu.seed ?? 5), cw, tx - pad, ty - pad, tw + 2 * pad, th + 2 * pad) : null;
+    if (poly) {
       const outline = `drop-shadow(${ol}px 0 0 #000) drop-shadow(-${ol}px 0 0 #000) drop-shadow(0 ${ol}px 0 #000) drop-shadow(0 -${ol}px 0 #000)`;
-      const img = <img src={staticFile(ct.svg || 'brand/safetynet_licence_to_hack.svg')} width={tw} height={th} style={{ display: 'block', imageRendering: 'pixelated' }} />;
-      const tg = Math.max(0, 1 - (p - tHit) / 0.09);
       titleEl = (
-        <div style={{ position: 'absolute', left: tx, top: ty, width: tw, height: th, filter: outline }}>
-          {tg > 0 ? <GlitchFX id="cta-title" w={tw} h={th} params={{ seed: frame * 5 + 3, k: tg, maxShift: Math.round(tw * 0.08), split: Math.max(2, sc), thick: 0.12, hide: tg * 0.3 }}>{img}</GlitchFX> : img}
+        <div style={{ position: 'absolute', left: tx - pad, top: ty - pad, width: tw + 2 * pad, height: th + 2 * pad, clipPath: polygonCss(poly) }}>
+          <div style={{ position: 'absolute', left: pad, top: pad, width: tw, height: th, filter: outline }}>
+            <img src={staticFile(ct.svg || 'brand/safetynet_licence_to_hack.svg')} width={tw} height={th} style={{ display: 'block', imageRendering: 'pixelated' }} />
+          </div>
         </div>
       );
     }
