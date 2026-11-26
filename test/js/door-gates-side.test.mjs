@@ -113,7 +113,9 @@ test('an openFor NPC opens it; open/close carve and uncarve the side corridor', 
     gates.update(1500);
     gates.update(4100);                                  // past holdMs
     assert.equal(g.open, false);
-    assert.deepEqual(pm.filter(c => c[0] === 'unmark').at(-1), ['unmark', BX - 16, Y, 'east']);
+    // The doorway is unmarked at the group centre (g.x/g.y) and at each sprite (E1 R2 m1)
+    assert.deepEqual(pm.filter(c => c[0] === 'unmark')[0], ['unmark', BX - 16, Y, 'east']);
+    assert.ok(pm.filter(c => c[0] === 'unmark').length >= 1);
     assert.deepEqual(events.map(e => e[0]), ['door_gate_opened', 'door_gate_closed']);
 });
 
