@@ -88,7 +88,7 @@ Rules: at most 3.0 words per second over the cue window, UK English, no em or en
 | v2 | both | 16.65-19.05 | First, you play the attacker. | 5 | 2.08 | 2.400 s |
 | v3 | both | 21.10-23.98 | Dig into what staff post in public. | 7 | 2.43 | 2.880 s |
 | v4 | both | 24.28-26.98 | Build a cover story from what you found. | 8 | 2.96 | 2.424 s, caption held to 26.98 |
-| **v4b** | both | 27.25-30.25 | Booked and signed off. Now dress the part. | 8 | 2.67 | **voiced 26 Nov**, 3.240 s (natural 3.408 s, atempo 1.05); **overruns the 3.0 s window by 0.24 s** |
+| **v4b** | both | 27.25-30.25 | Booked. Now dress the part. | 5 | 1.67 | **voiced 26 Nov**, 2.640 s (trimmed form; the full line ran 3.408 s) |
 | v5 | both | 31.07-33.55 | Then talk your way in. | 5 | 2.02 | 1.584 s |
 | **v5b** | ca12b | 33.80-36.80 | Or skip the desk, and watch the door. | 8 | 2.67 | **voiced 26 Nov**, 2.520 s |
 | **v6b** | ca12 | 38.87-41.77 | Name a partner, and she holds the door. | 8 | 2.76 | **voiced 26 Nov**, 2.712 s |
@@ -315,7 +315,7 @@ Also needed before the new takes:
 
 | # | Speaker | Voice | Line | Where | Status |
 |---|---|---|---|---|---|
-| 1 | Narrator | Sulafat_v2 | Booked and signed off. Now dress the part. | v4b, both | new |
+| 1 | Narrator | Sulafat_v2 | Booked. Now dress the part. | v4b, both | new, trimmed form |
 | 2 | Narrator | Sulafat_v2 | Or skip the desk, and watch the door. | v5b, ca12b | new |
 | 3 | Narrator | Sulafat_v2 | Name a partner, and she holds the door. | v6b, ca12 | new |
 | 4 | Narrator | Sulafat_v2 | Now swap seats. | v7, both | new |
