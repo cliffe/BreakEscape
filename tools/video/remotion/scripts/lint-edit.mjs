@@ -105,6 +105,19 @@ tl.shots.forEach((s, i) => {
     if (!s.clip?.file || !clipFiles.has(s.clip.file)) E(id, `cta needs clip.file in tools/video/assets/clips (${s.clip?.file})`);
     if (!s.phases?.length) E(id, 'cta needs phases[]');
     else { const sum = s.phases.reduce((a, p) => a + p.duration, 0); if (Math.abs(sum - s.duration) > 1 / fps) E(id, `cta phases total ${sum} s, shot is ${s.duration} s`); }
+    // burned_line { text, from, to }: the game's name burned over the close (seconds from the shot's start)
+    if (s.burned_line != null) {
+      const b = s.burned_line;
+      if (typeof b.text !== 'string' || !b.text.trim()) E(id, 'burned_line.text must be a non-empty string');
+      else if (/break\s*escape/i.test(b.text)) E(id, 'burned_line must not name Break Escape');
+      if (typeof b.from !== 'number' || typeof b.to !== 'number' || !(b.from >= 0) || !(b.to > b.from) || b.to > s.duration + 1e-6) E(id, `burned_line from/to must satisfy 0 <= from < to <= ${s.duration}`);
+    }
+    // cta_title { svg?, scale: {aspect: integer}, cy: {aspect: fraction} }: the game's pixel title above "Play now"
+    if (s.cta_title != null) {
+      const ct = s.cta_title;
+      for (const [k, v] of Object.entries(ct.scale || {})) if (!Number.isInteger(v) || v < 1 || v > 30) E(id, `cta_title.scale.${k} must be an integer 1-30 (pixel art scales by whole multiples)`);
+      for (const [k, v] of Object.entries(ct.cy || {})) if (typeof v !== 'number' || v < 0.05 || v > 0.95) E(id, `cta_title.cy.${k} must be a fraction 0.05-0.95`);
+    }
   } else if (s.type === 'cc_open' || s.type === 'cc_close') {
     if (!cc) E(id, `${s.type} is for Critical Cases edits only (set "theme": "cc")`);
     if (!ccOf(s).case1) E(id, `${s.type} needs the case name: cc.case1 (and cc.case2) on the shot or the edit`);
@@ -325,6 +338,15 @@ if (ca && edit.kind !== 'preview') { // a catalogue preview (docs/video/CA_PREVI
   });
 }
 // Voice-over lane: edit.vo = [{ id, start, end, text, file?, onCard?, gain_db? }] in global seconds; every cue is burned as a caption and, with a file, mixed in.
+if (edit.vo_skin != null && edit.vo_skin !== 'safetynet') E('vo_skin', `vo_skin must be "safetynet" (or absent), got ${JSON.stringify(edit.vo_skin)}`);
+if (edit.vo_captions != null) {
+  const vc = edit.vo_captions;
+  if (typeof vc !== 'object' || Array.isArray(vc) || Object.entries(vc).some(([k, v]) => !['16:9', '9:16', '1:1'].includes(k) || typeof v !== 'boolean')) E('vo_captions', 'vo_captions must be {"16:9"|"9:16"|"1:1": boolean}');
+}
+if (edit.caption_top != null) {
+  const v = edit.caption_top?.['9:16'];
+  if (typeof v !== 'number' || v < 0.4 || v > 0.78) E('caption_top', 'caption_top must be {"9:16": fraction between 0.4 and 0.78}');
+}
 if (edit.vo != null) {
   if (!Array.isArray(edit.vo)) E('vo', 'vo must be an array of cues');
   else {

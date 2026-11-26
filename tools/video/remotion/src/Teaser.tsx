@@ -32,6 +32,8 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
   const tlCa = edit.seat_labels ? { ...tl0, shots: tl0.shots.map((s: any) => ({ ...s, seat_labels: edit.seat_labels })) } : tl0;
   // Critical Cases edits: the edit-level cc ({case, accent, panel, case1, case2, ...}) sits under each shot's own cc
   const tl = edit.theme === 'cc' && edit.cc ? { ...tlCa, shots: tlCa.shots.map((s: any) => ({ ...s, cc: { ...edit.cc, ...(s.cc || {}) } })) } : tlCa;
+  // edit-level caption_top {"9:16": fraction} lifts the burned dialogue captions in portrait (absent: unchanged)
+  if (edit.caption_top) tl.shots = tl.shots.map((s: any) => ({ ...s, caption_top: edit.caption_top }));
   const source: [number, number] = edit.source_size || [1920, 1080];
 
   const shots = tl.shots.map((s: any) => (

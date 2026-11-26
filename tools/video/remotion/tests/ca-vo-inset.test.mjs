@@ -68,3 +68,15 @@ test('make-srt merges vo cues with dialogue cues in time order, no speaker prefi
   assert.equal(blocks[0][1], '00:00:00,500 --> 00:00:01,500');
   const times = blocks.map((b) => b[1].slice(0, 12)); assert.deepEqual([...times].sort(), times);
 });
+
+test('burned_line, vo_skin and caption_top lint', () => {
+  const e = base(); e.vo_skin = 'cyber'; assert.match(lint(e).out, /vo_skin must be "safetynet"/);
+  const f = base(); f.caption_top = { '9:16': 0.1 }; assert.match(lint(f).out, /caption_top must be/);
+  const g = base(); g.vo_skin = 'safetynet'; g.caption_top = { '9:16': 0.6 }; assert.doesNotMatch(lint(g).out, /vo_skin|caption_top/);
+  const v1 = base(); v1.vo_captions = { '16:9': false }; assert.doesNotMatch(lint(v1).out, /vo_captions/);
+  const v2 = base(); v2.vo_captions = { '4:3': false }; assert.match(lint(v2).out, /vo_captions must be/);
+  const v3 = base(); v3.vo_captions = { '16:9': 'no' }; assert.match(lint(v3).out, /vo_captions must be/);
+  const c1 = base(); c1.shots.push({ preset: 'hacktivity-close', cta_title: { scale: { '16:9': 12 }, cy: { '16:9': 0.3 } } }); assert.doesNotMatch(lint(c1).out, /cta_title/);
+  const c2 = base(); c2.shots.push({ preset: 'hacktivity-close', cta_title: { scale: { '16:9': 1.5 } } }); assert.match(lint(c2).out, /cta_title.scale.16:9 must be an integer/);
+  const c3 = base(); c3.shots.push({ preset: 'hacktivity-close', cta_title: { cy: { '1:1': 2 } } }); assert.match(lint(c3).out, /cta_title.cy.1:1 must be a fraction/);
+});
