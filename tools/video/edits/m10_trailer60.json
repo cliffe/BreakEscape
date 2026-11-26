@@ -1,6 +1,6 @@
 {
  "mission": "m10",
- "id": "m10_trailer60_v2",
+ "id": "m10_trailer60_v3",
  "title": "SAFETYNET: Licence to Hack, m10 Full Disclosure 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -1680,10 +1680,10 @@
    },
    "source": {
     "file": "t14_tesseract_core.trimmed.mkv",
-    "in": 14.4333,
-    "out": 16.9666
+    "in": 12.9667,
+    "out": 15.5
    },
-   "note": "Tesseract portrait wide, voice 12.13-16.57; pre 2.3 (audio from 12.1333); bar cropped in 16:9; integer scale 25 Nov: 16:9 at 2x (cy 0.28) so the name bar stays cropped",
+   "note": "Tesseract portrait wide, voice 10.68-15.12 (26 Nov re-take, E glasses); pre 2.3 (audio from 10.6667); bar cropped in 16:9; integer scale 25 Nov: 16:9 at 2x (cy 0.28) so the name bar stays cropped",
    "framing": {
     "16:9": {
      "cx": 0.6,
@@ -1741,10 +1741,10 @@
    },
    "source": {
     "file": "t14_tesseract_core.trimmed.mkv",
-    "in": 16.9667,
-    "out": 19.9
+    "in": 15.5,
+    "out": 18.4333
    },
-   "note": "Tesseract close, voice 17.37-19.64, cut in the pause after weak points; OUT 19.90, never past 20.2 (the stakes figure line starts 20.86). Bar off.",
+   "note": "Tesseract close, voice 15.93-18.20 (26 Nov re-take), cut in the pause after weak points; OUT 18.43, never past 19.2 (the stakes figure line starts 19.39). Bar off.",
    "framing": {
     "16:9": {
      "cx": 0.74,
