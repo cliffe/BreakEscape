@@ -326,7 +326,7 @@ export class DoorGates {
         if (joining.length > 1 && !g.open) {
             const pm = W().pathfindingManager;
             if (pm) {
-                pm.unmarkDoor?.(g.x, g.y, g.direction);
+                this._unmarkAll(pm, g);
                 pm.rebuildWorldGrid?.();
             }
         }
@@ -374,11 +374,27 @@ export class DoorGates {
         if (!g.open) {
             const pm = W().pathfindingManager;
             if (pm) {
-                pm.unmarkDoor?.(g.x, g.y, g.direction);
+                this._unmarkAll(pm, g);
                 pm.rebuildWorldGrid?.();
             }
         }
         return true;
+    }
+
+    /**
+     * Drop the doorway from the path grid at the group's centre and at every sprite of it.
+     * doors.js stores a side corridor at the clicked sprite's own position, which can sit a
+     * tile from the registering sprite's (g.x/g.y); unmarking only g.x/g.y would leave it
+     * carved through a shut gate (E1 R2 m1).
+     */
+    _unmarkAll(pm, g) {
+        pm.unmarkDoor?.(g.x, g.y, g.direction);
+        for (const s of g.sprites || []) {
+            const p = s?.doorProperties;
+            if (p && typeof p.worldX === 'number' && typeof p.worldY === 'number') {
+                pm.unmarkDoor?.(p.worldX, p.worldY, p.direction || g.direction);
+            }
+        }
     }
 
     isGate(sprite) { return !!sprite?.doorProperties?.gateKey && this.groups.has(sprite.doorProperties.gateKey); }
@@ -742,7 +758,7 @@ export class DoorGates {
         this._applyBodies(g, now);
         const pm = W().pathfindingManager;
         if (pm) {
-            pm.unmarkDoor?.(g.x, g.y, g.direction);
+            this._unmarkAll(pm, g);
             pm.rebuildWorldGrid?.();
         }
         console.log(`🚪 Gate closed: ${g.roomId} ↔ ${g.connectedRoom}`);

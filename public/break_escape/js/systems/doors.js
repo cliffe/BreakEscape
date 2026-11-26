@@ -672,6 +672,7 @@ async function handleDoorInteraction(doorSprite) {
         || window.doorGates?.groupAtPosition?.(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y, props.direction)
         || null;
     let gateGroup = findGateGroup();
+    let preHandshake = null;   // the 'unlocked' handshake the pre-load below already sent (E1 R2 m3)
     // A gate's config is on the outer room's door entry, so this sprite (the secured room's
     // own, when the learner starts inside it) cannot know the doorway is a gate until the room
     // on the other side has loaded and adopted it. Load that room first when it is unlocked
@@ -679,7 +680,10 @@ async function handleDoorInteraction(doorSprite) {
     // ordinary path and openDoor would destroy the gate's sprite for good.
     if (!props.gate && !gateGroup && props.locked !== true && props.connectedRoom &&
         !window.rooms?.[props.connectedRoom] && window.loadRoom) {
-        await loadRoomBehindDoor(doorSprite, props.connectedRoom);
+        // The click's feedback comes first; the load can take a while
+        try { window.playUISound?.('lock'); } catch (e) { /* no audio */ }
+        const pre = await loadRoomBehindDoor(doorSprite, props.connectedRoom);
+        if (pre.sent) preHandshake = { response: pre.response };
         gateGroup = findGateGroup();
     }
     if (props.gate || gateGroup) {
@@ -770,7 +774,9 @@ async function handleDoorInteraction(doorSprite) {
     // Client cannot be trusted to determine lock state
     // The server will check its scenario data and validate accordingly
     console.log('Checking door access with server...');
-    handleUnlock(doorSprite, 'door');
+    // A pre-load that already sent the handshake answers the click with its response, so an
+    // ordinary door sends one unlock request, not two
+    handleUnlock(doorSprite, 'door', preHandshake ? { handshake: preHandshake } : undefined);
 }
 
 /**
@@ -779,22 +785,26 @@ async function handleDoorInteraction(doorSprite) {
  * unlockedRooms); a locked one is only asked for, and the server refuses it unless it is
  * already open to him. Never throws: the caller checks window.rooms[room].
  */
-async function loadRoomBehindDoor(doorSprite, room) {
+async function loadRoomBehindDoor(doorSprite, room, { skipLoad = false } = {}) {
+    const out = { sent: false, response: null };
     if (doorSprite && doorSprite.doorProperties?.locked === false) {
+        out.sent = true;
         try {
             const resp = await notifyServerUnlock(doorSprite, 'door', 'unlocked');
-            if (resp?.success && resp.roomData && window.roomDataCache) window.roomDataCache.set(room, resp.roomData);
+            out.response = resp || null;
+            if (resp?.success && resp.roomData && window.roomDataCache && !window.rooms?.[room]) window.roomDataCache.set(room, resp.roomData);
         } catch (err) {
             console.warn('Unlock handshake failed:', err);
         }
     }
-    if (window.loadRoom) {
+    if (!skipLoad && window.loadRoom) {
         try {
             await window.loadRoom(room);
         } catch (err) {
             console.warn(`Failed to load room ${room}:`, err);
         }
     }
+    return out;
 }
 
 /**
@@ -807,14 +817,19 @@ async function loadRoomBehindDoor(doorSprite, room) {
 async function enterThroughInertGate(g, hintSource) {
     const doors = window.doorGates;
     const room = g.securedRoom;
-    if (!window.rooms?.[room]) {
-        const entry = [...(g.sprites || [])].find(s => s?.doorProperties?.connectedRoom === room && s.active !== false);
-        await loadRoomBehindDoor(entry, room);
-    }
+    // The handshake runs for any unlocked entry, loaded room or not: a route NPC can load a
+    // room into the world without unlocking it for him (E1 R2 m2)
+    const entry = [...(g.sprites || [])].find(s => s?.doorProperties?.connectedRoom === room && s.active !== false);
+    await loadRoomBehindDoor(entry, room, { skipLoad: !!window.rooms?.[room] });
     // The window may have gone live while the room loaded: then it is a live gate again
     if (window.rooms?.[room] && doors.isInert(g)) {
         if (!g.open) doors.exitOpen(g);
         return true;
+    }
+    if (window.rooms?.[room]) {
+        // Live again: refused as any live click is (the guard's bark, door_gate_denied)
+        refuseAtGate(entry?.doorProperties || { roomId: g.roomId, connectedRoom: room, direction: g.direction }, g);
+        return false;
     }
     window.gameAlert?.('Access denied', 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, 'Access denied'));
     return false;
@@ -915,7 +930,11 @@ function openDoor(doorSprite, opts = {}) {
     // This prevents crashes when called immediately after minigame cleanup
     const finishOpeningDoor = () => {
         // A gate opens through door-gates.js only: this destroys the sprite for good
-        if (window.doorGates?.isGate?.(doorSprite)) return;
+        if (window.doorGates?.isGate?.(doorSprite)) {
+            // unlockDoor/openDoor on a gate does nothing: it opens through door-gates.js only
+            console.warn(`openDoor ignored on gate sprite ${props.roomId} -> ${props.connectedRoom}; use window.doorGates.playerOpen`);
+            return;
+        }
         // Disable the door's physics body immediately so LOS checks stop seeing it
         // right away, even before the sprite is destroyed asynchronously below.
         if (doorSprite.body) doorSprite.body.enable = false;
@@ -976,6 +995,12 @@ function openDoor(doorSprite, opts = {}) {
             // the doorway open for good: put the gate back as it was and stop
             if (window.doorGates?.isGate?.(doorSprite)) {
                 window.doorGates.reassert?.(doorSprite);
+                // The player who clicked from inside the secured room leaves through the gate he
+                // has just unlocked: the click ends as a click on a gate does (E1 R2 m1)
+                const rg = window.doorGates.groups?.get?.(props.gateKey);
+                if (rg && !byNpc) {
+                    window.doorGates.clickOutcome?.(rg, { holdsCredential: false, connectedRoom: props.connectedRoom });
+                }
                 return;
             }
             
