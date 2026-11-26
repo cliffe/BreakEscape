@@ -1359,11 +1359,17 @@ module BreakEscape
         # object id, and defined by exactly one such source, so one definition cannot
         # stand in for another.
         held_definitions = Hash.new { |hash, key| hash[key] = [] }
-        each_held_source_item { |obj| held_definitions[obj['id']] << obj if obj['id'].is_a?(String) }
+        # An account-only NPC's held ids still count as a definition (review M1 follow-up):
+        # an id held by a normal NPC and by an account never indexes, though the account's
+        # copy is never indexed itself.
+        each_held_source_item(include_account_only: true) do |obj, account_only|
+          held_definitions[obj['id']] << (account_only ? nil : obj) if obj['id'].is_a?(String)
+        end
         held_definitions.each do |id, defs|
           next if defs.size != 1 || room_object_ids.include?(id) || index.key?(id)
 
           obj = defs.first
+          next if obj.nil? # the one definition is an account-only NPC's: counted, never indexed
           next unless obj['needsTag'].present? && carriable_object?(obj)
           next if lock_referenced_object_ids.include?(id)
 
@@ -1377,19 +1383,24 @@ module BreakEscape
     # object: NPC itemsHeld (room NPCs and headless records), the start inventory,
     # the contents and itemsHeld of room objects, and declared give_item grants, each
     # with its nested contents and itemsHeld.
-    def each_held_source_item(&block)
+    # With include_account_only, an account-only NPC's items are yielded too, the block
+    # receiving a second argument true for them so the caller can count but not index them.
+    def each_held_source_item(include_account_only: false, &block)
+      from_account = false
       visit = lambda do |item|
         next unless item.is_a?(Hash)
 
-        block.call(item)
+        block.call(item, from_account)
         Array(item['contents']).each { |inner| visit.call(inner) }
         Array(item['itemsHeld']).each { |inner| visit.call(inner) }
       end
       scenario_npc_records.each do |npc|
-        next if AccessIdentities.account_only?(npc) # S5c: an account holds no carriable items
+        from_account = AccessIdentities.account_only?(npc) # S5c: an account holds no carriable items
+        next if from_account && !include_account_only
 
         Array(npc['itemsHeld']).each { |item| visit.call(item) }
       end
+      from_account = false
       Array(scenario_data['startItemsInInventory']).each { |item| visit.call(item) }
       rooms = scenario_data['rooms']
       if rooms.is_a?(Hash)
