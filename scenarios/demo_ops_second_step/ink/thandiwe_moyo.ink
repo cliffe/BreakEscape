@@ -40,7 +40,7 @@ What do you need?
 # speaker:npc
 The approvals log is on the computer beside me. Your requests are in it.
 # speaker:npc
-Look for requests nobody answered, and any approval.
+Look for requests nobody answered, and any approval. Your resets are in there too, each with the form that asked for it.
 # speaker:npc
 Then flag the odd one out, a burst of requests to Darren in the small hours.
 -> hub.choices
@@ -48,7 +48,7 @@ Then flag the odd one out, a burst of requests to Darren in the small hours.
 === reset_request ===
 ~ helpdesk_it_desk_result = ""
 # speaker:npc
-Fill in the form. Two answers off the file and I'll sort it. #helpdesk_request:it_desk
+Fill in the form: the username, then their staff number and line manager. If both match the file, I'll sort it. #helpdesk_request:it_desk
 -> reset_verdict
 
 === reset_verdict ===

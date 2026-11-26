@@ -1334,7 +1334,7 @@ module BreakEscape
         secrets.each { |x| assert_not_includes found.first['bark'], x }
       end
       pointer = maps.find { |m| m['eventPattern'] == 'pc_in_use:lorna_pc' }
-      assert_equal 'Nobody signs in at a PC while its owner is sitting there.', pointer['bark']
+      assert_equal 'Nobody signs in at a PC while its owner is sitting there. Everything today waits until people step away.', pointer['bark']
     end
 
     test 'tour: Darren keeps his 90 s leave threshold and gains a 50 s idle lock; the lock bark reads the screen global' do
