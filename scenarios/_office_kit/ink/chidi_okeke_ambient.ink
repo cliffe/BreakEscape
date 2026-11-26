@@ -125,7 +125,7 @@ Chidi Okeke: Microsoft's blocked it. He's sent steps to get round it. Do I?
 { kit_key_caught:
     Chidi Okeke: Good spot. That blocked CV was the whole trick. Follow his steps and you run whatever's tucked inside. #delivery: easy-going, approving
 - else:
-    Chidi Okeke: A real CV just opens. One that talks you round Office's block is after that one step to let it loose. #delivery: easy-going, matter-of-fact
+    Chidi Okeke: A real CV just opens. One that talks you round Office's block wants you to take that one step and let it loose. #delivery: easy-going, matter-of-fact
 }
 -> bye
 
