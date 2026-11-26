@@ -1,7 +1,7 @@
 {
-  "key": "4d40c7655d6ab9edeaa2815ebf8c2a67",
+  "key": "e42a81acfbee483b8af6dcc87a0cdcf4",
   "npc": "fatima_begum",
-  "text": "Switching content on, or unpacking a zip, is the step that lets a file run a small program, and that could give the sender a way into Tarrowby's network.",
+  "text": "Switching content on, or opening a file out of a zip, is the step that lets a file run a small program, and that could give the sender a way into Tarrowby's network.",
   "voice": "Vindemiatrix",
   "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca02_cv_lures_defend",
   "source": "generate",
   "generated": "2026-11-26",
-  "recorded_at": "2026-11-26T00:55:22Z"
+  "recorded_at": "2026-11-26T01:11:17Z"
 }

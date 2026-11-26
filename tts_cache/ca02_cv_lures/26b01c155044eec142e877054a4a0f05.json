@@ -1,7 +1,7 @@
 {
-  "key": "a05df62bc54a464655bcd0cdf3abf300",
+  "key": "26b01c155044eec142e877054a4a0f05",
   "npc": "kit_chidi_okeke",
-  "text": "A real CV just opens. One that talks you round Office's block is after that one step to let it loose.",
+  "text": "A real CV just opens. One that talks you round Office's block wants you to take that one step and let it loose.",
   "delivery": "easy-going, matter-of-fact",
   "voice": "Zubenelgenubi",
   "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
@@ -10,5 +10,5 @@
   "scenario": "ca02_cv_lures",
   "source": "generate",
   "generated": "2026-11-26",
-  "recorded_at": "2026-11-26T00:55:03Z"
+  "recorded_at": "2026-11-26T01:11:09Z"
 }
