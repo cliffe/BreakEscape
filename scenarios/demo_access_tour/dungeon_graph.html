@@ -132,23 +132,23 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
   </div>
 
   <div class="stats">
-    <h2>Critical Path — 0 hops</h2>
-    <div class="crit-path"></div>
+    <h2>Critical Path — 2 hops</h2>
+    <div class="crit-path">Test the network → + → Report back</div>
     <div class="note-oos">
       ⚠️&nbsp; Dashed aim arrows = narrative unlock only. A player with physical access to a room may complete an
       objective before the system unlocks that aim. Solid arrows indicate hard dependencies (AND gates, physical
       puzzle-lock chains). The critical path above shows the minimum mandatory sequence to reach mission completion.
     </div>
     <table>
-      <tr><th>Aims (story objectives)</th><td class="val">1</td></tr>
-      <tr><th>Total tasks</th><td class="val">1</td></tr>
-      <tr><th>Optional tasks</th><td class="val">0 / 1</td></tr>
+      <tr><th>Aims (story objectives)</th><td class="val">5</td></tr>
+      <tr><th>Total tasks</th><td class="val">17</td></tr>
+      <tr><th>Optional tasks</th><td class="val">8 / 17</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
-      <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
+      <tr><th>AND-gate convergences</th><td class="val">1</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">15</td></tr>
       <tr><th>Rooms</th><td class="val">10</td></tr>
       <tr><th>Puzzle nodes / edges</th><td class="val">44 / 71</td></tr>
-      <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
+      <tr><th>Story nodes / edges</th><td class="val">6 / 3</td></tr>
     </table>
   </div>
 
@@ -318,9 +318,21 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
   aim_aim_office{{"Test the office"}}
+  aim_aim_network{{"Test the network"}}
+  aim_aim_around{{"Look around (optional)"}}
+  aim_aim_deeper{{"Go deeper (optional)"}}
+  aim_aim_wrap{{"Report back"}}
+  aim_andgate_aim_wrap((" + "))
 
+  aim_aim_office --> aim_andgate_aim_wrap
+  aim_aim_network --> aim_andgate_aim_wrap
+  aim_andgate_aim_wrap --> aim_aim_wrap
 
-  class aim_aim_office aim`,
+  class aim_aim_office,aim_aim_around,aim_aim_deeper aim
+  class aim_aim_network,aim_aim_wrap,aim_andgate_aim_wrap critical
+
+  classDef optional stroke-dasharray:5 2
+  class aim_aim_around,aim_aim_deeper optional`,
       integrated: `flowchart TD
 
   classDef room      fill:#0f2d2d,stroke:#22ddcc,color:#a0ffee
@@ -386,6 +398,11 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
   cred_src_julian_rdp_file{"julian.rdp"}
   cred_lorna_door_pw{"Lorna Easton password<br/>(leaston)"}
   aim_aim_office{{"Test the office"}}
+  aim_aim_network{{"Test the network"}}
+  aim_aim_around{{"Look around (optional)"}}
+  aim_aim_deeper{{"Go deeper (optional)"}}
+  aim_aim_wrap{{"Report back"}}
+  aim_andgate_aim_wrap((" + "))
 
   door_server_room --> server_room
   door_partner_office --> partner_office
@@ -458,7 +475,17 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
   cred_julian_rdp --> lock_julian_pc
   lock_reception_pc --> cred_lorna_door_pw
   cred_lorna_door_pw --> lock_door_controller
+  aim_aim_office --> aim_andgate_aim_wrap
+  aim_aim_network --> aim_andgate_aim_wrap
+  aim_andgate_aim_wrap --> aim_aim_wrap
   door_meeting_room -.-> aim_aim_office
+  lock_reception_pc -.-> aim_aim_office
+  door_comms_cupboard -.-> aim_aim_office
+  lock_julian_pc -.-> aim_aim_network
+  door_server_room -.-> aim_aim_around
+  lock_thandiwe_laptop -.-> aim_aim_around
+  lock_yasmin_pc -.-> aim_aim_around
+  lock_door_controller -.-> aim_aim_deeper
 
   class door_server_room,door_partner_office,door_meeting_room,door_comms_cupboard,lock_reception_pc,lock_thandiwe_laptop,lock_yasmin_pc,lock_door_controller,lock_julian_pc,jack_meeting_jack,jack_managed_port,jack_guest_vlan_port,wifiap_staff_ap,wifiap_guest_ap,implant_reception_pc lock
   class server_room,partner_office,meeting_room,comms_cupboard,open_plan,reception,kitchen,net_office_lan,net_guest,net_server_lan room
@@ -466,7 +493,11 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
   class resource_client_letters,resource_finance_share container
   class pivot_julian_pc,pivot_reception_pc,pivot_thandiwe_laptop,pivot_yasmin_pc,pivot_door_controller gate
   class cred_src_julian_rdp_file item
-  class aim_aim_office aim
+  class aim_aim_office,aim_aim_around,aim_aim_deeper aim
+  class aim_aim_network,aim_aim_wrap,aim_andgate_aim_wrap critical
+
+  classDef optional stroke-dasharray:5 2
+  class aim_aim_around,aim_aim_deeper optional
   class node_start start`,
       rooms:      `flowchart TD
 
