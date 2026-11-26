@@ -1,0 +1,13 @@
+{
+  "key": "6f7bd4e10bfcf9eabc2911d2748f0513",
+  "npc": "ama_owusu",
+  "text": "The Terminal stays for as long as the view is open, with everything you typed. Testers keep that record so their report can show exactly what they did.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:58:03Z"
+}

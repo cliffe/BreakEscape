@@ -1,0 +1,13 @@
+{
+  "key": "8590cb9f2b94f0ede5310e4b9e33c8d5",
+  "npc": "ama_owusu",
+  "text": "It lasts six minutes from when the box went in, so do this now.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:56:46Z"
+}

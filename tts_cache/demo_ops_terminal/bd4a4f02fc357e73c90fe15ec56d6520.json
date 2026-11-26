@@ -1,0 +1,13 @@
+{
+  "key": "bd4a4f02fc357e73c90fe15ec56d6520",
+  "npc": "ama_owusu",
+  "text": "Two real, one false, and the false one says why. A finding that isn't real is called a false positive. The write-ups didn't tell you that. Testing did.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:34Z"
+}

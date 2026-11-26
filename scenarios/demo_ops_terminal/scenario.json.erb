@@ -116,7 +116,7 @@
       "sprite": "network_dropbox",
       "takeable": true,
       "rogueDevice": true,
-      "observations": "A palm-sized network drop box. Plug it into a live wall port to join that port's network."
+      "observations": "A palm-sized network drop box. Plug it into a live wall port to join that port's network. In real offices, an unknown box on a port is worth reporting: it can let someone work from outside."
     },
     {
       "type": "pc",
@@ -133,7 +133,7 @@
     {
       "aimId": "get_in",
       "title": "Get in: the box and the token",
-      "description": "Most tasks tick when you have done them; the console, the log and a greyed token tick when you tell Ama. Ama's hub says what is next.",
+      "description": "Most tasks tick when you have done them; the console, the log and a greyed token tick when you tell Ama. Ask Ama \"What's next?\" at any time.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -212,7 +212,7 @@
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Get in:\n- Take the drop box to the server room and plug it into the port by the rack. The view opens as a Terminal.\n- Sweep the network, then show the hosts as a table.\n- Through the box, sign in to the backup PC with Zainab's token while it is fresh.\n- Plug the keystroke device into the backup PC's socket.\nThe report:\n- Scan the file server and check its storage service.\n- Type help to find the console. Search, choose a module with use, ask for info, then tell Ama.\n- Confirm all three, ask Zainab for her card, and use both cards.\n- Switch to Panels and back, then tell Ama about your log.\nRemote ways in:\n- Ask Graham to share his screen, then ask Ama to have him end it.\n- Watch the token run out. If it shows greyed out in your keyring, tell Ama.\n- Unplug: click the box at its port, try a short form of unplug, then type the whole word."
+          "text": "Get in:\n- Take the drop box to the server room and plug it into the port by the rack. The view opens as a Terminal.\n- Sweep the network, then show the hosts as a table.\n- Through the box, sign in to the backup PC with Zainab's token while it is fresh.\n- Plug the keystroke device into the backup PC's socket.\nThe report:\n- Scan the file server and check its storage service.\n- Type help to find the console. Search, choose a module with use, ask for info, then tell Ama.\n- Confirm all three, ask Zainab for her card, and use both cards.\n- Switch to Panels and back, then tell Ama about your log.\nRemote ways in:\n- Ask Graham to share his screen, then ask Ama to have him end it.\n- Watch the token run out. If it shows greyed out in your keyring, tell Ama.\n- Unplug: click the box at its port, try a short form such as unp, then type unplug in full."
         }
       ],
       "npcs": [
@@ -233,24 +233,24 @@
             { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
 
             { "eventPattern": "network_foothold_gained:rack_jack", "onceOnly": true, "cooldown": 0, "completeTask": "plug_in", "setGlobal": { "plug_in_done": true } },
-            { "eventPattern": "global_variable_changed:plug_in_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "This Terminal imitates a scanner and a console. Every name and number in it is invented. Zainab's token came with the box, and its clock is running." },
+            { "eventPattern": "global_variable_changed:plug_in_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "This Terminal imitates two tools. A scanner lists what machines run and their likely weaknesses; a console is where testers look weaknesses up. Every name is invented. Zainab's token is a sign-in with no password, and it stops working six minutes from now." },
             { "eventPattern": "network_swept", "cooldown": 0, "completeTask": "sweep", "setGlobal": { "sweep_done": true } },
-            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_token_done !== true", "cooldown": 0, "bark": "The same list Panels would show, as a table. Next, the backup PC." },
+            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_token_done !== true", "cooldown": 0, "bark": "That's every machine that answered, as a table. Panels shows the same network as pictures; switch at any time. The red bolt on the port marks the box you hold. Next, the backup PC." },
             { "eventPattern": "pc_signed_in:backup_pc", "condition": "data.token === true", "cooldown": 0, "completeTask": "use_token", "setGlobal": { "use_token_done": true } },
             { "eventPattern": "global_variable_changed:use_token_done", "condition": "data.value === true && data.oldValue !== true && globalVars.needs_console_done !== true", "cooldown": 0, "bark": "You're on the backup PC with a token, no password. It only lasts a few minutes. Try the keystroke device on its socket." },
             { "eventPattern": "network_device_refused", "condition": "data.reason === 'needs_console'", "cooldown": 0, "completeTask": "needs_console", "setGlobal": { "needs_console_done": true } },
-            { "eventPattern": "global_variable_changed:needs_console_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_check_done !== true", "cooldown": 0, "bark": "That device needs someone signed in at its keyboard. A remote session doesn't count. Now scan the file server." },
+            { "eventPattern": "global_variable_changed:needs_console_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_check_done !== true", "cooldown": 0, "bark": "That device needs someone signed in at its keyboard. A remote session doesn't count. It would work on an unlocked PC with nobody watching, which is why you lock your screen when you step away. Now scan the file server." },
 
             { "eventPattern": "network_service_checked", "condition": "data.hostId === 'file_server'", "cooldown": 0, "completeTask": "scan_check", "setGlobal": { "scan_check_done": true } },
-            { "eventPattern": "global_variable_changed:scan_check_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_all_done !== true", "cooldown": 0, "bark": "Three findings, each with a scanner's write-up and reference ids. Any of them could be a false alarm. They all read the same." },
+            { "eventPattern": "global_variable_changed:scan_check_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_all_done !== true", "cooldown": 0, "bark": "Three findings, each with a scanner's write-up and reference ids, the catalogue numbers testers use to look a weakness up. Any could be a false alarm. They all read the same." },
             { "eventPattern": "network_finding_confirmed", "condition": "data.status === 'false'", "cooldown": 0, "setGlobal": { "t6_release_seen": true } },
             { "eventPattern": "network_finding_confirmed", "condition": "data.status === 'confirmed' && globalVars.t6_update_seen === true && globalVars.t6_link_seen !== true", "cooldown": 0, "setGlobal": { "t6_link_seen": true } },
             { "eventPattern": "network_finding_confirmed", "condition": "data.status === 'confirmed' && globalVars.t6_update_seen !== true", "cooldown": 0, "setGlobal": { "t6_update_seen": true } },
             { "eventPattern": "network_finding_confirmed", "condition": "globalVars.t6_update_seen === true && globalVars.t6_link_seen === true && globalVars.t6_release_seen === true", "cooldown": 0, "completeTask": "confirm_all", "setGlobal": { "confirm_all_done": true } },
-            { "eventPattern": "global_variable_changed:confirm_all_done", "condition": "data.value === true && data.oldValue !== true && globalVars.step_up_done !== true", "cooldown": 0, "bark": "Two real, one false, and the false one says why. The write-ups didn't tell you that. Testing did." },
-            { "eventPattern": "pc_signed_in:file_server", "condition": "data.via === 'technique' && data.npcId === 'zainab_hussain'", "cooldown": 0, "bark": "That's a user session. The settings finding needs one before it will work." },
+            { "eventPattern": "global_variable_changed:confirm_all_done", "condition": "data.value === true && data.oldValue !== true && globalVars.step_up_done !== true", "cooldown": 0, "bark": "Two real, one false, and the false one says why. A finding that isn't real is called a false positive. The write-ups didn't tell you that. Testing did." },
+            { "eventPattern": "pc_signed_in:file_server", "condition": "data.via === 'technique' && data.npcId === 'zainab_hussain'", "cooldown": 0, "bark": "That's a user session, and the red frame and bolt on the file server mark it. The settings finding needs one before it will work." },
             { "eventPattern": "pc_signed_in:file_server", "condition": "data.via === 'technique' && data.npcId === 'graham_whitfield'", "cooldown": 0, "completeTask": "step_up", "setGlobal": { "step_up_done": true } },
-            { "eventPattern": "global_variable_changed:step_up_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "A user session first, then an administrator's on top of it." },
+            { "eventPattern": "global_variable_changed:step_up_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "A user session first, then an administrator's on top of it. A user can do what one member of staff can; an administrator can change the whole server. One weakness led to the next. Fixing either one breaks the chain." },
 
             { "eventPattern": "pc_signed_in:graham_pc", "condition": "data.relay === true", "onceOnly": true, "cooldown": 0, "setGlobal": { "relay_seen": true }, "bark": "You're on Graham's own screen because he let you in. It shows as Administrator because he is one. It's still his session." },
             { "eventPattern": "pc_signed_out:backup_pc", "condition": "data.reason === 'token_expired'", "cooldown": 0, "completeTask": "token_expired", "setGlobal": { "token_ran_out": true, "token_expired_done": true }, "bark": "Tokens run out. The session ended on the clock, and the token won't open it again." },
@@ -258,7 +258,7 @@
             { "eventPattern": "network_foothold_gained:spare_jack", "onceOnly": true, "cooldown": 0, "bark": "The spare port. Its token's clock starts now. Sign in to the backup PC with the spare token." },
             { "eventPattern": "network_device_unplugged:rack_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true && globalVars.needs_console_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
             { "eventPattern": "network_device_unplugged:spare_jack", "condition": "globalVars.token_expired_done === true && globalVars.shared_screen_done === true && globalVars.needs_console_done === true", "cooldown": 0, "completeTask": "unplug", "setGlobal": { "unplug_done": true } },
-            { "eventPattern": "global_variable_changed:unplug_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "In the Terminal, unplugging needs the whole word, so a slip of the keys can't do it. It also ended every session through the box." }
+            { "eventPattern": "global_variable_changed:unplug_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "In the Terminal, unplugging needs the whole word, so a slip of the keys can't do it. It also ended every session through the box. For a defender, pulling an unknown box cuts off everything it carried. That's the whole tour. Come and find me for the short version." }
           ]
         },
         {
