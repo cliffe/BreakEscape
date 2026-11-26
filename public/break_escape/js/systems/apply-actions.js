@@ -464,9 +464,14 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
             // `roomIds` name them; with neither, every room the scenario declares. Per room: a
             // loaded room's sprite is destroyed, then the server's room state is told (a stick
             // in a room that is not loaded is only in saved state, so the removal always goes).
-            // A room that never held it costs one POST the server answers `success: false`; that
-            // is ignored (a console warning from RoomStateSync, no toast). A no-op when the
-            // object was picked up, consumed or never dropped.
+            // A room that never held it costs one POST: the server answers `success: false`, or
+            // 403 for a room the learner has not unlocked (games_controller); either is ignored
+            // (a console warning from RoomStateSync, no toast). A no-op when the object was
+            // picked up, consumed or never dropped. An item an NPC carries is out of
+            // `room.objects` (npc-needs.js), so it is not taken. A drop still being saved
+            // (`sprite._dropSync`: texture loading, add_object in flight) is waited for first,
+            // else the sprite would go back to the tray or the removal reach the server before
+            // the add (E4 R1 M3). In a list, put remove_world_item before remove_item.
             // action: { type: 'remove_world_item', item: '<id>', roomId?, roomIds? }
             case 'remove_world_item': {
                 const wantedId = typeof action.item === 'string' ? action.item : null;
@@ -477,13 +482,22 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                 for (const rid of roomIds) {
                     const objs = window.rooms?.[rid]?.objects;
                     const sp = objs?.[wantedId];
-                    if (sp) {
-                        try { sp.proximityGhost?.destroy?.(); } catch (e) { /* already gone */ }
-                        try { sp.destroy?.(); } catch (e) { /* already gone */ }
-                        delete objs[wantedId];
+                    const takeBack = () => {
+                        const cur = window.rooms?.[rid]?.objects;
+                        const here = cur?.[wantedId];
+                        if (here) {
+                            try { here.proximityGhost?.destroy?.(); } catch (e) { /* already gone */ }
+                            try { here.destroy?.(); } catch (e) { /* already gone */ }
+                            delete cur[wantedId];
+                        }
+                        try { Promise.resolve(window.RoomStateSync?.removeItemFromRoom?.(rid, wantedId)).catch(() => {}); }
+                        catch (e) { /* offline */ }
+                    };
+                    if (sp && typeof sp._dropSync?.then === 'function') {
+                        Promise.resolve(sp._dropSync).catch(() => {}).then(takeBack);
+                    } else {
+                        takeBack();
                     }
-                    try { Promise.resolve(window.RoomStateSync?.removeItemFromRoom?.(rid, wantedId)).catch(() => {}); }
-                    catch (e) { /* offline */ }
                 }
                 console.log('[applyActions] remove_world_item:', wantedId, roomIds);
                 break;
@@ -492,7 +506,12 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
             // Start or restart an NPC's authored patrol (npc-behavior.js restartAuthoredPatrol):
             // start_patrol sets off a patrol authored with `patrol.startDeferred: true` (or any
             // authored patrol); resume_patrol hands an NPC back its patrol after a patrolOverride
-            // or goToAndStay left it standing (a no-op while it is still on its patrol).
+            // or goToAndStay left it standing (a no-op while it is still on its patrol; false
+            // while a deferred patrol has not started). Neither is saved: after a reload a
+            // started patrol is off again. For one that must survive a reload, author
+            // `patrol.startWhen` (a global condition, read every tick) instead of start_patrol.
+            // Both refuse an NPC that is mid walk-in/walk-out, and both tell the needs and
+            // seating systems the NPC was moved (as goToAndStay does).
             // action: { type: 'start_patrol' | 'resume_patrol', npc: '<npcId>', speed? }
             case 'start_patrol':
             case 'resume_patrol': {

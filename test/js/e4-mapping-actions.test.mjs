@@ -306,3 +306,204 @@ test('start_patrol and resume_patrol on an unknown npc, or one with no authored 
     mgr.behaviors.set('idle', idle);
     assert.equal(quietSync(() => mgr.startPatrol('idle', {})), false);
 });
+
+// ===================================================================== round 1 fixes (E4 review R1)
+// A route walker built without parseConfig's room checks (those need loaded rooms): the route is
+// set on the config directly, as parseConfig would leave it for a valid one.
+function routeWalker() {
+    const b = patroller({ waypoints: WAYPOINTS, enabled: true, speed: 40 });
+    Object.assign(b.config.patrol, {
+        multiRoom: true,
+        route: [{ room: 'hall', waypoints: [{ tileX: 2, tileY: 2 }] }, { room: 'lobby', waypoints: [{ tileX: 9, tileY: 2 }] }],
+        currentSegmentIndex: 1
+    });
+    b._authoredPatrol = JSON.parse(JSON.stringify(b.config.patrol));
+    b.npcBodyPos = () => ({ x: 100, y: 100 });
+    b._resetAvoidForNewTarget = () => {};
+    b.pathfindingManager = { findNearestWalkableWorldCell: () => null, findNearestWalkableStartCell: () => null };
+    b._planned = [];
+    b._planMovePath = (pfm, fx, fy, tx, ty) => { b._planned.push([tx, ty]); };
+    b.chooseWaypointTargetMultiRoom = () => { b._routeChosen = (b._routeChosen || 0) + 1; };
+    return b;
+}
+
+test('B1: a route walker sent by goToAndStay plans to the stop, not to the next route waypoint', () => {
+    const b = routeWalker();
+    b._pendingRouteAction = { action: 'useObject' };
+    b._routeWait = { until: 1 }; b._routeUse = { until: 1 }; b._useHeld = { since: 1 };
+    quietSync(() => b.goToAndStay(64, 96, 80, { owner: undefined }));
+    assert.equal(b._pendingRouteAction, null, 'the route\'s pending action does not outlive the stop');
+    assert.equal(b._routeWait, null); assert.equal(b._routeUse, null); assert.equal(b._useHeld, null);
+    quietSync(() => b.chooseWaypointTarget(2000));
+    assert.equal(b._routeChosen, undefined, 'the route branch is not taken while a move is in flight');
+    assert.deepEqual(b._planned, [[64, 96]], 'the single waypoint is the stop');
+    // once the move ends (arrival or cancel) the route branch is back
+    b._stopOnArrival = false;
+    quietSync(() => b.chooseWaypointTarget(3000));
+    assert.equal(b._routeChosen, 1);
+});
+
+test('B1: a route walker on a move in flight does not want to cross a gate toward the route segment', () => {
+    const b = routeWalker();
+    b.roomId = 'hall';
+    const gate = { roomId: 'hall', connectedRoom: 'lobby' };
+    assert.equal(b.wantsToCrossGate(gate), true, 'on the route, segment is the lobby');
+    b._stopOnArrival = true;
+    assert.equal(b.wantsToCrossGate(gate), false, 'on a stop move, the route does not pull him through');
+});
+
+test('B1: resume_patrol after a route walker was stopped puts him on the segment of the room he stands in', () => {
+    const mgr = new NPCBehaviorManager({}, {});
+    const b = routeWalker();
+    mgr.behaviors.set('jun', b);
+    quietSync(() => b.goToAndStay(64, 96, 80, {}));
+    b._stopOnArrival = false; b.config.patrol.enabled = false;   // arrived
+    b.roomId = 'lobby';
+    assert.equal(quietSync(() => mgr.resumePatrol('jun', {})), true);
+    assert.equal(b.config.patrol.currentSegmentIndex, 1, 'lobby segment');
+    assert.equal(b.config.patrol.multiRoom, true);
+});
+
+test('M1: patrol.startWhen starts a deferred patrol once its condition holds, and again after a reload', async () => {
+    await quietSync(() => import(dataUrl(readFileSync(join(js, 'utils/global-condition.js'), 'utf8'))));
+    // the condition util sets window.* on the module's own `window`, which is this global
+    assert.equal(typeof window.parseActionCondition, 'function');
+    window.gameState = { globalVariables: { ca12_runner_go: false, ca12_world_done: false } };
+    const mgr = new NPCBehaviorManager({}, {});
+    const b = patroller({ waypoints: WAYPOINTS, speed: 50, startWhen: 'globalVars.ca12_runner_go && !globalVars.ca12_world_done' });
+    assert.equal(b.config.patrol.startDeferred, true, 'startWhen implies startDeferred');
+    assert.equal(b.config.patrol.enabled, false);
+    mgr.behaviors.set('jun', b);
+    quietSync(() => mgr._tickStartWhen());
+    assert.equal(b.config.patrol.enabled, false, 'condition false: still');
+    window.gameState.globalVariables.ca12_runner_go = true;
+    quietSync(() => mgr._tickStartWhen());
+    assert.equal(b.config.patrol.enabled, true);
+    assert.equal(b.config.patrol.startDeferred, false);
+    assert.equal(b._cancelled, 1);
+    // one shot: a stop (patrolOverride) is not undone by the next tick
+    b.config.patrol.enabled = false; b._patrolOverridden = true;
+    quietSync(() => mgr._tickStartWhen());
+    assert.equal(b.config.patrol.enabled, false);
+    // a reload: a fresh behaviour, globals already restored: starts on the first tick
+    const mgr2 = new NPCBehaviorManager({}, {});
+    const again = patroller({ waypoints: WAYPOINTS, speed: 50, startWhen: 'globalVars.ca12_runner_go && !globalVars.ca12_world_done' });
+    mgr2.behaviors.set('jun', again);
+    quietSync(() => mgr2._tickStartWhen());
+    assert.equal(again.config.patrol.enabled, true, 'restored global: the patrol resumes after a reload');
+    // the world done: a reload leaves him standing
+    window.gameState.globalVariables.ca12_world_done = true;
+    const done = patroller({ waypoints: WAYPOINTS, startWhen: 'globalVars.ca12_runner_go && !globalVars.ca12_world_done' });
+    mgr2.behaviors.set('jun', done);
+    quietSync(() => mgr2._tickStartWhen());
+    assert.equal(done.config.patrol.enabled, false);
+    // a condition outside the grammar warns once and never starts
+    const bad = patroller({ waypoints: WAYPOINTS, startWhen: 'this is not a condition ((' });
+    mgr2.behaviors.clear(); mgr2.behaviors.set('jun', bad);
+    quietSync(() => { mgr2._tickStartWhen(); mgr2._tickStartWhen(); });
+    assert.equal(bad.config.patrol.enabled, false);
+    assert.equal(bad._startWhenBad, true);
+    delete window.gameState;
+    window.gameState = { globalVariables: {} };
+});
+
+test('M2: restart tells the needs and seating systems, as goToAndStay does', () => {
+    const calls = [];
+    window.npcNeedsSystem = { onExternalMove: (id, owner) => calls.push(['needs', id, owner]) };
+    window.seating = { cancelFetch: (b, why) => calls.push(['fetch', why]), unseatNPC: () => calls.push(['unseat']) };
+    try {
+        const b = patroller({ waypoints: WAYPOINTS, startDeferred: true });
+        assert.equal(quietSync(() => b.restartAuthoredPatrol({ why: 'start_patrol' })), true);
+        assert.deepEqual(calls, [['needs', 'jun', 'patrol'], ['fetch', 'move:start_patrol'], ['unseat']]);
+    } finally { delete window.npcNeedsSystem; delete window.seating; }
+});
+
+test('M2: restart is refused during a walk-in or walk-out', () => {
+    const b = patroller({ waypoints: WAYPOINTS, startDeferred: true });
+    b._walk = { farRoom: 'lobby' };
+    assert.equal(quietSync(() => b.restartAuthoredPatrol({ why: 'start_patrol' })), false);
+    assert.equal(b.config.patrol.enabled, false);
+    assert.equal(b._cancelled, undefined, 'the walk\'s move is left alone');
+});
+
+test('M2: resume_patrol sees a needs move as off the patrol; an untouched patrol still refuses', () => {
+    const mgr = new NPCBehaviorManager({}, {});
+    const b = patroller({ waypoints: WAYPOINTS, enabled: true, speed: 40 });
+    mgr.behaviors.set('jun', b);
+    assert.equal(quietSync(() => mgr.resumePatrol('jun', {})), false);
+    // a needs goToAndStay: patrol on with one waypoint, move in flight, not marked as an override
+    b._stopOnArrival = true;
+    b.config.patrol.waypoints = [{ x: 1, y: 1 }];
+    assert.equal(quietSync(() => mgr.resumePatrol('jun', {})), true);
+    assert.equal(b.config.patrol.waypoints.length, 2);
+});
+
+test('m2: resume_patrol does not start a deferred patrol that was never started', () => {
+    const mgr = new NPCBehaviorManager({}, {});
+    const b = patroller({ waypoints: WAYPOINTS, startDeferred: true });
+    mgr.behaviors.set('jun', b);
+    assert.equal(quietSync(() => mgr.resumePatrol('jun', {})), false);
+    assert.equal(b.config.patrol.enabled, false);
+    assert.equal(quietSync(() => mgr.startPatrol('jun', {})), true);
+});
+
+test('m1: a rejected route (multiRoom off, route left) does not count as an authored patrol', () => {
+    const b = patroller({});
+    b._authoredPatrol = { waypoints: [], route: [{ room: 'x' }], multiRoom: false, enabled: false };
+    assert.equal(quietSync(() => b.restartAuthoredPatrol({})), false);
+});
+
+test('M2: mapping actions run after patrolOverride, setVisible and walkIn in the same mapping', () => {
+    const m = makeManager();
+    const order = [];
+    window.npcBehaviorManager = {
+        goToAndStay: () => order.push('override'),
+        setNPCVisible: () => order.push('visible'),
+        walkNPCIn: () => { order.push('walkIn'); return { immediate: true, then() {} }; }
+    };
+    window.rooms = { hall: { position: { x: 0, y: 0 } } };
+    window.applyActions = () => order.push('actions');
+    try {
+        quietSync(() => fire(m, {
+            patrolOverride: { targetTile: { x: 1, y: 1 } }, setVisible: true, walkIn: {},
+            actions: [{ type: 'resume_patrol', npc: 'guard' }]
+        }));
+        assert.equal(order[order.length - 1], 'actions');
+        assert.ok(order.indexOf('override') < order.indexOf('actions'));
+        assert.ok(order.indexOf('walkIn') < order.indexOf('actions'));
+    } finally { delete window.npcBehaviorManager; delete window.rooms; delete window.applyActions; }
+});
+
+test('M3: remove_world_item waits for a drop that is still being saved', async () => {
+    let settle;
+    const stick = sprite();
+    stick._dropSync = new Promise((r) => { settle = r; });
+    const removed = withRooms({ a: { objects: { stick } } }, { a: {} });
+    await quiet(() => applyActions([{ type: 'remove_world_item', item: 'stick' }]));
+    assert.equal(stick.destroyed, 0, 'not destroyed while the drop is saving');
+    assert.deepEqual(removed, [], 'the removal is not sent before the add');
+    settle(true);
+    await flush(); await flush();
+    assert.equal(stick.destroyed, 1);
+    assert.deepEqual(removed, [['a', 'stick']]);
+    cleanRooms();
+});
+
+test('M3: a drop whose save rejects is still taken back; one picked up meanwhile is not destroyed', async () => {
+    const stick = sprite();
+    stick._dropSync = Promise.reject(new Error('save failed'));
+    let removed = withRooms({ a: { objects: { stick } } }, { a: {} });
+    await quiet(async () => { applyActions([{ type: 'remove_world_item', item: 'stick' }]); await flush(); await flush(); });
+    assert.equal(stick.destroyed, 1);
+    const held = sprite();
+    let settle;
+    held._dropSync = new Promise((r) => { settle = r; });
+    removed = withRooms({ a: { objects: { stick: held } } }, { a: {} });
+    await quiet(() => applyActions([{ type: 'remove_world_item', item: 'stick' }]));
+    delete window.rooms.a.objects.stick;   // picked up (and re-dropped as nothing) before the save settles
+    settle(true);
+    await flush(); await flush();
+    assert.equal(held.destroyed, 0);
+    assert.deepEqual(removed, [['a', 'stick']], 'the server is still told, idempotently');
+    cleanRooms();
+});

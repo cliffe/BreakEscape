@@ -142,3 +142,20 @@ test('confirm_action onConfirm lists are checked too', { skip }, () => {
   assert.match(out.join('\n'), /ERROR.*actions\[0\]\/onConfirm\[0\]' \(hint\) is missing required key 'message'/);
   assert.equal(out.filter((l) => /missing required key/.test(l)).length, 1, 'reported once, not twice');
 });
+
+test('patrol actions need an authored patrol; startDeferred needs a starter; client-only actions in a mapping warn (R1 m3, m4)', { skip }, () => {
+  const sc = (npc, actions) => ({ globalVariables: {}, rooms: { r: { npcs: [{ id: 'jun', npcType: 'person', ...npc, eventMappings: [{ eventPattern: 'x', actions }] }] } } });
+  const w = (l) => l.filter((s) => /WARNING/.test(s));
+  let l = check(sc({}, [{ type: 'start_patrol', npc: 'jun' }]));
+  assert.ok(w(l).some((s) => /no authored patrol/.test(s)), l.join('\n'));
+  l = check(sc({ behavior: { patrol: { waypoints: [{ x: 1, y: 1 }], startDeferred: true } } }, [{ type: 'start_patrol', npc: 'jun' }]));
+  assert.deepEqual(l, []);
+  l = check(sc({ behavior: { patrol: { waypoints: [{ x: 1, y: 1 }], startDeferred: true } } }, []));
+  assert.ok(w(l).some((s) => /never moves/.test(s)), l.join('\n'));
+  l = check(sc({ behavior: { patrol: { waypoints: [{ x: 1, y: 1 }], startWhen: 'globalVars.a' } } }, []));
+  assert.deepEqual(l, [], 'startWhen is its own starter');
+  l = check(sc({ needs: {}, behavior: { patrol: { waypoints: [{ x: 1, y: 1 }], startDeferred: true } } }, [{ type: 'start_patrol', npc: 'jun' }]));
+  assert.ok(w(l).some((s) => /needs/.test(s)), l.join('\n'));
+  l = check(sc({}, [{ type: 'unlock_door', room_id: 'r' }, { type: 'complete_task', taskId: 't' }]));
+  assert.equal(w(l).filter((s) => /not saved by the server/.test(s)).length, 2, l.join('\n'));
+});

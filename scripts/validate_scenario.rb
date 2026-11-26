@@ -3288,12 +3288,18 @@ def check_action_keys(json_data)
   rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
   globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
   npc_ids = []
+  npc_nodes = {}
+  started = []   # npc ids named by any start_patrol action anywhere
   droppable = []
   collect = nil
   collect = lambda do |node|
     case node
     when Hash
-      npc_ids << node['id'] if node['npcType'] || node['behavior'] || node.key?('eventMappings')
+      if node['npcType'] || node['behavior'] || node.key?('eventMappings')
+        npc_ids << node['id']
+        npc_nodes[node['id']] = node if node['id'].is_a?(String)
+      end
+      started << node['npc'] if node['type'] == 'start_patrol' && node['npc'].is_a?(String)
       droppable << node['id'] if node['droppable'] == true && node['id'].is_a?(String)
       node.each_value { |v| collect.call(v) }
     when Array
@@ -3351,6 +3357,16 @@ def check_action_keys(json_data)
       if %w[start_patrol resume_patrol].include?(type) && a['npc'].is_a?(String) && !npc_ids.include?(a['npc'])
         issues << "#{sev}: '#{ap}' (#{type}) names npc '#{a['npc']}', which the scenario does not declare."
       end
+      if %w[start_patrol resume_patrol].include?(type) && a['npc'].is_a?(String) && npc_nodes[a['npc']]
+        pat = npc_nodes[a['npc']].dig('behavior', 'patrol')
+        authored = pat.is_a?(Hash) && (Array(pat['waypoints']).any? || (pat['multiRoom'] && Array(pat['route']).any?) || pat['bounds'] || pat['worldBounds'])
+        issues << "⚠️ WARNING: '#{ap}' (#{type}) names '#{a['npc']}', which has no authored patrol (behavior.patrol waypoints, a multiRoom route or bounds), so the action does nothing." unless authored
+      end
+      # E4 R1 m4: these actions run client-side only from a mapping (no gameId), so nothing is saved
+      if strict && %w[unlock_door unlock_object complete_task].include?(type)
+        field = { 'unlock_door' => "the mapping's own 'unlockDoor'", 'unlock_object' => "a server-side unlock (the mapping has no unlockObject field)", 'complete_task' => "the mapping's own 'completeTask'" }[type]
+        issues << "⚠️ WARNING: '#{ap}' (#{type}) in a mapping's actions is not saved by the server (no game id), so it is lost on reload; use #{field}."
+      end
       if type == 'set_global' && a['key'].is_a?(String) && !globals.key?(a['key'])
         issues << "⚠️ WARNING: '#{ap}' (set_global) sets '#{a['key']}', which is not a declared global."
       end
@@ -3379,6 +3395,17 @@ def check_action_keys(json_data)
     end
   end
   walk.call(json_data, '')
+  npc_nodes.each do |id, node|
+    pat = node.dig('behavior', 'patrol')
+    next unless pat.is_a?(Hash)
+    next unless pat['startDeferred'] == true || (pat['startWhen'].is_a?(String) && pat['startWhen'].strip != '')
+    unless started.include?(id) || (pat['startWhen'].is_a?(String) && pat['startWhen'].strip != '')
+      issues << "⚠️ WARNING: '#{id}' has a startDeferred patrol that no start_patrol action names (and no startWhen), so it never moves."
+    end
+    if node['needs'] || node.dig('behavior', 'needs')
+      issues << "⚠️ WARNING: '#{id}' has a deferred patrol and needs; start_patrol suspends its needs for good (as any scripted move does)."
+    end
+  end
   issues
 end
 

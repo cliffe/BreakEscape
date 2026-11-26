@@ -4854,7 +4854,8 @@
               "type": "object",
               "properties": {
                 "enabled": { "type": "boolean" },
-                "startDeferred": { "type": "boolean", "description": "E4: the patrol is authored and validated but the NPC stands still until a start_patrol action sets it off; resume_patrol restarts it after a patrolOverride" },
+                "startWhen": { "type": "string", "description": "E4: a global condition (globalVars grammar, utils/global-condition.js) read every tick. Implies startDeferred; the patrol starts once, the first time it holds, so it also starts after a reload. Unlike a start_patrol action it survives a reload" },
+                "startDeferred": { "type": "boolean", "description": "E4: the patrol is authored and validated but the NPC stands still until a start_patrol action sets it off (not saved: after a reload it is off again, use startWhen for that); resume_patrol restarts it after a patrolOverride" },
                 "speed": { "type": "number", "minimum": 1 },
                 "loop": { "type": "boolean" },
                 "pauseForPlayer": { "type": "boolean" },
