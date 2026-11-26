@@ -1,0 +1,13 @@
+{
+  "key": "5aa5b13b341537e3d39f9e13713bcac7",
+  "npc": "niamh_doherty",
+  "text": "So are the mugs, Graham.",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:43:02Z"
+}

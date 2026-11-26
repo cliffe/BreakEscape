@@ -1,0 +1,13 @@
+{
+  "key": "7b9a22d468b87971d97d5c491aa80738",
+  "npc": "yusuf_demir",
+  "text": "Printer's dead. I'll ask Anjali.",
+  "voice": "Iapetus",
+  "style": "Operations analyst at Merrin & Sallow, in his 30s, friendly and a little scatty. Speak with a consistent London accent with a light Turkish inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:05:28Z"
+}

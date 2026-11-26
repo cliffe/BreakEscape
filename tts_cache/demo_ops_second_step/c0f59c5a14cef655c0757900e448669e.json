@@ -1,0 +1,13 @@
+{
+  "key": "c0f59c5a14cef655c0757900e448669e",
+  "npc": "thandiwe_moyo",
+  "text": "Go on, after you.",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:11:53Z"
+}

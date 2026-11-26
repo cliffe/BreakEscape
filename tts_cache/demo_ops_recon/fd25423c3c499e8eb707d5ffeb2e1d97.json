@@ -1,0 +1,13 @@
+{
+  "key": "fd25423c3c499e8eb707d5ffeb2e1d97",
+  "npc": "ama_owusu",
+  "text": "The scan showed what the printer runs, service by service.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:34:53Z"
+}

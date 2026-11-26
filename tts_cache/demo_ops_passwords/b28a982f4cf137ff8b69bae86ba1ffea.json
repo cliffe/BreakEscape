@@ -1,0 +1,13 @@
+{
+  "key": "b28a982f4cf137ff8b69bae86ba1ffea",
+  "npc": "jun_watanabe",
+  "text": "Oh, hi. Sorry, I'm a bit swamped.",
+  "voice": "Puck",
+  "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:40:52Z"
+}

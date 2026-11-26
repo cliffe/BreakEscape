@@ -599,3 +599,17 @@ test('a short form of a move that ends the trip is refused at both prompts; whol
     }
     assert.equal(G.complete('un', offers, view, SHELL).completed, 'unplug ');
 });
+
+test('use accepts the card name as well as its id, and a wrong word names the usable ones', () => {
+    const view = viewOf('techniques_unconfirmed');
+    const offers = offersFor(view);
+    const use = offers.find(o => o.action === 'use' && o.ids.techniqueId === 'phish');
+    const alias = G.modulesOf(view).find(m => m.findingId === use.ids.findingId).alias;
+    const card = Object.values(view.techniques).length ? view.techniques.phish : null;
+    assert.ok(card && card.name, 'fixture card has a name');
+    sameOffer(p(`use ${card.name.toLowerCase()} on ${alias}`, view), use);
+    sameOffer(p(`use ${card.name} ${alias}`, view), use);
+    assert.equal(msg(p(`use ${card.name} on ${alias} extra`, view)), 'One target at a time in this simulation.');
+    const wrong = msg(p(`use nonsense card on ${alias}`, view));
+    assert.match(wrong, /Type one of these words: .*phish/);
+});

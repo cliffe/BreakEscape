@@ -1,0 +1,13 @@
+{
+  "key": "440970c8f90fa0bb1e051ec836b6dffb",
+  "npc": "ama_owusu",
+  "text": "The desk policy refused the stick. That's a rule doing its job.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:44:39Z"
+}

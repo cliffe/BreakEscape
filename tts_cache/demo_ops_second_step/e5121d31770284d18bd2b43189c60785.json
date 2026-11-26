@@ -1,0 +1,13 @@
+{
+  "key": "e5121d31770284d18bd2b43189c60785",
+  "npc": "lorna_easton",
+  "text": "Busy morning?",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:58:09Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "03101927a1d17462c386656c90949e0d",
+  "npc": "priya_nair",
+  "text": "Priya Nair, IT service desk. I take the ones that come in by phone.",
+  "voice": "Leda",
+  "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:52:25Z"
+}

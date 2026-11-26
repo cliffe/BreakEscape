@@ -1,0 +1,13 @@
+{
+  "key": "76673462a1175579c5922be930ea3d6f",
+  "npc": "lorna_easton",
+  "text": "This machine takes forever.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:57:57Z"
+}

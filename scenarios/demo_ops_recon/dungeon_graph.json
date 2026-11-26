@@ -142,7 +142,7 @@
     },
     {
       "id": "log_network_log",
-      "label": "Network log<br/>net_link_up, net_link_down, share_folder_opened, network_swept, host_scanned, service_checked, finding_confirmed, technique_used, technique_refused",
+      "label": "Network log<br/>net_link_up, net_link_down, share_folder_opened, network_swept, host_scanned, service_checked, finding_confirmed, technique_used, technique_refused, signin_ok",
       "kind": "note",
       "optional": false
     },

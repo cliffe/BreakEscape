@@ -1,0 +1,13 @@
+{
+  "key": "2ee174680906cf8a335477f179628c01",
+  "npc": "yusuf_demir",
+  "text": "Print job failed. Again.",
+  "voice": "Iapetus",
+  "style": "Operations analyst at Merrin & Sallow, in his 30s, friendly and a little scatty. Speak with a consistent London accent with a light Turkish inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:05:42Z"
+}

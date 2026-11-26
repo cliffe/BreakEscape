@@ -1,0 +1,13 @@
+{
+  "key": "658bcaa27681c14c01b98c6f592816be",
+  "npc": "agnieszka_duda",
+  "text": "Because nobody else will.",
+  "voice": "Callirrhoe",
+  "style": "Merrin & Sallow's part-time bookkeeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:37:35Z"
+}

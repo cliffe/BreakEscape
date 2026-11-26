@@ -55,7 +55,7 @@ Fill in the form. Two answers off the file and I'll sort it. #helpdesk_request:i
 {
     - helpdesk_it_desk_result == "granted":
         # speaker:npc
-        That matches. It is done: the form shows what changed.
+        That matches. Done, and the form shows what changed.
         #complete_task:reset_password
         #set_global:reset_password_done:true
         ~ reset_password_done = true
@@ -81,7 +81,7 @@ Same form. Pick the approval reset this time. #helpdesk_request:it_desk
 {
     - helpdesk_it_desk_result == "granted":
         # speaker:npc
-        That matches. It is done: the form shows what changed.
+        That matches. Done, and the form shows what changed.
         #complete_task:reenrol
         #set_global:reenrol_done:true
         ~ reenrol_done = true

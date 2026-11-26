@@ -1,0 +1,13 @@
+{
+  "key": "5b1d2409b3e2160c88ee8b3a61bd8fc6",
+  "npc": "delphine_arvanitis",
+  "text": "Why is it off?",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:50:15Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "5545fc4e40b3572662fb54d16f235b61",
+  "npc": "lorna_easton",
+  "text": "Go on, after you.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:57:44Z"
+}

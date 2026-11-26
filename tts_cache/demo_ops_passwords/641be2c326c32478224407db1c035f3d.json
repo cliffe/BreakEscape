@@ -1,0 +1,13 @@
+{
+  "key": "641be2c326c32478224407db1c035f3d",
+  "npc": "niamh_doherty",
+  "text": "It's off. Typical.",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:55:28Z"
+}

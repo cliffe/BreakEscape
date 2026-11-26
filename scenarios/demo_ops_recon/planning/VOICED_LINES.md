@@ -4,6 +4,8 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); this is the list a la
 
 ## ama_owusu
 
+Regenerated after the tour round 1 fixes from `ink/ama_owusu.ink` (every `# speaker:npc` line, both arms of the one inline conditional) and Ama's barks in `scenario.json.erb`.
+
 | # | Source | Line | Words |
 |---|---|---|---|
 | 1 | ink start | I'm Ama, from Fenlow. Merrin and Sallow want to know what an outsider could learn from one spare network port. | 20 |
@@ -11,60 +13,85 @@ Voice audio is decided later (SHOWCASE_PLAN.md section 9); this is the list a la
 | 3 | ink hub | What can I help with? | 5 |
 | 4 | ink hub | Anything else? | 2 |
 | 5 | ink hub | Go on. | 2 |
-| 6 | ink hub | Go on. I'll be here. | 5 |
+| 6 | ink hub | I'll be here. | 3 |
 | 7 | ink whats_next | Find the hot desk and its network port. Plug the drop box in while Jun is away from it. | 19 |
-| 8 | ink whats_next | Jun goes for coffee now and then, or I can send him and Chidi. Be off the port before he's back. | 21 |
-| 9 | ink whats_next | Open the drop box in your inventory and sweep the office network. See what answers. | 15 |
-| 10 | ink whats_next | Scan the printer to see what it runs. | 8 |
-| 11 | ink whats_next | Check the printer's admin page. It reports two weaknesses. Test both to see which is real. | 16 |
-| 12 | ink whats_next | There's a technique card in the printer cupboard. Use it on the weakness that's real. | 15 |
-| 13 | ink whats_next | Now try the file server the same way, in the Terminal view. Same moves, typed. | 15 |
-| 14 | ink whats_next | Then come back and tell me what it said. | 9 |
-| 15 | ink whats_next | The rest needs the evening. Tell me to call it a day. | 12 |
-| 16 | ink whats_next | The rest needs the evening. Look in on the kitchen and the server room first, then tell me to call it a day. | 23 |
-| 17 | ink whats_next | Zainab stays late. She'll be in the server room or at the kitchen coffee. She has a card for you. | 20 |
-| 18 | ink whats_next | Use Zainab's card on the file server's update weakness. That gets you a user session. | 15 |
-| 19 | ink whats_next | Then test the left-open setting, and use the card from her tool roll on it. That's an admin session, and the shared drive. | 23 |
-| 20 | ink whats_next | Go and see Graham in IT. He'll show you the network log. | 12 |
-| 21 | ink whats_next | That's the lot. Ask for the short version, or stay and look round. | 13 |
-| 22 | ink lever_coffee | Right. A coffee run. Chidi and Jun will head for the machine. | 12 |
-| 23 | ink lever_coffee | Anyone still at the hot desk port when Jun comes back gets caught. | 13 |
-| 24 | ink lever_lunch | Have a look in the kitchen first. That's where they eat. | 11 |
-| 25 | ink lever_lunch | Lunch, then. Staff drift off their desks, Jun included. They only go the once. | 14 |
-| 26 | ink lever_day_end | Look in on the kitchen and the server room first. Zainab works in the server room, and she'll want the kitchen later. | 22 |
-| 27 | ink lever_day_end | Seen what you wanted? Once they've gone home, it's just Zainab and Graham. | 13 |
-| 28 | ink lever_day_end | Right. Home time for nearly everyone. | 6 |
-| 29 | ink lever_day_end | Zainab will head for the kitchen coffee, and Graham will show you the log. | 14 |
-| 30 | ink lever_day_end | Take your time. | 3 |
-| 31 | ink terminal_talk | Good. What did the file server say? | 7 |
-| 32 | ink terminal_talk | That's the banner. It tells you what to look up before you guess. | 13 |
-| 33 | ink terminal_talk | Same findings, same names. The Terminal shows the addresses and banners the panels tidy away. | 15 |
-| 34 | ink terminal_talk | Try it, then tell me. | 5 |
-| 35 | ink terminal_ticked | Panels and Terminal are two views of the same thing. Switch between them any time. | 15 |
-| 36 | ink recap | Which part? | 2 |
-| 37 | ink recap_morning | The drop box on the port gave you a foothold. No password needed, only a free cable. | 17 |
-| 38 | ink recap_morning | The sweep listed what answers. Machines you never touched, found from one port. | 13 |
-| 39 | ink recap_morning | The scan showed what the printer runs, service by service. | 10 |
-| 40 | ink recap_midday | Testing sorted the weakness that's real from the one that's a false alarm. | 13 |
-| 41 | ink recap_midday | The card turned the printer's factory account into a saved link to Agnieszka's PC. | 14 |
-| 42 | ink recap_midday | The Terminal showed the same findings, typed, with each machine's address and banner. | 13 |
-| 43 | ink recap_evening | The shared drive took two steps, a user session and then an administrator's. | 13 |
-| 44 | ink recap_evening | The log kept every step you took, so someone could spot you afterwards. | 13 |
-| 45 | ink short_version | One cable shows a lot. Sweep the network, then scan each machine. | 12 |
-| 46 | ink short_version | Reported weaknesses are only reports. Test each one before you trust it. | 12 |
-| 47 | ink short_version | A technique fits one kind of weakness, and some need a user session first. | 14 |
-| 48 | ink short_version | Everything you did is in the network log. That's how defenders find you. | 13 |
-| 49 | bark room_entered:office | Morning! Come and find me when you're ready. | 8 |
-| 50 | bark network_foothold_gained:hotdesk_jack | You're in. Now see what answers. | 6 |
-| 51 | bark network_device_unplugged:hotdesk_jack | Unplugged. Every session through that box has ended with it. | 10 |
-| 52 | bark global_variable_changed:printer_off | Printer's off. It won't answer on the network now. | 9 |
-| 53 | bark network_foothold_gained:kitchen_jack | That works too. Nobody's watching the kitchen port. | 8 |
-| 54 | bark global_variable_changed:sweep_done | That's everything that answers. Pick the printer and scan it. | 10 |
-| 55 | bark global_variable_changed:scan_printer_done | The admin page is the one to look at. Check it, then test what it reports. | 16 |
-| 56 | bark global_variable_changed:confirm_both_done | One real, one false alarm. There's a technique card in the printer cupboard. | 13 |
-| 57 | bark global_variable_changed:use_card_done | The printer kept a saved link to Agnieszka's PC. Try it from her row. | 14 |
-| 58 | bark global_variable_changed:file_server_seen | That's the file server. Try it in the Terminal too, then tell me what it said. | 16 |
-| 59 | bark global_variable_changed:open_share_done | You're in the shared drive. Graham can show you how that looked. | 12 |
+| 8 | ink whats_next | Jun goes for coffee now and then, or I can send him and Chidi. | 14 |
+| 9 | ink whats_next | If Jun comes back while you're at his port, he'll ask what you're doing. | 14 |
+| 10 | ink whats_next | If you'd rather not wait, the kitchen has a spare port too, and nobody watches it. | 16 |
+| 11 | ink whats_next | Open the drop box in your inventory and sweep the office network. See what answers. | 15 |
+| 12 | ink whats_next | Scan the printer to see what it runs. | 8 |
+| 13 | ink whats_next | Switch the printer back on at its wall socket first. | 10 |
+| 14 | ink whats_next | Check the printer's admin page. It reports two weaknesses. Test both to see which is real. | 16 |
+| 15 | ink whats_next | Want to see an outage? Switch the printer off at its wall socket and sweep again. Then switch it back on. | 21 |
+| 16 | ink whats_next | There's a technique card in the printer cupboard. Use it on the weakness that's real. | 15 |
+| 17 | ink whats_next | Now sign in to Agnieszka's PC from the network view, with the printer's saved link. | 15 |
+| 18 | ink whats_next | Now try the file server the same way, in the Terminal view. Same moves, typed. | 15 |
+| 19 | ink whats_next | Then come back and tell me what it said. | 9 |
+| 20 | ink whats_next | The rest needs the evening. Tell me to call it a day. | 12 |
+| 21 | ink whats_next | The rest needs the evening. Look in on the kitchen and the server room first, then tell me to call it a day. | 23 |
+| 22 | ink whats_next | Zainab stays late. She'll be in the server room or at the kitchen coffee. She has a card for you. | 20 |
+| 23 | ink whats_next | Use Zainab's card on the file server's update weakness. That gets you a user session. | 15 |
+| 24 | ink whats_next | Then test the left-open setting, and use the card from her tool roll on it. That's an admin session, and the shared drive. | 23 |
+| 25 | ink whats_next | Go and see Graham in IT. He'll show you the network log. | 12 |
+| 26 | ink whats_next | Last thing. Go back to the kitchen port and unplug the box. | 12 |
+| 27 | ink whats_next | Last thing. Go back to the hot desk port and unplug the box. | 13 |
+| 28 | ink whats_next | That's the lot. Ask for the short version, or stay and look round. | 13 |
+| 29 | ink lever_coffee | Right, a coffee run. Chidi and Jun will head for the machine. | 12 |
+| 30 | ink lever_coffee | Jun's desk will be empty for a bit. | 8 |
+| 31 | ink lever_lunch | Have a look in the kitchen first. That's where they eat. | 11 |
+| 32 | ink lever_lunch | Lunch, then. Staff drift off their desks, Jun included. They only go the once. | 14 |
+| 33 | ink lever_day_end | Look in on the kitchen and the server room first. Zainab works in the server room, and she'll want the kitchen later. | 22 |
+| 34 | ink lever_day_end | Not yet. There's still work to do, and once they've gone home they won't be back. | 16 |
+| 35 | ink lever_day_end | You haven't plugged the drop box in. | 7 |
+| 36 | ink lever_day_end | You haven't swept the network. | 5 |
+| 37 | ink lever_day_end | You haven't scanned the printer. | 5 |
+| 38 | ink lever_day_end | You haven't tested both printer weaknesses. | 6 |
+| 39 | ink lever_day_end | You haven't used the card on the printer's real weakness. | 10 |
+| 40 | ink lever_day_end | You haven't signed in to Agnieszka's PC. | 7 |
+| 41 | ink lever_day_end | You haven't looked at the file server in the Terminal. | 10 |
+| 42 | ink lever_day_end | Seen what you wanted? Once they've gone home, it's just Zainab and Graham. | 13 |
+| 43 | ink lever_day_end | Right. Home time for nearly everyone. | 6 |
+| 44 | ink lever_day_end | Zainab will head for the kitchen coffee, and Graham will show you the log. | 14 |
+| 45 | ink lever_day_end | Take your time. | 3 |
+| 46 | ink terminal_talk | Good. What did the file server say? | 7 |
+| 47 | ink terminal_talk | That's the banner. On a real network, that's what you'd look up before you guess. | 15 |
+| 48 | ink terminal_talk | Same findings, same names. The Terminal shows the addresses and banners the panels tidy away. | 15 |
+| 49 | ink terminal_talk | Try it, then tell me. | 5 |
+| 50 | ink terminal_ticked | The Terminal prints like a real console, with the scan as a table, but the products and names are made up. | 21 |
+| 51 | ink terminal_ticked | Switch to Panels and back again. The Terminal keeps its log for as long as the view is open. | 19 |
+| 52 | ink recap | Which part? | 2 |
+| 53 | ink recap | Right. | 1 |
+| 54 | ink recap_morning | The drop box on the port gave you a foothold. No password needed, only a free cable. | 17 |
+| 55 | ink recap_morning | The sweep listed what answers. Machines you never touched, found from one port. | 13 |
+| 56 | ink recap_morning | The scan showed what the printer runs, service by service. | 10 |
+| 57 | ink recap_midday | Testing sorted the weakness that's real from the one that's a false alarm. | 13 |
+| 58 | ink recap_midday | The card got in through the printer's factory account, and the printer had a saved link to Agnieszka's PC. | 19 |
+| 59 | ink recap_midday | A saved link is as good as a password, so anything that stores one is worth guarding. | 17 |
+| 60 | ink recap_midday | The Terminal showed the same findings, typed, with each machine's address and banner. | 13 |
+| 61 | ink recap_evening | The shared drive took two steps, a user session and then an administrator's. | 13 |
+| 62 | ink recap_evening | The log kept every step you took, so someone could spot you afterwards. | 13 |
+| 63 | ink recap_evening | A foothold lasts only while the box is plugged in. What you found stays with you. | 16 |
+| 64 | ink short_version | One cable shows a lot. Sweep the network, then scan each machine. | 12 |
+| 65 | ink short_version | Reported weaknesses are only reports. Test each one before you trust it. | 12 |
+| 66 | ink short_version | A technique fits one kind of weakness, and a saved link works like a password. | 15 |
+| 67 | ink short_version | Everything you did is in the network log. That's how defenders find you. | 13 |
+| 68 | bark room_entered:office | Morning! Come and find me when you're ready. | 8 |
+| 69 | bark network_foothold_gained:hotdesk_jack | You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network. | 23 |
+| 70 | bark network_device_unplugged:hotdesk_jack | Unplugging ended every session that ran through the box. Your keyring keeps what you found. | 15 |
+| 71 | bark global_variable_changed:printer_off | Printer's off. It won't answer on the network now. | 9 |
+| 72 | bark network_foothold_gained:kitchen_jack | That works too. The box is your foothold, so anything it can reach, you can look at. Now sweep the network. | 21 |
+| 73 | bark global_variable_changed:sweep_done | Those are the machines that answered. One spare port showed you every PC, the printer, a camera and a file share. Scan the printer next. | 25 |
+| 74 | bark global_variable_changed:scan_printer_done | The scan lists what the printer offers, each with its product and version. The admin page is the one to check. | 21 |
+| 75 | bark global_variable_changed:confirm_both_done | Two reports that looked the same. Only testing showed which was real and why the other was a false alarm. There's a technique card in the printer cupboard. | 28 |
+| 76 | bark global_variable_changed:use_card_done | The card fitted the real weakness. The printer had kept a saved link to Agnieszka's PC, and that link is in your keyring now. | 24 |
+| 77 | bark global_variable_changed:file_server_seen | That's the file server. Look at it in the Terminal, then tell me what it said. | 16 |
+| 78 | bark global_variable_changed:open_share_done | The shared drive opens only for Graham. The foothold and Agnieszka's session weren't enough. Now see Graham for the log. | 20 |
+| 79 | bark global_variable_changed:remote_signin_done | That's her desktop, and you never knew her password. A saved link works like one. | 15 |
+| 80 | bark pc_signed_in:file_server | A session on the file server as Agnieszka, an ordinary user. The red frame means a technique got you in, not a password. | 23 |
+| 81 | bark pc_signed_in:file_server | Now you're Graham, an administrator. The user session was what that weakness needed first. | 14 |
+| 82 | bark global_variable_changed:read_log_done | Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them. Last thing, unplug the box. | 28 |
+| 83 | bark global_variable_changed:read_log_done | Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them. | 23 |
+| 84 | bark global_variable_changed:use_card_done | The false one won't take that card, if you want to try. Then sign in to Agnieszka's PC with the saved link. | 22 |
 
 ## chidi_okeke
 
@@ -236,7 +263,7 @@ Lines new or reworded in the round 1 fixes (dialogue review R1 and implementatio
 
 ## Totals
 
-143 lines listed; 47 new or changed in round 1; longest 23 words.
+168 lines listed (Ama 84, regenerated after the tour round 1 fixes; the other speakers unchanged); longest 28 words, within the 30-word cap.
 
 ## Changed in round 2
 
@@ -246,3 +273,27 @@ Lines new or reworded in the round 1 fixes (dialogue review R1 and implementatio
 | ama_owusu | bark global_variable_changed:file_server_seen | That's the file server. Try it in the Terminal too, then tell me what it said. | 16 |
 
 The two lines above replace their round 1 versions in the tables. No other line changed.
+
+## Tour round (U1, 2026-11-25): new and changed lines (text only, nothing generated)
+
+Changed (replace the old line): Ama barks `network_foothold_gained:hotdesk_jack` ("You're in. Now see what answers." -> "You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network."), `:kitchen_jack` (adds "The box is your foothold there, and anything it can reach, you can look at."), `sweep_done` (-> "Those are the machines that answered. One spare port showed you every PC, the printer, a camera and a file share. Scan the printer next."), `scan_printer_done` (-> "Each tile is something the printer offers, with its product and version. The admin page is the one to check."), `confirm_both_done` (-> "Two reports that looked the same. Only testing showed which was real and why the other was a false alarm. There's a technique card in the printer cupboard."), `use_card_done` (-> "The card fitted the real weakness. The printer had kept a saved link to Agnieszka's PC, and that link is in your keyring now."), `open_share_done` (-> "The shared drive opens only for Graham. The foothold and Agnieszka's session weren't enough. Now see Graham for the log."), unplug (-> "Unplugging ended every session that ran through the box. Your keyring keeps what you found."), and `terminal_ticked` ("Panels and Terminal are two views of the same thing. Switch between them any time." -> "Same findings, same names, printed the way a console prints them. Its scan came back as a table, lined up in columns.").
+
+New (Ama): "Try the same card on the false one, if you like. It won't take. Then open Agnieszka's PC row and connect with that saved link." (25 words); "That's her desktop, and you never knew her password. A saved connection works like one."; "A session on the file server as Agnieszka, an ordinary user. The red frame means a technique got you in, not a sign-in."; "Now you're Graham, an administrator. The user session was what that weakness needed first."; "Every move you made is in that log, after the stranger's. Whoever reads it can see you, the way you saw them. Then ask me what's next."; "Switch to Panels and back again. The Terminal keeps its log for as long as the view is open."; "If Jun comes back while you're at his port, he'll ask what you're doing."; "Want to see an outage? Switch the printer off at its wall socket and sweep again. Then switch it back on."; "Open the sign-in control on Agnieszka's PC row and connect with the printer's saved link."; "Last thing. Go back to the kitchen port and unplug the box." and the same with "hot desk"; the gate: "Not yet. Some of the day's steps are still undone, and staff won't be back once they've gone home." with "You haven't plugged the drop box in.", "You haven't swept the network.", "You haven't scanned the printer.", "You haven't tested both printer weaknesses.", "You haven't used the card on the real one.", "You haven't signed in to Agnieszka's PC.", "You haven't looked at the file server in the Terminal."; recaps: "The saved connection was as good as a password. Keep that in mind when a printer stores one.", "A foothold lasts only while the box is plugged in. What you found stays with you."
+
+Voice style wording changed for Chidi, Jun, Agnieszka and Graham (firm names fixed); changes the cache keys, nothing is cached. Longest new line 28 words. Superseded by the regenerated Ama table above and the section below.
+
+## Tour round 1 fixes (2026-11-25): changed, new and cut lines (text only, nothing generated)
+
+Changed (Ama, ink): "Jun goes for coffee now and then, or I can send him and Chidi." (cut "Be off the port before he's back."); "Now sign in to Agnieszka's PC from the network view, with the printer's saved link."; "Right, a coffee run. Chidi and Jun will head for the machine."; "Not yet. There's still work to do, and once they've gone home they won't be back."; "You haven't used the card on the printer's real weakness."; "That's the banner. On a real network, that's what you'd look up before you guess."; "It prints like a real console, with the scan as a table, but the products and names are made up."; "The card got in through the printer's factory account, and the printer had a saved link to Agnieszka's PC."; "A saved link is as good as a password, so anything that stores one is worth guarding."; "A technique fits one kind of weakness, and a saved link works like a password."; "I'll be here." (was "Go on. I'll be here.").
+
+Changed (Ama, barks): kitchen plug-in ("... The box is your foothold, so anything it can reach, you can look at. Now sweep the network."); scan ("The scan lists what the printer offers, each with its product and version. The admin page is the one to check."); file server ("That's the file server. Look at it in the Terminal, then tell me what it said."); remote sign-in ("... A saved link works like one."); the user technique session ("... not a password."); the log ("Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them. Last thing, unplug the box."); the false card ("The false one won't take that card, if you want to try. Then sign in to Agnieszka's PC with the saved link.").
+
+New (Ama): "If you'd rather not wait, the kitchen has a spare port too, and nobody watches it."; "Switch the printer back on at its wall socket first."; "Jun's desk will be empty for a bit."; "Right." (recap "Never mind."); the log bark without its last sentence, for a player who unplugged first.
+
+Cut (Ama): "Anyone still at the hot desk port when Jun comes back gets caught."; "Same findings, same names, printed the way a console prints them. Its scan came back as a table, lined up in columns."
+
+Longest line 28 words. No line prints a variable or carries a stage direction.
+
+## Final line edits before voicing (2026-11-25, from TOUR_REVIEW_R2)
+
+Changed (Ama): terminal_ticked now opens "The Terminal prints like a real console, ..." (was "It prints ..."); the kitchen plug-in bark is "That works too. The box is your foothold, so anything it can reach, you can look at. Now sweep the network." (cut "Nobody's watching the kitchen port."). Routing only, no line changed: the skip-day choice and the yes choice both divert to the new knot `lever_day_go`. The Ama table above is current.

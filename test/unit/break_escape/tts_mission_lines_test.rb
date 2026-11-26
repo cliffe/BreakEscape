@@ -1,7 +1,8 @@
 require 'test_helper'
 
 module BreakEscape
-  # Every line normal play voices in m01 to m10 and lab_physical_pentest, sent
+  # Every line normal play voices in m01 to m10, lab_physical_pentest and the
+  # demo_ops_* showcases, sent
   # through the /tts endpoint's own chain (TtsLineResolver, which
   # GamesController#tts calls): each must be accepted and keyed exactly as the
   # batch keys it, so no clip on disk goes silent and none is generated twice.
@@ -15,11 +16,11 @@ module BreakEscape
   # side reads the scenario as a game holds it (Game#generate_scenario_data);
   # the batch's side (TtsLineExtractor) reads the raw render, as the batch does.
   class TtsMissionLinesTest < ActiveSupport::TestCase
-    MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest)\z/.freeze
+    MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest|demo_ops_[a-z_]+)\z/.freeze
 
     # Missions whose event barks are checked against the batch's keys (m3):
     # the missions above plus sis03, whose barks carry the NPC's own name prefix
-    BARK_MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest|sis03_cyber_insurance)\z/.freeze
+    BARK_MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest|demo_ops_[a-z_]+|sis03_cyber_insurance)\z/.freeze
 
     # Voiced lines that print a scenario value, by mission. Anything else that
     # prints a variable is either player text (a carried-over global) or game
@@ -94,8 +95,9 @@ module BreakEscape
       @svc = TtsService.new
     end
 
-    test "the mission list is the expected eleven, each with the game's own scenario data" do
-      assert_equal 11, self.class.missions_data.size
+    test "the mission list is the eleven campaign and lab missions plus every demo_ops showcase, each with the game's own scenario data" do
+      showcases = Dir.glob(Engine.root.join('scenarios', 'demo_ops_*', 'scenario.json.erb').to_s).size
+      assert_equal 11 + showcases, self.class.missions_data.size
       self.class.missions_data.each do |name, _raw, game_data|
         # stamp_scenario_object_ids! ran: every room object has an id
         objects = game_data['rooms'].values.flat_map { |room| Array(room['objects']) }

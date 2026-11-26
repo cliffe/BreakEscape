@@ -1,0 +1,13 @@
+{
+  "key": "806681d8897b54fb9b179fa93df896dc",
+  "npc": "fatima_begum",
+  "text": "Thanks. Careful on the way out.",
+  "voice": "Zephyr",
+  "style": "Records clerk at Merrin & Sallow, in her late 20s, quick and cheerful, always carrying something. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:50:53Z"
+}

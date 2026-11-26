@@ -3,13 +3,16 @@
 // Contract: SHOWCASE_PLAN.md 8.3.1 (recon). Every VAR below is a scenario global that the
 // scenario file declares with the same initial value, synced in when the conversation starts;
 // met_ama is the only ink-local VAR (first-meeting line plays once, as in office_life_showcase).
-// coffee_call is a counter: the lever adds one and stays offered, so every press is a change.
+// coffee_call is a counter: a press that is not already pending adds one, so it is a change.
+// coffee_pending is true from a press until Jun is back at his desk (a mapping on Jun clears it):
+// a press in between says the run is on its way and queues nothing.
 // kitchen_seen and server_room_seen gate lunch and the evening: an NPC's needs only pick
 // targets in rooms the player has loaded, so the kitchen (food, the evening coffee) and the
 // server room (Zainab) must be loaded before those levers can work (as office_life_showcase
 // gates its lunch on kitchen_seen).
 
 VAR coffee_call = 0
+VAR coffee_pending = false // Synced scenario global: set here on a press, cleared when Jun is back at his desk or on a load
 VAR act_midday = false
 VAR act_evening = false
 VAR kitchen_seen = false
@@ -22,9 +25,15 @@ VAR scan_printer_done = false
 VAR confirm_both_done = false
 VAR use_card_done = false
 VAR terminal_view_done = false
+VAR remote_signin_done = false
+VAR unplug_done = false
+VAR box_at_kitchen = false
+VAR printer_off = false
 VAR open_share_done = false
 VAR read_log_done = false
 VAR met_ama = false
+// skip_day: the player chose "Skip them and call it a day anyway." (ink-local, as skip_late in the second-step showcase).
+VAR skip_day = false
 
 === start ===
 { met_ama:
@@ -57,7 +66,7 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
     -> short_version
 + [I'll have a look round.]
     # speaker:npc
-    Go on. I'll be here.
+    I'll be here.
     # exit_conversation
     -> END
 
@@ -67,7 +76,11 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         # speaker:npc
         Find the hot desk and its network port. Plug the drop box in while Jun is away from it.
         # speaker:npc
-        Jun goes for coffee now and then, or I can send him and Chidi. Be off the port before he's back.
+        Jun goes for coffee now and then, or I can send him and Chidi.
+        # speaker:npc
+        If Jun comes back while you're at his port, he'll ask what you're doing.
+        # speaker:npc
+        If you'd rather not wait, the kitchen has a spare port too, and nobody watches it.
     - not sweep_done:
         # speaker:npc
         Open the drop box in your inventory and sweep the office network. See what answers.
@@ -75,11 +88,22 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         # speaker:npc
         Scan the printer to see what it runs.
     - not confirm_both_done:
+        { printer_off:
+            # speaker:npc
+            Switch the printer back on at its wall socket first.
+        }
         # speaker:npc
         Check the printer's admin page. It reports two weaknesses. Test both to see which is real.
+        { not printer_off:
+            # speaker:npc
+            Want to see an outage? Switch the printer off at its wall socket and sweep again. Then switch it back on.
+        }
     - not use_card_done:
         # speaker:npc
         There's a technique card in the printer cupboard. Use it on the weakness that's real.
+    - not remote_signin_done:
+        # speaker:npc
+        Now sign in to Agnieszka's PC from the network view, with the printer's saved link.
     - not terminal_view_done:
         # speaker:npc
         Now try the file server the same way, in the Terminal view. Same moves, typed.
@@ -106,6 +130,9 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
     - not read_log_done:
         # speaker:npc
         Go and see Graham in IT. He'll show you the network log.
+    - not unplug_done:
+        # speaker:npc
+        Last thing. Go back to the {box_at_kitchen: kitchen|hot desk} port and unplug the box.
     - else:
         # speaker:npc
         That's the lot. Ask for the short version, or stay and look round.
@@ -113,11 +140,19 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
 -> hub
 
 === lever_coffee ===
+{ coffee_pending:
+    # speaker:npc
+    That's already on its way. Give them a minute.
+    -> hub
+}
 ~ coffee_call = coffee_call + 1
+~ coffee_pending = true
 # speaker:npc
-Right. A coffee run. Chidi and Jun will head for the machine.
-# speaker:npc
-Anyone still at the hot desk port when Jun comes back gets caught.
+Right, a coffee run. Chidi and Jun will head for the machine.
+{ not plug_in_done:
+    # speaker:npc
+    Jun's desk will be empty for a bit.
+}
 -> hub
 
 === lever_lunch ===
@@ -138,27 +173,75 @@ Lunch, then. Staff drift off their desks, Jun included. They only go the once.
     Look in on the kitchen and the server room first. Zainab works in the server room, and she'll want the kitchen later.
     -> hub
 }
+~ temp seen_file_server = terminal_view_done
+~ temp morning_done = plug_in_done and sweep_done and scan_printer_done
+~ temp midday_done = confirm_both_done and use_card_done and remote_signin_done and seen_file_server
+{ not skip_day and not (morning_done and midday_done):
+    # speaker:npc
+    Not yet. There's still work to do, and once they've gone home they won't be back.
+    { not plug_in_done:
+        # speaker:npc
+        You haven't plugged the drop box in.
+    }
+    { not sweep_done:
+        # speaker:npc
+        You haven't swept the network.
+    }
+    { not scan_printer_done:
+        # speaker:npc
+        You haven't scanned the printer.
+    }
+    { not confirm_both_done:
+        # speaker:npc
+        You haven't tested both printer weaknesses.
+    }
+    { not use_card_done:
+        # speaker:npc
+        You haven't used the card on the printer's real weakness.
+    }
+    { not remote_signin_done:
+        # speaker:npc
+        You haven't signed in to Agnieszka's PC.
+    }
+    { not terminal_view_done:
+        # speaker:npc
+        You haven't looked at the file server in the Terminal.
+    }
+    -> lever_day_refused
+}
 # speaker:npc
 Seen what you wanted? Once they've gone home, it's just Zainab and Graham.
 + [Yes, call it a day.]
-    ~ act_evening = true
-    #set_global:act_evening:true
-    # speaker:npc
-    Right. Home time for nearly everyone.
-    # speaker:npc
-    Zainab will head for the kitchen coffee, and Graham will show you the log.
-    -> hub
+    -> lever_day_go
 + [Not yet.]
     # speaker:npc
     Take your time.
     -> hub
+
+=== lever_day_go ===
+~ act_evening = true
+#set_global:act_evening:true
+# speaker:npc
+Right. Home time for nearly everyone.
+# speaker:npc
+Zainab will head for the kitchen coffee, and Graham will show you the log.
+-> hub
+
+=== lever_day_refused ===
++ [Skip them and call it a day anyway.]
+    ~ skip_day = true
+    -> lever_day_go
++ [Not yet.]
+    # speaker:npc
+    Take your time.
+    -> hub.choices
 
 === terminal_talk ===
 # speaker:npc
 Good. What did the file server say?
 + [It named the product and its version.]
     # speaker:npc
-    That's the banner. It tells you what to look up before you guess.
+    That's the banner. On a real network, that's what you'd look up before you guess.
     -> terminal_ticked
 + [It listed the same findings, with addresses.]
     # speaker:npc
@@ -171,7 +254,9 @@ Good. What did the file server say?
 
 === terminal_ticked ===
 # speaker:npc
-Panels and Terminal are two views of the same thing. Switch between them any time.
+The Terminal prints like a real console, with the scan as a table, but the products and names are made up.
+# speaker:npc
+Switch to Panels and back again. The Terminal keeps its log for as long as the view is open.
 #complete_task:terminal_view
 ~ terminal_view_done = true
 -> hub
@@ -181,10 +266,14 @@ Panels and Terminal are two views of the same thing. Switch between them any tim
 Which part?
 + [The morning.]
     -> recap_morning
-+ { confirm_both_done or use_card_done or terminal_view_done } [Midday.]
++ { confirm_both_done or use_card_done or remote_signin_done or terminal_view_done } [Midday.]
     -> recap_midday
-+ { open_share_done or read_log_done } [The evening.]
++ { open_share_done or read_log_done or unplug_done } [The evening.]
     -> recap_evening
++ [Never mind.]
+    # speaker:npc
+    Right.
+    -> hub
 
 === recap_morning ===
 # speaker:npc
@@ -206,7 +295,11 @@ The drop box on the port gave you a foothold. No password needed, only a free ca
 }
 { use_card_done:
     # speaker:npc
-    The card turned the printer's factory account into a saved link to Agnieszka's PC.
+    The card got in through the printer's factory account, and the printer had a saved link to Agnieszka's PC.
+}
+{ remote_signin_done:
+    # speaker:npc
+    A saved link is as good as a password, so anything that stores one is worth guarding.
 }
 { terminal_view_done:
     # speaker:npc
@@ -223,6 +316,10 @@ The drop box on the port gave you a foothold. No password needed, only a free ca
     # speaker:npc
     The log kept every step you took, so someone could spot you afterwards.
 }
+{ unplug_done:
+    # speaker:npc
+    A foothold lasts only while the box is plugged in. What you found stays with you.
+}
 -> hub
 
 === short_version ===
@@ -231,7 +328,7 @@ One cable shows a lot. Sweep the network, then scan each machine.
 # speaker:npc
 Reported weaknesses are only reports. Test each one before you trust it.
 # speaker:npc
-A technique fits one kind of weakness, and some need a user session first.
+A technique fits one kind of weakness, and a saved link works like a password.
 # speaker:npc
 Everything you did is in the network log. That's how defenders find you.
 -> hub

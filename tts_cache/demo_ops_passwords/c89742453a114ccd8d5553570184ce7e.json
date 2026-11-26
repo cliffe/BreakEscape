@@ -1,0 +1,13 @@
+{
+  "key": "c89742453a114ccd8d5553570184ce7e",
+  "npc": "graham_whitfield",
+  "text": "Every sign-in leaves a row. Open the log terminal and find yours.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind, a little tired of the same password questions. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:42:29Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "a5a4949b8369502f86ebd90a488e1b12",
+  "npc": "zainab_hussain",
+  "text": "Who switched the printer off?",
+  "voice": "Achernar",
+  "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:57:06Z"
+}

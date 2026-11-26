@@ -1,0 +1,13 @@
+{
+  "key": "b1fe849905949724cb6b62b7d3e34f14",
+  "npc": "ama_owusu",
+  "text": "Through the box, sign in to the backup PC with Zainab's token while it's fresh. It's in your keyring.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:30:23Z"
+}

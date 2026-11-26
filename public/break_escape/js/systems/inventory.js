@@ -599,6 +599,9 @@ function createInventorySprite(itemData) {
 export function restoreNoteFromSave(item) {
     const text = item?.text || item?.observations || '';
     if (!text || !window.addNote) return false;
+    // A note marked addToNotes:false was never put in the Notepad when it was read, so a
+    // reload must not add it either (the Notepad would gain a page that was not there before)
+    if (item.addToNotes === false) return false;
     const title = item.name || 'Note';
     if ((window.gameState?.notes || []).some(n => n.title === title)) return false;
     const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;

@@ -1,0 +1,13 @@
+{
+  "key": "e96acd07d2db8cc39d55ae8ee9f083f2",
+  "npc": "jun_watanabe",
+  "text": "Who keeps taking the mugs?",
+  "voice": "Puck",
+  "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:51:38Z"
+}

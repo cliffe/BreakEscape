@@ -1,0 +1,13 @@
+{
+  "key": "d83f0d16438e756f8411c0cb04b8be2f",
+  "npc": "niamh_doherty",
+  "text": "I'll use the hot desk.",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:56:23Z"
+}

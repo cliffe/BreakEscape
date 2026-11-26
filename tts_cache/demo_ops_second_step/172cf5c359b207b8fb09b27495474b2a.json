@@ -1,0 +1,13 @@
+{
+  "key": "172cf5c359b207b8fb09b27495474b2a",
+  "npc": "niamh_doherty",
+  "text": "Who's the cake from?",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, covering reception today. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:01:04Z"
+}

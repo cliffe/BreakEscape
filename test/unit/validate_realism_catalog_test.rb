@@ -74,11 +74,20 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
     end
   end
 
-  test 'only test scenarios link entries of the training fixtures' do
+  # demo_ops_terminal shows the Terminal's realism text on the invented FileHold
+  # entries; the owner accepted that this freezes their content (2026-11-25,
+  # SHOWCASE_TOUR_PLAN decision 1). No other non-test scenario may link them.
+  FIXTURE_SHOWCASES = %w[demo_ops_terminal].freeze
+
+  test 'only test scenarios and the approved showcase link entries of the training fixtures' do
     ids = JSON.parse(File.read(File.join(REALISM_CATALOG_DIR, 'training_fixtures.json')))['entries'].keys
     links = realism_scenario_links(REALISM_SCENARIOS_DIR)
     ids.each do |id|
-      links[id].each { |name| assert_match(/\Atest_/, name, "#{id} linked from a non-test scenario") }
+      links[id].each do |name|
+        next if FIXTURE_SHOWCASES.include?(name)
+
+        assert_match(/\Atest_/, name, "#{id} linked from a non-test scenario")
+      end
     end
   end
 

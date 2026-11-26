@@ -22,7 +22,7 @@ Sorry, still swamped.
     -> choices
 + { jun_pc_off and not see_borrow_done } [Is your PC off?]
     # speaker:npc
-    Dead as a doorknob. I can't get a thing done.
+    Dead as a doornail. I can't get a thing done.
     # speaker:npc
     I'll have to try the hot desk.
     -> choices

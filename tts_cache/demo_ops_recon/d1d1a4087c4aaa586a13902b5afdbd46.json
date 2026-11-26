@@ -1,0 +1,13 @@
+{
+  "key": "d1d1a4087c4aaa586a13902b5afdbd46",
+  "npc": "jun_watanabe",
+  "text": "Go on, just a small slice.",
+  "voice": "Puck",
+  "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:51:05Z"
+}

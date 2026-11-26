@@ -1,0 +1,13 @@
+{
+  "key": "06aab7c30119a60b5adf28e381c09c29",
+  "npc": "ama_owusu",
+  "text": "Three findings, each with a scanner's write-up and reference ids. Any of them could be a false alarm. They all read the same.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:37:11Z"
+}

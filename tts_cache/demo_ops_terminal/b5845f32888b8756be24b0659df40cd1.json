@@ -1,0 +1,13 @@
+{
+  "key": "b5845f32888b8756be24b0659df40cd1",
+  "npc": "ama_owusu",
+  "text": "This drop box is yours. I'll point out each step.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:29:24Z"
+}

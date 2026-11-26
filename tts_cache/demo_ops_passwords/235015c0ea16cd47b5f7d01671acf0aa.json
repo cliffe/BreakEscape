@@ -1,0 +1,13 @@
+{
+  "key": "235015c0ea16cd47b5f7d01671acf0aa",
+  "npc": "delphine_arvanitis",
+  "text": "The moment I get up, it locks itself. IT insisted.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:40:33Z"
+}

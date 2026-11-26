@@ -1,0 +1,13 @@
+{
+  "key": "ddcfa95d850e64c4893d640042cc634a",
+  "npc": "it_line",
+  "text": "I can't do that one over the phone.",
+  "voice": "Charon",
+  "style": "IT service desk phone agent at Merrin & Sallow, in his 30s, even and procedural. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:52:59Z"
+}
