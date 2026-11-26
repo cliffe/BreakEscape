@@ -88,17 +88,17 @@ Rules: at most 3.0 words per second over the cue window, UK English, no em or en
 | v2 | both | 16.65-19.05 | First, you play the attacker. | 5 | 2.08 | 2.400 s |
 | v3 | both | 21.10-23.98 | Dig into what staff post in public. | 7 | 2.43 | 2.880 s |
 | v4 | both | 24.28-26.98 | Build a cover story from what you found. | 8 | 2.96 | 2.424 s, caption held to 26.98 |
-| **v4b** | both | 27.25-30.25 | Booked and signed off. Now dress the part. | 8 | 2.67 | **new**, est. 2.6-3.0 s |
+| **v4b** | both | 27.25-30.25 | Booked and signed off. Now dress the part. | 8 | 2.67 | **voiced 26 Nov**, 3.240 s (natural 3.408 s, atempo 1.05); **overruns the 3.0 s window by 0.24 s** |
 | v5 | both | 31.07-33.55 | Then talk your way in. | 5 | 2.02 | 1.584 s |
-| **v5b** | ca12b | 33.80-36.80 | Or skip the desk, and watch the door. | 8 | 2.67 | **new**, est. 2.7-3.0 s |
-| **v6b** | ca12 | 38.87-41.77 | Name a partner, and she holds the door. | 8 | 2.76 | **new**, est. 2.5-2.9 s |
+| **v5b** | ca12b | 33.80-36.80 | Or skip the desk, and watch the door. | 8 | 2.67 | **voiced 26 Nov**, 2.520 s |
+| **v6b** | ca12 | 38.87-41.77 | Name a partner, and she holds the door. | 8 | 2.76 | **voiced 26 Nov**, 2.712 s |
 | v6 | ca12 | 45.37-46.12 | You're in. | 2 | 2.67 | 0.744 s, 0.34 s clear of the flip cut |
-| **v7** | both | 53.31-55.56 / 52.06-54.31 | Now swap seats. | 3 | 1.33 | **new**, est. 1.0-1.3 s |
+| **v7** | both | 53.31-55.56 / 52.06-54.31 | Now swap seats. | 3 | 1.33 | **voiced 26 Nov**, 1.632 s |
 | v8a | ca12 | 54.56-57.63 | Tailgating: slipping in behind a badge-holder. | 6 | 1.95 | 3.072 s |
 | v8b | both | 55.81-59.09 / 58.06-61.34 | Decide who gets in, and who gets checked. | 8 | 2.43 | 3.288 s |
 | v9 | both | 59.34-61.19 / 61.59-63.44 | You've used these tricks yourself. | 5 | 2.70 | 1.848 s |
 | v10 | ca12 | 63.69-68.47 | Check the list. Escort them. Badge in. Lock your screen. | 10 | 2.09 | 4.776 s |
-| **v10b** | ca12b | 61.44-66.22 | Check the list. Don't let anyone follow you in. | 9 | 1.88 | **new**, est. 4.0-4.6 s |
+| **v10b** | ca12b | 61.44-66.22 | Check the list. Don't let anyone follow you in. | 9 | 1.88 | **voiced 26 Nov**, 3.480 s |
 | v11 | both | 70.36-75.32 / 72.61-77.57 | Play the attack, learn to stop it, on Hacktivity.co.uk. | 9 | 1.81 | 4.968 s |
 
 Where two windows are given, the first is ca12b and the second ca12. Tightest gaps: v3 to v4 0.30 s; v10 to Lorna's speech (68.77) 0.30 s; v6 starts 0.31 s after Yusuf's bark.
