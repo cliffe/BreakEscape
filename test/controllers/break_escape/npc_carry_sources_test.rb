@@ -153,5 +153,12 @@ module BreakEscape
       %w[k1 k2 k3 k4 t1 t2 t3].each { |id| assert_nil idx[id], "#{id} is disqualified" }
       assert idx['ok'].present?
     end
+
+    test 'an account-only NPC itemsHeld entry with a needsTag is not indexed' do
+      account = { 'id' => 'deskadmin', 'displayName' => 'Desk Admin', 'npcType' => 'person', 'accountOnly' => true,
+                  'creds' => { 'username' => 'deskadmin', 'password' => 'Desk-Admin-1' }, 'itemsHeld' => [tagged('account_mugs')] }
+      build(scenario(npcs_extra: [account]))
+      assert_nil @game.carriable_object_index['account_mugs']
+    end
   end
 end

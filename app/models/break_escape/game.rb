@@ -1385,7 +1385,11 @@ module BreakEscape
         Array(item['contents']).each { |inner| visit.call(inner) }
         Array(item['itemsHeld']).each { |inner| visit.call(inner) }
       end
-      scenario_npc_records.each { |npc| Array(npc['itemsHeld']).each { |item| visit.call(item) } }
+      scenario_npc_records.each do |npc|
+        next if AccessIdentities.account_only?(npc) # S5c: an account holds no carriable items
+
+        Array(npc['itemsHeld']).each { |item| visit.call(item) }
+      end
       Array(scenario_data['startItemsInInventory']).each { |item| visit.call(item) }
       rooms = scenario_data['rooms']
       if rooms.is_a?(Hash)

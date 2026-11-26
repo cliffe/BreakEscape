@@ -147,6 +147,9 @@ app/models/break_escape/game.rb#headless_email_npc?:
   action: keep
   why: reads or edits a record by id from a room answer that already left the account
     out, or by id from the scenario
+app/models/break_escape/game.rb#each_held_source_item:
+  action: skip
+  why: an account holds no carriable items
 app/models/break_escape/game.rb#ko_claimable_room_npc_ids:
   action: skip
   why: no person to knock out
