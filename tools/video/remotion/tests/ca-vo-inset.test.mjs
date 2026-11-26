@@ -80,3 +80,11 @@ test('burned_line, vo_skin and caption_top lint', () => {
   const c2 = base(); c2.shots.push({ preset: 'hacktivity-close', cta_title: { scale: { '16:9': 1.5 } } }); assert.match(lint(c2).out, /cta_title.scale.16:9 must be an integer/);
   const c3 = base(); c3.shots.push({ preset: 'hacktivity-close', cta_title: { cy: { '1:1': 2 } } }); assert.match(lint(c3).out, /cta_title.cy.1:1 must be a fraction/);
 });
+
+test('a vo cue with caption:false lints clean and stays in the .srt', () => {
+  const e = base(); e.mission = 'ca12'; e.vo = [cue('t', 0.5, 2.5, 'Title line, spoken only.', { caption: false })];
+  const r = lint(e); assert.equal(r.code, 0, r.out);
+  const out = path.join(tmp, 'cf.srt');
+  const s = spawnSync('node', [path.join(root, 'scripts/make-srt.mjs'), write(e), out, '--takes-dir', tmp], { encoding: 'utf8' }); assert.equal(s.status, 0, s.stderr);
+  assert.match(fs.readFileSync(out, 'utf8'), /Title line, spoken only\./);
+});

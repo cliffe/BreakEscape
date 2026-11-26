@@ -30,6 +30,8 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
     if (sShot?.type === 'card' && cue.onCard === 'hide') return null;
     return <CaptionBox w={w} h={h} text={String(cue.caption ?? cue.text).replace(/\n/g, ' ')} topFrac9x16={edit.caption_top?.['9:16']} />;
   }
+  // cue.caption === false (any skin): no burned text for this cue, the audio still plays and the .srt keeps it (the product trailer's title plate carries the line)
+  if (cue.caption === false) return null;
   const shot = tl.shots.find((s: any) => frame >= s.startFrame && frame < s.endFrame) || tl.shots[tl.shots.length - 1];
   if (!shot) return null;
   if (shot.type === 'ca_close') return null; // the close's own tagline is the message (ca_open shows the cue at the foot: owner r3, silent viewers need the opening line)
@@ -45,7 +47,7 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
     const local = t - shot.startSec;
     const line = (shot.lines || []).find((l: any) => local >= l.start && local < l.end);
     if (line) {
-      if (shot.caption?.[aspect] && shot.seat) bottom = caCaptionBox(w, h, line).occupied + gap * 2;
+      if (shot.caption?.[aspect] && shot.seat) bottom = caCaptionBox(w, h, line, shot.caption_skin).occupied + gap * 2;
       else if (w > h) bottom = Math.round(h * 0.23) + gap; // the game's own subtitle bar fills the bottom 22% of the take
       else bottom = Math.round(h * 0.06);
     }

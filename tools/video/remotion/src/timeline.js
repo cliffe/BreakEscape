@@ -112,3 +112,29 @@ export function freezeSec(shot, fps) {
 export const isPlaceholderShot = (s) => s.placeholder === true;
 /** Shot types that count as a "card" for the join rule (text cards, the title card, logo cards). */
 export const isCardLike = (s) => s.type === 'card' || s.type === 'title' || s.type === 'cta' || s.type === 'ca_open' || s.type === 'ca_close' || s.type === 'cc_open' || s.type === 'cc_close';
+
+/** Chip text on a seat at `localSec` (seconds from the shot's start): the seat.chips window that holds it, else none; with no chips, the plain seat.chip. */
+export const chipTextAt = (seat, localSec) => (seat?.chips ? seat.chips.find((c) => localSec >= c.from - 1e-6 && localSec < c.to - 1e-6)?.text : seat?.chip);
+/** Keys of ca.timing (seconds from the close's start), in rising order. */
+export const CLOSE_TIMING_KEYS = ['slide_end', 'shrink_end', 'text', 'url', 'tag'];
+/**
+ * Frame numbers of the ca_close phases. Default (no timing): written for 3 s at 30 fps and stretched to `frames`.
+ * With ca.timing { slide_end, shrink_end, text, url, tag } (seconds): the halves slide in until slide_end, shrink at once until shrink_end,
+ * then the name/wordmark (text), the URL or Hacktivity line (url) and the tagline (tag) appear.
+ */
+export const closeFrames = (timing, frames, fps) => {
+  if (!timing) {
+    const T = (n) => Math.round(n * (frames / 90));
+    return { slideEnd: T(24), flashEnd: T(28), shrinkStart: T(30), shrinkLen: T(22), text: T(52), url: T(56), tag: T(64) };
+  }
+  const F = (s) => Math.round(s * fps);
+  const slideEnd = Math.max(1, F(timing.slide_end)), shrinkEnd = Math.max(slideEnd + 1, F(timing.shrink_end));
+  return { slideEnd, flashEnd: slideEnd + Math.max(1, Math.round(0.05 * fps)), shrinkStart: slideEnd, shrinkLen: shrinkEnd - slideEnd, text: F(timing.text), url: F(timing.url), tag: F(timing.tag) };
+};
+/** Lines of a title_plate "card" title: its own \n breaks, else (stacked frames) one line per half of the words, else one line. */
+export const stackedTitleLines = (text, stacked) => {
+  if (String(text).includes('\n')) return String(text).split('\n');
+  const words = String(text).trim().split(/\s+/);
+  if (!stacked || words.length < 2) return [words.join(' ')];
+  const k = Math.floor(words.length / 2); return [words.slice(0, k).join(' '), words.slice(k).join(' ')];
+};

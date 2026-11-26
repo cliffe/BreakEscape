@@ -1,0 +1,1486 @@
+{
+  "mission": "ca_product",
+  "id": "ca_product_trailer_r2",
+  "theme": "ca",
+  "kind": "product",
+  "title": "Cyber Aware product trailer, round 2 (16:9; 60 s)",
+  "script": {
+    "heading": "Cyber Aware product trailer",
+    "owner_card": "none yet",
+    "brief": "See docs/video/scripts/ca_product_trailer_script.md and tmp/handover/vid2/ca_product/ (BUILD_HANDOVER.md, MUSIC.md). Takes via BE_TAKES_DIR=/home/cliffe/video-takes-local/ca_product/takes. DEFAULTS the owner can change: (1) music Guitar Motif at 99.10 s with a 0.8 s fade-in; (2) small burned captions in 16:9 with the game's subtitle bar masked on beats 2, 6, 8; (3) VO8 full and VO9 with 'only'; (4) beat 10 is a placeholder (studio_wide, ORGANISERS / PROGRESS / RESULTS chips) until organiser screens are chosen; (5) Influence panel masked on the ca12 chat shot (beat 2) only; the beat 6 chat has none. Chips: FRONT DESK, SWITCH SEATS, INBOX, PHONE, ABOUT 15 MIN / EPISODE, ABOUT 1 HOUR / COURSE, ORGANISERS, PROGRESS, RESULTS, A LINE FOR THE AI, THE ASSISTANT PASSES IT ON."
+  },
+  "fps": 30,
+  "length": 60.0,
+  "music": {
+    "track": "PeaceFolk/Guitar Motif.mp3",
+    "analysis": "guitar_motif_75.json",
+    "start": 112.5,
+    "length": 60.0,
+    "gain_db": -5,
+    "fade_in": 0.8,
+    "fade_out": 0.4
+  },
+  "beat": {
+    "bpm": 95.0,
+    "period": 0.6316,
+    "offset": 0
+  },
+  "duck": {
+    "db": -10,
+    "attack": 0.12,
+    "release": 0.3
+  },
+  "audio": {
+    "fade_ms": 8,
+    "target_lufs": -14,
+    "true_peak": -1.5
+  },
+  "shots": [
+    {
+      "id": "b1a",
+      "type": "gameplay",
+      "duration": 1.4,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca01_t02_attack_run.trimmed.mkv",
+        "in": 30.3,
+        "out": 31.7
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b1b",
+      "type": "gameplay",
+      "duration": 1.6,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca01_t02_attack_run.trimmed.mkv",
+        "in": 38.0,
+        "out": 39.6
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b2_front_desk",
+      "type": "gameplay",
+      "duration": 2.3,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t06_the_call.trimmed.mkv",
+        "in": 14.85,
+        "out": 17.15
+      },
+      "audio": {
+        "gain_db": -2,
+        "dialogue": true,
+        "duck_music": true
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a",
+        "chip": "FRONT DESK"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 355,
+          "y": 722,
+          "w": 350,
+          "h": 165,
+          "color": "#000000"
+        },
+        {
+          "x": 355,
+          "y": 955,
+          "w": 1000,
+          "h": 85,
+          "color": "#000000"
+        },
+        {
+          "x": 1381,
+          "y": 976,
+          "w": 177,
+          "h": 60,
+          "color": "#000000"
+        }
+      ],
+      "lines": [
+        {
+          "start": 0.15,
+          "end": 2.05,
+          "speaker": "Delphine",
+          "text": "Go on then, I'll buzz you through."
+        }
+      ],
+      "caption": {
+        "16:9": true,
+        "9:16": true,
+        "1:1": true
+      },
+      "dialogue": true
+    },
+    {
+      "id": "b3a_title",
+      "type": "gameplay",
+      "duration": 2.65,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca06_t02_attack_run.trimmed.mkv",
+        "in": 29.4,
+        "out": 32.05
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "full",
+        "stripe": "#6b4c9a"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "title_plate": {
+        "text": "Hacktivity Cyber Aware",
+        "sub": "Security awareness training you can play",
+        "style": "card",
+        "from": 0,
+        "to": 2.65
+      }
+    },
+    {
+      "id": "b3b_title",
+      "type": "gameplay",
+      "duration": 2.55,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca02_t02_attack_run.trimmed.mkv",
+        "in": 32.9,
+        "out": 35.45
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b4a_target",
+      "type": "gameplay",
+      "duration": 1.7,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t04_osint_note.trimmed.mkv",
+        "in": 6.3,
+        "out": 8.0
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b4b_pretext",
+      "type": "gameplay",
+      "duration": 1.6,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t05_pretext_card.trimmed.mkv",
+        "in": 5.8,
+        "out": 7.4
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b4c_call",
+      "type": "gameplay",
+      "duration": 1.6,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca03_t02_attack_run.trimmed.mkv",
+        "in": 28.0,
+        "out": 29.6
+      },
+      "audio": {
+        "gain_db": -60
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 780,
+          "y": 198,
+          "w": 360,
+          "h": 130,
+          "color": "#5ccd68",
+          "from": 0.87
+        },
+        {
+          "x": 980,
+          "y": 42,
+          "w": 45,
+          "h": 24,
+          "color": "#53b75d",
+          "from": 0.87
+        }
+      ]
+    },
+    {
+      "id": "b5a_flip",
+      "type": "card",
+      "style": "ca",
+      "chapter": "defend",
+      "duration": 1.1,
+      "join": {
+        "type": "seam"
+      },
+      "text": [
+        "You run the front desk"
+      ],
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "Defend chapter card (round 2)"
+      }
+    },
+    {
+      "id": "b5b_flip",
+      "type": "gameplay",
+      "duration": 1.81,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t07_flip.trimmed.mkv",
+        "in": 21.89,
+        "out": 23.7
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "defend",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 2
+        },
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b6_same_visitors",
+      "type": "gameplay",
+      "duration": 5.99,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t13_lorna_flip.trimmed.mkv",
+        "in": 2.67,
+        "out": 8.66
+      },
+      "audio": {
+        "gain_db": -2,
+        "dialogue": true,
+        "duck_music": true
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "defend",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 0,
+          "y": 893,
+          "w": 1920,
+          "h": 167,
+          "color": "#14161c"
+        }
+      ],
+      "lines": [
+        {
+          "start": 0.0,
+          "end": 2.32,
+          "speaker": "Lorna",
+          "text": "You talked your way through\nthat door just now."
+        },
+        {
+          "start": 2.42,
+          "end": 5.62,
+          "speaker": "Lorna",
+          "text": "Here you're the one being asked,\nsame visitors."
+        }
+      ],
+      "caption": {
+        "16:9": true,
+        "9:16": true,
+        "1:1": true
+      },
+      "dialogue": true
+    },
+    {
+      "id": "b7a_inbox",
+      "type": "gameplay",
+      "duration": 2.2,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca01_t04_payments_inbox.trimmed.mkv",
+        "in": 4.2,
+        "out": 6.4
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "defend",
+        "stripe": "#6b4c9a",
+        "chip": "INBOX"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 505,
+          "y": 126,
+          "w": 300,
+          "h": 38,
+          "color": "#151c35"
+        },
+        {
+          "x": 505,
+          "y": 98,
+          "w": 150,
+          "h": 26,
+          "color": "#151c35"
+        }
+      ]
+    },
+    {
+      "id": "b7b_phone",
+      "type": "gameplay",
+      "duration": 1.6,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca06_t05_work_phone_runB.trimmed.mkv",
+        "in": 14.9,
+        "out": 16.5
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "defend",
+        "stripe": "#6b4c9a",
+        "chip": "PHONE"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 984,
+          "y": 292,
+          "w": 158,
+          "h": 158,
+          "color": "#ece7d9"
+        },
+        {
+          "x": 505,
+          "y": 98,
+          "w": 150,
+          "h": 26,
+          "color": "#151c35"
+        }
+      ]
+    },
+    {
+      "id": "b7c_desk",
+      "type": "gameplay",
+      "duration": 1.6,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t12_tailgater_card.trimmed.mkv",
+        "in": 4.4,
+        "out": 6.0
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "defend",
+        "stripe": "#6b4c9a",
+        "chip": "FRONT DESK"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 505,
+          "y": 126,
+          "w": 425,
+          "h": 38,
+          "color": "#151c35"
+        },
+        {
+          "x": 505,
+          "y": 98,
+          "w": 150,
+          "h": 26,
+          "color": "#151c35"
+        }
+      ]
+    },
+    {
+      "id": "b8_adaeze",
+      "type": "gameplay",
+      "duration": 7.3,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca01_t05_adaeze_end.trimmed.mkv",
+        "in": 14.7,
+        "out": 22.0
+      },
+      "audio": {
+        "gain_db": -2,
+        "dialogue": true,
+        "duck_music": true
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "defend",
+        "stripe": "#6b4c9a"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 0,
+          "y": 893,
+          "w": 1920,
+          "h": 167,
+          "color": "#14161c"
+        }
+      ],
+      "lines": [
+        {
+          "start": 0.25,
+          "end": 3.2,
+          "speaker": "Adaeze",
+          "text": "Ring the person back\non a number you already hold"
+        },
+        {
+          "start": 3.3,
+          "end": 7.03,
+          "speaker": "Adaeze",
+          "text": "before you change who gets paid,\nand the wrong account never sees a penny."
+        }
+      ],
+      "caption": {
+        "16:9": true,
+        "9:16": true,
+        "1:1": true
+      },
+      "dialogue": true
+    },
+    {
+      "id": "b9a_length",
+      "type": "gameplay",
+      "duration": 1.8,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca20_t03_choices_reveal.trimmed.mkv",
+        "in": 16.0,
+        "out": 17.8
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "full",
+        "stripe": "#6b4c9a",
+        "chips": [
+          {
+            "from": 0.3,
+            "to": 1.8,
+            "text": "ABOUT 15 MIN / EPISODE"
+          }
+        ],
+        "chip_px": 32
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b9b_length",
+      "type": "gameplay",
+      "duration": 1.8,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca20_t03_choices_reveal.trimmed.mkv",
+        "in": 26.5,
+        "out": 28.3
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "full",
+        "stripe": "#6b4c9a",
+        "chips": [
+          {
+            "from": 0,
+            "to": 1.0,
+            "text": "15 MIN"
+          },
+          {
+            "from": 1.0,
+            "to": 1.8,
+            "text": "ABOUT 1 HOUR / COURSE"
+          }
+        ],
+        "chip_px": 32
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b9c_length",
+      "type": "gameplay",
+      "duration": 1.8,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca10_t03_fake_check_builder.trimmed.mkv",
+        "in": 6.0,
+        "out": 7.8
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "full",
+        "stripe": "#6b4c9a",
+        "chips": [
+          {
+            "from": 0,
+            "to": 1.8,
+            "text": "1 HOUR"
+          }
+        ],
+        "chip_px": 32
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "id": "b10a_orgs",
+      "type": "gameplay",
+      "duration": 2.4,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t01_studio_wide.trimmed.mkv",
+        "in": 0.5,
+        "out": 2.9
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "full",
+        "stripe": "#6b4c9a",
+        "chips": [
+          {
+            "from": 0.3,
+            "to": 2.4,
+            "text": "ORGANISERS"
+          }
+        ],
+        "chip_px": 32
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "placeholder": true,
+      "placeholder_note": "Beat 10 organiser screens (staff and courses, progress, export CSV) not captured; fallback ca12 studio_wide with chips ORGANISERS / PROGRESS / RESULTS",
+      "title_plate": {
+        "text": "PLACEHOLDER:\nORGANISER SCREENS",
+        "sub": "replace with captured organiser footage",
+        "style": "tag",
+        "from": 0,
+        "to": 2.4
+      }
+    },
+    {
+      "id": "b10b_orgs",
+      "type": "gameplay",
+      "duration": 2.4,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t01_studio_wide.trimmed.mkv",
+        "in": 2.9,
+        "out": 5.3
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "full",
+        "stripe": "#6b4c9a",
+        "chips": [
+          {
+            "from": 0,
+            "to": 1.8,
+            "text": "ORGANISERS"
+          },
+          {
+            "from": 1.8,
+            "to": 2.4,
+            "text": "PROGRESS"
+          }
+        ],
+        "chip_px": 32
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "placeholder": true,
+      "placeholder_note": "Beat 10 organiser screens (staff and courses, progress, export CSV) not captured; fallback ca12 studio_wide with chips ORGANISERS / PROGRESS / RESULTS",
+      "title_plate": {
+        "text": "PLACEHOLDER:\nORGANISER SCREENS",
+        "sub": "replace with captured organiser footage",
+        "style": "tag",
+        "from": 0,
+        "to": 2.4
+      }
+    },
+    {
+      "id": "b10c_orgs",
+      "type": "gameplay",
+      "duration": 2.4,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca12_t01_studio_wide.trimmed.mkv",
+        "in": 5.3,
+        "out": 7.7
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "full",
+        "stripe": "#6b4c9a",
+        "chips": [
+          {
+            "from": 0,
+            "to": 0.8,
+            "text": "PROGRESS"
+          },
+          {
+            "from": 0.8,
+            "to": 2.4,
+            "text": "RESULTS"
+          }
+        ],
+        "chip_px": 32
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "placeholder": true,
+      "placeholder_note": "Beat 10 organiser screens (staff and courses, progress, export CSV) not captured; fallback ca12 studio_wide with chips ORGANISERS / PROGRESS / RESULTS",
+      "title_plate": {
+        "text": "PLACEHOLDER:\nORGANISER SCREENS",
+        "sub": "replace with captured organiser footage",
+        "style": "tag",
+        "from": 0,
+        "to": 2.4
+      }
+    },
+    {
+      "id": "b11a_usp",
+      "type": "gameplay",
+      "duration": 2.5,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca13_t01_attack_run.trimmed.mkv",
+        "in": 9.3,
+        "out": 11.8
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "attack",
+        "stripe": "#6b4c9a",
+        "chip": "A LINE FOR THE AI"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      },
+      "masks": [
+        {
+          "x": 535,
+          "y": 406,
+          "w": 340,
+          "h": 22,
+          "color": "#272f41"
+        }
+      ]
+    },
+    {
+      "id": "b11b_usp",
+      "type": "gameplay",
+      "duration": 2.5,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "ca13_t02_assist_window.trimmed.mkv",
+        "in": 11.75,
+        "out": 14.25
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": false,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "CA product trailer R1 | CA: spoilers not an issue (owner); see tmp/handover/vid2/ca_product/reviews"
+      },
+      "seat": {
+        "seat": "defend",
+        "stripe": "#6b4c9a",
+        "chip": "THE ASSISTANT PASSES IT ON"
+      },
+      "seat_labels": {
+        "attack": "YOU: THE ATTACKER",
+        "defend": "YOU: THE STAFF"
+      },
+      "framing": {
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 0.5625
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        }
+      }
+    },
+    {
+      "preset": "ca-close",
+      "id": "close",
+      "join": {
+        "type": "seam"
+      },
+      "ca": {
+        "name": "Play the scammer. Then catch the scam.",
+        "tagline": "Play an episode free · Nothing to install",
+        "hacktivity": "Hacktivity",
+        "cta": "hacktivity.co.uk/cyber-aware",
+        "wordmark": [
+          "HACKTIVITY",
+          "CYBER AWARE"
+        ],
+        "timing": {
+          "slide_end": 0.2,
+          "shrink_end": 0.47,
+          "text": 0.47,
+          "url": 1.2,
+          "tag": 1.6
+        }
+      },
+      "duration": 5.4
+    }
+  ],
+  "vo": [
+    {
+      "id": "vo1",
+      "start": 0.2,
+      "end": 3.18,
+      "text": "This is a scam. You're writing it.",
+      "caption": "This is a scam.\nYou're writing it.",
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO1.mp3"
+    },
+    {
+      "id": "vo2",
+      "start": 5.4,
+      "end": 10.51,
+      "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+      "caption": false,
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO2.mp3"
+    },
+    {
+      "id": "vo3",
+      "start": 11.0,
+      "end": 14.38,
+      "text": "Pick a target, build the pretext, make the call.",
+      "caption": "Pick a target, build the pretext,\nmake the call.",
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO3.mp3"
+    },
+    {
+      "id": "vo5",
+      "start": 24.1,
+      "end": 28.73,
+      "text": "Then it lands on you. Your inbox, your phone, your front desk.",
+      "caption": "Then it lands on you.\nYour inbox, your phone,\nyour front desk.",
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO5.mp3"
+    },
+    {
+      "id": "vo7",
+      "start": 37.3,
+      "end": 41.69,
+      "text": "About fifteen minutes an episode. About an hour a course.",
+      "caption": "About fifteen minutes an episode.\nAbout an hour a course.",
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO7.mp3"
+    },
+    {
+      "id": "vo8",
+      "start": 42.7,
+      "end": 48.96,
+      "text": "For organisations: invite your staff, choose the courses, follow their progress, and export the results.",
+      "caption": "For organisations: invite your staff,\nchoose the courses, follow their progress,\nand export the results.",
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO8.mp3"
+    },
+    {
+      "id": "vo9",
+      "start": 49.9,
+      "end": 54.51,
+      "text": "The only security awareness training where your staff play the attacker first.",
+      "caption": "The only security awareness training\nwhere your staff play the attacker first.",
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO9.mp3"
+    },
+    {
+      "id": "vo10",
+      "start": 54.9,
+      "end": 57.83,
+      "text": "Play the scammer. Then catch the scam.",
+      "caption": "Play the scammer.\nThen catch the scam.",
+      "file": "/home/cliffe/video-takes-local/ca_product/vo/Sulafat_v2/trim/VO10.mp3"
+    }
+  ],
+  "caption_skin": "pixel"
+}

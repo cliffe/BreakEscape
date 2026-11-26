@@ -164,3 +164,27 @@ test('findChromium order: BE_CHROMIUM first, then the Playwright cache, then chr
   if (!fs.existsSync('/opt/pw-browsers/chromium-1243/chrome-linux64/chrome')) assert.equal(r, new1); // newest cache build, never the headless shell
   assert.notEqual(r, old1);
 });
+
+// Product trailer additions (docs/video/scripts/ca_product_trailer_script.md)
+test('kind "product" has no ca_open (and may not have one); still needs the ca_close', () => {
+  const e = base(); e.kind = 'product'; e.shots.splice(1, 1); // drop the ca-open
+  e.shots[1].join = { type: 'cut' };
+  const r = lint(e); assert.equal(r.code, 0, r.out); assert.doesNotMatch(r.out, /exactly one ca_open/);
+  const e2 = base(); e2.kind = 'product'; // ca-open kept: not allowed here
+  const r2 = lint(e2); assert.equal(r2.code, 1); assert.match(r2.out, /a product edit has no ca_open shot/);
+  const e3 = base(); e3.kind = 'product'; e3.shots.splice(1, 1); e3.shots.pop();
+  assert.match(lint(e3).out, /exactly one ca_close/);
+  const e4 = base(); e4.shots.splice(1, 1); // a normal CA edit still needs its ca_open
+  assert.match(lint(e4).out, /exactly one ca_open/);
+});
+test('seat.chip allows up to 28 characters, not 29', () => {
+  const e = base(); shot(e, 'research').seat.chip = 'THE ASSISTANT PASSES IT ON'; assert.doesNotMatch(lint(e).out, /seat\.chip must be/);
+  const e2 = base(); shot(e2, 'research').seat.chip = 'A'.repeat(29); assert.match(lint(e2).out, /at most 28 characters/);
+});
+test('title_plate: text required, window inside the shot, no Break Escape', () => {
+  const e = base(); shot(e, 'research').title_plate = { text: 'Hacktivity Cyber Aware', sub: 'Security awareness training you can play' };
+  const r = lint(e); assert.equal(r.code, 0, r.out);
+  const e2 = base(); shot(e2, 'research').title_plate = { text: '  ' }; assert.match(lint(e2).out, /title_plate\.text must be a non-empty string/);
+  const e3 = base(); shot(e3, 'research').title_plate = { text: 'X', from: 0, to: 99 }; assert.match(lint(e3).out, /title_plate from\/to must satisfy/);
+  const e4 = base(); shot(e4, 'research').title_plate = { text: 'Break Escape' }; assert.match(lint(e4).out, /must not name Break Escape/);
+});

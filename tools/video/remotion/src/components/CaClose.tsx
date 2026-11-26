@@ -2,6 +2,7 @@ import React from 'react';
 import { Img, staticFile } from 'remotion';
 import { CA, CaTab, unit, stepped, snapTo, easeOut, isStacked, tabFont, textWidth, fitSize, crisp } from '../ca';
 import { GNF_FONT, VT_FONT, PIXEL_FONT } from '../fonts';
+import { closeFrames } from '../timeline.js';
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const GRID = (u: number) => `repeating-linear-gradient(0deg, transparent 0, transparent ${7 * u}px, rgba(0,0,0,0.12) ${7 * u}px, rgba(0,0,0,0.12) ${8 * u}px), repeating-linear-gradient(90deg, transparent 0, transparent ${7 * u}px, rgba(0,0,0,0.12) ${7 * u}px, rgba(0,0,0,0.12) ${8 * u}px)`;
@@ -13,12 +14,11 @@ const GRID = (u: number) => `repeating-linear-gradient(0deg, transparent 0, tran
  * name, the small Hacktivity line at the foot (from 56) and the tagline (default "Play the attack · Learn to stop it"; the owner dropped "15 minutes, in your browser · No installs", 2026-11-22) (from 64).
  * shot.ca = { name, tagline, hacktivity, cta?, wordmark? } (cta replaces the Hacktivity line with a plate, e.g. "Learn on Hacktivity.co.uk"). Stacked (attacker above) on 9:16 and 1:1.
  */
-export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string; frame: number; frames: number }> = ({ shot, w, h, aspect, frame, frames }) => {
+export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string; frame: number; frames: number; fps?: number }> = ({ shot, w, h, aspect, frame, frames, fps = 30 }) => {
   const cfg = shot.ca || {}; const lay = cfg.layout?.[aspect] || {};
   const u = unit(w, h), stacked = isStacked(w, h), q = 4 * u;
   const f = frame, tf = tabFont(w, h);
-  const scale = frames / 90; // timings are written for 3 s at 30 fps
-  const T = (n: number) => Math.round(n * scale);
+  const cf = closeFrames(cfg.timing, frames, fps); // default: written for 3 s at 30 fps and stretched; shot.ca.timing (seconds from the close's start) overrides
   const mS = Math.max(48, Math.round((Math.min(w, h) * (stacked ? 0.11 : 0.12)) / 2) * 2); // mark square side
   const off = Math.round(mS * 0.55), gw = mS + off;
   const textFont = Math.max(16, Math.round((w * (stacked ? 0.05 : 0.027)) / 8) * 8);
@@ -51,8 +51,8 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
 
   // phases
   // one step per frame (n = the phase's frame count): the phases are stretched by `scale`, so a fixed step count (8, 10) gave 4-6 frames per step, 5-7 fps
-  const tIn = easeOut(stepped(f / T(24), T(24)));             // halves slide in
-  const tShrink = stepped((f - T(30)) / T(22), T(22));        // halves shrink into the squares
+  const tIn = easeOut(stepped(f / cf.slideEnd, cf.slideEnd));             // halves slide in
+  const tShrink = stepped((f - cf.shrinkStart) / cf.shrinkLen, cf.shrinkLen);        // halves shrink into the squares
   const half = stacked ? h / 2 : w / 2;
   const slide = Math.round((1 - tIn) * half);
   const A = stacked ? { x: 0, y: -slide, w, h: h / 2 } : { x: -slide, y: 0, w: w / 2, h };
@@ -60,10 +60,10 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const lerpRect = (r: any, sq: any) => ({ x: lerp(r.x, sq.x, tShrink), y: lerp(r.y, sq.y, tShrink), w: lerp(r.w, sq.s, tShrink), h: lerp(r.h, sq.s, tShrink) });
   const rA = lerpRect(A, sqA), rD = lerpRect(D, sqD);
   const halvesDone = tShrink >= 1;
-  const touch = f >= T(24) && f < T(28); // flash on the seam as they meet
+  const touch = f >= cf.slideEnd && f < cf.flashEnd; // flash on the seam as they meet
   const showTabs = tShrink < 0.35;
-  const textIn = f >= T(52);
-  const hackIn = f >= T(56), tagIn = f >= T(64);
+  const textIn = f >= cf.text;
+  const hackIn = f >= cf.url, tagIn = f >= cf.tag;
   const hackW = Math.round(w * 0.18);
   const hackSize = Math.max(32, Math.round((hackW / 5.2) / 16) * 16);
   const gnfW = textWidth('Hacktivity', GNF_FONT, hackSize);
