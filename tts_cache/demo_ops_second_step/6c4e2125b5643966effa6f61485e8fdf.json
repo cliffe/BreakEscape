@@ -1,0 +1,13 @@
+{
+  "key": "6c4e2125b5643966effa6f61485e8fdf",
+  "npc": "ama_owusu",
+  "text": "Last month we switched on a second sign-in step. A password alone is no longer enough: you also need something you have, like a phone or a code fob.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:57:49Z"
+}

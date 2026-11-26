@@ -1,0 +1,13 @@
+{
+  "key": "5d5aacc3124e45146b5c4c9afaae1c72",
+  "npc": "ama_owusu",
+  "text": "Gwen won't approve it, so close the request. Then ask me to switch the records index off, and watch what Fatima does.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:10Z"
+}

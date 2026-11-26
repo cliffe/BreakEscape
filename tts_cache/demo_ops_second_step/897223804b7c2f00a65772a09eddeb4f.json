@@ -1,0 +1,13 @@
+{
+  "key": "897223804b7c2f00a65772a09eddeb4f",
+  "npc": "ama_owusu",
+  "text": "The door's pane has a button to check Gwen's phone. Use it with her phone in hand.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:17Z"
+}

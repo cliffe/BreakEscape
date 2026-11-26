@@ -1,0 +1,13 @@
+{
+  "key": "e015e5dc757abce525d4e910b43be5a4",
+  "npc": "thandiwe_moyo",
+  "text": "Look for requests nobody answered, and any approval. Your resets are in there too, each with the form that asked for it.",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:02:12Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ff724a2df1f11e06f72d4ee4be375c41",
+  "npc": "ama_owusu",
+  "text": "Here's Lorna's sign-in card. It's in your inventory. Try her PC now, while she's sitting at it.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:51Z"
+}

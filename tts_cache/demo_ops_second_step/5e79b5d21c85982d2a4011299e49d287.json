@@ -1,0 +1,13 @@
+{
+  "key": "5e79b5d21c85982d2a4011299e49d287",
+  "npc": "ama_owusu",
+  "text": "That's the lot. Ask me for the short version, and I'll sum up the day.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:44Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "b6d542130e496d4337160e47bbcefcb7",
+  "npc": "ama_owusu",
+  "text": "You carried the case off and kept asking. His phone couldn't tell where the case was, so he gave in.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:03:05Z"
+}
