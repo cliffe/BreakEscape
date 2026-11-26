@@ -281,6 +281,16 @@ module BreakEscape
       assert_response :success, response.body
     end
 
+    test 'R8: once printer_fixed is set the real printer finding reads Fixed and the card is refused as fixed' do
+      printer_checked
+      take_card('card_factory')
+      ops_confirm(FOOT, PRINTER_REAL)
+      assert_nil findings('printer_host').find { |f| f['id'] == PRINTER_REAL }['fixed']
+      set_global('printer_fixed', true)
+      assert_equal true, findings('printer_host').find { |f| f['id'] == PRINTER_REAL }['fixed']
+      refused(PRINTER_REAL, 'card_factory', 'fixed')
+    end
+
     test 'R5: the factory card does not fit the file server first finding (wrong class), and a card not held is not found' do
       confirmed_all
       take_card('card_factory')

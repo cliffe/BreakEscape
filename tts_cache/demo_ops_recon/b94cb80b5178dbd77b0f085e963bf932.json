@@ -1,0 +1,13 @@
+{
+  "key": "b94cb80b5178dbd77b0f085e963bf932",
+  "npc": "ama_owusu",
+  "text": "Same findings, same names. The Terminal also shows each address and banner, the line a service sends to say what it is.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:48Z"
+}

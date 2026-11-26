@@ -1,0 +1,13 @@
+{
+  "key": "a4f5beaede93e943489203f01f32ab7d",
+  "npc": "ama_owusu",
+  "text": "Now you're Graham, an administrator. The user session was what that weakness needed first. Open the shared drive from his desktop.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:02:33Z"
+}

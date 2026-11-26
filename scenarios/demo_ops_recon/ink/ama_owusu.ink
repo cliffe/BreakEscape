@@ -83,7 +83,7 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         If you'd rather not wait, the kitchen has a spare port too, and nobody watches it.
     - not sweep_done:
         # speaker:npc
-        Open the drop box in your inventory and sweep the office network. See what answers.
+        Open the drop box in your inventory. That's the network view, in Panels. Sweep the office network and see what answers.
     - not scan_printer_done:
         # speaker:npc
         Scan the printer to see what it runs.
@@ -93,20 +93,24 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
             Switch the printer back on at its wall socket first.
         }
         # speaker:npc
-        Check the printer's admin page. It reports two weaknesses. Test both to see which is real.
+        On the printer's admin page, press Check. It lists two reported weaknesses, called findings. Press Confirm on each to test which is real. High and Low are only how bad the report claims it is.
         { not printer_off:
             # speaker:npc
             Want to see an outage? Switch the printer off at its wall socket and sweep again. Then switch it back on.
         }
     - not use_card_done:
         # speaker:npc
-        There's a technique card in the printer cupboard. Use it on the weakness that's real.
+        There's a technique card in the printer cupboard. Each card is a known way in that fits one kind of weakness. This one is for factory accounts: the login a device ships with, which nobody changed.
+        # speaker:npc
+        Take it, then in the drop box view pick the card, pick the real finding and press Use.
     - not remote_signin_done:
         # speaker:npc
-        Now sign in to Agnieszka's PC from the network view, with the printer's saved link.
+        Now open the drop box again and find Agnieszka's PC in the list. Press Sign in. You don't know her password, so don't type one: pick the printer's saved link from the list instead.
     - not terminal_view_done:
         # speaker:npc
-        Now try the file server the same way, in the Terminal view. Same moves, typed.
+        Now try the file server the same way, in the Terminal. Use the Panels and Terminal switch at the top of the drop box view. Same moves, typed.
+        # speaker:npc
+        It looks like a real console, but every product and name in it is made up.
         # speaker:npc
         Then come back and tell me what it said.
     - not act_evening:
@@ -123,9 +127,9 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
             Zainab stays late. She'll be in the server room or at the kitchen coffee. She has a card for you.
         - else:
             # speaker:npc
-            Use Zainab's card on the file server's update weakness. That gets you a user session.
+            Use Zainab's card on the file server's update weakness. Test it first if you haven't. That gets you a user session.
             # speaker:npc
-            Then test the left-open setting, and use the card from her tool roll on it. That's an admin session, and the shared drive.
+            Then test the left-open setting, and use the card from her tool roll on it. That's an admin session. Open the shared drive from the file server's own desktop, not from the list.
         }
     - not read_log_done:
         # speaker:npc
@@ -222,7 +226,7 @@ Seen what you wanted? Once they've gone home, it's just Zainab and Graham.
 ~ act_evening = true
 #set_global:act_evening:true
 # speaker:npc
-Right. Home time for nearly everyone.
+Right. Home time for nearly everyone. An empty office is when a visitor gets the most time.
 # speaker:npc
 Zainab will head for the kitchen coffee, and Graham will show you the log.
 -> hub
@@ -241,11 +245,11 @@ Zainab will head for the kitchen coffee, and Graham will show you the log.
 Good. What did the file server say?
 + [It named the product and its version.]
     # speaker:npc
-    That's the banner. On a real network, that's what you'd look up before you guess.
+    That's the banner, the line a service sends to say what it is. On a real network, you'd check that version against published lists of known weaknesses.
     -> terminal_ticked
 + [It listed the same findings, with addresses.]
     # speaker:npc
-    Same findings, same names. The Terminal shows the addresses and banners the panels tidy away.
+    Same findings, same names. The Terminal also shows each address and banner, the line a service sends to say what it is.
     -> terminal_ticked
 + [Actually, I haven't yet.]
     # speaker:npc
@@ -254,7 +258,7 @@ Good. What did the file server say?
 
 === terminal_ticked ===
 # speaker:npc
-The Terminal prints like a real console, with the scan as a table, but the products and names are made up.
+The Terminal shows the scan as a table, the way a console prints it.
 # speaker:npc
 Switch to Panels and back again. The Terminal keeps its log for as long as the view is open.
 #complete_task:terminal_view
@@ -270,6 +274,8 @@ Which part?
     -> recap_midday
 + { open_share_done or read_log_done or unplug_done } [The evening.]
     -> recap_evening
++ [How do they stop that?]
+    -> defend
 + [Never mind.]
     # speaker:npc
     Right.
@@ -299,7 +305,7 @@ The drop box on the port gave you a foothold. No password needed, only a free ca
 }
 { remote_signin_done:
     # speaker:npc
-    A saved link is as good as a password, so anything that stores one is worth guarding.
+    A saved link is as good as a password, so anything that stores one is worth guarding. Your keyring is the list of sign-ins you've collected, and the network view offers them when you connect.
 }
 { terminal_view_done:
     # speaker:npc
@@ -322,6 +328,17 @@ The drop box on the port gave you a foothold. No password needed, only a free ca
 }
 -> hub
 
+=== defend ===
+# speaker:npc
+Switch off wall ports nobody uses, and notice a box that shouldn't be there.
+# speaker:npc
+Change every factory login when a device goes in, and don't let devices keep saved sign-ins they don't need.
+# speaker:npc
+Keep services up to date, and close settings left open.
+# speaker:npc
+Read the log. That's where you were seen.
+-> hub
+
 === short_version ===
 # speaker:npc
 One cable shows a lot. Sweep the network, then scan each machine.
@@ -330,5 +347,9 @@ Reported weaknesses are only reports. Test each one before you trust it.
 # speaker:npc
 A technique fits one kind of weakness, and a saved link works like a password.
 # speaker:npc
+One way in can lead to the next: an ordinary user first, then an administrator.
+# speaker:npc
 Everything you did is in the network log. That's how defenders find you.
+# speaker:npc
+And a foothold lasts only while the box is plugged in.
 -> hub

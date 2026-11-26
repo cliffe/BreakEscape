@@ -69,7 +69,8 @@
             {
               "id": "factory_login", "class": "default_creds", "severity": "high",
               "summary": "The admin page still accepts the account it shipped with.",
-              "grants": { "credential": "print_admin" }
+              "grants": { "credential": "print_admin" },
+              "fixedIf": "printer_fixed"
             }
           ],
           "decoys": [
@@ -195,6 +196,8 @@
     "jun_caught": false,
     "remote_signin_done": false,
     "unplug_done": false,
+    "printer_fixed": false,
+    "printer_fix_told": false,
     "box_at_kitchen": false,
     "hotdesk_used": false,
     "kitchen_used": false
@@ -228,7 +231,7 @@
     {
       "aimId": "morning",
       "title": "Morning: get on the network",
-      "description": "Each task ticks when you have done it. Ama's hub says what is next.",
+      "description": "Each task ticks when you have done it. If you're not sure what's next, ask Ama \"What's next?\"",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -244,7 +247,7 @@
       "status": "active",
       "order": 1,
       "tasks": [
-        { "taskId": "confirm_both", "title": "Test both of the printer's reported weaknesses", "type": "custom", "status": "active" },
+        { "taskId": "confirm_both", "title": "Test both of the printer's reported weaknesses (Check, then Confirm)", "type": "custom", "status": "active" },
         { "taskId": "use_card", "title": "Use a technique on the one that is real", "type": "custom", "status": "active" },
         { "taskId": "remote_signin", "title": "Sign in to Agnieszka's PC with the printer's saved link", "type": "custom", "status": "active" },
         { "taskId": "terminal_view", "title": "Look at the file server in the Terminal", "type": "custom", "status": "active" }
@@ -258,7 +261,7 @@
       "order": 2,
       "tasks": [
         { "taskId": "open_share", "title": "Open the shared drive", "type": "custom", "status": "active" },
-        { "taskId": "read_log", "title": "Find yourself in the network log", "type": "custom", "status": "active" },
+        { "taskId": "read_log", "title": "Read the network log and flag the odd row", "type": "custom", "status": "active" },
         { "taskId": "unplug", "title": "Unplug the drop box and see what ends", "type": "custom", "status": "active" }
       ]
     }
@@ -491,7 +494,7 @@
             { "eventPattern": "game_loaded", "cooldown": 0, "setGlobal": { "kitchen_seen": false, "server_room_seen": false, "coffee_pending": false } },
             { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
             { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
-            { "eventPattern": "network_foothold_gained:hotdesk_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.kitchen_used !== true", "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network." },
+            { "eventPattern": "network_foothold_gained:hotdesk_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.kitchen_used !== true", "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "You're on the office network now. The box is your foothold. The red tint and the bolt on the port mark something you hold. Now sweep the network." },
             { "eventPattern": "network_swept", "cooldown": 0, "completeTask": "sweep", "setGlobal": { "sweep_done": true } },
             { "eventPattern": "network_host_scanned:printer_host", "cooldown": 0, "completeTask": "scan_printer", "setGlobal": { "scan_printer_done": true } },
             { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'confirmed'", "cooldown": 0, "setGlobal": { "r4_real_seen": true } },
@@ -500,28 +503,29 @@
             { "eventPattern": "network_finding_confirmed", "condition": "data.findingId.includes('printer_host.') && data.status === 'false' && globalVars.r4_real_seen === true", "cooldown": 0, "completeTask": "confirm_both", "setGlobal": { "confirm_both_done": true } },
             { "eventPattern": "network_technique_used", "condition": "data.grant === 'credential'", "cooldown": 0, "completeTask": "use_card", "setGlobal": { "use_card_done": true } },
             { "eventPattern": "network_share_opened:shared_drive", "cooldown": 0, "completeTask": "open_share", "setGlobal": { "open_share_done": true } },
-            { "eventPattern": "network_device_unplugged:hotdesk_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.open_share_done === true", "completeTask": "unplug", "setGlobal": { "unplug_done": true }, "bark": "Unplugging ended every session that ran through the box. Your keyring keeps what you found." },
-            { "eventPattern": "global_variable_changed:printer_off", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "bark": "Printer's off. It won't answer on the network now." },
+            { "eventPattern": "network_device_unplugged:hotdesk_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.open_share_done === true", "completeTask": "unplug", "setGlobal": { "unplug_done": true }, "bark": "Unplugging ended every session that ran through the box. Your keyring keeps what you found. Come and see me for the short version." },
+            { "eventPattern": "network_service_checked", "onceOnly": true, "cooldown": 0, "condition": "data.hostId === 'printer_host' && globalVars.printer_fix_told === true", "bark": "Fixed. Once the setting changes, the finding stops being reported, and the card won't take it." },
+            { "eventPattern": "global_variable_changed:printer_off", "condition": "data.value === true", "onceOnly": true, "cooldown": 0, "bark": "Printer's off. It won't answer on the network now. A sweep only finds what's switched on." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": true } },
             { "eventPattern": "room_entered:server_room", "cooldown": 0, "setGlobal": { "server_room_seen": true } },
             { "eventPattern": "network_host_scanned:file_server", "cooldown": 0, "setGlobal": { "file_server_seen": true } },
-            { "eventPattern": "network_foothold_gained:kitchen_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.hotdesk_used !== true", "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "That works too. The box is your foothold, so anything it can reach, you can look at. Now sweep the network." },
-            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_printer_done !== true", "cooldown": 0, "bark": "Those are the machines that answered. One spare port showed you every PC, the printer, a camera and a file share. Scan the printer next." },
-            { "eventPattern": "global_variable_changed:scan_printer_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_both_done !== true", "cooldown": 0, "bark": "The scan lists what the printer offers, each with its product and version. The admin page is the one to check." },
+            { "eventPattern": "network_foothold_gained:kitchen_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.hotdesk_used !== true", "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "That works too. The box is your foothold. The red tint and the bolt on the port mark something you hold. Now sweep the network." },
+            { "eventPattern": "global_variable_changed:sweep_done", "condition": "data.value === true && data.oldValue !== true && globalVars.scan_printer_done !== true", "cooldown": 0, "bark": "Those machines answered. One port showed every PC, the printer, a camera and a file share. The printer has no sign-in of its own. Scan it next." },
+            { "eventPattern": "global_variable_changed:scan_printer_done", "condition": "data.value === true && data.oldValue !== true && globalVars.confirm_both_done !== true", "cooldown": 0, "bark": "The scan lists what the printer offers, with each product and version. The number is the port, the door a service listens on. Check the admin page." },
             { "eventPattern": "global_variable_changed:confirm_both_done", "condition": "data.value === true && data.oldValue !== true && globalVars.use_card_done !== true", "cooldown": 0, "bark": "Two reports that looked the same. Only testing showed which was real and why the other was a false alarm. There's a technique card in the printer cupboard." },
-            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "The card fitted the real weakness. The printer had kept a saved link to Agnieszka's PC, and that link is in your keyring now." },
+            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "The card fitted the real weakness. The printer had kept a saved link to Agnieszka's PC. It's in your keyring now, the list of sign-ins you've collected." },
             { "eventPattern": "global_variable_changed:file_server_seen", "condition": "data.value === true && data.oldValue !== true && globalVars.terminal_view_done !== true", "cooldown": 0, "bark": "That's the file server. Look at it in the Terminal, then tell me what it said." },
             { "eventPattern": "global_variable_changed:open_share_done", "condition": "data.value === true && data.oldValue !== true && globalVars.read_log_done !== true", "cooldown": 0, "bark": "The shared drive opens only for Graham. The foothold and Agnieszka's session weren't enough. Now see Graham for the log." },
-            { "eventPattern": "network_device_unplugged:kitchen_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.open_share_done === true", "completeTask": "unplug", "setGlobal": { "unplug_done": true }, "bark": "Unplugging ended every session that ran through the box. Your keyring keeps what you found." },
+            { "eventPattern": "network_device_unplugged:kitchen_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.open_share_done === true", "completeTask": "unplug", "setGlobal": { "unplug_done": true }, "bark": "Unplugging ended every session that ran through the box. Your keyring keeps what you found. Come and see me for the short version." },
             { "eventPattern": "network_foothold_gained:kitchen_jack", "cooldown": 0, "setGlobal": { "box_at_kitchen": true, "kitchen_used": true } },
             { "eventPattern": "network_foothold_gained:hotdesk_jack", "cooldown": 0, "setGlobal": { "box_at_kitchen": false, "hotdesk_used": true } },
             { "eventPattern": "pc_signed_in:agnieszka_pc", "cooldown": 0, "completeTask": "remote_signin", "setGlobal": { "remote_signin_done": true } },
             { "eventPattern": "global_variable_changed:remote_signin_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "That's her desktop, and you never knew her password. A saved link works like one." },
-            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'agnieszka_duda'", "cooldown": 0, "bark": "A session on the file server as Agnieszka, an ordinary user. The red frame means a technique got you in, not a password." },
-            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'graham_whitfield'", "cooldown": 0, "bark": "Now you're Graham, an administrator. The user session was what that weakness needed first." },
+            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'agnieszka_duda'", "cooldown": 0, "bark": "This is a session: you're signed in as Agnieszka, an ordinary user, with only what she can reach. The red frame and bolt mean a technique got you in." },
+            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'graham_whitfield'", "cooldown": 0, "bark": "Now you're Graham, an administrator. The user session was what that weakness needed first. Open the shared drive from his desktop." },
             { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true && globalVars.unplug_done !== true", "cooldown": 0, "bark": "Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them. Last thing, unplug the box." },
             { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true && globalVars.unplug_done === true", "cooldown": 0, "bark": "Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them." },
-            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true && globalVars.remote_signin_done !== true", "cooldown": 0, "bark": "The false one won't take that card, if you want to try. Then sign in to Agnieszka's PC with the saved link." }
+            { "eventPattern": "global_variable_changed:use_card_done", "condition": "data.value === true && data.oldValue !== true && globalVars.remote_signin_done !== true", "cooldown": 0, "bark": "The false one won't take that card, if you want to try. Then press Sign in on Agnieszka's PC and pick the saved link, not a password." }
           ]
         },
         {
