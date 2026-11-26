@@ -343,6 +343,8 @@ class OwnerClaimTest < ActiveSupport::TestCase
       'patrol (bounds)' => ->(x) { jake(x)['behavior'] = { 'patrol' => { 'bounds' => { 'x' => 1, 'y' => 1, 'width' => 4, 'height' => 4 } } } },
       'scripted_move' => ->(x) { jake(x)['eventMappings'] = [{ 'eventPattern' => 'alarm', 'patrolOverride' => { 'targetTile' => { 'x' => 2, 'y' => 2 } } }] },
       'scripted_move (map)' => ->(x) { jake(x)['eventMappings'] = { 'alarm' => { 'patrolOverride' => { 'targetTile' => { 'x' => 2, 'y' => 2 } } } } },
+      'scripted_move (walkIn)' => ->(x) { jake(x)['eventMappings'] = [{ 'eventPattern' => 'alarm', 'walkIn' => true }] },
+      'scripted_move (walkOut object)' => ->(x) { jake(x)['eventMappings'] = [{ 'eventPattern' => 'alarm', 'walkOut' => { 'to' => 'lobby', 'speed' => 90 } }] },
       'scripted_move (navigateToPlayer)' => ->(x) { jake(x)['eventMapping'] = [{ 'eventPattern' => 'seen', 'navigateToPlayer' => true, 'knot' => 'hi' }] },
       'ink_patrol' => ->(x) { jake(x)['storyPath'] = 'scenarios/x/ink/jake.json' },
       'ink_patrol (changeStoryPath)' => lambda { |x|

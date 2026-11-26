@@ -2308,6 +2308,34 @@ const bridge = {
         }
     },
 
+    // ── NPC walk-in / walk-out (systems/npc-walk.js) ───────────────────────
+
+    /**
+     * Start a walk the way an eventMapping walkIn/walkOut does (no deferred speech).
+     * in/out return { ok, started } at once; the walk's end shows as npc_arrived /
+     * npc_left in the log, or poll state(npcId) until it is null.
+     */
+    npcWalk: {
+        _mgr() { return window.npcBehaviorManager?.walkNPCIn ? window.npcBehaviorManager : null; },
+        in(npcId, opts = {}) {
+            const m = this._mgr();
+            if (!m) return { ok: false, reason: 'no-walk-module' };
+            m.walkNPCIn(npcId, opts);
+            return { ok: true, started: !!m.walks.get(npcId) };
+        },
+        out(npcId, opts = {}) {
+            const m = this._mgr();
+            if (!m) return { ok: false, reason: 'no-walk-module' };
+            m.walkNPCOut(npcId, opts);
+            return { ok: true, started: !!m.walks.get(npcId) };
+        },
+        /** { dir, phase, how, farRoom, ms } for a walk in progress, else null. */
+        state(npcId) {
+            const w = this._mgr()?.walks.get(npcId);
+            return w ? { dir: w.dir, phase: w.phase, how: w.how, farRoom: w.farRoom, ms: Date.now() - w.startedAt } : null;
+        }
+    },
+
     // ── Access model (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) ───────
 
     /**

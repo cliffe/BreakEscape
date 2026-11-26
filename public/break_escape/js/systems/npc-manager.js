@@ -1535,6 +1535,8 @@ export default class NPCManager {
         background:    mapping.background    || null,    // optional background image path
         // NEW ACTION FIELDS [Phase 2-4]
         setVisible:         mapping.setVisible          ?? undefined,
+        walkIn:             mapping.walkIn              ?? undefined,   // walk in from out of view (systems/npc-walk.js)
+        walkOut:            mapping.walkOut             ?? undefined,   // walk out of view, then hide
         patrolOverride:     mapping.patrolOverride      || null,
         needs:              mapping.needs               || null,
         addCapture:         mapping.addCapture          || null,   // record a credential/foothold into se_captures (merges the npc_used payload)
@@ -1985,6 +1987,27 @@ export default class NPCManager {
       console.log(`👁️ setVisible: ${npcId} → ${visible ? 'VISIBLE' : 'HIDDEN'}`);
     }
 
+    // Walk-in / walk-out (systems/npc-walk.js, installed on the behaviour manager by game.js).
+    // A walk-in defers this mapping's conversation and bark until the NPC arrives; a
+    // walk-out starts the walk and lets the bark play at once. Without the walk module
+    // (node harnesses, an import still in flight) both fall back to setVisible.
+    let walkInPending = null;
+    const bm = window.npcBehaviorManager;
+    if (config.walkIn !== undefined && config.walkIn !== false && bm) {
+      const opts = (config.walkIn && typeof config.walkIn === 'object') ? config.walkIn : {};
+      if (typeof bm.walkNPCIn === 'function') {
+        const p = bm.walkNPCIn(npcId, opts);
+        if (p && typeof p.then === 'function' && !p.immediate) walkInPending = p;
+      } else {
+        bm.setNPCVisible(npcId, true);
+      }
+    }
+    if (config.walkOut !== undefined && config.walkOut !== false && bm) {
+      const opts = (config.walkOut && typeof config.walkOut === 'object') ? config.walkOut : {};
+      if (typeof bm.walkNPCOut === 'function') bm.walkNPCOut(npcId, opts);
+      else bm.setNPCVisible(npcId, false);
+    }
+
     // [Phase 4] Handle patrol speed override (accelerate/decelerate during incidents)
     if (config.setPatrolSpeed !== undefined && window.npcBehaviorManager) {
       const speed = config.setPatrolSpeed;
@@ -2062,6 +2085,8 @@ export default class NPCManager {
       }).catch((e) => console.warn('[event mapping] sendEmail failed', e));
     }
 
+    // The speech tail: with a walk-in still walking it runs on arrival (see walkInPending)
+    const speak = () => {
     // Debug: Log the full config to see what we're working with
     console.log(`🔍 Event config for ${eventPattern}:`, {
       conversationMode: config.conversationMode,
@@ -2130,6 +2155,14 @@ export default class NPCManager {
     }
     
     console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
+    };
+    if (walkInPending) {
+      // A cancelled walk-in (a walk-out took over) says nothing
+      walkInPending.then((how) => { if (how !== 'cancelled') speak(); })
+        .catch((e) => { console.warn(`⚠️ walkIn ${npcId} failed, speaking now`, e); speak(); });
+      return;
+    }
+    speak();
   }
   
 
@@ -2590,9 +2623,12 @@ export default class NPCManager {
    * Record an NPC's visibility as set by setVisible (npc-behavior.js setNPCVisible),
    * so it is saved (exportNpcVisibility) and applied when the NPC registers again.
    */
-  recordNpcVisibility(npcId, visible) {
+  recordNpcVisibility(npcId, visible, { persistOnly = false } = {}) {
     if (!npcId) return;
     this._npcVisibility.set(npcId, !!visible);
+    // persistOnly (a walk-out at its trigger): saved now, but entry.isVisible stays as it
+    // is until the NPC is actually hidden, so systems mirroring it keep showing the walker
+    if (persistOnly) return;
     const entry = this.npcs.get(npcId);
     if (entry) entry.isVisible = !!visible;
   }

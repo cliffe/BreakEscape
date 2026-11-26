@@ -136,8 +136,9 @@ module BreakEscape
       return 'patrol' if behavior.is_a?(Hash) && behavior['patrol'] && behavior['patrol'] != false
 
       maps = mappings(owner)
-      # npc-manager.js: patrolOverride (goToAndStay) and navigateToPlayer move the NPC by script
-      return 'scripted_move' if maps.any? { |m| m['patrolOverride'] || m['navigateToPlayer'] }
+      # npc-manager.js: patrolOverride (goToAndStay), navigateToPlayer and walkIn/walkOut
+      # (npc-walk.js, goToAndStay with owner 'walk') move the NPC by script
+      return 'scripted_move' if maps.any? { |m| m['patrolOverride'] || m['navigateToPlayer'] || m['walkIn'] || m['walkOut'] }
 
       # person-chat-conversation.js: #patrol_mode in the owner's story, or in a story a mapping
       # switches to (changeStoryPath)

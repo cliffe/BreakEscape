@@ -5330,6 +5330,43 @@
           },
           "additionalProperties": false
         },
+        "walkIn": {
+          "description": "Instead of setVisible: true. The NPC appears out of view (through a door from a connected room, or the nearest out-of-view floor) and walks to 'to'; conversationMode and bark in the same mapping wait for arrival. true picks everything automatically. Ends with npc_arrived (owner 'walk').",
+          "oneOf": [
+            {"type": "boolean", "enum": [true]},
+            {
+              "type": "object",
+              "properties": {
+                "from": {"oneOf": [{"type": "string", "description": "A connected room id, or \"offscreen\""}, {"type": "object", "required": ["room", "x", "y"], "properties": {"room": {"type": "string"}, "x": {"type": "number"}, "y": {"type": "number"}}, "additionalProperties": false}]},
+                "to": {
+                  "type": "object",
+                  "description": "Tile in the NPC's own room; defaults to its scenario position (a reload puts the NPC there)",
+                  "required": ["x", "y"],
+                  "properties": { "x": { "type": "number" }, "y": { "type": "number" } },
+                  "additionalProperties": false
+                },
+                "speed": { "type": "number", "exclusiveMinimum": 0 },
+                "timeoutMs": { "type": "number", "exclusiveMinimum": 0 }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "walkOut": {
+          "description": "Instead of setVisible: false. The NPC walks off and is hidden once out of view. true picks the exit automatically. Ends with npc_left:<id>; never fires npc_arrived.",
+          "oneOf": [
+            {"type": "boolean", "enum": [true]},
+            {
+              "type": "object",
+              "properties": {
+                "to": {"oneOf": [{"type": "string", "description": "A connected room id, or \"offscreen\""}, {"type": "object", "required": ["room", "x", "y"], "properties": {"room": {"type": "string"}, "x": {"type": "number"}, "y": {"type": "number"}}, "additionalProperties": false}]},
+                "speed": { "type": "number", "exclusiveMinimum": 0 },
+                "timeoutMs": { "type": "number", "exclusiveMinimum": 0 }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
         "setPatrolSpeed": {
           "type": "number",
           "minimum": 1,

@@ -4190,7 +4190,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "eventMappings": [
             <%= after_end_json.('gallery') %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.gallery_camera_blinded === true", "onceOnly": true, "bark": "Camera's dead again. I'll go and look." },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.gallery_camera_blinded === true", "setVisible": false, "delayMs": 3500 },
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.gallery_camera_blinded === true", "walkOut": { "to": "server_hall" }, "delayMs": 1500 },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round' && !globalVars.gallery_camera_blinded", "onceOnly": true, "delayMs": 4000, "bark": "Where's Farah? She was on till six." }
           ],
           "observations": "The monitor post's guard, B. Haugen by the rota, with one eye on a small screen."
@@ -4211,7 +4211,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "behavior": { "hostile": { "chaseSpeed": 130, "attackDamage": 9, "pauseToAttack": true } },
           "eventMappings": [
             <%= after_end_json.('gallery') %>
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round'", "setVisible": false }
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round'", "walkOut": { "to": "server_hall" } }
           ],
           "observations": "The floor post's guard, Farah Qureshi, near the end of a long shift."
         },
