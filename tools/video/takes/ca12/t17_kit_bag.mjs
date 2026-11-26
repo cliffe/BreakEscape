@@ -63,7 +63,7 @@ export default async (page, bridge, mark) => {
   mark('walk-start');
   await bridge.moveToNear(BAG).catch((e) => { throw new Error('could not walk to the kit bag: ' + String(e).slice(0, 120)); });
   mark('walk-end'); await sleep(600);
-  await interactRetry(bridge, BAG, mark);              // marks interact:ca12_kit_bag
+  await interactRetry(bridge, BAG, mark, 3, { acceptBlockingUi: true });           // marks interact:ca12_kit_bag
   // shot a: the dialog is up.
   let t0 = Date.now(), rect = null;
   while (Date.now() - t0 < 8000) { rect = await dialogRect(page); if (rect && /kit now|Put the hi-vis on|hi-vis/i.test(rect.text)) break; rect = null; await sleep(100); }
