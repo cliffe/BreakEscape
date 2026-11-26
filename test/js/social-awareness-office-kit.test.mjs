@@ -298,7 +298,7 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
 // ---- plan 4.5 chain rules ----------------------------------------------------------------------
 // A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
 // _comment: engine-ignored note, used by retired-in-place slots that keep later once-only indices.
-const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil', 'askCueQuiet', 'unlockTask', 'completeTask', 'skipTask'];
+const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'walkIn', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil', 'askCueQuiet', 'unlockTask', 'completeTask', 'skipTask'];
 // Bark gates. The ask bark (a targetKnot bark on there, and its game_loaded re-arm copy) does not read kit_quiet in a
 // shell with the done backstop: reopening and closing the debrief sets kit_quiet false, which would drop the ask.
 // It reads !done and an empty choice instead. A follow-through bark on the answer reads !done and may keep or drop
