@@ -1,0 +1,13 @@
+{
+  "key": "5ac9e1742ba9da82b4a948646c3649f3",
+  "npc": "ama_owusu",
+  "text": "Now try the file server the same way, in the Terminal. Use the Panels and Terminal switch at the top of the drop box view. Same moves, typed.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:06Z"
+}

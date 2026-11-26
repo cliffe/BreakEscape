@@ -1,0 +1,13 @@
+{
+  "key": "aa616dd5fd0da68ed94ee4f2ffc430a0",
+  "npc": "ama_owusu",
+  "text": "Her desk photo tells you more. Ask me to send them for coffee, and have a look at it while she's away.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:57:30Z"
+}

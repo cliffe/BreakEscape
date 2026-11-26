@@ -41,6 +41,7 @@ VAR skip_tour = false
 // Ink-local: the opening plays once; each recap plays once; two one-off lines.
 VAR met_ama = false
 VAR told_free_play = false
+VAR told_summary = false
 VAR asked_cooler = false
 VAR recapped_facts = false
 VAR recapped_records = false
@@ -72,7 +73,13 @@ I'm Ama, from Fenlow. We look after the IT here.
 # speaker:npc
 Someone left a box of old password records in the confidential waste.
 # speaker:npc
-Show the partners why that matters. Come back and tell me what you find, and I'll tick it off.
+The partners have asked you to show them why that matters. It's all with their say-so.
+# speaker:npc
+Ask me what's next whenever you're unsure. The tasks panel and the notice board list the day as well.
+# speaker:npc
+I can send the staff for coffee or to lunch, so their desks are free.
+# speaker:npc
+Some tasks tick by themselves. For the rest, come back and tell me what you found.
 -> hub.choices
 
 === hub ===
@@ -139,13 +146,13 @@ What can I help with?
     - not earn_facts_done:
         { not se_intel_delphine_dog_year:
             # speaker:npc
-            Delphine posts on the office feed. Read it on the tablet in the kitchen.
+            Delphine posts on the office feed. On the kitchen tablet, pick her name, then open her post.
             # speaker:npc
             If she hasn't posted yet, I can ask about her weekend.
         }
         { not se_intel_delphine_dog_name:
             # speaker:npc
-            Her desk photo tells you more. Ask me to send them for coffee, and take it while she's away.
+            Her desk photo tells you more. Ask me to send them for coffee, and have a look at it while she's away.
         }
     - not get_records_done and not act_midday:
         # speaker:npc
@@ -161,12 +168,14 @@ What can I help with?
         Search the confidential-waste bin in the IT room. Take all three record files.
     - not crack_guessable_done:
         # speaker:npc
-        Open the capture log in your inventory. Crack Delphine's record with both things you learnt, then tell me.
+        Open the capture log in your inventory. A stolen record can be guessed offline, with no lockout. Crack Delphine's with both things you learnt, then tell me.
     - not crack_reused_done:
         # speaker:npc
         There's a printer admin note in the cupboard by the printers. Take it.
         # speaker:npc
-        Then crack Graham's record from the file in your inventory. It's salted, so every guess takes longer. Wait for it.
+        The cracker tries every password you already hold.
+        # speaker:npc
+        Then crack Graham's record from the file in your inventory. It's stored the careful way, salted and slow to check, so every guess takes longer. Wait for it.
         # speaker:npc
         If you pressed Crack before you had the note, run it again now.
     - not crack_strong_done:
@@ -174,7 +183,7 @@ What can I help with?
         Try Julian's record. Try it twice, then tell me.
     - not user_signin_done:
         # speaker:npc
-        Sign in at Delphine's PC with her password once she's left it.
+        Ask me to send them for coffee, then sign in at Delphine's PC with her password. The sign-in screen offers it.
     - not usb_refused_done:
         # speaker:npc
         Plug the USB stick into the port on Delphine's desk.
@@ -192,19 +201,21 @@ What can I help with?
         Back at Julian's PC as Graham, plug the keystroke device into the socket beside it.
     - not stick_override_done:
         # speaker:npc
-        Ask me to send them for coffee, then sign in at Delphine's PC as Graham and try the stick in her port again.
+        Ask me to send them for coffee, then be quick. Sign in at Delphine's PC as Graham and try the stick in her port again.
+        # speaker:npc
+        She's back in under half a minute, and your session ends when she sits down. If the port refuses, that's why. Ask for coffee again.
     - not collect_partner_done:
         # speaker:npc
         Back at Julian's PC as Graham, use Cached accounts on its desktop, then tell me.
     - not collect_hot_desk_done:
         # speaker:npc
-        Sign in at the hot desk as Graham and collect what it remembers, then tell me.
+        Sign in at the hot desk as Graham and collect what it remembers, then tell me. The Hash collected note has its own Crack button.
     - not see_borrow_done:
         # speaker:npc
         Now ask me to switch Jun's PC off, and watch where he goes. Do it before you call it a day.
     - not collect_after_borrow_done:
         # speaker:npc
-        Collect at the hot desk again, as Graham, then tell me. And ask me to switch Jun's PC back on, or he'll keep coming back.
+        Jun left his session open at the hot desk. Use Switch user, sign in as Graham and collect again, then tell me. And ask me to switch Jun's PC back on, or he'll keep coming back.
     - not crack_cached_done:
         # speaker:npc
         Crack one of the records you collected. A weak one falls at once. Then tell me.
@@ -212,19 +223,30 @@ What can I help with?
         # speaker:npc
         Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then try it at Delphine's PC.
         # speaker:npc
-        Ask me to send them for coffee, then type the name and password under Other user.
+        Ask me to send them for coffee. Sign out from Start first if you're still in as Graham, then use Other user with the name and password the cracker showed.
+        # speaker:npc
+        Then try it at the hot desk too.
     - not local_refused_done:
         # speaker:npc
-        Now sign out at Julian's PC and try the shared desk account there. See what the sign-in screen says, then tell me.
+        Now use Sign out from Start at Julian's PC and try the shared desk account there. Look at the Domain line under the name, see what the sign-in screen says, then tell me.
     - not read_log_done and not act_evening:
         # speaker:npc
         You've done the hands-on part. Tell me to call it a day.
     - not read_log_done:
         # speaker:npc
-        Open the sign-in log terminal in the IT room. Find your own rows, then flag the night-time failure.
-    - else:
+        Open the sign-in log terminal in the IT room. Your sign-ins are there under the names you used: Delphine, Graham and the shared desk account. To the log, you were them.
         # speaker:npc
-        That's everything. Look round as long as you like.
+        Then find the failed sign-in in the small hours and flag it.
+    - else:
+        { not told_summary:
+            ~ told_summary = true
+            # speaker:npc
+            That's the day done. Here's what it showed.
+            -> short_version_body ->
+        - else:
+            # speaker:npc
+            That's everything. Look round as long as you like.
+        }
         # speaker:npc
         The printer account won't open any PC here. Try it if you like.
 }
@@ -232,6 +254,10 @@ What can I help with?
     ~ told_free_play = true
     # speaker:npc
     Next time Graham's away from his desk, try that password on his PC. Same password, typed by hand.
+    # speaker:npc
+    Then try a wrong one three times. It locks you out, and the sign-in log keeps your tries on one row with a count.
+    # speaker:npc
+    There's a cake in your bag. Put it out and watch who wanders over. Free food empties desks too.
 }
 -> hub.choices
 
@@ -239,7 +265,7 @@ What can I help with?
 # speaker:npc
 Good. Two different places, two things she shares without a thought.
 # speaker:npc
-Keep both. A cracker needs them.
+People build passwords from things like these. Keep both. You'll try them as guesses later.
 #complete_task:earn_facts
 ~ earn_facts_done = true
 -> hub.choices
@@ -247,6 +273,8 @@ Keep both. A cracker needs them.
 === tell_crack_guessable ===
 # speaker:npc
 Her dog's name and the year it came home. That was all it took.
+# speaker:npc
+Just what the IT poster in the office warned about.
 #complete_task:crack_guessable
 ~ crack_guessable_done = true
 -> hub.choices
@@ -256,6 +284,8 @@ Her dog's name and the year it came home. That was all it took.
 Graham's password was the printer account's too.
 # speaker:npc
 One person, one password, two accounts. That's reuse.
+# speaker:npc
+A salt means two people with the same password still get different records, so each one has to be guessed on its own.
 #complete_task:crack_reused
 ~ crack_reused_done = true
 -> hub.choices
@@ -315,7 +345,7 @@ A weak password falls whatever PC it came from.
 
 === tell_local_refused ===
 # speaker:npc
-Refused, and no lockout counted. A local account works only on the PCs it was set up on, and Julian's isn't one.
+Refused, and no lockout counted, because that account doesn't exist there. A local account works only on the PCs it was set up on, and Julian's isn't one.
 #complete_task:local_refused
 ~ local_refused_done = true
 -> hub.choices
@@ -370,6 +400,8 @@ I'll ask Delphine how her weekend went. Give her a minute.
 }
 # speaker:npc
 Right. Lunch for everyone. Watch the rooms empty.
+# speaker:npc
+Everyone here has habits: coffee, lunch, a chat at the cooler. An intruder learns them, because they say when a desk is empty.
 #set_global:act_midday:true
 ~ act_midday = true
 # exit_conversation
@@ -499,7 +531,7 @@ Graham stays. Ask him about the log.
     ~ recapped_refused = true
     ~ said = said + 1
     # speaker:npc
-    A local account isn't part of the domain, so only the desks it was made on know it.
+    Office accounts like Graham's are checked centrally, so they work on any office PC. That's the domain. A local account lives on each desk it was made on, so only those desks know it.
 }
 { said < 2 and local_account_done and not recapped_local:
     ~ recapped_local = true
@@ -577,7 +609,7 @@ Graham stays. Ask him about the log.
     ~ recapped_reused = true
     ~ said = said + 1
     # speaker:npc
-    Graham's was salted, so it took a wait, but you already held the same password.
+    Graham's was stored the careful way, so it took a wait. But you already held the same password, so care didn't save it.
 }
 { said < 2 and crack_guessable_done and not recapped_guessable:
     ~ recapped_guessable = true
@@ -589,7 +621,7 @@ Graham stays. Ask him about the log.
     ~ recapped_records = true
     ~ said = said + 1
     # speaker:npc
-    A stored record isn't safe just because it isn't plain text.
+    A stored record isn't safe just because it isn't plain text. Once it's stolen, guessing against it never trips a lockout.
 }
 { said < 2 and earn_facts_done and not recapped_facts:
     ~ recapped_facts = true
@@ -604,14 +636,24 @@ Graham stays. Ask him about the log.
 -> hub.choices
 
 === short_version ===
+-> short_version_body ->
+-> hub.choices
+
+=== short_version_body ===
 # speaker:npc
-People share what a guesser needs, and a stolen record falls to it.
+People share what a guesser needs, and a stolen record falls to it, with no lockout to stop it.
 # speaker:npc
-A reused password opens more than one account. A long random one doesn't fall.
+A reused password opens more than one account. A long random one doesn't fall, salted or not.
 # speaker:npc
-A user's sign-in opens one desk. An administrator's opens other people's.
+A user's sign-in opens one desk. An administrator's opens other people's, gets round the device rules, and collects what PCs remember.
 # speaker:npc
 A PC remembers who used it, and a shared local password falls wherever it's used.
 # speaker:npc
-And the log remembers all of it.
--> hub.choices
+And the log remembers all of it, under the names you borrowed.
+# speaker:npc
+The fixes are plain. A password manager makes every password long, random and different.
+# speaker:npc
+Keep administrator accounts few, and use them only when you must.
+# speaker:npc
+Give every desk its own local password, and have someone read the log.
+->->

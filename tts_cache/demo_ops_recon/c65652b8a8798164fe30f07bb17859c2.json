@@ -1,0 +1,13 @@
+{
+  "key": "c65652b8a8798164fe30f07bb17859c2",
+  "npc": "ama_owusu",
+  "text": "Those machines answered. One port showed every PC, the printer, a camera and a file share. The printer has no sign-in of its own. Scan it next.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:02:06Z"
+}

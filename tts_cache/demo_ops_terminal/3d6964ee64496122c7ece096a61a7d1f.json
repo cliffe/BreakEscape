@@ -1,0 +1,13 @@
+{
+  "key": "3d6964ee64496122c7ece096a61a7d1f",
+  "npc": "ama_owusu",
+  "text": "Three findings, each with a scanner's write-up and reference ids, the catalogue numbers testers use to look a weakness up. Any could be a false alarm. They all read the same.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:27Z"
+}

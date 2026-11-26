@@ -48,13 +48,14 @@ export async function prepare(page, bridge, mark = () => {}) {
 }
 
 /** interact(id) up to 3 times (the first is often swallowed) until a minigame or dialogue opens. */
-export async function interactRetry(bridge, id, mark = () => {}, tries = 3) {
+export async function interactRetry(bridge, id, mark = () => {}, tries = 3, { acceptBlockingUi = false } = {}) {
   for (let i = 0; i < tries; i++) {
     const r = await bridge.interact(id, { timeoutMs: 15000 }).catch(e => ({ ok: false, reason: String(e).slice(0, 80) }));
     await sleep(1200);
     const s = await bridge.getState();
     mark('interact:' + id, { attempt: i, ok: r && r.ok, reason: r && r.reason });
-    if (s.activeMinigame || s.dialogue) return s;
+    // A confirm_action dialog (e.g. the ca12 kit bag's "Put the hi-vis on?") shows as blockingUi, not a minigame.
+    if (s.activeMinigame || s.dialogue || (acceptBlockingUi && s.blockingUi)) return s;
     await sleep(800);
   }
   throw new Error('interact ' + id + ' opened nothing after ' + tries + ' tries');

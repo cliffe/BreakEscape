@@ -613,3 +613,18 @@ test('use accepts the card name as well as its id, and a wrong word names the us
     const wrong = msg(p(`use nonsense card on ${alias}`, view));
     assert.match(wrong, /Type one of these words: .*phish/);
 });
+
+test('plain use lists the usable words, and signin says the window is opening', () => {
+    const view = viewOf('swept_hosts');
+    const r = p('use', view);
+    assert.equal(r.kind, 'message');
+    assert.equal(r.lines[0], 'Use a held technique on a finding: use <technique> on <alias>');
+    assert.match(r.lines[1], /^(Words you can use: |You hold no techniques)/);
+    const offers = C.offers(view);
+    const so = offers.find(o => o.action === 'sign-in');
+    if (so) {
+        const sr = p(`signin ${so.ids.hostId}`, view, offers);
+        assert.equal(sr.kind, 'offer');
+        assert.deepEqual(sr.notes, [`Opening the sign-in screen for ${so.ids.hostId}...`]);
+    }
+});

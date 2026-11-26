@@ -25,6 +25,12 @@ Usage:
   python3 scripts/room_gen/build_aw_rooms.py brightwell   # just one
   python3 scripts/room_gen/build_aw_rooms.py --out DIR    # build into DIR instead
   python3 scripts/room_gen/build_aw_rooms.py --check      # build to a temp dir, diff with assets/rooms
+  python3 scripts/room_gen/build_aw_rooms.py open_plan    # the ca15 Tarrowby open plan (see OPEN_PLAN below)
+
+The open plan is not a seminar clone: room_tarrowby_open_plan is the lab's 20x10
+room_lw_accounts with its Ledgerwell shell and signs swapped for Tarrowby ones, so ca15's
+open_plan keeps every desk, PC, door and stand point. It is deliberately not named
+room_aw_*: those maps are pinned by test/js/social-awareness-office-kit.test.mjs.
 """
 
 import argparse
@@ -213,6 +219,42 @@ NO_SKELETON = {"merrin_lobby"}
 
 COMPANIES = list(COMPANY_OPS)
 
+# ---- the ca15 Tarrowby open plan (docs/video/scripts/ca15_trailer_script_r3.md S1) --------
+OPEN_PLAN = "open_plan"
+OPEN_PLAN_SOURCE = "room_lw_accounts"
+OPEN_PLAN_STEM = "room_tarrowby_open_plan"
+OPEN_PLAN_SHEET = "room_tarrowby_open_plan_20"      # room_aw_tarrowby's shell widened to 20 tiles
+# Source ids (room_edit.py room_lw_accounts list): 49/50 ledger shelves, 51 portrait, 52 ACCOUNTS
+# sign, 54/55 sash windows, 56 card index, 57 pigeonholes. Desks, chairs, PCs, lamps, clock,
+# camera, copier and the two confidential-waste bins stay where they are, so no scenario
+# coordinate moves. Heights: a wall item's y is its bottom edge, and the shell's back wall
+# runs to y 64.
+OPEN_PLAN_OPS = [
+    ("delete", 49, 50, 51, 52, 54, 55, 56, 57),
+    ("add", "items", "binder_shelves1", 140, 74),        # ops folders behind Joanne's desk
+    ("add", "items", "aes_shelving1", 196, 76),          # depot parts and boxes behind desk 2
+    ("add", "items", "m09_county_map1", 104, 44),        # delivery territory map, where the portrait hung
+    ("add", "items", "aw_logo_tarrowby1", 250, 38),      # the Tarrowby plate, where the ACCOUNTS sign was
+    ("add", "items", "window_blinds1", 350, 56),
+    ("add", "items", "window_blinds1", 392, 56),
+    ("add", "items", "aes_hivis_hook1", 436, 59),        # hi-vis and hard hat by the yard door side
+    ("add", "items", "notice_board1", 470, 59),
+    ("add", "items", "rota_board1", 516, 58),
+    ("add", "items", "first_aid_cabinet1", 548, 59),     # right edge 576: clear of the NE door corner
+    # Round 2 (live check): the camera and the east bin were inside the frame / the copier's footprint.
+    ("move", 58, 72, 30),
+    ("move", 60, 582, 240),
+    # The lower half is the yard end of the depot office: a parcel corner (south-east), a pallet truck,
+    # a wet-floor sign by the cooler and a plant on the east side. Nothing within 2 tiles of the
+    # kettle stand point (14,6) = (448,192), the cooler (9.5,7) or the west door run.
+    ("add", "items", "aes_pallet_truck1", 396, 303),
+    ("add", "items", "aes_pallet1", 436, 304),
+    ("add", "items", "supply_boxes1", 472, 306),
+    ("add", "items", "m09_box_trolley1", 508, 306),
+    ("add", "items", "wet_floor_sign1", 340, 244),
+    ("add", "items", "plant-large1", 588, 150),
+]
+
 
 def apply(room, op, co):
     kind, *args = op
@@ -249,13 +291,37 @@ def build(co, out_dir):
     return stem
 
 
+def build_open_plan(out_dir, tiles_dir):
+    """room_tarrowby_open_plan.json in out_dir and its 20-wide sheet in tiles_dir."""
+    from PIL import Image
+    from make_lw_tileset import widen_sheet
+    sheet = widen_sheet(Image.open(ROOMS.parent / "tiles/rooms/room_aw_tarrowby.png").convert("RGBA"))
+    tiles_dir.mkdir(parents=True, exist_ok=True)
+    sheet.save(tiles_dir / f"{OPEN_PLAN_SHEET}.png")
+    shutil.copyfile(ROOMS / f"{OPEN_PLAN_SOURCE}.json", out_dir / f"{OPEN_PLAN_STEM}.json")
+    room_edit.ROOMS = out_dir
+    try:
+        room = room_edit.Room(OPEN_PLAN_STEM)
+        for d in room.docs:
+            ts = next(t for t in d.data["tilesets"] if t.get("name") == "room_lw_tiles_20")
+            d.put_tileset(dict(ts, name=OPEN_PLAN_SHEET, image=f"../tiles/rooms/{OPEN_PLAN_SHEET}.png"))
+        for op in OPEN_PLAN_OPS:
+            apply(room, op, "tarrowby")
+        room.save()
+    finally:
+        room_edit.ROOMS = ROOMS
+    return OPEN_PLAN_STEM
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("companies", nargs="*", help=f"any of {', '.join(COMPANIES)} (default: all)")
     ap.add_argument("--out", type=Path, help="build into this directory instead of assets/rooms")
     ap.add_argument("--check", action="store_true", help="build to a temp dir and diff with assets/rooms")
     a = ap.parse_args(argv)
-    cos = a.companies or COMPANIES
+    want_plan = OPEN_PLAN in a.companies
+    cos = [c for c in a.companies if c != OPEN_PLAN] if a.companies else COMPANIES
+    want_plan = want_plan or not a.companies
     for co in cos:
         if co not in COMPANY_OPS:
             ap.error(f"unknown company {co!r}")
@@ -268,12 +334,23 @@ def main(argv):
                     same = (Path(tmp) / f"{stem}.{ext}").read_bytes() == (ROOMS / f"{stem}.{ext}").read_bytes()
                     print(f"{stem}.{ext}: {'same' if same else 'DIFFERS'}")
                     bad += not same
+            if want_plan:
+                tiles = Path(tmp) / "tiles"
+                build_open_plan(Path(tmp), tiles)
+                for label, a_, b_ in ((f"{OPEN_PLAN_STEM}.json", Path(tmp) / f"{OPEN_PLAN_STEM}.json", ROOMS / f"{OPEN_PLAN_STEM}.json"),
+                                      (f"{OPEN_PLAN_SHEET}.png", tiles / f"{OPEN_PLAN_SHEET}.png", ROOMS.parent / "tiles/rooms" / f"{OPEN_PLAN_SHEET}.png")):
+                    same = a_.read_bytes() == b_.read_bytes()
+                    print(f"{label}: {'same' if same else 'DIFFERS'}")
+                    bad += not same
             sys.exit(1 if bad else 0)
     out = a.out or ROOMS
     out.mkdir(parents=True, exist_ok=True)
     for co in cos:
         stem = build(co, out)
         print(f"wrote {out / stem}.json and .tmj")
+    if want_plan:
+        tiles = a.out / "tiles" if a.out else ROOMS.parent / "tiles/rooms"
+        print(f"wrote {out / build_open_plan(out, tiles)}.json and {tiles / OPEN_PLAN_SHEET}.png")
 
 
 if __name__ == "__main__":

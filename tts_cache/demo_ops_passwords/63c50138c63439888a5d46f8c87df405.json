@@ -1,0 +1,13 @@
+{
+  "key": "63c50138c63439888a5d46f8c87df405",
+  "npc": "ama_owusu",
+  "text": "A salt means two people with the same password still get different records, so each one has to be guessed on its own.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:33Z"
+}

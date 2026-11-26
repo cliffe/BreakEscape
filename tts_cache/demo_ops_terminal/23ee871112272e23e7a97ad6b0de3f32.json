@@ -1,0 +1,13 @@
+{
+  "key": "23ee871112272e23e7a97ad6b0de3f32",
+  "npc": "ama_owusu",
+  "text": "Each card names the product and version it works on, and the wrong version is refused.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:57:22Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "598ccb720143efe7259c66f7eb2f5497",
+  "npc": "ama_owusu",
+  "text": "Talking a helpdesk into a reset is social engineering. Ringing back the number on file is call-back verification.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:01:58Z"
+}

@@ -421,8 +421,8 @@
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.4,
-     "zoom": 2
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "voPos": {
@@ -471,8 +471,8 @@
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.572222,
-     "zoom": 2
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "voPos": {
@@ -521,8 +521,8 @@
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.744444,
-     "zoom": 2
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "voPos": {
@@ -605,9 +605,9 @@
     "type": "seam"
    },
    "source": {
-    "file": "t05_inbox_list.trimmed.mkv",
-    "in": 5.4,
-    "out": 9.8
+    "file": "t05n_inbox_list.trimmed.mkv",
+    "in": 5.43,
+    "out": 9.83
    },
    "audio": {
     "gain_db": -6
@@ -618,7 +618,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "wide t05 used in all aspects (t05n card pane broken); six-row list, subjects truncated, empty right pane; out is 0.69 s before the row click (10.487); 9:16 window x 500-1040 y 20-980; 1:1 x 500-1040 y 20-560 | CA: spoilers not an issue (owner)"
+    "note": "t05n at 520 px (client 700,20,520,900); six-row list, subjects truncated, empty right pane; out is 0.69 s before the row click (10.516); 9:16 z1.125 window y 0-960; 1:1 z2 window y 10-550 | CA: spoilers not an issue (owner)"
    },
    "seat": {
     "seat": "defend",
@@ -632,15 +632,18 @@
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.401042,
-     "cy": 0.462963,
+     "cx": 0.5,
+     "cy": 0.444444,
      "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.401042,
-     "cy": 0.268519,
+     "cx": 0.5,
+     "cy": 0.259259,
      "zoom": 2
     }
+   },
+   "voPos": {
+    "1:1": "top"
    }
   },
   {

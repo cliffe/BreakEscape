@@ -14,7 +14,7 @@ const CARD_HIDE = '.mail-body, .tri-actions, .tri-hidden-btn { visibility: hidde
 export async function body(page, bridge, mark, narrow) {
   await css(page, INBOX_HIDE); await css(page, CARD_HIDE);
   await hideText(page, /Phish stopped for the team|Risks reported or checked for the team/i);
-  if (narrow) await css(page, NARROW_760);
+  if (narrow) await css(page, typeof narrow === 'string' ? narrow : NARROW_760);
   await sprite(page, mark);
   await openKiosk(page, bridge, mark); mark('kiosk-open'); await sleep(1200);
   const bs = await buttons(page); mark('defend-panel', { buttons: bs });

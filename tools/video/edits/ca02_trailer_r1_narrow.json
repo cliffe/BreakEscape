@@ -6,7 +6,7 @@
   "script": {
     "heading": "ca02 trailer script (CV lures)",
     "owner_card": "none yet",
-    "brief": "See docs/video/scripts/ca02_trailer_script.md and docs/video/takes_ca02.md (recorded 25 Nov). Model ca03/ca05 (attack-first). Marks from the 25 Nov takes (trimmed-take seconds, 0.6-1.9 s later than the dry-run windows); Sulafat_v2 VO; PeaceFolk Quietly Cinematic from 29.82 s (r1.2; one track per trailer). PROPOSAL: office_life (2.4 s, t09_zainab_drinks, silent) is not in the script; it sits between inbox and office, adds 2.4 s (72.5 s total). Dropped from the script: the Fatima-reply variant (lands stays on the panel). Shot chips: EMAIL BUILDER (the script's APPLICATION EMAIL BUILDER is 25 characters, over the 24 limit)."
+    "brief": "See docs/video/scripts/ca02_trailer_script.md and docs/video/takes_ca02.md (recorded 25 Nov). Model ca03/ca05 (attack-first). Marks from the 25 Nov takes, retimed 26 Nov to the retakes of t05 (A, B, n), t07_chidi and t02/t02n (Option A+C content change: seven inbox rows, new result-panel line) (trimmed-take seconds, 0.6-1.9 s later than the dry-run windows); Sulafat_v2 VO; PeaceFolk Quietly Cinematic from 29.82 s (r1.2; one track per trailer). PROPOSAL: office_life (2.4 s, t09_zainab_drinks, silent) is not in the script; it sits between inbox and office, adds 2.4 s (72.5 s total). Dropped from the script: the Fatima-reply variant (lands stays on the panel). Shot chips: EMAIL BUILDER (the script's APPLICATION EMAIL BUILDER is 25 characters, over the 24 limit). v8a is the 'Seven messages' clip (2.52 s, Sulafat_seven_v2); v10b moved to 60.5 s so it ends before Chidi's speech (the r1.2 in-point had left it overlapping)."
   },
   "fps": 30,
   "length": 72.5,
@@ -132,8 +132,8 @@
       },
       "source": {
         "file": "t05_inbox_list_runA.trimmed.mkv",
-        "in": 5.6,
-        "out": 12.7
+        "in": 5.91,
+        "out": 13.01
       },
       "audio": {
         "gain_db": -6
@@ -144,7 +144,7 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "t05 run A (wide take, zoomed out: the narrow take t05n has only 4.6 s of list before the card and its other seconds feed the inbox shot, so the same seconds would repeat); list mark 5.46, take end 12.96; 9:16 zoom 0.6 shows the whole panel (about x 0.25-0.75), check legibility on the render | CA: spoilers not an issue (owner), no masks"
+        "note": "t05 run A retaken 26 Nov (seven rows, '0 of 7 sorted'): list mark 5.77 (was 5.46), take end 13.27; window 5.91-13.01 keeps the 0.14 s after the list mark and the 0.26 s before the end; nothing opened or hovered; frames at 5.91 and 13.0 checked | CA: spoilers not an issue (owner), no masks"
       },
       "seat": {
         "seat": "defend",
@@ -199,8 +199,8 @@
       },
       "source": {
         "file": "t02n_attack_run_narrow.trimmed.mkv",
-        "in": 10.95,
-        "out": 15.75
+        "in": 11.91,
+        "out": 16.71
       },
       "audio": {
         "gain_db": -6
@@ -211,7 +211,7 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "careers page open then the vacancy noted (narrow take, 560 px client, 528 px browser; marks from t02n); careers-open 11.50, note-vacancy 13.64, careers-noted frame 14.95, browser-closed 16.91 | CA: spoilers not an issue (owner), no masks"
+        "note": "26 Nov retake: careers-open 12.50 (t02) / 12.45 (t02n), note-vacancy 14.80 / 14.81, careers-noted frame 16.11, browser-closed 18.13; window keeps careers-open 0.54 s in, so the old +0.06 / +0.05 s shift; Our-people notes (8.25, 10.43) not in | CA: spoilers not an issue (owner), no masks"
       },
       "seat": {
         "seat": "attack",
@@ -245,8 +245,8 @@
       },
       "source": {
         "file": "t02n_attack_run_narrow.trimmed.mkv",
-        "in": 25.78,
-        "out": 32.98
+        "in": 27.98,
+        "out": 35.18
       },
       "audio": {
         "gain_db": -6
@@ -257,7 +257,7 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "builder filling (narrow take, 560 px client, 528 px browser; marks from t02n); slot2 28.98 (3.2 s in), ask 30.50, attach and counter 0 at 31.82, filled frame 32.92, to-line 33.83 not in. 9:16 zoom 1.25 crops the Close fragment (x 1205-1265, y 60-112) that pokes out at the right; 1:1 at 1.25 still shows it (open issue) | CA: spoilers not an issue (owner), no masks"
+        "note": "26 Nov retake: slot1 27.67 (t02n 27.55), slot2 31.31 (31.14), ask 32.93 (32.78), attach 34.35 (34.20); slot2 stays 3.2 s in, attach 6.2 s in; Attach reads 'CV (Word document)' (no zip label); to-line 36.43 and send 37.37 not in; red-flag reason lines hidden by CSS, counter kept | CA: spoilers not an issue (owner), no masks"
       },
       "seat": {
         "seat": "attack",
@@ -291,8 +291,8 @@
       },
       "source": {
         "file": "t02n_attack_run_narrow.trimmed.mkv",
-        "in": 33.0,
-        "out": 37.2
+        "in": 35.7,
+        "out": 39.9
       },
       "audio": {
         "gain_db": -6
@@ -303,7 +303,7 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "Send then the green result panel (narrow take, 560 px client, 528 px browser; marks from t02n); to-line 33.83, send 34.56, panel from 34.57, reply row 40.95 not in (window ends 37.2) | CA: spoilers not an issue (owner), no masks"
+        "note": "26 Nov retake: to-line 36.43, send 37.37 (t02n 37.23), panel from 37.40 (1.53 s in); reply row 43.70 not in. OPEN ISSUE: the panel now reads 'A Word CV is what she expects. Office blocks its macros by default, so it only runs if she switches content on', readable at zoom 2 (the t02n panel wraps it whole): it states the mechanism the episode withholds, owner to confirm | CA: spoilers not an issue (owner), no masks"
       },
       "seat": {
         "seat": "attack",
@@ -337,8 +337,8 @@
       },
       "source": {
         "file": "t02n_attack_run_narrow.trimmed.mkv",
-        "in": 41.8,
-        "out": 44.2
+        "in": 44.57,
+        "out": 46.97
       },
       "audio": {
         "gain_db": -6
@@ -349,7 +349,7 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "mail closes onto 'Now it lands on you' (narrow take, 560 px client, 528 px browser; marks from t02n); mail-closed 41.72, continue 44.74 not in | CA: spoilers not an issue (owner), no masks"
+        "note": "26 Nov retake: mail-closed 44.58, flip-up 44.61 (t02n 44.56); continue 47.65 not in (window ends 47.02); heading only, body small | CA: spoilers not an issue (owner), no masks"
       },
       "seat": {
         "seat": "defend",
@@ -487,8 +487,8 @@
       },
       "source": {
         "file": "t05n_inbox_narrow.trimmed.mkv",
-        "in": 6.5,
-        "out": 18.3
+        "in": 6.54,
+        "out": 18.34
       },
       "audio": {
         "gain_db": -6
@@ -499,7 +499,7 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "t05n (760 px client): list 5.68, card-open 10.30 (list held 3.8 s from 6.5), take end 18.82; Tendai Shava card only; the verdict buttons are in frame (9:16 and 1:1 cannot crop above them), unpressed, nothing hovered; row names truncate | CA: spoilers not an issue (owner), no masks"
+        "note": "t05 run B retaken 26 Nov: list 6.01, card-open 10.76 (t05n 5.57, 10.34); window opens so the card opens 3.8 s in as before (in 6.96, t05n 6.54), take end 19.27 (t05n 18.86); Tendai Shava card only; 16:9 zoom 2.0 cy 0.25 frames above the Trust, Report, Delete row (top about y 0.503), the seventh row (Colin Mather) is now clipped at the bottom edge; nothing hovered or pressed; cursor off the Jordan Kerr row | CA: spoilers not an issue (owner), no masks"
       },
       "seat": {
         "seat": "defend",
@@ -554,9 +554,9 @@
       },
       "framing": {
         "16:9": {
-          "cx": 0.59896,
-          "cy": 0.51852,
-          "zoom": 1.5
+          "cx": 0.52,
+          "cy": 0.52,
+          "zoom": 3
         },
         "9:16": {
           "cx": 0.59896,
@@ -564,9 +564,9 @@
           "zoom": 0.84375
         },
         "1:1": {
-          "cx": 0.59896,
-          "cy": 0.51852,
-          "zoom": 1.5
+          "cx": 0.52,
+          "cy": 0.52,
+          "zoom": 2
         }
       },
       "scaleOk": true
@@ -580,8 +580,8 @@
       },
       "source": {
         "file": "t07_chidi_prompt.trimmed.mkv",
-        "in": 4.7,
-        "out": 10.3
+        "in": 4.72,
+        "out": 10.32
       },
       "audio": {
         "gain_db": 0,
@@ -594,7 +594,7 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "t07_chidi: panel-up 2.88, Look up pressed 4.40 (1.03 s into the shot), bubble 6.05, audio-start 6.28, speech 6.493-8.312 (silencedetect), bark 2 11.74 and its bubble 11.60 not in; in 3.37 = bark1_start - 2.8, out 8.97 = +2.8; the panel body says 'Look up from the kiosk...' (no tell) and is small at zoom 1.5; crop estimated from contact frames (room x 0.16-0.65, panel x 0.30-0.70), check on the render; world bubble shows the line | CA: spoilers not an issue (owner), no masks | r1.2 in/out 3.37-8.97 -> 4.70-10.30: the Before-the-debrief dialog is on screen until about 4.6 and cannot be framed whole at an integer zoom; bubble 6.05 and bark 11.60 still in/out of the window as before"
+        "note": "t07_chidi retaken 26 Nov: panel-up 2.92, look_up 4.42, bubble 6.05, audio-start 6.16, speech 6.377-8.198 (silencedetect -35 dB d 0.08), bark 2 starts 11.60 (bubble 11.50), not in; in 4.72 = look_up + 0.30 (room settled, the Before-the-debrief dialog gone by 4.5), so speech starts 1.657 s in and v10b now ends before it (see vo); crop from the 25 Nov frames, rechecked at 4.72, 6.9 and 10.3; world bubble shows the line | CA: spoilers not an issue (owner), no masks"
       },
       "seat": {
         "seat": "full",
@@ -603,7 +603,7 @@
       },
       "framing": {
         "16:9": {
-          "cx": 0.33333,
+          "cx": 0.4,
           "cy": 0.52778,
           "zoom": 2.0
         },
@@ -620,8 +620,8 @@
       },
       "lines": [
         {
-          "start": 3.123,
-          "end": 4.942,
+          "start": 1.657,
+          "end": 3.478,
           "speaker": "Chidi",
           "text": "Got a CV in for the driver job."
         }
@@ -725,10 +725,10 @@
     {
       "id": "v8a",
       "start": 47.4,
-      "end": 49.728,
-      "text": "Six messages wait in the inbox.",
-      "caption": "Six messages wait\nin the inbox.",
-      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v8a.mp3"
+      "end": 49.92,
+      "text": "Seven messages wait in the inbox.",
+      "caption": "Seven messages wait\nin the inbox.",
+      "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_seven_v2/trim/v8a.mp3"
     },
     {
       "id": "v8b",
@@ -748,8 +748,8 @@
     },
     {
       "id": "v10b",
-      "start": 61.6,
-      "end": 63.88,
+      "start": 60.5,
+      "end": 62.78,
       "text": "Then, at the next desk.",
       "caption": "Then, at the next desk.",
       "file": "/home/cliffe/video-takes-local/ca02/vo/Sulafat_v2/trim/v10b.mp3"

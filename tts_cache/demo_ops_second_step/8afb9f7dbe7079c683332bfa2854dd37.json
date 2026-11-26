@@ -1,0 +1,13 @@
+{
+  "key": "8afb9f7dbe7079c683332bfa2854dd37",
+  "npc": "ama_owusu",
+  "text": "A request to approve on a phone is a push. The fob's six digits are a one-time code. Picking the matching number is number matching.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:01:43Z"
+}

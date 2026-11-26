@@ -1,0 +1,13 @@
+{
+  "key": "aa49c97a55a2dfa59fbf42c7f9a3c60a",
+  "npc": "thandiwe_moyo",
+  "text": "Fill in the form: the username, then their staff number and line manager. If both match the file, I'll sort it.",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:02:19Z"
+}

@@ -31,9 +31,11 @@ VAR met_ama = false
 }
 ~ met_ama = true
 # speaker:npc
-I'm Ama, from Fenlow. Zainab is setting up remote support on the file server. Let's look at it the way an attacker's tools would.
+I'm Ama, security lead at Fenlow, the office's IT company.
 # speaker:npc
-This drop box is yours. I'll point out each step.
+Zainab is setting up remote support on the file server. The office has agreed to let us test it the way an attacker's tools would.
+# speaker:npc
+This drop box is yours. There are three parts: getting in, reading the report, and remote ways in. Ask me what's next at any time.
 -> hub
 
 === hub ===
@@ -42,7 +44,7 @@ This drop box is yours. I'll point out each step.
 - (choices)
 + [What's next?]
     -> whats_next
-+ [Send them for coffee.]
++ [Send Chidi for a coffee.]
     -> lever_coffee
 + { not shared_screen_done } [Ask Graham to end the shared screen.]
     -> lever_end_screen
@@ -51,7 +53,7 @@ This drop box is yours. I'll point out each step.
 + { step_up_done and not keeps_log_done } [My log's still there.]
     -> log_talk
 + { (sweep_done and not token_ran_out and not (use_token_done and needs_console_done)) or (shared_screen_done and not token_expired_done) } [My token's greyed out.]
-    -> token_out
+    -> token_check
 + { token_ran_out and not (use_token_done and needs_console_done) and not spare_port_offered } [Can I have another go?]
     -> spare_offer
 + { sweep_done } [What did that show?]
@@ -80,7 +82,11 @@ This drop box is yours. I'll point out each step.
         From the box on the spare port, sign in to the backup PC with the spare token. Then try the keystroke device.
     - not use_token_done:
         # speaker:npc
-        Through the box, sign in to the backup PC with Zainab's token while it's fresh. It's in your keyring.
+        Through the box, sign in to the backup PC with Zainab's token.
+        # speaker:npc
+        It's in your keyring, the list of sign-ins you hold. The network view offers them when you connect.
+        # speaker:npc
+        It lasts six minutes from when the box went in, so do this now.
     - not needs_console_done:
         # speaker:npc
         While the token's live, plug the keystroke device into the backup PC's socket.
@@ -89,13 +95,19 @@ This drop box is yours. I'll point out each step.
         Scan the file server, then check its storage service.
     - not console_done:
         # speaker:npc
-        Type help to find the console's command. Search there, choose a module with use and ask for info, then tell me what it said.
+        Type help to find the console's command. A module is the console's entry for one known weakness.
+        # speaker:npc
+        Search, choose one with use and ask for info, then tell me what it said.
     - not confirm_all_done:
         # speaker:npc
         Confirm all three. Only that tells them apart.
     - not step_up_done:
         # speaker:npc
-        Ask Zainab for her card. Use it on the real update finding, then the tool roll card on the settings one.
+        Ask Zainab for her card, and take the other one from her tool roll.
+        # speaker:npc
+        In the Terminal, use the update card on the real update finding, then the settings card on the settings one. Type help use for the form.
+        # speaker:npc
+        Each card names the product and version it works on, and the wrong version is refused.
     - not keeps_log_done:
         # speaker:npc
         Switch to Panels and back, then tell me what happened to your Terminal log.
@@ -105,17 +117,18 @@ This drop box is yours. I'll point out each step.
             Stay signed in to his screen, then ask me to have Graham end it.
         - else:
             # speaker:npc
-            Ask Graham to share his screen.
+            Ask Graham, in the IT room, to share his screen.
         }
     - not token_expired_done:
         # speaker:npc
         Your token runs out six minutes after the box went in. When it shows greyed out in your keyring, tell me.
     - not unplug_done:
         # speaker:npc
-        To finish, click the box at its port in the server room. In that Terminal, try a short form of unplug, then the whole word.
+        To finish, click the box at its port in the server room. In that Terminal, try a short form such as unp, then type unplug in full.
     - else:
         # speaker:npc
-        That's the lot. Ask for the short version, or stay and look round.
+        That's the lot. Here's what you saw.
+        -> short_version
 }
 -> hub
 
@@ -123,6 +136,8 @@ This drop box is yours. I'll point out each step.
 ~ coffee_call = coffee_call + 1
 # speaker:npc
 Right, I'll send Chidi for a coffee.
+# speaker:npc
+Watch his desk while he's away: an empty desk is a chance for someone.
 -> hub
 
 === lever_end_screen ===
@@ -138,6 +153,8 @@ Right, I'll send Chidi for a coffee.
 #complete_task:shared_screen
 # speaker:npc
 Gone. A shared screen lasts only as long as its owner allows.
+# speaker:npc
+While it's on, the helper can do anything the owner can, so only share with someone you have checked.
 -> hub
 
 === console_talk ===
@@ -169,8 +186,18 @@ What did the console say?
 ~ keeps_log_done = true
 #complete_task:keeps_log
 # speaker:npc
-The Terminal stays for as long as the view is open, with everything you typed.
+The Terminal stays for as long as the view is open, with everything you typed. Testers keep that record so their report can show exactly what they did.
 -> hub
+
+=== token_check ===
+# speaker:npc
+Is the row grey in your keyring?
++ [Yes, it's grey.]
+    -> token_out
++ [No, not yet.]
+    # speaker:npc
+    Then you've still got time. Sign in to the backup PC first.
+    -> hub
 
 === token_out ===
 ~ token_ran_out = true
@@ -205,7 +232,7 @@ Which part?
 === recap_in ===
 { sweep_done:
     # speaker:npc
-    Show listed the machines that answered the sweep, as a table.
+    Show listed the machines that answered the sweep. Attackers map a network first; defenders should know that list better than they do.
 }
 { use_token_done:
     # speaker:npc
@@ -213,7 +240,7 @@ Which part?
 }
 { needs_console_done:
     # speaker:npc
-    The keystroke device wanted someone at the keyboard. A remote session isn't one.
+    Some tools need a person signed in at the keyboard. A remote session isn't one, but an unlocked, empty desk is. Lock your screen.
 }
 -> hub
 
@@ -249,9 +276,13 @@ Which part?
 
 === short_version ===
 # speaker:npc
-A scanner's write-up is a report. Test each finding before you trust it.
+A small box on a spare port put you on the network. Unplugging it ended every session it carried.
+# speaker:npc
+A sweep lists what answers. A scanner's write-up is only a report: test each finding before you trust it.
+# speaker:npc
+One real weakness gave a user session, and that opened the way to an administrator's. Fix either and the chain breaks.
 # speaker:npc
 A token and a shared screen both work without a password, but a clock, the owner or an unplug can end them.
 # speaker:npc
-Some tools need a person at the keyboard. A remote session isn't one.
+Some tools need a person at the keyboard. A remote session isn't one; an unlocked, empty desk is.
 -> hub

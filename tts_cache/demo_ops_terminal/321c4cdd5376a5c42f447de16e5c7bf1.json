@@ -1,0 +1,13 @@
+{
+  "key": "321c4cdd5376a5c42f447de16e5c7bf1",
+  "npc": "ama_owusu",
+  "text": "A small box on a spare port put you on the network. Unplugging it ended every session it carried.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:58:36Z"
+}

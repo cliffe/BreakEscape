@@ -1,0 +1,13 @@
+{
+  "key": "b26802505d0314f8bd26e4985e5d218f",
+  "npc": "ama_owusu",
+  "text": "Refused, and no lockout counted, because that account doesn't exist there. A local account works only on the PCs it was set up on, and Julian's isn't one.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:40Z"
+}

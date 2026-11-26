@@ -1,0 +1,13 @@
+{
+  "key": "119b94fb55ede2fa6e67d5934d828da3",
+  "npc": "ama_owusu",
+  "text": "Yusuf's approvals went to your phone, so his second step now answers to you. If a lock of his asked, you'd approve it yourself.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:01:13Z"
+}

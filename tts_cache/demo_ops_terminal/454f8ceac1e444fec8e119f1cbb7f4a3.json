@@ -1,0 +1,13 @@
+{
+  "key": "454f8ceac1e444fec8e119f1cbb7f4a3",
+  "npc": "ama_owusu",
+  "text": "That's every machine that answered, as a table. Panels shows the same network as pictures; switch at any time. The red bolt on the port marks the box you hold. Next, the backup PC.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:14Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "73f68ee4fdd1a1fe5f5fdecbff75b3c3",
+  "npc": "ama_owusu",
+  "text": "Some tools need a person signed in at the keyboard. A remote session isn't one, but an unlocked, empty desk is. Lock your screen.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:58:30Z"
+}

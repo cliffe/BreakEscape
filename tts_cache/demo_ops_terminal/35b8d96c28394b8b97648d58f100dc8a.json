@@ -1,0 +1,13 @@
+{
+  "key": "35b8d96c28394b8b97648d58f100dc8a",
+  "npc": "ama_owusu",
+  "text": "I'm Ama, security lead at Fenlow, the office's IT company.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:56:08Z"
+}

@@ -130,7 +130,7 @@
     },
     {
       "id": "weak_printer_host_admin_page_factory_login",
-      "label": "Office printer<br/>Admin page :80<br/>default_creds / high",
+      "label": "Office printer<br/>Admin page :80<br/>default_creds / high<br/>fixed if printer_fixed",
       "kind": "lock",
       "optional": false
     },

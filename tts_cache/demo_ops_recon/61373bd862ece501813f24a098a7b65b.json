@@ -1,0 +1,13 @@
+{
+  "key": "61373bd862ece501813f24a098a7b65b",
+  "npc": "ama_owusu",
+  "text": "Read the log. That's where you were seen.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:30Z"
+}

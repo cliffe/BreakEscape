@@ -297,3 +297,7 @@ Longest line 28 words. No line prints a variable or carries a stage direction.
 ## Final line edits before voicing (2026-11-25, from TOUR_REVIEW_R2)
 
 Changed (Ama): terminal_ticked now opens "The Terminal prints like a real console, ..." (was "It prints ..."); the kitchen plug-in bark is "That works too. The box is your foothold, so anything it can reach, you can look at. Now sweep the network." (cut "Nobody's watching the kitchen port."). Routing only, no line changed: the skip-day choice and the yes choice both divert to the new knot `lever_day_go`. The Ama table above is current.
+
+## Changed in the showcase review (2026-11-26)
+
+The rows above keep the older wording. The current text is in `ink/ama_owusu.ink`, `ink/graham_whitfield.ink`, `ink/zainab_hussain.ink` and the barks in `scenario.json.erb`. Lines new or reworded in the review: Ama's sweep, check, card, sign-in, Terminal, Zainab-card, admin-share and home-time pointers; her banner, same-findings, console and saved-link recap lines; her new "How do they stop that?" answers (four lines) and two short-version lines; Graham's two log lines and the new printer-fixed line; Zainab's two card lines; and the barks for plug-in (both ports), sweep, scan, printer off, card used, file server session, admin session, unplug and the new "Fixed." bark. Old clips for the replaced lines were pruned.

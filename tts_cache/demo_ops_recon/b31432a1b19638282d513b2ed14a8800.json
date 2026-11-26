@@ -1,0 +1,13 @@
+{
+  "key": "b31432a1b19638282d513b2ed14a8800",
+  "npc": "ama_owusu",
+  "text": "The false one won't take that card, if you want to try. Then press Sign in on Agnieszka's PC and pick the saved link, not a password.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:02:41Z"
+}

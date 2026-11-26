@@ -1,0 +1,13 @@
+{
+  "key": "a4b6bd8e4c85bd3a5af2eb8d53c2d007",
+  "npc": "ama_owusu",
+  "text": "Then test the left-open setting, and use the card from her tool roll on it. That's an admin session. Open the shared drive from the file server's own desktop, not from the list.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:27Z"
+}

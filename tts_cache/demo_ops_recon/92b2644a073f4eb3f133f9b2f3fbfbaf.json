@@ -1,0 +1,13 @@
+{
+  "key": "92b2644a073f4eb3f133f9b2f3fbfbaf",
+  "npc": "ama_owusu",
+  "text": "The card fitted the real weakness. The printer had kept a saved link to Agnieszka's PC. It's in your keyring now, the list of sign-ins you've collected.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:02:19Z"
+}

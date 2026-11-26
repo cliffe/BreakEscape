@@ -1,0 +1,13 @@
+{
+  "key": "b5a588d71da10887fdb66a1b10288029",
+  "npc": "ama_owusu",
+  "text": "Some tasks tick by themselves. For the rest, come back and tell me what you found.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:57:14Z"
+}

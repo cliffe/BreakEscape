@@ -131,6 +131,8 @@ export async function send({ deskId, username, what, answers, pcId } = {}) {
     if (typeof deskId === 'string' && deskId) {
         try { setGlobal(`helpdesk_${deskId}_result`, result); } catch (e) { console.warn('[helpdesk-client] global not written', e); }
         const detail = { deskId, result };
+        // A granted answer says which reset it was, so a scenario can tell a password reset from a sign-in approval reset.
+        if (result === 'granted' && (body.what === 'password' || body.what === 'mfa')) detail.what = body.what;
         emit('helpdesk_answered', detail);
         emit(`helpdesk_answered:${deskId}`, detail);
     }

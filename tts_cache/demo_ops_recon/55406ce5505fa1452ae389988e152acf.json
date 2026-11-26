@@ -1,0 +1,13 @@
+{
+  "key": "55406ce5505fa1452ae389988e152acf",
+  "npc": "graham_whitfield",
+  "text": "I've changed the printer's factory login tonight. Have a look at its admin page now.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind; he looks after the office network. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:01:20Z"
+}
