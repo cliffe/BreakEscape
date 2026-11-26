@@ -1,0 +1,78 @@
+{
+  "schema": "footage-take/1",
+  "id": "gap4_decoding",
+  "mission": "m01_first_contact",
+  "kind": "ingame",
+  "shot_type": "ui-minigame",
+  "title": "CyberChef decoding at 200%",
+  "description": "In-game CyberChef workstation at 200% zoom decoding three neutral samples: Base64, Vigenere, ROT13. Input, recipe and output visible together.",
+  "characters": [],
+  "voiced_lines": [],
+  "highlights": [
+    {
+      "t": 9.65,
+      "trailer_score": 4,
+      "note": "Base64 decoded: sample input and plain output"
+    },
+    {
+      "t": 15.3,
+      "trailer_score": 4,
+      "note": "Vigenere decoded, key in recipe"
+    },
+    {
+      "t": 21.07,
+      "trailer_score": 4,
+      "note": "ROT13 decoded"
+    }
+  ],
+  "marks": {
+    "file": "gap4_decoding.trimmed.markers.json"
+  },
+  "media": {
+    "file": "gap4_decoding.trimmed.mkv",
+    "duration": 24.902,
+    "resolution": "1920x1080",
+    "fps": 30,
+    "audio": true,
+    "loudness_lufs": null,
+    "av_drift_ms": null,
+    "dropped_pct": null,
+    "trim": null
+  },
+  "spoiler": "none",
+  "sensitive": {
+    "needs_mask": false,
+    "mask_log": null,
+    "safe_spans": [
+      [
+        6.5,
+        24.9
+      ]
+    ],
+    "mask_spans": [
+      [
+        0,
+        6.5
+      ]
+    ]
+  },
+  "quality": {
+    "status": "good",
+    "reason": "Video-only check (end tone did not sound; silent take). Drop 0.37%. 200% done by laying the iframe out at 960x540 and scaling 2x; the right edge clips by about 60 px. 0-6.5 s is the game room with a mission-brief toast, not for use."
+  },
+  "provenance": {
+    "game": null,
+    "set": null,
+    "date": "2026-11-25",
+    "rig_commit": "61c8bd653",
+    "take_script_commit": null
+  },
+  "thumbnail": {
+    "t": 10.0
+  },
+  "sync": {
+    "bytes": 5543171,
+    "sha256": "06d2792aa60eae923d47d399982a5fa1590ee7b97ff3a9f900a935e65bd902d3"
+  },
+  "_draft": false
+}
