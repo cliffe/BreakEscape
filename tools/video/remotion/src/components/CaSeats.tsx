@@ -1,6 +1,7 @@
 import React from 'react';
 import { CA, CaTab, unit, tabFont, crisp, textWidth } from '../ca';
 import { CAPTION_FONT } from '../fonts';
+import { chipTextAt } from '../timeline.js';
 
 export const seatOf = (shot: any): { seat: 'attack' | 'defend' | 'full'; chip?: string; chips?: { from: number; to: number; text: string }[]; chip_px?: number; stripe?: string } | null => {
   const s = shot.seat; if (!s) return null;
@@ -20,7 +21,7 @@ export const CaSeats: React.FC<{ shot: any; w: number; h: number; children: Reac
   // seat.chip_px (design px at 1080): a larger chip for claims a muted viewer must read (product trailer); absent: the usual small tag size
   const chipSize = seat.chip_px ? Math.max(8, Math.round((seat.chip_px * Math.min(w, h)) / 1080 / 8) * 8) : Math.max(8, Math.round(tf * 0.67 / 8) * 8);
   // seat.chips [{from, to, text}] (shot-local seconds): the chip changes on the spoken words; outside every window no chip. seat.chip alone is unchanged.
-  const chipText: string | undefined = seat.chips ? seat.chips.find((c: any) => localSec >= c.from - 1e-6 && localSec < c.to - 1e-6)?.text : seat.chip;
+  const chipText: string | undefined = chipTextAt(seat, localSec);
   const framed = seat.seat !== 'full';
   const tabLabelText: string = seat.seat === 'attack' ? (shot.seat_labels?.attack ?? 'ATTACKER') : (shot.seat_labels?.defend ?? 'DEFENDER'); // tab width follows the label (8 characters = the old 9.6 em)
   const tabH = tf + Math.round(tf * 1) + 4 * u + (seat.stripe ? 3 * u : 0);

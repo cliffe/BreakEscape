@@ -87,7 +87,7 @@ const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source })
   if (shot.type === 'title') return <TitleCard shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
   if (shot.type === 'cta') return <CtaShot shot={shot} w={w} h={h} frame={frame} frames={shot.frames} fps={fps} aspect={aspect} />;
   if (shot.type === 'ca_open') return <CaOpen shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
-  if (shot.type === 'ca_close') return <CaClose shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
+  if (shot.type === 'ca_close') return <CaClose shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} fps={fps} />;
   if (shot.type === 'cc_open') return <CcOpen shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
   if (shot.type === 'cc_close') return <CcClose shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
   if (shot.type === 'card' && shot.style === 'cc') return <CcCard shot={shot} w={w} h={h} frame={frame} />;
