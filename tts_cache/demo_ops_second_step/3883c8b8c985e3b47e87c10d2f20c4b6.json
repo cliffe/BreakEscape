@@ -1,0 +1,13 @@
+{
+  "key": "3883c8b8c985e3b47e87c10d2f20c4b6",
+  "npc": "ama_owusu",
+  "text": "Yusuf's approvals come to your phone now, and his own phone shows nothing. The desk never checked who was asking.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:54:58Z"
+}

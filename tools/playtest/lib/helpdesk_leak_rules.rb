@@ -48,9 +48,11 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # seen counts as stopped), `npcId` is an account and `deskId` a desk of the scenario, that desk covers the account for `what`
 # (a `callback` desk only while the run holds the account's phone at that row), and for a password the value is the one the
 # account alone owns. A repeat grant names the same account again and adds nothing. A grant that is NOT credited (an honest one inside a stop,
-# limit 1) drops no step and marks no pair; the row is already a `helpdesk_grant` finding.
+# limit 1) drops no step and marks no pair; the row is already a `helpdesk_grant` finding. One exception to the stop rule: a
+# `callback` desk's grant for an account whose phone the run held at every refusal so far, from a desk that covers the account for every
+# reset kind it offers, is clear of a stop seen elsewhere (such a desk cannot stop that name; see `hd_callback_clear_of_stops?`).
 #
-# LIMITS (the recorder keeps no request bodies): (1) a stop on any desk or username stops every grant until it runs out, because
+# LIMITS (the recorder keeps no request bodies): (1) a stop on any desk or username stops every grant until it runs out (except the proven call-back case above), because
 # a refusal names no username, so a grant for another account inside that time is not credited: the scripted playtest plays its
 # refusals last. The stop rule therefore depends on playtest ORDER (a refusal row is `{reason, triesLeft}` or `{reason, retryIn}`
 # on a path with no query and nothing in it names the desk or the username). Two ways to close it, both leaving every answer for
@@ -173,6 +175,8 @@ module HelpdeskLeakRules
     @hd_max_tries = [@hd_desks.values.map { |d| d['maxTries'].to_i }.max.to_i, 1].max
     @hd_stop_until = nil       # the time (seconds) the latest stop seen runs to
     @hd_stop_unknown = false   # a stop was seen on a row with no readable time
+    @hd_refusal_rows = 0       # refusal and blocked answers seen so far (each starts or extends at most one desk table entry)
+    @hd_phone_unheld_at_refusal = Set.new  # npc ids whose phone the run did NOT hold at some refusal or blocked row
     @hd_row_time = nil
     # R1-SCANNER3: a scenario whose only second step is one a re-enrolment creates still gets the session rules. This only turns
     # checking ON: before a grant every PC still owes nothing (`mfa_kind_at` answers `none`).
@@ -385,12 +389,11 @@ module HelpdeskLeakRules
   # row), and for a password the value is the one reset password that account owns.
   def hd_grant_credit(shape, body, info)
     return nil unless info[:status] == 200 && info[:method] == 'POST' && info[:strict]
-    return nil if hd_stopped?(@hd_row_time)
-
     npc = @hd_accounts[body['npcId']]
     desk = @hd_desks[body['deskId']]
     what = shape == :granted_password ? 'password' : 'mfa'
     return nil unless npc && desk && hd_desk_covers?(desk, npc, what)
+    return nil if hd_stopped?(@hd_row_time) && !hd_callback_clear_of_stops?(desk, npc)
 
     if shape == :granted_password
       owners = @hd_reset_pw[body['password']]
@@ -402,6 +405,20 @@ module HelpdeskLeakRules
   # The desk could grant `what` for this account NPC, and a `callback` desk only while the run holds the account's phone.
   def hd_desk_covers?(desk, npc, what)
     BreakEscape::HelpdeskModel.covers?(desk, npc, what) && (desk['verify'] != 'callback' || mfa_phone_taken?(npc['id']))
+  end
+
+  # A refusal names no desk or username, so a stop seen is held against every desk. A callback desk is the one exception, and
+  # only on proof: that desk refuses an account only while the run does not hold that account's phone (with the phone held
+  # the rule is met, the answer is a grant), and it needs a table entry for the name to be stopped or blocked. So the grant is
+  # clear of a stop seen elsewhere only when the phone is held now, was held at every refusal or blocked row so far (never
+  # given back in between, as a remove row would show it unheld at the next refusal), and fewer refusal rows than the table
+  # cap have been seen (a full table blocks a new name). It also needs the desk to cover the account for EVERY reset kind it offers:
+  # a desk that resets passwords can refuse a password request for an account with no reset password (counted under that desk and
+  # name), stop the name itself, and then honestly block an mfa request. Anything else stays stopped.
+  def hd_callback_clear_of_stops?(desk, npc)
+    desk['verify'] == 'callback' && mfa_phone_taken?(npc['id']) && !@hd_phone_unheld_at_refusal.include?(npc['id']) &&
+      @hd_refusal_rows < BreakEscape::HelpdeskModel::TRIES_CAP &&
+      desk['resets'].all? { |w| BreakEscape::HelpdeskModel.covers?(desk, npc, w) }
   end
 
   def hd_stopped?(time)
@@ -423,9 +440,16 @@ module HelpdeskLeakRules
         hd_drop_steps(fresh)
       end
     when :granted_mfa then @hd_mfa_earned.merge(earned[:accounts]) if earned[:kind]
-    when :blocked then hd_note_stop(body['retryIn'])
-    when :refused_last then hd_note_stop(BreakEscape::HelpdeskModel::DESK_STOP_SECONDS)
+    when :blocked then hd_note_refusal(body['retryIn'])
+    when :refused_last then hd_note_refusal(BreakEscape::HelpdeskModel::DESK_STOP_SECONDS)
+    when :refused then hd_note_refusal(nil)
     end
+  end
+
+  def hd_note_refusal(stop_seconds)
+    @hd_refusal_rows += 1
+    @hd_accounts.each_key { |id| @hd_phone_unheld_at_refusal << id unless mfa_phone_taken?(id) }
+    hd_note_stop(stop_seconds) if stop_seconds
   end
 
   # A FIRST password grant for an account drops its pending second steps on the server (a repeat grant is answered before that

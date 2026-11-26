@@ -1,0 +1,13 @@
+{
+  "key": "2e81ebe49a53444e694a537e419e0070",
+  "npc": "ama_owusu",
+  "text": "Go and see Thandiwe in the IT room. She has the log.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:43:02Z"
+}

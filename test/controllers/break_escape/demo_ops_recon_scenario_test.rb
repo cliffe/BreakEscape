@@ -385,6 +385,95 @@ module BreakEscape
       assert_response :not_found
     end
 
+    test 'tour R8c probe: unplugging ends the saved-connection session at Agnieszka PC as well as the file server session' do
+      confirmed_all
+      take_card('card_factory')
+      granted(PRINTER_REAL, 'card_factory')
+      post game_path('login'), params: { pc_id: 'agnieszka_pc', credential: 'print_admin', foothold: FOOT }, as: :json
+      assert_response :success, response.body
+      # Tour R1 M1: the saved-link sign-in is in the log the player reads at R8 (method and route only)
+      signin = rows('signin_ok')
+      assert_equal 1, signin.size
+      assert_equal({ 'kind' => 'pc', 'id' => 'agnieszka_pc' }, signin.first['where'])
+      assert_equal({ 'method' => 'credential', 'route' => 'foothold' }, signin.first['detail'])
+      post game_path('inventory'), params: { action_type: 'add', source_npc_id: 'zainab_hussain',
+                                             item: { type: 'technique_card', id: 'card_update_gap', name: 'Technique card: known update gap' } }, as: :json
+      granted(UPDATE, 'card_update_gap')
+      ended = unplug(JACK)
+      assert_response :success, response.body
+      assert_equal %w[agnieszka_pc file_server], Array(ended['endedPcIds']).sort
+      assert_nil session_at('agnieszka_pc')
+      assert_nil session_at('file_server')
+    end
+
+    # ---- the guided tour: tasks, ticks, globals, barks ---------------------------------------------------
+
+    def ama
+      scenario['rooms']['office']['npcs'].find { |n| n['id'] == 'ama_owusu' }
+    end
+
+    def aim_tasks
+      scenario['objectives'].to_h { |a| [a['aimId'], a['tasks'].map { |t| t['taskId'] }] }
+    end
+
+    test 'tour: the panel lists the beats in the order the tour plays them, with the two new tasks placed' do
+      assert_equal %w[plug_in sweep scan_printer], aim_tasks['morning']
+      assert_equal %w[confirm_both use_card remote_signin terminal_view], aim_tasks['midday']
+      assert_equal %w[open_share read_log unplug], aim_tasks['evening']
+    end
+
+    test 'tour: remote_signin ticks on any sign-in at Agnieszka PC; unplug ticks on either jack only after the share; the box position is tracked at both jacks' do
+      maps = ama['eventMappings']
+      signin = maps.find { |m| m['eventPattern'] == 'pc_signed_in:agnieszka_pc' }
+      assert_equal 'remote_signin', signin['completeTask']
+      assert_equal({ 'remote_signin_done' => true }, signin['setGlobal'])
+      %w[hotdesk_jack kitchen_jack].each do |jack|
+        un = maps.find { |m| m['eventPattern'] == "network_device_unplugged:#{jack}" }
+        assert_equal 'unplug', un['completeTask'], jack
+        assert_equal 'globalVars.open_share_done === true', un['condition'], jack
+        assert_equal({ 'unplug_done' => true }, un['setGlobal'], jack)
+      end
+      { 'kitchen_jack' => [true, 'kitchen_used', 'hotdesk_used'], 'hotdesk_jack' => [false, 'hotdesk_used', 'kitchen_used'] }.each do |jack, (value, used, other)|
+        track = maps.select { |m| m['eventPattern'] == "network_foothold_gained:#{jack}" && m['setGlobal']&.key?('box_at_kitchen') }
+        assert_equal 1, track.size, jack
+        assert_equal({ 'box_at_kitchen' => value, used => true }, track.first['setGlobal'])
+        refute track.first['onceOnly'], 'the position mappings must not be once-only'
+        # Tour R1 m3: moving the box to the other jack later does not tick or bark the plug-in again. The guard reads
+        # the other jack's global, never plug_in_done, which this mapping sets (a bark would be dropped as stale)
+        tick = maps.find { |m| m['eventPattern'] == "network_foothold_gained:#{jack}" && m['completeTask'] == 'plug_in' }
+        assert_equal "globalVars.#{other} !== true", tick['condition'], jack
+      end
+      assert_includes scenario['logSources'][LOG]['events'], 'signin_ok'
+      %w[remote_signin_done unplug_done box_at_kitchen hotdesk_used kitchen_used].each { |g| assert_equal false, scenario['globalVariables'][g], g }
+      ink = File.read(File.expand_path('../../../scenarios/demo_ops_recon/ink/ama_owusu.ink', __dir__))
+      %w[remote_signin_done unplug_done box_at_kitchen].each { |g| assert_match(/^VAR #{g} = false$/, ink) }
+    end
+
+    test 'tour: the technique-session barks key on the sign-in event, never on a finding id, and every bark stays within the 30-word cap' do
+      maps = ama['eventMappings']
+      user = maps.find { |m| m['condition'].to_s.include?("npcId === 'agnieszka_duda'") }
+      admin = maps.find { |m| m['condition'].to_s.include?("npcId === 'graham_whitfield'") }
+      [user, admin].each do |m|
+        assert_equal 'pc_signed_in:file_server', m['eventPattern']
+        assert_includes m['condition'], "data.via === 'technique'"
+      end
+      scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.flat_map { |n| Array(n['eventMappings']) }.each do |m|
+        next unless m['bark']
+        assert_operator m['bark'].split.size, :<=, 30, m['bark']
+        refute_match(/\{[a-z_]+\}/, m['bark'])
+      end
+    end
+
+    test 'tour: Ama refuses the evening until the morning and midday beats are done, and the voices name Merrin & Sallow only' do
+      ink = File.read(File.expand_path('../../../scenarios/demo_ops_recon/ink/ama_owusu.ink', __dir__))
+      assert_includes ink, "Not yet. There's still work to do"
+      assert_includes ink, '[Skip them and call it a day anyway.]'
+      assert_equal true, scenario['ttsPregenerateChatter']
+      voices = scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.map { |n| n.dig('voice', 'style') }.compact
+      assert_equal 6, voices.size
+      voices.each { |v| refute_match(/Tarrowby|Brightwell/, v) }
+    end
+
     # ---- free play: the printer switched off -----------------------------------------------------------
 
     test 'free play: with the printer switched off at the wall the sweep lists it as not answering and the scan is refused' do

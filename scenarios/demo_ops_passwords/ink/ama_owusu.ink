@@ -35,6 +35,9 @@ VAR collect_hot_desk_done = false
 VAR crack_cached_done = false
 VAR local_account_done = false
 VAR local_refused_done = false
+VAR stick_override_done = false
+VAR collect_after_borrow_done = false
+VAR skip_tour = false
 // Ink-local: the opening plays once; each recap plays once; two one-off lines.
 VAR met_ama = false
 VAR told_free_play = false
@@ -56,6 +59,8 @@ VAR recapped_collect_hot_desk = false
 VAR recapped_crack_cached = false
 VAR recapped_local = false
 VAR recapped_refused = false
+VAR recapped_stick = false
+VAR recapped_after_borrow = false
 
 === start ===
 { met_ama:
@@ -84,6 +89,20 @@ What can I help with?
     -> tell_crack_strong
 + { admin_signin_done and not profile_read_done } [I opened Julian's client files.]
     -> tell_profile
++ { admin_signin_done and not collect_partner_done } [I collected what Julian's PC remembers.]
+    -> tell_collect_partner
++ { hot_desk_signin_done and not see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk.]
+    -> tell_collect_hot_desk
++ { hot_desk_signin_done and see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk before Jun borrowed it.]
+    -> tell_collect_hot_desk
++ { hot_desk_signin_done and see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk after Jun borrowed it.]
+    -> tell_collect_hot_desk_late
++ { see_borrow_done and collect_hot_desk_done and not collect_after_borrow_done } [I collected there again.]
+    -> tell_collect_after_borrow
++ { collect_hot_desk_done and not crack_cached_done } [I cracked one of those records.]
+    -> tell_crack_cached
++ { local_account_done and not local_refused_done } [I tried the shared desk account at Julian's PC.]
+    -> tell_local_refused
 + [What's next?]
     -> whats_next
 + { not act_evening } [Send them for coffee.]
@@ -100,15 +119,7 @@ What can I help with?
     -> recap
 + { act_evening } [Give me the short version.]
     -> short_version
-+ { admin_signin_done and not collect_partner_done } [I collected what Julian's PC remembers.]
-    -> tell_collect_partner
-+ { see_borrow_done and hot_desk_signin_done and not collect_hot_desk_done } [I collected at the hot desk.]
-    -> tell_collect_hot_desk
-+ { collect_hot_desk_done and not crack_cached_done } [I cracked one of those records.]
-    -> tell_crack_cached
-+ { local_account_done and not local_refused_done } [I tried the shared desk account at Julian's PC.]
-    -> tell_local_refused
-+ { not act_evening and not jun_pc_off } [Switch Jun's PC off.]
++ { not act_evening and not jun_pc_off and collect_hot_desk_done } [Switch Jun's PC off.]
     -> lever_jun_off
 + { not act_evening and jun_pc_off } [Switch Jun's PC back on.]
     -> lever_jun_on
@@ -130,7 +141,7 @@ What can I help with?
             # speaker:npc
             Delphine posts on the office feed. Read it on the tablet in the kitchen.
             # speaker:npc
-            If she hasn't posted yet, ask me to ask about her weekend.
+            If she hasn't posted yet, I can ask about her weekend.
         }
         { not se_intel_delphine_dog_name:
             # speaker:npc
@@ -155,7 +166,7 @@ What can I help with?
         # speaker:npc
         There's a printer admin note in the cupboard by the printers. Take it.
         # speaker:npc
-        Then crack Graham's record. It's salted, so every guess takes longer. Wait for it.
+        Then crack Graham's record from the file in your inventory. It's salted, so every guess takes longer. Wait for it.
         # speaker:npc
         If you pressed Crack before you had the note, run it again now.
     - not crack_strong_done:
@@ -178,27 +189,33 @@ What can I help with?
         Open Client files in Julian's profile, then tell me. Delphine's sign-in never could.
     - not override_done:
         # speaker:npc
-        Still at Julian's PC as Graham? Plug the keystroke device into the socket beside it.
+        Back at Julian's PC as Graham, plug the keystroke device into the socket beside it.
+    - not stick_override_done:
+        # speaker:npc
+        Ask me to send them for coffee, then sign in at Delphine's PC as Graham and try the stick in her port again.
     - not collect_partner_done:
         # speaker:npc
-        Still signed in at Julian's PC as Graham? Use Cached accounts on its desktop, then tell me.
+        Back at Julian's PC as Graham, use Cached accounts on its desktop, then tell me.
+    - not collect_hot_desk_done:
+        # speaker:npc
+        Sign in at the hot desk as Graham and collect what it remembers, then tell me.
     - not see_borrow_done:
         # speaker:npc
-        Ask me to switch Jun's PC off, and watch where he goes. Do it before you call it a day.
-    - not hot_desk_signin_done or not collect_hot_desk_done:
+        Now ask me to switch Jun's PC off, and watch where he goes. Do it before you call it a day.
+    - not collect_after_borrow_done:
         # speaker:npc
-        Jun left the hot desk signed in. Sign in there as Graham and use Cached accounts, then tell me.
+        Collect at the hot desk again, as Graham, then tell me. And ask me to switch Jun's PC back on, or he'll keep coming back.
     - not crack_cached_done:
         # speaker:npc
         Crack one of the records you collected. A weak one falls at once. Then tell me.
     - not local_account_done:
         # speaker:npc
-        Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then sign in at Delphine's PC.
+        Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then try it at Delphine's PC.
         # speaker:npc
-        Type the name and password under Other user.
+        Ask me to send them for coffee, then type the name and password under Other user.
     - not local_refused_done:
         # speaker:npc
-        Now try the same account at Julian's PC. Look at what the sign-in screen says, then tell me.
+        Now sign out at Julian's PC and try the shared desk account there. See what the sign-in screen says, then tell me.
     - not read_log_done and not act_evening:
         # speaker:npc
         You've done the hands-on part. Tell me to call it a day.
@@ -208,6 +225,8 @@ What can I help with?
     - else:
         # speaker:npc
         That's everything. Look round as long as you like.
+        # speaker:npc
+        The printer account won't open any PC here. Try it if you like.
 }
 { crack_reused_done and act_midday and not act_evening and not told_free_play:
     ~ told_free_play = true
@@ -227,23 +246,23 @@ Keep both. A cracker needs them.
 
 === tell_crack_guessable ===
 # speaker:npc
-Her password was built from things she posts. Guessing was enough.
+Her dog's name and the year it came home. That was all it took.
 #complete_task:crack_guessable
 ~ crack_guessable_done = true
 -> hub.choices
 
 === tell_crack_reused ===
 # speaker:npc
-One person, one password, two accounts. That's reuse.
+Graham's password was the printer account's too.
 # speaker:npc
-Once you hold one, you hold the other.
+One person, one password, two accounts. That's reuse.
 #complete_task:crack_reused
 ~ crack_reused_done = true
 -> hub.choices
 
 === tell_crack_strong ===
 # speaker:npc
-Julian's won't fall. Long and random beats guessing.
+Long and random, so guessing never gets there.
 #complete_task:crack_strong
 ~ crack_strong_done = true
 -> hub.choices
@@ -262,25 +281,41 @@ Julian's PC remembers who signed in. An administrator gets the stored records, n
 ~ collect_partner_done = true
 -> hub.choices
 
+// The first collect, made before the borrow (the player says so once the borrow has been seen).
 === tell_collect_hot_desk ===
 # speaker:npc
-Jun's record only turned up because he borrowed the PC. Anyone who signs in leaves something behind.
+One record, Niamh's. Whoever uses a PC leaves a record behind.
 #complete_task:collect_hot_desk
 ~ collect_hot_desk_done = true
 -> hub.choices
 
+// The first collect came after the borrow (the player says so): it shows both records, so it ticks both beats.
+=== tell_collect_hot_desk_late ===
+# speaker:npc
+Two records, Niamh's and Jun's. He'd already borrowed the desk, so it cached him too.
+#complete_task:collect_hot_desk
+#complete_task:collect_after_borrow
+~ collect_hot_desk_done = true
+~ collect_after_borrow_done = true
+-> hub.choices
+
+=== tell_collect_after_borrow ===
+# speaker:npc
+Now it remembers Jun as well. He signed in there, so it cached him.
+#complete_task:collect_after_borrow
+~ collect_after_borrow_done = true
+-> hub.choices
+
 === tell_crack_cached ===
 # speaker:npc
-Same cracker, new source. A weak password falls whatever the PC.
+A weak password falls whatever PC it came from.
 #complete_task:crack_cached
 ~ crack_cached_done = true
 -> hub.choices
 
 === tell_local_refused ===
 # speaker:npc
-The sign-in screen names the domain. A domain account works across it. A local account stays on its own PCs.
-# speaker:npc
-So the shared account opens every desk it's on, and not Julian's.
+Refused, and no lockout counted. A local account works only on the PCs it was set up on, and Julian's isn't one.
 #complete_task:local_refused
 ~ local_refused_done = true
 -> hub.choices
@@ -308,7 +343,7 @@ I'll ask Jun what he's been up to. Give him a minute.
 === cooler ===
 ~ asked_cooler = true
 # speaker:npc
-Graham and Niamh, same time every day. Habits like that are what a guesser lives on.
+Graham and Niamh, same time every day. Habits like that tell an intruder when a room's empty.
 -> hub.choices
 
 === lever_coffee ===
@@ -341,20 +376,37 @@ Right. Lunch for everyone. Watch the rooms empty.
 -> END
 
 === lever_day_end ===
+{ not skip_tour and not (earn_facts_done and get_records_done and crack_guessable_done and crack_reused_done and crack_strong_done and user_signin_done and usb_refused_done and admin_signin_done and profile_read_done and override_done and stick_override_done and collect_partner_done and collect_hot_desk_done and see_borrow_done and collect_after_borrow_done and crack_cached_done and local_account_done and local_refused_done):
+    # speaker:npc
+    Not yet. There's still some of today's list to do.
+    -> lever_day_refused
+}
 # speaker:npc
 The staff won't be back once they've gone home. Seen everything you wanted?
 + [Yes, call it a day.]
-    # speaker:npc
-    Right. Home time for nearly all of them.
-    # speaker:npc
-    Graham stays. Ask him about the log.
-    #set_global:act_evening:true
-    ~ act_evening = true
-    # exit_conversation
-    -> END
+    -> day_end_go
 + [Not yet.]
     # speaker:npc
     Take your time.
+    -> hub.choices
+
+=== day_end_go ===
+# speaker:npc
+Right. Home time for nearly all of them.
+# speaker:npc
+Graham stays. Ask him about the log.
+#set_global:act_evening:true
+~ act_evening = true
+# exit_conversation
+-> END
+
+=== lever_day_refused ===
++ [Skip the rest and call it a day anyway.]
+    ~ skip_tour = true
+    -> day_end_go
++ [Not yet.]
+    # speaker:npc
+    Take your time. Ask me what's next if you're not sure.
     -> hub.choices
 
 === function unrecapped() ===
@@ -410,12 +462,18 @@ The staff won't be back once they've gone home. Seen everything you wanted?
 { local_refused_done and not recapped_refused:
     ~ c = c + 1
 }
+{ stick_override_done and not recapped_stick:
+    ~ c = c + 1
+}
+{ collect_after_borrow_done and not recapped_after_borrow:
+    ~ c = c + 1
+}
 ~ return c
 
 // Each ticked beat is recapped once, newest first, at most two per ask.
 === recap ===
 ~ temp said = 0
-{ not earn_facts_done and not get_records_done and not crack_guessable_done and not crack_reused_done and not crack_strong_done and not user_signin_done and not usb_refused_done and not admin_signin_done and not profile_read_done and not override_done and not read_log_done and not collect_partner_done and not see_borrow_done and not collect_hot_desk_done and not crack_cached_done and not local_account_done and not local_refused_done:
+{ not earn_facts_done and not get_records_done and not crack_guessable_done and not crack_reused_done and not crack_strong_done and not user_signin_done and not usb_refused_done and not admin_signin_done and not profile_read_done and not override_done and not read_log_done and not collect_partner_done and not see_borrow_done and not collect_hot_desk_done and not crack_cached_done and not local_account_done and not local_refused_done and not stick_override_done and not collect_after_borrow_done:
     # speaker:npc
     Nothing to look back on yet. Have a go first.
     -> hub.choices
@@ -425,11 +483,23 @@ The staff won't be back once they've gone home. Seen everything you wanted?
     That's all of it so far. Ask for the short version at the end.
     -> hub.choices
 }
+{ said < 2 and collect_after_borrow_done and not recapped_after_borrow:
+    ~ recapped_after_borrow = true
+    ~ said = said + 1
+    # speaker:npc
+    Borrowing left Jun's account on the hot desk.
+}
+{ said < 2 and stick_override_done and not recapped_stick:
+    ~ recapped_stick = true
+    ~ said = said + 1
+    # speaker:npc
+    Each override left a row in the log. An administrator can get round a rule, but not quietly.
+}
 { said < 2 and local_refused_done and not recapped_refused:
     ~ recapped_refused = true
     ~ said = said + 1
     # speaker:npc
-    The shared account was refused where it doesn't belong. A local account stays local.
+    A local account isn't part of the domain, so only the desks it was made on know it.
 }
 { said < 2 and local_account_done and not recapped_local:
     ~ recapped_local = true
@@ -441,13 +511,13 @@ The staff won't be back once they've gone home. Seen everything you wanted?
     ~ recapped_crack_cached = true
     ~ said = said + 1
     # speaker:npc
-    A remembered record falls like any other: a weak one at once, Jun's with one fact.
+    A remembered record cracks like any other.
 }
 { said < 2 and collect_hot_desk_done and not recapped_collect_hot_desk:
     ~ recapped_collect_hot_desk = true
     ~ said = said + 1
     # speaker:npc
-    The hot desk remembered Jun because he'd sat there.
+    The hot desk still held Niamh's record from when she'd used it.
 }
 { said < 2 and see_borrow_done and not recapped_borrow:
     ~ recapped_borrow = true
@@ -459,7 +529,7 @@ The staff won't be back once they've gone home. Seen everything you wanted?
     ~ recapped_collect_partner = true
     ~ said = said + 1
     # speaker:npc
-    A PC keeps a record of who used it. An administrator can collect them.
+    An administrator can collect what a PC remembers.
 }
 { said < 2 and read_log_done and not recapped_log:
     ~ recapped_log = true
@@ -489,7 +559,7 @@ The staff won't be back once they've gone home. Seen everything you wanted?
     ~ recapped_usb = true
     ~ said = said + 1
     # speaker:npc
-    The desk policy refused the stick. That's a rule doing its job.
+    A user can't get past the USB block, and can't change the rule either.
 }
 { said < 2 and user_signin_done and not recapped_user:
     ~ recapped_user = true

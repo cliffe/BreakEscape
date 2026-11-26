@@ -1,0 +1,13 @@
+{
+  "key": "da3b760daf787520422244796244f9bd",
+  "npc": "ama_owusu",
+  "text": "Jun's desk will be empty for a bit.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:32:02Z"
+}

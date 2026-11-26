@@ -1,0 +1,13 @@
+{
+  "key": "c306e20aea7a017f1404ab9d0f7fc8bb",
+  "npc": "chidi_okeke",
+  "text": "Who switched the printer off?",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:48:37Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "7524fa61411c336dec7c503d104c0bfd",
+  "npc": "darren_price",
+  "text": "Who's the cake from?",
+  "voice": "Orus",
+  "style": "Operations coordinator at Merrin & Sallow, in his 40s, easily flustered and quick to give in. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:03:09Z"
+}

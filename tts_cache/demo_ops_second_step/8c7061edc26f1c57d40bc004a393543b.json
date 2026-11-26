@@ -1,0 +1,13 @@
+{
+  "key": "8c7061edc26f1c57d40bc004a393543b",
+  "npc": "yusuf_demir",
+  "text": "Nearly always. The coffee machine is my weak spot.",
+  "voice": "Iapetus",
+  "style": "Operations analyst at Merrin & Sallow, in his 30s, friendly and a little scatty. Speak with a consistent London accent with a light Turkish inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:49:45Z"
+}

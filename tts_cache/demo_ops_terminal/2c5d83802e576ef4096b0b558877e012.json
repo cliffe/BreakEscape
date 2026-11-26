@@ -1,0 +1,13 @@
+{
+  "key": "2c5d83802e576ef4096b0b558877e012",
+  "npc": "ama_owusu",
+  "text": "From the box on the spare port, sign in to the backup PC with the spare token. Then try the keystroke device.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:30:16Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "437c7437fc2d66febb2b8af3a0c803b8",
+  "npc": "darren_price",
+  "text": "Fine, until it asks me ten times in a row.",
+  "voice": "Orus",
+  "style": "Operations coordinator at Merrin & Sallow, in his 40s, easily flustered and quick to give in. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:48:50Z"
+}

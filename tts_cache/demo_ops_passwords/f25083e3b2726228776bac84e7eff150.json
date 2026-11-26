@@ -1,0 +1,13 @@
+{
+  "key": "f25083e3b2726228776bac84e7eff150",
+  "npc": "ama_owusu",
+  "text": "Open the capture log in your inventory. Crack Delphine's record with both things you learnt, then tell me.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:31:36Z"
+}

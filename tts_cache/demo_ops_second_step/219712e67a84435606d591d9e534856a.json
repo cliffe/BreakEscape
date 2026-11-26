@@ -1,0 +1,13 @@
+{
+  "key": "219712e67a84435606d591d9e534856a",
+  "npc": "priya_nair",
+  "text": "This machine takes forever.",
+  "voice": "Leda",
+  "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:14:01Z"
+}

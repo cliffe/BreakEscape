@@ -1,0 +1,13 @@
+{
+  "key": "6d4d1bf7a171e48363f51722f041b9e2",
+  "npc": "ama_owusu",
+  "text": "Now sign in to Agnieszka's PC from the network view, with the printer's saved link.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:30:36Z"
+}

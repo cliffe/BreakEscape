@@ -1,0 +1,13 @@
+{
+  "key": "eaa548678e2e67f88fd2fdab4485a562",
+  "npc": "ama_owusu",
+  "text": "Not yet. There's still work to do, and once they've gone home they won't be back.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:32:28Z"
+}

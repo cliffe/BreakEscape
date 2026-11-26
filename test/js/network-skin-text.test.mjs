@@ -252,7 +252,8 @@ export const TERMINAL_LAYOUTS = Object.freeze([
     new RegExp(`^${CHIP_RE} ${CHIP_RE}(?: on .+)?$`),        // class and severity, then the service
     /^Nmap done: \d+ hosts? up$/,                            // the scanner's closing line
     /^\S+:\d+ - The target (?:appears to be vulnerable|is not vulnerable)\.$/,
-    /^Session opened on \S+ as .+$/
+    /^Session opened on \S+ as .+$/,
+    /^Type: use \S+ on <finding>$/                            // a technique card's command: Panels give only the word
 ]);
 
 /** A Panels piece the Terminal lays out another way: the chips, the service line, the grant sentence. */
@@ -262,6 +263,12 @@ function samePieceByLayout(p, terminal, termWords) {
     const all = [...terminal.elements, ...terminal.lines.map(l => l.join(' ')), ...terminal.lines.flat()].map(collapse);
     const port = /^(.+) · (\d+) · (.+)$/.exec(p);                // label, port, product and version
     if (port) return all.some(t => t.includes(`${port[2]}/`) && t.endsWith(port[3]) && /\bopen\b/.test(t)) && all.some(t => t.includes(port[1]));
+    // A technique card says "Type: <id>"; the Terminal says which command takes it: "Type: use <id> on <finding>"
+    const typed = /^Type: (\S+)$/.exec(p);
+    if (typed) return all.some(t => t === `Type: use ${typed[1]} on <finding>`);
+    // A named Check button ("Check <service>") is the Terminal's Check control beside that service's own line
+    const named = /^Check (.+)$/.exec(p);
+    if (named) return terminal.elements.some(t => collapse(t) === 'Check') && all.some(t => t.includes(named[1]));
     const grant = /^You now hold a session on .+ as (.+?)\.(?: (\w+))?$/.exec(p);
     if (grant) return all.some(t => new RegExp(`^(?:\\[\\*\\] )?Session opened on \\S+ as ${escapeRe(grant[1])}$`).test(t)) && (!grant[2] || all.some(t => t.split(' ').includes(grant[2])));
     return false;
@@ -330,6 +337,7 @@ function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, 
     const allKeys = new Set(panelsAll.map(key));
     const allowed = (p) => {
         const k = key(p);
+        if (p === 'Check' && panelsAll.some(q => /^Check \S/.test(q))) return true;   // the Terminal's Check control, which Panels name by service
         if ([...served].some(v => p === v || p === `(${v})`)) return true;
         if (idKeys.has(k) || modules.has(p) || commands.has(p) || titles.has(p) || TEMPLATE_RES.some(re => re.test(p)) || panelsKeys.has(k) || allKeys.has(k)) return true;
         return TERMINAL_LAYOUTS.some(re => re.test(p)) && wordsOf(p).every(allowedWord);

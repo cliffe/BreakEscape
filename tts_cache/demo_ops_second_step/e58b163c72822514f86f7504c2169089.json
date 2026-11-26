@@ -1,0 +1,13 @@
+{
+  "key": "e58b163c72822514f86f7504c2169089",
+  "npc": "fatima_begum",
+  "text": "Whose birthday is it?",
+  "voice": "Zephyr",
+  "style": "Records clerk at Merrin & Sallow, in her late 20s, quick and cheerful, always carrying something. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:11:41Z"
+}

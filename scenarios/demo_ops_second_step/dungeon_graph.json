@@ -253,6 +253,30 @@
       "label": "Thandiwe Moyo<br/>resets second step",
       "kind": "key",
       "optional": false
+    },
+    {
+      "id": "desk_call_desk_lorna_easton_mfa",
+      "label": "Priya Nair<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_call_desk_darren_price_mfa",
+      "label": "Priya Nair<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_call_desk_anjali_rao_mfa",
+      "label": "Priya Nair<br/>resets second step",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "desk_call_desk_yusuf_demir_mfa",
+      "label": "Priya Nair<br/>resets second step",
+      "kind": "key",
+      "optional": false
     }
   ],
   "edges": [
@@ -574,6 +598,56 @@
     },
     {
       "from": "desk_it_desk_yusuf_demir_mfa",
+      "to": "lock_yusuf_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_call_desk_lorna_easton_mfa",
+      "soft": false
+    },
+    {
+      "from": "desk_call_desk_lorna_easton_mfa",
+      "to": "lock_lorna_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_call_desk_darren_price_mfa",
+      "soft": false
+    },
+    {
+      "from": "desk_call_desk_darren_price_mfa",
+      "to": "lock_darren_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_call_desk_anjali_rao_mfa",
+      "soft": false
+    },
+    {
+      "from": "desk_call_desk_anjali_rao_mfa",
+      "to": "lock_anjali_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "it_room",
+      "to": "desk_call_desk_yusuf_demir_mfa",
+      "soft": false
+    },
+    {
+      "from": "cred_src_yusuf_phone",
+      "to": "desk_call_desk_yusuf_demir_mfa",
+      "soft": false,
+      "label": "callback"
+    },
+    {
+      "from": "desk_call_desk_yusuf_demir_mfa",
       "to": "lock_yusuf_pc",
       "soft": false,
       "label": "second step"

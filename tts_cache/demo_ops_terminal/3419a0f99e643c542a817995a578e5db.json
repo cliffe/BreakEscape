@@ -1,0 +1,13 @@
+{
+  "key": "3419a0f99e643c542a817995a578e5db",
+  "npc": "ama_owusu",
+  "text": "Switch to Panels and back, then tell me what happened to your Terminal log.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:31:02Z"
+}

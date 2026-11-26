@@ -1,0 +1,13 @@
+{
+  "key": "4018f5f5f900c829a2b30718a3ebf514",
+  "npc": "niamh_doherty",
+  "text": "Delphine's dog is on the feed again.",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:53:43Z"
+}

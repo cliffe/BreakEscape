@@ -1,0 +1,13 @@
+{
+  "key": "4429641982f590a4f0894e7b5c3ad1bc",
+  "npc": "ama_owusu",
+  "text": "Zainab stays late. She'll be in the server room or at the kitchen coffee. She has a card for you.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:31:09Z"
+}

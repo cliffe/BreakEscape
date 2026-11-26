@@ -1,0 +1,13 @@
+{
+  "key": "dc8c7508b93b5f24dba32209931377a8",
+  "npc": "delphine_arvanitis",
+  "text": "Did you see the car park email?",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:48:31Z"
+}

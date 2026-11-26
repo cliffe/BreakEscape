@@ -1,0 +1,13 @@
+{
+  "key": "d05b1124260be24168236f754cbe6bb9",
+  "npc": "ama_owusu",
+  "text": "Scan the file server, then check its storage service.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:30:36Z"
+}

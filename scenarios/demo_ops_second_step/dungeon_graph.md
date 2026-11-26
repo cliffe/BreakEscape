@@ -11,12 +11,12 @@ Merrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow 
 | Metric | Value |
 |---|---|
 | Story aims | 5 |
-| Total tasks | 17 (0 optional) |
+| Total tasks | 18 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 9 |
 | AND-gate convergences | 0 |
 | Rooms | 6 |
-| Puzzle graph nodes / edges | 42 / 60 |
+| Puzzle graph nodes / edges | 46 / 69 |
 | Story graph nodes / edges | 5 / 0 |
 
 ## Critical Path
@@ -115,6 +115,10 @@ flowchart TD
   desk_it_desk_darren_price_mfa{"Thandiwe Moyo<br/>resets second step"}
   desk_it_desk_anjali_rao_mfa{"Thandiwe Moyo<br/>resets second step"}
   desk_it_desk_yusuf_demir_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_call_desk_lorna_easton_mfa{"Priya Nair<br/>resets second step"}
+  desk_call_desk_darren_price_mfa{"Priya Nair<br/>resets second step"}
+  desk_call_desk_anjali_rao_mfa{"Priya Nair<br/>resets second step"}
+  desk_call_desk_yusuf_demir_mfa{"Priya Nair<br/>resets second step"}
 
   door_records_room --> records_room
   door_archive_store --> archive_store
@@ -176,10 +180,19 @@ flowchart TD
   it_room --> desk_it_desk_yusuf_demir_mfa
   clue_staff_board -->|answer| desk_it_desk_yusuf_demir_mfa
   desk_it_desk_yusuf_demir_mfa -->|second step| lock_yusuf_pc
+  it_room --> desk_call_desk_lorna_easton_mfa
+  desk_call_desk_lorna_easton_mfa -->|second step| lock_lorna_pc
+  it_room --> desk_call_desk_darren_price_mfa
+  desk_call_desk_darren_price_mfa -->|second step| lock_darren_pc
+  it_room --> desk_call_desk_anjali_rao_mfa
+  desk_call_desk_anjali_rao_mfa -->|second step| lock_anjali_pc
+  it_room --> desk_call_desk_yusuf_demir_mfa
+  cred_src_yusuf_phone -->|callback| desk_call_desk_yusuf_demir_mfa
+  desk_call_desk_yusuf_demir_mfa -->|second step| lock_yusuf_pc
 
   class door_records_room,door_archive_store,lock_lorna_pc,lock_visitor_kiosk,lock_darren_case,lock_darren_pc,lock_anjali_pc,lock_yusuf_pc,lock_records_safe lock
   class records_room,archive_store,reception,office,kitchen,it_room room
-  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price,npc_darren_price,npc_gwen_pritchard,npc_anjali_rao,desk_it_desk_lorna_easton_mfa,desk_it_desk_darren_price_password,desk_it_desk_darren_price_mfa,desk_it_desk_anjali_rao_mfa,desk_it_desk_yusuf_demir_mfa key
+  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price,npc_darren_price,npc_gwen_pritchard,npc_anjali_rao,desk_it_desk_lorna_easton_mfa,desk_it_desk_darren_price_password,desk_it_desk_darren_price_mfa,desk_it_desk_anjali_rao_mfa,desk_it_desk_yusuf_demir_mfa,desk_call_desk_lorna_easton_mfa,desk_call_desk_darren_price_mfa,desk_call_desk_anjali_rao_mfa,desk_call_desk_yusuf_demir_mfa key
   class workaround_darren_price_0,workaround_yusuf_demir_0,workaround_fatima_begum_0 action
   class outage_printer_off,outage_records_index_off gate
   class log_mfa_log note
@@ -287,6 +300,10 @@ flowchart TD
   desk_it_desk_darren_price_mfa{"Thandiwe Moyo<br/>resets second step"}
   desk_it_desk_anjali_rao_mfa{"Thandiwe Moyo<br/>resets second step"}
   desk_it_desk_yusuf_demir_mfa{"Thandiwe Moyo<br/>resets second step"}
+  desk_call_desk_lorna_easton_mfa{"Priya Nair<br/>resets second step"}
+  desk_call_desk_darren_price_mfa{"Priya Nair<br/>resets second step"}
+  desk_call_desk_anjali_rao_mfa{"Priya Nair<br/>resets second step"}
+  desk_call_desk_yusuf_demir_mfa{"Priya Nair<br/>resets second step"}
   aim_morning{{"Morning: passwords escape"}}
   aim_midday{{"Midday: the second step"}}
   aim_evening{{"Evening: the trail"}}
@@ -353,10 +370,19 @@ flowchart TD
   it_room --> desk_it_desk_yusuf_demir_mfa
   clue_staff_board -->|answer| desk_it_desk_yusuf_demir_mfa
   desk_it_desk_yusuf_demir_mfa -->|second step| lock_yusuf_pc
+  it_room --> desk_call_desk_lorna_easton_mfa
+  desk_call_desk_lorna_easton_mfa -->|second step| lock_lorna_pc
+  it_room --> desk_call_desk_darren_price_mfa
+  desk_call_desk_darren_price_mfa -->|second step| lock_darren_pc
+  it_room --> desk_call_desk_anjali_rao_mfa
+  desk_call_desk_anjali_rao_mfa -->|second step| lock_anjali_pc
+  it_room --> desk_call_desk_yusuf_demir_mfa
+  cred_src_yusuf_phone -->|callback| desk_call_desk_yusuf_demir_mfa
+  desk_call_desk_yusuf_demir_mfa -->|second step| lock_yusuf_pc
 
   class door_records_room,door_archive_store,lock_lorna_pc,lock_visitor_kiosk,lock_darren_case,lock_darren_pc,lock_anjali_pc,lock_yusuf_pc,lock_records_safe lock
   class records_room,archive_store,reception,office,kitchen,it_room room
-  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price,npc_darren_price,npc_gwen_pritchard,npc_anjali_rao,desk_it_desk_lorna_easton_mfa,desk_it_desk_darren_price_password,desk_it_desk_darren_price_mfa,desk_it_desk_anjali_rao_mfa,desk_it_desk_yusuf_demir_mfa key
+  class signin_lorna_easton,signin_niamh_doherty,signin_darren_price,signin_anjali_rao,signin_yusuf_demir,cred_lorna_login,mfa_approve_darren_pc_darren_price,npc_darren_price,npc_gwen_pritchard,npc_anjali_rao,desk_it_desk_lorna_easton_mfa,desk_it_desk_darren_price_password,desk_it_desk_darren_price_mfa,desk_it_desk_anjali_rao_mfa,desk_it_desk_yusuf_demir_mfa,desk_call_desk_lorna_easton_mfa,desk_call_desk_darren_price_mfa,desk_call_desk_anjali_rao_mfa,desk_call_desk_yusuf_demir_mfa key
   class workaround_darren_price_0,workaround_yusuf_demir_0,workaround_fatima_begum_0 action
   class outage_printer_off,outage_records_index_off gate
   class log_mfa_log note
@@ -486,9 +512,11 @@ flowchart TD
   rc_mfa_log_pc_45{"Approvals log terminal"}
   rc_thandiwe_laptop_46{"Thandiwe's laptop"}
   rc_npc_thandiwe_moyo_47("Thandiwe Moyo")
-  rc_records_safe_48[["Records safe"]]
-  rc_safe_papers_49{"Safe papers"}
-  rc_archive_boxes_50{"Archive boxes"}
+  rc_npc_priya_nair_48("Priya Nair")
+  rc_npc_it_service_line_49("IT service line")
+  rc_records_safe_50[["Records safe"]]
+  rc_safe_papers_51{"Safe papers"}
+  rc_archive_boxes_52{"Archive boxes"}
 
   reception --> office
   office --> kitchen
@@ -542,14 +570,16 @@ flowchart TD
   it_room --> rc_mfa_log_pc_45
   it_room --> rc_thandiwe_laptop_46
   it_room --> rc_npc_thandiwe_moyo_47
-  records_room --> rc_records_safe_48
-  rc_records_safe_48 --> rc_safe_papers_49
-  archive_store --> rc_archive_boxes_50
+  it_room --> rc_npc_priya_nair_48
+  it_room --> rc_npc_it_service_line_49
+  records_room --> rc_records_safe_50
+  rc_records_safe_50 --> rc_safe_papers_51
+  archive_store --> rc_archive_boxes_52
 
   class reception,office,kitchen,it_room room
   class records_room,archive_store lock
-  class rc_lorna_pc_1,rc_visitor_kiosk_2,rc_kiosk_card_3,rc_kiosk_stool_4,rc_case_papers_6,rc_lorna_login_card_8,rc_darren_form_12,rc_anjali_pc_13,rc_yusuf_pc_14,rc_anjali_fob_15,rc_yusuf_phone_16,rc_darren_badge_17,rc_office_printer_18,rc_office_printer_socket_19,rc_office_coffee_20,rc_office_coffee_socket_21,rc_tour_notice_22,rc_gwen_desk_23,rc_safe_note_25,rc_side_table_26,rc_gwen_phone_27,rc_fatima_desk_28,rc_records_index_socket_29,rc_archive_wedge_30,rc_darren_case_key_32,rc_fridge_38,rc_microwave_39,rc_kitchen_coffee_40,rc_water_cooler_41,rc_washing_up_tray_42,rc_staff_board_43,rc_facilities_notice_44,rc_mfa_log_pc_45,rc_thandiwe_laptop_46,rc_safe_papers_49,rc_archive_boxes_50 item
-  class rc_darren_case_5,rc_darren_pc_11,rc_gwen_drawer_24,rc_darren_drawer_31,rc_records_safe_48 container
-  class rc_npc_ama_owusu_7,rc_npc_lorna_easton_9,rc_npc_niamh_doherty_10,rc_npc_darren_price_33,rc_npc_anjali_rao_34,rc_npc_yusuf_demir_35,rc_npc_gwen_pritchard_36,rc_npc_fatima_begum_37,rc_npc_thandiwe_moyo_47 npc
+  class rc_lorna_pc_1,rc_visitor_kiosk_2,rc_kiosk_card_3,rc_kiosk_stool_4,rc_case_papers_6,rc_lorna_login_card_8,rc_darren_form_12,rc_anjali_pc_13,rc_yusuf_pc_14,rc_anjali_fob_15,rc_yusuf_phone_16,rc_darren_badge_17,rc_office_printer_18,rc_office_printer_socket_19,rc_office_coffee_20,rc_office_coffee_socket_21,rc_tour_notice_22,rc_gwen_desk_23,rc_safe_note_25,rc_side_table_26,rc_gwen_phone_27,rc_fatima_desk_28,rc_records_index_socket_29,rc_archive_wedge_30,rc_darren_case_key_32,rc_fridge_38,rc_microwave_39,rc_kitchen_coffee_40,rc_water_cooler_41,rc_washing_up_tray_42,rc_staff_board_43,rc_facilities_notice_44,rc_mfa_log_pc_45,rc_thandiwe_laptop_46,rc_safe_papers_51,rc_archive_boxes_52 item
+  class rc_darren_case_5,rc_darren_pc_11,rc_gwen_drawer_24,rc_darren_drawer_31,rc_records_safe_50 container
+  class rc_npc_ama_owusu_7,rc_npc_lorna_easton_9,rc_npc_niamh_doherty_10,rc_npc_darren_price_33,rc_npc_anjali_rao_34,rc_npc_yusuf_demir_35,rc_npc_gwen_pritchard_36,rc_npc_fatima_begum_37,rc_npc_thandiwe_moyo_47,rc_npc_priya_nair_48,rc_npc_it_service_line_49 npc
   class node_start start
 ```

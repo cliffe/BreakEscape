@@ -69,6 +69,11 @@ g.save!
 
 # Swap this row's scenario and rebuild its state from it, as a new game of that scenario would.
 g.scenario_data = sd
+# Prepare the swapped data exactly as Game#generate_scenario_data does for a new game: player
+# preferences, then prepare_scenario_data! (access model, stable object ids, NpcHabits.expand!).
+# Without it habits not authored inline are missing and lock-on-leave, noHold and the like misbehave.
+g.send(:inject_player_preferences, g.scenario_data)
+g.send(:prepare_scenario_data!)
 g.player_state = { BreakEscape::CarryOver::OVERRIDES_KEY => {} }
 g.send(:initialize_player_state)
 g.send(:set_scoring_totals)

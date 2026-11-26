@@ -1,0 +1,13 @@
+{
+  "key": "ba98d837b397a0666fe604862661cef2",
+  "npc": "ama_owusu",
+  "text": "You're on Graham's own screen because he let you in. It shows as Administrator because he is one. It's still his session.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:37:37Z"
+}

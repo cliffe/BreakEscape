@@ -1,0 +1,13 @@
+{
+  "key": "2a4d5c20b8b0ee73e03d5d639bee6fa3",
+  "npc": "niamh_doherty",
+  "text": "Missed it.",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:55:40Z"
+}

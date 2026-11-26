@@ -289,6 +289,9 @@ server. The player never enters it. The leak check says `VERDICT: no leaks found
 
 ## Run 4: H10 Never leaves (owner claim q78)
 
+Needs Rowan loaded: start in the lobby, or carry him in from there (as in the Run 3 set-up), or the
+run cannot be completed as written.
+
 Room `noor_room`, north of `omar_room`. PC `noor_pc` (Noor Qureshi, an account,
 `locksScreenOnLeave: false`). Her one need, `work`, is met only at her own PC (`affordance` on
 `noor_pc`), so every use is at her post and she never gets up; `disableAttacks` means she cannot be

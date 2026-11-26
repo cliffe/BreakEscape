@@ -1,0 +1,13 @@
+{
+  "key": "d09a33a0e3f8c8d819361e69ab5493ac",
+  "npc": "ama_owusu",
+  "text": "Morning! Come and find me when you're ready.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:36:38Z"
+}

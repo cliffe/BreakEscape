@@ -1,0 +1,13 @@
+{
+  "key": "9bc4520d15728c3945c3b6bfdf50bba1",
+  "npc": "ama_owusu",
+  "text": "Switch to Panels and back again. The Terminal keeps its log for as long as the view is open.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:34:22Z"
+}

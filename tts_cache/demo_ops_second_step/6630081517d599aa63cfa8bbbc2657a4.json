@@ -1,0 +1,13 @@
+{
+  "key": "6630081517d599aa63cfa8bbbc2657a4",
+  "npc": "lorna_easton",
+  "text": "Sign-in requests on my phone and I wasn't even at my desk. I'm telling IT.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:55:47Z"
+}

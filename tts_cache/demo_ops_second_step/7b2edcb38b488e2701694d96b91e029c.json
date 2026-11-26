@@ -1,0 +1,13 @@
+{
+  "key": "7b2edcb38b488e2701694d96b91e029c",
+  "npc": "ama_owusu",
+  "text": "Darren's gone to lunch, and he'll be a while.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:53:49Z"
+}

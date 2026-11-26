@@ -1,0 +1,13 @@
+{
+  "key": "f2329cc7d01859a33013001029ccaf81",
+  "npc": "ama_owusu",
+  "text": "You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:41:06Z"
+}

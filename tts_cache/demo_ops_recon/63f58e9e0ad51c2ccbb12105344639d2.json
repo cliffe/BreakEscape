@@ -1,0 +1,13 @@
+{
+  "key": "63f58e9e0ad51c2ccbb12105344639d2",
+  "npc": "chidi_okeke",
+  "text": "How was the weekend?",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:46:58Z"
+}

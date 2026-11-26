@@ -516,6 +516,114 @@ module BreakEscape
       assert_empty rows('usb_install_overridden')
     end
 
+    # ---- the tour (SHOWCASE_TOUR_PLAN.md 2.5): order, gate, P8b, the collects, the barks ---------------
+
+    test 'tour: the aims run morning, midday, afternoon, evening, and the midday aim ends with the stick override' do
+      data = scenario
+      assert_equal %w[morning midday afternoon_cache evening], data['objectives'].sort_by { |o| o['order'] }.map { |o| o['aimId'] }
+      assert_equal [0, 1, 2, 3], data['objectives'].map { |o| o['order'] }.sort
+      midday = data['objectives'].find { |o| o['aimId'] == 'midday' }
+      assert_equal 'stick_override', midday['tasks'].last['taskId']
+      assert_equal true, data['ttsPregenerateChatter']
+      %w[stick_override stick_override_done collect_after_borrow_done].each do |g|
+        assert_equal false, data['globalVariables'][g], "#{g} is a declared scenario global (ink reads only declared globals)"
+      end
+    end
+
+    test 'tour: the ink declares the new tour variables and holds the day-end gate and the collect gates' do
+      ink = File.read(File.join(ROOT, 'scenarios/demo_ops_passwords/ink/ama_owusu.ink'))
+      %w[stick_override_done collect_after_borrow_done].each { |v| assert_match(/^VAR #{v} = false$/, ink) }
+      day = ink[/=== lever_day_end ===.*?(?====)/m]
+      %w[earn_facts get_records crack_guessable crack_reused crack_strong user_signin usb_refused admin_signin profile_read override
+         stick_override collect_partner collect_hot_desk see_borrow collect_after_borrow crack_cached local_account local_refused].each do |t|
+        assert_includes day, "#{t}_done", "the day-end gate waits for #{t}"
+      end
+      assert_includes day, 'lever_day_refused'
+      refute_includes day, 'read_log_done', 'the gate never waits for the evening task'
+      assert_includes ink, '+ { hot_desk_signin_done and not see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk.]'
+      # round 1 m4: once the borrow is seen the player says which came first, so the reply is true of what they saw
+      assert_includes ink, "+ { hot_desk_signin_done and see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk before Jun borrowed it.]\n    -> tell_collect_hot_desk\n"
+      assert_includes ink, "+ { hot_desk_signin_done and see_borrow_done and not collect_hot_desk_done } [I collected at the hot desk after Jun borrowed it.]\n    -> tell_collect_hot_desk_late\n"
+      assert_includes ink, '+ { see_borrow_done and collect_hot_desk_done and not collect_after_borrow_done } [I collected there again.]'
+      assert_includes ink, '+ { not act_evening and not jun_pc_off and collect_hot_desk_done } [Switch Jun\'s PC off.]'
+      refuse = ink[/=== lever_day_refused ===.*?(?====)/m]
+      assert_includes refuse, '-> day_end_go', 'the skip goes straight home, with no second warning (round 1 m3)'
+      late = ink[/=== tell_collect_hot_desk_late ===.*?(?====)/m]
+      assert_includes late, '#complete_task:collect_after_borrow', 'a borrow-first collect ticks both beats'
+      assert_includes late, '#complete_task:collect_hot_desk'
+    end
+
+    test 'tour: the barks are appended after the old mappings, gated, and name no secret' do
+      data = scenario
+      ama = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'ama_owusu' }['eventMappings']
+      old_last = ama.index { |m| m['eventPattern'] == 'pc_signed_in:hot_desk' && m['completeTask'] == 'local_account' }
+      tour = ama[(old_last + 1)..]
+      assert_equal %w[stick_override get_records_done user_signin_done usb_refused_done admin_signin_done see_borrow_done local_account_done].map { |g| "global_variable_changed:#{g}" },
+                   tour.map { |m| m['eventPattern'] }
+      tour.each do |m|
+        assert_equal true, m['onceOnly']
+        assert_equal 0, m['cooldown']
+        assert_operator m['bark'].split.size, :<=, 30
+        PASSWORDS.each { |pw| refute_includes m['bark'], pw }
+      end
+      tour.drop(1).each { |m| assert_includes m['condition'], 'data.oldValue !== true' }
+      tick = tour.first
+      assert_equal 'stick_override', tick['completeTask']
+      assert_equal({ 'stick_override_done' => true }, tick['setGlobal'])
+    end
+
+    test 'tour: every voice is the shared wording and the stale firm wording is gone' do
+      npcs = scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.index_by { |n| n['id'] }
+      assert_includes npcs['ama_owusu']['voice']['style'], "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT)"
+      assert_includes npcs['delphine_arvanitis']['voice']['style'], 'poised and polite under a little pressure at the desk'
+      assert_includes npcs['julian_sallow']['voice']['style'], 'sits on planning panels'
+      voices = npcs.values.map { |n| n.dig('voice', 'name') }.compact
+      assert_equal voices.uniq.size, voices.size, 'no two speakers share a voice name'
+    end
+
+    # P8b: a stick the desk policy refuses for a user goes through in an administrator's session at the same PC (ruling A).
+    test 'P8b: the desk port refuses with no session and with a user session, and takes the stick in Graham\'s session at Delphine\'s PC, logging an override' do
+      build
+      port = scenario['rooms']['office']['objects'].find { |o| o['id'] == 'desk_usb_port' }
+      assert_equal 'delphine_pc', port['portOf']
+      confirm = port['triggerOnInteract'].find { |a| a['type'] == 'confirm_action' }
+      assert_includes confirm['onConfirm'], { 'type' => 'set_global', 'key' => 'stick_override', 'value' => true }
+      # round 1 m7: the confirm waits for P6b, and an administrator's session before it gets a pointer back
+      assert_equal 'globalVars.usb_refused_done', confirm['condition']
+      assert_equal '!globalVars.usb_refused_done', port['triggerOnInteract'].first['condition']
+      body = remove('kit_stick', 'desk_usb_port')
+      assert_response :unprocessable_entity, body.to_s
+      assert_includes held_ids, 'kit_stick'
+      sign_in('delphine_pc', *DELPHINE)
+      body = remove('kit_stick', 'desk_usb_port')
+      assert_response :unprocessable_entity, body.to_s
+      assert_includes held_ids, 'kit_stick'
+      assert_empty rows('usb_install_overridden')
+      logout('delphine_pc')
+      body = sign_in('delphine_pc', *GRAHAM)
+      assert body['success'], body.to_s
+      assert_equal 'admin', level('delphine_pc')
+      body = remove('kit_stick', 'desk_usb_port')
+      assert_response :success, body.to_s
+      refute_includes held_ids, 'kit_stick'
+      assert_equal 1, Array(state['plantedItems']).size
+      override = rows('usb_install_overridden')
+      assert_equal 1, override.size
+      assert_equal({ 'device' => 'storage' }, override.first['detail'])
+      assert_equal({ 'account' => GRAHAM[0] }, override.first['as'])
+    end
+
+    test 'P8b: a locked administrator session at Delphine\'s PC does not take the stick either' do
+      build
+      sign_in('delphine_pc', *GRAHAM)
+      post game_path('lock_session'), params: { pc_id: 'delphine_pc' }, as: :json
+      assert_response :success, response.body
+      body = remove('kit_stick', 'desk_usb_port')
+      assert_response :unprocessable_entity, body.to_s
+      assert_includes held_ids, 'kit_stick'
+      assert_empty rows('usb_install_overridden')
+    end
+
     # ---- P9: the log ----------------------------------------------------------------------------------
 
     test 'P9: the sign-in log reader lists the seed rows with the 02:10 failure, and the player\'s own rows after a run' do
@@ -636,12 +744,19 @@ module BreakEscape
         body = implant
         assert_equal true, body['success'], body.to_s
         network_view('implant_partner_pc')
+        # P8b (round 1 m5): the same stick in Graham's session at Delphine's PC goes through, so the scan judges it too
+        body = sign.call('delphine_pc', [GRAHAM[0], row('graham_whitfield.cracked')['password']])
+        assert_equal 'admin', body['access']
+        body = remove('kit_stick', 'desk_usb_port')
+        assert_response :success, body.to_s
+        refute_includes held_ids, 'kit_stick'
+        @signin_counts = counts   # the afternoon numbers Graham's later sign-ins on from these
         # reload, then P9
         bootstrap_scenario
         desktop_ids('partner_pc')
         reader = reader_rows
         assert_includes reader['rows'].map { |r| r['id'] }, 's2'
-        assert_includes reader['rows'].map { |r| r['event'] }, 'USB_OVERRIDE'
+        assert_equal 2, reader['rows'].count { |r| r['event'] == 'USB_OVERRIDE' }, 'the keystroke device and the stick each leave an override row'
         assert_equal %w[delphine_arvanitis graham_whitfield], state['crackedAccounts'].sort
         assert_equal 2, state['crackRuns']['julian_hash']
       end
@@ -770,8 +885,8 @@ module BreakEscape
       assert_includes data['logSources']['signin_log']['events'], 'credentials_harvested'
       assert_includes data['logSources']['signin_log']['events'], 'signin_refused'
       aim = data['objectives'].find { |o| o['aimId'] == 'afternoon_cache' }
-      assert_equal %w[collect_partner see_borrow collect_hot_desk crack_cached local_account local_refused], aim['tasks'].map { |t| t['taskId'] }
-      assert_equal 3, aim['order']
+      assert_equal %w[collect_partner collect_hot_desk see_borrow collect_after_borrow crack_cached local_account local_refused], aim['tasks'].map { |t| t['taskId'] }
+      assert_equal 2, aim['order']
     end
 
     test 'P-S5: the appended passwords stay out of ink, notices, objectives and the mission file, and the name of the shared account stays out of every mapping and served text' do
@@ -1008,12 +1123,12 @@ module BreakEscape
         # P11: the hot desk before and after the borrow
         body = sign_in('hot_desk', *GRAHAM)
         assert body['success'], body.to_s
-        @signins << "#{body['npcId']}@hot_desk##{2}"
+        @signins << "#{body['npcId']}@hot_desk##{@signin_counts[body['npcId']] += 1}"
         assert_equal %w[niamh_doherty], harvest('hot_desk')['harvested'].map { |r| r['npcId'] }
         make_jun_borrow
         body = sign_in('hot_desk', *GRAHAM)
         assert body['success'], body.to_s
-        @signins << "#{body['npcId']}@hot_desk##{3}"
+        @signins << "#{body['npcId']}@hot_desk##{@signin_counts[body['npcId']] += 1}"
         assert_equal %w[jun_watanabe], harvest('hot_desk')['harvested'].map { |r| r['npcId'] }
         # P12
         assert_equal 'cracked', crack('niamh_cached_hot_desk')['status']
