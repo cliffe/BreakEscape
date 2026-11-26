@@ -27,7 +27,7 @@ stub('./unlock-system.js', 'export const handleUnlock = (...a) => { globalThis._
 stub('../utils/locked-hint.js', 'export const appendLockedHint = (b) => b, lockedHintDuration = (l, ms) => ms, doorRefusalTitle = (l, t) => t;');
 stub('./interaction-repeat.js', 'export const isRepeatInteraction = () => false;');
 stub('./room-ready.js', 'export const waitForRoomReady = (get, p) => Promise.resolve(p).then(() => ({ ready: true, room: get() }));');
-const { handleDoorInteraction } = await import(dataUrl(src));
+const { handleDoorInteraction, openDoorForNpc } = await import(dataUrl(src));
 
 const BX = 532, Y = 100;
 const GATE = { openFor: ['guard'], openRadius: 56, holdMs: 2500, playerMayPassIf: 'vest' };
@@ -161,4 +161,49 @@ test('m1: reassert on a shut gate (player outside) drops a corridor stored at th
     assert.equal(window.pathfindingManager.corridors.length, 1);
     assert.equal(gates.reassert(studio), true);
     assert.equal(window.pathfindingManager.corridors.length, 0);
+});
+
+// ---- E1 R3 ----
+test('R3 m1: openDoorForNpc on an unlocked door whose far room is not loaded returns false and opens nothing', async () => {
+    world();
+    const a = sprite('hall', 'office', 'north', 200, 100, { isSideDoor: false });
+    window.rooms.hall = { doorSprites: [a] };
+    assert.equal(openDoorForNpc(a, 'jun'), false);
+    await tick();
+    assert.equal(a.body.enable, true, 'openDoor did not run');
+    assert.equal(a.doorProperties.open, false);
+});
+
+test('R3 m1: with the far room loaded openDoorForNpc opens as before', async () => {
+    world();
+    const a = sprite('hall', 'office', 'north', 200, 100, { isSideDoor: false });
+    window.rooms.hall = { doorSprites: [a] };
+    window.rooms.office = { doorSprites: [] };
+    assert.equal(openDoorForNpc(a, 'jun'), true);
+    await tick();
+    assert.equal(a.body.enable, false, 'openDoor ran');
+});
+
+test('R3 m3: a second click while the pre-load is in flight does nothing', async () => {
+    world();
+    const a = sprite('hall', 'office', 'north', 200, 100, { isSideDoor: false });
+    window.rooms.hall = { doorSprites: [a] };
+    let release; const gate = new Promise((r) => { release = r; });
+    let loads = 0;
+    window.loadRoom = async (id) => { loads++; await gate; window.rooms[id] = { doorSprites: [] }; };
+    const sounds = []; window.playUISound = (n) => sounds.push(n);
+    window.player = { x: 200, y: 110 };
+    window.currentPlayerRoom = 'hall';
+    const first = handleDoorInteraction(a);
+    await new Promise((r) => setTimeout(r, 350));
+    await handleDoorInteraction(a);   // second click, >300 ms later, load still pending
+    release();
+    await first;
+    await tick();
+    delete window.playUISound;
+    assert.equal(loads, 1, 'one load');
+    assert.equal(sounds.length, 1, 'one lock sound');
+    assert.equal(globalThis.__nsu.length, 1, 'one handshake');
+    assert.equal(globalThis.__hu.length, 1, 'one handleUnlock');
+    assert.equal(a._preLoadInFlight, false, 'flag cleared');
 });

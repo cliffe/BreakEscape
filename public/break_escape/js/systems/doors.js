@@ -680,11 +680,18 @@ async function handleDoorInteraction(doorSprite) {
     // ordinary path and openDoor would destroy the gate's sprite for good.
     if (!props.gate && !gateGroup && props.locked !== true && props.connectedRoom &&
         !window.rooms?.[props.connectedRoom] && window.loadRoom) {
-        // The click's feedback comes first; the load can take a while
-        try { window.playUISound?.('lock'); } catch (e) { /* no audio */ }
-        const pre = await loadRoomBehindDoor(doorSprite, props.connectedRoom);
-        if (pre.sent) preHandshake = { response: pre.response };
-        gateGroup = findGateGroup();
+        // A second click while the load is in flight does nothing (E1 R3 m3)
+        if (doorSprite._preLoadInFlight) return;
+        doorSprite._preLoadInFlight = true;
+        try {
+            // The click's feedback comes first; the load can take a while
+            try { window.playUISound?.('lock'); } catch (e) { /* no audio */ }
+            const pre = await loadRoomBehindDoor(doorSprite, props.connectedRoom);
+            if (pre.sent) preHandshake = { response: pre.response };
+            gateGroup = findGateGroup();
+        } finally {
+            doorSprite._preLoadInFlight = false;
+        }
     }
     if (props.gate || gateGroup) {
         // Both rooms' sprites of the doorway take the same click: answer once
@@ -1136,6 +1143,7 @@ export function openDoorForNpc(doorSprite, npcId, opts = {}) {
     const props = doorSprite?.doorProperties;
     if (!props || props.open || doorSprite.active === false) return false;
     if (props.locked && !opts?.passedByHook) return false;
+    if (!window.rooms?.[props.connectedRoom]) return false;     // the far room is not loaded: the walk must load it first (E1 R3 m1)
     if (window.doorGates?.isGate?.(doorSprite)) return false;   // gates open by proximity (door-gates.js)
     openDoor(doorSprite, { byNpc: npcId || true });
     return true;
