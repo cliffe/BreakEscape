@@ -525,10 +525,10 @@
    },
    "source": {
     "file": "t16_gallery_bark.trimmed.mkv",
-    "in": 7.6,
-    "out": 11.0333
+    "in": 5.5333,
+    "out": 8.9666
    },
-   "note": "gallery guard bark, voice 7.88-9.19 + 10.00-10.91; two rooms in frame: crop to the gallery and the guard with his bubble. Framing is a guess: check.",
+   "note": "gallery guard bark, voice ~5.9-7.24 + 7.94-8.86 (26 Nov re-take, hall guards stood down); two rooms in frame: crop to the gallery and the guard with his bubble. Framing is a guess: check.",
    "framing": {
     "16:9": {
      "cx": 0.64,
