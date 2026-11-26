@@ -94,7 +94,7 @@ Chidi Okeke: Right, sorted. New one's on a sticky note on my screen so I don't f
 { kit_ca02_cv_choice == "report" || kit_ca02_cv_choice == "enable" || kit_ca02_cv_choice == "silent" || kit_ca02_done:
     -> ca02
 }
-Chidi Okeke: Blank page, just a box saying enable editing and content. Do I click?
+Chidi Okeke: Microsoft's blocked it. He's sent steps to get round it. Do I?
 { kit_ca02_cv_choice == "":
     ~ kit_ca02_cv_choice = "asked"
 }
@@ -103,7 +103,7 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
     Chidi Okeke: Right. Reported it, and I'll give Fatima a shout.
     #exit_conversation
     -> DONE
-+ [Click it. Word says that about anything downloaded from email.]
++ [Follow his steps. It's only a CV.]
     ~ kit_ca02_cv_choice = "enable"
     Chidi Okeke: Grand. Clicked it. #delivery: cheerful, unbothered
     #exit_conversation

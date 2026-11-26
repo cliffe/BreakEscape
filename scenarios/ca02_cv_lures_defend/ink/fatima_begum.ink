@@ -28,7 +28,7 @@ VAR hub_quiet = false
             Fatima Begum: Enable Content is the step that lets a file run a small program, and that could give the sender a way into Tarrowby's network.
         }
     - else:
-        Fatima Begum: Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.
+        Fatima Begum: Thanks for covering the recruitment inbox while I'm in interviews. Seven messages are waiting on the kiosk. Treat them the way you would on a normal day.
     }
 }
 + [Thanks, Fatima.]
