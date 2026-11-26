@@ -42,9 +42,11 @@ for (const [name, want] of [
         assert.equal(out.result, want);
         assert.deepEqual(out.body, answer(name).body);
         assert.deepEqual(s.globals, [{ n: 'helpdesk_it_desk_result', v: want }]);
+        const detail = { deskId: 'it_desk', result: want };
+        if (want === 'granted') detail.what = answer(name).body.what; // which reset it was
         assert.deepEqual(s.events, [
-            { n: 'helpdesk_answered', d: { deskId: 'it_desk', result: want } },
-            { n: 'helpdesk_answered:it_desk', d: { deskId: 'it_desk', result: want } }
+            { n: 'helpdesk_answered', d: detail },
+            { n: 'helpdesk_answered:it_desk', d: detail }
         ]);
         assert.equal(s.granted.length, want === 'granted' ? 1 : 0);
     });
