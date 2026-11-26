@@ -2,6 +2,7 @@ import React, { useLayoutEffect, useRef } from 'react';
 import { delayRender, continueRender } from 'remotion';
 import { PIXEL_FONT } from '../fonts';
 import { rng } from '../rand';
+import { curtainLag, curtainFronts } from '../curtain.js';
 
 /**
  * The solid red hex curtain, ported from the Hacktivity shell's launch curtain (hacktivity app/views/game_shell/_launch_curtain.html.erb), drawn on a canvas:
@@ -16,24 +17,7 @@ import { rng } from '../rand';
 const HEX = '0123456789ABCDEF';
 const TONES = ['#ffe3e0', '#ff8f8a', '#6b0c12', '#8c1119'];
 const RED = '#b3151d';
-const MAX_LAG = 0.35;
-
-export function curtainLag(n: number, seed: number): number[] {
-  const r = rng(seed * 101 + 7);
-  const waves: Array<{ f: number; p: number; a: number }> = [];
-  for (let j = 0; j < 3; j++) waves.push({ f: 0.15 + r() * 0.35, p: r() * 6.3, a: 0.02 + r() * 0.025 });
-  const count = Math.max(4, Math.round(n / 7));
-  const drips: Array<{ at: number; w: number; d: number }> = [];
-  for (let j = 0; j < count; j++) drips.push({ at: r() * n, w: 0.8 + r() * 2.2, d: 0.08 + r() * 0.2 });
-  const out: number[] = [];
-  for (let i = 0; i < n; i++) {
-    let v = 0.3;
-    for (const w of waves) v += Math.sin(i * w.f + w.p) * w.a;
-    for (const d of drips) v -= d.d * Math.exp(-Math.pow((i - d.at) / d.w, 2));
-    out.push(Math.min(MAX_LAG, Math.max(0, v + (r() - 0.5) * 0.015)));
-  }
-  return out;
-}
+export { curtainLag };
 
 /** Text drawn in the curtain's own layer: each column shows it only above that column's front, so the falling curtain uncovers it. */
 export type CurtainLabel = { text: string; cx: number; cy: number; size: number; fill?: string; stroke?: string };
@@ -57,7 +41,6 @@ export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number;
     function draw() {
       if (!x) return;
     const cols = Math.ceil(w / cw), rows = Math.ceil(h / ch);
-    const lag = curtainLag(cols, seed);
     const cells = new Uint8Array(cols * rows), flips = new Uint8Array(cols * rows);
     const r = rng(seed * 13 + 1);
     for (let i = 0; i < cells.length; i++) { cells[i] = Math.floor(r() * 16); flips[i] = r() < 0.35 ? 1 : 0; }
@@ -66,13 +49,8 @@ export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number;
     x.imageSmoothingEnabled = false;
     x.font = `${Math.round(cw * 0.9)}px monospace`; // as in v5 (the digits always drew in the fallback monospace) x.textAlign = 'center'; x.textBaseline = 'middle';
     x.fillStyle = RED;
-    const fronts: number[] = [];
-    for (let c = 0; c < cols; c++) {
-      const q = Math.min(1, Math.max(0, (p - lag[c]) / 0.65));
-      const f = Math.pow(q, 1.6) * (h + ch * 2);
-      fronts.push(f);
-      if (f > 0) x.fillRect(c * cw, 0, cw, Math.min(f, h));
-    }
+    const fronts = curtainFronts(p, w, h, cw, ch, seed);
+    for (let c = 0; c < cols; c++) if (fronts[c] > 0) x.fillRect(c * cw, 0, cw, Math.min(fronts[c], h));
     for (let t = 0; t < TONES.length; t++) {
       x.fillStyle = TONES[t];
       for (let c = 0; c < cols; c++) {
