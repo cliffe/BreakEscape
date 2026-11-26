@@ -43,7 +43,7 @@ VAR skip_day = false
 # speaker:npc
 I'm Ama, from Fenlow. Merrin and Sallow want to know what an outsider could learn from one spare network port.
 # speaker:npc
-This drop box is yours. Plug it in when nobody is looking, and I'll point out each step.
+This drop box is a small computer, and it's yours. Plug it in when nobody is looking, and I'll point out each step.
 -> hub
 
 === hub ===
@@ -54,9 +54,9 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
     -> whats_next
 + { not act_evening } [Send them for coffee.]
     -> lever_coffee
-+ { not act_midday and not act_evening } [Send them to lunch.]
++ { not act_midday and not act_evening } [Send them to lunch (later).]
     -> lever_lunch
-+ { not act_evening } [Call it a day.]
++ { not act_evening } [Call it a day (last).]
     -> lever_day_end
 + { file_server_seen and not terminal_view_done } [I've scanned the file server.]
     -> terminal_talk
@@ -110,7 +110,7 @@ This drop box is yours. Plug it in when nobody is looking, and I'll point out ea
         # speaker:npc
         Now try the file server the same way, in the Terminal. Use the Panels and Terminal switch at the top of the drop box view. Same moves, typed.
         # speaker:npc
-        It looks like a real console, but every product and name in it is made up.
+        It looks like a real console. The tool names are real, but the machines and results are made up.
         # speaker:npc
         Then come back and tell me what it said.
     - not act_evening:

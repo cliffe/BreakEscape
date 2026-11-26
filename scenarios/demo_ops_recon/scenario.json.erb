@@ -520,7 +520,7 @@
             { "eventPattern": "network_foothold_gained:hotdesk_jack", "cooldown": 0, "setGlobal": { "box_at_kitchen": false, "hotdesk_used": true } },
             { "eventPattern": "pc_signed_in:agnieszka_pc", "cooldown": 0, "completeTask": "remote_signin", "setGlobal": { "remote_signin_done": true } },
             { "eventPattern": "global_variable_changed:remote_signin_done", "condition": "data.value === true && data.oldValue !== true", "cooldown": 0, "bark": "That's her desktop, and you never knew her password. A saved link works like one." },
-            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'agnieszka_duda'", "cooldown": 0, "bark": "This is a session: you're signed in as Agnieszka, an ordinary user, with only what she can reach. The red frame and bolt mean a technique got you in." },
+            { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'agnieszka_duda'", "cooldown": 0, "bark": "You're signed in as Agnieszka, an ordinary user, with only what she can reach. Her desktop is empty. The red frame and bolt mean a technique got you in." },
             { "eventPattern": "pc_signed_in:file_server", "onceOnly": true, "condition": "data.via === 'technique' && data.npcId === 'graham_whitfield'", "cooldown": 0, "bark": "Now you're Graham, an administrator. The user session was what that weakness needed first. Open the shared drive from his desktop." },
             { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true && globalVars.unplug_done !== true", "cooldown": 0, "bark": "Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them. Last thing, unplug the box." },
             { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true && globalVars.unplug_done === true", "cooldown": 0, "bark": "Every move you made is in that log, after that early sweep. Whoever reads it can see you, the way you saw them." },
@@ -588,7 +588,8 @@
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false },
             { "eventPattern": "npc_left_post:jun_watanabe", "cooldown": 0, "setGlobal": { "jun_caught": false } },
             { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance !== null && data.playerDistance <= 80 && globalVars.jun_caught !== true", "cooldown": 90000, "bark": "Er, that's my desk. Can I help you?" },
-            { "eventPattern": "npc_returned_post:jun_watanabe", "cooldown": 0, "setGlobal": { "coffee_pending": false } }
+            { "eventPattern": "npc_returned_post:jun_watanabe", "cooldown": 0, "setGlobal": { "coffee_pending": false } },
+            { "eventPattern": "npc_returned_post:jun_watanabe", "condition": "data.playerDistance > 80", "cooldown": 0, "bark": "Back at my desk." }
           ]
         },
         {

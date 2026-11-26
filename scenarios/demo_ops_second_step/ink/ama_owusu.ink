@@ -205,7 +205,7 @@ Once she's away, her PC will send a request to her phone each time you sign in.
 }
 { coffee_call > 0:
     # speaker:npc
-    Asked again. Lorna, Darren and Yusuf should be up for coffee within a couple of minutes. Anjali only moves for water.
+    Asked again. Lorna, Darren, Gwen and Yusuf should be up for coffee within a couple of minutes. Anjali only moves for water.
 - else:
     # speaker:npc
     Right, coffee for everyone. Watch who leaves their desk.

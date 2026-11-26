@@ -1,7 +1,7 @@
 {
-  "key": "7ffb98dedf95f124513f17836946161b",
+  "key": "43252192895dcc0df21b5ee451858fd9",
   "npc": "ama_owusu",
-  "text": "It looks like a real console, but every product and name in it is made up.",
+  "text": "It looks like a real console. The tool names are real, but the machines and results are made up.",
   "voice": "Autonoe",
   "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "demo_ops_recon",
   "source": "generate",
   "generated": "2026-11-26",
-  "recorded_at": "2026-11-26T08:59:12Z"
+  "recorded_at": "2026-11-26T10:17:30Z"
 }
