@@ -25,7 +25,8 @@ VAR hub_quiet = false
             Fatima Begum: A real CV just opens. One that wants content switched on, or a zip unpacked with a password from the email, is the one to report.
         - else:
             Fatima Begum: The CVs that wanted a second step were the ones to stop.
-            Fatima Begum: Switching content on, or opening a file out of a zip, is the step that lets a file run a small program, and that could give the sender a way into Tarrowby's network.
+            Fatima Begum: Switching content on, or opening a file out of a zip, is the step that lets a file run a small program.
+            Fatima Begum: That could give the sender a way into Tarrowby's network.
         }
     - else:
         Fatima Begum: Thanks for covering the recruitment inbox while I'm in interviews. Seven messages are waiting on the kiosk. Treat them the way you would on a normal day.
