@@ -1,6 +1,61 @@
 # Trailer update (m01 + m02, spy avatars), resume note for the orchestrator
 
-## State 24 Nov, evening (READ THIS FIRST; older sections below are history)
+## State 26 Nov, ~00:30 (READ THIS FIRST)
+
+Review page B (this account, owned): https://claude.ai/artifact/8UFHWa6tf6XjfAZVw6aarv, source docs/video/review/trailers_spies_review_b.html (54c81bb96), tabs m01v15 + m09v2, docs feedback/m01_trailer_v15 and feedback/m09_trailer_v2. Republish the same path for new tabs (m10 v2, m09 v3); upload assets with url + asset:true. AC0 has link + hash. Renders m01 v15 / m09 v2 all 60.00 s, -14.0 LUFS, TP -1.5; review copies in scratchpad review_b/.
+MACHINE: CA0 took it (~23:00) for B4 captures (ca18, :3456/:147, ~1 h). HOLD captures/renders/encodes/train-check until CA0 pings. My Noor m09 t12 re-take agent was stopped before recording; restart it after the ping (brief: MISSION=m09 scratchpad run.sh, same sprite/flags as the original take files in ~/video-takes-local/m09/takes/t12_noor_cover.*; then pull face frames; then re-cut noor_cover and render m09 v3).
+Mission row: test_npc_walk_in_out = id 281 (created by a one-scenario rails runner, AC0 told).
+WALK-IN (critical path) now on branch fix/npc-walk-live, worktree .claude/worktrees/npc-walk-fix (feat/npc-walk-in-out + main b08448986 + fixes). Proof worktree .claude/worktrees/npc-walk-proof (detached e9e972a16, can be removed). Fix commits: e9e972a16, 257185488, a9a9ad1b4, e39ca1b3f, 528b1e676, f72d751b2, b98f3ba76, 6a665d1e3, 3ba8a5f56, ad01566b3 (handover sections in docs/agents/NPC_WALK_IN_OUT_HANDOVER.md). Causes fixed: closed door beyond DOOR_OPEN_PX (m09 stall), walkers 1 tile short (arriveWithin), bridge __test.walk clash (now __test.npcWalk), out-leg stop-short + edge exit cells (deep picks WALK_PICK_DEPTH_PX), walkers may squeeze past the player (m10 stall = guard shoving player), how 'walked' for unseen hides. Case c needs `new-game.sh 281 --unlock walk_annex` (server 403 on never-unlocked rooms; owner question: serve such rooms as route rooms? default no, doorway fade). Proof viewport 800x420 (800x600 shows whole lobby -> fade is correct). At 3ba8a5f56: m10 A/B PASS, a-e PASS, f FAIL (spawn cell where body overlaps a wall).
+Running: Sonnet agent fixing case f (body-fit spawn + walk-in stall respawn), then a-f twice + m10 A/B, results scratchpad walkproof6/RESULTS.md.
+Next when f passes: (after CA0's ping) `tools/playtest/train-check.sh <npc-walk-fix worktree> <outdir> <port>`; merge main first if it moved; GREEN hash to AC0 ("LIVE AC0: Break Escape access model work"); tell CA0 the commit. Then m10 t16 re-take + m10 v2 render.
+Owner questions to send AC0 (with context): (1) walk-in from a never-unlocked room = doorway fade vs serve route room; (2) small fully visible rooms -> doorway fades are common on big windows.
+Tesseract: waiting on owner pick (E default) via AC0; no paid PixelLab before that.
+
+## State 25 Nov, ~21:00 (READ THIS FIRST)
+
+New account. Routing per AGENTS.md (Grok dropped by owner): Haiku scripted/checks, Sonnet default, Opus 5.5 (opus55 type) on purpose. AC0 wants ~5 agents running on my side; keep going on defaults, owner decisions go to AC0 WITH images/before-after/why.
+Old review page 6JAeGCZXd1neKNc5ccyRea is from the old account: read-only here. Publish a NEW page from this account (copy docs/video/review/trailers_spies_review.html to a new path, upload assets, publish) with tabs m01 v15 + m09 v2 (+ m10 v2 later); send AC0 the link.
+
+Done today: m01 v15 edit 7e8c1506f (Action Dub from 0.695, lift on Mission card at 10.0); m09 v2 edit ea7b14660 (Midnight Trigger @93, card_vig out, Dillard from take 15.0, hook extended, flash 10.4-11.5, vig_password after card_real, fill_lockpick); m10 v2 edit 6f08cef60 (flashes -> post_team t25, crescendo zoom 1.2 cy .416; sheets scratchpad m10v2/); m10 plan files committed 6335ba401 (owner OK); Noor visemes 0c97992f8 landed (T404); trailer branch merged main a431bb5fc.
+Running: render job (scratchpad render_v15_v2.log; render6.sh m01+m09 x3; started ~20:40, ~1h30). After: check contact sheets (m01 mb_sarah/mb_chair in-points, hax_hook tail; m09 vig_password, fill_lockpick 9:16, re-timed shots), loudness, encode review copies, new review page, hash to AC0, ping CA0 + VID2 machine free. Then Noor re-take t12 (MISSION=m09 scratchpad run.sh; main has her visemes), re-cut m09 noor_cover.
+Walk-in/out (CRITICAL PATH; worktree .claude/worktrees/npc-walk-in, branch feat/npc-walk-in-out): plan 78f5f5b5c, decisions in plan s13, handover docs/agents/NPC_WALK_IN_OUT_HANDOVER.md (never needs me to read it). Built: engine 1fe72e3c3+b5dfe683e (40 tests), validator/schema/owner_claim dba5b5de6 (16 tests; pop check INFO), npc_left fix 58edc112e, main 59fa05d52 merged f0056ad98. Running: Opus B3 (gate hook setNpcDoorPassHook with CA0's 3 rules: 2 s/throw = false, single hook replace+warn, re-ask on re-plan; scenarios/test_npc_walk_in_out; docs/agents/NPC_WALK_IN_OUT_PROOF_SCRIPT.md) and Sonnet conversions (m09 Dillard from loading_dock, m10 monitor_guard walkOut to server_hall, farah_guard walkOut IN PLACE, no new trigger). Next: Haiku live proof on :3026 from the proof script; full bin/test-js + rails + rubocop (or tools/playtest/train-check.sh); merge main again (T412 running); GREEN hash to AC0; tell CA0 the commit. ca12 Camila is CA0's (not my branch).
+Tesseract round 2 (owner rejected A-D): Sonnet making E-H from adrian_tesseract_nonpixelart.png (thin wire glasses) -> scratchpad tess_init2/; send AC0 compare + zoom + before/after + why.
+Catalogue scrub: BLOCKED (sidecars in ~/safetynet-footage read-only mirror); with AC0 for the owner (recommend fix at the capture server). Agent fixed 4 VID2 lth_game sidecars and left an uncommitted regenerated catalogue in hacktivity-videos (VID2 told). Live05 take is m02 in the mirror.
+Peers: AC0 (trains), CA0 (machine; waits on walk-in for E1/E4), VID2 "VID2: Licence to Hack game trailer" uds:/run/user/1000/cc-socks/2941683.sock (whole-game trailer; uses my takes read-only; asks before rig use).
+After walk-in lands: re-take m10 t16 gallery guard, m09 Dillard optional; after Tesseract pick: visemes --from-talk from the picked init, re-take t14; then m10 v2 render.
+
+## State 25 Nov, early (READ THIS FIRST; everything below is history)
+
+Account switch hand-off. Branch video/trailers-m01-m02-spies, worktree .claude/worktrees/v-trailers-1120, merged with main to a2ae50dda (f5a952bcb). Nothing of mine is running: no agents, renders, takes or encodes. Avatar female_hacker_hood_v2 (checked). Review page v32 https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea (tabs m01mus, m09v1, m10v1 are the open ones). Scratchpad (may be wiped): /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/aa7bde54-8454-4f29-a091-6d65a3d0b927/scratchpad (render6.sh, run.sh, add_m10tab.py as a tab template, review/, m10chk/).
+
+Peers: AC0 "uds:/run/user/1000/cc-socks/3710521.sock" (trains; send hashes). CA0 "uds:/run/user/1000/cc-socks/3747875.sock" (shares the machine: ask before any capture/render/encode; CA0 will ask me for a B3 capture slot on display 147/:3456 soon). Never commit on main; stage explicit paths.
+
+QUOTA LOW (owner): scripted takes/re-takes, frame and loudness checks, lint, lookups and digests go to Haiku or Grok; Sonnet/Opus only for judgement, design, review and writing. Don't slow down.
+
+Uncommitted on purpose (owner decides): docs/video/edits/M10_TRAILER60_OUTLINE.md plan section and the m10 row in docs/video/recipes/README.md. Leave unstaged.
+
+### Owner verdicts 25 Nov (via AC0): m09 v1 REVISE, m10 v1 REVISE, m01 v14 music decided
+MUSIC SWAP: m09 takes SpyAction/Midnight Trigger.mp3 from 93.0 (m01's preview used 92.994). m01 takes m09 v1's track, SpyAgro/Action Dub.mp3 (m09 v1 used start 0.0, quiet start, lift on the Mission card; alternative window 0.695 lifts at 10.0, analysis action_dub_60.json). Derek's darker line stays. So: m01 v15 = v14 re-fitted to Action Dub (cards/cuts on its beat grid), render 3 aspects; after sign-off export + rebuild HT game-level .vtt from the m01 .srt (HT trailer files: check AC0's S1/S2 agent is done first).
+
+m09 v1 -> v2 (tools/video/edits/m09_trailer60.json):
+1. Noor (noor_cover, 13.7-17.9 out, take t12_noor_cover): visemes glitchy, nose moves. Fix as CA0 did in 0f9fb5843: `tools/pixellab_pipeline.py` pick with `--top <row>` re-picked from the same talk frames (see the pixellab-character-pipeline SKILL line it added). Commit the visemes as a GAME CHANGE hash, then re-take t12 (Haiku), then re-cut.
+2. Drop card_vig ("Vigenère / Cipher").
+3. 0:35 Dillard pops into the stacks aisle (take t17 at ~14.4 s, no walk-in; portrait opens 15.0, line 15.28-19.6). Plan: start the dillard shot at take 15.0 so the pop is gone and his line stays (shot ~5 s). If the owner meant drop Dillard entirely, the engine fix below + a re-take is the other route; say which on the page.
+4. Face flash starts at 0:11, after Netherton's line (line ends 10.32 out): extend hook_netherton, flash ~10.4-11.5, card after.
+5. Console OK (one scroll). Move vig_password (t15 9.9, password form) to sit after card_real and before real_hacking.
+6. Re-fit everything to Midnight Trigger beats (lost 1.2 s card + ~1 s Dillard: fill from existing takes, takes_m09.md lists usable ones).
+
+m10 v1 -> v2 (tools/video/edits/m10_trailer60.json):
+1. Remove the four flash_* shots after the hook (8.4-10.27). Keep the hook (Netherton's first sentence), the "Now it's my turn." VO, HaX breaker line, Hybrid Attack 1.
+2. gallery_bark (t16 7.6, 0:26): the gallery guard says "Camera's dead again. I'll go and look." (scenario.json.erb:4192, eventMappings bark on room_entered:gallery) then vanishes. Owner: he must walk off / out of frame (fade only as fallback), IN THE GAME and in the trailer -> needs the engine fix below, then re-take t16 (Haiku), re-cut.
+3. Crescendo (42.33-46.53, 17 cuts) too zoomed: NPCs not in frame. Lower zooms / re-centre every cr_* shot, check frames per aspect.
+4. Tesseract (ending_wide/ending_close, t14): redo visemes AND a new talk init/rest pose with his glasses clearer. Memory rule: make 4 alternative talk inits for the owner to pick (send to AC0 for the decisions page) before generating visemes --from-talk. Then re-take t14 (Haiku), re-cut.
+
+ENGINE (owner): NPCs appear/vanish in place (m09 Dillard, m10 gallery guard, ca12 Camila: docs/IDEAS_BACKLOG.md ~line 94). Task ONE subagent (Sonnet is fine for design+implementation under low quota; Opus/Sonnet review) to design a single fix: arrive by walking in from out of view (door / off-screen), leave by walking out of frame, fade only as fallback. New feature rules: unit tests, a focused test scenario, live browser proof (memory new-features-need-full-tests, fix-claims-need-live-proof); own BE worktree made by hand; ports :3026/:3027 only. Show/hide path: systems/apply-actions.js (setVisible), behavior.initiallyHidden, scripts/validate_scenario.rb:4321 area. CA0 touches door-gates.js, the CA step-away runner, world.holdUntil and the validator + dungeon graph generator: agreed order = my fix lands on main first, CA0 merges after. Send CA0 the agent's exact file list before it writes code (told CA0 25 Nov). Then apply to m09 Dillard, m10 gallery guard (and offer ca12 to CA0).
+
+Suggested order: launch engine agent + Noor --top visemes + Tesseract 4 inits at once; meanwhile re-fit m01 v15 to Action Dub and render (ask CA0 first); then m09 v2 after Noor re-take; m10 v2 after the engine fix + t16 re-take and the Tesseract pick + t14 re-take. Page tabs: m01 v15, m09 v2, m10 v2; hashes to AC0.
+
+## State 24 Nov, evening (history)
 Rig: keyless server :3025, display :113, both mine. Takes via scratchpad run.sh (`MISSION=<m>`); renders via scratchpad render6.sh. Check running work with `ps -eo pid,etime,args | grep -E "run-take|render6" | grep -v grep` (pgrep -f matches itself). Avatar must read female_hacker_hood_v2 (`psql -X -At -U deploy -d break_escape_development -c "select selected_sprite from break_escape_player_preferences where id=1"`).
 Review page v22 https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea (file docs/video/review/trailers_spies_review.html; tab = CUTS block + nav button + `let current`; asset ids in scratchpad review/asset_ids_1124.txt).
 
@@ -279,3 +334,48 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - Running: Sonnet agent m10 t25-t28 + m09 t29 retake (import file). User decision pending: commit the m10 plan files (M10_TRAILER60_OUTLINE.md, README m10 row) — left unstaged.
 - ~21:20: all takes done (2a81aa6cd: m10 t25-t28 pass, m09 t29 re-filmed with import file, rings). m10 edit JSON cb8b419dc + my fixes (Kowalczyk between faces). NEXT: render m10 v1 (render6.sh m10:16:9 m10:9:16 m10:1:1), check contact sheets for the crop list in the JSON notes (faces cx, t12 HUD crop, UID blur in cr_cloner, pad <=3 digits, guard toast, console no casualty figure), fix, encode, tab "m10 · v1", publish, commit, hash to AC0, then message CA0 (uds:/run/user/1000/cc-socks/3747875.sock) that rig is free. m10 vo cue uses absolute path ~/video-takes-local/m10/vo/tess_my_turn.wav. README m10 music row not yet committed (pending user re plan files).
 - (21:05) m10 v1 rendered and checked. First render had the four face flashes off the faces (planner cx guesses 0.45-0.50; measured 0.68) and the console, clock panel and guard toast clipped in 9:16/1:1: fixed 7a1886d96, re-rendered, frames checked in all aspects (-14.0 LUFS, TP -1.56). Review page v32 adds tab "m10 · v1" (doc feedback/m10_trailer_v1; blobs 16:9 a95278ce..., 9:16 41d4da93..., 1:1 8df89124...). CA0 told the rig is free. Open questions on the page: hook first sentence, "Now it's my turn." VO (white unnamed caption box), HaX breaker line, music. NEXT: wait for the owner on m01 v14 music, m09 v1 and m10 v1; merge main when AC0 lands trains. Plan files (M10 outline plan section, README m10 row) still unstaged pending the user.
+- (21:12) CA0 rendering ca01/ca12/ca15 (3 shapes each) from ~21:10 for ~1 h 30: no render, encode or capture from me until CA0 says it is done.
+- (22:12) CA0 done at 22:11; CA0 doing catalogue preview cuts next (told to go ahead). Ask CA0 before any render of mine.
+- (23:22) CA0 capture block (display 147, :3456, dry runs :3457), about 1.5 h. No render, encode or capture from me until CA0 says it has ended.
+- (23:27) Owner via AC0: weekly quota low. Scripted takes/re-takes, frame and loudness checks, lint, lookups and digests go to Grok or Haiku; Sonnet/Opus only for judgement, review and writing. Don't slow down.
+
+## State 25 Nov, ~22:50
+
+- Noor t12 re-take: both earlier attempts failed because m09's game_loaded mapping rings the HaX dock call when briefing_played is set. Take header now adds `--set dock_done=true` (aaa3c5fa9). Haiku re-take r2 running; faces go to $S/noor_retake/faces.png. Then re-cut noor_cover in tools/video/edits/m09_trailer60.json, render m09 v3, encode, add a v3 tab to page B (https://claude.ai/artifact/8UFHWa6tf6XjfAZVw6aarv), republish.
+- Walk-in fix (fix/npc-walk-live, worktree .claude/worktrees/npc-walk-fix): Sonnet agent on case f (body-fit spawn, stall respawn) is running; results in $S/walkproof6/RESULTS.md. After a pass: merge main if it moved, train-check.sh (about 40 min, ask CA0 for the machine), GREEN hash to AC0, tell CA0.
+- Machine order agreed with CA0: Noor take, train-check, m09 v3 render; or CA0's B5 (ca19/ca20, about 1.5 h) first if the fix runs late.
+- Then: m10 t16 gallery-guard re-take after the walk-in lands; Tesseract after the owner's pick (E default); catalogue scrub waits on the owner.
+
+## State 25 Nov, ~23:20
+
+- Owner picks (via AC0): m01 v15 ship (keep music, export); m09 v2 revise (Noor visemes: the 20:51 re-pick plus tonight's re-take cover it; keep music, password screen, Dillard). New house rule: integer output scales for pixel-art shots, less zoom on NPC chats, m01–m08 not revisited (memory trailer-integer-scale). CA0 owns the lint warning ("scaleOk": true opt-out) and the GUIDELINES/skill text.
+- m01 v15 export: committed locally in hacktivity-videos (b155e49, 312afe9). No push credentials on this machine, so it's with AC0 for the owner to push (5 commits, all cleared; catalogue regen held for the scrub). The .vtt on Hacktivity needs regenerating.
+- m09 v3: edit a2e8c4428 (Noor re-cut). Render stopped for the reframe. A Sonnet agent is reframing m09 and m10 to integer scales (edit lists only; ffmpeg-only checks while CA0 captures). After it reports and CA0's B5 capture ends (about 00:50): remotion stills check, render m09 v3 (scratchpad render6.sh + enc_v3.sh), v3 tab on page B.
+- CA0 is capturing B5 (ca19, ca20) on :3456/:147 until about 00:50: no renders or encodes until CA0 pings.
+- Walk-in case f agent still running.
+- 23:40: reframe landed (ea6fcd4db; ending_wide fix 2b53823b6). Walk-in case f fixed (0e95ea0b1, tests 3dc1fb798, handover ee57c2349; a–f pass, c r2 fade is the whole-room-in-view case on the owner form). m10 A/B re-run at the final commit is running (Sonnet, walkproof7). Then: merge main into fix/npc-walk-live, train-check when CA0 frees the machine, GREEN hash to AC0.
+- 23:55: m10 A/B PASS x2 at ee57c2349 (walkproof7; m10 setup needs --unlock gallery --set gallery_open=true). main not moved. Waiting for CA0's B5 to end, then train-check on ee57c2349, then the m09 v3 render.
+
+## State 26 Nov, ~01:00
+
+- Walk-in fix DONE: final hash d8ff8d580 (fix/npc-walk-live) sent to AC0 for T413. Train-check green apart from ops-unchanged golden; AC0 ruled to re-record m02 and ca12 (pop-check INFO lines only). CA0 told.
+- m09 v3 rendered (60.000 s, -14.0 LUFS, TP -1.49, all three aspects) and encoded to $S/review_b/m09_trailer60_v3_*_review.mp4. Contact sheets checked: integer scales, Noor new take, ending_wide bar hidden in 16:9. NEXT: upload the 3 review copies as assets to page B (https://claude.ai/artifact/8UFHWa6tf6XjfAZVw6aarv), add an m09v3 tab (doc feedback/m09_trailer_v3), republish. Questions for v3: Noor's visemes OK now?; the 9:16 password screen is tiny at 1x (panel 640 px > the 540 px 2x window): keep 1x, or allow 1.5x for UI panels?; whole-number reframe overall (chats zoomed out, 16:9 subtitle bar visible on hook/noor/jesse); verdict.
+- m01 v15 export committed in hacktivity-videos (b155e49, 312afe9); push is with the owner (no credentials here).
+- Machine: VID2 has it now (one 16:9 render), then CA0 (walk-in captures). Ask before any render.
+- Then: m10 t16 gallery-guard re-take after T413 lands (setup needs --unlock gallery --set gallery_open=true to stop the HaX gallery call); Tesseract after the owner's pick; m10 v3 render.
+
+## State 26 Nov, ~01:30
+
+- m09 v3 is on page B (tab m09v3, doc feedback/m09_trailer_v3, fe4d64e6d). Waiting on the owner: noor, scale, pw916, pace.
+- Owner picks via AC0: Tesseract E (thin wire) approved, covering the talk init, PixelLab talk, visemes --from-talk and the m10 t14 re-take. The walk fades stay (walklocked keep, walkvisible accept). voicedtext: spoken dialogue is exempt from rule 2 (VID2's generator change). Scrub: /data/footage isn't reachable from here, so the fix list goes to the owner via AC0 (told). Never write to ~/safetynet-footage.
+- Running: a Sonnet agent on Tesseract E (init, talk, visemes, in-game portrait on :3026). It commits on this branch and reports the hash, sheet and screenshot paths.
+- Next: send the Tesseract hash to AC0; Haiku re-takes m10 t14 (Tesseract), plus t16 (gallery guard, setup --unlock gallery --set gallery_open=true) once T413 lands; re-cut ending_wide/ending_close; bump to m10_trailer60_v3; render when CA0/VID2 free the machine; add an m10 tab on page B.
+
+## State 26 Nov, ~02:00
+
+- Merged main 797198b06 (T413 walk-in fix landed) as 5b123f43b.
+- Tesseract E assets: e517d594d (init, talk, visemes --from-talk --top 25, blink glasses patched). Hash sent to AC0. The headshot and walk sprite still have the old glasses; that's an optional question for the owner.
+- m10 re-takes recorded in ~/video-takes-local/m10/takes: t14 (needed breach_call_done=true), t16 (needed hall_guards_stood_down=true). Headers fixed (7458db660).
+- m10 v3 edit: ending_wide/close re-timed −1.4667 s (7458db660); gallery_bark re-timed −2.0667 s (dc8cb149d); 9:16 cx 0.66 (f2b6201f8). Lint is 0 errors (the clip warning is a lint path quirk; the clip is in m10/clips).
+- NEXT: when CA0 pings after its render queue, run `bash $S/render6.sh m10:16:9 m10:9:16 m10:1:1`, pre-flight (60 s, −14 LUFS, TP < −1, contact sheets, spoiler check: no stakes figure, no codes), enc_v3.sh, then an m10v3 tab on page B (doc feedback/m10_trailer_v3).
+- 03:50: m10 v3 rendered (60.000 s, −14.00 LUFS, TP −1.55, all three aspects; contact sheets checked; no figures, codes or flags). Review copies uploaded; m10v3 tab is on page B (version 4, doc feedback/m10_trailer_v3; questions tess, gallery, music, pace, seen). Machine handed back to CA0. Waiting on the owner for m09 v3 and m10 v3.

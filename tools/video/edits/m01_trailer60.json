@@ -1,33 +1,31 @@
 {
  "mission": "m01",
- "id": "m01_trailer60_v14",
+ "id": "m01_trailer60_v15",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v13 (2026-11-24): music swapped to SpyAction Emerald Trigger from 85.571 s (a downbeat; 150.01 BPM, grid 0.4 s) and the cards re-fitted to it, with no spoken line cut. Quiet breakdown bars under the title, lift at 4.8 as HaX's voice comes in, Mission 1 card on the 9.6 lift, the peak bar 16.0-17.6 under Real Hacking, build at 20.8, Uncover the Plan. / Stop It. on 22.4, Before the Sunday Launch on the 41.6 lift, the Derek close cut on the 50.0 hit (hits 50.4, 51.2, 52.0 under the CTA start). Changes: hax_hook in 16.8->16.2 (3.0->3.6 s, pre 1.3->0.7), cards 1.5->1.6 s, montage A trims (m_lockpick 0.2, m_phone 0.3, m_keypad 0.3, m_cyberchef 0.2 s), npc_3 out 19.95->19.85 and derek_close out 52.16->52.0 (silence only), mb_maya trim 0.2, cr_flag 4->3 frames, derek_wide on 45.6667. Old music: Midnight Cipher Chase from 109.023 s. Not rendered. v11 (2026-11-24): the generic cards are rewritten in m01's own words (owner, v10 review: retire them): Uncover the Mystery -> People Keep / Vanishing (before Kevin, Maya and Sarah), Choices with Consequences -> Stay in / Character (HaX's brief for the IT-contractor cover, before montage B), And Hold Back The Entropy! -> Before the / Sunday Launch (Operation Shatter launches Sunday; before the crescendo that ends on the launch device). Same ids, durations, joins and timings; Mission 1 / First Contact and Real / Hacking (house card) unchanged; alternatives in docs/video/logs/m01_VIDEO_LOG.md. Not rendered. v10 (2026-11-22): Derek ends on the user's chosen line, the whole \"Sixty deaths... That's not murder. That's optimisation.\" from the new take t09c, wide then a hard cut to the close-up on \"That's optimisation\". v9 (2026-11-20): re-recorded on build 1f651abce with the spy starter avatars (one avatar per take, none shared by adjacent visible shots, see docs/video/edits/M01_TRAILER60_AVATARS.md) and every window re-timed to the v3 takes (docs/video/takes_v2.md, v3 edit windows); m_lights is the new take t03b_lights_on in the NPC-free motion-sensor storage_closet (the main office starts lit now, so the strike no longer shows there); the NPC lines are 4.0 / 4.0 / 4.5 s on the grid with their real line ends; derek_wide is cropped (cx .5 cy .4 zoom 1.3) so the Derek Lawson name bar stays out, and Derek's J-cut still starts 2.43 s into his line. Keep out: the Anniversary post-it, the Kali launcher post-it, the Derek name bar. v8.5: the cards Uncover the Mystery (now 22.5 s, before the NPC lines) and Choices with Consequences (now 36.5 s) swap places (user: the NPC lines are not consequences of the player's actions). v8.4: the server-room shot at 16 s is gone; Real Hacking card at 16.0, walk up to the Kali station 2 s, then only this mission's Kali footage (Hydra and the SSH shell, slowed to 2 s; sqlmap and dirb are from other missions and are out). v8.3: Real Hacking section is now card, walk to the Kali station, hacking clip, CyberChef (the first CyberChef cut is gone from montage A); montage B drops its keypad, the chair walk is a walk to the north-west door that knocks a swivel chair (1.5 s); the crescendo's last cut is the launch device instead of the Kali launcher. v8.2: montage B's Kevin walk (the player bumped into him) replaced by a walk that pushes a swivel chair. v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card) v12 (2026-11-24): owner note via AC0, 'Stay in Character' card replaced by 'Uncover the Plan. / Stop It.'",
+ "status": "v15 (2026-11-25): music swapped to SpyAgro Action Dub from 0.695 s (a downbeat; 119.99 BPM, grid 0.5 s, bar 2.0 s; owner decision) and cards and cuts re-fitted on its grid with no spoken line cut: Mission 1 card on the 10.0 lift, Real Hacking card on 16.0, People Keep Vanishing on 22.0, Before the Sunday Launch on the 42.0 lift, Derek close cut on the 50.0 hit, CTA 52.0. Cards 1.6->1.5 s. Shot changes in docs/video/logs/m01_VIDEO_LOG.md. Not rendered. v13 (2026-11-24): music swapped to SpyAction Emerald Trigger from 85.571 s (a downbeat; 150.01 BPM, grid 0.4 s) and the cards re-fitted to it, with no spoken line cut. Quiet breakdown bars under the title, lift at 4.8 as HaX's voice comes in, Mission 1 card on the 9.6 lift, the peak bar 16.0-17.6 under Real Hacking, build at 20.8, Uncover the Plan. / Stop It. on 22.4, Before the Sunday Launch on the 41.6 lift, the Derek close cut on the 50.0 hit (hits 50.4, 51.2, 52.0 under the CTA start). Changes: hax_hook in 16.8->16.2 (3.0->3.6 s, pre 1.3->0.7), cards 1.5->1.6 s, montage A trims (m_lockpick 0.2, m_phone 0.3, m_keypad 0.3, m_cyberchef 0.2 s), npc_3 out 19.95->19.85 and derek_close out 52.16->52.0 (silence only), mb_maya trim 0.2, cr_flag 4->3 frames, derek_wide on 45.6667. Old music: Midnight Cipher Chase from 109.023 s. Not rendered. v11 (2026-11-24): the generic cards are rewritten in m01's own words (owner, v10 review: retire them): Uncover the Mystery -> People Keep / Vanishing (before Kevin, Maya and Sarah), Choices with Consequences -> Stay in / Character (HaX's brief for the IT-contractor cover, before montage B), And Hold Back The Entropy! -> Before the / Sunday Launch (Operation Shatter launches Sunday; before the crescendo that ends on the launch device). Same ids, durations, joins and timings; Mission 1 / First Contact and Real / Hacking (house card) unchanged; alternatives in docs/video/logs/m01_VIDEO_LOG.md. Not rendered. v10 (2026-11-22): Derek ends on the user's chosen line, the whole \"Sixty deaths... That's not murder. That's optimisation.\" from the new take t09c, wide then a hard cut to the close-up on \"That's optimisation\". v9 (2026-11-20): re-recorded on build 1f651abce with the spy starter avatars (one avatar per take, none shared by adjacent visible shots, see docs/video/edits/M01_TRAILER60_AVATARS.md) and every window re-timed to the v3 takes (docs/video/takes_v2.md, v3 edit windows); m_lights is the new take t03b_lights_on in the NPC-free motion-sensor storage_closet (the main office starts lit now, so the strike no longer shows there); the NPC lines are 4.0 / 4.0 / 4.5 s on the grid with their real line ends; derek_wide is cropped (cx .5 cy .4 zoom 1.3) so the Derek Lawson name bar stays out, and Derek's J-cut still starts 2.43 s into his line. Keep out: the Anniversary post-it, the Kali launcher post-it, the Derek name bar. v8.5: the cards Uncover the Mystery (now 22.5 s, before the NPC lines) and Choices with Consequences (now 36.5 s) swap places (user: the NPC lines are not consequences of the player's actions). v8.4: the server-room shot at 16 s is gone; Real Hacking card at 16.0, walk up to the Kali station 2 s, then only this mission's Kali footage (Hydra and the SSH shell, slowed to 2 s; sqlmap and dirb are from other missions and are out). v8.3: Real Hacking section is now card, walk to the Kali station, hacking clip, CyberChef (the first CyberChef cut is gone from montage A); montage B drops its keypad, the chair walk is a walk to the north-west door that knocks a swivel chair (1.5 s); the crescendo's last cut is the launch device instead of the Kali launcher. v8.2: montage B's Kevin walk (the player bumped into him) replaced by a walk that pushes a swivel chair. v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card) v12 (2026-11-24): owner note via AC0, 'Stay in Character' card replaced by 'Uncover the Plan. / Stop It.'",
  "music": {
-  "track": "SpyAction/Emerald Trigger.mp3",
-  "analysis": "emerald_trigger_60.json",
-  "start": 85.571,
+  "track": "SpyAgro/Action Dub.mp3",
+  "analysis": "action_dub_60.json",
+  "start": 0.695,
   "length": 60,
   "gain_db": 0,
   "fade_in": 0,
   "fade_out": 2.0,
   "alternatives": [
+   "Action Dub window 0.0 (m09 v1's window: lift 10.696 is 0.696 s off the grid, so the Mission card would sit between beats)",
+   "SpyAction/Emerald Trigger.mp3 @85.571 (v13/v14 placeholder)",
    "Noir/Midnight Cipher Chase.mp3 @109.023 (v12's track)",
-   "Emerald Trigger window 0.775 (now m08's v1 first choice, since replaced by Shadowline Protocol)",
-   "Emerald Trigger window 75.972 (loud from the first bar)",
-   "SpyAction/Cold Bond Circuit.mp3 @53.847",
-   "SpyAction/Midnight Trigger.mp3 @92.994",
-   "CutScene/Shadow Code 1.mp3 @114.322"
+   "Action Dub window 54.702 (analysis best, flat energy)"
   ],
-  "analysis_60": "emerald_trigger_60.json"
+  "analysis_60": "action_dub_60.json"
  },
  "beat": {
-  "bpm": 150.01,
-  "period": 0.4,
+  "bpm": 119.99,
+  "period": 0.5001,
   "offset": 0,
-  "note": "window start 85.571 s is a downbeat (bar 1.6 s). Bar rms x100: breakdown 8-12 at 0-4.8 (title), lift 4.8 (HaX's voice), lift 11.2, peak bar 16.0-17.6 (25-29, Real Hacking card), dip 18.4-20.8, build 20.8, dip 40.8-41.6 then lift 41.6 (Before the Sunday Launch card), strong hits 50.0 (0.55, Derek close cut), 50.4, 51.2 (0.67), 52.0 (0.60). Rejected: window 0.775 (quiet bars 12.8-17.6 fall under montage A and the Real Hacking card), window 75.972 (loud from bar 1), end-of-track window 100.77 (no quiet title). Not judged by ear."
+  "note": "window start 0.695 s is a downbeat (bar 2.0 s, beat 0.5 s). Bar rms x100: bar 0.13 at 0-2, quiet 2-4 (1), 4-6 6, 6-8 12 (HaX's voice under the title), drop 8-10 (2), lift 10.0 (21, Mission 1 card), 12 11, 14 16, 16 9 (Real Hacking card), drop 18 (3), lift 20 (15), 22 12 (People Keep Vanishing card), hit 23.33, 24 23, 28 8, 32 7, 42.0 lift 21 (Before the Sunday Launch card), 46 9, quiet bar 48-50 (3, under Derek's wide line), 50.0 lift + hit 0.81 (Derek close cut), hits 51.99, 53.33, 54.0 (strongest, 1.0, CTA), 54.33, 56.0. Not judged by ear."
  },
  "duck": {
   "db": -10,
@@ -70,7 +68,7 @@
   {
    "id": "hax_hook",
    "type": "gameplay",
-   "duration": 3.6,
+   "duration": 4.0,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -78,7 +76,7 @@
    "source": {
     "file": "t10_hax_hook.trimmed.mkv",
     "in": 16.2,
-    "out": 19.8
+    "out": 20.2
    },
    "dialogue": true,
    "lines": [
@@ -129,7 +127,7 @@
   {
    "id": "card_mission",
    "type": "card",
-   "duration": 1.6,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -150,14 +148,14 @@
   {
    "id": "m_lights",
    "type": "gameplay",
-   "duration": 1.6,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
    },
    "source": {
     "file": "t03b_lights_on.trimmed.mkv",
-    "in": 2.9,
+    "in": 3.0,
     "out": 4.5
    },
    "note": "v9: t03b_lights_on (ngozi_adeyemi), the agent steps from the lit hallway_east into the dark NPC-free storage_closet; the lights strike on at 3.406 s in the take; the first v9 render showed it lit only at 11.95 (about 0.25 s later than the ffmpeg frames of the take), then the window moved to 2.9-4.4 because the strike flickers (lit 3.6, dark 3.7-3.9, steady from 4.0): dark start, flicker, 0.4 s steady before the cut at 12.0 s; v13 music: out 4.4->4.5 (lit at 4.5)",
@@ -193,7 +191,7 @@
   {
    "id": "m_lockpick",
    "type": "gameplay",
-   "duration": 0.8,
+   "duration": 0.5,
    "snap": true,
    "join": {
     "type": "cut"
@@ -201,7 +199,7 @@
    "source": {
     "file": "t04_lockpick.trimmed.mkv",
     "in": 6.4,
-    "out": 7.2
+    "out": 6.9
    },
    "note": "minigame fills the screen: 1x shows the whole panel; v13 music: out 7.4->7.2 (trim 0.2)",
    "framing": {
@@ -236,7 +234,7 @@
   {
    "id": "m_phone",
    "type": "gameplay",
-   "duration": 1.2,
+   "duration": 1.0,
    "snap": true,
    "join": {
     "type": "cut"
@@ -244,7 +242,7 @@
    "source": {
     "file": "t05_phone.trimmed.mkv",
     "in": 7.2,
-    "out": 8.4
+    "out": 8.2
    },
    "note": "phone panel x .40-.61, y .02-.67 of the frame: 1.3x keeps it whole. 7.4-8.9: HaX reply on screen, then the reply choices appear at 7.83 (the later Maya reply starts at 9.4, not shown); v13 music: out 8.7->8.4 (trim 0.3, choices on screen, no Maya reply)",
    "framing": {
@@ -279,7 +277,7 @@
   {
    "id": "m_keypad",
    "type": "gameplay",
-   "duration": 1.2,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "cut"
@@ -287,7 +285,7 @@
    "source": {
     "file": "t06_keypad_v3.trimmed.mkv",
     "in": 5.3,
-    "out": 6.5
+    "out": 6.8
    },
    "note": "v3: 5.3-6.8 shows digit 2 (5.27) and digit 3 (5.92) land and hold; whole panel at 1x; v13 music: out 6.8->6.5 (trim 0.3, shows 193_)",
    "framing": {
@@ -322,7 +320,7 @@
   {
    "id": "card_real",
    "type": "card",
-   "duration": 1.6,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -343,7 +341,7 @@
   {
    "id": "kali_walk",
    "type": "gameplay",
-   "duration": 2.0,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -351,7 +349,7 @@
    "source": {
     "file": "t23_walk_kali.trimmed.mkv",
     "in": 0.95,
-    "out": 2.95
+    "out": 2.45
    },
    "note": "the player walks up to the IT Audit Station (Kali) and stands at it; ends before the VM launcher opens at 3.00 s (its screen shows the kali login post-it)",
    "framing": {
@@ -432,7 +430,7 @@
   {
    "id": "m_cyberchef",
    "type": "gameplay",
-   "duration": 0.8,
+   "duration": 1.0,
    "snap": true,
    "join": {
     "type": "cut"
@@ -440,7 +438,7 @@
    "source": {
     "file": "t14_cyberchef.trimmed.mkv",
     "in": 6.57,
-    "out": 7.37
+    "out": 7.57
    },
    "note": "moved after the real-hacking clip (user, v8.2 review: Real Hacking card, walk to Kali, hacking clip, CyberChef). CyberChef workstation, 2x crop on the input/output panes (x .475-.975, rows y .135-.635): input pasted at 6.63, decode 'Meet at the server room' visible from 6.77 (take's marks lag by 0.5 s; cut on frames); v13 music: out 7.57->7.37 (trim 0.2, output visible)",
    "framing": {
@@ -475,7 +473,7 @@
   {
    "id": "card_uncover",
    "type": "card",
-   "duration": 1.6,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -612,7 +610,7 @@
   {
    "id": "npc_3",
    "type": "gameplay",
-   "duration": 4.4,
+   "duration": 4.5,
    "snap": true,
    "join": {
     "type": "cut"
@@ -620,7 +618,7 @@
    "source": {
     "file": "t13_sarah_line.trimmed.mkv",
     "in": 15.45,
-    "out": 19.85
+    "out": 19.95
    },
    "dialogue": true,
    "lines": [
@@ -670,7 +668,7 @@
   {
    "id": "card_choices",
    "type": "card",
-   "duration": 1.6,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "dissolve",
@@ -692,7 +690,7 @@
   {
    "id": "mb_sarah",
    "type": "gameplay",
-   "duration": 1.2,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "dissolve",
@@ -700,7 +698,7 @@
    },
    "source": {
     "file": "t16_walk_sarah.trimmed.mkv",
-    "in": 2.3,
+    "in": 2.0,
     "out": 3.5
    },
    "note": "walk to Sarah's desk 2.3-3.3 (walk ends 3.25, bubble prompt, no dialogue); v13 music: out 3.3->3.5 (at the desk, bubble)",
@@ -736,14 +734,14 @@
   {
    "id": "mb_chair",
    "type": "gameplay",
-   "duration": 1.6,
+   "duration": 2.0,
    "snap": true,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t21_walk_chair.trimmed.mkv",
-    "in": 1.6,
+    "in": 1.2,
     "out": 3.2
    },
    "note": "heading for the north-west door, the player knocks a swivel chair, which rolls aside, and turns up into the doorway (user, v8.2 review); v13 music: out 3.1->3.2",
@@ -779,7 +777,7 @@
   {
    "id": "mb_maya",
    "type": "gameplay",
-   "duration": 0.8,
+   "duration": 1.0,
    "snap": true,
    "join": {
     "type": "cut"
@@ -787,7 +785,7 @@
    "source": {
     "file": "t18_walk_maya.trimmed.mkv",
     "in": 5.3,
-    "out": 6.1
+    "out": 6.3
    },
    "note": "walk beside Maya 5.3-6.3 (room-transition click marker at ~3.4 s is outside the window); v13 music: out 6.3->6.1 (trim 0.2)",
    "framing": {
@@ -822,7 +820,7 @@
   {
    "id": "card_entropy",
    "type": "card",
-   "duration": 1.6,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -843,7 +841,7 @@
   {
    "id": "cr_lockpick",
    "type": "gameplay",
-   "duration": 0.5,
+   "duration": 0.3333,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -851,7 +849,7 @@
    "source": {
     "file": "t04_lockpick.trimmed.mkv",
     "in": 6.85,
-    "out": 7.35
+    "out": 7.1833
    },
    "note": "minigame crescendo: lockpicking, 'Pin 2 set!'",
    "framing": {
@@ -886,7 +884,7 @@
   {
    "id": "cr_key",
    "type": "gameplay",
-   "duration": 0.5,
+   "duration": 0.3667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -894,7 +892,7 @@
    "source": {
     "file": "t19_minigames.trimmed.mkv",
     "in": 23.9,
-    "out": 24.4
+    "out": 24.2667
    },
    "note": "minigame crescendo: Derek's office key, the last half second of insertion: the pins ride the key and lift onto the shear line (t19 re-recorded after the key-insertion pin fix)",
    "framing": {

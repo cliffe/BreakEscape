@@ -9,5 +9,5 @@
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:teeth_t04_f3 (head -1,+0px), round:round_t04_f3, small_open:wide_open_t05_f2 (head -1,-2px), medium_open:medium_open_t06_f2 (head -1,-2px), wide_open:wide_open_t06_f3 (head -1,-1px, jaw +3 rows), blink:inpaint i02"
+  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust from row 25 down (nose kept): teeth:teeth_t03_f1, round:round_t03_f3 (head -1,-1px), small_open:small_open_t03_f2 (head +0,-1px), medium_open:medium_open_t03_f2 (head -1,-2px), wide_open:medium_open_t02_f2, blink:kept from the game's previous sheet (blink: previous sheet blink, with the new E wire-frame glasses pixels copied in)"
 }
