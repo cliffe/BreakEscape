@@ -668,9 +668,20 @@ async function handleDoorInteraction(doorSprite) {
     // load — that must not grant the PLAYER passage). Detect the gate robustly, by
     // doorProperties or by a registered group at the doorway position, so this holds
     // even for a sprite that lost its `gate` field on a room reload.
-    const gateGroup = window.doorGates?.groups?.get?.(props.gateKey)
+    const findGateGroup = () => window.doorGates?.groups?.get?.(props.gateKey)
         || window.doorGates?.groupAtPosition?.(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y, props.direction)
         || null;
+    let gateGroup = findGateGroup();
+    // A gate's config is on the outer room's door entry, so this sprite (the secured room's
+    // own, when the learner starts inside it) cannot know the doorway is a gate until the room
+    // on the other side has loaded and adopted it. Load that room first when it is unlocked
+    // (the ordinary path loads it anyway), then look again: otherwise this click would take the
+    // ordinary path and openDoor would destroy the gate's sprite for good.
+    if (!props.gate && !gateGroup && props.locked !== true && props.connectedRoom &&
+        !window.rooms?.[props.connectedRoom] && window.loadRoom) {
+        await loadRoomBehindDoor(doorSprite, props.connectedRoom);
+        gateGroup = findGateGroup();
+    }
     if (props.gate || gateGroup) {
         // Both rooms' sprites of the doorway take the same click: answer once
         if (gateGroup && isRepeatInteraction(gateGroup)) return;
@@ -681,17 +692,14 @@ async function handleDoorInteraction(doorSprite) {
         const outcome = window.doorGates?.clickOutcome?.(gateGroup, {
             holdsCredential: false, connectedRoom: props.connectedRoom
         }) || 'denied';
-        if (outcome === 'exit' || outcome === 'leave') {
-            // Outside its live window a gate opens for the player from outside too (E1): the
-            // room behind it may never have loaded, and he is about to walk into it
-            if (outcome === 'exit' && gateGroup && window.doorGates?.isInert?.(gateGroup) &&
-                window.currentPlayerRoom !== gateGroup.securedRoom &&
-                !window.rooms?.[gateGroup.securedRoom] && window.loadRoom) {
-                Promise.resolve(window.loadRoom(gateGroup.securedRoom)).catch(err =>
-                    console.warn(`Failed to load room ${gateGroup.securedRoom}:`, err));
-            }
+        if (outcome === 'inert_enter') {
+            // Outside its live window the gate is an ordinary door from outside too. The room
+            // behind it may never have loaded or been unlocked for him, so make it exist first
+            // and open the gate only then (a refusal leaves it shut: no walking into empty space)
+            await enterThroughInertGate(gateGroup, gateHintSource(props, gateGroup));
             return;
         }
+        if (outcome === 'exit' || outcome === 'leave') return;
         // Clone-as-entry: a held credential satisfying the locked room's `requires`
         // (physical keycard or a clone saved on the rfid cloner) opens the gate — the
         // taught alternative to tailgating. It behaves exactly like an ordinary
@@ -763,6 +771,53 @@ async function handleDoorInteraction(doorSprite) {
     // The server will check its scenario data and validate accordingly
     console.log('Checking door access with server...');
     handleUnlock(doorSprite, 'door');
+}
+
+/**
+ * Load a room the player has not been to. A door that is not locked first goes through the
+ * ordinary 'unlocked' handshake, which is what makes the server serve the room (it adds it to
+ * unlockedRooms); a locked one is only asked for, and the server refuses it unless it is
+ * already open to him. Never throws: the caller checks window.rooms[room].
+ */
+async function loadRoomBehindDoor(doorSprite, room) {
+    if (doorSprite && doorSprite.doorProperties?.locked === false) {
+        try {
+            const resp = await notifyServerUnlock(doorSprite, 'door', 'unlocked');
+            if (resp?.success && resp.roomData && window.roomDataCache) window.roomDataCache.set(room, resp.roomData);
+        } catch (err) {
+            console.warn('Unlock handshake failed:', err);
+        }
+    }
+    if (window.loadRoom) {
+        try {
+            await window.loadRoom(room);
+        } catch (err) {
+            console.warn(`Failed to load room ${room}:`, err);
+        }
+    }
+}
+
+/**
+ * A player outside a gate that is outside its live window clicks it (clickOutcome
+ * 'inert_enter'). An unlocked room that is not loaded goes through the ordinary 'unlocked'
+ * handshake (which is what puts it in the server's unlockedRooms), then any room is loaded.
+ * The gate opens (exitOpen) only if the room now exists; otherwise the normal refusal.
+ * @returns {Promise<boolean>} whether the gate is open for him
+ */
+async function enterThroughInertGate(g, hintSource) {
+    const doors = window.doorGates;
+    const room = g.securedRoom;
+    if (!window.rooms?.[room]) {
+        const entry = [...(g.sprites || [])].find(s => s?.doorProperties?.connectedRoom === room && s.active !== false);
+        await loadRoomBehindDoor(entry, room);
+    }
+    // The window may have gone live while the room loaded: then it is a live gate again
+    if (window.rooms?.[room] && doors.isInert(g)) {
+        if (!g.open) doors.exitOpen(g);
+        return true;
+    }
+    window.gameAlert?.('Access denied', 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, 'Access denied'));
+    return false;
 }
 
 /**
@@ -859,6 +914,8 @@ function openDoor(doorSprite, opts = {}) {
     // Wait for game scene to be ready before proceeding
     // This prevents crashes when called immediately after minigame cleanup
     const finishOpeningDoor = () => {
+        // A gate opens through door-gates.js only: this destroys the sprite for good
+        if (window.doorGates?.isGate?.(doorSprite)) return;
         // Disable the door's physics body immediately so LOS checks stop seeing it
         // right away, even before the sprite is destroyed asynchronously below.
         if (doorSprite.body) doorSprite.body.enable = false;
@@ -913,6 +970,14 @@ function openDoor(doorSprite, opts = {}) {
         // Process door sprites after room is ready
         const processRoomDoors = () => {
             console.log('Processing room doors after load');
+
+            // The room just loaded may have adopted this sprite into a gate (it was an ordinary
+            // door while pending). Destroying it, or the gate's sprite in the room, would leave
+            // the doorway open for good: put the gate back as it was and stop
+            if (window.doorGates?.isGate?.(doorSprite)) {
+                window.doorGates.reassert?.(doorSprite);
+                return;
+            }
             
             // Remove wall tiles from the connected room under the door position
             if (window.removeWallTilesForDoorInRoom) {
@@ -1072,6 +1137,8 @@ function removeMatchingDoorSprite(roomId, fromRoomId, direction, doorWorldX, doo
     // Find the door sprite that connects to the fromRoomId
     // For multiple doors between same rooms, also check position and direction
     const matchingDoorSprite = room.doorSprites.find(doorSprite => {
+        // A gate's sprite is never removed here (it opens through door-gates.js)
+        if (window.doorGates?.isGate?.(doorSprite)) return false;
         const props = doorSprite.doorProperties;
         if (!props || props.connectedRoom !== fromRoomId) {
             return false;

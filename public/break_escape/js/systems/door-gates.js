@@ -88,7 +88,13 @@
  * rooms create a sprite for one doorway, so sprites are grouped by position and
  * toggled together; the far room's sprite joins whichever loads first (pending).
  * Events: door_gate_opened / door_gate_closed / door_gate_denied, each with
- * { roomId, connectedRoom, direction }.
+ * { roomId, connectedRoom, direction }. door_gate_opened/closed carry `inert: true` when the
+ * gate was outside its live window at the moment of that toggle (so the two can differ if the
+ * window changes mid-hold). door_gate_guard_turned_back also carries x, y (the registering
+ * sprite's position) and cx, cy (the doorway's centre, 16 px off for a side gate).
+ *
+ * NPCs and an inert gate: outside its window a gate stays openFor-only for NPC walkers (it
+ * is an ordinary door for the player alone). A walker not on openFor is not routed through it.
  *
  * Sound: a gate whose door has an RFID lock plays the door release (`rfid_unlock`, the
  * same sound as any RFID lock) each time it opens, whoever it opens for, and when a
@@ -125,8 +131,10 @@ const TILE = 32;
 // How far past the doorway's centre a click on an open gate walks the player
 // (walkThroughTarget): clear of a north or south wall's depth, or of a side wall
 const WALK_THROUGH_NS_PX = 2 * TILE;
-// East and west: from the doorway's centre on the wall boundary, one tile into the far room
-const WALK_THROUGH_SIDE_PX = TILE;
+// East and west: from the doorway's centre on the wall boundary, a tile and a half into the far
+// room: the centre of the first floor tile past that room's wall column (one tile would stop on
+// the door tile itself, inside the body footprint that holds a gate open)
+const WALK_THROUGH_SIDE_PX = 1.5 * TILE;
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' };
 
 function isSideProps(props) {
@@ -352,6 +360,25 @@ export class DoorGates {
             for (const s of [...set]) if (gone(s)) set.delete(s);
             if (!set.size) this.pending.delete(key);
         }
+    }
+
+    /**
+     * A sprite that doors.js had treated as an ordinary door (it was still pending when the
+     * click or NPC began) joined a gate while its room was loading: put the gate's bodies and
+     * path grid back as they were (doors.js openDoor, before it would have destroyed the sprite).
+     */
+    reassert(sprite, now = Date.now()) {
+        const g = sprite?.doorProperties?.gateKey && this.groups.get(sprite.doorProperties.gateKey);
+        if (!g) return false;
+        this._applyBodies(g, now);
+        if (!g.open) {
+            const pm = W().pathfindingManager;
+            if (pm) {
+                pm.unmarkDoor?.(g.x, g.y, g.direction);
+                pm.rebuildWorldGrid?.();
+            }
+        }
+        return true;
     }
 
     isGate(sprite) { return !!sprite?.doorProperties?.gateKey && this.groups.has(sprite.doorProperties.gateKey); }
@@ -638,6 +665,9 @@ export class DoorGates {
      *   'granted' - he holds a credential the gate takes; it is opened for him now
      *   'pass'    - the gate is open and he may walk through; nothing to say
      *   'denied'  - refuse, with the door's hint
+ *   'inert_enter' - outside its live window, the player clicks from outside: nothing is
+ *               opened here. doors.js makes sure the secured room is loaded (an unlocked
+ *               one goes through the ordinary 'unlocked' handshake), then exitOpen()s the gate
      * Inside answers first, so leaving never presents a credential or refuses. Outside,
      * the credential answers first, so a clone opens (and is credited) even while the
      * gate happens to be open for a guard.
@@ -645,13 +675,11 @@ export class DoorGates {
      * @param {{holdsCredential?: boolean, connectedRoom?: string, playerRoom?: string, now?: number}} click
      */
     clickOutcome(g, { holdsCredential = false, connectedRoom = null, playerRoom = currentPlayerRoom(), now = Date.now() } = {}) {
-        // Outside its live window the gate is an ordinary door, from either side: the click
-        // opens it for one holdMs, as the leaving click does (no credential, no lock check)
-        if (g && g.cfg && this.isInert(g)) {
-            if (g.open) return 'leave';
-            this.exitOpen(g, now);
-            return 'exit';
-        }
+        // Outside its live window the gate is an ordinary door, from either side. From inside
+        // the secured room the click opens it as the leaving click does (below). From outside
+        // nothing is opened here: the room behind it may never have loaded, and the server may
+        // refuse it, so doors.js loads it first and calls exitOpen() once it exists
+        if (g && g.cfg && this.isInert(g) && !(playerRoom && playerRoom === g.securedRoom)) return 'inert_enter';
         if (g && playerRoom && playerRoom === g.securedRoom) {
             if (g.open) return 'leave';
             this.exitOpen(g, now);
@@ -776,7 +804,7 @@ export class DoorGates {
     }
 
     _gateInfo(g) {
-        return { roomId: g.roomId, connectedRoom: g.connectedRoom, direction: g.direction, x: g.x, y: g.y };
+        return { roomId: g.roomId, connectedRoom: g.connectedRoom, direction: g.direction, x: g.x, y: g.y, cx: g.cx, cy: g.cy };
     }
 
     /** openFor guards near the shut gate whose route wants to take them across it. */
