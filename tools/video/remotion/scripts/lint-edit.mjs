@@ -128,6 +128,12 @@ tl.shots.forEach((s, i) => {
     if (!ca) E(id, `${s.type} is for Cyber Aware edits only (set "theme": "ca")`);
     if (s.type === 'ca_open' && !s.ca?.title) E(id, 'ca_open needs ca.title');
     if (s.source) W(id, `${s.type} has a source (ignored)`);
+    if (s.ca?.timing != null) {
+      const t = s.ca.timing, keys = ['slide_end', 'shrink_end', 'text', 'url', 'tag'];
+      if (s.type !== 'ca_close') E(id, 'ca.timing is for ca_close only');
+      else if (typeof t !== 'object' || !keys.every((k) => typeof t[k] === 'number' && t[k] > 0)) E(id, `ca.timing needs positive numbers (seconds from the close's start): ${keys.join(', ')}`);
+      else { if (!keys.every((k, i) => i === 0 || t[k] >= t[keys[i - 1]])) E(id, `ca.timing must not fall: ${keys.join(' <= ')}`); if (t.tag > s.duration + 1e-6) E(id, `ca.timing.tag ${t.tag} is past the end of the close (${s.duration} s)`); }
+    }
     if (s.type === 'ca_close' && s.duration < 2.5) W(id, 'ca_close under 2.5 s: the halves, mark, Hacktivity line and tagline will not all land');
     if (s.type === 'ca_open' && s.duration < 1.5) W(id, 'ca_open under 1.5 s: the title card has no time to read');
   } else if (s.type === 'card') {
@@ -193,7 +199,24 @@ tl.shots.forEach((s, i) => {
       const st = typeof s.seat === 'string' ? s.seat : s.seat?.seat;
       if (!ca) E(id, 'seat is for Cyber Aware edits only (set "theme": "ca")');
       if (!['attack', 'defend', 'full'].includes(st)) E(id, `seat must be attack|defend|full, got ${st}`);
-      if (typeof s.seat === 'object' && s.seat.chip != null && (typeof s.seat.chip !== 'string' || s.seat.chip.length > 24 || s.seat.chip !== s.seat.chip.toUpperCase())) E(id, 'seat.chip must be an upper-case string of at most 24 characters');
+      if (typeof s.seat === 'object' && s.seat.chip_px != null && !(typeof s.seat.chip_px === 'number' && s.seat.chip_px >= 8 && s.seat.chip_px <= 128)) E(id, 'seat.chip_px must be a number from 8 to 128 (design px at 1080)');
+      if (typeof s.seat === 'object' && s.seat.chips != null) {
+        const cs = s.seat.chips;
+        if (!Array.isArray(cs)) E(id, 'seat.chips must be an array of { from, to, text }');
+        else cs.forEach((c, ci) => {
+          if (!(typeof c?.from === 'number' && typeof c?.to === 'number' && c.from >= 0 && c.to > c.from && c.to <= s.duration + 1e-6)) E(id, `seat.chips[${ci}] needs numeric from < to inside the shot (0 to ${s.duration} s)`);
+          if (typeof c?.text !== 'string' || !c.text.trim() || c.text.length > 28) E(id, `seat.chips[${ci}].text must be a non-empty string of at most 28 characters`);
+        });
+      }
+      if (typeof s.seat === 'object' && s.seat.chip != null && (typeof s.seat.chip !== 'string' || s.seat.chip.length > 28 || s.seat.chip !== s.seat.chip.toUpperCase())) E(id, 'seat.chip must be an upper-case string of at most 28 characters');
+    // title_plate { text, sub?, from?, to? }: the Cyber Aware product trailer's title over footage (seconds from the shot's start)
+    if (s.title_plate != null) {
+      const tp = s.title_plate;
+      if (typeof tp.text !== 'string' || !tp.text.trim()) E(id, 'title_plate.text must be a non-empty string');
+      else if (/break\s*escape/i.test(tp.text + ' ' + (tp.sub || ''))) E(id, 'title_plate must not name Break Escape');
+      if (tp.style != null && !['card', 'tag'].includes(tp.style)) E(id, `title_plate.style must be card|tag, got ${tp.style}`);
+      if (tp.from != null || tp.to != null) { const a = tp.from ?? 0, b = tp.to ?? s.duration; if (!(a >= 0) || !(b > a) || b > s.duration + 1e-6) E(id, `title_plate from/to must satisfy 0 <= from < to <= ${s.duration}`); }
+    }
     } else if (ca) W(id, 'gameplay shot in a Cyber Aware edit has no seat (use seat "full" for hook and room shots)');
     for (const [mi, m] of (s.masks || []).entries()) {
       if (![m.x, m.y, m.w, m.h].every((v) => typeof v === 'number' && v >= 0) || !(m.w > 0 && m.h > 0)) E(id, `masks[${mi}] needs numeric x, y and w, h > 0 (source pixels)`);
@@ -258,6 +281,7 @@ tl.shots.forEach((s, i) => {
 });
 
 // Cyber Aware edit rules (theme "ca"): opens with ca-open, closes with ca-close, nothing from SAFETYNET, at most one flip.
+if (edit.caption_skin != null && edit.caption_skin !== 'pixel') E('edit', `caption_skin must be "pixel" (or absent), got ${edit.caption_skin}`);
 if (edit.theme != null && edit.theme !== 'ca' && edit.theme !== 'cc') E('edit', `unknown theme ${edit.theme} (only "ca" or "cc")`);
 // Critical Cases edit rules (theme "cc"): exactly one cc_open and one cc_close (the last shot), nothing from SAFETYNET or Cyber Aware, no seam or flip, no brand names on cards.
 if (cc) {
@@ -293,7 +317,9 @@ if (cc) {
 if (ca && edit.kind !== 'preview') { // a catalogue preview (docs/video/CA_PREVIEW_CUTS_PLAN.md) is a silent gameplay loop: no open or close card
   const shots = tl.shots;
   const opens = shots.filter((s) => s.type === 'ca_open'), closes = shots.filter((s) => s.type === 'ca_close');
-  if (opens.length !== 1) E('edit', `a CA edit needs exactly one ca_open shot (the ca-open preset), found ${opens.length}`);
+  // edit.kind "product" (the Cyber Aware product trailer, docs/video/scripts/ca_product_trailer_script.md): opens on footage with a title plate, so no ca_open card; the ca_close rule still holds
+  if (edit.kind === 'product') { if (opens.length) E(opens[0].id, 'a product edit has no ca_open shot (its title is a title_plate over footage)'); }
+  else if (opens.length !== 1) E('edit', `a CA edit needs exactly one ca_open shot (the ca-open preset), found ${opens.length}`);
   else if (opens[0].index > 1 || (opens[0].index === 1 && !(shots[0].type === 'gameplay' && shots[0].duration <= 5))) E(opens[0].id, 'ca_open must be the first shot, or the second after one cold-open gameplay shot of at most 5 s (one voiced line)');
   if (closes.length !== 1) E('edit', `a CA edit needs exactly one ca_close shot (the ca-close preset), found ${closes.length}`);
   else if (closes[0].index !== shots.length - 1) E(closes[0].id, 'ca_close must be the last shot');
