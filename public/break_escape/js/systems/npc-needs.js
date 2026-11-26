@@ -5422,6 +5422,7 @@ export function createEngineWorld() {
     const stowSprite = (sp, fromRoomId, fromKey) => {
         if (!sp || sp.destroyed || sp.active === false || inInventory(sp)) return false;
         const home = slotHome(sp, fromRoomId, fromKey);
+        try { W().clearObjectHighlight?.(sp); } catch (e) { /* cosmetic */ }
         const hide = W().hideRevealedObject;
         if (typeof hide === 'function') hide(sp);
         else { sp.setVisible?.(false); sp.interactable = false; try { sp.disableInteractive?.(); } catch (e) { /* ok */ } }
@@ -5873,6 +5874,8 @@ export function createEngineWorld() {
             else if (sp.body && sp.body.enable !== false) { sp._carryBodyOff = true; sp.body.enable = false; }
             sp.interactable = false;
             try { sp.disableInteractive?.(); } catch (e) { /* no input zone */ }
+            // the per-frame highlight loop only walks room.objects, so end the highlight (tint, ghost) now
+            try { W().clearObjectHighlight?.(sp); } catch (e) { /* highlight is cosmetic */ }
             delete W().rooms[f.roomId].objects[f.key];
             const rec = W().npcManager?.getNPC?.(npcId);
             if (rec) {
@@ -6050,6 +6053,7 @@ export function createEngineWorld() {
                 else if (sp.body && sp.body.enable !== false) { sp._carryBodyOff = true; sp.body.enable = false; }
                 sp.interactable = false;
                 try { sp.disableInteractive?.(); } catch (e) { /* ok */ }
+                try { W().clearObjectHighlight?.(sp); } catch (e) { /* cosmetic */ }
                 const room = W().rooms?.[info.roomId];
                 if (room?.objects) delete room.objects[info.key];
             }

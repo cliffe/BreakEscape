@@ -1311,7 +1311,12 @@ module BreakEscape
 
     # Object types that may never be carried even with a needsTag: keys and the
     # credential family. The structural lock-field checks below catch the rest.
-    CARRY_DISQUALIFYING_TYPES = %w[key keycard credential password badge smartcard rfid_card].freeze
+    # Tool types the player needs to open locks and read cards are in the same class:
+    # a needs NPC carrying one away is a soft-lock, not a cheat (review M3).
+    CARRY_DISQUALIFYING_TYPES = %w[
+      key keycard credential password badge smartcard rfid_card key_ring
+      lockpick rfid_cloner fingerprint_kit pin-cracker bluetooth_scanner ble_scanner
+    ].freeze
 
     # { item_id => { 'room' => room_id, 'object' => scenario_def } } for every
     # scenario object the needs system may carry: one that carries a needsTag and
@@ -1321,6 +1326,7 @@ module BreakEscape
     def carriable_object_index
       @carriable_object_index ||= begin
         index = {}
+        room_object_ids = Set.new
         rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
         if rooms.is_a?(Hash)
           rooms.each do |room_id, room|
@@ -1330,6 +1336,10 @@ module BreakEscape
               next unless obj.is_a?(Hash)
 
               id = obj['id']
+              # Every top-level room object id is recorded, indexed or not (review M1): a
+              # locked, content-bearing or key-type object that was rejected below must
+              # not be replaced in the index by a world-held definition that reuses its id.
+              room_object_ids << id if id.is_a?(String)
               next unless id.is_a?(String) && obj['needsTag'].present? && carriable_object?(obj)
               # Cross-reference (review R1 m1): an object whose id is a de facto key,
               # named as a requirement by any lock, terminal or objective elsewhere, is
@@ -1340,8 +1350,61 @@ module BreakEscape
             end
           end
         end
+        # An item that reaches the world another way (an NPC's itemsHeld, a start item,
+        # a container's contents, a flag station's itemsHeld, a declared grant) and is
+        # dropped by the player is a world object the needs system may carry, though it
+        # is in no room's objects list: without this the carry is refused (422) and the
+        # client undoes its pick-up (ca15_shadow_it). It passes the same checks. An id is
+        # indexed from these sources only when it is unambiguous (review M1): not a room
+        # object id, and defined by exactly one such source, so one definition cannot
+        # stand in for another.
+        held_definitions = Hash.new { |hash, key| hash[key] = [] }
+        each_held_source_item { |obj| held_definitions[obj['id']] << obj if obj['id'].is_a?(String) }
+        held_definitions.each do |id, defs|
+          next if defs.size != 1 || room_object_ids.include?(id) || index.key?(id)
+
+          obj = defs.first
+          next unless obj['needsTag'].present? && carriable_object?(obj)
+          next if lock_referenced_object_ids.include?(id)
+
+          index[id] = { 'room' => nil, 'object' => obj }
+        end
         index
       end
+    end
+
+    # Yield every item definition that enters the world other than as a top-level room
+    # object: NPC itemsHeld (room NPCs and headless records), the start inventory,
+    # the contents and itemsHeld of room objects, and declared give_item grants, each
+    # with its nested contents and itemsHeld.
+    def each_held_source_item(&block)
+      visit = lambda do |item|
+        next unless item.is_a?(Hash)
+
+        block.call(item)
+        Array(item['contents']).each { |inner| visit.call(inner) }
+        Array(item['itemsHeld']).each { |inner| visit.call(inner) }
+      end
+      scenario_npc_records.each do |npc|
+        next if AccessIdentities.account_only?(npc) # S5c: an account holds no carriable items
+
+        Array(npc['itemsHeld']).each { |item| visit.call(item) }
+      end
+      Array(scenario_data['startItemsInInventory']).each { |item| visit.call(item) }
+      rooms = scenario_data['rooms']
+      if rooms.is_a?(Hash)
+        rooms.each_value do |room|
+          next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+          room['objects'].each do |obj|
+            next unless obj.is_a?(Hash)
+
+            Array(obj['contents']).each { |inner| visit.call(inner) }
+            Array(obj['itemsHeld']).each { |inner| visit.call(inner) }
+          end
+        end
+      end
+      declared_grants.each { |grant| visit.call(grant['item']) }
     end
 
     # Object-reference fields that name another object/key by id: a lock the door or
@@ -1352,6 +1415,7 @@ module BreakEscape
       requires required requiredItem requiredItems requiredObject requiredObjects
       key_id keyId card_id cardId opens_lock opensLock unlocks target
       requiresItem targetObject targetId objectId unlockedBy
+      targetItemIds targetItems itemId
     ].freeze
 
     # Every object id referenced as a requirement anywhere in the scenario (locks,
@@ -1394,7 +1458,8 @@ module BreakEscape
       return false if CARRY_DISQUALIFYING_TYPES.include?(obj['type'])
       return false if obj['locked'] || obj['requires'].present? || obj['opens_lock'].present? ||
                       obj['keyPins'].present? || obj['key_id'].present? || obj['card_id'].present? ||
-                      obj['lockType'].present?
+                      obj['lockType'].present? || obj['opensLock'].present? || obj['keyId'].present? ||
+                      obj['cardId'].present? || obj['unlocks'].present?
       return false if obj['contents'].is_a?(Array) && obj['contents'].any?
       # A reveal slot (a copier output and the like: npc-needs.js isSlot) keeps its
       # own client-only place-then-file flow, so it is not a server-tracked carry.
