@@ -1340,6 +1340,24 @@ module BreakEscape
             end
           end
         end
+        # An item an NPC hands the player (itemsHeld) and the player drops again is a world
+        # object the needs system may carry, though it is in no room's objects list: without
+        # this the carry is refused (422) and the client undoes its pick-up, leaving the item
+        # highlighted at the NPC's hand (ca15_shadow_it). It must pass the same checks, and
+        # item_in_room? still needs the drop's objects_added record.
+        scenario_npc_records.each do |npc|
+          next unless npc['itemsHeld'].is_a?(Array)
+
+          npc['itemsHeld'].each do |obj|
+            next unless obj.is_a?(Hash)
+
+            id = obj['id']
+            next unless id.is_a?(String) && obj['needsTag'].present? && !index.key?(id) && carriable_object?(obj)
+            next if lock_referenced_object_ids.include?(id)
+
+            index[id] = { 'room' => nil, 'object' => obj }
+          end
+        end
         index
       end
     end

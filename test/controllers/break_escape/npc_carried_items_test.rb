@@ -211,6 +211,27 @@ module BreakEscape
       assert_equal false, g.carry_object!('office', 'grace', 'office_mugs2'), 'one item per NPC'
     end
 
+    # An item an NPC hands over (itemsHeld) and the player drops again is carriable by a needs
+    # NPC once the drop is saved (ca15_shadow_it's red-team stick). Refused before: the client
+    # undid its pick-up and the item stayed highlighted at the NPC's hand.
+    test 'a player-dropped item from an NPC itemsHeld is carriable, and only once the drop is saved' do
+      build
+      g = @game.reload
+      stick = { 'type' => 'usb_storage_swivel', 'id' => 'handed_stick', 'name' => 'Stick', 'takeable' => true, 'needsTag' => 'tag_stick' }
+      bad = { 'type' => 'key', 'id' => 'handed_key', 'name' => 'Key', 'takeable' => true, 'needsTag' => 'tag_stick' }
+      g.scenario_data['rooms']['office']['npcs'][1]['itemsHeld'] = [stick, bad]
+      g.save!
+      g = @game.reload
+      assert g.carriable_object_index['handed_stick'].present?, 'in the allowlist'
+      assert g.carriable_object_index['handed_key'].nil?, 'a key type never is'
+      assert_equal false, g.carry_object!('office', 'grace', 'handed_stick'), 'not dropped in the room yet'
+      g.player_state['room_states'] ||= {}
+      g.player_state['room_states']['office'] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+      g.player_state['room_states']['office']['objects_added'] << stick.merge('x' => 100, 'y' => 100)
+      g.save!
+      assert_equal true, @game.reload.carry_object!('office', 'grace', 'handed_stick')
+    end
+
     test 'put down or consume of an item the NPC does not carry is refused' do
       build
       put_down('grace', 'office_mugs', room: 'kitchen')
