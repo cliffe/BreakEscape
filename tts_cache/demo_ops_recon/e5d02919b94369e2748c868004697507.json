@@ -1,0 +1,13 @@
+{
+  "key": "e5d02919b94369e2748c868004697507",
+  "npc": "jun_watanabe",
+  "text": "The one by my feet? It's a live network port. Anyone can plug a laptop in.",
+  "voice": "Puck",
+  "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:37:11Z"
+}

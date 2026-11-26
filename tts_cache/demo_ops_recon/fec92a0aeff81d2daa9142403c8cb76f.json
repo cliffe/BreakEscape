@@ -1,0 +1,13 @@
+{
+  "key": "fec92a0aeff81d2daa9142403c8cb76f",
+  "npc": "graham_whitfield",
+  "text": "It's off. Typical.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind; he looks after the office network. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:59:13Z"
+}

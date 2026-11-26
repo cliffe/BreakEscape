@@ -1,0 +1,13 @@
+{
+  "key": "9db5a83c8d024c20982c3235fe36c764",
+  "npc": "chidi_okeke",
+  "text": "Still here, still busy.",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:36:18Z"
+}

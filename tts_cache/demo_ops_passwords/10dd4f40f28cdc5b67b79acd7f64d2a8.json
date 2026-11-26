@@ -1,0 +1,13 @@
+{
+  "key": "10dd4f40f28cdc5b67b79acd7f64d2a8",
+  "npc": "julian_sallow",
+  "text": "Long and random, from a manager. I couldn't tell you one if you asked.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:43:41Z"
+}

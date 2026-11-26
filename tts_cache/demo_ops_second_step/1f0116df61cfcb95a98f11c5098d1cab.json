@@ -1,0 +1,13 @@
+{
+  "key": "1f0116df61cfcb95a98f11c5098d1cab",
+  "npc": "darren_price",
+  "text": "Strong one today?",
+  "voice": "Orus",
+  "style": "Operations coordinator at Merrin & Sallow, in his 40s, easily flustered and quick to give in. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:02:01Z"
+}

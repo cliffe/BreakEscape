@@ -1,0 +1,13 @@
+{
+  "key": "c4d6a86c2f68dc7390801a8c66526713",
+  "npc": "ama_owusu",
+  "text": "A propped door skips every step. Fatima wedged it because the index was down.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:46:34Z"
+}

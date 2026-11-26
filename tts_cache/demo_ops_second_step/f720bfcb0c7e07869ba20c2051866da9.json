@@ -1,0 +1,13 @@
+{
+  "key": "f720bfcb0c7e07869ba20c2051866da9",
+  "npc": "thandiwe_moyo",
+  "text": "Did you see the car park email?",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:12:25Z"
+}

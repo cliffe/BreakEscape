@@ -1,0 +1,13 @@
+{
+  "key": "f0acc0693969c8d4e9d9641a37f8022f",
+  "npc": "thandiwe_moyo",
+  "text": "Then flag the odd one out, a burst of requests to Darren in the small hours.",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:51:41Z"
+}

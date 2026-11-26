@@ -1,0 +1,13 @@
+{
+  "key": "11ac1ec15b4e7672f2ce90253064da57",
+  "npc": "anjali_rao",
+  "text": "Quiet one today, isn't it?",
+  "voice": "Aoede",
+  "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:04:33Z"
+}

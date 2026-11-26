@@ -1,0 +1,13 @@
+{
+  "key": "644fc49507329738239c6940d9e86f20",
+  "npc": "zainab_hussain",
+  "text": "It's a sign-in for the backup PC, so I can work without a password. It runs out on purpose.",
+  "voice": "Achernar",
+  "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:35:06Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "29d10d2319c9f132101b7ce1be6ed937",
+  "npc": "ama_owusu",
+  "text": "The administrator could plug in what the policy blocks for everyone else.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:38:37Z"
+}

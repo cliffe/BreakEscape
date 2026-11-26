@@ -1,0 +1,13 @@
+{
+  "key": "787f267c7c6627f53f1d7e8892c3876d",
+  "npc": "graham_whitfield",
+  "text": "Not seen you at the cooler all week.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind; he looks after the office network. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:40:26Z"
+}

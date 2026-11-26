@@ -67,7 +67,7 @@ const T = Object.freeze({
     TECHNIQUE_HELD: 'TECHNIQUE must be one you hold: <ids>',
     HOLD_NONE: 'You hold no techniques.',
     USE_FORM: 'Use a held technique on a finding: use <technique> on <alias>',
-    TECHNIQUES_HELD: 'Techniques held: <ids>',
+    TECHNIQUES_HELD: 'Not a card you hold. Type one of these words: <ids>',
     WORKS_ON: '<verb> works on: <ids>',
     NOTHING_TO: 'Nothing to <verb> here.',
     COULD_BE: 'Could be: <ids>',
@@ -90,7 +90,7 @@ const T = Object.freeze({
     HELP_NMAP_KNOWN: 'Flags accepted and ignored: -sS, -sT, -sU, -sV, -sC, -A, -O, -Pn, -n, -v, -vv, -T0 to -T5, -sn.',
     HELP_CHECK_SHELL: 'check <host> <service or port>: look for weaknesses in one service. Inside msfconsole, check finds out whether the selected module is real.',
     HELP_CHECK_MSF: 'check: find out whether the selected module is real (the game verb confirm does the same). Outside msfconsole, check <host> <service or port> looks for weaknesses in one service.',
-    HELP_USE_SHELL: 'use <technique> on <alias>: try a technique you hold on a finding (run is the same). Inside msfconsole, use selects a module.',
+    HELP_USE_SHELL: 'use <technique> on <alias>: try a technique you hold on a finding (run is the same). Type the card\'s word shown after "Type:" in the techniques list, or the card\'s name. Inside msfconsole, use selects a module.',
     HELP_USE_MSF: 'use <module, alias or number>: select a module. Outside msfconsole, use <technique> on <alias> tries a technique.',
     HELP_RUN: 'run (or exploit): use the technique set in TECHNIQUE on the selected module.',
     HELP_SEARCH: 'search [word]: list the modules.',
@@ -562,8 +562,22 @@ function useOfferFor(st, techniqueId, findingId) {
     return st.offers.find(o => o.action === 'use' && o.ids?.techniqueId === techniqueId && o.ids?.findingId === findingId) || null;
 }
 
+/** A held card typed by its name ("known update gap"), joined to its id; words that are not a card name are left as they are. */
+function joinCardName(st, args) {
+    const techs = techniqueList(st.view);
+    const split = args.findIndex((w, i) => i > 0 && norm(w) === 'on');
+    const tryFor = (head, tail) => {
+        const typed = head.map(norm).join(' ');
+        const t = techs.find(x => norm(x.name) === typed);
+        return t && tail.length ? [t.id, ...tail] : null;
+    };
+    if (split > 1) return tryFor(args.slice(0, split), args.slice(split)) || [args.slice(0, split).join(' '), ...args.slice(split)];
+    if (split === -1 && args.length > 2) return tryFor(args.slice(0, -1), args.slice(-1)) || args;
+    return args;
+}
+
 function doUseGame(st, args) {
-    let a = args.slice();
+    let a = joinCardName(st, args);
     if (a.length === 3 && norm(a[1]) === 'on') a = [a[0], a[2]];
     if (a.length > 2) return message(T.ONE_TARGET);
     if (a.length < 2) return message(T.USE_FORM);

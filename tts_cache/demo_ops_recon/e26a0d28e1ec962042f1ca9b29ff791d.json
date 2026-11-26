@@ -1,0 +1,13 @@
+{
+  "key": "e26a0d28e1ec962042f1ca9b29ff791d",
+  "npc": "chidi_okeke",
+  "text": "This machine takes forever.",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:46:20Z"
+}

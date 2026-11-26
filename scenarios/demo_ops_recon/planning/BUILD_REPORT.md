@@ -103,3 +103,55 @@ Inputs: `IMPL_REVIEW_R2.md` (six minors) and the run 2 playtest (16 differences)
 Scenario test in the scanner batch: the cause was not reproduced (the batch passed on three seeds, 59569, 1, 2, before and after). The shared state found is the request-scoped store `OpsLog::Current.issued_secrets` (left set by the MFA tests, which make the log guard refuse a row that equals an issued secret) and a frozen clock from `travel_to`. The recon test now clears both, and the ops log overlay, in `setup` and `teardown`. Proof run: `access_leak_scanner*_test.rb` plus the recon test, seeds 1 and 2: 166 runs, 3386 assertions, 0 failures. The leak scan reports 0.
 
 Checks: ink compiles (6 of 6); validator 0 errors, 24 warnings (unchanged); dialoguelint no findings; `tools/check_mapping_index_drift.rb main`: 0 failures; `bin/ops-golden-compare`: 27 runs, 0 failures; dungeon graph regenerated.
+
+## Showcase tour U1 (2026-11-25)
+
+Plan: `docs/agents/ops_core_build/SHOWCASE_TOUR_PLAN.md` 2.3, with review R4. Owner's answers of 2026-11-25 (section 5 of the plan, recorded there as decided by R4): yes to `demo_ops_terminal` and the freeze; mission rows may be re-seeded in dev (standalone and Hacktivity's seed both fine); yes to the voice spend after the dialogue sign-off; yes to the helpdesk call as the last unit.
+
+### Probe answers
+| Probe | Answer |
+|---|---|
+| `via` on the Agnieszka PC sign-in from the saved connection | `credential` (`pc-sessions.js:835`); the event is `pc_signed_in:agnieszka_pc` (the suffix is the pcId, `:371`). Live: ticked `remote_signin` and barked. |
+| technique session `via` and `npcId` on the file server | `via` `technique` (`pc-sessions.js:753`), pcId is the host id `file_server`; `npcId` is the grant's account, `agnieszka_duda` then `graham_whitfield` (scenario grants). Not clicked live this round (evening beats); read from code. |
+| Does `endedPcIds` list every PC the "ended every session" line claims | Yes: new Rails test `tour R8c probe` shows an unplug after the saved-connection login and the update-gap session ends exactly `agnieszka_pc` and `file_server`. |
+| Does an unplug before the share neither tick nor spend the once-only bark | A failed condition does not spend a once-only mapping (R3 review, `npc-manager.js:1561-1592`); the new mapping carries `globalVars.open_share_done === true`. Not clicked live. |
+| Jun and the hot desk window, Zainab's trip lengths | Unchanged: no routine number was touched, so not re-measured. |
+
+### Changes
+New tasks `remote_signin` (midday, between `use_card` and `terminal_view`) and `unplug` (evening, last), with globals `remote_signin_done`, `unplug_done`, `box_at_kitchen` declared in the scenario and as ink VARs; the new mappings are appended (indices 28 onward), the changed barks (R1 to R5, `open_share`, unplug) are changed in place; the existing unplug mapping gains the condition, task and global. Appended: kitchen unplug, the two `box_at_kitchen` trackers, `remote_signin`, its bark, the two technique-session barks, the log bark, the false-card pointer. Ama's ink: "What's next?" lines for R1 (Jun), R3b, R5c and R8c (inline `{box_at_kitchen: kitchen|hot desk}`), the "Call it a day" gate (one fixed line per undone beat, `lever_day_refused`), the R6 and R6c lines in `terminal_ticked`, recap lines. The board lists the new beats. Voice styles of Chidi, Jun, Agnieszka and Graham now name Merrin & Sallow (voice names, ages and accents kept); `ttsPregenerateChatter` is set. No audio generated. New voiced lines are listed in `VOICED_LINES.md` under "Tour round".
+
+### Checks
+Ink compiles (6 of 6); validator 0 errors, 26 warnings (the 24 listed before plus two objective-wiring warnings: the appended `box_at_kitchen` mappings share `network_foothold_gained:hotdesk_jack` and `:kitchen_jack` with the `onceOnly` plug-in mappings, which is intended: the plug-in tick fires once, the position tracker every time); dialoguelint 0 ERROR; mapping drift 0 failures; tagdiff changes explained above; Rails test 24 runs, 0 failures, leak scan 0; `bin/ops-golden-compare` 45 runs, 0 failures; graph regenerated.
+
+### Where the plan was wrong
+- 2.3 says the R6 line is in the "typed" register; the validator's realism-wording check flags "typed" beside "scan", so the line says "printed the way a console prints them".
+- The plan's gate says "the list of undone beats"; a single line cannot hold seven optional fragments without many voiced variants, so each undone beat is its own fixed line.
+- The two wiring warnings above are unavoidable with the plan's appended position mappings.
+- `plug_in` still ticks on the first plug-in only; `box_at_kitchen` is what tracks later moves, as planned.
+
+## Tour round 1 fixes (2026-11-25)
+
+Acting on `TOUR_IMPL_REVIEW_R1.md`, `TOUR_DIALOGUE_REVIEW_R1.md` and tour playtest 1 (game 287, `/data/tmp/scratch/tour-recon-playtest-1/RESULTS.md`).
+
+### Implementation review
+- M1: `signin_ok` added to `network_log`'s events (option a), so the R5c saved-link sign-in is a `SIGN_IN` row (method `credential`, route `foothold`; no secret) and "Every move you made is in that log" is true. The R8c probe test now asserts the row; the shape test asserts the event is listed.
+- M2: PLAYTEST's guided path rewritten with the exact current lines and the measured times; run tables updated (R1b, R2, R3, R5b, R5c, R6, R7c, R8a, R8c now a task beat, R8d); ten tasks, not eight. Run B's R6c and the guided R6c are now the same step (telling Ama). Setup uses `new-game.rb`, as the playtest did.
+- m1: "Switch the printer back on at its wall socket first." heads the `confirm_both` pointer while the printer is off.
+- m2: the R8 log bark is split into two disjoint mappings: with the box still in, it ends "Last thing, unplug the box."; after an unplug, the same line without it. The R7c share bark keeps its `read_log_done` guard: its last sentence ("Now see Graham for the log") would be false after the log is read, and the evening recap carries the lesson.
+- m3: the plug-in tick and bark at each jack now need the other jack never used (`kitchen_used` / `hotdesk_used`, set by the position mappings). Not `plug_in_done` as the review suggested: the validator (V3b) warns that a bark whose condition reads a global its own mapping sets is dropped as stale. Two globals declared, false.
+- m4: the playtest's measured waits are in PLAYTEST. The coffee window was short (expected 28.8 s), so the office coffee machine's `useSeconds` goes from the preset's 12 to 30, and the R1 pointer names the kitchen port as the no-wait way in. Live check (game 297, :3070, after the fixes): Jun away 38 s (expected 34.8 s, was 28.8 s); the R1 pointer and coffee-lever lines read exactly as written; leak check over the capture: no leaks.
+- m5: covered by tour playtest 1 (R7a to R8c all clicked; ten of ten ticks). The R3b printer-off bark is still unseen live.
+- m6: the self-report is noted under "Known limits" in PLAYTEST. No Terminal-only signal exists to key on.
+
+### Dialogue review
+- M1, M2: `:224` and the `terminal_ticked` line rewritten as given ("... On a real network, that's what you'd look up before you guess." and "It prints like a real console, with the scan as a table, but the products and names are made up.").
+- M3: "Be off the port before he's back." and the coffee-lever warning cut; the lever says "Right, a coffee run. ..." and, before the plug-in, "Jun's desk will be empty for a bit."
+- m1 to m12: all taken as given, including the task title and board ("saved link"), the recap "Never mind." choice and the short version's third line. The exit is now "I'll be here." (the mild P11 note).
+
+### Playtest lost points not fixed here (engine, not this scenario)
+- Sign in on Agnieszka's row shows a password field before the saved link; the pointer and PLAYTEST now say to pick the saved link.
+- Clicking a selected card or finding deselects it; tick toasts show only after the view closes; the Terminal can open with msf-style lines; a user session on the file server shows "Desktop is empty"; door pathing for the harness. Noted in PLAYTEST.
+- Zainab leaves about 1.4 s after "Call it a day", not 8 s: her caffeine is already low. PLAYTEST now says "within a few seconds".
+
+### Checks
+Ink compiles (6 of 6; only Ama's changed; tagdiff shows the intended structure changes only: two conditionals, the recap's "Never mind." choice); loopcheck clean; validator 0 errors, 26 warnings (same count as before); dialoguelint totals none; mapping drift 0; graph regenerated; `demo_ops_recon_scenario_test.rb` 24 runs, 428 assertions, 0 failures (the whole-run leak scan finds nothing; the run uses no hand-made `login` tag); `tts_mission_lines_test.rb` 6 runs, 0 failures; `bin/ops-golden-compare` 45 runs, 0 failures.

@@ -1,0 +1,13 @@
+{
+  "key": "c62dff0df2e1ce9259be6cc85944dff7",
+  "npc": "ama_owusu",
+  "text": "The shared drive took two steps, a user session and then an administrator's.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:35:26Z"
+}

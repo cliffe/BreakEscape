@@ -1,0 +1,13 @@
+{
+  "key": "5d9ffc7a20a58cfa132192f787cb473c",
+  "npc": "anjali_rao",
+  "text": "Strong one today?",
+  "voice": "Aoede",
+  "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:03:54Z"
+}

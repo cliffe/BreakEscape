@@ -1,0 +1,13 @@
+{
+  "key": "40587c828eff4a237772697d1ae1dd8c",
+  "npc": "ama_owusu",
+  "text": "Graham's was salted, so it took a wait, but you already held the same password.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:39:16Z"
+}

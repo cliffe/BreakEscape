@@ -1,0 +1,13 @@
+{
+  "key": "965dea6b0c95d05113ccf063adb6c7c4",
+  "npc": "niamh_doherty",
+  "text": "Did you see the car park email?",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:54:32Z"
+}

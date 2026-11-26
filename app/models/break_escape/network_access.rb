@@ -132,6 +132,15 @@ module BreakEscape
         path_unlocked?(info[:path]) && panel_unlocked?(info, room)
     end
 
+    # An object with revealOnGlobal whose global is not true on the server's copy of the
+    # globals is hidden from the player (the client never shows it), so no plug-in reaches it.
+    def hidden_until_reveal?(object)
+      name = object.is_a?(Hash) ? object['revealOnGlobal'] : nil
+      return false if name.blank?
+
+      frustration_globals[name.to_s] != true
+    end
+
     # A patch-panel port (panelOf) is reached only through its panel, so a locked panel gates
     # it like a locked container above it (Pentest B1). Any other object passes.
     def panel_unlocked?(info, room)
@@ -239,7 +248,8 @@ module BreakEscape
     def plant_device!(jack_id, device_id = nil, delta: false)
       jack = find_jack(jack_id)
       return { status: :not_found, body: { success: false, error: JACK_NOT_FOUND } } unless jack
-      unless object_reachable?(jack)
+      # A port still hidden by its revealOnGlobal is refused exactly like an unreachable one.
+      unless object_reachable?(jack) && !hidden_until_reveal?(jack[:object])
         return { status: :forbidden, body: { success: false, reason: 'unreachable', error: 'Jack not reachable' } }
       end
 

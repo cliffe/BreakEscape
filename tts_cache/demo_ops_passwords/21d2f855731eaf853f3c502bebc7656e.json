@@ -1,0 +1,13 @@
+{
+  "key": "21d2f855731eaf853f3c502bebc7656e",
+  "npc": "ama_owusu",
+  "text": "Same stick, same port. Signed in as an administrator, the policy let it through, and the log keeps an override row.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:44:19Z"
+}

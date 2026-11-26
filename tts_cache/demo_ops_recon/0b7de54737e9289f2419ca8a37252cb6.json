@@ -1,0 +1,13 @@
+{
+  "key": "0b7de54737e9289f2419ca8a37252cb6",
+  "npc": "ama_owusu",
+  "text": "Did you see the car park email?",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:43:40Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "dadced036ab883d7548e0f22cf3f7cad",
+  "npc": "ama_owusu",
+  "text": "Darren's case is by the front desk, and its key is in his drawer.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:42:43Z"
+}

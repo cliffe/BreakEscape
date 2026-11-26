@@ -1,0 +1,13 @@
+{
+  "key": "c1a925eb052c04c9a4520fb9ca67ee81",
+  "npc": "ama_owusu",
+  "text": "Then ask me to send them to lunch, and the room empties.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:31:22Z"
+}

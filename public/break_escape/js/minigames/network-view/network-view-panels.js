@@ -592,7 +592,9 @@ export class PanelsRenderer {
         let check = '';
         if (offersCheck(row)) {
             const { busy, text } = this.controlText('check', checkTarget(row.id, s.name));
-            check = `<button type="button" class="minigame-button network-row-action network-check" data-action="check"${busy ? ' disabled' : ''}>${text}</button>`;
+            // A host with several services shows several Check buttons: each says which it checks
+            const named = !busy && rowServices(row).length > 1 ? `${text} ${escapeHtml(s.label || s.name)}` : text;
+            check = `<button type="button" class="minigame-button network-row-action network-check" data-action="check"${busy ? ' disabled' : ''}>${named}</button>`;
         }
         return `<li class="network-service${findings.length ? ' network-service-with-findings' : ''}" data-service="${escapeHtml(s.name)}"><span class="network-service-line">${escapeHtml(serviceLine(s))}</span>${check}${findings.length ? `<ul class="network-findings">${findings.map(f => this.findingHtml(row, f)).join('')}</ul>` : ''}</li>`;
     }
@@ -655,6 +657,7 @@ export class PanelsRenderer {
             return `<li class="network-technique${on ? ' network-technique-selected' : ''}" data-technique="${escapeHtml(t.id)}" data-selected="${on ? 'true' : 'false'}" draggable="true">`
                 + `<button type="button" class="minigame-button network-row-action network-technique-select" data-action="select-technique" aria-pressed="${on ? 'true' : 'false'}">${escapeHtml(t.name)}</button>`
                 + (t.summary ? `<span class="network-technique-summary">${escapeHtml(t.summary)}</span>` : '')
+                + `<span class="network-technique-type">Type: ${escapeHtml(t.id)}</span>`
                 + (t.worksOn ? `<span class="network-technique-works">${escapeHtml(t.worksOn)}</span>` : '')
                 + '</li>';
         }).join('');

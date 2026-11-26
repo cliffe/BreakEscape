@@ -1,0 +1,13 @@
+{
+  "key": "e4baa7a529fa0cf91dac03b5ffb4d8b4",
+  "npc": "zainab_hussain",
+  "text": "Still here.",
+  "voice": "Achernar",
+  "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:34:52Z"
+}

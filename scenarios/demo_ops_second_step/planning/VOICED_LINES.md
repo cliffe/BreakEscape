@@ -229,3 +229,113 @@ Nothing prints a variable or contains a PIN, a code or a password. The three doo
 | fatima_begum | hub | Thanks. Careful on the way out. | 6 |
 | fatima_begum | chatter work_fail | Index is down. Again. | 4 |
 | fatima_begum | chatter wk_prop_door | Not tapping that code all day. | 6 |
+
+## Tour unit U3 (SHOWCASE_TOUR_PLAN.md 2.6): new and changed lines, text only
+
+Nothing is generated; audio waits for the dialogue sign-off. Voice changes (plan 3.2): niamh_doherty Despina to Kore (Dublin Irish, covering reception today); anjali_rao Kore to Aoede; lorna_easton Sulafat to Erinome (Lancashire, the tour's block); thandiwe_moyo Leda to Pulcherrima (southern English, light Zimbabwean inflection). Ama, Darren, Yusuf, Gwen and Fatima are unchanged. `ttsPregenerateChatter` is on.
+
+### Changed ink lines
+
+| NPC | Knot | Old | New | Words |
+|---|---|---|---|---|
+| ama_owusu | give_lorna_card | Here's Lorna's sign-in. Use it at her desk when she's away. | Here's Lorna's sign-in. Try her PC now, while she's sitting at it. | 12 |
+| ama_owusu | whats_next (reenrol) | Ask Thandiwe for a sign-in approval reset, for Yusuf. | This time use the IT request form on Darren's desktop. Send them for coffee first, so his screen is open. | 20 |
+| ama_owusu | whats_next (reenrol) | His answers are on the kitchen board. Then sign in at his PC with your own phone. | Ask for a sign-in approval reset, for Yusuf. His answers are on the kitchen board. Then sign in at his PC with your own phone. | 25 |
+| ama_owusu | lever_lunch (new) | (none) | Not yet. Watch Darren's temper first. | 6 |
+| niamh_doherty | start | Hi, I'm just the temp on reception. | Hi, I'm Niamh. I'm covering reception today. | 7 |
+| niamh_doherty | hub | Guests sign in there. It's only a password for me, no phone needed. | Guests sign in there. I'm covering reception, so it's only a password for me, no phone needed. | 17 |
+
+### New barks (ama_owusu, once only, appended mappings)
+
+| Event | Line | Words |
+|---|---|---|
+| pc_in_use:lorna_pc | Nobody signs in at a PC while its owner is sitting there. | 12 |
+| global_variable_changed:see_note_done | A password under a keyboard. The second step is what stands between that note and her desktop. | 17 |
+| global_variable_changed:see_temper_note_done | Frustrated people write things down. Read it on his sign-in screen when he's away. | 14 |
+| global_variable_changed:overhear_done | He said his login out loud to help a colleague. Now you have it too. | 15 |
+| global_variable_changed:step_holds_done | Right password, and still no way in. The request went to Lorna's phone, and she didn't answer. | 17 |
+| global_variable_changed:open_screen_done | His screen was open, so no password and no second step. The step guards the sign-in, not an open screen. | 20 |
+| global_variable_changed:fob_done | The fob's six digits change every minute. Whoever holds the fob holds the second step. | 15 |
+| global_variable_changed:number_match_done | The number on screen had to match the phone. A wrong pick cancels. Holding his phone, you could match it. | 20 |
+| global_variable_changed:exempt_done | This account has no second step at all. One gap like that undoes the rest. | 15 |
+| global_variable_changed:reset_password_done | Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile. | 23 |
+| global_variable_changed:reenrol_done | The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing. | 23 |
+| global_variable_changed:desk_refuses_done | Three wrong tries and the desk stopped listening. It never said whether the name was real. | 16 |
+| global_variable_changed:door_step_done | The door's second step went to Gwen's phone. With her phone in your hand, you approved it yourself. | 18 |
+| global_variable_changed:propped_done | Nobody approved anything. Fatima propped the door, and the step never came into it. | 14 |
+| global_variable_changed:safe_step_done | The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time. | 20 |
+| global_variable_changed:case_step_done | You carried the case off and kept asking. Darren approved in the end, wherever the case was. | 17 |
+| global_variable_changed:darren_pc_screen_locked | Darren's screen has locked. Now try his PC. | 8 |
+| global_variable_changed:desk_call_done | The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it. | 22 |
+
+
+## U3b appended: the helpdesk by phone call (M13b)
+
+New Ama ink lines (face to face, cap 30):
+
+| Knot | Line | Words |
+|---|---|---|
+| whats_next | One more at the desk. Meet Priya in the IT room, then ring the IT line on your work phone. | 20 |
+| whats_next | You've still got Yusuf's phone. Ask them to move his approvals. The desk rings his phone to check, and you hold it. | 22 |
+| recap | The phone line moved Yusuf's approvals, because the desk rang his phone to check and you were holding it. | 19 |
+
+New NPC priya_nair (ink, face to face, cap 30; voice Leda):
+
+| Knot | Line | Words |
+|---|---|---|
+| start | Priya Nair, IT service desk. I take the ones that come in by phone. | 13 |
+| hub | Can I help? | 3 |
+| hub | Ring it and we'll move an account's approvals. We call the number we hold for them back, to check it's really them. | 22 |
+| hub | Right you are. | 3 |
+
+New NPC it_line, the IT service line (ink, on the phone, cap 25; voice Sulafat):
+
+| Knot | Line | Words |
+|---|---|---|
+| start | IT service line, you're through to the desk. | 8 |
+| ask_reaction | One moment. We ring the number we hold for that account to check it's them. | 15 |
+| ask_reaction | That came back fine. Fill in the form and it's done. | 11 |
+| ask_reaction | I can't do that one over the phone. | 8 |
+
+## Tour round 1 fixes (TOUR_DIALOGUE_REVIEW_R1, TOUR_IMPL_REVIEW_R1): changed, new and removed lines, text only
+
+The list is still written by hand: plan 3.3 regenerates it from `TtsLineExtractor` after dialogue sign-off. The IT line (`it_line`) is now a voiced call (`"voiced": true` on the contact, voice Charon, "in his 30s"), so its lines below join the batch; on the keyless server its lines went out to `/tts` under `it_line` (game 298).
+
+### Ink
+
+| NPC / knot | Old | New | Words |
+|---|---|---|---|
+| ama / tell_note | Good. A password on a note under a keyboard is no secret at all. | (removed with the knot and its hub choice) | - |
+| ama / tell_note | That's one way a password escapes. | (removed) | - |
+| ama / whats_next (M8, now second) | - | If you missed him, ask me to send them for coffee again. | 11 |
+| ama / whats_next (M12) | This time use the IT request form on Darren's desktop. Send them for coffee first, so his screen is open. | Now ask Thandiwe for an approval reset for Yusuf. His answers are on the kitchen board. | 16 |
+| ama / whats_next (M12) | Ask for a sign-in approval reset, for Yusuf. His answers are on the kitchen board. Then sign in at his PC with your own phone. | The same form is on Darren's desktop too, but it only sends while his screen is open. | 17 |
+| ama / whats_next (M13b) | You've still got Yusuf's phone. Ask them to move his approvals. The desk rings his phone to check, and you hold it. | Keep Yusuf's phone on you, and ask the line for an approval reset for him. | 15 |
+| ama / whats_next (M15, now before M14) | Fatima props the archive store door when the records index is down. Ask me to switch it off. | Two new door codes are on the facilities notice in the kitchen. Try the archive store door with its code. | 20 |
+| ama / whats_next (M15) | Try that door first, and don't approve it on Gwen's phone, or the prop has nothing to skip. | Then ask me to switch the records index off, and watch what Fatima does. | 14 |
+| ama / whats_next (M14) | Facilities pinned two new door codes on the facilities notice in the kitchen. The records room also wants Gwen's approval. | The records room wants Gwen's approval as well as its code. | 11 |
+| ama / lever_lunch | Not yet. Watch Darren's temper first. | Not yet. Wait for Darren's temper to run first. (printer already off) | 9 |
+| ama / lever_lunch | - | Not yet. Switch the printer off and let Darren's temper run first. | 12 |
+| ama / recap | A note under a keyboard: the second step can't help once the password's on show. | A note under a keyboard gives the password away, so the second step is all that's left. | 17 |
+| ama / recap | Darren's open screen asked for no second step. It guards signing in, not a screen left open. | Darren's open screen asked for nothing, so lock your screen when you step away. | 14 |
+| ama / recap | Darren approved just to make the requests stop. | Darren gave in to make the requests stop. A request you didn't start should be denied. | 16 |
+| ama / recap | After three wrong answers the desk stopped listening, and never said whether the name was real. | The desk's limit and its silence about names stop guessing, but not someone who has the answers. | 17 |
+| ama / recap | The phone line moved Yusuf's approvals, because the desk rang his phone to check and you were holding it. | The phone line trusted a call-back to Yusuf's phone, and you were the one holding it. | 16 |
+| ama / short_version | And the helpdesk can undo it for anyone who can answer facts from a badge and a board. | The helpdesk can undo it for anyone who can answer facts from a badge and a board. | 17 |
+| it_line / ask_reaction | One moment. We ring the number we hold for that account to check it's them. | Fill in the form, and we'll ring the number we hold for that account to check. | 16 |
+| it_line / ask_reaction | That came back fine. Fill in the form and it's done. | (removed) | - |
+| it_line / desk (choice, not voiced) | [Ask them to move an account's approvals to your phone] | [Can you move an account's approvals to my phone?] | - |
+| niamh / hub | Guests sign in there. I'm covering reception, so it's only a password for me, no phone needed. | Guests sign in there. The desk account is only a password, no phone needed. | 14 |
+| priya / hub | Ring it and we'll move an account's approvals. We call the number we hold for them back, to check it's really them. | Ring it and we'll move an account's approvals, once we've rung the number we hold to check it's really them. | 21 |
+| thandiwe / reset_verdict, reenrol_verdict | That matches. It is done: the form shows what changed. | That matches. Done, and the form shows what changed. (one clip, both knots) | 9 |
+
+Unchanged it_line lines now voiced: "IT service line, you're through to the desk." (7), "I can't do that one over the phone." (8).
+
+### Barks (ama_owusu, in place, same indices)
+
+| Event | Old | New | Words |
+|---|---|---|---|
+| see_temper_note_done | Frustrated people write things down. Read it on his sign-in screen when he's away. | Frustrated people write things down. You'll see it on his sign-in screen at lunch. | 14 |
+| number_match_done | The number on screen had to match the phone. A wrong pick cancels. Holding his phone, you could match it. | The number on screen had to match his phone, and a wrong pick cancels. With his phone in your hand, you could match it. | 24 |
+| npc_left_post:darren_price (lunch) | Darren's gone to lunch. His screen will be locked. | Darren's gone to lunch, and he'll be a while. | 9 |
+| reenrol_done | The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing. | Yusuf's approvals come to your phone now, and his own phone shows nothing. The desk never checked who was asking. | 20 |

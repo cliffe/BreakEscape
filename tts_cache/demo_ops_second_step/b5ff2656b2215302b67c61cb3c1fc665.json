@@ -1,0 +1,13 @@
+{
+  "key": "b5ff2656b2215302b67c61cb3c1fc665",
+  "npc": "ama_owusu",
+  "text": "The phone line trusted a call-back to Yusuf's phone, and you were the one holding it.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:46:21Z"
+}

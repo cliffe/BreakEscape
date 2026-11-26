@@ -1,0 +1,13 @@
+{
+  "key": "ebdccd3f671ca83ea5ef7ad06a861102",
+  "npc": "niamh_doherty",
+  "text": "Train was late again.",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:54:57Z"
+}

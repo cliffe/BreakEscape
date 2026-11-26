@@ -1,0 +1,13 @@
+{
+  "key": "3145f0b635e77115232b172a023fd282",
+  "npc": "thandiwe_moyo",
+  "text": "That matches. Done, and the form shows what changed.",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:51:55Z"
+}

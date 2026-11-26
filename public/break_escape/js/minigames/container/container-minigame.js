@@ -2595,6 +2595,10 @@ export class ContainerMinigame extends MinigameScene {
                 contents: this.contents,
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
+                // interactions.js clears item.takeable while the reader opens, so whether the
+                // note could be taken is read now: a note shown inside a held device's contents
+                // (takeable: false) is not in the scenario, and the server refuses to add it
+                noteWasTakeable: item.takeable !== false,
                 // The Notepad's size before the reader opens (opening it adds the note): if it
                 // is unchanged afterwards the note was already held, and nothing is announced
                 notesBefore: notepadCount(),
@@ -3090,7 +3094,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // Notes-family items: register with server so the container filters them on next load.
             // inventory.js skips the UI slot for notes types — they live in the notepad.
             // (takeable was set to false by interactions.js before opening the minigame.)
-            if (window.addToInventory) {
+            if (window.addToInventory && containerState.noteWasTakeable !== false) {
                 const tempSprite = {
                     scenarioData: containerState.itemToTake,
                     name: containerState.itemToTake.type,

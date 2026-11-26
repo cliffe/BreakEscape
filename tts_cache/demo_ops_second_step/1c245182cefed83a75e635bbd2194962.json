@@ -1,0 +1,13 @@
+{
+  "key": "1c245182cefed83a75e635bbd2194962",
+  "npc": "fatima_begum",
+  "text": "I keep the archive and its index. When the index is down I can't find a thing.",
+  "voice": "Zephyr",
+  "style": "Records clerk at Merrin & Sallow, in her late 20s, quick and cheerful, always carrying something. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:50:41Z"
+}

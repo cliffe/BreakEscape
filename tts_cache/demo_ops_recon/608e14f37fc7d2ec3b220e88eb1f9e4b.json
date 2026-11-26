@@ -1,0 +1,13 @@
+{
+  "key": "608e14f37fc7d2ec3b220e88eb1f9e4b",
+  "npc": "agnieszka_duda",
+  "text": "Who's the cake from?",
+  "voice": "Callirrhoe",
+  "style": "Merrin & Sallow's part-time bookkeeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:53:49Z"
+}

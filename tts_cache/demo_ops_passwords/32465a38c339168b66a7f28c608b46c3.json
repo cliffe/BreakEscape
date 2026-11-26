@@ -1,0 +1,13 @@
+{
+  "key": "32465a38c339168b66a7f28c608b46c3",
+  "npc": "graham_whitfield",
+  "text": "Tuesdays I do the desk rounds on the shared desk account. One login, three desks.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind, a little tired of the same password questions. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:42:44Z"
+}

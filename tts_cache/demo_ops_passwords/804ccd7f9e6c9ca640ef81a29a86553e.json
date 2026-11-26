@@ -1,0 +1,13 @@
+{
+  "key": "804ccd7f9e6c9ca640ef81a29a86553e",
+  "npc": "ama_owusu",
+  "text": "Graham's off to the kitchen, and Julian's gone to his client lunch.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:44:05Z"
+}

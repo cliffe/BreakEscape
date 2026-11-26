@@ -1,0 +1,9 @@
+{
+  "display_name": "Ops demo: the Terminal close up",
+  "description": "Fenlow's field engineer is setting up remote support for the file server. Read a scanner's report and a console's search in the Terminal, test which findings are real, then see what a timed sign-in token, a shared screen and a keyboard-only device give you over a remote session.",
+  "difficulty_level": 2,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 12,
+  "test_type": "ops_demo",
+  "test_objective": "Show the Terminal's tables, scanner write-ups and console search, the realism text for checked findings, a timed token, a relay session, the keyboard-only device refusal and the whole-word unplug."
+}

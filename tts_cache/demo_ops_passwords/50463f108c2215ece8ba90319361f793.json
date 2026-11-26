@@ -1,0 +1,13 @@
+{
+  "key": "50463f108c2215ece8ba90319361f793",
+  "npc": "ama_owusu",
+  "text": "A stored record isn't safe just because it isn't plain text.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:39:27Z"
+}

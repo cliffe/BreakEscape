@@ -78,6 +78,15 @@ case "$PORT" in ''|*[!0-9]*) echo "port must be a number" >&2; exit 2;; esac
 case "$PORT" in 3000|3085|3086) echo "port $PORT is reserved" >&2; exit 2;; esac
 TOOLS="$WT/tools/playtest"
 
+# Default: the newest headless shell installed under ~/.cache/ms-playwright (builds differ by machine:
+# 1248 keeps it in chrome-headless-shell-linux64/, 1148 in chrome-linux/headless_shell).
+if [ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE:-}" ]; then
+  for c in $(ls -d "$HOME"/.cache/ms-playwright/chromium_headless_shell-* 2>/dev/null | sort -V -r); do
+    for exe in "$c/chrome-headless-shell-linux64/chrome-headless-shell" "$c/chrome-linux/headless_shell"; do
+      if [ -x "$exe" ]; then PLAYWRIGHT_CHROMIUM_EXECUTABLE="$exe"; break 2; fi
+    done
+  done
+fi
 export PLAYWRIGHT_CHROMIUM_EXECUTABLE="${PLAYWRIGHT_CHROMIUM_EXECUTABLE:-$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell}"
 if [ -n "${RUBY:-}" ]; then TC_RUBY="$RUBY"; elif [ -x /usr/bin/ruby3.2 ]; then TC_RUBY=/usr/bin/ruby3.2; else TC_RUBY=ruby; fi
 export TC_RUBY

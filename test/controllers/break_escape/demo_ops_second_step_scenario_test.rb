@@ -157,8 +157,8 @@ module BreakEscape
       assert_equal({ 'front' => 'push', 'floor' => 'push', 'finance' => 'code', 'ops' => 'push_number_match', 'kiosk' => 'push' },
                    data['policies'].transform_values { |p| p['mfa'] })
       npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }
-      assert_equal %w[ama_owusu anjali_rao darren_price fatima_begum gwen_pritchard lorna_easton niamh_doherty thandiwe_moyo yusuf_demir],
-                   npcs.map { |n| n['id'] }.sort # S8c adds Gwen and Fatima
+      assert_equal %w[ama_owusu anjali_rao darren_price fatima_begum gwen_pritchard it_line lorna_easton niamh_doherty priya_nair thandiwe_moyo yusuf_demir],
+                   npcs.map { |n| n['id'] }.sort # S8c adds Gwen and Fatima; U3b adds Priya (call desk) and the IT line phone contact
       assert_equal %w[niamh_doherty], npcs.select { |n| n.dig('creds', 'mfa') == false }.map { |n| n['id'] }
       habit = ->(id) { npcs.find { |n| n['id'] == id }.dig('habits', 'approvesPrompts') }
       assert_equal %w[never pestered never], %w[lorna_easton darren_price yusuf_demir].map(&habit)
@@ -781,6 +781,90 @@ module BreakEscape
       assert_not_includes @marks[:boot_end]['body'].to_json, DARREN_NEW
     end
 
+    # ---- U3b appended: the helpdesk's third way in, a phone call with a call-back desk (M13b). ------------------------
+    # The call route itself is the browser's (person-chat-pretext opens the desk's form on a granted ask); here we drive
+    # the server helpdesk route the ask opens, as the M11 to M13 cases do, and prove the call-back rule: the grant turns
+    # on holding the account owner's Friendface phone, not on anything the call or the client says.
+
+    def meet_priya
+      game = Game.find(@game.id)
+      game.player_state['encounteredNPCs'] = (PEOPLE + %w[priya_nair]).uniq
+      game.save!
+    end
+
+    def call_desk_row(username, what, mark = nil)
+      post_row('helpdesk/request', { desk_id: 'call_desk', username: username, what: what, answers: {} }, mark)
+    end
+
+    test 'U3b: the call desk, the IT line contact and the work phone are wired for the phone-call route' do
+      data = scenario
+      desk = data['helpdesks']['call_desk']
+      assert_equal 'priya_nair', desk['npc']
+      assert_equal 'callback', desk['verify']
+      assert_equal %w[mfa], desk['resets']
+      char = data['social']['characters']['it_line']
+      assert_equal 'it_line', char['channels']['phone']
+      pretext = data['social']['pretextNpcs'].find { |p| p['character'] == 'it_line' }
+      assert_equal 'it_line_call', pretext['callId']
+      assert_equal 'call_desk', pretext.dig('asks', 'reset_request', 'helpdesk')
+      phone = data['startItemsInInventory'].find { |i| i['id'] == 'work_phone' }
+      assert_equal 'phone', phone['type']
+      assert_equal %w[it_line], phone['npcIds']
+      contact = data['rooms']['it_room']['npcs'].find { |n| n['id'] == 'it_line' }
+      assert_equal 'phone', contact['npcType']
+      assert_equal 'it_line_call', contact['callId']
+      assert data['rooms']['it_room']['npcs'].any? { |n| n['id'] == 'priya_nair' }
+      tasks = data['objectives'].find { |a| a['aimId'] == 'afternoon_helpdesk' }['tasks'].map { |t| t['taskId'] }
+      assert_includes tasks, 'desk_call'
+      assert_equal false, data['globalVariables']['desk_call_done']
+      assert_equal '', data['globalVariables']['helpdesk_call_desk_result']
+    end
+
+    test 'U3b M13b: the call-back desk grants an mfa reset only while the account owner phone is held' do
+      meet_priya
+      ask('ydemir', 'mfa', {}, desk: 'call_desk')
+      assert_answer_shape('helpdesk.refused', response)
+      assert_nil state['accountResets'], 'no phone held, so the call-back grants nothing'
+      take('yusuf_phone', 'phone_friendface', "Yusuf's phone")
+      ask('ydemir', 'mfa', {}, desk: 'call_desk')
+      assert_answer_shape('helpdesk.granted_mfa', response)
+      assert_equal 'yusuf_demir', response.parsed_body['npcId']
+      assert_equal 'call_desk', response.parsed_body['deskId']
+      assert_equal true, state['accountResets']['yusuf_demir']['mfa']
+      assert_equal 1, count('account_mfa_reenrolled')
+    end
+
+    test 'U3b M13b: holding one owner phone does not open the call-back for another account' do
+      meet_priya
+      take('yusuf_phone', 'phone_friendface', "Yusuf's phone")
+      # Darren has no takeable Friendface phone, so the player can never hold his number
+      ask('dprice', 'mfa', {}, desk: 'call_desk')
+      assert_answer_shape('helpdesk.refused', response)
+      assert_nil state.dig('accountResets', 'darren_price')
+      assert_equal 0, count('account_mfa_reenrolled')
+    end
+
+    test 'U3b M13b: before Priya is met the IT line reaches no desk' do
+      take('yusuf_phone', 'phone_friendface', "Yusuf's phone")
+      ask('ydemir', 'mfa', {}, desk: 'call_desk')
+      assert_response :unprocessable_entity
+      assert_equal 'unavailable', response.parsed_body['reason']
+      assert_equal 0, count('account_mfa_reenrolled')
+    end
+
+    test 'U3b: the leak scanner over a played call-desk run reports nothing' do
+      meet_priya
+      get_row('scenario', {}, :boot0)
+      ROOMS.each { |room| get_row("room/#{room}", {}, nil) }
+      take_row('yusuf_phone', 'phone_friendface', "Yusuf's phone", :take_phone)
+      call_desk_row('ydemir', 'mfa', :grant_call)
+      get_row('scenario', {}, :boot_end)
+      assert_operator @log.length, :>, 5
+      assert_equal [], scan(@log).map { |f| [f.line, f.rule, f.owner, f.route] }
+      assert_equal 'yusuf_demir', @marks[:grant_call]['body']['npcId']
+      assert_equal true, state['accountResets']['yusuf_demir']['mfa']
+    end
+
     # ---- S8c appended: a second step on locks (M14 to M17). Every case above is unchanged. ---------------------------
 
     RECORDS_PIN = '5821'.freeze
@@ -901,7 +985,7 @@ module BreakEscape
       assert_equal %w[gwen_pritchard fatima_begum], rooms['office']['npcs'].map { |n| n['id'] }.last(2)
       assert_nil npcs['gwen_pritchard']['creds'], 'Gwen and Fatima sign in at no PC, so the helpdesk rule does not reach them'
       assert_nil npcs['fatima_begum']['creds']
-      assert_equal %w[door_step propped safe_step case_step], data['objectives'].last['tasks'].map { |t| t['taskId'] }
+      assert_equal %w[propped door_step safe_step case_step], data['objectives'].last['tasks'].map { |t| t['taskId'] }
       assert_equal 'late_locks', data['objectives'].last['aimId']
       # each PIN: its lock, and one clue each (the two doors on the kitchen notice, the safe in Gwen's drawer)
       texts = scenario_texts
@@ -1227,6 +1311,97 @@ module BreakEscape
       assert_equal %w[case_papers], @marks[:case_open]['body']['contents'].map { |c| c['id'] }
       assert_equal 422, @marks[:safe_wrong]['status']
       LOCK_SECRETS.each { |secret| assert_not_includes @marks[:boot_end]['body'].to_json, secret }
+    end
+
+    # ---- the guided tour (SHOWCASE_TOUR_PLAN.md 2.6, unit U3) ----------------------------------------
+
+    TOUR_TASKS = %w[see_note see_temper_note overhear step_holds open_screen fob number_match exempt reset_password reenrol
+                    desk_refuses desk_call door_step propped safe_step case_step].freeze
+
+    def ama_mappings
+      scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'ama_owusu' }['eventMappings']
+    end
+
+    test 'tour: every beat has one once-only "what you just saw" bark on its done global, short and free of secrets' do
+      maps = ama_mappings
+      secrets = [LORNA, DARREN, ANJALI, YUSUF, NIAMH].flatten + [DARREN_NEW, '5821', '3074', '6419', '40118', '40371', '40226', '40459']
+      TOUR_TASKS.each do |task|
+        found = maps.select { |m| m['eventPattern'] == "global_variable_changed:#{task}_done" && m['bark'] }
+        assert_equal 1, found.size, "#{task} has one bark"
+        assert found.first['onceOnly'], "#{task} bark is once only"
+        assert_includes found.first['condition'], 'data.value === true'
+        assert_operator found.first['bark'].split.size, :<=, 30, "#{task} bark within the 30-word cap"
+        secrets.each { |x| assert_not_includes found.first['bark'], x }
+      end
+      pointer = maps.find { |m| m['eventPattern'] == 'pc_in_use:lorna_pc' }
+      assert_equal 'Nobody signs in at a PC while its owner is sitting there.', pointer['bark']
+    end
+
+    test 'tour: Darren keeps his 90 s leave threshold and gains a 50 s idle lock; the lock bark reads the screen global' do
+      data = scenario
+      objects = data['rooms'].values.flat_map { |r| Array(r['objects']) }
+      assert_equal 50, objects.find { |o| o['id'] == 'darren_pc' }['autoLockSeconds']
+      darren = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'darren_price' }
+      assert_equal 90, darren.dig('habits', 'screen', 'lockIfAwayOverSeconds')
+      assert_equal false, data['globalVariables']['darren_pc_screen_locked']
+      bark = ama_mappings.find { |m| m['eventPattern'] == 'global_variable_changed:darren_pc_screen_locked' }
+      assert_includes bark['condition'], 'act_midday'
+      assert_includes bark['condition'], 'pestered_done'
+    end
+
+    test 'tour: the desktop form ticks reenrol only after the password reset, and Thandiwe still ticks it in person' do
+      m = ama_mappings.find { |x| x['eventPattern'] == 'helpdesk_answered:it_desk' && x['completeTask'] == 'reenrol' }
+      assert_includes m['condition'], "reset_password_done === true"
+      assert_includes m['condition'], "reenrol_done !== true"
+      ink = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/thandiwe_moyo.ink', __dir__))
+      assert_includes ink, '#complete_task:reenrol'
+    end
+
+    test 'tour: one voice per character, no two speakers share a voice, the four changed voices and the chatter pass' do
+      data = scenario
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }
+      voices = npcs.to_h { |n| [n['id'], n.dig('voice', 'name')] }
+      assert_equal voices.values.uniq.size, voices.values.size
+      assert_equal({ 'niamh_doherty' => 'Kore', 'anjali_rao' => 'Aoede', 'lorna_easton' => 'Erinome', 'thandiwe_moyo' => 'Pulcherrima' },
+                   voices.slice('niamh_doherty', 'anjali_rao', 'lorna_easton', 'thandiwe_moyo'))
+      assert_includes npcs.find { |n| n['id'] == 'niamh_doherty' }.dig('voice', 'style'), 'covering reception today'
+      assert_equal true, data['ttsPregenerateChatter']
+    end
+
+    test 'tour: the lunch lever waits for the temper note and the M12 pointer names Thandiwe and the desktop form' do
+      ink = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/ama_owusu.ink', __dir__))
+      lunch = ink[/=== lever_lunch ===.*?(?==== lever_index)/m]
+      assert_includes lunch, 'not see_temper_note_done'
+      assert_includes lunch, "let Darren's temper run first."
+      # Tour round 1: the desktop form only sends while Darren's screen is open (a coffee trip measured 14 to 18 s,
+      # and a form sent after his return is refused), so the pointer sends the player to Thandiwe and names the form as the other route
+      assert_includes ink, 'Now ask Thandiwe for an approval reset for Yusuf.'
+      assert_includes ink, "The same form is on Darren's desktop too, but it only sends while his screen is open."
+    end
+
+    # Tour round 1 fixes: the note is ticked only by seeing it (no hub claim), the IT line promises the call-back
+    # rather than reporting it, and the IT line is a voiced call in a man's voice that nobody else here uses.
+    test 'tour: no ink claim of the note, the IT line voiced and promising the call-back, the board and pointers in the panel order' do
+      ama = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/ama_owusu.ink', __dir__))
+      assert_not_includes ama, '=== tell_note ==='
+      assert_not_includes ama, '#complete_task:'
+      line = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/it_line.ink', __dir__))
+      assert_not_includes line, 'came back fine'
+      assert_includes line, "we'll ring the number we hold for that account to check."
+      data = scenario
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }
+      it_line = npcs.find { |n| n['id'] == 'it_line' }
+      assert_equal true, it_line['voiced']
+      assert_equal 'Charon', it_line.dig('voice', 'name')
+      assert BreakEscape::TtsLineExtractor.voiced_phone_call?(it_line)
+      # the order of "What's next?" follows the panel, aim by aim
+      tasks = data['objectives'].sort_by { |a| a['order'] }.flat_map { |a| a['tasks'].map { |t| t['taskId'] } }
+      nxt = ama[/=== whats_next ===.*?(?==== give_lorna_card)/m].scan(/- not (\w+)_done:/).flatten
+      assert_equal tasks, nxt
+      board = data['rooms'].values.flat_map { |r| Array(r['objects']) }.find { |o| o['id'] == 'tour_notice' }['text']
+      assert_includes board, 'Meet Priya in the IT room'
+      assert_includes board, "The same form is on Darren's desktop"
+      assert_operator board.index('archive store door'), :<, board.index('records room door')
     end
   end
 end

@@ -1,0 +1,13 @@
+{
+  "key": "a1970e451eaf8204e733859653e9ff3a",
+  "npc": "fatima_begum",
+  "text": "Go on, after you.",
+  "voice": "Zephyr",
+  "style": "Records clerk at Merrin & Sallow, in her late 20s, quick and cheerful, always carrying something. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:09:56Z"
+}

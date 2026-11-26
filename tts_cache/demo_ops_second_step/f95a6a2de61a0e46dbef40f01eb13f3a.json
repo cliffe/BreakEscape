@@ -1,0 +1,13 @@
+{
+  "key": "f95a6a2de61a0e46dbef40f01eb13f3a",
+  "npc": "priya_nair",
+  "text": "Did you see the car park email?",
+  "voice": "Leda",
+  "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:14:20Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "212d6691fb8b4777b174507f93a751c9",
+  "npc": "thandiwe_moyo",
+  "text": "Go on, just a small slice.",
+  "voice": "Pulcherrima",
+  "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:13:30Z"
+}

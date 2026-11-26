@@ -1,0 +1,13 @@
+{
+  "key": "98afaef1854fe4f2924e2b0f672e5f96",
+  "npc": "chidi_okeke",
+  "text": "Jun, mostly. The network port there is live, which is handy for laptops.",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:36:31Z"
+}

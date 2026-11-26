@@ -175,3 +175,71 @@ Every beat is reachable by clicking (the codes from the notice and the drawer no
 - F1: the "Things to try" board now runs Morning, Midday, Afternoon, Late, Evening (the Evening line ends "Do this last: staff go home"). Aim orders: `afternoon_helpdesk` 2, `late_locks` 3, `evening` 4 (array order unchanged, so the test's last-in-array assertion holds). Ama's "Call it a day." now refuses with a plain line while any of the seven afternoon and late tasks is undone; "Skip them and call it a day anyway." (ink-local `skip_late`) lifts the refusal.
 - F2: `darren_drawer` moved to (3.9, 4.0), 1.1 tiles from the badge. `side_table` (9.0, 4.3) and `gwen_phone` (9.0, 3.9) moved 1.3 tiles clear of the coffee socket (8.66, 6.06). Kept warning with its reason: `Side table` and `Gwen's phone` 13 px apart: the phone sits on the table's charger by design, and clicking either gives the same pick-up of the phone. Warnings now 35.
 - F3: Ama's M14 hint names "the facilities notice in the kitchen", her M15 hint says not to approve on Gwen's phone, Thandiwe's two verdict lines are true for either kind of grant (ticks unchanged). VOICED_LINES updated; the audio for these lines needs a top-up.
+
+## Tour unit U3 (SHOWCASE_TOUR_PLAN.md 2.6, 4.1; owner's answers of 2026-11-25 are recorded as decided in plan section 5)
+
+Main was not merged into the worktree by this unit: another builders' uncommitted work shares the tree and the merge was refused by the permission check. Left to the orchestrator.
+
+### Probes (live, keyless :3053, game 282, swap game; measured seconds are in PLAYTEST.md)
+
+- Is `darren_pc_screen_locked` written before any leave? It is declared in `globalVariables` (false) and `_publish` writes it at every leave; the lock bark's `data.oldValue !== true` guard holds. Seen live: at the lunch leave the global went true and "Darren's screen has locked. Now try his PC." came with the existing "Darren's gone to lunch..." bark.
+- Temper note: 50 s from the printer switch-off (one run); no tuning of `frustration.perFail` was needed (35, workaround at 60), so it is unchanged.
+- Darren's coffee trips with the screen open: 25 s and 37 s; a trip in the printer outage 72 s. `autoLockSeconds` 50 on `darren_pc` locked the open screen exactly 50 s after the leave. `lockIfAwayOverSeconds` stays 90. Lunch: 105 s away, locked at the leave (expected trip over 90 s), so there is no lunch wait.
+- M12 by the desktop form: the desk's `helpdesk_answered` event carries only `deskId` and `result` (`helpdesk-client.js:133-135`), not what was asked. So the tick is an appended Ama mapping on a granted answer while `reset_password_done` is true and `reenrol_done` is not; Thandiwe's in-person ink still ticks it. Plan deviation, written into PLAYTEST.
+- Not probed live: the form on Darren's desktop through the browser (the Rails test for the form route already exists); the barks other than M0, M2 and the lock bark were not seen live (same mechanism: a `global_variable_changed:<task>_done` mapping).
+
+### What changed
+
+- `scenario.json.erb`: 16 appended Ama mappings (M0 on `pc_in_use:lorna_pc`, 15 "what you just saw" barks on `<task>_done`, the lock bark on `darren_pc_screen_locked`, the desktop-form tick of `reenrol`; `pestered`, `read_log` keep their existing lines); `autoLockSeconds: 50` on `darren_pc`; `darren_pc_screen_locked` declared; `ttsPregenerateChatter`; voices of Niamh (Kore, Dublin, covering reception today), Anjali (Aoede), Lorna (Erinome, Lancashire), Thandiwe (Pulcherrima).
+- Ink: `give_lorna_card` (M0 pointer), `whats_next` reenrol (desktop form pointer), `lever_lunch` (temper check), Niamh's two lines. tagdiff: 3 structural differences, all in Ama (the new `lever_lunch` condition and its divert).
+- No existing mapping moved or deleted; `check_mapping_index_drift.rb`: 0 failures (the scenario is not on main, so 0 compared).
+- Panel order: unchanged (the plan's table already follows it).
+- Validator: 0 errors, 35 warnings, the same list as before this unit (diffed against HEAD). Dialoguelint 0 ERROR (one existing `crowded-hub`). Scenario test: 41 runs, 0 failures (5 new tour cases); the whole-run leak scans are the existing ones, 0 findings.
+- The old "Darren's gone to lunch. His screen will be locked." and the new lock bark both fire at the lunch leave; the dialogue review may fold them.
+
+## Tour unit U3b (SHOWCASE_TOUR_PLAN.md 2.6 M13b, 4.1 U3b; owner's answer 5.4 YES, recorded as decided)
+
+Main was not merged into the worktree by this unit either (same reason U3 gives: the tree holds other builders' work and the merge is refused). Left to the orchestrator/train; the leak scan ran against the scanner now in the worktree.
+
+### Probes (from the code; the call route itself is browser-only, proven by engine JS tests)
+
+- Call-back verify rule: `helpdesk_covers_request?` grants a `callback` desk when `held_friendface_phone(account_npc_id)` is non-nil (`app/models/break_escape/helpdesk_access.rb:219`), i.e. the player holds the account owner's declared `phone_friendface`. Confirmed by `test/models/break_escape/helpdesk_access_test.rb:321` and reproduced in this unit's Rails cases.
+- Call -> helpdesk route: a pretext ask carrying `helpdesk:<deskId>` opens that desk's request form on a granted ask (`person-chat-pretext.js:300,313-334`); the server's `request_helpdesk!(desk_id, ...)` decides; the client emits `helpdesk_answered:<deskId>` with `{deskId, result}` (`helpdesk-client.js:131-135`). So `desk_call` ticks on an appended Ama mapping `helpdesk_answered:call_desk` with `data.result === 'granted'` — the same pattern the proven `reenrol`/`desk_refuses` ticks use.
+- Phone-call plumbing shape (copied from `test_ops_helpdesk`): a room npc `{npcType:"phone", phoneId, callId, storyPath}` (the IT line contact) plus a `phone` item with the same `phoneId` and `npcIds:["it_line"]` (the work phone you ring from). The call-back's trusted phone is a separate held item — Yusuf's `phone_friendface`, taken at the coffee machine in M7.
+- Desk must be met: `helpdesk_npc_serving?` needs the desk NPC encountered and present (`helpdesk_access.rb:162-168`), so Priya is a met IT-room NPC; before she is met the line answers `unavailable` (tested).
+- Idempotency: a repeat mfa reset returns granted with no further change (`helpdesk_access.rb:270`). In the guided order M13b follows M12, which already moved Yusuf's approvals, so M13b's grant is idempotent; the bark teaches the route and the call-back check, not a fresh change. In a run that skips M12 (and in the isolated Rails case) it is the first move.
+- Validator flags `call_desk` callback "not takeable" for lorna/niamh/darren/anjali (no takeable phone of theirs) and NOT for yusuf_demir or gwen_pritchard — confirming the mechanic is solvable for the account whose phone the player holds (Yusuf). Informational; recorded here.
+
+### Plan deviation
+
+The plan (4.1 U3b, test shape) suggested the call-back desk on "a second room NPC" with the call text written by a social-engineering specialist and wired by Sonnet. This unit was a single Opus builder: I wrote the (mild, training) pretext lines myself and added a minimal second IT-room NPC, Priya Nair (call_desk), plus the `it_line` phone contact, so the plan's "second room NPC" holds. The call-back resets Yusuf's approvals (the only owner phone the player holds by the afternoon); no new secret is introduced (a password reset on Yusuf would have needed a `resetPassword` the existing M11 shape test forbids).
+
+### What changed
+
+- `scenario.json.erb`: `call_desk` helpdesk (callback, resets mfa, npc priya_nair); `social.characters.it_line` and `social.pretextNpcs` (ask `reset_request` -> helpdesk `call_desk`), copied in shape from `test_ops_helpdesk`; `work_phone` start item (type phone, npcIds `it_line`); `priya_nair` and the `it_line` phone contact in the IT room (Priya voice Leda, it_line voice Sulafat — both free after the plan's Thandiwe/Lorna voice moves); `desk_call` task appended to the afternoon aim; two appended Ama mappings (the `helpdesk_answered:call_desk` tick and the `desk_call_done` bark); eight new `globalVariables` (desk_call_done, helpdesk_call_desk_result, the it_line pretext globals).
+- Ink: new `it_line.ink` and `priya_nair.ink`; `ama_owusu.ink` gains `VAR desk_call_done`, the M13b "What's next?" pointer, the recap line, and `desk_call_done` added to the day-end gate and the recap-empty guard. tagdiff: ama structure-only additions, priya/it_line added, all explained; no existing knot/divert/condition removed beyond the two in-place gate edits.
+- No existing mapping moved or deleted; `check_mapping_index_drift.rb main`: 0 failures.
+- Rails test: 5 new U3b cases + the NPC-list assertion updated for Priya and the IT line; 46 runs, 0 failures; the leak scanner over a played call-desk run reports 0.
+- Validator: 0 errors, 39 warnings (the only new substantive ones are the expected "callback not takeable" notices for accounts whose phone the player cannot hold). Dialoguelint: 0 ERROR (the pre-existing `crowded-hub` CHECK on Ama's hub is unchanged — no hub choice was added). `bin/ops-golden-compare`: 45 runs, 0 failures. Dungeon graph regenerated.
+- Live smoke (keyless :3056, swapped game 285): the app boots the scenario with `helpdeskForms.call_desk` (npc priya_nair, resets mfa), `social.characters.it_line` and the `it_line_call` pretext ask pointing at `call_desk`, no server errors. The pretext-call UI and form are engine code with their own JS tests; the desk_call tick was not driven in a browser (same proven mapping mechanism as U3's barks).
+
+## Tour round 1 fixes (TOUR_IMPL_REVIEW_R1, TOUR_DIALOGUE_REVIEW_R1, playtest 1)
+
+### Fixed
+- J1 (board): the afternoon now reads Thandiwe for Darren's reset, Thandiwe (or the desktop form while his screen is open) for Yusuf's approvals, Lorna's wrong answers, and Priya plus the IT line holding Yusuf's phone (M13b). Morning and late lines follow the new order.
+- J2 (M12): the bark names no route ("Yusuf's approvals come to your phone now, and his own phone shows nothing. The desk never checked who was asking."). Driven live (game 298, :3073): the form on Darren's desktop stays open when he comes back, but the desk only takes it while his session is open; sent after his return it answers "The desk cannot take this request now." His coffee trips measured 14 s and 18 s. That is too tight to type a username, the request and two answers, so the guided M12 is now Thandiwe in person, and the pointer names the form as the other route ("it only sends while his screen is open"). Deviation from plan 2.6 (the desktop form as the guided route), made on that measurement.
+- J3 / D-M3 (IT line): "Fill in the form, and we'll ring the number we hold for that account to check." Live: the line plays this, the form opens, and `dprice` is then refused ("The desk could not verify you. Tries left: 2.").
+- D-M4 / n4: `it_line` has `"voiced": true` and voice Charon (male, free in this showcase); live, the call shows ON CALL and its lines go to `/tts` under `it_line`. No `// lint: call-knot` needed: dialoguelint reports nothing.
+- D-M1, D-M2 (`tell_note` and its hub choice removed; header comment updated; nothing in the test referred to it), D-M5, D-M6 (lunch bark), m1 to m9, the recap lines that sat close to their barks (open_screen, pestered, desk_refuses), short_version's "And". Lines in VOICED_LINES.md.
+- n1: late order is now M15 then M14 in "What's next?", the late aim and the board; the "don't approve it on Gwen's phone" sentence is gone; PLAYTEST Run E agrees.
+- Playtest 1: M8 moved to second in the morning (pointer, aim, board), before the printer goes off. In the outage Darren's trips ran about 5 minutes and the idle lock shut his screen, with nothing to say why. Live: M8 ticked on the first coffee trip. The pointer adds "If you missed him, ask me to send them for coffee again."
+- n6: `desk_call` is in `TOUR_TASKS`. New test: no ink claim of the note, the IT line voiced and promising the call-back, "What's next?" in panel order, the board's afternoon and late lines.
+
+### Not changed, and why
+- n2 (stale-bark guard): the one forward-pointing bark (M2, "You'll see it on his sign-in screen at lunch") stays true until M5, and lunch waits for M2, so no guard is needed.
+- n5: Fatima's prop and the M13b call with Yusuf's phone held were not measured live this round (budget). The M13b refusal path and the call screen were checked.
+- The dialogue review's D-M5 note about the M12 sign-in at Yusuf's PC with your own phone: dropped from the pointer, as suggested. The bark carries it.
+
+### Checks
+Ink 11 compiled, 0 failed. Validator 0 errors, 38 warnings (the earlier list, one fewer). Dialoguelint: no findings (Ama's hub is down to 10 choices, so `crowded-hub` has gone). tagdiff `--old` (snapshot of HEAD): Ama has 16 structural differences, all from removing `tell_note` (knot, choice, tags, divert, assign) plus the new `lever_lunch` printer branch and its two speaker tags. The other four files have no structural change. Mapping drift: 0 failures. Graph regenerated (unchanged). Leak check on game 298: no leaks.
+Rails scenario test: 47 runs, 0 failures. That includes the whole-run leak scans, which report 0 findings, and the S8c late-order assertion, updated for M15 then M14. The captures use recorder tags, not hand-made `login` tags, so the scanner hardening needed no change. `bin/ops-golden-compare`: 45 runs, 0 failures.

@@ -1,0 +1,13 @@
+{
+  "key": "82c1894b0f727245fe981fdc8452dc43",
+  "npc": "julian_sallow",
+  "text": "Did you see the car park email?",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:59:57Z"
+}
