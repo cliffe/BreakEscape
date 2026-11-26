@@ -136,8 +136,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 4.033,
-                "out": 6.533
+                "in": 4.163,
+                "out": 6.663
             },
             "audio": {
                 "gain_db": -6
@@ -148,7 +148,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "t03 card 1 unpicked, live 2.5 s (card appears at 4.1, pick click 8.285) | CA: spoilers not an issue (owner), no masks"
+                "note": "t03 card 1 unpicked, live 2.5 s (card appears at 4.1, pick click 8.285) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
             },
             "seat": {
                 "seat": "attack",
@@ -182,10 +182,10 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 6.533,
-                "out": 10.933
+                "in": 6.663,
+                "out": 11.063
             },
-            "freezeAt": 6.533,
+            "freezeAt": 6.663,
             "audio": {
                 "gain_db": -60
             },
@@ -195,7 +195,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "topic hold: freezeAt on card 1 unpicked, static from 4.2 to 8.1 apart from a 89 px blink at 6.0 and 7.5; audio muted so the later pick click is not heard; join with topic is invisible | CA: spoilers not an issue (owner), no masks"
+                "note": "topic hold: freezeAt on card 1 unpicked, static from 4.2 to 8.1 apart from a 89 px blink at 6.0 and 7.5; audio muted so the later pick click is not heard; join with topic is invisible | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
             },
             "seat": {
                 "seat": "attack",
@@ -250,8 +250,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 7.9,
-                "out": 10.8
+                "in": 8.03,
+                "out": 10.93
             },
             "audio": {
                 "gain_db": -6
@@ -262,7 +262,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "t03 card 1, pick lands 8.285, picked state static from 9.7 | CA: spoilers not an issue (owner), no masks"
+                "note": "t03 card 1, pick lands 8.285, picked state static from 9.7 | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
             },
             "seat": {
                 "seat": "attack",
@@ -296,10 +296,10 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 10.8,
-                "out": 11.7
+                "in": 10.93,
+                "out": 11.84
             },
-            "freezeAt": 10.8,
+            "freezeAt": 10.93,
             "audio": {
                 "gain_db": -60
             },
@@ -309,7 +309,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "freezeAt on card 1 picked (static 9.7 to 11.0; Next click about 11.5) | CA: spoilers not an issue (owner), no masks"
+                "note": "freezeAt on card 1 picked (static 9.7 to 11.0; Next click about 11.5) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.13 s"
             },
             "seat": {
                 "seat": "attack",
@@ -343,8 +343,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 15.333,
-                "out": 17.833
+                "in": 15.533,
+                "out": 18.033
             },
             "audio": {
                 "gain_db": -6
@@ -355,7 +355,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "t03 card 3 shown 15.42, pick lands 16.447, static from 16.9 | CA: spoilers not an issue (owner), no masks"
+                "note": "t03 card 3 shown 15.42, pick lands 16.447, static from 16.9 | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
             },
             "seat": {
                 "seat": "attack",
@@ -389,10 +389,10 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 17.833,
-                "out": 19.433
+                "in": 18.033,
+                "out": 19.633
             },
-            "freezeAt": 17.833,
+            "freezeAt": 18.033,
             "audio": {
                 "gain_db": -60
             },
@@ -402,7 +402,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "freezeAt on card 3 picked (static 16.9 to 18.1; Next click about 19.0) | CA: spoilers not an issue (owner), no masks"
+                "note": "freezeAt on card 3 picked (static 16.9 to 18.1; Next click about 19.0) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.17 s"
             },
             "seat": {
                 "seat": "attack",
@@ -436,8 +436,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 22.69,
-                "out": 26.89
+                "in": 22.89,
+                "out": 27.09
             },
             "audio": {
                 "gain_db": -6
@@ -448,7 +448,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "montage, three cards, labels hidden in the take | CA: spoilers not an issue (owner), no masks"
+                "note": "montage, three cards, labels hidden in the take | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
             },
             "seat": {
                 "seat": "attack",
@@ -464,13 +464,16 @@
                 "9:16": {
                     "cx": 0.5,
                     "cy": 0.5,
-                    "zoom": 1.125
+                    "zoom": 0.5625
                 },
                 "1:1": {
                     "cx": 0.5,
                     "cy": 0.5,
                     "zoom": 1.0
                 }
+            },
+            "voPos": {
+                "1:1": "top"
             }
         },
         {
@@ -482,8 +485,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 26.89,
-                "out": 31.59
+                "in": 27.09,
+                "out": 31.79
             },
             "audio": {
                 "gain_db": -6
@@ -494,7 +497,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "punch-in on the caller card | CA: spoilers not an issue (owner), no masks"
+                "note": "punch-in on the caller card | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
             },
             "seat": {
                 "seat": "attack",
@@ -514,9 +517,13 @@
                 },
                 "1:1": {
                     "cx": 0.5,
-                    "cy": 0.5,
+                    "cy": 0.425926,
                     "zoom": 2.0
                 }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
             }
         },
         {
@@ -528,8 +535,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 31.59,
-                "out": 36.14
+                "in": 31.79,
+                "out": 36.34
             },
             "audio": {
                 "gain_db": -6
@@ -540,7 +547,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "punch-in on the export card; Continue click at 36.392 | CA: spoilers not an issue (owner), no masks"
+                "note": "punch-in on the export card; Continue click at 36.392 | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
             },
             "seat": {
                 "seat": "attack",
@@ -563,6 +570,10 @@
                     "cy": 0.666667,
                     "zoom": 2.0
                 }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
             }
         },
         {
@@ -574,8 +585,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 36.09,
-                "out": 39.09
+                "in": 36.29,
+                "out": 39.32
             },
             "audio": {
                 "gain_db": -6
@@ -586,7 +597,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "Continue then the Defend intro panel (body hidden in the take) | CA: spoilers not an issue (owner), no masks"
+                "note": "Continue then the Defend intro panel (body hidden in the take) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
             },
             "seat": {
                 "seat": "defend",
@@ -641,8 +652,8 @@
             },
             "source": {
                 "file": "t06b_inbox_list_narrow.trimmed.mkv",
-                "in": 5.35,
-                "out": 14.8
+                "in": 5.55,
+                "out": 15.0
             },
             "audio": {
                 "gain_db": -6
@@ -653,7 +664,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "list then 11:15 card (row click 9.852 wide / 9.778 narrow); 08:52 row highlighted, accepted; 11:15 From/To/number visible (owner) | CA: spoilers not an issue (owner), no masks"
+                "note": "list then 11:15 card (row click 9.852 wide / 9.778 narrow); 08:52 row highlighted, accepted; 11:15 From/To/number visible (owner) | CA: spoilers not an issue (owner), no masks | 520 retake: marks moved +0.20 s"
             },
             "seat": {
                 "seat": "defend",
@@ -668,7 +679,7 @@
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.462963,
+                    "cy": 0.444444,
                     "zoom": 1.125
                 },
                 "1:1": {

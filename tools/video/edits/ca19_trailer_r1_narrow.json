@@ -135,8 +135,8 @@
    },
    "source": {
     "file": "t02b_brief_narrow.trimmed.mkv",
-    "in": 4.3,
-    "out": 9.0
+    "in": 4.57,
+    "out": 9.27
    },
    "audio": {
     "gain_db": -6
@@ -147,7 +147,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Brief panel static, paragraph hidden; 16:9/1:1 z2 windows end above the dashed scope box; 9:16 z1.125 shows the scope box and Start (accepted, authorisation note) | CA: spoilers not an issue (owner)"
+    "note": "Brief panel static, paragraph hidden; 16:9/1:1 z2 windows end above the dashed scope box; 9:16 z1.125 shows the scope box and Start (accepted, authorisation note) | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.27 s"
    },
    "seat": {
     "seat": "full",
@@ -202,8 +202,8 @@
    },
    "source": {
     "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-    "in": 5.0,
-    "out": 9.2
+    "in": 5.47,
+    "out": 9.77
    },
    "audio": {
     "gain_db": -6
@@ -214,7 +214,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "beat 1 of 4; pick highlight at 6.386, beat 1 still up at 9.6 (next choice shows 9.8), out 9.2 checked; 9:16 z0.5625 and 1:1 z1 show the 714 px panel whole | CA: spoilers not an issue (owner)"
+    "note": "beat 1 of 4; pick highlight at 6.386, beat 1 still up at 9.6 (next choice shows 9.8), out 9.2 checked; 9:16 z0.5625 and 1:1 z1 show the 714 px panel whole | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
    },
    "seat": {
     "seat": "attack",
@@ -248,8 +248,8 @@
    },
    "source": {
     "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-    "in": 15.0,
-    "out": 19.2
+    "in": 15.73,
+    "out": 19.93
    },
    "audio": {
     "gain_db": -6
@@ -260,7 +260,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "beat 4 of 4; pick at 16.431; See where they led button unpressed through 19.4, montage from about 19.8, out 19.2 checked | CA: spoilers not an issue (owner)"
+    "note": "beat 4 of 4; pick at 16.431; See where they led button unpressed through 19.4, montage from about 19.8, out 19.2 checked | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.73 s"
    },
    "seat": {
     "seat": "attack",
@@ -294,8 +294,8 @@
    },
    "source": {
     "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-    "in": 20.9,
-    "out": 24.4
+    "in": 21.9,
+    "out": 25.4
    },
    "audio": {
     "gain_db": -6
@@ -306,7 +306,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "montage page whole at 1x (z1 / 9:16 z0.5625 with bars), Later that afternoon, Continue unpressed; the whole-page view is the establishing cut before the two z2 crops | CA: spoilers not an issue (owner)"
+    "note": "montage page whole at 1x (z1 / 9:16 z0.5625 with bars), Later that afternoon, Continue unpressed; the whole-page view is the establishing cut before the two z2 crops | CA: spoilers not an issue (owner) | 520 retake: marks moved +1.00 s"
    },
    "seat": {
     "seat": "attack",
@@ -321,14 +321,18 @@
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 0.5625
+     "cy": 0.444444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
      "zoom": 1
     }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
    }
   },
   {
@@ -340,8 +344,8 @@
    },
    "source": {
     "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-    "in": 24.4,
-    "out": 29.0
+    "in": 25.4,
+    "out": 30.0
    },
    "audio": {
     "gain_db": -6
@@ -352,7 +356,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "same static page; z2 window y 206-746 (heading, restart card, most of save card); 9:16 window y 0-960 | CA: spoilers not an issue (owner)"
+    "note": "same static page; z2 window y 206-746 (heading, restart card, most of save card); 9:16 window y 0-960 | CA: spoilers not an issue (owner) | 520 retake: marks moved +1.00 s"
    },
    "seat": {
     "seat": "attack",
@@ -375,6 +379,10 @@
      "cy": 0.440741,
      "zoom": 2
     }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
    }
   },
   {
@@ -386,8 +394,8 @@
    },
    "source": {
     "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-    "in": 29.0,
-    "out": 33.5
+    "in": 30.0,
+    "out": 34.5
    },
    "audio": {
     "gain_db": -6
@@ -398,7 +406,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "same static page; z2 window y 378-918 (save card, Continue; restart card tail); 9:16 window y 120-1080; take holds to 33.575 | CA: spoilers not an issue (owner)"
+    "note": "same static page; z2 window y 378-918 (save card, Continue; restart card tail); 9:16 window y 120-1080; take holds to 33.575 | CA: spoilers not an issue (owner) | 520 retake: marks moved +1.00 s"
    },
    "seat": {
     "seat": "attack",
@@ -421,6 +429,10 @@
      "cy": 0.6,
      "zoom": 2
     }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
    }
   },
   {
@@ -432,8 +444,8 @@
    },
    "source": {
     "file": "t04b_flip_narrow.trimmed.mkv",
-    "in": 6.63,
-    "out": 9.63
+    "in": 7.13,
+    "out": 10.13
    },
    "audio": {
     "gain_db": -6
@@ -444,7 +456,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Defend panel up from press (6.3 / 6.43), Open the inbox unpressed | CA: spoilers not an issue (owner)"
+    "note": "Defend panel up from press (6.3 / 6.43), Open the inbox unpressed | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.50 s"
    },
    "seat": {
     "seat": "defend",
@@ -525,14 +537,14 @@
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.453125,
+     "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.125
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.453125,
-     "cy": 0.27037,
-     "zoom": 2
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     }
    }
   },
@@ -571,14 +583,14 @@
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.453125,
+     "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.125
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.453125,
-     "cy": 0.3,
-     "zoom": 2
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     }
    }
   },

@@ -142,8 +142,8 @@
             },
             "source": {
                 "file": "t02b_brief_narrow.trimmed.mkv",
-                "in": 4.1,
-                "out": 8.2
+                "in": 4.3,
+                "out": 8.4
             },
             "audio": {
                 "gain_db": -6
@@ -154,7 +154,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "Brief panel opens at 3.81; crop above the scope notice (top y 613 wide, about 647 narrow); 170 px blank gap under the heading kept (reads as a pause) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+                "note": "Brief panel opens at 3.81; crop above the scope notice (top y 613 wide, about 647 narrow); 170 px blank gap under the heading kept (reads as a pause) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.20 s"
             },
             "seat": {
                 "seat": "full",
@@ -209,8 +209,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 11.6,
-                "out": 15.0
+                "in": 11.77,
+                "out": 15.17
             },
             "audio": {
                 "gain_db": -6
@@ -221,7 +221,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "Offer card with its two options, nothing marked; panel 554 px fits the 9:16 window at zoom 1.0 on the narrow take | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+                "note": "Offer card with its two options, nothing marked; panel 554 px fits the 9:16 window at zoom 1.0 on the narrow take | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.17 s"
             },
             "seat": {
                 "seat": "attack",
@@ -255,8 +255,8 @@
             },
             "source": {
                 "file": "t03b_choices_reveal_narrow.trimmed.mkv",
-                "in": 17.45,
-                "out": 21.15
+                "in": 17.55,
+                "out": 21.25
             },
             "audio": {
                 "gain_db": -6
@@ -267,7 +267,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "Export-favour card, pick shown, no marks | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+                "note": "Export-favour card, pick shown, no marks | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.10 s"
             },
             "seat": {
                 "seat": "attack",
@@ -336,6 +336,10 @@
                     "cy": 0.5,
                     "zoom": 2
                 }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
             }
         },
         {
@@ -382,6 +386,10 @@
                     "cy": 0.42,
                     "zoom": 2
                 }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
             }
         },
         {
@@ -428,6 +436,10 @@
                     "cy": 0.66,
                     "zoom": 2
                 }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
             }
         },
         {
@@ -506,8 +518,8 @@
             },
             "source": {
                 "file": "t04b_concern_form_narrow.trimmed.mkv",
-                "in": 10.6,
-                "out": 15.8
+                "in": 10.7,
+                "out": 15.9
             },
             "audio": {
                 "gain_db": -6
@@ -518,7 +530,7 @@
                 "shows_identity": false,
                 "shows_ending": false,
                 "keypad_partial": null,
-                "note": "Form open from 10.34; 'A colleague has seemed to be having a hard week' chip kept (names nobody); t04b header bar is 724 px wide so 9:16 runs at 1x (zoom 0.5625) with bars (owner, no retake) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+                "note": "Form open from 10.34; 'A colleague has seemed to be having a hard week' chip kept (names nobody); t04b header bar is 724 px wide so 9:16 runs at 1x (zoom 0.5625) with bars (owner, no retake) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.10 s"
             },
             "seat": {
                 "seat": "defend",
@@ -579,7 +591,7 @@
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.5,
+                    "cy": 0.444444,
                     "zoom": 1.125
                 },
                 "1:1": {
@@ -625,7 +637,7 @@
                 },
                 "9:16": {
                     "cx": 0.5,
-                    "cy": 0.5,
+                    "cy": 0.444444,
                     "zoom": 1.125
                 },
                 "1:1": {

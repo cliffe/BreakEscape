@@ -135,8 +135,8 @@
    },
    "source": {
     "file": "t02n_brief.trimmed.mkv",
-    "in": 4.1,
-    "out": 9.7
+    "in": 4.3,
+    "out": 9.9
    },
    "audio": {
     "gain_db": -6
@@ -147,7 +147,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Brief panel static (hold to 11.9), paragraph hidden; 16:9 and 1:1 z2 windows end above the dashed scope box (16:9 window y 46-586 vs box y 592; 1:1 on t02n y 80-620 vs box about 620); 9:16 z1.125 on t02n shows the scope box and Start (accepted, authorisation note), bezel 560 trims 10 px each side | CA: spoilers not an issue (owner)"
+    "note": "Brief panel static (hold to 11.9), paragraph hidden; 16:9 and 1:1 z2 windows end above the dashed scope box (16:9 window y 46-586 vs box y 592; 1:1 on t02n y 80-620 vs box about 620); 9:16 z1.125 on t02n shows the scope box and Start (accepted, authorisation note), bezel 560 trims 10 px each side | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.20 s"
    },
    "seat": {
     "seat": "full",
@@ -340,8 +340,8 @@
    },
    "source": {
     "file": "t03n_choices_reveal.trimmed.mkv",
-    "in": 25,
-    "out": 28.6
+    "in": 25.47,
+    "out": 29.07
    },
    "audio": {
     "gain_db": -6
@@ -352,7 +352,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "montage page whole, static from 25.0 (reveal 24.055); three cards, no headline card, no tablet card, no Your call tags; narrow t03n panel 554 wide, cards x 708-1212 (504) at y 345-519, 531-705, 717-891, Continue 918-962; 9:16 z0.5625 with bars (panel over 540 px) | CA: spoilers not an issue (owner)"
+    "note": "montage page whole, static from 25.0 (reveal 24.055); three cards, no headline card, no tablet card, no Your call tags; narrow t03n panel 554 wide, cards x 708-1212 (504) at y 345-519, 531-705, 717-891, Continue 918-962; 9:16 z0.5625 with bars (panel over 540 px) | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
    },
    "seat": {
     "seat": "attack",
@@ -375,6 +375,9 @@
      "cy": 0.5,
      "zoom": 1
     }
+   },
+   "voPos": {
+    "1:1": "top"
    }
   },
   {
@@ -386,8 +389,8 @@
    },
    "source": {
     "file": "t03n_choices_reveal.trimmed.mkv",
-    "in": 25.3,
-    "out": 29
+    "in": 25.77,
+    "out": 29.47
    },
    "audio": {
     "gain_db": -6
@@ -398,7 +401,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "same static page, reuse of source span in the same hold (nothing moves); 16:9 z2 window y 154-694 (heading, cards 1 and 2); 9:16 z1.125 window y 60-1020 (whole stack); 1:1 z2 window y 162-702 (card 1 centred) | CA: spoilers not an issue (owner)"
+    "note": "same static page, reuse of source span in the same hold (nothing moves); 16:9 z2 window y 154-694 (heading, cards 1 and 2); 9:16 z1.125 window y 60-1020 (whole stack); 1:1 z2 window y 162-702 (card 1 centred) | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
    },
    "seat": {
     "seat": "attack",
@@ -421,6 +424,10 @@
      "cy": 0.4,
      "zoom": 2
     }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
    }
   },
   {
@@ -432,8 +439,8 @@
    },
    "source": {
     "file": "t03n_choices_reveal.trimmed.mkv",
-    "in": 25.6,
-    "out": 29
+    "in": 26.07,
+    "out": 29.47
    },
    "audio": {
     "gain_db": -6
@@ -444,7 +451,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "same static page; 16:9 z2 window y 316-856 (all three cards); 1:1 z2 window y 348-888 (card 2 centred) | CA: spoilers not an issue (owner)"
+    "note": "same static page; 16:9 z2 window y 316-856 (all three cards); 1:1 z2 window y 348-888 (card 2 centred) | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
    },
    "seat": {
     "seat": "attack",
@@ -467,6 +474,10 @@
      "cy": 0.572222,
      "zoom": 2
     }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
    }
   },
   {
@@ -478,8 +489,8 @@
    },
    "source": {
     "file": "t03n_choices_reveal.trimmed.mkv",
-    "in": 26,
-    "out": 29.6
+    "in": 26.47,
+    "out": 30.07
    },
    "audio": {
     "gain_db": -6
@@ -490,7 +501,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "same static page; 16:9 z2 window y 478-1018 (cards 2 and 3, Continue); 1:1 z2 window y 534-1074 (card 3 and Continue); both sentences of the laptop card readable | CA: spoilers not an issue (owner)"
+    "note": "same static page; 16:9 z2 window y 478-1018 (cards 2 and 3, Continue); 1:1 z2 window y 534-1074 (card 3 and Continue); both sentences of the laptop card readable | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.47 s"
    },
    "seat": {
     "seat": "attack",
@@ -513,6 +524,10 @@
      "cy": 0.744444,
      "zoom": 2
     }
+   },
+   "voPos": {
+    "9:16": "top",
+    "1:1": "top"
    }
   },
   {
@@ -524,8 +539,8 @@
    },
    "source": {
     "file": "t03n_choices_reveal.trimmed.mkv",
-    "in": 31.2,
-    "out": 33.2
+    "in": 31.74,
+    "out": 33.74
    },
    "audio": {
     "gain_db": -6
@@ -536,7 +551,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Defend panel (heading Defend, strip ticks 1 to 3, tab 4, Open the pages), paragraph hidden; panel up from 31.033; z2 window shows it whole; 560 bezel trims 10 px each side at z1.125 and z2 | CA: spoilers not an issue (owner)"
+    "note": "Defend panel (heading Defend, strip ticks 1 to 3, tab 4, Open the pages), paragraph hidden; panel up from 31.033; z2 window shows it whole; 560 bezel trims 10 px each side at z1.125 and z2 | CA: spoilers not an issue (owner) | 520 retake: marks moved +0.54 s"
    },
    "seat": {
     "seat": "defend",
