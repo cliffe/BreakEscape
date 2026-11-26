@@ -1,0 +1,75 @@
+{
+  "schema": "footage-take/1",
+  "id": "gap2_field_guide",
+  "mission": "m01_first_contact",
+  "kind": "ingame",
+  "shot_type": "ui-minigame",
+  "title": "Phone ask and lockpicking field guide",
+  "description": "Agent HaX phone chat offers \"Send me the lockpicking field guide\"; the guide is sent and opened, title readable.",
+  "characters": [
+    "Agent HaX"
+  ],
+  "voiced_lines": [],
+  "highlights": [
+    {
+      "t": 3.64,
+      "trailer_score": 4,
+      "note": "phone choices on screen incl. the lockpicking field guide"
+    },
+    {
+      "t": 5.24,
+      "trailer_score": 4,
+      "note": "guide choice sent"
+    },
+    {
+      "t": 17.0,
+      "trailer_score": 4,
+      "note": "SAFETYNET Field Guide Extract: Lockpicking, title readable"
+    }
+  ],
+  "marks": {
+    "file": "gap2_field_guide.trimmed.markers.json"
+  },
+  "media": {
+    "file": "gap2_field_guide.trimmed.mkv",
+    "duration": 19.068,
+    "resolution": "1920x1080",
+    "fps": 30,
+    "audio": true,
+    "loudness_lufs": null,
+    "av_drift_ms": null,
+    "dropped_pct": null,
+    "trim": null
+  },
+  "spoiler": "low",
+  "sensitive": {
+    "needs_mask": false,
+    "mask_log": null,
+    "safe_spans": [
+      [
+        0,
+        19.0
+      ]
+    ],
+    "mask_spans": []
+  },
+  "quality": {
+    "status": "good",
+    "reason": "Check passed (drop 0.47%, residual under 5 ms). Phone is a narrow column: crop to it. Guide is technique only."
+  },
+  "provenance": {
+    "game": null,
+    "set": null,
+    "date": "2026-11-25",
+    "rig_commit": "61c8bd653",
+    "take_script_commit": null
+  },
+  "thumbnail": {
+    "t": 17.0
+  },
+  "sync": {
+    "bytes": 4698405,
+    "sha256": "69d4459c70e453bceea6787c867dd7e44997d286224e1e3200acf9f78e444379"
+  },
+  "_draft": false
+}

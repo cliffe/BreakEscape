@@ -1,0 +1,93 @@
+{
+  "schema": "footage-take/1",
+  "id": "gap3_archive_key",
+  "mission": "m01_first_contact",
+  "kind": "ingame",
+  "shot_type": "ui-minigame",
+  "title": "Archive key entered and confirmed",
+  "description": "The ENTROPY Encrypted Archive terminal takes the decryption key (input masked as bullets), then Agent HaX confirms it by message. Seeded value never shown.",
+  "characters": [
+    "Agent HaX"
+  ],
+  "voiced_lines": [],
+  "highlights": [
+    {
+      "t": 1.7,
+      "trailer_score": 3,
+      "note": "archive terminal open, key field empty"
+    },
+    {
+      "t": 7.7,
+      "trailer_score": 4,
+      "note": "key typed, masked as bullets"
+    },
+    {
+      "t": 8.9,
+      "trailer_score": 4,
+      "note": "access granted line, before the archive contents screen (cut at 11.4)"
+    },
+    {
+      "t": 20.0,
+      "trailer_score": 5,
+      "note": "Agent HaX: ENTROPY archive decryption key confirmed"
+    }
+  ],
+  "marks": {
+    "file": "gap3_archive_key.trimmed.markers.json"
+  },
+  "media": {
+    "file": "gap3_archive_key.trimmed.mkv",
+    "duration": 21.736,
+    "resolution": "1920x1080",
+    "fps": 30,
+    "audio": true,
+    "loudness_lufs": null,
+    "av_drift_ms": null,
+    "dropped_pct": null,
+    "trim": null
+  },
+  "spoiler": "low",
+  "sensitive": {
+    "needs_mask": true,
+    "mask_log": null,
+    "safe_spans": [
+      [
+        1.7,
+        11.4
+      ],
+      [
+        19.5,
+        21.7
+      ]
+    ],
+    "mask_spans": [
+      [
+        0,
+        1.7
+      ],
+      [
+        11.4,
+        12.9
+      ]
+    ]
+  },
+  "quality": {
+    "status": "good",
+    "reason": "Check passed (drop 0.41%, residual under 10 ms). SSH toast hidden in-page. Mask 0-1.7 s (arrival toast names a host and account) and 11.4-12.9 s (archive contents screen). Crop the bottom text box (names an account and host, no value) in S30."
+  },
+  "provenance": {
+    "game": null,
+    "set": null,
+    "date": "2026-11-25",
+    "rig_commit": "61c8bd653",
+    "take_script_commit": null
+  },
+  "thumbnail": {
+    "t": 20.0
+  },
+  "sync": {
+    "bytes": 5990016,
+    "sha256": "1aba4f15b958d8fabedf0b12066674ff51ab0f7f40d8d5697598d5baad91cf7f"
+  },
+  "_draft": false
+}

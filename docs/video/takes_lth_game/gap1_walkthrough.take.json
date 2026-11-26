@@ -1,0 +1,68 @@
+{
+  "schema": "footage-take/1",
+  "id": "gap1_walkthrough",
+  "mission": "m01_first_contact",
+  "kind": "browser",
+  "shot_type": "web-page",
+  "title": "m01 walkthrough page",
+  "description": "The published m01 lab sheet in its embedded view: getting-started, concepts and the first hint stage with a visible nudge and closed Nudge/Recipe boxes. Plain browser capture.",
+  "characters": [],
+  "voiced_lines": [],
+  "highlights": [
+    {
+      "t": 2.2,
+      "trailer_score": 3,
+      "note": "Getting Started section"
+    },
+    {
+      "t": 7.8,
+      "trailer_score": 4,
+      "note": "first hint stage with the visible nudge, boxes closed"
+    }
+  ],
+  "marks": {
+    "file": "gap1_walkthrough.trimmed.markers.json"
+  },
+  "media": {
+    "file": "gap1_walkthrough.trimmed.mkv",
+    "duration": 11.2,
+    "resolution": "1920x1080",
+    "fps": 30,
+    "audio": false,
+    "loudness_lufs": null,
+    "av_drift_ms": null,
+    "dropped_pct": null,
+    "trim": null
+  },
+  "spoiler": "none",
+  "sensitive": {
+    "needs_mask": false,
+    "mask_log": null,
+    "safe_spans": [
+      [
+        0,
+        11.2
+      ]
+    ],
+    "mask_spans": []
+  },
+  "quality": {
+    "status": "good",
+    "reason": "Video-only check passed (drop 0). No details box open; no answer visible."
+  },
+  "provenance": {
+    "game": null,
+    "set": null,
+    "date": "2026-11-25",
+    "rig_commit": "61c8bd653",
+    "take_script_commit": null
+  },
+  "thumbnail": {
+    "t": 7.8
+  },
+  "sync": {
+    "bytes": 9213356,
+    "sha256": "76f7ca88e094d4f3271335050fe1e0a12bba6fc8875b53703ef8e0ea2159849f"
+  },
+  "_draft": false
+}

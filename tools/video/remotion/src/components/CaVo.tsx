@@ -2,6 +2,7 @@ import React from 'react';
 import { CA, unit, tabFont, markSize, crisp } from '../ca';
 import { VT_FONT } from '../fonts';
 import { caCaptionBox } from './CaSeats';
+import { CaptionBox } from './Caption';
 
 /**
  * Narrator (voice-over) caption, burned in every aspect: a lower-third plate in CA surface with ink text in VT323, a 2 unit square ink
@@ -20,6 +21,15 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
   const t = frame / fps;
   const cue = (edit.vo || []).find((c: any) => t >= c.start - 1e-6 && t < c.end - 1e-6);
   if (!cue || !cue.text) return null;
+  // edit-level vo_captions {aspect: false}: no burned announcer text in that aspect (audio still plays; the .srt keeps the cue)
+  if (edit.vo_captions?.[aspect] === false) return null;
+  // vo_skin "safetynet": the announcer is drawn in the SAFETYNET caption plate at the character captions' position; caption: false hides the burned text
+  if (edit.vo_skin === 'safetynet') {
+    if (cue.caption === false) return null;
+    const sShot = tl.shots.find((s: any) => frame >= s.startFrame && frame < s.endFrame) || tl.shots[tl.shots.length - 1];
+    if (sShot?.type === 'card' && cue.onCard === 'hide') return null;
+    return <CaptionBox w={w} h={h} text={String(cue.caption ?? cue.text).replace(/\n/g, ' ')} topFrac9x16={edit.caption_top?.['9:16']} />;
+  }
   const shot = tl.shots.find((s: any) => frame >= s.startFrame && frame < s.endFrame) || tl.shots[tl.shots.length - 1];
   if (!shot) return null;
   if (shot.type === 'ca_close') return null; // the close's own tagline is the message (ca_open shows the cue at the foot: owner r3, silent viewers need the opening line)

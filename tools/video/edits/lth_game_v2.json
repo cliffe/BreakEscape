@@ -1,0 +1,2273 @@
+{
+ "mission": "lth_game",
+ "id": "lth_game_v2",
+ "title": "SAFETYNET: Licence to Hack, whole-game trailer, V2 character lines",
+ "fps": 30,
+ "caption_top": {
+  "9:16": 0.6
+ },
+ "length": 104.767,
+ "status": "v1 (25 Nov 2026): built from docs/video/recipes/lth-game-trailer.md; not rendered. Seven placeholders (GAP-1 to GAP-4); S23 mask box provisional; close burned line needs a renderer overlay; announcer caption skin and 9:16 lift need renderer changes (recipe 'Renderer changes'). | 25 Nov: gap takes wired (GAP-1 to GAP-4), console clips real; frame-checked in stills only.",
+ "music": {
+  "track": "SpyAction/Emerald Trigger.mp3",
+  "analysis": "emerald_trigger_60.json",
+  "start": 0.0,
+  "length": 104.767,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 0.6,
+  "alternatives": [
+   "fade_out 1.6 for the soft-end render"
+  ]
+ },
+ "beat": {
+  "bpm": 150.01,
+  "period": 0.39996,
+  "offset": 0.335,
+  "note": "working grid beat = 0.335 + 0.39996 k; cuts sit on measured onsets, so snap is false on every shot; deliberate holds S23 45.872, S32 64.236, C7b 88.935"
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no code, PIN, password, flag value or answer on screen; mask the m03 VM login note (S23) in every aspect",
+  "no tool, exploit or technique named anywhere",
+  "no Break Escape on screen; never m10 story, WREN, m08 mole, m05 insider, m09 choice, Derek"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to dissolve for the alternative render"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false,
+   "duration": 5.7667,
+   "join": {
+    "type": "cut"
+   }
+  },
+  {
+   "id": "S01_hospital_alert",
+   "type": "gameplay",
+   "duration": 0.6,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m02_t02_lights.trimmed.mkv",
+    "in": 0.5,
+    "out": 1.103
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.42,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "hospital lobby under red alert; own framing, map fills only x 0.25-0.75; frame-check skull and both figures in every aspect (plan check table)"
+   },
+   "note": "hospital lobby under red alert; own framing, map fills only x 0.25-0.75; frame-check skull and both figures in every aspect (plan check table)"
+  },
+  {
+   "id": "S02_lights_plant",
+   "type": "gameplay",
+   "duration": 0.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m04_t02_drop.trimmed.mkv",
+    "in": 3.4,
+    "out": 4.016
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.66,
+     "cy": 0.6,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.66,
+     "cy": 0.6,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.66,
+     "cy": 0.6,
+     "zoom": 1.6
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "frame-check: slide the window onto the light strike (take 4.1-4.5) if one falls near it"
+   },
+   "note": "frame-check: slide the window onto the light strike (take 4.1-4.5) if one falls near it"
+  },
+  {
+   "id": "S03_netherton_threat",
+   "type": "gameplay",
+   "duration": 6.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m04_t01c_briefing.trimmed.mkv",
+    "in": 4.75,
+    "out": 10.85
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.58,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "frame-check the picture from 4.75; cy 0.40 keeps the game bar and top-right close button out; caption leaves out 'Agent 0x00.' (spoken before the shot)"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "ENTROPY used to steal. Now they break the things people can't live without.",
+     "start": 0.088,
+     "end": 5.528
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "frame-check the picture from 4.75; cy 0.40 keeps the game bar and top-right close button out; caption leaves out 'Agent 0x00.' (spoken before the shot)"
+  },
+  {
+   "id": "S04_ransom",
+   "type": "gameplay",
+   "duration": 0.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m02_t04_ransom.trimmed.mkv",
+    "in": 2.3,
+    "out": 3.1
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.7
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ransom screen"
+   },
+   "note": "ransom screen"
+  },
+  {
+   "id": "C1_card_missions",
+   "type": "card",
+   "duration": 2.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Ten Missions",
+    "One Enemy"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "S05_loc_forward_post",
+   "type": "gameplay",
+   "duration": 0.6333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m10_t26_walk_tunnel.trimmed.mkv",
+    "in": 0.3,
+    "out": 0.9333
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.42,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.42,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "m10 forward post at night; take audio muted; 16:9 cropped x 0.25-1.0; 9:16/1:1 cx 0.42; frame-check no duplicated sprites, no text"
+   },
+   "note": "m10 forward post at night; take audio muted; 16:9 cropped x 0.25-1.0; 9:16/1:1 cx 0.42; frame-check no duplicated sprites, no text"
+  },
+  {
+   "id": "S06_loc_checkpoint",
+   "type": "gameplay",
+   "duration": 0.7,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m06_t11_checkpoint_walk.trimmed.mkv",
+    "in": 1.6,
+    "out": 2.308
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.56,
+     "cy": 0.58,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.56,
+     "cy": 0.58,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.56,
+     "cy": 0.58,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   }
+  },
+  {
+   "id": "S07_hax_ward",
+   "type": "gameplay",
+   "duration": 4.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m02_t01_hax_hook.trimmed.mkv",
+    "in": 11.85,
+    "out": 15.9833
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "16:9 zoom 1 so the game bar shows the line; caption window held to shot end (fast line)"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent HaX",
+     "text": "If they refuse and you're too slow, people die on the ward.",
+     "start": 0.12,
+     "end": 4.133
+    }
+   ],
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "16:9 zoom 1 so the game bar shows the line; caption window held to shot end (fast line)"
+  },
+  {
+   "id": "S08_netherton_millions",
+   "type": "gameplay",
+   "duration": 2.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m07_t10_briefing.trimmed.mkv",
+    "in": 30.02,
+    "out": 32.82
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "fade the last 0.1 s; next sentence starts at source 32.884, after the out point"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "Eight point four million people, Agent.",
+     "start": 0.2,
+     "end": 2.66
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "fade the last 0.1 s; next sentence starts at source 32.884, after the out point"
+  },
+  {
+   "id": "C2_card_gadgets",
+   "type": "card",
+   "duration": 2.0,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Pick. Clone.",
+    "Crack."
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "S09_g_lockpick",
+   "type": "gameplay",
+   "duration": 0.8,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m01_t04_lockpick.trimmed.mkv",
+    "in": 6.4,
+    "out": 7.202
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.492,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   }
+  },
+  {
+   "id": "S10_g_rfid_read",
+   "type": "gameplay",
+   "duration": 0.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m03_t04_rfid_clone.trimmed.mkv",
+    "in": 2.6,
+    "out": 3.401
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card number blurred in the take"
+   },
+   "note": "card number blurred in the take"
+  },
+  {
+   "id": "S11_g_rfid_emulate",
+   "type": "gameplay",
+   "duration": 0.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m03_t20_rfid_emulate.trimmed.mkv",
+    "in": 5.9,
+    "out": 6.701
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   }
+  },
+  {
+   "id": "S12_g_dust_brush",
+   "type": "gameplay",
+   "duration": 0.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m04_t14_dust_print.trimmed.mkv",
+    "in": 15.0,
+    "out": 15.801
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   }
+  },
+  {
+   "id": "S13_g_dust_match",
+   "type": "gameplay",
+   "duration": 0.7,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m04_t14_dust_print.trimmed.mkv",
+    "in": 35.6,
+    "out": 36.3
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "name in the panel stays unreadable as in m04"
+   },
+   "note": "name in the panel stays unreadable as in m04"
+  },
+  {
+   "id": "S14_g_biometric",
+   "type": "gameplay",
+   "duration": 1.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m04_t16_biometric_door.trimmed.mkv",
+    "in": 5.0,
+    "out": 6.301
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.9
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   }
+  },
+  {
+   "id": "S15_g_keypad",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m02_t06_keypad.trimmed.mkv",
+    "in": 3.3,
+    "out": 4.5
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "digits at 3.3, 4.1, 4.5 s: shows one, two, three digits (256_); never the whole code; verify each aspect crop"
+   },
+   "note": "digits at 3.3, 4.1, 4.5 s: shows one, two, three digits (256_); never the whole code; verify each aspect crop"
+  },
+  {
+   "id": "S16_g_conversation",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m02_t09_val.trimmed.mkv",
+    "in": 10.357,
+    "out": 11.866
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "conversation with choices; choices solid from 11.4 s (last 0.77 s); no suspect named; take audio muted; fallback m06 t15_kemal from 31.5. 9:16 and 1:1 framing to be set at the frame check"
+   },
+   "note": "conversation with choices; choices solid from 11.4 s (last 0.77 s); no suspect named; take audio muted; fallback m06 t15_kemal from 31.5. 9:16 and 1:1 framing to be set at the frame check"
+  },
+  {
+   "id": "S17_g_tracer",
+   "type": "gameplay",
+   "duration": 0.9,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m06_t14_tracer.trimmed.mkv",
+    "in": 14.2,
+    "out": 15.1
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 0.7
+    },
+    "1:1": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "deposit picked ~14.9-15.0; recheck 9:16 crop on the match line (window later than m06 trailer's)"
+   },
+   "note": "deposit picked ~14.9-15.0; recheck 9:16 crop on the match line (window later than m06 trailer's)"
+  },
+  {
+   "id": "S18_kemal",
+   "type": "gameplay",
+   "duration": 2.4333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m06_t29_kemal_picks.trimmed.mkv",
+    "in": 42.0,
+    "out": 44.441
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "16:9 zoom 1 so the game bar shows the line; out before the 'turns on you' toast"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Kemal Aydin",
+     "text": "Then come and move me.",
+     "start": 0.03,
+     "end": 2.43
+    }
+   ],
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "16:9 zoom 1 so the game bar shows the line; out before the 'turns on you' toast"
+  },
+  {
+   "id": "C3_card_codes",
+   "type": "card",
+   "duration": 1.9667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Encoding &",
+    "Encryption"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "S20_c_base64",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "lth_gap4_rot13.trimmed.mkv",
+    "in": 9.5,
+    "out": 10.7
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.495,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.684,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.734,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-4 real take: Base64 decode (neutral sample), input and output in one crop; result lands 9.65 s"
+   },
+   "placeholder": false,
+   "note": "GAP-4 real take: Base64 decode (neutral sample), input and output in one crop; result lands 9.65 s"
+  },
+  {
+   "id": "S21_c_vigenere",
+   "type": "gameplay",
+   "duration": 1.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "lth_gap4_rot13.trimmed.mkv",
+    "in": 15.2,
+    "out": 16.6
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.495,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.684,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.734,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-4 real take: Vigenere decode (neutral sample), result lands 15.30 s; crop starts right of the recipe pane"
+   },
+   "placeholder": false,
+   "note": "GAP-4 real take: Vigenere decode (neutral sample), result lands 15.30 s; crop starts right of the recipe pane"
+  },
+  {
+   "id": "S22_c_rot13",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "lth_gap4_rot13.trimmed.mkv",
+    "in": 20.9,
+    "out": 22.7
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.495,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.684,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.734,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-4 real take: ROT13 decode (neutral sample), result lands 21.07 s; crop starts right of the recipe pane"
+   },
+   "placeholder": false,
+   "note": "GAP-4 real take: ROT13 decode (neutral sample), result lands 21.07 s; crop starts right of the recipe pane"
+  },
+  {
+   "id": "C4_card_real",
+   "type": "card",
+   "duration": 1.9333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real VMs.",
+    "Real Hacking."
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "S23_vm_in_game",
+   "type": "gameplay",
+   "duration": 0.6667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m03_t02_vm_approach.trimmed.mkv",
+    "in": 9.5,
+    "out": 10.1667
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.265,
+     "cy": 0.5,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.265,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.265,
+     "cy": 0.5,
+     "zoom": 1.9
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "VM panel open in game, desktop drawn from 9.5 s; panel fills left 53% of the frame so crop to it; if the crop fails use GAP-5; deliberate hold (45.872) off any onset"
+   },
+   "masks": [
+    {
+     "x": 40,
+     "y": 780,
+     "w": 620,
+     "h": 220,
+     "note": "PROVISIONAL: login sticky note, bottom left outside the panel; set exact box on the frame check, all aspects"
+    }
+   ],
+   "note": "VM panel open in game, desktop drawn from 9.5 s; panel fills left 53% of the frame so crop to it; if the crop fails use GAP-5; deliberate hold (45.872) off any onset"
+  },
+  {
+   "id": "S24_con_script_read",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m05_console_script_clip.mp4",
+    "in": 0.2,
+    "out": 1.2
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   },
+   "placeholder": false
+  },
+  {
+   "id": "S25_con_settings",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m03_console_msfuse_clip.mp4",
+    "in": 0.9,
+    "out": 1.9
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   },
+   "placeholder": false
+  },
+  {
+   "id": "S26_con_run",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m09_console_msfrun_clip.mp4",
+    "in": 0.8,
+    "out": 1.8
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   },
+   "placeholder": false
+  },
+  {
+   "id": "S27_con_script_list",
+   "type": "gameplay",
+   "duration": 0.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m07_console_script_clip.mp4",
+    "in": 0.6,
+    "out": 1.401
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "wide clip, centred in 9:16 and 1:1"
+   },
+   "note": "wide clip, centred in 9:16 and 1:1",
+   "placeholder": false
+  },
+  {
+   "id": "S28_con_session",
+   "type": "gameplay",
+   "duration": 1.6333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m08_console_shell_clip.mp4",
+    "in": 0.4,
+    "out": 2.043
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "session output lands 0.9 s into the shot"
+   },
+   "note": "session output lands 0.9 s into the shot",
+   "placeholder": false
+  },
+  {
+   "id": "S29_victoria",
+   "type": "gameplay",
+   "duration": 4.7667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m03_t19_victoria_pitch.trimmed.mkv",
+    "in": 18.132,
+    "out": 22.8987
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "16:9 zoom 1 so the game bar shows the line; two pauses inside the line (split option in Q8)"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Victoria Sterling",
+     "text": "Freelance pen testing. Some CTF work. Competent.",
+     "start": 0.128,
+     "end": 4.558
+    }
+   ],
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "16:9 zoom 1 so the game bar shows the line; two pauses inside the line (split option in Q8)"
+  },
+  {
+   "id": "S30_flag_accepted",
+   "type": "gameplay",
+   "duration": 3.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "lth_gap3_archive_key.trimmed.mkv",
+    "in": 18.5,
+    "out": 21.7
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.8333,
+     "cy": 0.5,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.833,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.83,
+     "cy": 0.621,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-3 real take: HaX reaction toast 'ENTROPY archive decryption key confirmed' only; tight crop on the bottom-most toast, other HUD masked (0 to 0.3 s: wider mask while the toast settles); no archive contents, no typed input"
+   },
+   "placeholder": false,
+   "note": "GAP-3 real take: HaX reaction toast 'ENTROPY archive decryption key confirmed' only; tight crop on the bottom-most toast, other HUD masked (0 to 0.3 s: wider mask while the toast settles); no archive contents, no typed input",
+   "masks": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 345,
+     "h": 560,
+     "color": "#000",
+     "note": "objectives panel (names a technique)"
+    },
+    {
+     "x": 590,
+     "y": 860,
+     "w": 740,
+     "h": 120,
+     "color": "#000",
+     "note": "bottom examine box (names a person and a host)"
+    },
+    {
+     "x": 1285,
+     "y": 0,
+     "w": 635,
+     "h": 354,
+     "color": "#000",
+     "note": "menu, Task Complete and Objective Updated toasts, Clear all"
+    },
+    {
+     "x": 1700,
+     "y": 975,
+     "w": 220,
+     "h": 105,
+     "color": "#000",
+     "note": "Block/Punch HUD"
+    },
+    {
+     "x": 0,
+     "y": 985,
+     "w": 450,
+     "h": 95,
+     "color": "#000",
+     "note": "portrait, hearts, inventory"
+    },
+    {
+     "x": 1285,
+     "y": 354,
+     "w": 635,
+     "h": 260,
+     "from": 0,
+     "to": 0.3,
+     "color": "#000",
+     "note": "HaX toast still settling into place before 18.8 s"
+    }
+   ]
+  },
+  {
+   "id": "C5_card_help",
+   "type": "card",
+   "duration": 2.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Stuck?",
+    "Hints. Guides.",
+    "Walkthroughs."
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "S31_phone_ask",
+   "type": "gameplay",
+   "duration": 1.9,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "lth_gap2_field_guide.trimmed.mkv",
+    "in": 4.7,
+    "out": 6.6
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.357,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.357,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.357,
+     "zoom": 1.4
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-2 real take: choices on screen (3.64), 'Send me the lockpicking field guide' sent (5.24), reply lands; phone column crop"
+   },
+   "placeholder": false,
+   "note": "GAP-2 real take: choices on screen (3.64), 'Send me the lockpicking field guide' sent (5.24), reply lands; phone column crop"
+  },
+  {
+   "id": "S32_field_guide",
+   "type": "gameplay",
+   "duration": 1.26,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "lth_gap2_field_guide.trimmed.mkv",
+    "in": 17.8,
+    "out": 19.06
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.495,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.495,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-2 real take: field guide open, title readable (17.8 to 19 s, after the item toast clears); 9:16 and 1:1 crop to the text column"
+   },
+   "placeholder": false,
+   "note": "GAP-2 real take: field guide open, title readable (17.8 to 19 s, after the item toast clears); 9:16 and 1:1 crop to the text column"
+  },
+  {
+   "id": "S33_irina",
+   "type": "gameplay",
+   "duration": 6.04,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m06_t12_irina_badges.trimmed.mkv",
+    "in": 23.9,
+    "out": 29.94
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "'Exactly backwards.' (source 30.26) falls after the out point"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Dr Irina Volkova",
+     "text": "Satoshi is paranoid about doors and careless about passwords.",
+     "start": 0.237,
+     "end": 5.657
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "'Exactly backwards.' (source 30.26) falls after the out point"
+  },
+  {
+   "id": "S34_walkthrough",
+   "type": "gameplay",
+   "duration": 2.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "lth_gap1_walkthrough.trimmed.mkv",
+    "in": 3.0,
+    "out": 5.8
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.495,
+     "cy": 0.5,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.495,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.495,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "GAP-1 real take: getting-started section (window starts after the Purpose list, which names ciphers); crop excludes the Contents sidebar; window ends before the page's 'Break Escape' list item and Derek lines (about 6 s)"
+   },
+   "placeholder": false,
+   "note": "GAP-1 real take: getting-started section (window starts after the Purpose list, which names ciphers); crop excludes the Contents sidebar; window ends before the page's 'Break Escape' list item and Derek lines (about 6 s)"
+  },
+  {
+   "id": "S35_v_ghost",
+   "type": "gameplay",
+   "duration": 0.6667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m02_t17_ghost_call.trimmed.mkv",
+    "in": 2.7,
+    "out": 3.368
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.71,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.71,
+     "cy": 0.435,
+     "zoom": 1.15
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "no voice plays in the window; VO8 runs 0.53 s into it"
+   },
+   "note": "no voice plays in the window; VO8 runs 0.53 s into it"
+  },
+  {
+   "id": "S36_v_withheld",
+   "type": "gameplay",
+   "duration": 0.9333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m07_t13c_architect_call.trimmed.mkv",
+    "in": 10.3,
+    "out": 11.234
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.17,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.2,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.17,
+     "zoom": 2.5
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "withheld-number call widget only"
+   },
+   "note": "withheld-number call widget only"
+  },
+  {
+   "id": "C6_card_entropy",
+   "type": "card",
+   "duration": 1.6,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Meet",
+    "ENTROPY"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "S37_voltage_wide",
+   "type": "gameplay",
+   "duration": 2.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m04_t04_voltage.trimmed.mkv",
+    "in": 64.84,
+    "out": 67.24
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.58,
+     "cy": 0.41,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reviewed against recipe; frame check pending"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Voltage",
+     "text": "I didn't bring a bomb, agent.",
+     "start": 0.2,
+     "end": 2.19
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
+   "id": "S38_voltage_close",
+   "type": "gameplay",
+   "duration": 2.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m04_t04_voltage.trimmed.mkv",
+    "in": 67.24,
+    "out": 69.44
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.28,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.3,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.3,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "caption window starts at the shot start (fast line)"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Voltage",
+     "text": "I brought a maintenance schedule.",
+     "start": 0.0,
+     "end": 1.68
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   },
+   "note": "caption window starts at the shot start (fast line)"
+  },
+  {
+   "id": "S39_recruiter",
+   "type": "gameplay",
+   "duration": 3.4333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m05_t10_recruiter_call.trimmed.mkv",
+    "in": 146.5,
+    "out": 149.94
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.25,
+     "zoom": 4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.231,
+     "zoom": 2.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.25,
+     "zoom": 3
+    }
+   },
+   "audio": {
+    "gain_db": 0.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "frame-check the picture from 146.5 to 148.55, not used before"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Recruiter",
+     "text": "Everyone has a price, agent.",
+     "start": 0.33,
+     "end": 2.89
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "frame-check the picture from 146.5 to 148.55, not used before"
+  },
+  {
+   "id": "C7a_card_usp1",
+   "type": "card",
+   "duration": 3.3667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real VMs and CTF",
+    "In a Spy Story"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "C7b_card_usp2",
+   "type": "card",
+   "duration": 3.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "No Other Game",
+    "Does It Like This"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "F1_f_briefcase",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "m01_t19_minigames.trimmed.mkv",
+    "in": 2.9,
+    "out": 3.306
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.40625
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "the one crescendo flash (Q4: m10 alarm panel alternative)"
+   },
+   "note": "the one crescendo flash (Q4: m10 alarm panel alternative)"
+  },
+  {
+   "id": "S40_architect",
+   "type": "gameplay",
+   "duration": 3.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m07_t13c_architect_call_fx.trimmed.mkv",
+    "in": 37.4,
+    "out": 41.0
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 1.7
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 2.6
+    }
+   },
+   "audio": {
+    "gain_db": 2.7,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "whole line inside the shot; frame-check the picture from 37.4"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Architect",
+     "text": "Four fires tonight, and only one of you.",
+     "start": 0.125,
+     "end": 3.358
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "note": "whole line inside the shot; frame-check the picture from 37.4"
+  },
+  {
+   "id": "S41_lone_agent",
+   "type": "gameplay",
+   "duration": 0.8333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "m07_t29b_walk_genhall.trimmed.mkv",
+    "in": 0.3,
+    "out": 1.136
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lone agent in the empty lit generator hall; silent; take audio muted. Alt t29c_walk_genhall"
+   },
+   "note": "lone agent in the empty lit generator hall; silent; take audio muted. Alt t29c_walk_genhall"
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false,
+   "note": "burned line 'SAFETYNET: Licence to Hack' over the close 96.769-101.568 (upper third, Press Start 2P): drawn by the cta renderer (burned_line); music fade 0.6 s from 104.168",
+   "burned_line": {
+    "text": "SAFETYNET: Licence to Hack",
+    "from": 0.0,
+    "to": 4.8
+   }
+  }
+ ]
+}
