@@ -1,0 +1,903 @@
+{
+    "mission": "ca15",
+    "id": "ca15_trailer_r5",
+    "theme": "ca",
+    "title": "Cyber Aware ca15 trailer (Shadow IT), r5: in-world red-team drop, Guitar Motif 116 beats, Sulafat VO (16:9)",
+    "script": {
+        "heading": "ca15 trailer script r3 (Shadow IT)",
+        "owner_card": "none yet",
+        "brief": "docs/video/scripts/ca15_trailer_script_r3.md (r5 edit): consequence-first, in-world red-team drop; edit-level seat tab THE SHORTCUT / DEFENDER, shots 6-11 ATTACKER, inbox YOUR TURN (shot-level seat_labels). Guitar Motif from 37.442, 116 beats of 0.6316 s. Seams at the cards, cuts elsewhere, no flip join (flip is gameplay-to-gameplay only).",
+        "pace": "VO pace limit: 2.3 words per second + 0.2 s (lint). Every VO line is also a burned caption.",
+        "open_questions": [
+            "Beats 5 and 6 show choice buttons (Look up / Carry on, the card options): not verdict buttons, kept per script.",
+            "Hook ends 0.24 s after the line (below the 0.3 s rule); real marks force it.",
+            "Blue stick sprite stays on the floor after pickup (engine bug being fixed); visible in the hook and beat 10 until t11 is re-recorded.",
+            "Beat 14 uses in 1.75 / out 7.4344 so the Trust/Report/Delete/Verify buttons (6.78) never show."
+        ]
+    },
+    "fps": 30,
+    "length": 73.2656,
+    "music": {
+        "track": "PeaceFolk/Guitar Motif.mp3",
+        "analysis": "guitar_motif_75.json",
+        "start": 37.442,
+        "length": 73.2656,
+        "gain_db": -5,
+        "fade_in": 0,
+        "fade_out": 2.5,
+        "alternatives": [
+            "PeaceFolk/Gently Decaying.mp3 @39.055 (r4)"
+        ]
+    },
+    "beat": {
+        "bpm": 95.0,
+        "period": 0.6316,
+        "offset": 0
+    },
+    "duck": {
+        "db": -10,
+        "attack": 0.12,
+        "release": 0.3
+    },
+    "audio": {
+        "fade_ms": 8,
+        "target_lufs": -14,
+        "true_peak": -1.5
+    },
+    "shots": [
+        {
+            "id": "hook",
+            "type": "gameplay",
+            "duration": 4.4212,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t11_red_drop_run.trimmed.mkv",
+                "in": 41.71,
+                "out": 46.1312
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Joanne picks up the stick; hook line audio 43.02-45.89 (two runs), game bubble carries it; ends 0.24 s after the line (real marks force the sub-0.3 s tail); the blue stick sprite on the floor is an engine bug being fixed (t11 to be re-recorded) | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE OPEN-PLAN"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.4375,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "lines": [
+                {
+                    "start": 1.31,
+                    "end": 4.18,
+                    "speaker": "Joanne",
+                    "text": "Someone's dropped a memory stick. Whose is this?"
+                }
+            ],
+            "caption": {
+                "16:9": false,
+                "9:16": false,
+                "1:1": false
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-open",
+            "id": "open",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "title": "Shadow IT",
+                "company": "Tarrowby Logistics",
+                "stripe": "#6b4c9a"
+            },
+            "duration": 5.6844
+        },
+        {
+            "id": "topic",
+            "type": "gameplay",
+            "duration": 3.158,
+            "join": {
+                "type": "seam"
+            },
+            "source": {
+                "file": "t03b_choices_hold.trimmed.mkv",
+                "in": 5.606,
+                "out": 8.764
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Everyday choices panel before any pick (everyday_shown 5.406); no verdicts | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "EVERYDAY CHOICES",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "red_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "attack",
+            "duration": 3.158,
+            "join": {
+                "type": "seam"
+            },
+            "text": [
+                "Take the shortcut"
+            ],
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Shortcut chapter card, title only | CA: spoilers fine (owner), no masks"
+            }
+        },
+        {
+            "id": "pick_email",
+            "type": "gameplay",
+            "duration": 3.7896,
+            "join": {
+                "type": "seam"
+            },
+            "source": {
+                "file": "t03_choices_reveal.trimmed.mkv",
+                "in": 6.93,
+                "out": 10.7196
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Card 1: personal email option picked at c1_pick 8.19 (music drop); options on screen are choices, not verdicts; check 10.55-10.72 for marks | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "FRIDAY DEADLINE",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "look_up",
+            "type": "gameplay",
+            "duration": 2.5264,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t10_worldbeat_panel.trimmed.mkv",
+                "in": 0.71,
+                "out": 3.2364
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "'One from the red-team kit' panel: Look up / Carry on are choices, nothing pressed | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "TRACKER · BOOKED WITH IT",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "seat_labels": {
+                "attack": "ATTACKER"
+            }
+        },
+        {
+            "id": "nilesh_give",
+            "type": "gameplay",
+            "duration": 6.316,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t11_red_drop_run.trimmed.mkv",
+                "in": 16.42,
+                "out": 22.736
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Nilesh hands over the stick (line 87 at 16.52-21.69); chat menu hidden until 23.71; game bar masked, burned caption | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "TRACKER · BOOKED WITH IT",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.64,
+                    "cy": 0.42,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.645,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "seat_labels": {
+                "attack": "ATTACKER"
+            },
+            "lines": [
+                {
+                    "start": 0.1,
+                    "end": 5.27,
+                    "speaker": "Nilesh",
+                    "text": "Leave it next door, somewhere people stop. Then watch who picks it up."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true,
+            "masks": [
+                {
+                    "x": 0,
+                    "y": 850,
+                    "w": 1920,
+                    "h": 230,
+                    "color": "#14161c"
+                }
+            ]
+        },
+        {
+            "id": "walk_drop",
+            "type": "gameplay",
+            "duration": 4.4212,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t11_red_drop_run.trimmed.mkv",
+                "in": 29.26,
+                "out": 33.6812
+            },
+            "audio": {
+                "gain_db": -60
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Through the side door, the stick's menu, Drop here, the stick lands (drop_land 33.08; inventory HUD on until 33.99); take audio muted under v19 | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "THE OPEN-PLAN",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "seat_labels": {
+                "attack": "ATTACKER"
+            },
+            "voPos": {
+                "16:9": "top",
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "find_use",
+            "type": "gameplay",
+            "duration": 5.0528,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t11_red_drop_run.trimmed.mkv",
+                "in": 45.9,
+                "out": 50.9528
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Joanne at her desk, use_started 46.13, line audio 46.32-48.25; crop keeps the blue-stick bug out; game bubble carries the line | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "THE OPEN-PLAN",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.25,
+                    "cy": 0.37,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.1667,
+                    "cy": 0.5,
+                    "zoom": 1.6875
+                },
+                "1:1": {
+                    "cx": 0.21875,
+                    "cy": 0.37,
+                    "zoom": 2
+                }
+            },
+            "seat_labels": {
+                "attack": "ATTACKER"
+            },
+            "lines": [
+                {
+                    "start": 0.42,
+                    "end": 2.35,
+                    "speaker": "Joanne",
+                    "text": "I'll just plug it in and see whose it is."
+                }
+            ],
+            "caption": {
+                "16:9": false,
+                "9:16": false,
+                "1:1": false
+            },
+            "dialogue": true
+        },
+        {
+            "id": "payoff",
+            "type": "gameplay",
+            "duration": 2.5264,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t11_red_drop_run.trimmed.mkv",
+                "in": 52.8,
+                "out": 55.3264
+            },
+            "audio": {
+                "gain_db": -60
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Note arrives in the tray (note_in_tray 52.96); the Task and Objective toasts are gone by 52.80; no other toast to 55.33 | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "TRACKER · SESSION NOTE",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.28125,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "seat_labels": {
+                "attack": "ATTACKER"
+            },
+            "voPos": {
+                "16:9": "top",
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "nilesh_kind",
+            "type": "gameplay",
+            "duration": 6.316,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t15_nilesh_kind.trimmed.mkv",
+                "in": 9.82,
+                "out": 16.136
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Nilesh at the kiosk (line 9.92-14.65, menu hidden to 16.82); game bar masked, burned caption | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.64,
+                    "cy": 0.42,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.645,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "seat_labels": {
+                "attack": "ATTACKER"
+            },
+            "lines": [
+                {
+                    "start": 0.1,
+                    "end": 4.83,
+                    "speaker": "Nilesh",
+                    "text": "Nobody was careless there. She was being kind, and that's what a drop relies on."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "dialogue": true,
+            "masks": [
+                {
+                    "x": 0,
+                    "y": 850,
+                    "w": 1920,
+                    "h": 230,
+                    "color": "#14161c"
+                }
+            ]
+        },
+        {
+            "id": "led_email",
+            "type": "gameplay",
+            "duration": 4.4212,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03c_flip_one.trimmed.mkv",
+                "in": 14.365,
+                "out": 18.7862
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Six months later, card 1's consequence only (other three montage items hidden in the take) | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "SIX MONTHS LATER",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "blue_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "defend",
+            "duration": 2.5264,
+            "join": {
+                "type": "seam"
+            },
+            "text": [
+                "You sort the shortcuts"
+            ],
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Defend chapter card, title only | CA: spoilers fine (owner), no masks"
+            }
+        },
+        {
+            "id": "inbox",
+            "type": "gameplay",
+            "duration": 5.6844,
+            "join": {
+                "type": "seam"
+            },
+            "source": {
+                "file": "t06_inbox_list.trimmed.mkv",
+                "in": 1.75,
+                "out": 7.4344
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Inbox list then the Benmoor row; window ends before the verb buttons appear at 6.78 (in 1.75: list up at 1.7, tally badge gone at 1.65); nothing pressed | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "SHORTCUTS INBOX",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            },
+            "seat_labels": {
+                "defend": "YOUR TURN"
+            }
+        },
+        {
+            "id": "fatima",
+            "type": "gameplay",
+            "duration": 6.316,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t14_fatima_stepaway.trimmed.mkv",
+                "in": 8.91,
+                "out": 15.226
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": true,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Fatima asks about the found stick (ask audio 10.59-13.82; bubble 10.21-17.16); v10 clears it by 0.55; cut before the menu | CA: spoilers fine (owner), no masks"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE DEPOT"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.406,
+                    "cy": 0.45,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.406,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.2448,
+                    "cy": 0.5,
+                    "zoom": 2
+                }
+            },
+            "lines": [
+                {
+                    "start": 1.68,
+                    "end": 4.91,
+                    "speaker": "Fatima",
+                    "text": "No name on it, nothing. What do you reckon I do with it?"
+                }
+            ],
+            "caption": {
+                "16:9": false,
+                "9:16": false,
+                "1:1": false
+            },
+            "dialogue": true
+        },
+        {
+            "preset": "ca-close",
+            "id": "close",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "name": "Shadow IT",
+                "tagline": "Take the shortcut · See where it leads",
+                "hacktivity": "Hacktivity",
+                "cta": "Learn on Hacktivity.co.uk",
+                "layout": {
+                    "1:1": {
+                        "mark_y": 0.14
+                    }
+                },
+                "wordmark": [
+                    "HACKTIVITY",
+                    "CYBER AWARE"
+                ]
+            },
+            "duration": 6.9476
+        }
+    ],
+    "vo": [
+        {
+            "id": "v1",
+            "start": 4.6212,
+            "end": 9.7332,
+            "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+            "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2/trim/v1.mp3"
+        },
+        {
+            "id": "v1c",
+            "start": 10.2056,
+            "end": 12.8936,
+            "text": "This episode: Shadow IT.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2/trim/v1c.mp3"
+        },
+        {
+            "id": "v2_r3",
+            "start": 13.3636,
+            "end": 16.0516,
+            "text": "First, take the shortcuts round IT.",
+            "caption": "First, take the\nshortcuts round IT.",
+            "onCard": "hide",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v2_r3.mp3"
+        },
+        {
+            "id": "v16",
+            "start": 16.6216,
+            "end": 19.0936,
+            "text": "The pack goes to a personal inbox.",
+            "caption": "The pack goes to\na personal inbox.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v16.mp3"
+        },
+        {
+            "id": "v18",
+            "start": 20.3112,
+            "end": 22.0392,
+            "text": "Now the attacker's side.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v18.mp3"
+        },
+        {
+            "id": "v19",
+            "start": 29.5536,
+            "end": 31.7376,
+            "text": "Next door, you leave it by the kettle.",
+            "caption": "Next door, you leave it\nby the kettle.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v19.mp3"
+        },
+        {
+            "id": "v21",
+            "start": 38.7276,
+            "end": 40.4556,
+            "text": "The tracker reports home.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v21.mp3"
+        },
+        {
+            "id": "v17",
+            "start": 47.47,
+            "end": 51.43,
+            "text": "Months on, a reused password opens that inbox.",
+            "caption": "Months on, a reused password\nopens that inbox.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v17.mp3"
+        },
+        {
+            "id": "v15",
+            "start": 51.9912,
+            "end": 53.4072,
+            "text": "You sort what's waiting.",
+            "onCard": "hide",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v15.mp3"
+        },
+        {
+            "id": "v9",
+            "start": 54.3176,
+            "end": 59.1416,
+            "text": "Is it an approved tool? Found sticks go to IT, unplugged.",
+            "caption": "Is it an approved tool?\nFound sticks go\nto IT, unplugged.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2/trim/v9.mp3"
+        },
+        {
+            "id": "v10",
+            "start": 60.002,
+            "end": 61.13,
+            "text": "A colleague asks.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/v10.mp3"
+        },
+        {
+            "id": "v11",
+            "start": 66.518,
+            "end": 72.278,
+            "text": "Take the shortcut, see where it leads. Learn on Hacktivity.co.uk.",
+            "caption": "Take the shortcut, see where it leads.\nLearn on Hacktivity.co.uk.",
+            "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat_v2/trim/v11.mp3"
+        }
+    ],
+    "seat_labels": {
+        "attack": "THE SHORTCUT",
+        "defend": "DEFENDER"
+    }
+}

@@ -44,6 +44,12 @@ export function buildTimeline(edit) {
   return { fps, shots, joins, totalFrames: shots.length ? shots[shots.length - 1].endFrame : 0 };
 }
 
+/** Merges edit-level seat_labels {attack, defend} under each shot's own seat_labels (shot-level wins per key). No labels: the timeline is returned unchanged. */
+export function withSeatLabels(tl, labels) {
+  if (!labels) return tl;
+  return { ...tl, shots: tl.shots.map((s) => ({ ...s, seat_labels: { ...labels, ...(s.seat_labels || {}) } })) };
+}
+
 /** Effect state at a global frame: {type, intensity 0..1, side:'out'|'in', p 0..1, join} or null. */
 export function effectAt(tl, frame) {
   for (const j of tl.joins) {

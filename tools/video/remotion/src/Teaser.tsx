@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AbsoluteFill, Freeze, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
-import { buildTimeline, effectAt } from './timeline.js';
+import { buildTimeline, effectAt, withSeatLabels } from './timeline.js';
 import { loadFonts } from './fonts';
 import { TextCard } from './components/TextCard';
 import { EndLogos } from './components/EndLogos';
@@ -29,7 +29,7 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
   const { width: w, height: h, fps } = useVideoConfig();
   const tl0 = buildTimeline(edit);
   // edit-level seat_labels {attack, defend} override the ATTACKER / DEFENDER tab text on every Cyber Aware component (absent: unchanged)
-  const tlCa = edit.seat_labels ? { ...tl0, shots: tl0.shots.map((s: any) => ({ ...s, seat_labels: { ...edit.seat_labels, ...(s.seat_labels || {}) } })) } : tl0;
+  const tlCa = withSeatLabels(tl0, edit.seat_labels);
   // Critical Cases edits: the edit-level cc ({case, accent, panel, case1, case2, ...}) sits under each shot's own cc
   const tl = edit.theme === 'cc' && edit.cc ? { ...tlCa, shots: tlCa.shots.map((s: any) => ({ ...s, cc: { ...edit.cc, ...(s.cc || {}) } })) } : tlCa;
   // edit-level caption_top {"9:16": fraction} lifts the burned dialogue captions in portrait (absent: unchanged)
