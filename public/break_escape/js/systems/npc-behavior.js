@@ -3680,13 +3680,13 @@ export class NPCBehavior {
         }];
         this.config.patrol.waypointMode = 'sequential';
         this.config.patrol.waypointIndex = 0;
-        this.config.patrol.enabled = true;
         // A route stop mid-way: drop the route's pending action, timed use and wait (E4 R1 B1),
         // as restartAuthoredPatrol does
         this._pendingRouteAction = null;
         this._routeWait = null;
         this._routeUse = null;
         this._useHeld = null;
+        this.config.patrol.enabled = true;
         this._stopOnArrival = true; // New flag: disable patrol after reaching this waypoint
         this._goToStayDest = { x: worldX, y: worldY }; // Original destination for arrival-tolerance guard
         this._moveId = opts?.moveId ?? null;   // SIMS-2: echoed in npc_arrived so needs can ignore a stale arrival
