@@ -1,0 +1,14 @@
+{
+  "key": "5c5cc2e520ea9a06764eeb77c820ffe0",
+  "npc": "nilesh_solanki",
+  "text": "To find out whose it is. Kindness does the attacker's work.",
+  "delivery": "stepping into the red-team host role, conspiratorial but light",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:16:24Z"
+}

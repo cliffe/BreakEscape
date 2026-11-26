@@ -1,0 +1,14 @@
+{
+  "key": "f0a476ab45b6fa99052d85ca842a10fe",
+  "npc": "nilesh_solanki",
+  "text": "Before we flip, one from the red-team kit. A stick, no label, no note.",
+  "delivery": "stepping into the red-team host role, conspiratorial but light",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:16:12Z"
+}
