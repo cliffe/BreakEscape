@@ -1,0 +1,13 @@
+{
+  "key": "3d28dd602deebf71e79eb95e66b63734",
+  "npc": "ama_owusu",
+  "text": "A sweep lists what answers. A scanner's write-up is only a report: test each finding before you trust it.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:58:44Z"
+}

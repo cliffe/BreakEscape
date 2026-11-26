@@ -1,0 +1,13 @@
+{
+  "key": "dfce52ea4de3fd82f653144639bacbf5",
+  "npc": "ama_owusu",
+  "text": "A saved link is as good as a password, so anything that stores one is worth guarding. Your keyring is the list of sign-ins you've collected, and the network view offers them when you connect.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:04Z"
+}

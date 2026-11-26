@@ -3,6 +3,9 @@
 
 VAR act_evening = false
 VAR read_log_done = false
+VAR use_card_done = false
+VAR printer_fixed = false
+VAR printer_fix_told = false
 // met_graham: ink-local first-meeting flag (see ama_owusu.ink).
 VAR met_graham = false
 
@@ -41,9 +44,17 @@ Go on, then.
 # speaker:npc
 Want to see what you looked like from here? The network log PC's just there.
 # speaker:npc
-Every sweep, scan and test you did is a row. Find your own.
+Every sweep, scan, test, plug and share you opened is a row. Yours come after the early ones.
 # speaker:npc
-Before you got here, someone swept the whole network from the kitchen port. Find that sweep and flag it.
+Before the office opened, someone swept the whole network from the kitchen port. A sweep at an odd hour from an odd place is what I look for. Find it and flag it.
+{ use_card_done and not printer_fixed:
+    ~ printer_fixed = true
+    #set_global:printer_fixed:true
+    ~ printer_fix_told = true
+    #set_global:printer_fix_told:true
+    # speaker:npc
+    I've changed the printer's factory login tonight. Have a look at its admin page now.
+}
 -> hub
 
 // Played once by the needs system when Graham and Agnieszka chat at the cooler

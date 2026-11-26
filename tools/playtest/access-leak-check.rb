@@ -46,6 +46,10 @@
 #   --signin, --logout   untagged captures only, so only with `--untagged`. A tagged capture places them by its own tags, so
 #                        either option beside a tagged file is refused (exit 2): a name can never sit beside a tag.
 #   --resume             both modes: the tags do not reach a resumed session.
+#   --refused            both modes: `<account id|other>@<row time>` names the username typed at ONE helpdesk stopping row (a
+#                        `refused` with triesLeft 0, or `blocked`), read from the playtest's own log. It only lets a REPEAT password
+#                        grant of ANOTHER account pass that stop (review R3 minor 2); an unnamed stop, or one named for the
+#                        grant's own account, still holds. An entry that matches no stopping row exits 2.
 # Stripping the tags by hand gains nothing: a hand-stripped file is refused without `--untagged`.
 #
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
@@ -95,6 +99,7 @@ require_relative 'lib/access_leak_scanner'
 args = ARGV.dup
 usage = 'usage: access-leak-check.rb [--untagged [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
         '[--logout <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]...] [--resume <account id>@<pc id>@<row time>]... ' \
+        '[--refused <account id|other>@<row time>]... ' \
         '<game_id> <responses.jsonl> [more.jsonl ...] ' \
         '(a tagged capture takes no --signin or --logout: leave them out; they go only with --untagged, for an older capture; n counts every successful POST /login answer of the account in the log, remote and relay ones too; in a second-step scenario a --signin name must be confirmed by the desktop row that follows, else exit 2; a capture with a `login` tag is refused, exit 2)'
 untagged = !args.delete('--untagged').nil?
@@ -102,14 +107,15 @@ args.delete('--untagged') while args.include?('--untagged')
 signins = []
 resumes = []
 logouts = []
-['--signin', '--resume', '--logout'].each do |option|
+refused = []
+['--signin', '--resume', '--logout', '--refused'].each do |option|
   while (i = args.index(option))
     value = args[i + 1]
     if value.nil? || value.start_with?('--')
       warn usage
       exit 2
     end
-    { '--signin' => signins, '--resume' => resumes, '--logout' => logouts }[option] << value
+    { '--signin' => signins, '--resume' => resumes, '--logout' => logouts, '--refused' => refused }[option] << value
     args.slice!(i, 2)
   end
 end
@@ -175,7 +181,7 @@ if tag_problem
 end
 
 begin
-  findings = scanner.scan(lines, signins: signins, resumes: resumes, logouts: logouts, tags: tag_mode)
+  findings = scanner.scan(lines, signins: signins, resumes: resumes, logouts: logouts, tags: tag_mode, refused: refused)
 rescue ArgumentError => e
   warn e.message
   exit 2

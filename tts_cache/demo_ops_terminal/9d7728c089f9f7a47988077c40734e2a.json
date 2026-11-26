@@ -1,0 +1,13 @@
+{
+  "key": "9d7728c089f9f7a47988077c40734e2a",
+  "npc": "ama_owusu",
+  "text": "In the Terminal, unplugging needs the whole word, so a slip of the keys can't do it. It also ended every session through the box. For a defender, pulling an unknown box cuts off everything it carried. That's the whole tour. Come and find me for the short version.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:57Z"
+}

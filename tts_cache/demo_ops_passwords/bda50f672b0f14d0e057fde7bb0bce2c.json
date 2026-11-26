@@ -1,0 +1,13 @@
+{
+  "key": "bda50f672b0f14d0e057fde7bb0bce2c",
+  "npc": "ama_owusu",
+  "text": "Stored records, scrambled. None shows a password. But you can guess against them on your own machine, as often as you like, and no lockout stops you.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:01:21Z"
+}

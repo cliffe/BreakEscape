@@ -1,0 +1,13 @@
+{
+  "key": "a309e06685ac3aa92c68c0cdb875b9a8",
+  "npc": "ama_owusu",
+  "text": "This drop box is yours. There are three parts: getting in, reading the report, and remote ways in. Ask me what's next at any time.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:56:24Z"
+}

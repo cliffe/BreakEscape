@@ -1,0 +1,13 @@
+{
+  "key": "69a9a421f4ac212c3f146efe6e6a643a",
+  "npc": "ama_owusu",
+  "text": "One way in can lead to the next: an ordinary user first, then an administrator.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:37Z"
+}

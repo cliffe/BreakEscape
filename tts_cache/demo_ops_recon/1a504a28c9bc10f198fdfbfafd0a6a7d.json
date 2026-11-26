@@ -1,0 +1,13 @@
+{
+  "key": "1a504a28c9bc10f198fdfbfafd0a6a7d",
+  "npc": "ama_owusu",
+  "text": "Now open the drop box again and find Agnieszka's PC in the list. Press Sign in. You don't know her password, so don't type one: pick the printer's saved link from the list instead.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:58:59Z"
+}

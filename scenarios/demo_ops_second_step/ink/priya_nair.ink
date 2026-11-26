@@ -18,6 +18,8 @@ Can I help?
 + [How does the phone line work?]
     # speaker:npc
     Ring it and we'll move an account's approvals, once we've rung the number we hold to check it's really them.
+    # speaker:npc
+    Callers who push too hard make the desk wary, and it slows down.
     -> choices
 + [Nothing, thanks.]
     # speaker:npc

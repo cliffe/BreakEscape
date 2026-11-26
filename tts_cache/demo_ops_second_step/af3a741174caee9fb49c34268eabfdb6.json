@@ -1,0 +1,13 @@
+{
+  "key": "af3a741174caee9fb49c34268eabfdb6",
+  "npc": "ama_owusu",
+  "text": "Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile. Your keyring holds every sign-in you've earned.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:02:57Z"
+}

@@ -14,7 +14,7 @@ Hi, I'm Niamh. I'm covering reception today.
 # speaker:npc
 Can I help?
 - (choices)
-+ [What's the visitor desk for?]
++ [What's the visitor kiosk for?]
     # speaker:npc
     Guests sign in there. The desk account is only a password, no phone needed.
     -> choices

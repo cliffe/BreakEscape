@@ -1334,7 +1334,7 @@ module BreakEscape
         secrets.each { |x| assert_not_includes found.first['bark'], x }
       end
       pointer = maps.find { |m| m['eventPattern'] == 'pc_in_use:lorna_pc' }
-      assert_equal 'Nobody signs in at a PC while its owner is sitting there.', pointer['bark']
+      assert_equal 'Nobody signs in at a PC while its owner is sitting there. Everything today waits until people step away.', pointer['bark']
     end
 
     test 'tour: Darren keeps his 90 s leave threshold and gains a 50 s idle lock; the lock bark reads the screen global' do
@@ -1355,6 +1355,16 @@ module BreakEscape
       assert_includes m['condition'], "reenrol_done !== true"
       ink = File.read(File.expand_path('../../../scenarios/demo_ops_second_step/ink/thandiwe_moyo.ink', __dir__))
       assert_includes ink, '#complete_task:reenrol'
+    end
+
+    test 'tour: the password reset ticks when the desk grants it, and the log closing bark is the last mapping before it' do
+      m = ama_mappings.find { |x| x['eventPattern'] == 'helpdesk_answered:it_desk' && x['completeTask'] == 'reset_password' }
+      assert m, 'a desk grant ticks reset_password without waiting for Continue'
+      assert_includes m['condition'], "data.what === 'password'"
+      assert_equal({ 'reset_password_done' => true }, m['setGlobal'])
+      bark = ama_mappings.find { |x| x['eventPattern'] == 'global_variable_changed:read_log_done' }
+      assert bark && bark['onceOnly'], 'read_log_done has a once-only closing bark'
+      assert_operator ama_mappings.index(bark), :>, ama_mappings.index { |x| x['eventPattern'] == 'global_variable_changed:desk_call_done' }
     end
 
     test 'tour: one voice per character, no two speakers share a voice, the four changed voices and the chatter pass' do
