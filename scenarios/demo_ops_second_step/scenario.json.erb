@@ -445,7 +445,7 @@ rec = {
             { "eventPattern": "global_variable_changed:see_temper_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Frustrated people write things down. You'll see it on his sign-in screen at lunch." },
             { "eventPattern": "global_variable_changed:overhear_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "He said his login out loud to help a colleague. Now you have it too." },
             { "eventPattern": "global_variable_changed:step_holds_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Right password, and still no way in. The request went to Lorna's phone, and she didn't answer." },
-            { "eventPattern": "global_variable_changed:open_screen_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "His screen was open, so no password and no second step. He should have pressed Lock on the taskbar. The X only hides a desktop; sign out from Start." },
+            { "eventPattern": "global_variable_changed:open_screen_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "His screen was open, so no password and no second step. He should have used Lock or Sign out from Start. The X only hides a desktop." },
             { "eventPattern": "global_variable_changed:fob_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The fob's six digits change every minute. Whoever holds the fob holds the second step." },
             { "eventPattern": "global_variable_changed:number_match_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The number on screen had to match his phone, and a wrong pick cancels. With his phone in your hand, you could match it." },
             { "eventPattern": "global_variable_changed:exempt_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "This account has no second step at all. One gap like that undoes the rest." },
@@ -457,9 +457,11 @@ rec = {
             { "eventPattern": "global_variable_changed:safe_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time." },
             { "eventPattern": "global_variable_changed:case_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "You carried the case off and kept asking. His phone couldn't tell where the case was, so he gave in." },
             { "eventPattern": "global_variable_changed:darren_pc_screen_locked", "condition": "data.value === true && data.oldValue !== true && globalVars.act_midday === true && globalVars.pestered_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's screen has locked itself while he's away. Now try his PC." },
-            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && globalVars.reset_password_done === true && globalVars.reenrol_done !== true", "cooldown": 0, "completeTask": "reenrol", "setGlobal": { "reenrol_done": true } },
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && data.what === 'mfa' && globalVars.reset_password_done === true && globalVars.reenrol_done !== true", "cooldown": 0, "completeTask": "reenrol", "setGlobal": { "reenrol_done": true } },
             { "eventPattern": "helpdesk_answered:call_desk", "condition": "data.result === 'granted'", "cooldown": 0, "completeTask": "desk_call", "setGlobal": { "desk_call_done": true } },
-            { "eventPattern": "global_variable_changed:desk_call_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it." }
+            { "eventPattern": "global_variable_changed:desk_call_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it." },
+            { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "That's the day done. Come back to reception and ask me for the short version." },
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && data.what === 'password' && globalVars.reset_password_done !== true", "cooldown": 0, "completeTask": "reset_password", "setGlobal": { "reset_password_done": true } }
           ]
         },
         {
@@ -1090,7 +1092,7 @@ rec = {
           "name": "Approvals log terminal",
           "position": { "x": 3, "y": 4 },
           "takeable": false,
-          "observations": "A terminal showing the building's sign-in and approvals log. One burst of requests overnight looks wrong.",
+          "observations": "A terminal showing the building's sign-in and approvals log. One burst of requests overnight looks wrong. Select its row and flag it: that tells Ama you have found the odd one out.",
           "minigameData": {
             "logSource": "mfa_log",
             "anomaly": { "rowId": "s5" },

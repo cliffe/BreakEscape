@@ -1357,6 +1357,16 @@ module BreakEscape
       assert_includes ink, '#complete_task:reenrol'
     end
 
+    test 'tour: the password reset ticks when the desk grants it, and the log closing bark is the last mapping before it' do
+      m = ama_mappings.find { |x| x['eventPattern'] == 'helpdesk_answered:it_desk' && x['completeTask'] == 'reset_password' }
+      assert m, 'a desk grant ticks reset_password without waiting for Continue'
+      assert_includes m['condition'], "data.what === 'password'"
+      assert_equal({ 'reset_password_done' => true }, m['setGlobal'])
+      bark = ama_mappings.find { |x| x['eventPattern'] == 'global_variable_changed:read_log_done' }
+      assert bark && bark['onceOnly'], 'read_log_done has a once-only closing bark'
+      assert_operator ama_mappings.index(bark), :>, ama_mappings.index { |x| x['eventPattern'] == 'global_variable_changed:desk_call_done' }
+    end
+
     test 'tour: one voice per character, no two speakers share a voice, the four changed voices and the chatter pass' do
       data = scenario
       npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }

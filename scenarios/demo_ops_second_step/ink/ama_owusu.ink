@@ -203,10 +203,15 @@ Once she's away, her PC will send a request to her phone each time you sign in.
     Have a look in the kitchen first. That's where the water is, and Anjali won't move without it.
     -> hub.choices
 }
-# speaker:npc
-Right, coffee for everyone. Watch who leaves their desk.
-# speaker:npc
-Give them a minute or two. If nobody moves, ask me again.
+{ coffee_call > 0:
+    # speaker:npc
+    Asked again. Lorna, Darren and Yusuf should be up for coffee within a couple of minutes. Anjali only moves for water.
+- else:
+    # speaker:npc
+    Right, coffee for everyone. Watch who leaves their desk.
+    # speaker:npc
+    Give them a minute or two. If nobody moves, ask me again.
+}
 ~ coffee_call = coffee_call + 1
 # exit_conversation
 -> END
