@@ -363,3 +363,10 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - m01 v15 export committed in hacktivity-videos (b155e49, 312afe9); push is with the owner (no credentials here).
 - Machine: VID2 has it now (one 16:9 render), then CA0 (walk-in captures). Ask before any render.
 - Then: m10 t16 gallery-guard re-take after T413 lands (setup needs --unlock gallery --set gallery_open=true to stop the HaX gallery call); Tesseract after the owner's pick; m10 v3 render.
+
+## State 26 Nov, ~01:30
+
+- m09 v3 is on page B (tab m09v3, doc feedback/m09_trailer_v3, fe4d64e6d). Waiting on the owner: noor, scale, pw916, pace.
+- Owner picks via AC0: Tesseract E (thin wire) approved, covering the talk init, PixelLab talk, visemes --from-talk and the m10 t14 re-take. The walk fades stay (walklocked keep, walkvisible accept). voicedtext: spoken dialogue is exempt from rule 2 (VID2's generator change). Scrub: /data/footage isn't reachable from here, so the fix list goes to the owner via AC0 (told). Never write to ~/safetynet-footage.
+- Running: a Sonnet agent on Tesseract E (init, talk, visemes, in-game portrait on :3026). It commits on this branch and reports the hash, sheet and screenshot paths.
+- Next: send the Tesseract hash to AC0; Haiku re-takes m10 t14 (Tesseract), plus t16 (gallery guard, setup --unlock gallery --set gallery_open=true) once T413 lands; re-cut ending_wide/ending_close; bump to m10_trailer60_v3; render when CA0/VID2 free the machine; add an m10 tab on page B.
