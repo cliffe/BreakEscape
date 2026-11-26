@@ -79,12 +79,12 @@ Sulafat, the ca15 style. Budget: at most 3.0 words per second against the shot (
 |---|---|---|---|---|---|---|---|---|
 | v1 | 2 open | "Hacktivity Cyber Aware: Security awareness training you can play." | 9 | 5.68 | 1.58 | 5.31 (clip 5.112) | 0.37 | cached |
 | v1c | 3 topic | "This episode: Shadow IT." | 4 | 3.16 | 1.27 | 2.79 (clip 2.688) | 0.37 | cached |
-| v2_r3 | 4 red card | "First, take the shortcuts round IT." | 6 | 3.16 | 1.90 | 2.78 | 0.38 | **new** |
+| v2_r3 | 4 red card | "First, take the shortcuts round IT." | 6 | 3.16 | 1.90 | 2.79 (clip 2.688, lead 0.1) | 0.37 | **new**, voiced 26 Nov |
 | v16 | 5 pick_email | "The pack goes to a personal inbox." | 7 | 3.79 | 1.85 | 3.10 | 0.69 | **new** |
 | v18 | 6 look_up | "Now the attacker's side." | 4 | 2.53 | 1.58 | 1.82 | 0.71 | **new** |
 | v19 | 8 walk_drop | "Next door, you leave it by the kettle." | 8 | 4.42 | 1.81 | 3.63 | 0.79 | **new** |
 | v21 | 10 payoff | "The tracker reports home." | 4 | 2.53 | 1.58 | 1.92 | 0.61 | **new** |
-| v17 | 12 led_email | "Months on, a reused password opens the personal inbox." | 9 | 4.42 | 2.04 | 3.96 | 0.46 | **new** |
+| v17 | 12 led_email | "Months on, a reused password opens that inbox." | 8 | 4.42 | 1.81 | 4.06 (clip 3.960, lead 0.1) | 0.36 | **new**, voiced 26 Nov |
 | v15 | 13 blue card | "You sort what's waiting." | 4 | 2.53 | 1.58 | 1.92 | 0.61 | **new** |
 | v9 | 14 inbox | "Is it an approved tool? Found sticks go to IT, unplugged." | 11 | 5.68 | 1.94 | 5.02 (clip 4.824) | 0.66 | cached |
 | v10 | 15 fatima | "A colleague asks." | 3 | 0.0 to 1.26 of the shot (ask audible at 1.56) | 2.4 at most | clip must be 1.26 s or less | 0.30 to the ask at a clip of 1.26 s (shorter clips give more) | **new** (re-voice; the old "Then a colleague asks." is retired from r3) |
@@ -110,7 +110,7 @@ Burned caption breaks (all lines 28 characters or fewer):
 - v18 "Now the attacker's side."
 - v19 "Next door, you leave it / by the kettle."
 - v21 "The tracker reports home."
-- v17 "Months on, a reused password / opens the personal inbox."
+- v17 "Months on, a reused password / opens that inbox."
 - v15 "You sort what's waiting."
 - v9 "Is it an approved tool? / Found sticks go / to IT, unplugged."
 - v10 "A colleague asks."
@@ -239,7 +239,7 @@ Every line below goes through the `npc-dialog-review` checks before it is voiced
 | 3 | Narrator | "Now the attacker's side." | new | v18, beat 6 | pending |
 | 4 | Narrator | "Next door, you leave it by the kettle." | new (replaces v19 "Next door, work carries on." and v20 "You leave it by the kettle.") | v19, beat 8 | pending |
 | 5 | Narrator | "The tracker reports home." | new | v21, beat 10 | pending |
-| 6 | Narrator | "Months on, a reused password opens the personal inbox." | new | v17, beat 12 | pending |
+| 6 | Narrator | "Months on, a reused password opens that inbox." | new | v17, beat 12 | pending |
 | 7 | Narrator | "You sort what's waiting." | new | v15, beat 13 | pending |
 | 7b | Narrator | "A colleague asks." | new text (replaces "Then a colleague asks."), id v10 | beat 15 | pending |
 | 8 | Joanne | "Someone's dropped a memory stick. Whose is this?" | existing game line, uncached | beat 1 | check the ca15 ink review covered it |
@@ -291,3 +291,4 @@ Delta review R3 (0 B, 2 M, 7 m). Decisions on M1, M2 and Q4 from AC0; minors on 
 | Narrator (v2_r3, v10, v15, v16, v17, v18, v19, v21) | Not in the game. `~/video-takes-local/ca15/vo/Sulafat_v2_r3/`, voiced with `tools/video/scripts/narrate.rb`, trimmed with `trim_vo.py` |
 | Joanne barks (2) | `scenarios/ca15_shadow_it/scenario.json.erb` (`bark` fields, lines about 1590 and 1608); audio in `tts_cache/` |
 | Nilesh (4) | `scenarios/ca15_shadow_it/ink/nilesh_solanki.ink` (compiled to `nilesh_solanki.json`); audio in `tts_cache/` |
+- Voicing (26 Nov): v17 reworded to "Months on, a reused password opens that inbox." (8 words) because the 9-word line measured 4.30 s against a 4.42 s slot (margin under 0.3); the take is slowed 4 percent (atempo 1.04) to 3.96 s. v2_r3 clip 2.688 s needs lead 0.1 (not 0.2) to keep 0.37 s. v10 measures 1.128 s (limit 1.26), margin 0.43 to the ask. Clips in `~/video-takes-local/ca15/vo/Sulafat_v2_r3/trim/`.
