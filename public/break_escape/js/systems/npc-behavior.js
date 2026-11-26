@@ -388,6 +388,21 @@ export class NPCBehaviorManager {
         }
     }
 
+    /** Start an NPC's authored patrol (apply-actions start_patrol). Returns true when it started. */
+    startPatrol(npcId, opts) {
+        const b = this.behaviors.get(npcId);
+        if (!b) { console.warn(`⚠️ startPatrol: no behavior for ${npcId}`); return false; }
+        return b.restartAuthoredPatrol({ ...opts, why: 'start_patrol' });
+    }
+
+    /** Hand an NPC back its authored patrol after an override (apply-actions resume_patrol). */
+    resumePatrol(npcId, opts) {
+        const b = this.behaviors.get(npcId);
+        if (!b) { console.warn(`⚠️ resumePatrol: no behavior for ${npcId}`); return false; }
+        if (!b._patrolOverridden && b.config.patrol.enabled) return false;   // still on it
+        return b.restartAuthoredPatrol({ ...opts, why: 'resume_patrol' });
+    }
+
     /** Stop an in-flight goToAndStay without an arrival (npc-needs.js aborts). */
     cancelMove(npcId) {
         this.behaviors.get(npcId)?.cancelMove();
@@ -466,7 +481,7 @@ export class NPCBehaviorManager {
             if (!window.npcHostileSystem?.isNPCKO?.(npcId)) behavior.setHostile(true);
         }
         // If revealing and patrol is configured, enable it
-        if (visible && behavior.config.patrol.waypoints?.length > 0) {
+        if (visible && behavior.config.patrol.waypoints?.length > 0 && !behavior.config.patrol.startDeferred) {
             behavior.config.patrol.enabled = true;
         }
         
@@ -519,6 +534,8 @@ export class NPCBehavior {
         }
 
         this.config = this.parseConfig(config || {});
+        this._authoredPatrol = JSON.parse(JSON.stringify(this.config.patrol));   // restartAuthoredPatrol (start_patrol / resume_patrol)
+        this._patrolOverridden = false;   // set by a goToAndStay from a script (resume_patrol)
 
         // State
         this.currentState = 'idle';
@@ -700,7 +717,11 @@ export class NPCBehavior {
         };
 
         // Auto-enable patrol if waypoints or bounds are provided but enabled not explicitly set
-        if (!config.patrol?.enabled && (config.patrol?.waypoints?.length > 0 || config.patrol?.bounds)) {
+        // patrol.startDeferred: authored and validated now, but stands still until a start_patrol
+        // action (apply-actions.js) sets it off; auto-enable below is how validation runs on it
+        const deferredPatrol = config.patrol?.startDeferred === true;
+        if (deferredPatrol) merged.patrol.startDeferred = true;
+        if ((!config.patrol?.enabled && (config.patrol?.waypoints?.length > 0 || config.patrol?.bounds)) || deferredPatrol) {
             merged.patrol.enabled = true;
             console.log(`🤖 Auto-enabled patrol for ${this.npcId} (waypoints/bounds detected)`);
         }
@@ -766,7 +787,46 @@ export class NPCBehavior {
             }
         }
 
+        if (deferredPatrol) merged.patrol.enabled = false;
         return merged;
+    }
+
+    /**
+     * Put the NPC back on its authored patrol (the config as parseConfig left it): the
+     * waypoints, route, bounds and speed, from the first waypoint. Cancels a goToAndStay
+     * that is still walking. For a route walker it starts at the segment in the room it
+     * stands in. Returns false when no patrol was authored.
+     */
+    restartAuthoredPatrol({ speed, why = 'patrol' } = {}) {
+        const snap = this._authoredPatrol;
+        if (!snap || !(snap.waypoints?.length || snap.route?.length || snap.bounds || snap.worldBounds)) {
+            console.warn(`⚠️ [${this.npcId}] ${why}: no authored patrol`);
+            return false;
+        }
+        window.seating?.unseatNPC?.(this);
+        this.cancelMove();
+        const fresh = JSON.parse(JSON.stringify(snap));
+        const patrol = this.config.patrol;
+        Object.assign(patrol, fresh, { enabled: true, startDeferred: false, waypointIndex: 0, currentSegmentIndex: 0 });
+        if (patrol.multiRoom && patrol.route?.length) {
+            const i = patrol.route.findIndex(seg => seg.room === this.roomId);
+            patrol.currentSegmentIndex = i >= 0 ? i : 0;
+        }
+        if (Number(speed) > 0) patrol.speed = Number(speed);
+        this._patrolOverridden = false;
+        this.patrolTarget = null;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.pathFollowingActive = false;
+        this.patrolReachedTime = 0;
+        this.lastPatrolChange = 0;
+        this._pendingRouteAction = null;
+        this._routeWait = null;
+        this._routeUse = null;
+        this._useHeld = null;
+        this.returningHome = false;
+        console.log(`🚶 [${this.npcId}] ${why}: authored patrol restarted`);
+        return true;
     }
 
     /**
@@ -3516,6 +3576,7 @@ export class NPCBehavior {
         if (opts?.owner !== 'needs' || !sameDest) this._playerPass = null;
         else if (this._playerPass) { this._playerPass.reissued = true; this._playerPass.reissuedAt = null; }
         this._moveOwner = opts?.owner;
+        if (opts?.owner !== 'needs' && opts?.owner !== 'walk') this._patrolOverridden = true;
         // Arrival extras (npc-walk.js): a callback, data spread into npc_arrived, and a
         // silent arrival (a walk-out ends with npc_left, never npc_arrived)
         this._moveOnArrive = typeof opts?.onArrive === 'function' ? opts.onArrive : null;

@@ -3202,16 +3202,16 @@ end
 # wherever it appears (walk the whole document, so nested contents/itemsHeld are covered).
 CONFIRM_LABEL_MAX = 16
 
+# Keys each apply-actions.js action reads: scripts/action_key_table.json (drift-tested against the
+# case labels of apply-actions.js by test/js/action-key-table.test.mjs). Its keys are the
+# known_actions vocabulary below.
+ACTION_KEY_TABLE = JSON.parse(File.read(File.join(__dir__, 'action_key_table.json')))['actions'].freeze
+
 def check_interaction_warnings(json_data)
   issues = []
   # The apply-actions.js action vocabulary (its case labels) plus the extra names the
   # triggerOnInteract schema enum accepts. Unknown types are a soft warning, not an error.
-  known_actions = %w[
-    set_global grant_fact emit_event complete_task unlock_task unlock_aim
-    unlock_object unlock_door give_item remove_item add_capture set_costume
-    clear_costume tint_objects lighting_dip confirm_action show_end_screen hint
-    revoke_card wear take_off
-  ]
+  known_actions = ACTION_KEY_TABLE.keys
   check_actions = lambda do |acts, p|
     unless acts.is_a?(Array)
       issues << "❌ ERROR: '#{p}' must be an array of actions."
@@ -3269,6 +3269,111 @@ def check_interaction_warnings(json_data)
       # A minigame's own data is its own format: the EHR terminal's medication rows carry a
       # string 'interactionWarning' that the object-level warning code never reads.
       node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") unless k == 'minigameData' }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
+# E4: the keys of every action in an action list. An eventMapping's `actions` list is strict
+# (a missing required key, an unknown key or an unknown type is an error, so `{ type: 'hint',
+# text: ... }` fails); the older lists (triggerOnInteract, onConfirm, onProceed, onDecline, timer
+# and onInteract `actions`, onWear, onRemove) report the same findings as warnings. `type`,
+# `condition` and keys starting with `_` are allowed on every action.
+ACTION_LIST_KEY_NAMES = %w[actions triggerOnInteract onConfirm onProceed onDecline onWear onRemove].freeze
+
+def check_action_keys(json_data)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+  npc_ids = []
+  droppable = []
+  collect = nil
+  collect = lambda do |node|
+    case node
+    when Hash
+      npc_ids << node['id'] if node['npcType'] || node['behavior'] || node.key?('eventMappings')
+      droppable << node['id'] if node['droppable'] == true && node['id'].is_a?(String)
+      node.each_value { |v| collect.call(v) }
+    when Array
+      node.each { |v| collect.call(v) }
+    end
+  end
+  collect.call(json_data)
+
+  check_list = lambda do |acts, p, strict|
+    sev = strict ? '❌ ERROR' : '⚠️ WARNING'
+    unless acts.is_a?(Array)
+      issues << "❌ ERROR: '#{p}' must be an array of actions." if strict
+      next
+    end
+    acts.each_with_index do |a, i|
+      ap = "#{p}[#{i}]"
+      unless a.is_a?(Hash)
+        issues << "❌ ERROR: '#{ap}' must be an action object." if strict
+        next
+      end
+      type = a['type']
+      unless type.is_a?(String) && !type.empty?
+        issues << "❌ ERROR: '#{ap}' needs a string 'type'." if strict
+        next
+      end
+      spec = ACTION_KEY_TABLE[type]
+      unless spec
+        issues << "❌ ERROR: '#{ap}' has unknown action type '#{type}'. Known types: #{ACTION_KEY_TABLE.keys.join(', ')}." if strict
+        next
+      end
+      allowed = spec['required'] + spec['optional'] + %w[type condition]
+      spec['required'].each do |k|
+        issues << "#{sev}: '#{ap}' (#{type}) is missing required key '#{k}'." unless a.key?(k)
+      end
+      if type == 'set_costume' && %w[costume id value].none? { |k| a.key?(k) }
+        issues << "#{sev}: '#{ap}' (set_costume) needs 'costume'."
+      end
+      extra = a.keys.reject { |k| allowed.include?(k) || k.start_with?('_') }
+      unless extra.empty?
+        issues << "#{sev}: '#{ap}' (#{type}) has unknown key(s): #{extra.join(', ')}. Keys read: #{(spec['required'] + spec['optional']).join(', ')}."
+      end
+      if a.key?('condition') && (!a['condition'].is_a?(String) || a['condition'].strip.empty?)
+        issues << "#{sev}: '#{ap}' condition must be a non-empty string; a bad condition never holds, so the action never runs."
+      end
+      if type == 'remove_world_item'
+        item = a['item']
+        if item.is_a?(String) && !droppable.include?(item)
+          issues << "#{sev}: '#{ap}' (remove_world_item) names '#{item}', which is not a declared item with droppable: true."
+        end
+        named = [a['roomId']].compact + (a['roomIds'].is_a?(Array) ? a['roomIds'] : [])
+        named.each do |rid|
+          issues << "#{sev}: '#{ap}' (remove_world_item) names room '#{rid}', which the scenario does not declare." unless rooms.key?(rid)
+        end
+      end
+      if %w[start_patrol resume_patrol].include?(type) && a['npc'].is_a?(String) && !npc_ids.include?(a['npc'])
+        issues << "#{sev}: '#{ap}' (#{type}) names npc '#{a['npc']}', which the scenario does not declare."
+      end
+      if type == 'set_global' && a['key'].is_a?(String) && !globals.key?(a['key'])
+        issues << "⚠️ WARNING: '#{ap}' (set_global) sets '#{a['key']}', which is not a declared global."
+      end
+      check_list.call(a['onConfirm'], "#{ap}/onConfirm", strict) if type == 'confirm_action' && a.key?('onConfirm')
+    end
+  end
+
+  walk = nil
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      node.each do |k, v|
+        next if k == 'minigameData' || k == 'flagRewards'
+        child = path.empty? ? k.to_s : "#{path}/#{k}"
+        if ACTION_LIST_KEY_NAMES.include?(k) && v.is_a?(Array) && v.all? { |e| e.is_a?(Hash) && e['type'].is_a?(String) } && !v.empty?
+          check_list.call(v, child, false) unless path =~ /eventMappings\[\d+\]\z/
+        end
+        if k == 'actions' && path =~ /eventMappings\[\d+\]\z/
+          check_list.call(v, child, true)
+        end
+        walk.call(v, child)
+      end
     when Array
       node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
     end
@@ -9392,6 +9497,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
   run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }
   run.call('check_interaction_warnings') { check_interaction_warnings(json_data) }
+  run.call('check_action_keys') { check_action_keys(json_data) }
   run.call('check_revoke_card_globals') { check_revoke_card_globals(json_data) }
   run.call('check_engine_limits') { check_engine_limits(json_data) }
   run.call('check_vm_flags_load_bearing') { check_vm_flags_load_bearing(json_data) }

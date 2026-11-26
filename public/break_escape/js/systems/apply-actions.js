@@ -176,6 +176,8 @@ function mergeEarnedFactEntries(map) {
  *   clear_costume  {}                — restores the chosen avatar
  *   wear           { itemId }:       puts a held wearable item on (wearables.js)
  *   take_off       { itemId? }:      takes the worn item off
+ *   remove_world_item { item, roomId?, roomIds? } — takes the learner's dropped object back
+ *   start_patrol / resume_patrol { npc, speed? } — an NPC's authored patrol starts or resumes
  *   hint           { message, title? }: shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
@@ -456,6 +458,51 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                 Promise.resolve(window.wearables?.takeOff?.(action.itemId || null))
                     .catch(e => console.warn('[applyActions] take_off failed:', e));
                 break;
+
+            // Take back what the learner dropped (E4): the player_drop object `item` (its own
+            // id, the dropped item's id) is removed from the rooms it could lie in. `roomId` /
+            // `roomIds` name them; with neither, every room the scenario declares. Per room: a
+            // loaded room's sprite is destroyed, then the server's room state is told (a stick
+            // in a room that is not loaded is only in saved state, so the removal always goes).
+            // A room that never held it costs one POST the server answers `success: false`; that
+            // is ignored (a console warning from RoomStateSync, no toast). A no-op when the
+            // object was picked up, consumed or never dropped.
+            // action: { type: 'remove_world_item', item: '<id>', roomId?, roomIds? }
+            case 'remove_world_item': {
+                const wantedId = typeof action.item === 'string' ? action.item : null;
+                if (!wantedId) { console.warn('[applyActions] remove_world_item: no item id'); break; }
+                const named = Array.isArray(action.roomIds) ? action.roomIds
+                    : (typeof action.roomId === 'string' && action.roomId ? [action.roomId] : null);
+                const roomIds = [...new Set(named || Object.keys(window.gameScenario?.rooms || {}))];
+                for (const rid of roomIds) {
+                    const objs = window.rooms?.[rid]?.objects;
+                    const sp = objs?.[wantedId];
+                    if (sp) {
+                        try { sp.proximityGhost?.destroy?.(); } catch (e) { /* already gone */ }
+                        try { sp.destroy?.(); } catch (e) { /* already gone */ }
+                        delete objs[wantedId];
+                    }
+                    try { Promise.resolve(window.RoomStateSync?.removeItemFromRoom?.(rid, wantedId)).catch(() => {}); }
+                    catch (e) { /* offline */ }
+                }
+                console.log('[applyActions] remove_world_item:', wantedId, roomIds);
+                break;
+            }
+
+            // Start or restart an NPC's authored patrol (npc-behavior.js restartAuthoredPatrol):
+            // start_patrol sets off a patrol authored with `patrol.startDeferred: true` (or any
+            // authored patrol); resume_patrol hands an NPC back its patrol after a patrolOverride
+            // or goToAndStay left it standing (a no-op while it is still on its patrol).
+            // action: { type: 'start_patrol' | 'resume_patrol', npc: '<npcId>', speed? }
+            case 'start_patrol':
+            case 'resume_patrol': {
+                const bm = window.npcBehaviorManager;
+                const fn = action.type === 'start_patrol' ? bm?.startPatrol : bm?.resumePatrol;
+                if (typeof action.npc !== 'string' || !action.npc) { console.warn(`[applyActions] ${action.type}: no npc`); break; }
+                if (typeof fn !== 'function') { console.warn(`[applyActions] ${action.type}: no behaviour manager`); break; }
+                fn.call(bm, action.npc, { speed: action.speed });
+                break;
+            }
 
             case 'clear_costume':
                 import('./costume-actions.js').then(m => m.clearCostume()).catch(e =>

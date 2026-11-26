@@ -1534,6 +1534,7 @@ export default class NPCManager {
         participantTag: mapping.participantTag || null, // ENG-07 (video-call): participant tag (e.g. External)
         background:    mapping.background    || null,    // optional background image path
         // NEW ACTION FIELDS [Phase 2-4]
+        actions:            Array.isArray(mapping.actions) ? mapping.actions : null,   // apply-actions.js list, run once per firing (E4)
         setVisible:         mapping.setVisible          ?? undefined,
         walkIn:             mapping.walkIn              ?? undefined,   // walk in from out of view (systems/npc-walk.js)
         walkOut:            mapping.walkOut             ?? undefined,   // walk out of view, then hide
@@ -1923,6 +1924,19 @@ export default class NPCManager {
       const payload = config.emitEventData || {};
       window.eventDispatcher?.emit(config.emitEvent, payload);
       console.log(`📡 Event emitEvent: ${config.emitEvent}`, payload);
+    }
+
+    // Scenario actions (apply-actions.js): hint, take_off, remove_item, remove_world_item,
+    // start_patrol and the rest, run once per firing after the mapping's own condition,
+    // once-only and cooldown. Each action's own `condition` is read by applyActions.
+    // window.applyActions is set by apply-actions.js at startup (no static import here).
+    if (Array.isArray(config.actions) && config.actions.length) {
+      if (typeof window.applyActions === 'function') {
+        try { window.applyActions(config.actions, { source: 'event_mapping' }); }
+        catch (e) { console.warn(`[event mapping] actions failed for ${npcId}:`, e); }
+      } else {
+        console.warn('[event mapping] actions: applyActions is not loaded');
+      }
     }
 
     // Open a minigame from the starter registry (systems/mapping-minigame.js). Once-only,

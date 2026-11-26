@@ -4853,6 +4853,7 @@
               "type": "object",
               "properties": {
                 "enabled": { "type": "boolean" },
+                "startDeferred": { "type": "boolean", "description": "E4: the patrol is authored and validated but the NPC stands still until a start_patrol action sets it off; resume_patrol restarts it after a patrolOverride" },
                 "speed": { "type": "number", "minimum": 1 },
                 "loop": { "type": "boolean" },
                 "pauseForPlayer": { "type": "boolean" },
@@ -5310,6 +5311,11 @@
               "additionalProperties": false
             }
           ]
+        },
+        "actions": {
+          "type": "array",
+          "description": "E4: apply-actions.js actions (hint, take_off, remove_item, remove_world_item, start_patrol, resume_patrol, ...) run once per firing, after the mapping's own condition, onceOnly and cooldown. Each may carry its own `condition`. The validator checks each action's keys against scripts/action_key_table.json.",
+          "items": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string"}, "condition": {"type": "string"}}, "additionalProperties": true}
         },
         "patrolOverride": {
           "type": "object",
