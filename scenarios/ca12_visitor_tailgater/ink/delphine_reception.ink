@@ -85,7 +85,7 @@ Delphine Arvanitis: Morning. Can I help you?
 }
 {
 - said == "open_parcel":
-    Delphine Arvanitis: Right, a parcel for upstairs. Let me see who's expecting it.
+    Delphine Arvanitis: Right, a parcel for the studio. Let me see who's expecting it.
 - said == "name_drop_partner":
     ~ named_recipient = true
     Delphine Arvanitis: For Catherine? She's away this week, though her boxes do come here.
@@ -104,7 +104,7 @@ Delphine Arvanitis: Morning. Can I help you?
 { result:
 - 1:
     # unlock_door:training_room
-    Delphine Arvanitis: Go on then, I'll buzz you through. Studio's up the stairs on your left.
+    Delphine Arvanitis: Go on then, I'll buzz you through. Studio's through the side door on your left.
 - 2:
     { named_recipient:
         Delphine Arvanitis: Before I open that door, I'll check that against today's list.
