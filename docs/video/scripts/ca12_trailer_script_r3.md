@@ -26,14 +26,14 @@ Owner's verdict on pilots r2 (25 Nov, via AC0): "Rethink: Needs updating with th
 - The cut opens on movement: Camila walks past the guard and through the door in the first 3 s, then says her line.
 - The red chapter card carries three bullets that make the authorisation visible with the sound off.
 - The talk menu holds 2.2 s, and a 2× inset in the narrow cuts shows the option that picks the route.
-- Each cut makes the "two layers" point once: Jo's spoken line in ca12b, the flip line in ca12. Jo's door toast is kept out of both cuts.
+- Each cut makes the "two layers" point once: Jo's spoken line in ca12b, the flip line in ca12. Lorna's door toast (mapping 9) is kept out of both cuts, and in ca12b Jo's own earpiece toast is hidden so the burned caption carries her line.
 - The flip shows only its heading and the E5 line (15 words, 4.5 s at the game's 300 ms a word) and holds 5.45 s. It is silent. The blue card is voiced.
 - Lorna's flip line is cut from both cuts.
 - ca12b drops the defend-side tailgater card (the tailgate has just been shown from the attacker's seat). ca12 keeps it: it is the only tailgating that cut shows.
 - Music: PeaceFolk "Gently Decaying" from 88.123 s (bar 32). Cards sit on its bars and hits where the beats allow.
 - Unchanged from r2: Camila's hook line (cached, "straight up"), the ca-open tagline, the red and blue chapter cards, the defend queue, Lorna's no-blame line and the close.
 
-Lengths: **ca12b 75.66 s**, **ca12 77.91 s**. v1c is cut and topic is one bar shorter (−3.2 s). The talk menu (+0.9 s), Jo's clearance (+0.06 s) and the watch beat (+0.40 s, so the flip lands on a half-bar) add back 1.36 s. ca12 also carries `lands` at 3.7 s.
+Lengths: **ca12b 75.66 s**, **ca12 77.91 s**. Against the untrimmed cut (77.03 s for ca12b), v1c is cut and topic is one bar shorter (the topic beat goes from 5.70 s to 2.97 s, −2.73 s; v1c's 3.24 s clip was inside that window). The talk menu (+0.90 s), Jo's clearance (+0.06 s) and the watch beat (+0.40 s, so the flip lands on a half-bar) add back 1.36 s: 77.03 − 2.73 + 1.36 = 75.66 s. ca12 is ca12b plus 2.25 s: it swaps the watch (4.90 s) and tailgate (9.15 s) for `lands` (3.70 s) and the door (9.10 s), and adds the tailgater card (3.50 s), giving 77.91 s.
 
 Existing takes are measured (section 5.2). New takes (t06r, t06w, t16 to t21) are budgets; the retime happens from their marks.
 
@@ -47,8 +47,8 @@ Existing takes are measured (section 5.2). New takes (t06r, t06w, t16 to t21) ar
 | 4 | 16.55-21.05 | red_card | attack | "You play the attacker". Bullets: "A booked test, signed off" (16.55) / "Scope: the desk and the door" (17.72) / "Challenged? Step back" (19.08) |
 | 5 | 21.05-24.05 | research | attack | OSINT note, chip OPEN-SOURCE RESEARCH |
 | 6 | 24.05-27.05 | build | attack | pretext card filling, chip COVER STORY |
-| 7 | 27.05-31.05 | kit | attack | Jo's kit bag, chip KIT BAG. Shot a (27.05-29.67): open the hook, letter inset with tab AUTHORISATION, take the hi-vis, confirm Wear. Hard cut to shot b (29.67-31.05): the world, the sprite changes on the 29.98 hit |
-| 8 | 31.05-33.65 | talk | attack | t06w: Delphine's portrait, the choice menu up 2.2 s, inset of "Not to worry, I'll leave it at the desk. Cheers.", chip FRONT DESK; out before the player's own line |
+| 7 | 27.05-31.05 | kit | attack | Jo's kit bag, chip KIT BAG. Shot a (27.05-29.67): open the hook 0.4 s, letter inset (tab AUTHORISATION plus the "Signed, Julian Sallow, Partner" crop) 1.3 s, take the hi-vis and confirm Wear 0.9 s; if the take cannot fit, hard-cut inside shot a (gameplay to gameplay) rather than shortening the inset. Hard cut to shot b (29.67-31.05): the world, the sprite changes on the 29.98 hit |
+| 8 | 31.05-33.65 | talk | attack | t06w: Delphine's portrait, the choice menu up 2.2 s, the menu alone until the last 1.2 s, then the inset of "Not to worry, I'll leave it at the desk. Cheers." (so the picture follows v5, not leads it), chip FRONT DESK; out before the player's own line |
 | 9b | 33.65-38.55 | watch | attack, full frame | the learner turns from the counter and walks to the street window, clear of Yusuf; Jun comes into frame heading for the reader in the last 1.5 s |
 | 10b | 38.55-47.70 | tailgate (hero) | attack, full frame | Jun taps the reader ("Morning, Yusuf.") and goes through; the learner follows him in while the gate holds; Yusuf waves the courier on; Jo in the earpiece |
 | 11b | 47.70-53.16 | flip | flip join | the flip panel: heading "In behind a member of staff" and the E5 line, silent |
@@ -92,7 +92,7 @@ Rules: at most 3.0 words per second over the cue window, UK English, no em or en
 | v5 | both | 31.07-33.55 | Then talk your way in. | 5 | 2.02 | 1.584 s |
 | **v5b** | ca12b | 33.80-36.80 | Or skip the desk, and watch the door. | 8 | 2.67 | **new**, est. 2.7-3.0 s |
 | **v6b** | ca12 | 38.87-41.77 | Name a partner, and she holds the door. | 8 | 2.76 | **new**, est. 2.5-2.9 s |
-| v6 | ca12 | 45.47-46.22 | You're in. | 2 | 2.67 | 0.744 s |
+| v6 | ca12 | 45.37-46.12 | You're in. | 2 | 2.67 | 0.744 s, 0.34 s clear of the flip cut |
 | **v7** | both | 53.31-55.56 / 52.06-54.31 | Now swap seats. | 3 | 1.33 | **new**, est. 1.0-1.3 s |
 | v8a | ca12 | 54.56-57.63 | Tailgating: slipping in behind a badge-holder. | 6 | 1.95 | 3.072 s |
 | v8b | both | 55.81-59.09 / 58.06-61.34 | Decide who gets in, and who gets checked. | 8 | 2.43 | 3.288 s |
@@ -129,7 +129,7 @@ Truth checks:
 Every character line in the attack beats gets a `lines[]` entry with a burned caption and speaker label in all three aspects ("Camila", "Delphine", "Yusuf", "Jun", "Jo (earpiece)"). The world-space bubbles are too small at 1× to read, and Jo has no bubble at all.
 
 Not used:
-- Jo's door toast (Lorna mapping 9, "The desk is the first layer. The door is the second. Watch how long it stays open, and for whom."). It stays in the game as the learner's clue for the tailgate. In the trailer it would be a third statement of the two layers, and at 20 words it cannot be read in either door beat. Takes t18, t19 and t20 hide it (section 5.1).
+- Jo's door toast (Lorna mapping 9, "The desk is the first layer. The door is the second. Watch how long it stays open, and for whom."). It stays in the game as the learner's clue for the tailgate. In the trailer it would be a third statement of the two layers, and at 20 words it cannot be read in either door beat. Takes t18, t19 and t20 hide it (section 5.1). Jo's own earpiece line also shows as a bark toast in the game; t20 hides that toast too, so each aspect shows the line once, as the burned caption.
 - Yusuf's reader bark ("Sorry, can I help you there? Deliveries go via the desk."). In a 75 s trailer, the same guard sending the courier to the desk and then waving them in seconds later reads as the guard forgetting. The watch beat keeps the learner out of his sight radius instead.
 - Lorna's L1 and "Camila's one of Jo's, by the way." (a link line for a later cut).
 
@@ -153,9 +153,9 @@ At the game's 300 ms a word:
 - +0.10 Delphine stands and starts round; "I'll get the door for you." +0.10 to +1.16 audible.
 - +1.52 v6b to +4.42.
 - about +4.0 the gate opens and Delphine holds it.
-- about +6.5 the learner enters the studio: Yusuf +6.52 to +7.81. Hand-back at +14.0, outside the beat.
-- +8.12 v6 "You're in." to +8.86.
-- If Delphine's walk starts late, v6b moves with it and keeps 0.36 s clear of her bark; Yusuf's bark must end 0.3 s before v6.
+- +6.40 or earlier: the learner enters the studio: Yusuf +6.42 to +7.71. Hand-back at +14.0, outside the beat.
+- +8.02 v6 "You're in." to +8.76, 0.34 s before the cut at +9.10.
+- If Delphine's walk starts late, v6b moves with it and keeps 0.36 s clear of her bark; Yusuf's bark must end 0.3 s before v6, and v6 must end at least 0.3 s before the flip cut: if the learner enters late, trim the walk with a hard cut, keep the beat at 9.10 s so the flip stays on the half-bar.
 
 ## 5. Shot list
 
@@ -201,7 +201,7 @@ The hook cuts from the walk to her arrival at the desks, and topic then shows th
 - Choice dwell `sleep(1100)` to `sleep(2200)`.
 - New mark `frame:menu-up:N` on the first poll where `dialogue.awaitingChoice` is true for choice N, and with it `route-option-rect` (the DOM rect of the option that matches `STEPS[1]`, for the inset).
 - t06r: `STEPS = [/sample box for Catherine/, /buzz me through/]`; the third awaited line is `/side door on your left/` (the old `/buzz you through/` no longer exists after L1). New mark `frame:d1-subtitle-up` on the first poll after `choose:2` where the speaker is Delphine and the text matches `/side door/`. Keep `line-start` and `line-end`, then the existing `d1-done` marks.
-- t06w: `STEPS = [/sample box for Catherine/, /leave it at the desk/]`. After `choose:2`, wait 800 ms, mark `frame:end-of-take` and stop; no third line is awaited.
+- t06w: `STEPS = [/sample box for Catherine/, /leave it at the desk/]`. After `choose:2`, wait 800 ms, mark `frame:end-of-take` and stop; no third line is awaited. The route-option inset runs only in the last 1.2 s of the talk beat; the menu shows alone before it.
 - Points, both takes: talk in = `frame:menu-up:2` − 0.35 s, out = `choose:2` − 0.02 s (the "playtest" name bar appears about 0.07 s after the pick). Expected 2.55-2.6 s; the menu is on screen at least 2.2 s of it.
 - Points, t06r: lands in = `frame:d1-subtitle-up` + 0.10 s, out = speech end + 0.25 s, with the speech end from silencedetect (−40 dB) on the take, not from `line-end` (on t06 that mark ran 0.29 s late). Budget 3.7 s.
 - The talk beat out and the lands beat in are two cuts on the same take: the player's own line between them is skipped.
@@ -210,7 +210,7 @@ The hook cuts from the walk to her arrival at the desks, and topic then shows th
 
 **t17_kit_bag**. Mark `kit-panel-rect` (the container minigame's DOM rect) when the panel opens, and `frame:wear-confirmed` and `frame:sprite-changed`. Shot a ends 0.31 s before the sprite change; shot b starts there.
 
-**t18_desk_pass, t19_watch, t20_tailgate**. Each take script removes Jo's door toast (Lorna 9) with a MutationObserver that hides any toast whose text matches `/first layer/`. Jo's spoken line in t20 uses the bark lane and is not matched. Marks: `door_gate_opened`, `room_entered:training_room`, `line-start`/`line-end` for every bark, and Jun's `useObject` on the reader. t20 is not recorded until the grace and `barkDelay` changes (section 8.2) are on the branch.
+**t18_desk_pass, t19_watch, t20_tailgate**. Each take script removes Jo's door toast (Lorna 9) with a MutationObserver that hides any toast whose text matches `/first layer/`. Jo's spoken line in t20 uses the bark lane and is not matched, but her own bark toast is hidden by a second match on `/held door beat both/`, so the burned caption is the only text. t18: the learner enters the studio at +6.40 s of the beat or earlier (trim the first part of the walk to get there). t19: the in point is after the conversation closes and Delphine's reply ("Right you are, leave it with me and I'll let them know.") has ended (mark `conversation-closed`), or its tail is cut hard, so no character speech runs under v5b. Marks: `door_gate_opened`, `room_entered:training_room`, `line-start`/`line-end` for every bark, and Jun's `useObject` on the reader. t20 is not recorded until the grace and `barkDelay` changes (section 8.2) are on the branch.
 
 **t21_flip_r3**, one per cut. Inject CSS before the hand-back: `.aw-flip .aw-lead, .aw-flip .aw-flip-call, .aw-flip .aw-call-notes, .aw-flip .aw-tells { display: none !important }`, so the panel shows only the heading, the E5 line and the Continue button (on a got_it run this hides the call intro, the replayed lines and the notes; on walked_away the panel already has only the heading and line, `flip-view.js` `missed` branch). Marks: `frame:flip-up` (first frame with the panel fully drawn), and the rects of `.aw-heading` and `.aw-defender-line`. Points: in = `frame:flip-up`, out = in + 5.452 s. The panel is on screen for the whole beat; the join is a glitch into it.
 
@@ -228,7 +228,7 @@ Measured by ffprobe, the trimmed marker files and silencedetect at −40 dB on `
 | t12_tailgater_card | 18.30 s | 5.90-9.40 | card open from 5.63 |
 | t14_lorna_noblame (24 Nov) | 21.80 s | 16.32-20.22 | L5 speech 16.58-19.43; chat closed 20.30 |
 
-**`lands` fallback** if t06r is not shot before the edit: t06 14.95-16.00 ("Go on then," only, 1.05 s), mask the subtitle bar and burn the caption "Go on then," in all three aspects. `lands` becomes 1.20 s and the door beat takes the other 2.50 s. The talk beat then also falls back to t06 11.55-13.23 (menu 1.1 s), which fails the 2 s rule: t06r is the preferred path.
+**`lands` fallback** if t06r is not shot before the edit: t06 14.95-16.00 ("Go on then," only, 1.05 s), mask the subtitle bar and burn the caption "Go on then," in all three aspects. `lands` becomes 1.05 s and the door beat takes the other 2.65 s (its internal cues are retimed from the marks). If D1 voices over 3.3 s of speech, `lands` takes the extra and the flip loses a half-bar of door lead-in, not the hold. The talk beat then also falls back to t06 11.55-13.23 (menu 1.1 s), which fails the 2 s rule: t06r is the preferred path.
 
 Capture notes:
 - t16 to t21 wait for E1 and E4 (with `resume_patrol`) on this branch, the Jun and Lorna shell mappings, CW and the lobby dressing pass. t17 can be shot after the dressing pass alone.
@@ -250,13 +250,13 @@ Music time = cut time + 2.726 s. Where the cuts land:
 | 24.53 | 21.80 | lift | 0.75 s into research | same |
 | 29.98-32.71 | 27.25-29.98 | hits | kit; v4b on 27.25; the sprite changes on 29.98 | same |
 | 46.34 | 43.61 | drop | under Jo's line (+5.06 into tailgate) | 6.26 s into the door beat, before Yusuf |
-| 49.07 | 46.34 | drop | in the tailgate's last second | 0.11 s before the flip |
+| 49.07 | 46.34 | drop | 1.36 s before the flip | 0.11 s before the flip |
 | 50.43 | 47.70 | half-bar hit | **flip starts** | in the flip |
 | 54.52 | 51.79 | lift | in the flip | 0.11 s before the blue card |
 | 55.88 | 53.16 | half-bar hit | **blue card starts** | under v7 |
 | 57.24 | 54.51 | lift | 1.36 s into the blue card, under v7 | 0.11 s into the tailgater card |
 
-Alternative if GD fails against the render: "Gently Decaying Again" from 85.419 s (r2's 82.693 plus 2.726 s; confirm it is a downbeat in that track's analysis; about 19.1 s from the nearest used starts either side).
+Alternative if GD fails against the render: "Gently Decaying Again" from 85.419 s (r2's 82.693 plus 2.726 s; confirm it is a downbeat in that track's analysis). Its starts in the edit lists are 6.069, 35.541, 64.356 and 102.341: 21.1 s from 64.356 and 16.9 s from 102.341.
 
 ## 7. Rubric (CA fun/USP, trailer-observable items)
 
@@ -353,3 +353,14 @@ Round 3 (26 Nov), folding in the R2 sell and truth review (0 B, 4 M, 1 m) and th
 - Timing M7: t16 and t16b, two runs.
 - Minors taken: sell m5 (L5b, L9); timing m1 (lands 3.7 s), m2 (v6b +0.36 s after Delphine), m3 (v3 to v4 0.30 s), m4 (music table redone), m5 (out 13.23, fallback in 14.95), m6 (t20 waits for 8.2).
 - Taken differently: timing M4's 9-word toast for ca12 (the in-game toast keeps its clue sentence; the flip carries the layers instead); timing M1's 6.8 s / 6.3 s hold (text cut instead, per AC0); the INFLUENCE inset in talk (the route option takes the inset).
+
+R4 fold (26 Nov), from the delta review of this script (0 B, 1 M, 7 m). All eight findings taken, none declined:
+- M1: ca12 door beat retimed so the learner enters at +6.40 s or earlier; v6 now 45.37-46.12, 0.34 s before the flip cut (sections 3, 4.2, 5.1).
+- m1: length arithmetic corrected to the real topic trim (−2.73 s); both lengths unchanged (75.66 s, 77.91 s).
+- m2: alternative music distances refreshed (21.1 s and 16.9 s).
+- m3: t19 in point set after Delphine's reply ends.
+- m4: kit shot a sub-timings (0.4 / 1.3 / 0.9 s).
+- m5: talk beat inset moved to the last 1.2 s; music table row corrected to 1.36 s before the flip.
+- m6: Jo's own toast hidden in t20.
+- m7: `lands` slack stated; fallback is 1.05 s throughout.
+- No narrator wording changed.
