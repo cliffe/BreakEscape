@@ -63,7 +63,7 @@ module ValidateOfficeLife
   # conversation, inventory, scripted patrol), so never a V5 trigger.
   OFFICE_LIFE_EVENT_EXCLUSIONS = %w[
     npc_ko npc_hidden npc_attacked npc_became_hostile npc_hostile_changed npc_hostile_state_changed
-    npc_influence_changed npc_items_changed npc_reported npc_arrived npc_used_object npc_used_object_done
+    npc_influence_changed npc_items_changed npc_reported npc_arrived npc_left npc_used_object npc_used_object_done
     item_picked_up item_unlocked item_consumed item_removed_from_scene
   ].freeze
 
@@ -276,6 +276,13 @@ module ValidateOfficeLife
     p['enabled'] == true || (p['waypoints'].is_a?(Array) && !p['waypoints'].empty?) || p['bounds'].is_a?(Hash)
   end
 
+  # An eventMapping with walkIn or walkOut (the NPC enters or leaves on foot).
+  def self.walks?(npc)
+    maps = npc['eventMappings']
+    maps = maps.values if maps.is_a?(Hash)
+    maps.is_a?(Array) && maps.any? { |m| m.is_a?(Hash) && (m['walkIn'] || m['walkOut']) }
+  end
+
   # Exchanges the NPC starts plus those another NPC starts `with` it.
   def self.exchange_count(w, npc)
     others = w.npcs.sum do |_r, o|
@@ -299,6 +306,7 @@ module ValidateOfficeLife
     end
     hints << 'patrol' if patrols?(npc)
     hints << 'hidden' if npc['initiallyHidden'] == true
+    hints << 'walks' if walks?(npc)
     hints << 'attackable' if attackable?(w.json, npc)
     hints
   end
