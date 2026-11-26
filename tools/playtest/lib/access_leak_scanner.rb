@@ -2445,21 +2445,59 @@ class AccessLeakScanner
   # therefore not judged; a key anywhere else (a finding row, a room, a check answer, a nested
   # `globalVariables`) is. A name that is also room text (a switch that sets it) is not registered as a
   # string, but it is still judged inside any finding row (scan_ops_finding_rows).
+  # Showcase leak review (game 326): the same holds for a name a room NPC's ink WRITES with a `set_global:<name>:` tag (the ink
+  # setter is the switch's twin: the client must hold the name to send the write, and the ink line beside it already says what
+  # it does). Only a writing tag counts; an ink that merely reads the global (`VAR?`) earns nothing, and the name is still
+  # judged inside any finding row.
   def collect_ops_globals(entry, owner, usable)
+    ink_set = ink_set_global_names
+    name_usable = ->(v) { usable.call(v) && !ink_set.include?(v.to_s.strip) }
     [entry['fixedIf'], (entry['needs'].is_a?(Hash) ? entry['needs']['global'] : nil)].each do |cond|
       names = cond.is_a?(Hash) ? cond.keys : [cond]
       names.each do |name|
         next unless name.is_a?(String) && !name.strip.empty?
 
         @ops_gating_globals << name.strip
-        add_ops_string(name, :never, owner, usable: usable)
-        if usable.call(name)
+        add_ops_string(name, :never, owner, usable: name_usable)
+        if name_usable.call(name)
           (@ops_global_names[name.strip] ||= []) << owner
         else
-          note = "global #{name.strip} is in room text; judged only inside finding rows"
+          where = usable.call(name) ? 'set by an NPC ink' : 'in room text'
+          note = "global #{name.strip} is #{where}; judged only inside finding rows"
           @ops_notes << note unless @ops_notes.include?(note)
         end
       end
+    end
+  end
+
+  INK_SET_GLOBAL = /\A\^?\s*set_global:\s*([^:\s]+)\s*:/.freeze
+
+  # Global names a room NPC's compiled ink (its `storyPath` JSON in the BreakEscape tree) writes with a
+  # `set_global:<name>:<value>` tag. A missing or unreadable file adds nothing (fail closed: the name stays judged).
+  def ink_set_global_names
+    @ink_set_global_names ||= begin
+      root = File.expand_path('../../..', __dir__)
+      names = Set.new
+      each_room_npc do |npc|
+        path = npc.is_a?(Hash) ? npc['storyPath'] : nil
+        next unless path.is_a?(String) && path.end_with?('.json') && !path.include?('..')
+
+        full = File.expand_path(path, root)
+        next unless full.start_with?("#{root}/") && File.file?(full)
+
+        ink_strings(JSON.parse(File.read(full))) { |s| (m = s.match(INK_SET_GLOBAL)) && names << m[1] }
+      rescue JSON::ParserError, SystemCallError
+        next
+      end
+      names
+    end
+  end
+
+  def ink_strings(node, &block)
+    case node
+    when String then yield node
+    when Array then node.each { |v| ink_strings(v, &block) }
+    when Hash then node.each_value { |v| ink_strings(v, &block) }
     end
   end
 

@@ -47,7 +47,8 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # the stop a refusal with triesLeft 0 starts, is still running at the row's time; a row with no readable time while any stop was
 # seen counts as stopped), `npcId` is an account and `deskId` a desk of the scenario, that desk covers the account for `what`
 # (a `callback` desk only while the run holds the account's phone at that row), and for a password the value is the one the
-# account alone owns. A repeat grant names the same account again and adds nothing. A grant that is NOT credited (an honest one inside a stop,
+# account alone owns. A repeat grant names the same account again and adds nothing (a repeat PASSWORD grant of an account already credited is
+# not held to the stop: `hd_repeat_password?`). A grant that is NOT credited (an honest one inside a stop,
 # limit 1) drops no step and marks no pair; the row is already a `helpdesk_grant` finding. One exception to the stop rule: a
 # `callback` desk's grant for an account whose phone the run held at every refusal so far, from a desk that covers the account for every
 # reset kind it offers, is clear of a stop seen elsewhere (such a desk cannot stop that name; see `hd_callback_clear_of_stops?`).
@@ -393,7 +394,7 @@ module HelpdeskLeakRules
     desk = @hd_desks[body['deskId']]
     what = shape == :granted_password ? 'password' : 'mfa'
     return nil unless npc && desk && hd_desk_covers?(desk, npc, what)
-    return nil if hd_stopped?(@hd_row_time) && !hd_callback_clear_of_stops?(desk, npc)
+    return nil if hd_stopped?(@hd_row_time) && !hd_callback_clear_of_stops?(desk, npc) && !hd_repeat_password?(shape, npc)
 
     if shape == :granted_password
       owners = @hd_reset_pw[body['password']]
@@ -419,6 +420,15 @@ module HelpdeskLeakRules
     desk['verify'] == 'callback' && mfa_phone_taken?(npc['id']) && !@hd_phone_unheld_at_refusal.include?(npc['id']) &&
       @hd_refusal_rows < BreakEscape::HelpdeskModel::TRIES_CAP &&
       desk['resets'].all? { |w| BreakEscape::HelpdeskModel.covers?(desk, npc, w) }
+  end
+
+  # Showcase leak review (game 325, response 203): a REPEAT password grant for an account an earlier credited grant in this
+  # capture already earned sends nothing new (the same value, already in the keyring; the server drops nothing for it). The
+  # stop a refusal on another name started cannot be told from one on this name (LIMIT 1), so the stop test is skipped for
+  # it; the desk, account and value tests still apply. A first grant, an mfa grant, or a repeat with another account's value
+  # inside a stop stays a finding.
+  def hd_repeat_password?(shape, npc)
+    shape == :granted_password && @hd_earned_pw.include?(npc['id'])
   end
 
   def hd_stopped?(time)
