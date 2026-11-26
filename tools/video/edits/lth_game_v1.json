@@ -1035,19 +1035,19 @@
       },
       "framing": {
         "16:9": {
-          "cx": 0.7,
-          "cy": 0.495,
+          "cx": 0.4896,
+          "cy": 0.3889,
           "zoom": 2
         },
         "9:16": {
-          "cx": 0.684,
-          "cy": 0.5,
-          "zoom": 1
+          "cx": 0.677,
+          "cy": 0.3,
+          "zoom": 1.125
         },
         "1:1": {
-          "cx": 0.734,
-          "cy": 0.5,
-          "zoom": 1.2
+          "cx": 0.677,
+          "cy": 0.3889,
+          "zoom": 2
         }
       },
       "audio": {
@@ -1059,10 +1059,10 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "GAP-4 real take: Base64 decode (neutral sample), input and output in one crop; result lands 9.65 s"
+        "note": "GAP-4 real take: Base64 decode (neutral sample), round 3: input pane framed; result lands 9.65 s (round 3: crop on recipe name + Input pane)"
       },
       "placeholder": false,
-      "note": "GAP-4 real take: Base64 decode (neutral sample), input and output in one crop; result lands 9.65 s"
+      "note": "GAP-4 real take: Base64 decode (neutral sample), round 3: input pane framed; result lands 9.65 s (round 3: crop on recipe name + Input pane)"
     },
     {
       "id": "S21_c_vigenere",
@@ -1079,19 +1079,19 @@
       },
       "framing": {
         "16:9": {
-          "cx": 0.7,
-          "cy": 0.495,
+          "cx": 0.4896,
+          "cy": 0.3889,
           "zoom": 2
         },
         "9:16": {
-          "cx": 0.684,
-          "cy": 0.5,
-          "zoom": 1
+          "cx": 0.677,
+          "cy": 0.3,
+          "zoom": 1.125
         },
         "1:1": {
-          "cx": 0.734,
-          "cy": 0.5,
-          "zoom": 1.2
+          "cx": 0.677,
+          "cy": 0.3889,
+          "zoom": 2
         }
       },
       "audio": {
@@ -1103,10 +1103,10 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "GAP-4 real take: Vigenere decode (neutral sample), result lands 15.30 s; crop starts right of the recipe pane"
+        "note": "GAP-4 real take: Vigenere decode (neutral sample), result lands 15.30 s; crop starts right of the recipe pane (round 3: crop on recipe name + Input pane)"
       },
       "placeholder": false,
-      "note": "GAP-4 real take: Vigenere decode (neutral sample), result lands 15.30 s; crop starts right of the recipe pane"
+      "note": "GAP-4 real take: Vigenere decode (neutral sample), result lands 15.30 s; crop starts right of the recipe pane (round 3: crop on recipe name + Input pane)"
     },
     {
       "id": "S22_c_rot13",
@@ -1123,19 +1123,19 @@
       },
       "framing": {
         "16:9": {
-          "cx": 0.7,
-          "cy": 0.495,
+          "cx": 0.4896,
+          "cy": 0.3889,
           "zoom": 2
         },
         "9:16": {
-          "cx": 0.684,
-          "cy": 0.5,
-          "zoom": 1
+          "cx": 0.677,
+          "cy": 0.3,
+          "zoom": 1.125
         },
         "1:1": {
-          "cx": 0.734,
-          "cy": 0.5,
-          "zoom": 1.2
+          "cx": 0.677,
+          "cy": 0.3889,
+          "zoom": 2
         }
       },
       "audio": {
@@ -1147,10 +1147,10 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "GAP-4 real take: ROT13 decode (neutral sample), result lands 21.07 s; crop starts right of the recipe pane"
+        "note": "GAP-4 real take: ROT13 decode (neutral sample), result lands 21.07 s; crop starts right of the recipe pane (round 3: crop on recipe name + Input pane)"
       },
       "placeholder": false,
-      "note": "GAP-4 real take: ROT13 decode (neutral sample), result lands 21.07 s; crop starts right of the recipe pane"
+      "note": "GAP-4 real take: ROT13 decode (neutral sample), result lands 21.07 s; crop starts right of the recipe pane (round 3: crop on recipe name + Input pane)"
     },
     {
       "id": "C4_card_real",
@@ -1945,15 +1945,15 @@
     {
       "id": "S37_voltage_wide",
       "type": "gameplay",
-      "duration": 0.8,
+      "duration": 3.95,
       "snap": false,
       "join": {
         "type": "cut"
       },
       "source": {
         "file": "m04_t04_voltage.trimmed.mkv",
-        "in": 64.84,
-        "out": 65.64
+        "in": 65.0,
+        "out": 68.95
       },
       "framing": {
         "16:9": {
@@ -1964,20 +1964,20 @@
         "9:16": {
           "cx": 0.7,
           "cy": 0.4,
-          "zoom": 1.25
+          "zoom": 1.125
         },
         "1:1": {
           "cx": 0.7,
-          "cy": 0.38,
-          "zoom": 1.3
+          "cy": 0.32,
+          "zoom": 2
         }
       },
       "audio": {
-        "gain_db": -120,
-        "dialogue": false,
-        "duck_music": false,
-        "pre": 0,
-        "post": 0
+        "gain_db": 5.5,
+        "dialogue": true,
+        "duck_music": true,
+        "pre": 0.1,
+        "post": 0.3
       },
       "spoiler": {
         "reviewed": true,
@@ -1985,84 +1985,28 @@
         "shows_identity": false,
         "shows_ending": false,
         "keypad_partial": null,
-        "note": "reviewed against recipe; frame check pending"
-      },
-      "dialogue": false,
-      "caption": {
-        "16:9": false,
-        "9:16": false,
-        "1:1": false
-      }
-    },
-    {
-      "id": "S39_derek",
-      "type": "gameplay",
-      "duration": 2.54,
-      "snap": false,
-      "join": {
-        "type": "cut"
-      },
-      "source": {
-        "file": "m01_t09c_derek_optimisation.trimmed.mkv",
-        "in": 51.95,
-        "out": 54.49
+        "note": "round 3: full line (speech 65.04-68.92); frame check done, game caption bar visible in 16:9"
       },
       "dialogue": true,
-      "note": "hard cut to the close-up of the face on \"That's optimisation\" (as the old trailer), out 52.16 before the choice menu (52.2); v13 music: cut 49.84->50.0 on the 50.0 hit; out 52.16->52.0 trims 0.16 s of silence after the line (ends 51.85; frame 51.97 clean), no line cut; v14: new take, cut at 51.95 on the word onset (52.00), out 53.95 (word ends 53.82)",
-      "lines": [
-        {
-          "speaker": "Derek Lawson",
-          "text": "That's optimisation.",
-          "start": 0.05,
-          "end": 1.87
-        }
-      ],
-      "framing": {
-        "16:9": {
-          "cx": 0.5,
-          "cy": 0.5,
-          "zoom": 1
-        },
-        "9:16": {
-          "cx": 0.65,
-          "cy": 0.185,
-          "zoom": 1.6875
-        },
-        "1:1": {
-          "cx": 0.71,
-          "cy": 0.33,
-          "zoom": 1.6
-        }
-      },
       "caption": {
         "16:9": false,
         "9:16": true,
         "1:1": true
       },
-      "audio": {
-        "gain_db": 5.5,
-        "dialogue": true,
-        "duck_music": true
-      },
-      "spoiler": {
-        "reviewed": true,
-        "shows_code": false,
-        "shows_identity": false,
-        "shows_ending": false,
-        "keypad_partial": null,
-        "note": "owner r2: Derek in (not a twist). m01 trailer derek_close"
-      },
-      "hit": {
-        "frames": 3,
-        "k": 0.55,
-        "shift": 0.05,
-        "pix": 0.12
-      }
+      "lines": [
+        {
+          "speaker": "Voltage",
+          "text": "I didn't bring a bomb, agent. I brought a maintenance schedule.",
+          "start": 0.04,
+          "end": 3.92
+        }
+      ],
+      "note": "round 3: the full line (in 65.0, out 68.95; speech 65.04-68.92), audio on with dialogue settings, framing as before (9:16 and 1:1 moved to integer zooms)"
     },
     {
       "id": "C7a_card_usp1",
       "type": "card",
-      "duration": 3.3667,
+      "duration": 2.7666,
       "snap": false,
       "join": {
         "type": "glitch"
