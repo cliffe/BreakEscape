@@ -98,13 +98,13 @@
     ],
     "payloadKit": [
       { "id": "kit_cv", "kind": "document", "label": "CV (Word document)" },
-      { "id": "kit_portfolio_zip", "kind": "archive", "label": "Portfolio (zip archive)" }
+      { "id": "kit_portfolio_zip", "kind": "archive", "label": "CV (password-protected zip)" }
     ],
     "seededMessages": [
       { "id": "brief", "mailbox": "analyst",
         "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
         "to": "a.rendell.jobs@mailgrove.example", "subject": "Authorised exercise: Tarrowby Logistics",
-        "body": "Hello,\n\nThis is the authorised Tarrowby Logistics exercise. In scope: this inbox and the recruitment team on it. Research the open vacancy and the recruiter, then send one candidate email with a CV attached. Nothing leaves this account.\n\nRed team lead",
+        "body": "Hello,\n\nThis is the authorised Tarrowby Logistics exercise. In scope: this inbox and the recruitment team on it. Research the open vacancy and the recruiter, then send one candidate email with a CV attached. Their Office blocks macros in files from outside by default, so whatever you send has to get her to take one more step herself. Nothing leaves this account.\n\nRed team lead",
         "time": "09:04", "unread": true, "folder": "inbox" }
     ],
     "checklistTiming": "onSend",
@@ -174,17 +174,17 @@
         "open": { "pass": "✓ She opens CVs from applicants she does not know", "fail": "Nothing about the message made her open it.", "redFlag": null },
         "pretextRelevant": { "pass": "✓ Ties to the vacancy she is recruiting for", "fail": "No vacancy she can match this to, so no reason to treat it as an application.", "redFlag": null },
         "attachmentPlausible": {
-          "pass": "✓ A CV is exactly what she expects to receive",
+          "pass": "✓ A Word CV is what she expects. Office blocks its macros by default, so it only runs if she switches content on",
           "missing": { "fail": "No CV is attached, so there is nothing for her to open.", "redFlag": null },
-          "wrong-type": { "fail": "An archive is not what an applicant sends; she would hesitate to open it, so the lure is weaker.", "redFlag": null }
+          "wrong-type": { "fail": "The password gets the zip past the mail filter, but a CV she has to unpack herself is odd, so she would stop and ask.", "redFlag": null }
         },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },
-      "replies": { "landed": "Thanks for your application — I'll open your CV and pass it to the hiring manager.", "missed": "Thanks for this. I'll open the CV in the viewer, and if it asks me to enable anything or sign in to see it, I'll leave it and ask you to send it another way." },
+      "replies": { "landed": "Thanks for your application. I'll open your CV and pass it to the hiring manager.", "missed": "Thanks for this. I'll open the CV in the viewer, and if it asks me to switch anything on, type a password or sign in to see it, I'll leave it and ask you to send it another way." },
       "hints": [
         "What is Tarrowby actually advertising, and what reference does the vacancy carry?",
         "Name the vacancy she is recruiting for so the application reads as expected.",
-        "Recruiters expect a CV; attach the document, not an archive they would hesitate to open."
+        "Office blocks macros by default, so any lure needs her to take one more step. Pick the wrapper she is least likely to question: a recruiter expects a Word CV."
       ],
       "outcome": { "setGlobal": { "phish_recruiter_contact_landed": true } }
     }
