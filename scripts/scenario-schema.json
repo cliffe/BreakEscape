@@ -5317,7 +5317,7 @@
         "actions": {
           "type": "array",
           "description": "E4: apply-actions.js actions (hint, take_off, remove_item, remove_world_item, start_patrol, resume_patrol, ...) run once per firing, after the mapping's own condition, onceOnly and cooldown. Each may carry its own `condition`. The validator checks each action's keys against scripts/action_key_table.json.",
-          "items": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string"}, "condition": {"type": "string"}}, "additionalProperties": true}
+          "items": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string"}, "condition": {"type": "string"}, "message": {"type": "string", "description": "hint: the toast text"}, "title": {"type": "string", "description": "hint: the toast heading"}, "itemId": {"type": "string", "description": "wear / take_off: the item id"}, "npc": {"type": "string", "description": "start_patrol / resume_patrol: the NPC id"}, "speed": {"type": "number", "description": "start_patrol / resume_patrol: optional walking speed"}}, "additionalProperties": true}
         },
         "patrolOverride": {
           "type": "object",

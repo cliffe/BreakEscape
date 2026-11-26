@@ -25,13 +25,15 @@
    {"k": null, "h": "596a9a6a"},
    {"k": null, "h": "2f8aa1c9"},
    {"k": null, "h": "67644ee3"},
-   {"k": null, "h": "5494845d"},
-   {"k": null, "h": "f086672f"}
+   {"k": null, "h": "9ecc9104"},
+   {"k": null, "h": "f086672f"},
+   {"k": null, "h": "872d10b9"},
+   {"k": null, "h": "478d8f11"}
   ],
   "npc:kit_camila_ospina": [
    {"k": "chg_ca12_out", "h": "94a8fe0b"},
-   {"k": "chg_ca12_visitor_go", "h": "d3ab5a4d"},
-   {"k": "chg_ca12_visitor_go_2", "h": "d5b2c7e7"},
+   {"k": "chg_ca12_visitor_go", "h": "85f04777"},
+   {"k": "chg_ca12_visitor_go_2", "h": "b116974c"},
    {"k": "npc_arrived_camila_ospina_sets_ca12_visitor_there", "h": "84b2ac79"},
    {"k": "chg_ca12_visitor_there_knot_ca12_door", "h": "d861c5f9"},
    {"k": "conversation_closed_camila_ospina_sets_ca12_door_choice", "h": "fcaf8b19"},
