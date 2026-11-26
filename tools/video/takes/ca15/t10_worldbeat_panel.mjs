@@ -7,6 +7,6 @@ import { sleep, prepare, toWorldBeatPanel } from './_ca15.mjs';
 export async function setup(page, bridge) { await prepare(page, bridge); await toWorldBeatPanel(page, bridge); await sleep(300); await page.mouse.move(1500, 1000); }
 
 export default async (page, bridge, mark) => {
-  mark('worldbeat_visible'); await sleep(4500);
+  mark('worldbeat_visible'); await sleep(7500);
   mark('end');
 };
