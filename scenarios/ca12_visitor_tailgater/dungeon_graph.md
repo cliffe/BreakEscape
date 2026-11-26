@@ -2,7 +2,7 @@
 
 # ca12_visitor_tailgater — Scenario Graph Reference
 
-You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by Julian Sallow. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.
+You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by the partners. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.
 
 ## Scenario Statistics
 
@@ -69,7 +69,7 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  door_training_room["Studio<br/>Key lock"]
+  door_training_room["Studio<br/>Key lock<br/>gate: live while ca12_world_on && !ca12_world_done<br/>gated: server pass"]
   training_room("Studio")
   grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
   grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
@@ -138,7 +138,7 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  door_training_room["Studio<br/>Key lock"]
+  door_training_room["Studio<br/>Key lock<br/>gate: live while ca12_world_on && !ca12_world_done<br/>gated: server pass"]
   training_room("Studio")
   grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
   grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
@@ -181,7 +181,7 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  training_room["Studio<br/>(locked)"]
+  training_room["Studio<br/>(locked)<br/>gate: live while ca12_world_on && !ca12_world_done"]
   lobby("Reception")
 
   training_room --> lobby

@@ -104,7 +104,7 @@ Delphine Arvanitis: Morning. Can I help you?
 { result:
 - 1:
     # unlock_door:training_room
-    Delphine Arvanitis: Go on then, I'll buzz you through. Studio's through the side door on your left.
+    Delphine Arvanitis: Go on then. Studio's through the side door on your left.
 - 2:
     { named_recipient:
         Delphine Arvanitis: Before I open that door, I'll check that against today's list.

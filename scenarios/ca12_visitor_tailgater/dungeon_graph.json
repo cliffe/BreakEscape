@@ -4,7 +4,7 @@
   "nodes": [
     {
       "id": "door_training_room",
-      "label": "Studio<br/>Key lock",
+      "label": "Studio<br/>Key lock<br/>gate: live while ca12_world_on && !ca12_world_done<br/>gated: server pass",
       "kind": "lock",
       "optional": false
     },

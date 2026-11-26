@@ -203,7 +203,7 @@
     {
       "id": "ca12_t_grace",
       "startOnGlobal": "ca12_entered",
-      "delayMs": 5000,
+      "delayMs": 7500,
       "setGlobal": {
         "ca12_world_done": true
       }
@@ -362,7 +362,7 @@
               },
               {
                 "who": "Visitor",
-                "text": "(slips in behind a badge-holder at the gate and heads for the stairs)"
+                "text": "(slips in behind a badge-holder at the gate and heads into the studio)"
               }
             ],
             "truth": {
@@ -372,11 +372,11 @@
                 "no_escort"
               ],
               "perFlagNote": {
-                "tailgating": "They badged in on someone else's card, which is exactly what a wedge or a held door lets happen.",
-                "no_escort": "Heading up alone, with nobody signing for them."
+                "tailgating": "They came in behind someone else's badge, which is exactly what a wedge or a held door lets happen.",
+                "no_escort": "Into the studio alone, with nobody signing for them."
               },
               "ifTrusted": "An unbadged stranger is loose on the studio floor, where client plans and screens are open.",
-              "reportReply": "Thanks, we caught them on the stairs; they weren't expected.", "reportReplyByVerdict": {"report": "Thanks, we caught them on the stairs; they weren't expected.", "verify": "Thanks for checking: they weren't on the list, and we've sent someone to find them."}
+              "reportReply": "Thanks, we caught them in the studio; they weren't expected.", "reportReplyByVerdict": {"report": "Thanks, we caught them in the studio; they weren't expected.", "verify": "Thanks for checking: they weren't on the list, and we've sent someone to find them."}
             },
             "factorStrings": {
               "tailgating": {
@@ -693,16 +693,16 @@
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by the partners. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
         "flipHeading": "Now you're the one on the desk",
         "flipIntro": "This is how your approach looked from Delphine's side of the counter. The lines picked out below are what got the door open.",
-        "flipDefenderLine": "The call landed. What happened at the door is above; now you're the one on the desk, and the same kinds of visitor are on their way.",
+        "flipDefenderLine": "Your approach landed. What happened at the door is above; now you're the one on the desk, and the same kinds of visitor are on their way.",
         "flipDefenderLineByGlobal": [
           {
             "global": "ca12_tailgated",
-            "line": "You walked in behind a member of staff while the door held. Nobody had to say yes.",
+            "line": "The door held, so nobody had to say yes.",
             "heading": "In behind a member of staff"
           },
           {
             "global": "ca12_desk_pass",
-            "line": "The desk said yes on the phone, then opened the door for you. One call got you past both layers."
+            "line": "One conversation got you past desk and door."
           },
           {
             "global": "ca12_door_missed",
@@ -991,7 +991,7 @@
         "requireFact": true,
         "requireFactLine": "Close this, then choose Back to research and open the browser. Click a line that names someone at the studio to add it to your notes: you need a name to ask for.",
         "outcomeLabels": {
-          "got_it": "You got buzzed through the door.",
+          "got_it": "The desk said yes.",
           "reported": "The desk reported you.",
           "walked_away": "You walked away from the desk."
         },
@@ -1388,13 +1388,46 @@
               "onceOnly": true,
               "setGlobal": {
                 "ca12_gate_open": false
-              }
+              },
+              "actions": [
+                {
+                  "type": "take_off",
+                  "itemId": "ca12_hivis",
+                  "condition": "globalVars.ca12_wearing_hivis"
+                }
+              ]
             },
             {
               "eventPattern": "global_variable_changed:ca12_wearing_hivis",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "wear_hivis"
+            },
+            {
+              "eventPattern": "door_gate_opened",
+              "condition": "data.connectedRoom === \"training_room\" && globalVars.ca12_world_on && !globalVars.ca12_world_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_door_cue": true
+              },
+              "actions": [
+                {
+                  "type": "hint",
+                  "title": "Jo",
+                  "message": "The desk is the first layer. The door is the second. Watch how long it stays open, and for whom."
+                }
+              ]
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_novest_hint",
+              "condition": "value === true",
+              "actions": [
+                {
+                  "type": "hint",
+                  "title": "Jo",
+                  "message": "No uniform, no badge. Try the desk again, or talk to the guard."
+                }
+              ]
             }
           ]
         },
@@ -1791,7 +1824,77 @@
             "name": "Puck",
             "style": "A junior architect at Merrin & Sallow, in his early 20s, in his first job, eager and polite; Japanese-British, grew up in the UK. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
             "language": "en-GB"
-          }
+          },
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "multiRoom": true,
+              "waypointMode": "sequential",
+              "pauseForPlayer": false,
+              "speed": 70,
+              "startWhen": "globalVars.ca12_runner_go && !globalVars.ca12_world_done",
+              "route": [
+                {
+                  "room": "training_room",
+                  "waypoints": [
+                    {
+                      "x": 1.4,
+                      "y": 6.0,
+                      "dwellTime": 8000
+                    }
+                  ]
+                },
+                {
+                  "room": "lobby",
+                  "waypoints": [
+                    {
+                      "x": 1.5,
+                      "y": 2.5,
+                      "action": {
+                        "useObject": "ca12_badge_reader",
+                        "useMs": 1500
+                      }
+                    },
+                    {
+                      "x": 4.5,
+                      "y": 5.0,
+                      "dwellTime": 5000
+                    },
+                    {
+                      "x": 1.5,
+                      "y": 2.5,
+                      "action": {
+                        "useObject": "ca12_badge_reader",
+                        "useMs": 1500
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used_object:ca12_badge_reader",
+              "condition": "data.npcId === \"ca12_jun_watanabe\" && globalVars.ca12_world_on && !globalVars.ca12_world_done",
+              "cooldown": 8000,
+              "bark": "Morning, Yusuf."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_world_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "fireOnlyWhenLoaded": true,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.4,
+                  "y": 6.0
+                },
+                "speed": 70,
+                "stopOnArrival": true
+              }
+            }
+          ]
         },
         {
           "id": "ca12_jo",
@@ -1814,7 +1917,7 @@
               "eventPattern": "global_variable_changed:ca12_tailgated",
               "condition": "value === true",
               "onceOnly": true,
-              "barkDelay": 1800,
+              "barkDelay": 2600,
               "bark": "Nobody checked. A uniform and a held door beat both."
             }
           ]
@@ -2013,6 +2116,23 @@
       "connections": {
         "west": "training_room"
       },
+      "doors": [
+        {
+          "connectedRoom": "training_room",
+          "direction": "west",
+          "gate": {
+            "openFor": [
+              "ca12_jun_watanabe",
+              "delphine_reception",
+              "kit_camila_ospina"
+            ],
+            "openRadius": 64,
+            "holdMs": 2500,
+            "playerMayPassIf": "ca12_wearing_hivis",
+            "activeIf": "globalVars.ca12_world_on && !globalVars.ca12_world_done"
+          }
+        }
+      ],
       "npcs": [
         {
           "id": "delphine_reception",
@@ -2073,6 +2193,20 @@
               "setGlobal": {
                 "ca12_delphine_at_door": false,
                 "ca12_delphine_back": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_guard_turned_back",
+              "condition": "data.npcId === \"delphine_reception\" && globalVars.ca12_delphine_at_door",
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 5.0
+                },
+                "speed": 90
+              },
+              "setGlobal": {
+                "ca12_delphine_at_door": false
               }
             }
           ]
@@ -2205,6 +2339,27 @@
                 },
                 "speed": 70
               }
+            },
+            {
+              "eventPattern": "door_gate_guard_turned_back",
+              "condition": "data.connectedRoom === \"training_room\" && globalVars.ca12_world_on && !globalVars.ca12_world_done && !globalVars.ca12_wearing_hivis && !globalVars.ca12_challenged",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "challenge",
+              "setGlobal": {
+                "ca12_challenged": true
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:ca12_yusuf_demir",
+              "condition": "globalVars.ca12_world_done",
+              "onceOnly": true,
+              "actions": [
+                {
+                  "type": "resume_patrol",
+                  "npc": "ca12_yusuf_demir"
+                }
+              ]
             }
           ]
         }
