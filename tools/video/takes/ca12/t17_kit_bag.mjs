@@ -54,7 +54,12 @@ const bagSprite = (page) => page.evaluate((id) => {
 }, BAG).catch(() => null);
 
 /** Click a dialog button by its label through the bridge (the real click on the real button). */
-const clickDialog = (bridge, label) => bridge.dismissBlockingUi(label);
+// dismissBlockingUi matches a plain lower-case substring (a RegExp stringifies to "/put it on/i" and never matches).
+const clickDialog = async (bridge, label) => {
+  const r = await bridge.dismissBlockingUi(label);
+  if (!r || r.ok === false) throw new Error('could not click "' + label + '": ' + JSON.stringify(r).slice(0, 160));
+  return r;
+};
 
 export default async (page, bridge, mark) => {
   mark('kit-bag-sprite', await bagSprite(page));
@@ -71,13 +76,13 @@ export default async (page, bridge, mark) => {
   mark('kit-panel-rect', rect);
   await sleep(2600);                                   // the panel must read on screen (shot a)
   mark('click:Put it on');
-  await clickDialog(bridge, /Put it on/i);
+  await clickDialog(bridge, 'Put it on');
   // the wearable may ask once more (confirmOn): answer the same way.
   t0 = Date.now();
   let worn = false, changed = false;
   while (Date.now() - t0 < 10000 && !(worn && changed)) {
     const r = await dialogRect(page);
-    if (r && /Put the courier hi-vis on/i.test(r.text)) { mark('click:Put it on (confirmOn)'); await clickDialog(bridge, /Put it on/i); await sleep(300); continue; }
+    if (r && /Put the courier hi-vis on/i.test(r.text)) { mark('click:Put it on (confirmOn)'); await clickDialog(bridge, 'Put it on'); await sleep(300); continue; }
     if (!worn) { const g = (await bridge.getState()).globals || {}; if (g.ca12_wearing_hivis) { worn = true; mark('frame:wear-confirmed'); } }
     if (!changed) { const t = await playerTexture(page); if (t && tex0 && t !== tex0) { changed = true; mark('frame:sprite-changed', { from: tex0, to: t }); } }
     await sleep(40);
