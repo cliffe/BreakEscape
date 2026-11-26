@@ -32,7 +32,7 @@ export default async (page, bridge, mark) => {
     if (!out && g.kit_ca02_out) { out = true; mark('ca02-out-set'); }
     if (!there && g.kit_ca02_there) { there = true; mark('ca02-there-set'); }
     if (!b1 && bw.seen.some(e => /Got a CV in for the driver job/i.test(norm(e.text)))) { b1 = true; mark('bark1_start'); mark('frame:bark1'); }
-    if (!b2 && bw.seen.some(e => /Blank page/i.test(norm(e.text)))) { b2 = true; mark('bark2_start'); mark('frame:bark2'); }
+    if (!b2 && bw.seen.some(e => /blocked it/i.test(norm(e.text)))) { b2 = true; mark('bark2_start'); mark('frame:bark2'); }
     if (!b3 && bw.seen.some(e => /IT have asked anyone/i.test(norm(e.text)))) { b3 = true; mark('bark3_start'); }
     const st = await bridge.getState();
     if (!menu && (st.dialogue || st.interactionMenu || st.activeMinigame)) { menu = true; mark('choice-menu-opened', { dialogue: !!st.dialogue, minigame: !!st.activeMinigame }); }

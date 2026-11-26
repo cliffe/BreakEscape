@@ -24,7 +24,7 @@ export async function run(page, bridge, mark, { narrow = false, runId = 'A' } = 
   if (narrow) await narrowPanel(page, '.mail-client', 760);
   await sleep(500);
   const rows = await page.$$eval('.mail-row', els => els.filter(e => e.offsetParent).map(e => e.textContent.replace(/\s+/g, ' ').trim().slice(0, 90)));
-  if (rows.length !== 6) throw new Error('expected 6 inbox rows, saw ' + rows.length + ': ' + JSON.stringify(rows));
+  if (rows.length !== 7) throw new Error('expected 7 inbox rows, saw ' + rows.length + ': ' + JSON.stringify(rows));
   mark('list', { rows }); mark('frame:list');
   if (runId === 'A') { await sleep(7500); mark('end'); return; }
   await sleep(3800 + 300);
