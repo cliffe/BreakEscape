@@ -19,7 +19,7 @@ Regenerated after the tour's final line edits (round 2) from `BreakEscape::TtsLi
 | 11 | ink whats_next | Walk round the kitchen, the IT room and the partner's office first. | 12 |
 | 12 | ink whats_next | Then ask me to send them to lunch, and the room empties. | 12 |
 | 13 | ink whats_next | Search the confidential-waste bin in the IT room. Take all three record files. | 13 |
-| 14 | ink whats_next | Open the capture log in your inventory. Crack Delphine's record with both things you learnt, then tell me. | 18 |
+| 14 | ink whats_next | Open the capture log in your inventory. A stolen record can be guessed offline, with no lockout. Crack Delphine's with both things you learnt, then tell me. | 18 |
 | 15 | ink whats_next | There's a printer admin note in the cupboard by the printers. Take it. | 13 |
 | 16 | ink whats_next | Then crack Graham's record from the file in your inventory. It's salted, so every guess takes longer. Wait for it. | 20 |
 | 17 | ink whats_next | If you pressed Crack before you had the note, run it again now. | 13 |

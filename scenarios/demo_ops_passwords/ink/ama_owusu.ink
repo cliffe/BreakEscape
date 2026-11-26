@@ -168,7 +168,7 @@ What can I help with?
         Search the confidential-waste bin in the IT room. Take all three record files.
     - not crack_guessable_done:
         # speaker:npc
-        Open the capture log in your inventory. Crack Delphine's record with both things you learnt, then tell me.
+        Open the capture log in your inventory. A stolen record can be guessed offline, with no lockout. Crack Delphine's with both things you learnt, then tell me.
     - not crack_reused_done:
         # speaker:npc
         There's a printer admin note in the cupboard by the printers. Take it.
@@ -223,12 +223,12 @@ What can I help with?
         # speaker:npc
         Graham's rota talks about a shared desk account. Its record is in the IT room. Crack it, then try it at Delphine's PC.
         # speaker:npc
-        Ask me to send them for coffee. Sign out first if you're still in as Graham, then use Other user with the name and password the cracker showed.
+        Ask me to send them for coffee. Sign out from Start first if you're still in as Graham, then use Other user with the name and password the cracker showed.
         # speaker:npc
         Then try it at the hot desk too.
     - not local_refused_done:
         # speaker:npc
-        Now use Sign out on the taskbar at Julian's PC and try the shared desk account there. Look at the Domain line under the name, see what the sign-in screen says, then tell me.
+        Now use Sign out from Start at Julian's PC and try the shared desk account there. Look at the Domain line under the name, see what the sign-in screen says, then tell me.
     - not read_log_done and not act_evening:
         # speaker:npc
         You've done the hands-on part. Tell me to call it a day.
@@ -243,8 +243,6 @@ What can I help with?
             # speaker:npc
             That's the day done. Here's what it showed.
             -> short_version_body ->
-            # speaker:npc
-            There's a cake in your bag. Put it out and watch who wanders over. Free food empties desks too.
         - else:
             # speaker:npc
             That's everything. Look round as long as you like.
@@ -258,6 +256,8 @@ What can I help with?
     Next time Graham's away from his desk, try that password on his PC. Same password, typed by hand.
     # speaker:npc
     Then try a wrong one three times. It locks you out, and the sign-in log keeps your tries on one row with a count.
+    # speaker:npc
+    There's a cake in your bag. Put it out and watch who wanders over. Free food empties desks too.
 }
 -> hub.choices
 
