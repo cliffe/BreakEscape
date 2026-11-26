@@ -572,6 +572,22 @@ function removeProximityGhost(obj) {
     }
 }
 
+// Ends a highlight at once, for an object that is leaving rooms[*].objects (an NPC picks it up),
+// where the per-frame loop in checkObjectInteractions can no longer reach it: ghost, tint, flag,
+// the setVisible patch and the interaction indicator all go.
+export function clearHighlight(obj) {
+    if (!obj) return;
+    removeProximityGhost(obj);   // also restores the setVisible the ghost patched
+    if (obj.isHighlighted) {
+        obj.isHighlighted = false;
+        if (obj.clearTint && typeof obj.clearTint === 'function') restTint(obj);
+    }
+    if (obj.interactionIndicator) {
+        try { obj.interactionIndicator.destroy(); } catch (e) { /* already gone */ }
+        delete obj.interactionIndicator;
+    }
+}
+
 function addInteractionIndicator(obj) {
     // Only add indicator if we have a game instance and the object has a scene
     if (!gameRef || !obj.scene || !obj.scene.add) {
@@ -2466,6 +2482,7 @@ export function isObjectInInteractionRange(sprite, from = undefined, range = INT
 
 // Export for global access
 window.checkObjectInteractions = checkObjectInteractions;
+window.clearObjectHighlight = clearHighlight; // npc-needs.js reaches it through window (no static import)
 window.handleObjectInteraction = handleObjectInteraction;
 window.examineHeldItem = examineHeldItem;
 window.handleContainerInteraction = handleContainerInteraction;
