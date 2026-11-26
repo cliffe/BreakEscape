@@ -31,3 +31,11 @@ Two leak-check findings from the showcase review runs. Both are scanner false po
 | 303 | tour-terminal-final | 5 `credential_unheld` (`zainab_token`), already in that capture's own earlier report (`leak-check-303.txt`); not touched by these changes and not looked into here |
 
 Tests: the two new files, plus the existing ops-real and helpdesk scanner tests (callback stop, real, r1, r1b, r2, base). 143 runs, 0 failures.
+
+## Follow-up: review R3 minors 2 and 3
+
+- **Minor 2 (repeat grant).** `hd_repeat_password?` no longer skips the stop test on its own. A repeat password grant passes a stop only when every stop still running was started or held by a row the tester has named as another name's, with the new entry `--refused <account id|other>@<row time>` (read from the playtest's own log; it names the stopping rows, a refusal with triesLeft 0 or a `blocked` answer). A stop named for the grant's own account, or one left unnamed, still holds. The capture itself cannot say whose stop it was, so a named entry is a claim, like `--signin`. An entry that matches no stopping row exits 2.
+- **Minor 3 (ink-set names).** An ink-set gating global is judged as a string and as a key from the start of the run again. It turns public only from the row that serves a 200 GET /ink for an NPC whose authored ink writes it, and that answer must carry the same writing tag. Another NPC's ink, an ink without the tag, or a failed answer makes nothing public.
+- Tests: the repeat-grant and ink-global files gained tamper cases (same-name stop, unnamed stop, a mix of named and unnamed, a later same-name lockout, a gate sent before its ink, another NPC's ink, an ink without the tag). All 53 `access_leak_scanner*` controller test files: 593 runs, 0 failures. Nine other scanner-related files: 182 runs, 0 failures.
+- Re-run on `showcase-r3-*` (328 to 331) and `tour-*-final` (303 to 307): the same verdicts as before. 328 and 303 still show the same 5 `credential_unheld` findings. The only change is the wording of the 331 note.
+- Game 325 now reports its repeat grant (line 203) unless the stop is named: `--refused lorna_easton@2026-11-26T09:19:49.188Z --refused lorna_easton@2026-11-26T09:19:54.787Z` gives "no leaks found". Naming `darren_price` there keeps both findings. Game 326 is still clean.

@@ -614,7 +614,7 @@ class AccessLeakScanner
     (@priv_named || {}).each { |key, pc| unused << priv_entry_text(key, pc) unless @priv_used.include?([:signin, key]) || @mfa_used&.include?([:signin, key]) }
     (@priv_resumes || {}).each_key { |key| unused << "#{key.join('@')} (--resume)" unless @priv_used.include?([:resume, key]) }
     (@priv_logouts || {}).each { |key, pc| unused << priv_logout_text(key, pc) unless @priv_used.include?([:logout, key]) || @mfa_used&.include?([:logout, key]) }
-    unused
+    unused.concat(hd_unused_refused)
   end
 
   # Whether a readable /feed_post answer's npcId tag disagreed with the NPC its body names, so
@@ -623,7 +623,7 @@ class AccessLeakScanner
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
-  def scan(lines, ops_steps: nil, signins: nil, resumes: nil, logouts: nil, tags: :auto)
+  def scan(lines, ops_steps: nil, signins: nil, resumes: nil, logouts: nil, tags: :auto, refused: nil)
     analysis = self.class.tag_analysis(lines.group_by { |source, _, _| source }.map { |source, list| [source, list.map { |entry| entry[2] }] }, tags)
     raise ArgumentError, analysis[:problem] if analysis[:problem]
 
@@ -639,6 +639,7 @@ class AccessLeakScanner
       raise ArgumentError, 'ops_steps cannot name an admin session: use signins: ["<account>@<pc id>#<n>"] for one sign-in row'
     end
     @priv_named = parse_priv_signins(signins)
+    @hd_refused_entries = refused # `--refused`, parsed by helpdesk_begin_scan (R3 minor 2)
     @priv_resumes = parse_priv_resumes(resumes)
     @priv_logouts = parse_priv_logouts(logouts)
     @priv_logout_count = 0
@@ -653,6 +654,7 @@ class AccessLeakScanner
     @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
     @priv_last_named = nil
     @ops_earned = @ops_supplied | @ops_start_steps
+    @ops_ink_public = Set.new # ink-set gating global names a served setter ink has made public so far (R3 minor 3)
     @crack_earned = Set.new # NPC ids a 200 POST /crack answer of the exact cracked shape named, so far (S7)
     @crack_running_credits = 0 # well formed 200 running answers not yet used by a salted grant (S7)
     @crack_running_seen = false # a well formed 200 running answer so far (R2-L4: a running row or a wait map follows one)
@@ -709,6 +711,7 @@ class AccessLeakScanner
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
       note_ops_steps(body, ctx, row)
+      ops_note_ink_served(body, ctx, row)
       scan_ops_strings(body, ctx, add)
       scan_ops_global_keys(body, add)
       scan_ops_services(body, add)
@@ -2449,48 +2452,73 @@ class AccessLeakScanner
   # setter is the switch's twin: the client must hold the name to send the write, and the ink line beside it already says what
   # it does). Only a writing tag counts; an ink that merely reads the global (`VAR?`) earns nothing, and the name is still
   # judged inside any finding row.
+  # Showcase review R3 minor 3: the ink-set name is public only FROM the row that serves a setter's ink (a 200 GET /ink for an
+  # NPC whose authored ink writes it, whose answer carries the same writing tag; `ops_note_ink_served`), never from the start
+  # of the run. Before that row the name is judged as a string and as a key like any other gating global.
   def collect_ops_globals(entry, owner, usable)
-    ink_set = ink_set_global_names
-    name_usable = ->(v) { usable.call(v) && !ink_set.include?(v.to_s.strip) }
+    setters = ink_set_global_names
     [entry['fixedIf'], (entry['needs'].is_a?(Hash) ? entry['needs']['global'] : nil)].each do |cond|
       names = cond.is_a?(Hash) ? cond.keys : [cond]
       names.each do |name|
         next unless name.is_a?(String) && !name.strip.empty?
 
         @ops_gating_globals << name.strip
-        add_ops_string(name, :never, owner, usable: name_usable)
-        if name_usable.call(name)
+        add_ops_string(name, :never, owner, usable: usable)
+        if usable.call(name)
           (@ops_global_names[name.strip] ||= []) << owner
+          note = "global #{name.strip} is set by an NPC ink; public only from the answer that serves that ink" if setters.key?(name.strip)
         else
-          where = usable.call(name) ? 'set by an NPC ink' : 'in room text'
-          note = "global #{name.strip} is #{where}; judged only inside finding rows"
-          @ops_notes << note unless @ops_notes.include?(note)
+          note = "global #{name.strip} is in room text; judged only inside finding rows"
         end
+        @ops_notes << note if note && !@ops_notes.include?(note)
       end
     end
+  end
+
+  # A 200 GET /ink answer for an NPC whose authored ink writes a gating global, carrying that same writing tag, makes the name
+  # public from this row on (the answer itself included: it holds the name as a `VAR?`). Another NPC's ink, or an answer
+  # without the tag, makes nothing public.
+  def ops_note_ink_served(body, ctx, row)
+    return if ink_set_global_names.empty? || !body.is_a?(Hash)
+    return unless ctx[:route].to_s.end_with?('/ink') && ctx[:route].to_s.start_with?('GET ') && row['status'] == 200
+
+    npc = URI.decode_www_form(row['query'].to_s).to_h['npc']
+    return unless npc.is_a?(String)
+
+    ink_strings(body) do |s|
+      name = s.match(INK_SET_GLOBAL)&.captures&.first
+      @ops_ink_public << name if name && ink_set_global_names[name]&.include?(npc)
+    end
+  rescue ArgumentError
+    nil
   end
 
   INK_SET_GLOBAL = /\A\^?\s*set_global:\s*([^:\s]+)\s*:/.freeze
 
   # Global names a room NPC's compiled ink (its `storyPath` JSON in the BreakEscape tree) writes with a
-  # `set_global:<name>:<value>` tag. A missing or unreadable file adds nothing (fail closed: the name stays judged).
+  # `set_global:<name>:<value>` tag, as { name => Set of the setter NPC ids }. A missing or unreadable file adds nothing
+  # (fail closed: the name stays judged).
   def ink_set_global_names
     @ink_set_global_names ||= begin
       root = File.expand_path('../../..', __dir__)
-      names = Set.new
+      names = {}
       each_room_npc do |npc|
         path = npc.is_a?(Hash) ? npc['storyPath'] : nil
-        next unless path.is_a?(String) && path.end_with?('.json') && !path.include?('..')
+        next unless path.is_a?(String) && path.end_with?('.json') && !path.include?('..') && npc['id'].is_a?(String)
 
         full = File.expand_path(path, root)
         next unless full.start_with?("#{root}/") && File.file?(full)
 
-        ink_strings(JSON.parse(File.read(full))) { |s| (m = s.match(INK_SET_GLOBAL)) && names << m[1] }
+        ink_strings(JSON.parse(File.read(full))) { |s| (m = s.match(INK_SET_GLOBAL)) && (names[m[1]] ||= Set.new) << npc['id'] }
       rescue JSON::ParserError, SystemCallError
         next
       end
       names
     end
+  end
+
+  def ops_ink_public?(name)
+    @ops_ink_public&.include?(name)
   end
 
   def ink_strings(node, &block)
@@ -2505,6 +2533,8 @@ class AccessLeakScanner
     return if @ops_global_names.empty?
 
     each_key_path(body) do |key, json_path|
+      next if ops_ink_public?(key.to_s.strip)
+
       (@ops_global_names[key.to_s.strip] || []).uniq.each { |owner| add.call('ops_string', owner, safe_path(json_path)) }
     end
   end
@@ -2659,6 +2689,8 @@ class AccessLeakScanner
       next if holder.to_s.start_with?('netlink_')
 
       @ops_strings.each do |secret, all_entries|
+        next if ops_ink_public?(secret)
+
         entries = all_entries.select { |e| ops_entry_applies?(e, json_path) && ops_match?(str, secret, e) }
         next if entries.empty?
 

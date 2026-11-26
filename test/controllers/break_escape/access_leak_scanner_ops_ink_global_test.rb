@@ -86,7 +86,38 @@ module BreakEscape
       body = ink(writes: true)
       scanner, = scan(scenario(body), rows(body))
       assert_includes scanner.instance_variable_get(:@ops_gating_globals), GATE
-      refute scanner.instance_variable_get(:@ops_global_names).key?(GATE)
+      assert scanner.instance_variable_get(:@ops_global_names).key?(GATE)
+    end
+
+    # Review R3 minor 3: the name is public only from the row that serves the setter's ink, not from the start of the run.
+    test 'tamper: the ink-set gate sent before its setter ink is served is reported at that early row' do
+      body = ink(writes: true)
+      early = { 't' => '2026-01-01T00:00:00.500Z', 'method' => 'GET', 'path' => "#{BASE}/scenario", 'status' => 200,
+                'body' => { 'savedGlobalVariables' => { GATE => true }, 'note' => GATE } }
+      _, found = scan(scenario(body), [early] + rows(body))
+      assert_equal [1], gate_findings(found).map(&:line).uniq.sort
+    end
+
+    test 'tamper: another NPC\'s ink carrying the writing tag makes the gate public for no one' do
+      body = ink(writes: true)
+      list = rows(body)
+      list[0] = list[0].merge('query' => 'npc=someone_else')
+      _, found = scan(scenario(body), list)
+      assert_equal [1, 2], gate_findings(found).map(&:line).uniq.sort
+    end
+
+    test 'tamper: the setter NPC\'s ink served WITHOUT the writing tag makes the gate public for no one' do
+      list = rows(ink(writes: false))
+      _, found = scan(scenario(ink(writes: true)), list)
+      assert_equal [1, 2], gate_findings(found).map(&:line).uniq.sort
+    end
+
+    test 'a failed ink answer makes nothing public' do
+      body = ink(writes: true)
+      list = rows(body)
+      list[0] = list[0].merge('status' => 500, 'body' => { 'error' => 'x' })
+      _, found = scan(scenario(body), list)
+      assert_equal [2], gate_findings(found).map(&:line).uniq.sort
     end
   end
 end

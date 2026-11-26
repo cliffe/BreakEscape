@@ -48,7 +48,7 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # seen counts as stopped), `npcId` is an account and `deskId` a desk of the scenario, that desk covers the account for `what`
 # (a `callback` desk only while the run holds the account's phone at that row), and for a password the value is the one the
 # account alone owns. A repeat grant names the same account again and adds nothing (a repeat PASSWORD grant of an account already credited is
-# not held to the stop: `hd_repeat_password?`). A grant that is NOT credited (an honest one inside a stop,
+# not held to a stop the tester has named as another name's with `--refused`: `hd_repeat_password?`). A grant that is NOT credited (an honest one inside a stop,
 # limit 1) drops no step and marks no pair; the row is already a `helpdesk_grant` finding. One exception to the stop rule: a
 # `callback` desk's grant for an account whose phone the run held at every refusal so far, from a desk that covers the account for every
 # reset kind it offers, is clear of a stop seen elsewhere (such a desk cannot stop that name; see `hd_callback_clear_of_stops?`).
@@ -176,6 +176,9 @@ module HelpdeskLeakRules
     @hd_max_tries = [@hd_desks.values.map { |d| d['maxTries'].to_i }.max.to_i, 1].max
     @hd_stop_until = nil       # the time (seconds) the latest stop seen runs to
     @hd_stop_unknown = false   # a stop was seen on a row with no readable time
+    @hd_stops = []             # one { until:, name: } per stopping row (refused_last, blocked); until nil when the row had no time
+    @hd_refused_named = hd_parse_refused(@hd_refused_entries) # row time => account id or 'other' (`--refused`)
+    @hd_refused_used = Set.new
     @hd_refusal_rows = 0       # refusal and blocked answers seen so far (each starts or extends at most one desk table entry)
     @hd_phone_unheld_at_refusal = Set.new  # npc ids whose phone the run did NOT hold at some refusal or blocked row
     @hd_row_time = nil
@@ -423,12 +426,38 @@ module HelpdeskLeakRules
   end
 
   # Showcase leak review (game 325, response 203): a REPEAT password grant for an account an earlier credited grant in this
-  # capture already earned sends nothing new (the same value, already in the keyring; the server drops nothing for it). The
-  # stop a refusal on another name started cannot be told from one on this name (LIMIT 1), so the stop test is skipped for
-  # it; the desk, account and value tests still apply. A first grant, an mfa grant, or a repeat with another account's value
+  # capture already earned sends nothing new (the same value, already in the keyring; the server drops nothing for it). It is
+  # clear of a stop only when every stop still running was started or held by a row the tester NAMED (`--refused`) as another
+  # name's (an account id other than this one, or `other`). Review R3 minor 2: a stop on THIS name, or an unnamed stop (the
+  # capture cannot tell whose it was, LIMIT 1), is still held, so a repeat grant during the name's own lockout stays a finding.
+  # The desk, account and value tests still apply. A first grant, an mfa grant, or a repeat with another account's value
   # inside a stop stays a finding.
   def hd_repeat_password?(shape, npc)
-    shape == :granted_password && @hd_earned_pw.include?(npc['id'])
+    return false unless shape == :granted_password && @hd_earned_pw.include?(npc['id']) && !@hd_stop_unknown
+
+    running = @hd_stops.select { |s| s[:until].nil? || @hd_row_time.nil? || @hd_row_time < s[:until] }
+    running.all? { |s| s[:name] && s[:name] != npc['id'] }
+  end
+
+  # `--refused <account id|other>@<row time>` entries: the name the request typed at ONE stopping row (a `refused` answer with
+  # triesLeft 0, or a `blocked` answer), read by the tester from the playtest's own log. A claim, like `--signin`: it only lets a
+  # REPEAT password grant of another account pass that stop. An unknown account, a repeat or a bad form is an error.
+  def hd_parse_refused(list)
+    named = {}
+    Array(list).each do |entry|
+      name, time = entry.to_s.match(/\A([^@\s]+)@(\S+)\z/)&.captures
+      raise ArgumentError, "bad refused entry #{entry.inspect}: use <account id|other>@<row time>" unless name
+      raise ArgumentError, "refused entry #{entry.inspect} names no account of the scenario (use other)" unless name == 'other' || @hd_accounts.key?(name)
+      raise ArgumentError, "refused entry #{entry.inspect} is given twice" if named.key?(time)
+
+      named[time] = name
+    end
+    named
+  end
+
+  # Entries that matched no stopping row, as the tester gave them.
+  def hd_unused_refused
+    (@hd_refused_named || {}).reject { |time, _| @hd_refused_used.include?(time) }.map { |time, name| "#{name}@#{time} (--refused)" }
   end
 
   def hd_stopped?(time)
@@ -475,11 +504,15 @@ module HelpdeskLeakRules
   end
 
   def hd_note_stop(seconds)
+    time = @hd_row.is_a?(Hash) ? @hd_row['t'] : nil
+    name = @hd_refused_named[time]
+    @hd_refused_used << time if name
     if @hd_row_time.nil?
       @hd_stop_unknown = true
     else
       lifts = @hd_row_time + seconds
       @hd_stop_until = lifts if @hd_stop_until.nil? || lifts > @hd_stop_until
+      @hd_stops << { until: lifts, name: name }
     end
   end
 
