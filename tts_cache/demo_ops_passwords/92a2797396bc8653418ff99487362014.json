@@ -1,0 +1,13 @@
+{
+  "key": "92a2797396bc8653418ff99487362014",
+  "npc": "ama_owusu",
+  "text": "A user's sign-in opens one desk. An administrator's opens other people's, gets round the device rules, and collects what PCs remember.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:31Z"
+}

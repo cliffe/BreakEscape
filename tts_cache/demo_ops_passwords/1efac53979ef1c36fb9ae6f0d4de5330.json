@@ -1,0 +1,13 @@
+{
+  "key": "1efac53979ef1c36fb9ae6f0d4de5330",
+  "npc": "ama_owusu",
+  "text": "The fixes are plain. A password manager makes every password long, random and different.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:44Z"
+}

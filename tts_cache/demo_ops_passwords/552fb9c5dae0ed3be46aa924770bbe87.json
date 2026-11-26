@@ -1,0 +1,13 @@
+{
+  "key": "552fb9c5dae0ed3be46aa924770bbe87",
+  "npc": "ama_owusu",
+  "text": "Office accounts like Graham's are checked centrally, so they work on any office PC. That's the domain. A local account lives on each desk it was made on, so only those desks know it.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:56Z"
+}

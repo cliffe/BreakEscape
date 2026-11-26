@@ -345,3 +345,8 @@ Regenerated after the tour's final line edits (round 2) from `BreakEscape::TtsLi
 | delphine_arvanitis | delphine_post_3 | Reception tip: the red folder is not a coaster. |
 | niamh_doherty | niamh_post_1 | Who ate my yoghurt? It had my name on it. Twice. |
 | niamh_doherty | niamh_post_2 | Printer jammed again. I am not touching it. |
+
+
+## Showcase review changes (2026-11-26)
+
+Changed or new Ama lines (ink start, whats_next, tells, recap, short_version_body, lever_lunch), two barks (keystroke device, stored records), one new bark (read_log_done) and Julian's line about a password manager. Clips for the 23 replaced lines were removed; the ink and scenario hold the final text.

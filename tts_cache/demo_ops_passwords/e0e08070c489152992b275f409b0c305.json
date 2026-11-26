@@ -1,0 +1,13 @@
+{
+  "key": "e0e08070c489152992b275f409b0c305",
+  "npc": "ama_owusu",
+  "text": "Then crack Graham's record from the file in your inventory. It's stored the careful way, salted and slow to check, so every guess takes longer. Wait for it.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:57:42Z"
+}

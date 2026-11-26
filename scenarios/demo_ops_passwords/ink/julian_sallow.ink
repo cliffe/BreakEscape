@@ -16,7 +16,7 @@ Quickly, then.
 - (choices)
 + [How do you pick passwords?]
     # speaker:npc
-    Long and random, from a manager. I couldn't tell you one if you asked.
+    Long and random, from a password manager. I couldn't tell you one if you asked.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

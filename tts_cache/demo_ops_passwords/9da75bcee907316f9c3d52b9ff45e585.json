@@ -1,0 +1,13 @@
+{
+  "key": "9da75bcee907316f9c3d52b9ff45e585",
+  "npc": "ama_owusu",
+  "text": "Now use Sign out on the taskbar at Julian's PC and try the shared desk account there. Look at the Domain line under the name, see what the sign-in screen says, then tell me.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:58:36Z"
+}

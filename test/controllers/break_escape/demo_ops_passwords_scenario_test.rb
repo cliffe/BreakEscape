@@ -458,9 +458,9 @@ module BreakEscape
       body = sign_in('graham_pc', 'gwhitfield', 'not-the-password')
       refute body['success'], body.to_s
       assert_equal 1, rows('signin_fail').size
-      3.times { sign_in('graham_pc', 'gwhitfield', 'not-the-password') }
+      sign_in('graham_pc', 'gwhitfield', 'not-the-password')
       assert_equal 1, rows('signin_fail').size, 'the failures merge into one row'
-      assert_equal 4, rows('signin_fail').first['n'].to_i, 'the merged row counts every failure'
+      assert_equal 2, rows('signin_fail').first['n'].to_i, 'the merged row counts every failure'
       # the password read from the note's own text, typed for Graham's account
       note = scenario['rooms']['office']['objects'].find { |o| o['id'] == 'printer_admin_note' } ||
              scenario['rooms']['office']['objects'].find { |o| o['id'] == 'printer_cupboard' }['contents'].find { |c| c['id'] == 'printer_admin_note' }
@@ -469,6 +469,18 @@ module BreakEscape
       body = sign_in('graham_pc', GRAHAM[0], typed)
       assert body['success'], body.to_s
       assert_equal 'admin', level('graham_pc')
+    end
+
+    test 'free play: Graham\'s PC has its own policy, and a third wrong password locks the account out' do
+      build
+      assert_equal 3, scenario['policies']['it_desk']['maxAttempts']
+      pc = scenario['rooms']['it_room']['objects'].find { |o| o['id'] == 'graham_pc' }
+      assert_equal 'it_desk', pc['policy']
+      3.times { sign_in('graham_pc', 'gwhitfield', 'not-the-password') }
+      assert_equal 3, rows('signin_fail').first['n'].to_i
+      assert_equal 1, rows('signin_lockout').size, 'the lockout is logged'
+      body = sign_in('graham_pc', GRAHAM[0], 'whatever')
+      refute body['success'], 'a locked-out account is refused'
     end
 
     test 'P8: the keystroke device is accepted at the partner PC in an administrator session, once, and logs the override' do
@@ -558,7 +570,7 @@ module BreakEscape
       ama = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'ama_owusu' }['eventMappings']
       old_last = ama.index { |m| m['eventPattern'] == 'pc_signed_in:hot_desk' && m['completeTask'] == 'local_account' }
       tour = ama[(old_last + 1)..]
-      assert_equal %w[stick_override get_records_done user_signin_done usb_refused_done admin_signin_done see_borrow_done local_account_done].map { |g| "global_variable_changed:#{g}" },
+      assert_equal %w[stick_override get_records_done user_signin_done usb_refused_done admin_signin_done see_borrow_done local_account_done read_log_done].map { |g| "global_variable_changed:#{g}" },
                    tour.map { |m| m['eventPattern'] }
       tour.each do |m|
         assert_equal true, m['onceOnly']

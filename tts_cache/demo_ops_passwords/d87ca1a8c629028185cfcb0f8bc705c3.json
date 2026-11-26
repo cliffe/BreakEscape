@@ -1,0 +1,13 @@
+{
+  "key": "d87ca1a8c629028185cfcb0f8bc705c3",
+  "npc": "ama_owusu",
+  "text": "Graham's was stored the careful way, so it took a wait. But you already held the same password, so care didn't save it.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:03Z"
+}
