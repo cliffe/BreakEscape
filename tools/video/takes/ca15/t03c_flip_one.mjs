@@ -2,9 +2,9 @@
 // consequence showing (the headline montage beat; the other three li.aw-montage-beat are display:none), the "Your call" tags, taken tags and
 // verdict colours hidden. Entry state: fresh game, no flags.
 //   BE_SPRITE=female_office_worker_v2 run-take.sh ca15_shadow_it t03c_flip_one "" "--hide-hud --zoom-step 1"
-// Picks: card 1 personal email (unsafe), card 2 approved channel, card 3 plug the stick in, card 4 hold off (as t03). Never presses Continue.
+// Picks: card 1 personal email (unsafe), card 2 approved channel, card 3 plug the stick in, card 4 hold off (as t03). Presses Carry on on the red-team panel (off camera), never Continue.
 // Marks: c1_pick..c4_pick, reveal (the edit's in), end. Verifies exactly one beat is visible.
-import { sleep, prepare, openKiosk, pressButton, pressEl, hideText } from './_ca15.mjs';
+import { sleep, prepare, openKiosk, pressButton, pressEl, hideText, buttons } from './_ca15.mjs';
 
 export async function setup(page, bridge) { await prepare(page, bridge); await sleep(500); }
 
@@ -25,8 +25,11 @@ export default async (page, bridge, mark) => {
     for (const e of document.querySelectorAll('li.aw-montage-beat')) { e.style.setProperty('border-left-color', '#1c2f5a', 'important'); e.style.setProperty('background-color', '#ffffff', 'important'); }
   }, 100)); });
   await pressButton(page, /See where they led/); await sleep(900);
-  const vis = await page.evaluate(() => [...document.querySelectorAll('li.aw-montage-beat')].filter(e => e.offsetParent).map(e => e.dataset.beat));
-  if (vis.length !== 1) throw new Error('expected one visible montage beat, saw ' + JSON.stringify(vis));
+  // the red-team step-away panel comes first (off camera here): Carry on skips the world beat and goes to the flip page
+  await pressButton(page, /^Carry on/); await sleep(900);
+  for (let i = 0; i < 30 && !(await page.$('li.aw-montage-beat')); i++) await sleep(200);
+  const vis = await page.evaluate(() => [...document.querySelectorAll('li.aw-montage-beat')].filter(e => e.getClientRects().length).map(e => e.dataset.beat));
+  if (vis.length !== 1) throw new Error('expected one visible montage beat, saw ' + JSON.stringify(vis) + ' of ' + await page.evaluate(() => [...document.querySelectorAll('li.aw-montage-beat')].map(e => e.dataset.beat + ':' + e.className).join(',')) + ' buttons ' + JSON.stringify(await buttons(page)));
   mark('reveal', { beat: vis[0] }); await sleep(5200);
   mark('end');
 };
