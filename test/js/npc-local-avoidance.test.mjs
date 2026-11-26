@@ -991,6 +991,20 @@ test('pass: never for a hostile or KO\'d NPC, an opted-out NPC, a patrol or a sc
     }
 });
 
+test('pass: an NPC walk-in/out (owner walk) passes the player in its doorway (m10 gallery guards shoved the player for 20 s)', () => {
+    const b = aisleWalker();
+    b._moveOwner = 'walk';
+    hold(b, 100000, 100000 + AVOID_PLAYER_PASS_MS);
+    assert.equal(b.isPassingPlayer(), true);
+    // A hostile walker still never passes
+    const h = aisleWalker();
+    h._moveOwner = 'walk';
+    window.npcHostileSystem = { isNPCHostile: id => id === h.npcId, isNPCKO: () => false };
+    hold(h, 100000, 100000 + AVOID_PLAYER_PASS_MS * 2);
+    assert.equal(h.isPassingPlayer(), false);
+    delete window.npcHostileSystem;
+});
+
 test('pass: the squeezePastPlayer behaviour flag parses (default on, false opts out)', () => {
     const b = Object.create(NPCBehavior.prototype);
     b.npcId = 'x';
