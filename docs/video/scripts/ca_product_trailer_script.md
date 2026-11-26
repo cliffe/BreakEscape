@@ -38,7 +38,7 @@ Every shot gets a frame check before lock (the right UI on screen, the staff act
 | 9 | 37.0-42.4 | Length | ca20 `t03_choices_reveal` 16.0-17.8 (the laptop choice), the same take 26.5-28.3 ("Later that day": what that choice led to; frame-check 9:16 at zoom 1.125 so more than the heading reads), ca10 `t03_fake_check_builder` 6.0-7.8 (a pick at 6.17) | ABOUT 15 MIN / EPISODE, then ABOUT 1 HOUR / COURSE, on the spoken phrases | VO7 at 37.3 |
 | 10 | 42.4-49.6 | For organisations | PLACEHOLDER until the owner picks. If captured: three organiser screens on a demo organisation with fictional CA-cast names, 2.4 s each, captured at a narrow viewport and placed at 1x or 2x in a bordered frame: (a) staff and courses; (b) the progress page cropped to its column headings and two or three named rows, the summary strip out of frame, no cell drawer opened; (c) the "Export progress CSV" button being clicked, not the file. If not captured: ca12 `t01_studio_wide` 0.5-4.9 (the training room), with the chips ORGANISERS and PROGRESS only | ORGANISERS, PROGRESS, RESULTS on the spoken nouns (fallback: ORGANISERS, PROGRESS) | VO8 at 42.7 |
 | 11 | 49.6-54.6 | USP | ca13 `t01_attack_run` 9.3-11.8 (the hidden line written; address patch masked), then ca13 `t02_assist_window` 11.75-14.25 (the click, the assistant's reply passes it on) | YOU: THE ATTACKER with A LINE FOR THE AI, then YOU: THE STAFF with THE ASSISTANT PASSES IT ON | VO9 at 49.9 |
-| 12 | 54.6-60.0 | End card | hero line over the Cyber Aware title; hacktivity.co.uk/cyber-aware; small line "Nothing to install. Runs in your browser." (plus the free-course line if the owner confirms) | none | VO10 at 54.9; URL held 2 s after; music resolves |
+| 12 | 54.6-60.0 | End card | hero line over the Cyber Aware title; hacktivity.co.uk/cyber-aware; small line "Play an episode free · Nothing to install" (owner, 26 Nov: a timeless free CTA, never a whole course and never "One course is free at a time") | none | VO10 at 54.9; URL held 2 s after; music resolves |
 
 ## Lines
 
@@ -73,7 +73,6 @@ One PeaceFolk track already used by the CA trailers: Guitar Motif (ca01, ca04, c
 - Organiser footage (beat 10): capture the real organiser screens on a demo organisation (needs a yes for a Hacktivity server off ports 3000/3001 and demo rows; crops as in beat 10), or no organiser screens and the short VO8. Recommended: capture.
 - "only" in the USP line.
 - 16:9 captions in the hero: small burned captions (recommended) or none.
-- End card free-course line: "One course is free at a time." True only while a course is in the free rotation. Default: left out.
 
 ## Fun and USP rubric (what the trailer shows)
 
