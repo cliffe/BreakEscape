@@ -444,6 +444,27 @@ export function installNpcWalk(manager, env = {}) {
         const { behavior } = w;
         const d = w.door;
         const here = bodyPos(behavior);
+        // A shut gate (door-gates.js): the lock the door sprite reads is the far room's, so
+        // doorClosed is false and the walk would head straight for a path that does not exist
+        // until the gate opens. An openFor walker goes to the spot in front of the doorway first;
+        // proximity opens the gate, then the real move is made (E1 R1 M2).
+        const gates = E.doorGates();
+        if (d?.sprite && gates?.isGate?.(d.sprite) && typeof gates.approachPoint === 'function') {
+            const rooms = [behavior.roomId, w.farRoom].filter(Boolean);
+            const spot = gates.approachPoint(w.id, here, rooms);
+            if (spot) {
+                const approach = snap(spot.x, spot.y);
+                behavior.goToAndStay(approach.x, approach.y, w.opts.speed, {
+                    owner: 'walk',
+                    silentArrival: true,
+                    onArrive: () => {
+                        if (w.done) return;
+                        behavior.goToAndStay(x, y, w.opts.speed, finalOpts);
+                    }
+                });
+                return;
+            }
+        }
         if (doorClosed(d)) {
             const dc = { x: d.props.worldX, y: d.props.worldY };
             const gap = dist(here, dc);
