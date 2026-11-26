@@ -1,13 +1,13 @@
 {
-  "key": "500b6fb2e7406a0e2aa34c46d88c8dd0",
+  "key": "f2a8201867fb124b8042ac59ac02ee42",
   "npc": "fatima_begum",
-  "text": "Enable Content is the step that lets a file run a small program, and that could give the sender a way into Tarrowby's network.",
+  "text": "The CVs that wanted a second step were the ones to stop.",
   "voice": "Vindemiatrix",
   "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
   "language": "en-GB",
   "model": "gemini-3.8-flash-tts",
   "scenario": "ca02_cv_lures_defend",
   "source": "generate",
-  "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T20:48:24Z"
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T00:55:17Z"
 }
