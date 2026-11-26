@@ -23,7 +23,7 @@
     "confirm_action":    { "required": ["text"], "optional": ["onConfirm", "confirmLabel", "cancelLabel", "closeX"] },
     "show_end_screen":   { "required": [], "optional": ["title", "outcome", "body", "buttonText"] },
     "hint":              { "required": ["message"], "optional": ["title"] },
-    "grant_foothold":    { "required": ["pc"], "optional": ["needsSession", "path"] },
+    "grant_foothold":    { "required": ["pc"], "optional": ["needsSession", "path", "needsDropped", "needsHeld", "name"] },
     "start_patrol":      { "required": ["npc"], "optional": ["speed"] },
     "resume_patrol":     { "required": ["npc"], "optional": ["speed"] }
   }

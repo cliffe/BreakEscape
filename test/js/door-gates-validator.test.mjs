@@ -1,7 +1,8 @@
 // scripts/validate_scenario.rb check_access_model on gate doors
-// (PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md section 3): a gate on an east or west door is
-// a warning (door-gates.js declines it), and a gate on the entry that leads out of the
-// locked room is an error (its secured room would be the wrong one).
+// (PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md section 3): a gate on any of the four door
+// sides works (E1: door-gates.js groups both sprites of a side doorway), and a gate on the
+// entry that leads out of the locked room is an error (its secured room would be the wrong
+// one). gate.activeIf (E1) is checked against the action-condition grammar and the declared globals.
 // Run with: node test/js/door-gates-validator.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -51,12 +52,46 @@ test('a north gate into the locked room raises neither check', { skip }, () => {
     assert.ok(!has(out, 'Put the gate on the door that leads into the locked room'), out.join('\n'));
 });
 
-test('a gate on an east or west door is a warning', { skip }, () => {
+test('a gate on an east or west door raises no warning (E1: side gates work)', { skip }, () => {
     for (const direction of ['east', 'west']) {
         const out = issues(scenario({ direction }));
-        assert.ok(out.some(s => s.startsWith('⚠️') && s.includes('Gates work on north and south doors only; this door will behave as an ordinary locked door')),
-            out.join('\n'));
+        assert.ok(!has(out, 'Gates work on north and south doors only'), out.join('\n'));
+        assert.ok(!has(out, 'ordinary locked door'), out.join('\n'));
     }
+});
+
+function activeIfIssues(cond, globals = { win_on: false, win_done: false }) {
+    const sc = scenario();
+    sc.globalVariables = globals;
+    sc.rooms.office.doors[0].gate.activeIf = cond;
+    return issues(sc).filter(s => s.includes('activeIf'));
+}
+
+test('gate.activeIf: a well-formed condition over declared globals passes', { skip }, () => {
+    for (const cond of ['globalVars.win_on', 'globalVars.win_on && !globalVars.win_done', 'globalVars.win_on || globalVars.win_done']) {
+        assert.deepEqual(activeIfIssues(cond), [], cond);
+    }
+});
+
+test('gate.activeIf: an unparsable condition is an error', { skip }, () => {
+    for (const cond of ['', 'win_on', 'globalVars.win_on &&', 'globalVars.win_on == true', '(globalVars.win_on)']) {
+        const out = activeIfIssues(cond);
+        assert.ok(out.some(s => s.startsWith('❌') && s.includes("'rooms/office/doors[0]/gate/activeIf'") && s.includes('always live')),
+            `${JSON.stringify(cond)}: ${out.join('\n')}`);
+    }
+});
+
+test('gate.activeIf: reading an undeclared global is an error, one error per name', { skip }, () => {
+    const out = activeIfIssues('globalVars.win_on && globalVars.ghost && globalVars.ghost');
+    assert.equal(out.length, 1, out.join('\n'));
+    assert.ok(out[0].startsWith('❌') && out[0].includes('globalVars.ghost, which is not a declared global'), out[0]);
+});
+
+test('gate.activeIf: the schema knows the key and accepts only a string', { skip }, () => {
+    const sc = scenario();
+    sc.globalVariables = { win_on: false };
+    sc.rooms.office.doors[0].gate.activeIf = 'globalVars.win_on';
+    assert.ok(!has(issues(sc), 'unknown field'), issues(sc).join('\n'));
 });
 
 test('a gate on the entry that leads out of the locked room is an error', { skip }, () => {
@@ -302,14 +337,12 @@ test('a room whose requires also accepts an item card draws no careful or NPC-on
     assert.ok(has(credentialIssues(careful), carefulOnly));
 });
 
-// Review R4 nit 1: door-gates.js declines a gate on an east or west door
-test('a careless guard on an east or west gate is no way in', { skip }, () => {
-    for (const direction of ['east', 'west']) {
+// E1: a gate on an east or west door works, so a careless guard on it is a way in, as on a south gate
+test('a careless guard on an east or west gate is a way in', { skip }, () => {
+    for (const direction of ['east', 'west', 'south']) {
         const out = credentialIssues(scenario({ direction, passIf: null, awareness: 'low' }));
-        assert.ok(has(out, npcOnly), `${direction}:\n${out.join('\n')}`);
+        assert.ok(!has(out, "'SAM-1'"), `${direction}:\n${out.join('\n')}`);
     }
-    // mirror: the same guard on a south gate is a way in
-    assert.ok(!has(credentialIssues(scenario({ direction: 'south', passIf: null, awareness: 'low' })), "'SAM-1'"));
 });
 
 // Review R5 minor 1: doors.js reads a door entry only when its connectedRoom and direction
@@ -341,13 +374,10 @@ test('a gate entry with no direction warns and is no way in', { skip }, () => {
 
 test('a gate entry whose direction the connections do not list warns and is no way in', { skip }, () => {
     const sc = carelessGate();
-    // east: a live gate there would draw the side-gate warning, so its absence shows the
-    // dead-gate warning replaces it
     sc.rooms.office.doors[0].direction = 'east';
     let out = issues(sc);
     assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("on its 'east' door, but room 'office' lists no 'vault' under connections.east") &&
         s.includes(deadGate)), out.join('\n'));
-    assert.ok(!has(out, 'Gates work on north and south doors only'), out.join('\n'));
     out = credentialIssues(sc);
     assert.ok(has(out, npcOnly) && !has(out, noWay), out.join('\n'));
     // a list under the direction counts when it names the room
@@ -573,9 +603,11 @@ test('closeDoor on a room a north or south gate leads into, or sits in, raises n
     }
 });
 
-test('closeDoor on a room whose only gate is on an east or west door is a warning', { skip }, () => {
-    const out = issues(withClose(scenario({ direction: 'east' }), 'vault'));
-    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("closeDoor 'vault'") && s.includes(closeMsg)), out.join('\n'));
+test('closeDoor on a room whose gate is on an east or west door raises no warning (E1)', { skip }, () => {
+    for (const direction of ['east', 'west']) {
+        const out = issues(withClose(scenario({ direction }), 'vault'));
+        assert.ok(!has(out, closeMsg), out.join('\n'));
+    }
 });
 
 test('closeDoor on a room with no gate at all is a warning; an unknown room is left to the schema', { skip }, () => {

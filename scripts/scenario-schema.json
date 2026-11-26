@@ -4411,9 +4411,10 @@
               "direction": { "type": "string", "enum": ["north", "south", "east", "west"] },
               "gate": {
                 "type": "object",
-                "description": "Gate door (systems/door-gates.js): opens for the listed NPCs as they near, holds open for holdMs, then shuts and relocks. Put it on the door entry that leads into the locked room. The player cannot open it by clicking from outside; a credential satisfying the door's requires opens it for one holdMs window, and a player inside opens it to leave. North and south doors only: a gate on an east or west door is declined (validator warning). See README_scenario_design.md, 'Gate doors'.",
+                "description": "Gate door (systems/door-gates.js): opens for the listed NPCs as they near, holds open for holdMs, then shuts and relocks. Put it on the door entry that leads into the locked room. The player cannot open it by clicking from outside; a credential satisfying the door's requires opens it for one holdMs window, and a player inside opens it to leave. Works on north, south, east and west doors. See README_scenario_design.md, 'Gate doors'.",
                 "properties": {
                   "enabled": { "type": "boolean", "description": "false turns a configured gate off" },
+                  "activeIf": { "type": "string", "description": "E1 live window: a condition in the action-condition grammar (globalVars.x, !globalVars.x, && and ||, comparisons). While it does not hold the gate is inert: the player is never barred and the shut gate opens on a click with no credential. Absent: always live. An unparsable condition is a validator error (the engine reads it as always live); every global it reads must be declared." },
                   "openFor": {
                     "oneOf": [
                       { "type": "string", "x-ref": "npc" },

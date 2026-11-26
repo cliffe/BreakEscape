@@ -2460,9 +2460,8 @@ def check_lock_credentials(json_data)
   # through a gate into that room that he can follow someone through. A gate opens for a
   # room NPC in its openFor who has a sprite (npcType person or both, as core/rooms.js
   # makes them), carrying the card or not, as door-gates.js opens for them; a phone NPC or
-  # an id with no NPC behind it never comes near. A gate on an east or west door is no gate
-  # (door-gates.js declines it), nor is one on a door entry that matches no doorway (doors.js
-  # never reads it; check_access_model warns). A gate is a way in when it opens for someone
+  # an id with no NPC behind it never comes near. A gate on a door entry that matches no doorway
+  # is no gate (doors.js never reads it; check_access_model warns). A gate is a way in when it opens for someone
   # and sets playerMayPassIf, or when an NPC it opens for holds doors, that is, is not in the
   # gate's noHold once habits are expanded (plan 5.4). A gate that opens only for careful
   # guards cannot be tailgated. A lock on an object (a safe, a cabinet) or on a start item is
@@ -2524,9 +2523,9 @@ def check_lock_credentials(json_data)
     out
   end
   gates = rooms.empty? ? [] : BreakEscape::NpcHabits.gate_entries(BreakEscape::NpcHabits.expanded_copy(json_data).first)
-  # Only a gate the engine registers: on a north or south door (door-gates.js declines a
-  # side gate), on an entry doors.js matches to a doorway (check_access_model warns otherwise)
-  gates = gates.reject { |g| %w[east west].include?(g[:direction].to_s) || g[:doorway] }
+  # Only a gate the engine registers: on an entry doors.js matches to a doorway
+  # (check_access_model warns otherwise). North, south, east and west doors all work.
+  gates = gates.reject { |g| g[:doorway] }
   # The NPCs a gate can open for: those with a sprite. A phone NPC (npcType phone, or none,
   # which npc-manager.js reads as phone) or an openFor id with no NPC behind it never comes near
   room_npc_ids = rooms.values.flat_map { |r| r.is_a?(Hash) && r['npcs'].is_a?(Array) ? r['npcs'] : [] }
@@ -3355,7 +3354,6 @@ def check_action_keys(json_data)
       if type == 'set_global' && a['key'].is_a?(String) && !globals.key?(a['key'])
         issues << "⚠️ WARNING: '#{ap}' (set_global) sets '#{a['key']}', which is not a declared global."
       end
-      check_list.call(a['onConfirm'], "#{ap}/onConfirm", strict) if type == 'confirm_action' && a.key?('onConfirm')
     end
   end
 
@@ -3366,12 +3364,14 @@ def check_action_keys(json_data)
       node.each do |k, v|
         next if k == 'minigameData' || k == 'flagRewards'
         child = path.empty? ? k.to_s : "#{path}/#{k}"
-        if ACTION_LIST_KEY_NAMES.include?(k) && v.is_a?(Array) && v.all? { |e| e.is_a?(Hash) && e['type'].is_a?(String) } && !v.empty?
-          check_list.call(v, child, false) unless path =~ /eventMappings\[\d+\]\z/
+        mapping_actions = k == 'actions' && path =~ /eventMappings\[\d+\]\z/
+        # an onConfirm list nested inside a mapping's actions is as strict as the list around it
+        nested_in_mapping = path =~ %r{eventMappings\[\d+\]/actions\[}
+        if ACTION_LIST_KEY_NAMES.include?(k) && !mapping_actions && v.is_a?(Array) && !v.empty? &&
+           v.all? { |e| e.is_a?(Hash) && e['type'].is_a?(String) }
+          check_list.call(v, child, nested_in_mapping ? true : false)
         end
-        if k == 'actions' && path =~ /eventMappings\[\d+\]\z/
-          check_list.call(v, child, true)
-        end
+        check_list.call(v, child, true) if mapping_actions
         walk.call(v, child)
       end
     when Array
@@ -8640,11 +8640,22 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                  'list; gate doors open from requires alone, so use requires (or drop the gate).')
       end
 
-      # North and south doors only (door-gates.js register() declines a side gate)
-      if %w[east west].include?(door['direction'].to_s)
-        warn.call("'rooms/#{room_id}/doors[#{i}]' has a gate on its #{door['direction']} door into " \
-                  "'#{door['connectedRoom']}'. Gates work on north and south doors only; this door will behave " \
-                  'as an ordinary locked door.')
+      # The live window (door-gates.js isInert): an optional condition in the action-condition
+      # grammar. The engine treats an unparsable one as always live, so it is an error here.
+      if door['gate'].key?('activeIf')
+        active_if = door['gate']['activeIf']
+        problem = action_condition_problem(active_if)
+        if problem
+          err.call("'rooms/#{room_id}/doors[#{i}]/gate/activeIf' #{problem}. The engine reads an unparsable " \
+                   'condition as always live, so the gate would never be inert.')
+        else
+          declared = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+          active_if.scan(/globalVars\.(\w+)/).flatten.uniq.each do |name|
+            next if declared.key?(name)
+
+            err.call("'rooms/#{room_id}/doors[#{i}]/gate/activeIf' reads globalVars.#{name}, which is not a declared global.")
+          end
+        end
       end
 
       # The gate's secured room is its entry's connectedRoom, so the entry must lead into
@@ -8872,12 +8883,12 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
 
   # closeDoor names a room with no gate (scenario-schema.json closeDoor: "Warns if the door is
   # not a gate"). door-gates.js closeNow matches a gate whose own room or connectedRoom is the
-  # id, among the gates it registers: enabled, on a north or south door, on an entry doors.js
+  # id, among the gates it registers: enabled, on an entry doors.js
   # reads. Anything else only logs a console warning in play. Unknown room ids are reported by
   # the schema's room reference check, so they are skipped here.
   if rooms.any?
     gated = BreakEscape::NpcHabits.gate_entries(json_data)
-                                  .reject { |g| %w[east west].include?(g[:direction].to_s) || g[:doorway] }
+                                  .reject { |g| g[:doorway] }
                                   .flat_map { |g| [g[:room], g[:connected_room]] }.grep(String).to_set
     walk_close = lambda do |node, path|
       case node
