@@ -25,7 +25,7 @@ test('vo: window, order, overlap, ids', () => {
 });
 test('vo: text length and words per second warn', () => {
   const e = base(); e.vo = [cue('long', 1, 8, 'word '.repeat(19).trim())]; assert.match(lint(e).out, /over 90/);
-  e.vo = [cue('fast', 1, 2, 'one two three four five')]; assert.match(lint(e).out, /5\.0 words\/s \(over 3\.2\)/);
+  e.vo = [cue('fast', 1, 2, 'one two three four five')]; assert.match(lint(e).out, /5\.0 words\/s \(over 3\.0\)/);
   e.vo = [cue('ok', 1, 3, 'one two three four five six')]; assert.doesNotMatch(lint(e).out, /too fast/);
 });
 test('vo: talking over a dialogue line by more than 0.3 s warns, a small overlap does not', () => {
