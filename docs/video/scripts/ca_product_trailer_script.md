@@ -1,4 +1,4 @@
-# Hacktivity Cyber Aware: product trailer script (60 s), draft R4
+# Hacktivity Cyber Aware: product trailer script (60 s), draft R5
 
 Purpose: sell the Cyber Aware course as a whole, in the /cyber-aware landing page hero (replacing the ca03 trailer) and the main-page teaser band. Aspects 16:9, 9:16, 1:1. Shorter cuts later.
 
@@ -19,7 +19,7 @@ Spine (USP): the player runs the scam first, in the attacker's own terms, then s
 - One caption system: where burned captions are on, the game's own subtitle bar is masked in that aspect (beats 2, 6, 8), so no line shows twice and Delphine's unspoken second sentence never shows.
 - Masks carried over from the episode trailers: ca13 `t01_attack_run` address patch (535, 406, 340 x 22).
 - Narrator: Sulafat, the CA trailers' voice. ca00 v1 reused as recorded.
-- Words per second: narrator target 2.6, linted under 3.0. The in-game lines run faster as recorded (Lorna about 3.2, Adaeze about 3.8); their burned captions are split in two so each half can be read.
+- Words per second: narrator target 2.6, linted under 3.0. The in-game lines run faster as recorded (Lorna about 3.0, Adaeze about 3.5); their burned captions are split in two so each half can be read.
 
 ## Timeline
 
@@ -27,16 +27,16 @@ Every shot gets a frame check before lock (the right UI on screen, the staff act
 
 | # | Time | Beat | Picture | Chip | Sound |
 |---|---|---|---|---|---|
-| 1 | 0.0-3.0 | Cold open | ca01 `t02_attack_run` 30.3-31.7 (supplier email builder), then 38.0-39.6 (the send, "It landed") | YOU: THE ATTACKER | VO1 at 0.2 |
+| 1 | 0.0-3.0 | Cold open | ca01 `t02_attack_run` 30.3-31.7 (supplier email builder), then 38.0-39.6 (the send, "It landed"); the builder shot is 1.4 s, under the 1.6 s floor, accepted because the send follows on the same screen | YOU: THE ATTACKER | VO1 at 0.2 |
 | 2 | 3.0-5.3 | Front desk gives in | ca12 `t06_the_call` 14.85-17.15 (Delphine 15.0-16.9; out before "Studio's" at 17.34) | YOU: THE ATTACKER held; small place tag FRONT DESK | Delphine: "Go on then, I'll buzz you through." |
-| 3 | 5.3-10.6 | Title | ca06 `t02_attack_run` 29.4-32.05 (writing the text), ca02 `t02_attack_run` 32.9-35.55 (the CV lure builder); title over both | YOU: THE ATTACKER | VO2 at 5.5; music hit at 10.6 |
-| 4 | 10.6-15.4 | Attack seat | ca12 `t04_osint_note` 6.4-8.0 (the target noted), ca12 `t05_pretext_card` 5.8-7.4 (the pretext card filled), ca03 `t02_attack_run` 27.7-29.3 (the phone call, out before the receptionist speaks) | YOU: THE ATTACKER | VO3 at 10.9 |
-| 5 | 15.4-18.1 | The flip | ca12 `t07_flip` 21.15-23.85 | SWITCH SEATS pulses on the hit (15.4); YOU: THE STAFF from about 16.4 (the defend strip), held | music hit, no VO |
+| 3 | 5.3-10.6 | Title | ca06 `t02_attack_run` 29.4-32.05 (writing the text), ca02 `t02_attack_run` 32.9-35.55 (the CV lure builder); title over both | YOU: THE ATTACKER | VO2 at 5.4; music hit at 10.6 |
+| 4 | 10.6-15.4 | Attack seat | ca12 `t04_osint_note` 6.4-8.0 (the target noted), ca12 `t05_pretext_card` 5.8-7.4 (the pretext card filled), ca03 `t02_attack_run` 28.0-29.6 (the filled card, the click at 28.87, the call screen; take audio muted for this shot) | YOU: THE ATTACKER | VO3 at 10.9 |
+| 5 | 15.4-18.1 | The flip | ca12 `t07_flip` 21.0-23.7 (out before the room view) | SWITCH SEATS pulses on the hit (15.4); YOU: THE STAFF from 16.5 (the Defend tab), held | music hit, no VO |
 | 6 | 18.1-24.3 | Same visitors | ca12 `t13_lorna_flip` 2.44-8.64 | YOU: THE STAFF | Lorna (2.65-8.29): "You talked your way through that door just now. Here you're the one being asked, same visitors." |
-| 7 | 24.3-29.7 | Defend seat | ca01 `t04_payments_inbox` 4.2-6.0 (a lookalike bank-change email; the click), ca06 `t05_work_phone_runB` 14.9-16.7 (a text on the work phone; the tap at 15.16), ca12 `t12_tailgater_card` 4.4-6.2 (a visitor at the desk; the click) | YOU: THE STAFF | VO5 at 24.4; "inbox", "phone" and "front desk" on the three cuts (cut points set from the recorded line) |
+| 7 | 24.3-29.7 | Defend seat | ca01 `t04_payments_inbox` 4.2-6.4 (a lookalike bank-change email; the click), ca06 `t05_work_phone_runB` 14.9-16.5 (a text on the work phone; the tap at 15.16), ca12 `t12_tailgater_card` 4.4-6.0 (a visitor at the desk; the click). Cuts at 26.5 and 28.1 | YOU: THE STAFF, with place tags INBOX (26.6), PHONE (27.4), FRONT DESK (28.2) | VO5 at 24.4: "inbox" about 26.7, "phone" about 27.5, "front desk" about 28.3 |
 | 8 | 29.7-37.0 | The catch, in a voice | ca01 `t05_adaeze_end` 14.7-22.0 | YOU: THE STAFF | Adaeze (14.95-21.73): "Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny." |
-| 9 | 37.0-42.4 | Length | ca11 `t03_choices_reveal` 28.4-30.2 (SIX MONTHS LATER: a choice's outcome), ca20 `t03_choices_reveal` 16.0-17.8 (the laptop choice), ca18 `t04_defend_list` 10.2-12.0 | ABOUT 15 MIN / EPISODE, then ABOUT 1 HOUR / COURSE, on the spoken phrases | VO7 at 37.3 |
-| 10 | 42.4-49.6 | For organisations | PLACEHOLDER until the owner picks. If captured: three organiser screens on a demo organisation with fictional CA-cast names, 2.4 s each, captured at a narrow viewport and placed at 1x or 2x in a bordered frame: (a) staff and courses; (b) the progress page cropped to its column headings and two or three named rows, the summary strip out of frame, no cell drawer opened; (c) the "Export progress CSV" button being clicked, not the file. If not captured: ca12 `t01_room_wide` 0.5-4.0 (the training room), held, with the chips | ORGANISERS, PROGRESS, RESULTS on the spoken nouns | VO8 at 42.7 |
+| 9 | 37.0-42.4 | Length | ca20 `t03_choices_reveal` 16.0-17.8 (the laptop choice), the same take 26.5-28.3 ("Later that day": what that choice led to), ca10 `t03_fake_check_builder` 6.0-7.8 (a pick at 6.17) | ABOUT 15 MIN / EPISODE, then ABOUT 1 HOUR / COURSE, on the spoken phrases | VO7 at 37.3 |
+| 10 | 42.4-49.6 | For organisations | PLACEHOLDER until the owner picks. If captured: three organiser screens on a demo organisation with fictional CA-cast names, 2.4 s each, captured at a narrow viewport and placed at 1x or 2x in a bordered frame: (a) staff and courses; (b) the progress page cropped to its column headings and two or three named rows, the summary strip out of frame, no cell drawer opened; (c) the "Export progress CSV" button being clicked, not the file. If not captured: ca12 `t01_studio_wide` 0.5-4.9 (the training room), with the chips ORGANISERS and PROGRESS only | ORGANISERS, PROGRESS, RESULTS on the spoken nouns (fallback: ORGANISERS, PROGRESS) | VO8 at 42.7 |
 | 11 | 49.6-54.6 | USP | ca13 `t01_attack_run` 9.3-11.8 (the hidden line written; address patch masked), then ca13 `t02_assist_window` 11.75-14.25 (the click, the assistant's reply passes it on) | YOU: THE ATTACKER with A LINE FOR THE AI, then YOU: THE STAFF with THE ASSISTANT PASSES IT ON | VO9 at 49.9 |
 | 12 | 54.6-60.0 | End card | hero line over the Cyber Aware title; hacktivity.co.uk/cyber-aware; small line "Nothing to install. Runs in your browser." (plus the free-course line if the owner confirms) | none | VO10 at 54.9; URL held 2 s after; music resolves |
 
@@ -61,7 +61,7 @@ Speech in total: about 33 s narrator plus about 14.3 s in-game, about 47 s of 60
 - Every spoken line is in the .srt.
 - 9:16 and 1:1: every line burned, in the bars; the game's subtitle bar masked.
 - 16:9: pending the owner; recommended small burned captions on every line (the hero autoplays muted and about a quarter of the cut is character speech), with the game's subtitle bar masked. If the owner says no burned captions, the game bar stays and only beat 2's second sentence is masked.
-- Silent reading of the spine: YOU: THE ATTACKER holds from 0 to the flip; SWITCH SEATS pulses on the hit; YOU: THE STAFF holds after. The front desk is talked past in beat 2 and staffed in beat 6; the invoice trick is written in beat 1 and caught by the payments clerk in beats 7 and 8; beat 11's two claim chips name the hidden line and its effect.
+- Silent reading of the spine: YOU: THE ATTACKER holds from 0 to the flip; SWITCH SEATS pulses on the hit; YOU: THE STAFF holds to the end of beat 8. Beats 9 and 10 carry no seat chip; beat 11 shows both seats again. The front desk is talked past in beat 2 and staffed in beat 6; the invoice trick is written in beat 1 and caught by the payments clerk in beats 7 and 8; beat 11's two claim chips name the hidden line and its effect.
 - Title card subline is fixed: "Security awareness training you can play".
 
 ## Music
@@ -77,4 +77,4 @@ One PeaceFolk track already used by the CA trailers: Guitar Motif (ca01, ca04, c
 
 ## Fun and USP rubric (what the trailer shows)
 
-F1 hook in 3 s (a scam being written); F3 a choice and its outcome (ca11 SIX MONTHS LATER, ca20); F4 named, voiced staff (Delphine, Lorna, Adaeze); F5 length claim; O1 the attacker's method shown (target, pretext, call, send); O2 the weakness is human (the front desk gives in); O3 the named defence with a cue (Adaeze's call-back rule); O4 empowering tone (Lorna's "same visitors"); A1 every claim from the landing page or Hacktivity code; A2 nothing operational; P1 in passing (the ca11 outcome). F2 and F6 cannot be shown in 60 s.
+F1 hook in 3 s (a scam being written); F3 a choice and its outcome (ca20: the laptop choice, then "Later that day"); F4 named, voiced staff (Delphine, Lorna, Adaeze); F5 length claim; O1 the attacker's method shown (target, pretext, call, send); O2 the weakness is human (the front desk gives in); O3 the named defence with a cue (Adaeze's call-back rule); O4 empowering tone (Lorna's "same visitors"); A1 every claim from the landing page or Hacktivity code; A2 nothing operational; P1 in passing (the ca20 outcome). F2 and F6 cannot be shown in 60 s.
