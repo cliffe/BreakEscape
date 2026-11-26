@@ -1833,116 +1833,6 @@
       }
     },
     {
-      "id": "S36_v_withheld",
-      "type": "gameplay",
-      "duration": 0.6,
-      "snap": false,
-      "join": {
-        "type": "cut"
-      },
-      "source": {
-        "file": "m07_t13c_architect_call.trimmed.mkv",
-        "in": 10.3,
-        "out": 10.9
-      },
-      "framing": {
-        "16:9": {
-          "cx": 0.5,
-          "cy": 0.17,
-          "zoom": 3
-        },
-        "9:16": {
-          "cx": 0.5,
-          "cy": 0.2,
-          "zoom": 1.5
-        },
-        "1:1": {
-          "cx": 0.5,
-          "cy": 0.17,
-          "zoom": 2.5
-        }
-      },
-      "audio": {
-        "gain_db": -6
-      },
-      "spoiler": {
-        "reviewed": true,
-        "shows_code": false,
-        "shows_identity": false,
-        "shows_ending": false,
-        "keypad_partial": null,
-        "note": "withheld-number call widget only"
-      },
-      "note": "withheld-number call widget only"
-    },
-    {
-      "id": "S35_ghost_line",
-      "type": "gameplay",
-      "duration": 4.1,
-      "snap": false,
-      "join": {
-        "type": "cut"
-      },
-      "source": {
-        "file": "m02_t17_ghost_call_fx.trimmed.mkv",
-        "in": 19.1,
-        "out": 23.2
-      },
-      "note": "v5: audio from t17_ghost_call_fx.trimmed.mkv, built by tools/video/takes/m02/ghost_voice_fx.sh take (same picture, stream copy; the Money line rebuilt from the clean TTS clip with the owner recipe of 2026-11-24, placed at the clip's own position in t17, 4 ms rubberband latency). Window, pre, post and the line tail unchanged from v4; gain 6 -> 6.5 matches the v4 line's momentary max (-15.1 v4, -15.7 fx at equal integrated level). v3: the whole Money line. Voice in t17 18.4-22.55 (measured, pause 19.0-19.4); picture 19.1-22.43 (the map comes back at about 22.5), audio from 18.4 (pre 0.7 under the reveal's last frames) and 0.25 s past the cut under the closing clip. Alt close 'No name tonight...' kept below.",
-      "alt_close": {
-        "file": "t17_ghost_call.trimmed.mkv",
-        "in": 13.73,
-        "out": 16.5,
-        "line": "No name tonight, no face. You get a person."
-      },
-      "framing": {
-        "16:9": {
-          "cx": 0.5,
-          "cy": 0.5,
-          "zoom": 1
-        },
-        "9:16": {
-          "cx": 0.69,
-          "cy": 0.43,
-          "zoom": 1.2
-        },
-        "1:1": {
-          "cx": 0.69,
-          "cy": 0.43,
-          "zoom": 1.2
-        }
-      },
-      "audio": {
-        "gain_db": 6.5,
-        "dialogue": true,
-        "duck_music": true,
-        "pre": 0.1,
-        "post": 0.85
-      },
-      "spoiler": {
-        "reviewed": true,
-        "shows_code": false,
-        "shows_identity": false,
-        "shows_ending": false,
-        "keypad_partial": null,
-        "note": "m02 trailer ghost_close; line tail (post 0.85) runs into the muted Voltage flash"
-      },
-      "dialogue": true,
-      "lines": [
-        {
-          "speaker": "Ghost",
-          "text": "Money is simply a means to hasten your inevitable end.",
-          "start": 0.09,
-          "end": 4.87
-        }
-      ],
-      "caption": {
-        "16:9": false,
-        "9:16": true,
-        "1:1": true
-      }
-    },
-    {
       "id": "S37_voltage_wide",
       "type": "gameplay",
       "duration": 3.95,
@@ -2001,7 +1891,117 @@
           "end": 3.92
         }
       ],
-      "note": "round 3: the full line (in 65.0, out 68.95; speech 65.04-68.92), audio on with dialogue settings, framing as before (9:16 and 1:1 moved to integer zooms)"
+      "note": "round 3: the full line (in 65.0, out 68.95; speech 65.04-68.92), audio on with dialogue settings, framing as before (9:16 and 1:1 moved to integer zooms) Round 4 (owner, 26 Nov): moved before the call and Ghost so no line is spoken over another."
+    },
+    {
+      "id": "S36_v_withheld",
+      "type": "gameplay",
+      "duration": 0.6,
+      "snap": false,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "m07_t13c_architect_call.trimmed.mkv",
+        "in": 10.3,
+        "out": 10.9
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.17,
+          "zoom": 3
+        },
+        "9:16": {
+          "cx": 0.5,
+          "cy": 0.2,
+          "zoom": 1.5
+        },
+        "1:1": {
+          "cx": 0.5,
+          "cy": 0.17,
+          "zoom": 2.5
+        }
+      },
+      "audio": {
+        "gain_db": -6
+      },
+      "spoiler": {
+        "reviewed": true,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "withheld-number call widget only"
+      },
+      "note": "withheld-number call widget only"
+    },
+    {
+      "id": "S35_ghost_line",
+      "type": "gameplay",
+      "duration": 4.1,
+      "snap": false,
+      "join": {
+        "type": "cut"
+      },
+      "source": {
+        "file": "m02_t17_ghost_call_fx.trimmed.mkv",
+        "in": 19.1,
+        "out": 23.2
+      },
+      "note": "v5: audio from t17_ghost_call_fx.trimmed.mkv, built by tools/video/takes/m02/ghost_voice_fx.sh take (same picture, stream copy; the Money line rebuilt from the clean TTS clip with the owner recipe of 2026-11-24, placed at the clip's own position in t17, 4 ms rubberband latency). Window, pre, post and the line tail unchanged from v4; gain 6 -> 6.5 matches the v4 line's momentary max (-15.1 v4, -15.7 fx at equal integrated level). v3: the whole Money line. Voice in t17 18.4-22.55 (measured, pause 19.0-19.4); picture 19.1-22.43 (the map comes back at about 22.5), audio from 18.4 (pre 0.7 under the reveal's last frames) and 0.25 s past the cut under the closing clip. Alt close 'No name tonight...' kept below. Round 4: now the last villain shot; speech ends at about 23.96 in the take, covered by the 0.85 s post tail under C7a (no speech there until VO9).",
+      "alt_close": {
+        "file": "t17_ghost_call.trimmed.mkv",
+        "in": 13.73,
+        "out": 16.5,
+        "line": "No name tonight, no face. You get a person."
+      },
+      "framing": {
+        "16:9": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "zoom": 1
+        },
+        "9:16": {
+          "cx": 0.69,
+          "cy": 0.43,
+          "zoom": 1.2
+        },
+        "1:1": {
+          "cx": 0.69,
+          "cy": 0.43,
+          "zoom": 1.2
+        }
+      },
+      "audio": {
+        "gain_db": 6.5,
+        "dialogue": true,
+        "duck_music": true,
+        "pre": 0.1,
+        "post": 0.85
+      },
+      "spoiler": {
+        "reviewed": true,
+        "shows_code": false,
+        "shows_identity": false,
+        "shows_ending": false,
+        "keypad_partial": null,
+        "note": "m02 trailer ghost_close; line tail (post 0.85) runs into the muted Voltage flash"
+      },
+      "dialogue": true,
+      "lines": [
+        {
+          "speaker": "Ghost",
+          "text": "Money is simply a means to hasten your inevitable end.",
+          "start": 0.09,
+          "end": 4.87
+        }
+      ],
+      "caption": {
+        "16:9": false,
+        "9:16": true,
+        "1:1": true
+      }
     },
     {
       "id": "C7a_card_usp1",
