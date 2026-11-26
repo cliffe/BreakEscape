@@ -30,7 +30,8 @@ export const hideLong = (page, re) => page.evaluate(([src, fl]) => {
 }, [re.source, re.flags]);
 
 /** Narrow a panel to maxW px, centred (injected CSS). */
-export const narrow = (page, sel, maxW = 560) => page.addStyleTag({ content: `${sel}{max-width:${maxW}px !important;width:${maxW}px !important;margin-left:auto !important;margin-right:auto !important}` });
+/** Env BE_NARROW_PX (e.g. 520) overrides the width every caller passes; unset keeps the 560 default. */
+export const narrow = (page, sel, maxW = 560) => { const w = Number(process.env.BE_NARROW_PX) || maxW; return page.addStyleTag({ content: `${sel}{max-width:${w}px !important;width:${w}px !important;margin-left:auto !important;margin-right:auto !important}` }); };
 
 /** The strip / tab labels in the open kiosk, deduped. */
 export const tabs = (page) => page.evaluate(() => [...document.querySelectorAll('[class*=tab],[class*=strip],[class*=step]')].filter(e => e.offsetParent && (e.innerText || '').trim().length && (e.innerText || '').length < 60).map(e => (e.innerText || '').replace(/\s+/g, ' ').trim()).filter((v, i, a) => a.indexOf(v) === i).slice(0, 12));

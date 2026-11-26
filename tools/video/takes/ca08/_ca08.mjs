@@ -24,7 +24,8 @@ export function watchTts(page, mark) {
 }
 
 /** Narrowed-panel variant for the 9:16 and 1:1 crops: injected CSS caps the minigame panel width. `sel` is the panel container. */
-export const narrowPanel = (page, sel, px = 560) => page.addStyleTag({ content: `${sel}{max-width:${px}px !important;margin-left:auto !important;margin-right:auto !important;}` });
+/** Env BE_NARROW_PX (e.g. 520) overrides the width every caller passes; unset keeps the 560 default. */
+export const narrowPanel = (page, sel, px = 560) => { const w = Number(process.env.BE_NARROW_PX) || px; return page.addStyleTag({ content: `${sel}{max-width:${w}px !important;margin-left:auto !important;margin-right:auto !important;}` }); };
 
 /** checkSprite that is strict in a real recording (BE_SPRITE=female_office_worker_v2 must be set) and only marks the key when BE_DRY=1
  *  (dry runs do not set BE_SPRITE: the shared avatar is in use elsewhere). */
