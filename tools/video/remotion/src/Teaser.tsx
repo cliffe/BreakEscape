@@ -22,6 +22,7 @@ import { CcOpen } from './components/CcOpen';
 import { CcClose } from './components/CcClose';
 import { CcCard } from './components/CcCard';
 import { CaVo } from './components/CaVo';
+import { CaTitlePlate } from './components/CaTitlePlate';
 
 export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<string, boolean> }> = ({ edit, aspect, available }) => {
   loadFonts();
@@ -95,7 +96,8 @@ const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source })
     return <TextCard shot={shot} w={w} h={h} />;
   }
   const gp = <Gameplay shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} fps={fps} available={available} source={source} />;
-  const g = seatOf(shot) ? <CaSeats shot={shot} w={w} h={h}>{gp}</CaSeats> : gp;
+  const gt = shot.title_plate ? <>{gp}<CaTitlePlate shot={shot} w={w} h={h} localSec={frame / fps} /></> : gp; // title over footage (product trailer), inside the seat frame
+  const g = seatOf(shot) ? <CaSeats shot={shot} w={w} h={h}>{gt}</CaSeats> : gt;
   // shot.hit = { frames: 3, k, ... }: a 2-3 frame glitch on the shot's first frames (an impact on a hard cut), same engine as the joins
   const hit = shot.hit;
   if (hit && frame < (hit.frames ?? 3)) {
