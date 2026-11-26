@@ -233,7 +233,7 @@ test('a guard held at a barred gate turns back after GUARD_TURN_BACK_MS, once', 
     assert.equal(behaviour.turnBacks.length, 0, 'not yet');
     gates.update(1000 + GUARD_TURN_BACK_MS);
     assert.equal(behaviour.turnBacks.length, 1, 'turned back');
-    assert.deepEqual(behaviour.turnBacks[0], { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100 });
+    assert.deepEqual(behaviour.turnBacks[0], { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, cx: 100, cy: 100 });
     assert.deepEqual(events.map(e => e[0]), ['door_gate_guard_turned_back']);
     assert.equal(events[0][1].npcId, 'guard');
     assert.equal(a.body.enable, true, 'and the gate stayed shut');

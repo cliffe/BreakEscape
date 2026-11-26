@@ -463,9 +463,11 @@ test('withoutLeavingNpcsIfObjects: the leaving NPC is dropped beside an object, 
 const { DoorGates } = await import(dataUrl(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')));
 
 function gateSetup(direction = 'north', gate = { openFor: ['guard'], openRadius: 56, holdMs: 2500, playerMayPassIf: 'disguised' }) {
-    const mk = (roomId, connectedRoom, dir) => ({
-        x: 100, y: 100, active: true, body: { enable: true },
-        doorProperties: { roomId, connectedRoom, direction: dir, worldX: 100, worldY: 100, open: false }
+    // A side doorway has its two sprites a tile apart, on each side of the wall boundary (E1 R1 m2)
+    const side = direction === 'east' || direction === 'west';
+    const mk = (roomId, connectedRoom, dir, x = 100) => ({
+        x, y: 100, active: true, body: { enable: true },
+        doorProperties: { roomId, connectedRoom, direction: dir, worldX: x, worldY: 100, open: false, ...(side ? { isSideDoor: true } : {}) }
     });
     window.npcManager = { npcs: new Map() };
     window.npcBehaviorManager = { getBehavior: () => null };
@@ -477,7 +479,7 @@ function gateSetup(direction = 'north', gate = { openFor: ['guard'], openRadius:
     const gates = new DoorGates();
     const opposite = { north: 'south', south: 'north', east: 'west', west: 'east' }[direction];
     const a = mk('lobby', 'vault', direction);
-    const b = mk('vault', 'lobby', opposite);
+    const b = mk('vault', 'lobby', opposite, side ? (direction === 'east' ? 132 : 68) : 100);
     gates.register(a, gate);
     gates.register(b, null);
     return { gates, a, b };
@@ -505,13 +507,16 @@ test('walkThroughTarget: open to the player, north or south, through to the far 
 });
 
 test('walkThroughTarget: an east or west gate walks across, to the doorway\'s floor', () => {
-    const { gates, a } = gateSetup('east', { openFor: ['guard'], holdMs: 2500 });
+    const { gates, a, b } = gateSetup('east', { openFor: ['guard'], holdMs: 2500 });
     const g = gates.groupAtPosition(100, 100);
     gates.open(g, 1000, 'door_gate_opened');
-    assert.deepEqual(gates.walkThroughTarget(a, { x: 40, y: 116 }, { playerRoom: 'lobby', now: 1000 }), { x: 148, y: 100 });
-    // E1: the doorway's centre is on the wall boundary (sprite x + 16 = 116), the target one tile into the far room on its centre row
-    assert.deepEqual(gates.walkThroughTarget(a, { x: 160, y: 116 }, { playerRoom: 'vault', now: 1000 }), { x: 84, y: 100 });
-    assert.deepEqual(gates.walkThroughTarget(a, { x: 160, y: 116 }, { playerRoom: 'lobby', now: 1000 }), { x: 148, y: 100 }, 'in the doorway past the centre: on, not back');
+    assert.equal(a.doorProperties.gateKey, b.doorProperties.gateKey, 'both sprites joined the one gate');
+    assert.deepEqual(gates.walkThroughTarget(b, { x: 40, y: 116 }, { playerRoom: 'lobby', now: 1000 }),
+        gates.walkThroughTarget(a, { x: 40, y: 116 }, { playerRoom: 'lobby', now: 1000 }), 'either sprite gives the same target');
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 40, y: 116 }, { playerRoom: 'lobby', now: 1000 }), { x: 164, y: 100 });
+    // E1: the doorway's centre is on the wall boundary (sprite x + 16 = 116), the target a tile and a half into the far room (past its wall column) on its centre row
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 160, y: 116 }, { playerRoom: 'vault', now: 1000 }), { x: 68, y: 100 });
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 160, y: 116 }, { playerRoom: 'lobby', now: 1000 }), { x: 164, y: 100 }, 'in the doorway past the centre: on, not back');
 });
 
 test('walkThroughTarget: the far side is the other room, even for a player in the doorway past its centre line (review R1 n4)', () => {

@@ -493,7 +493,7 @@ test('guardTurnedBack: one set of event fields; the gate does not open for the g
     const info = gates.heldShutAgainst('guard', 'lobby', 'vault', 0);
     assert.equal(gates.guardTurnedBack('guard', info, { beforeUse: true }), true);
     assert.deepEqual(events, [['door_gate_guard_turned_back',
-        { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, npcId: 'guard', beforeUse: true }]]);
+        { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, cx: 100, cy: 100, npcId: 'guard', beforeUse: true }]]);
     // The player steps away while he is still within the radius, walking off
     stand(FAR);
     gates.update(1000);
@@ -536,7 +536,7 @@ test('the timer form of door_gate_guard_turned_back carries the same fields, bef
     gates.update(1000);
     gates.update(1000 + GUARD_TURN_BACK_MS);
     assert.deepEqual(events, [['door_gate_guard_turned_back',
-        { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, npcId: 'guard', beforeUse: false }]]);
+        { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, cx: 100, cy: 100, npcId: 'guard', beforeUse: false }]]);
     // The player leaves while he is still near: the gate does not open behind his back
     stand(FAR);
     gates.update(1000 + GUARD_TURN_BACK_MS + 100);

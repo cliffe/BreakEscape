@@ -160,25 +160,25 @@ test('approachPoint offsets on x for a side gate, on the centre row', () => {
     assert.equal(gates.approachPoint('guard', { x: BX - 10, y: Y }), null, 'inside the radius: the gate opens for him');
 });
 
-test('walkThroughTarget lands one tile into the far room from both sides, from either sprite', () => {
+test('walkThroughTarget lands a tile and a half into the far room from both sides, from either sprite', () => {
     const { gates, hall, store, g } = setup({ globals: { vest: true } });
     gates.open(g, 0);
     // From the hall (secured room is the store, so he is outside but permitted)
     window.currentPlayerRoom = 'hall';
     for (const sprite of [hall, store]) {
         const t = gates.walkThroughTarget(sprite, { x: BX - 100, y: Y }, { now: 100 });
-        assert.deepEqual(t, { x: BX + 32, y: Y });
+        assert.deepEqual(t, { x: BX + 48, y: Y });
     }
     // From the store: back west
     window.currentPlayerRoom = 'store';
     for (const sprite of [hall, store]) {
         const t = gates.walkThroughTarget(sprite, { x: BX + 100, y: Y }, { now: 100 });
-        assert.deepEqual(t, { x: BX - 32, y: Y });
+        assert.deepEqual(t, { x: BX - 48, y: Y });
     }
     // Room unknown: read from his feet against the doorway's centre
     window.currentPlayerRoom = null; window.lastPlayerRoom = null;
-    assert.deepEqual(gates.walkThroughTarget(hall, { x: BX - 5, y: Y }, { playerRoom: null }), { x: BX + 32, y: Y });
-    assert.deepEqual(gates.walkThroughTarget(store, { x: BX + 5, y: Y }, { playerRoom: null }), { x: BX - 32, y: Y });
+    assert.deepEqual(gates.walkThroughTarget(hall, { x: BX - 5, y: Y }, { playerRoom: null }), { x: BX + 48, y: Y });
+    assert.deepEqual(gates.walkThroughTarget(store, { x: BX + 5, y: Y }, { playerRoom: null }), { x: BX - 48, y: Y });
 });
 
 test('a barred player stays out: an unvested player is turned away, an open gate is solid for him', () => {
@@ -291,13 +291,23 @@ test('inert: his click on the shut gate opens it for one holdMs, from either sid
         const { gates, g, events } = setup({ gate: WINDOW_GATE, globals: { vest: false, world_on: false } });
         window.currentPlayerRoom = room;
         window.player = { x: room === 'hall' ? BX - 30 : BX + 30, y: Y };
-        assert.equal(gates.clickOutcome(g, { holdsCredential: false, connectedRoom: 'store', now: 1000 }), 'exit', room);
+        const outcome = gates.clickOutcome(g, { holdsCredential: false, connectedRoom: 'store', now: 1000 });
+        if (room === 'hall') {
+            // Outside: nothing opens until doors.js has made sure the room behind exists (E1 R1 M1)
+            assert.equal(outcome, 'inert_enter');
+            assert.equal(g.open, false);
+            assert.deepEqual(events, []);
+            gates.exitOpen(g, 1000);
+        } else {
+            assert.equal(outcome, 'exit', room);
+        }
         assert.equal(g.open, true);
         assert.equal(g.exitHoldUntil, 1000 + 2500);
         assert.deepEqual(events.map(e => e[0]), ['door_gate_exit_opened']);
         assert.equal(events[0][1].inert, true);
         // Open: a second click does nothing
-        assert.equal(gates.clickOutcome(g, { now: 1200 }), 'leave');
+        assert.equal(gates.clickOutcome(g, { now: 1200 }), room === 'hall' ? 'inert_enter' : 'leave');
+        assert.deepEqual(events.map(e => e[0]), ['door_gate_exit_opened'], 'a click on the open gate opens nothing more');
         // He stands there: it holds through exitHoldUntil, then shuts (nobody barred or near)
         gates.update(2000);
         assert.equal(g.open, true);
@@ -314,13 +324,14 @@ test('inert: his click on the shut gate opens it for one holdMs, from either sid
 test('inert: open gate is open to the player and not solid for him', () => {
     const { gates, hall, store, g } = setup({ gate: WINDOW_GATE, globals: { vest: false, world_on: false } });
     window.player = { x: BX - 100, y: Y };
-    gates.clickOutcome(g, { now: 0 });
+    assert.equal(gates.clickOutcome(g, { now: 0 }), 'inert_enter');
+    gates.exitOpen(g, 0);
     assert.equal(gates.openToPlayer(g, 10), true);
     assert.equal(gates.blocksPlayer(g, { playerRoom: 'hall', now: 10 }), false);
     gates.update(10);
     assert.equal(hall.body.enable || store.body.enable, false);
     // And the walk-through target applies from outside
-    assert.deepEqual(gates.walkThroughTarget(hall, { x: BX - 100, y: Y }, { playerRoom: 'hall', now: 10 }), { x: BX + 32, y: Y });
+    assert.deepEqual(gates.walkThroughTarget(hall, { x: BX - 100, y: Y }, { playerRoom: 'hall', now: 10 }), { x: BX + 48, y: Y });
 });
 
 test('inert: an openFor NPC still opens it as he nears, and is never turned back with the player beside it', () => {
@@ -377,7 +388,9 @@ test('the inert window works on a north/south gate too', () => {
     const g = [...gates.groups.values()][0];
     assert.equal(g.side, false);
     assert.equal(gates._playerBarred(g), false, 'inert');
-    assert.equal(gates.clickOutcome(g, { now: 0 }), 'exit');
+    assert.equal(gates.clickOutcome(g, { now: 0 }), 'inert_enter', 'from outside: doors.js loads the room first');
+    assert.equal(g.open, false);
+    gates.exitOpen(g, 0);
     assert.equal(events[0][1].inert, true);
     window.gameState.globalVariables.on = true;
     assert.equal(gates._playerBarred(g), true, 'live');
