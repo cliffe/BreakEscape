@@ -39,3 +39,19 @@ Attack seat (engine judges only by kit kind, so no per-wrapper engine work): kit
 6. Voicing is pre-approved once the review is clean: tts-audio skill batch for ca02 (Chidi bark 2 and choice line, twin Fatima "Seven messages" line); then `tts:wasted`; move orphan clips to `tmp/delete/`, stage the removals; commit clips with the ink and scenario change.
 7. Trailer impact: read `docs/video/takes_ca02.md` and `tools/video/edits/ca02*`. Known so far: v8a "Six messages wait in the inbox." (`tools/video/edits/ca02_trailer_r1.json:729`, `_narrow.json:729`) needs re-voicing as "Seven"; inbox takes `t05_inbox_list_runA/B` and `t05n_inbox_narrow` show six rows; `t02_attack_run` / `t02n_attack_run_narrow` may show the renamed zip label in the Attach picker and the new pass line on the result panel (HIDE_MAIL hides some lines: check); `t07_chidi_prompt` shows bark 2 and possibly the PC hint. Don't capture.
 8. Report to AC0 under 150 words: hashes, before/after lines, check results with routes, review findings, clips voiced, retake list, assumption lines.
+
+## Update 26 Nov (second agent): done
+
+Commits: d2fe4ddb4 (Option A edits), bb189ab97 (Fatima defend debrief and Chidi react wording), 76b2f831c (11 new clips, 11 orphans moved to tmp/delete/tts_ca02/). Validator 0 errors both seats; fragment parity 20/20; dialoguelint clean; routes driven with inkjs (maxRun 9): Chidi ca02_cv report/follow/silent/after-report/moved, ca02_react caught/missed, defend Fatima fresh/done+missed/done+caught, attack Fatima start. No routes file exists for ca02.
+`e2/attack.json` not updated (out of scope).
+
+### Trailer VO
+v8a "Seven messages wait in the inbox." generated with tools/video/scripts/narrate.rb (Sulafat, style from the old v8a.json) then trim_vo.py: `~/video-takes-local/ca02/vo/Sulafat_seven_v2/trim/v8a.mp3`, 2.52 s against the old 2.328 s slot (47.4 to 49.728): the edit list (not edited) still points at the old clip; point it at the new path and widen the slot by 0.19 s (or trim), and change text/caption to "Seven". Same for `_narrow.json`.
+
+### Retakes (not captured)
+- t05_inbox_list_runA and runB: list now has seven rows ("0 of 7 sorted", Ana Moraru row at 11:05), chip text changed.
+- t05n_inbox_narrow: same, card chip and red-flag wording.
+- t02_attack_run and t02n_attack_run_narrow: only if the Attach picker or result panel shows the "CV (password-protected zip)" label or the new pass/wrong-type lines (check frames first; the Word CV label is unchanged).
+- t07_chidi_prompt: Chidi bark 2 text and audio changed ("Microsoft's blocked it. He's sent steps to get round it. Do I?"), PC hint red-bar wording changed.
+- t04_fatima_flip: F1 line unchanged on the attack side; no retake unless it shows "Six".
+- Panels: concept panel and debrief panels changed text; any take or still showing them needs a retake.
