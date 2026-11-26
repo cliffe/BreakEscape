@@ -123,9 +123,9 @@ Chidi Okeke: Microsoft's blocked it. He's sent steps to get round it. Do I?
 
 === ca02_react ===
 { kit_key_caught:
-    Chidi Okeke: Good spot. That "enable content" box is the whole trick. Click it and you run whatever's tucked inside. #delivery: easy-going, approving
+    Chidi Okeke: Good spot. That blocked CV was the whole trick. Follow his steps and you run whatever's tucked inside. #delivery: easy-going, approving
 - else:
-    Chidi Okeke: A real CV just opens. One that begs you to enable content is after that one click to let it loose. #delivery: easy-going, matter-of-fact
+    Chidi Okeke: A real CV just opens. One that talks you round Office's block is after that one step to let it loose. #delivery: easy-going, matter-of-fact
 }
 -> bye
 
