@@ -52,7 +52,7 @@ test('a new log holds the opening line, and logFor without create makes none', (
     assert.equal(FMT.logFor('no_such_trip', { create: false }), null);
     assert.equal(FMT.logFor(''), null);
     const log = fresh();
-    assert.deepEqual(text(log.lines), ['Type help, or pick a command below.']);
+    assert.deepEqual(text(log.lines), ['Type help, or pick a command below. This console is made up: every product and name in it is invented.']);
     assert.equal(FMT.logFor(`trip_${n}`), log);
     assert.equal(FMT.logFor(`trip_${n}`, { create: true }), log, 'one log per foothold');
 });
@@ -144,7 +144,7 @@ test('a failed unplug writes the unplug sentence; a good one writes nothing', ()
     const offer = { action: 'unplug', target: 'port_a', ids: {} };
     const log = fresh();
     FMT.recordSent(log, offer, undefined, swept);
-    assert.deepEqual(text(log.lines), ['Type help, or pick a command below.', '$ unplug']);
+    assert.deepEqual(text(log.lines), ['Type help, or pick a command below. This console is made up: every product and name in it is invented.', '$ unplug']);
     FMT.recordResult(log, offer, null, swept);
     FMT.recordResult(log, offer, { success: false, message: 'The box is still in use.' }, swept);
     FMT.recordResult(log, offer, { success: false }, swept);
@@ -350,7 +350,7 @@ test('TERMINAL_ONLY_TEXT holds what Panels never shows, and not the shared words
     assert.ok(Object.isFrozen(T));
     for (const piece of [FMT.OPENING_TEXT, FMT.STRIP_LABEL, FMT.CHANGE_LINE_TEXT, '$', 'msf >', ...SC.TEMPLATES, ...FW.TEMPLATES, ...GR.GRAMMAR_TEXT,
         'HOST', 'NAME', 'STATUS', 'SERVICE', 'PORT', 'PRODUCT', 'VERSION', 'TECHNIQUE', 'WORKS ON']) assert.ok(T.includes(piece), piece);
-    assert.equal(FMT.OPENING_TEXT, 'Type help, or pick a command below.');
+    assert.equal(FMT.OPENING_TEXT, 'Type help, or pick a command below. This console is made up: every product and name in it is invented.');
     assert.equal(FMT.STRIP_LABEL, 'Commands:');
     assert.equal(FMT.CHANGE_LINE_TEXT, '-- network changed. show lists it again --');
     const shared = [VT.REQUEST_FAILED_TEXT, OM.FIXED_TEXT, OM.ACCESS_TAG_TEXT, ...Object.values(OM.STATUS_WORDS), ...Object.values(OM.CLASS_WORDS), ...Object.values(OM.REFUSAL_TEXT), OM.UNKNOWN_REFUSAL_TEXT];
