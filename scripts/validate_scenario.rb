@@ -2868,6 +2868,7 @@ PATROL_DEFAULT_SPEED = 100
 PATROL_DEFAULT_INTERVAL = 3000
 PATROL_TILE_PX = 32
 PATROL_LEG_MARGIN = 0.9
+PATROL_EDGE_TILES = 2 # npc-pathfinding.js PATROL_EDGE_OFFSET
 
 def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_legs: nil)
   issues = []
@@ -2988,6 +2989,32 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
         issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} has action.unlockRoom '#{target}', but #{npc['id']} has no " \
                   "eventMapping with unlockDoor: \"#{target}\". The server refuses the unlock (game.rb npc_mapping_unlocks_door?) " \
                   "and the NPC retries at the door forever. Add an eventMapping with \"unlockDoor\": \"#{target}\" to this NPC."
+      end
+    end
+  end
+
+  # --- 4. waypoints outside the room's patrol bounds ----------------------------------------
+  # npc-behavior.js validateWaypoints drops any patrol.waypoints entry outside the room's patrol
+  # bounds (npc-pathfinding.js: PATROL_EDGE_OFFSET 2 tiles in from each edge of the tilemap), so
+  # the NPC walks the rest, or stands still if none survive. Route (multiRoom) waypoints and
+  # patrolOverride targets are not filtered this way. Skipped when the room's map is unreadable.
+  if repo_root
+    each_npc.call do |rid, i, npc|
+      patrol = npc.dig('behavior', 'patrol')
+      next unless patrol.is_a?(Hash) && patrol['waypoints'].is_a?(Array)
+      type = rooms.dig(rid, 'type')
+      map_file = type.is_a?(String) ? File.join(repo_root, 'public/break_escape/assets/rooms', "#{type}.json") : nil
+      next unless map_file && File.exist?(map_file)
+      map = (JSON.parse(File.read(map_file)) rescue nil)
+      next unless map.is_a?(Hash) && map['width'].is_a?(Integer) && map['height'].is_a?(Integer)
+      max_x = map['width'] - PATROL_EDGE_TILES
+      max_y = map['height'] - PATROL_EDGE_TILES
+      patrol['waypoints'].each_with_index do |w, wi|
+        next unless w.is_a?(Hash) && w['x'].is_a?(Numeric) && w['y'].is_a?(Numeric)
+        next if w['x'].between?(PATROL_EDGE_TILES, max_x) && w['y'].between?(PATROL_EDGE_TILES, max_y)
+        issues << "⚠️ WARNING: 'rooms/#{rid}/npcs[#{i}]' (#{npc['id']}) patrol waypoint #{wi} (#{w['x']},#{w['y']}) is outside the " \
+                  "room's patrol bounds (x and y from #{PATROL_EDGE_TILES} to #{max_x} / #{max_y} tiles in '#{type}'), so the engine drops it " \
+                  "(npc-behavior.js validateWaypoints). Move it inside the bounds."
       end
     end
   end
