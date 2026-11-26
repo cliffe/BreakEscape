@@ -67,6 +67,8 @@ const T = Object.freeze({
     TECHNIQUE_HELD: 'TECHNIQUE must be one you hold: <ids>',
     HOLD_NONE: 'You hold no techniques.',
     USE_FORM: 'Use a held technique on a finding: use <technique> on <alias>',
+    OPENING_SIGNIN: 'Opening the sign-in screen for <host>...',
+    TECHNIQUES_HELD_WORDS: 'Words you can use: <ids>',
     TECHNIQUES_HELD: 'Not a card you hold. Type one of these words: <ids>',
     WORKS_ON: '<verb> works on: <ids>',
     NOTHING_TO: 'Nothing to <verb> here.',
@@ -507,7 +509,9 @@ function doHostVerb(st, verb, action, args, kinds) {
     }
     const r = lookup(args[0], ents, verb);
     if (r.msg) return r.msg;
-    return offerResult(st, r.ent.offer);
+    // The sign-in screen takes over from the Terminal, so say so before it closes
+    const notes = verb === 'signin' && r.ent.offer?.action === 'sign-in' ? [fill(T.OPENING_SIGNIN, { host: r.ent.row.id })] : [];
+    return offerResult(st, r.ent.offer, notes);
 }
 
 const isPc = (row) => row.kind === 'pc';
@@ -580,6 +584,10 @@ function doUseGame(st, args) {
     let a = joinCardName(st, args);
     if (a.length === 3 && norm(a[1]) === 'on') a = [a[0], a[2]];
     if (a.length > 2) return message(T.ONE_TARGET);
+    if (a.length === 0) {
+        const held = techniqueEnts(st).map(x => x.ids[0]);
+        return message(T.USE_FORM, held.length ? fill(T.TECHNIQUES_HELD_WORDS, { ids: joinIds(held) }) : T.HOLD_NONE);
+    }
     if (a.length < 2) return message(T.USE_FORM);
     const techs = techniqueEnts(st);
     const t = lookup(a[0], techs, 'use', techs.map(x => x.ids[0]));
