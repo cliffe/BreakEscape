@@ -157,8 +157,9 @@ NEW_CP1 = "Office documents can carry macros, small programs that run inside the
 OLD_CP2 = "To a real attacker, a second action like enabling content is a foothold on an HR machine full of candidate records, and from there a way into the candidate database and the recruitment mailbox. The habit you just practised, giving any attachment that demands a second action a second look, is what breaks that chain, because the file is never run.\\n\\nWhen a file like this is opened and content is enabled, it runs on the HR machine and it goes out of action while it is rebuilt,"
 NEW_CP2 = "To a real attacker, that second step is a foothold on an HR machine full of candidate records, and from there a way into the candidate database and the recruitment mailbox. The habit you just practised, giving any CV that wants a second step a second look, is what breaks that chain, because the step is never taken and the file never runs.\\n\\nWhen a file like this does get its second step, it runs on the HR machine, which goes out of action while it is rebuilt,"
 for p in (ATT, DEF, FRAG):
-    rep(p, OLD_CP_HEAD, NEW_CP_HEAD)
-    rep(p, OLD_CP1, NEW_CP1)
+    n = 2 if p == FRAG else 1  # fragment also holds a planning note at line 33
+    rep(p, OLD_CP_HEAD, NEW_CP_HEAD, count=n)
+    rep(p, OLD_CP1, NEW_CP1, count=n)
 rep(ATT, OLD_CP2, NEW_CP2)
 
 # ---------- debrief panels (Option C wording on Chidi's outcome) ----------
