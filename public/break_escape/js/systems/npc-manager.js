@@ -1534,6 +1534,7 @@ export default class NPCManager {
         participantTag: mapping.participantTag || null, // ENG-07 (video-call): participant tag (e.g. External)
         background:    mapping.background    || null,    // optional background image path
         // NEW ACTION FIELDS [Phase 2-4]
+        actions:            Array.isArray(mapping.actions) ? mapping.actions : null,   // apply-actions.js list, run once per firing (E4)
         setVisible:         mapping.setVisible          ?? undefined,
         walkIn:             mapping.walkIn              ?? undefined,   // walk in from out of view (systems/npc-walk.js)
         walkOut:            mapping.walkOut             ?? undefined,   // walk out of view, then hide
@@ -2006,6 +2007,26 @@ export default class NPCManager {
       const opts = (config.walkOut && typeof config.walkOut === 'object') ? config.walkOut : {};
       if (typeof bm.walkNPCOut === 'function') bm.walkNPCOut(npcId, opts);
       else bm.setNPCVisible(npcId, false);
+    }
+
+    // Scenario actions (apply-actions.js): hint, take_off, remove_item, remove_world_item,
+    // start_patrol and the rest, run once per firing after the mapping's own condition,
+    // once-only and cooldown. Each action's own `condition` is read by applyActions.
+    // They run AFTER patrolOverride, setVisible, walkIn and walkOut (E4 R1 M2), so a
+    // resume_patrol or start_patrol in the same mapping has the last word on the NPC's move
+    // (a walk-in in progress refuses it, with a warning) and a hint follows a setVisible.
+    // A mapping can fire again around a reload (a onceOnly one that opens a chat is saved only
+    // when the chat closes) or after a dropped ring (its setGlobal is rolled back, its actions
+    // are not), so list only repeat-safe actions (take-backs, take_off); a hint shows twice
+    // and a give_item gives twice (E4 R1 m5).
+    // window.applyActions is set by apply-actions.js at startup (no static import here).
+    if (Array.isArray(config.actions) && config.actions.length) {
+      if (typeof window.applyActions === 'function') {
+        try { window.applyActions(config.actions, { source: 'event_mapping' }); }
+        catch (e) { console.warn(`[event mapping] actions failed for ${npcId}:`, e); }
+      } else {
+        console.warn('[event mapping] actions: applyActions is not loaded');
+      }
     }
 
     // [Phase 4] Handle patrol speed override (accelerate/decelerate during incidents)

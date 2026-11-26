@@ -2460,9 +2460,8 @@ def check_lock_credentials(json_data)
   # through a gate into that room that he can follow someone through. A gate opens for a
   # room NPC in its openFor who has a sprite (npcType person or both, as core/rooms.js
   # makes them), carrying the card or not, as door-gates.js opens for them; a phone NPC or
-  # an id with no NPC behind it never comes near. A gate on an east or west door is no gate
-  # (door-gates.js declines it), nor is one on a door entry that matches no doorway (doors.js
-  # never reads it; check_access_model warns). A gate is a way in when it opens for someone
+  # an id with no NPC behind it never comes near. A gate on a door entry that matches no doorway
+  # is no gate (doors.js never reads it; check_access_model warns). A gate is a way in when it opens for someone
   # and sets playerMayPassIf, or when an NPC it opens for holds doors, that is, is not in the
   # gate's noHold once habits are expanded (plan 5.4). A gate that opens only for careful
   # guards cannot be tailgated. A lock on an object (a safe, a cabinet) or on a start item is
@@ -2524,9 +2523,9 @@ def check_lock_credentials(json_data)
     out
   end
   gates = rooms.empty? ? [] : BreakEscape::NpcHabits.gate_entries(BreakEscape::NpcHabits.expanded_copy(json_data).first)
-  # Only a gate the engine registers: on a north or south door (door-gates.js declines a
-  # side gate), on an entry doors.js matches to a doorway (check_access_model warns otherwise)
-  gates = gates.reject { |g| %w[east west].include?(g[:direction].to_s) || g[:doorway] }
+  # Only a gate the engine registers: on an entry doors.js matches to a doorway
+  # (check_access_model warns otherwise). North, south, east and west doors all work.
+  gates = gates.reject { |g| g[:doorway] }
   # The NPCs a gate can open for: those with a sprite. A phone NPC (npcType phone, or none,
   # which npc-manager.js reads as phone) or an openFor id with no NPC behind it never comes near
   room_npc_ids = rooms.values.flat_map { |r| r.is_a?(Hash) && r['npcs'].is_a?(Array) ? r['npcs'] : [] }
@@ -2869,6 +2868,7 @@ PATROL_DEFAULT_SPEED = 100
 PATROL_DEFAULT_INTERVAL = 3000
 PATROL_TILE_PX = 32
 PATROL_LEG_MARGIN = 0.9
+PATROL_EDGE_TILES = 2 # npc-pathfinding.js PATROL_EDGE_OFFSET
 
 def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_legs: nil)
   issues = []
@@ -2989,6 +2989,32 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
         issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} has action.unlockRoom '#{target}', but #{npc['id']} has no " \
                   "eventMapping with unlockDoor: \"#{target}\". The server refuses the unlock (game.rb npc_mapping_unlocks_door?) " \
                   "and the NPC retries at the door forever. Add an eventMapping with \"unlockDoor\": \"#{target}\" to this NPC."
+      end
+    end
+  end
+
+  # --- 4. waypoints outside the room's patrol bounds ----------------------------------------
+  # npc-behavior.js validateWaypoints drops any patrol.waypoints entry outside the room's patrol
+  # bounds (npc-pathfinding.js: PATROL_EDGE_OFFSET 2 tiles in from each edge of the tilemap), so
+  # the NPC walks the rest, or stands still if none survive. Route (multiRoom) waypoints and
+  # patrolOverride targets are not filtered this way. Skipped when the room's map is unreadable.
+  if repo_root
+    each_npc.call do |rid, i, npc|
+      patrol = npc.dig('behavior', 'patrol')
+      next unless patrol.is_a?(Hash) && patrol['waypoints'].is_a?(Array)
+      type = rooms.dig(rid, 'type')
+      map_file = type.is_a?(String) ? File.join(repo_root, 'public/break_escape/assets/rooms', "#{type}.json") : nil
+      next unless map_file && File.exist?(map_file)
+      map = (JSON.parse(File.read(map_file)) rescue nil)
+      next unless map.is_a?(Hash) && map['width'].is_a?(Integer) && map['height'].is_a?(Integer)
+      max_x = map['width'] - PATROL_EDGE_TILES
+      max_y = map['height'] - PATROL_EDGE_TILES
+      patrol['waypoints'].each_with_index do |w, wi|
+        next unless w.is_a?(Hash) && w['x'].is_a?(Numeric) && w['y'].is_a?(Numeric)
+        next if w['x'].between?(PATROL_EDGE_TILES, max_x) && w['y'].between?(PATROL_EDGE_TILES, max_y)
+        issues << "⚠️ WARNING: 'rooms/#{rid}/npcs[#{i}]' (#{npc['id']}) patrol waypoint #{wi} (#{w['x']},#{w['y']}) is outside the " \
+                  "room's patrol bounds (x and y from #{PATROL_EDGE_TILES} to #{max_x} / #{max_y} tiles in '#{type}'), so the engine drops it " \
+                  "(npc-behavior.js validateWaypoints). Move it inside the bounds."
       end
     end
   end
@@ -3202,16 +3228,16 @@ end
 # wherever it appears (walk the whole document, so nested contents/itemsHeld are covered).
 CONFIRM_LABEL_MAX = 16
 
+# Keys each apply-actions.js action reads: scripts/action_key_table.json (drift-tested against the
+# case labels of apply-actions.js by test/js/action-key-table.test.mjs). Its keys are the
+# known_actions vocabulary below.
+ACTION_KEY_TABLE = JSON.parse(File.read(File.join(__dir__, 'action_key_table.json')))['actions'].freeze
+
 def check_interaction_warnings(json_data)
   issues = []
   # The apply-actions.js action vocabulary (its case labels) plus the extra names the
   # triggerOnInteract schema enum accepts. Unknown types are a soft warning, not an error.
-  known_actions = %w[
-    set_global grant_fact emit_event complete_task unlock_task unlock_aim
-    unlock_object unlock_door give_item remove_item add_capture set_costume
-    clear_costume tint_objects lighting_dip confirm_action show_end_screen hint
-    revoke_card wear take_off
-  ]
+  known_actions = ACTION_KEY_TABLE.keys
   check_actions = lambda do |acts, p|
     unless acts.is_a?(Array)
       issues << "❌ ERROR: '#{p}' must be an array of actions."
@@ -3274,6 +3300,139 @@ def check_interaction_warnings(json_data)
     end
   end
   walk.call(json_data, '')
+  issues
+end
+
+# E4: the keys of every action in an action list. An eventMapping's `actions` list is strict
+# (a missing required key, an unknown key or an unknown type is an error, so `{ type: 'hint',
+# text: ... }` fails); the older lists (triggerOnInteract, onConfirm, onProceed, onDecline, timer
+# and onInteract `actions`, onWear, onRemove) report the same findings as warnings. `type`,
+# `condition` and keys starting with `_` are allowed on every action.
+ACTION_LIST_KEY_NAMES = %w[actions triggerOnInteract onConfirm onProceed onDecline onWear onRemove].freeze
+
+def check_action_keys(json_data)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+  npc_ids = []
+  npc_nodes = {}
+  started = []   # npc ids named by any start_patrol action anywhere
+  droppable = []
+  collect = nil
+  collect = lambda do |node|
+    case node
+    when Hash
+      if node['npcType'] || node['behavior'] || node.key?('eventMappings')
+        npc_ids << node['id']
+        npc_nodes[node['id']] = node if node['id'].is_a?(String)
+      end
+      started << node['npc'] if node['type'] == 'start_patrol' && node['npc'].is_a?(String)
+      droppable << node['id'] if node['droppable'] == true && node['id'].is_a?(String)
+      node.each_value { |v| collect.call(v) }
+    when Array
+      node.each { |v| collect.call(v) }
+    end
+  end
+  collect.call(json_data)
+
+  check_list = lambda do |acts, p, strict|
+    sev = strict ? '❌ ERROR' : '⚠️ WARNING'
+    unless acts.is_a?(Array)
+      issues << "❌ ERROR: '#{p}' must be an array of actions." if strict
+      next
+    end
+    acts.each_with_index do |a, i|
+      ap = "#{p}[#{i}]"
+      unless a.is_a?(Hash)
+        issues << "❌ ERROR: '#{ap}' must be an action object." if strict
+        next
+      end
+      type = a['type']
+      unless type.is_a?(String) && !type.empty?
+        issues << "❌ ERROR: '#{ap}' needs a string 'type'." if strict
+        next
+      end
+      spec = ACTION_KEY_TABLE[type]
+      unless spec
+        issues << "❌ ERROR: '#{ap}' has unknown action type '#{type}'. Known types: #{ACTION_KEY_TABLE.keys.join(', ')}." if strict
+        next
+      end
+      allowed = spec['required'] + spec['optional'] + %w[type condition]
+      spec['required'].each do |k|
+        issues << "#{sev}: '#{ap}' (#{type}) is missing required key '#{k}'." unless a.key?(k)
+      end
+      if type == 'set_costume' && %w[costume id value].none? { |k| a.key?(k) }
+        issues << "#{sev}: '#{ap}' (set_costume) needs 'costume'."
+      end
+      extra = a.keys.reject { |k| allowed.include?(k) || k.start_with?('_') }
+      unless extra.empty?
+        issues << "#{sev}: '#{ap}' (#{type}) has unknown key(s): #{extra.join(', ')}. Keys read: #{(spec['required'] + spec['optional']).join(', ')}."
+      end
+      if a.key?('condition') && (!a['condition'].is_a?(String) || a['condition'].strip.empty?)
+        issues << "#{sev}: '#{ap}' condition must be a non-empty string; a bad condition never holds, so the action never runs."
+      end
+      if type == 'remove_world_item'
+        item = a['item']
+        if item.is_a?(String) && !droppable.include?(item)
+          issues << "#{sev}: '#{ap}' (remove_world_item) names '#{item}', which is not a declared item with droppable: true."
+        end
+        named = [a['roomId']].compact + (a['roomIds'].is_a?(Array) ? a['roomIds'] : [])
+        named.each do |rid|
+          issues << "#{sev}: '#{ap}' (remove_world_item) names room '#{rid}', which the scenario does not declare." unless rooms.key?(rid)
+        end
+      end
+      if %w[start_patrol resume_patrol].include?(type) && a['npc'].is_a?(String) && !npc_ids.include?(a['npc'])
+        issues << "#{sev}: '#{ap}' (#{type}) names npc '#{a['npc']}', which the scenario does not declare."
+      end
+      if %w[start_patrol resume_patrol].include?(type) && a['npc'].is_a?(String) && npc_nodes[a['npc']]
+        pat = npc_nodes[a['npc']].dig('behavior', 'patrol')
+        authored = pat.is_a?(Hash) && (Array(pat['waypoints']).any? || (pat['multiRoom'] && Array(pat['route']).any?) || pat['bounds'] || pat['worldBounds'])
+        issues << "⚠️ WARNING: '#{ap}' (#{type}) names '#{a['npc']}', which has no authored patrol (behavior.patrol waypoints, a multiRoom route or bounds), so the action does nothing." unless authored
+      end
+      # E4 R1 m4: these actions run client-side only from a mapping (no gameId), so nothing is saved
+      if strict && %w[unlock_door unlock_object complete_task].include?(type)
+        field = { 'unlock_door' => "the mapping's own 'unlockDoor'", 'unlock_object' => "a server-side unlock (the mapping has no unlockObject field)", 'complete_task' => "the mapping's own 'completeTask'" }[type]
+        issues << "⚠️ WARNING: '#{ap}' (#{type}) in a mapping's actions is not saved by the server (no game id), so it is lost on reload; use #{field}."
+      end
+      if type == 'set_global' && a['key'].is_a?(String) && !globals.key?(a['key'])
+        issues << "⚠️ WARNING: '#{ap}' (set_global) sets '#{a['key']}', which is not a declared global."
+      end
+    end
+  end
+
+  walk = nil
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      node.each do |k, v|
+        next if k == 'minigameData' || k == 'flagRewards'
+        child = path.empty? ? k.to_s : "#{path}/#{k}"
+        mapping_actions = k == 'actions' && path =~ /eventMappings\[\d+\]\z/
+        # an onConfirm list nested inside a mapping's actions is as strict as the list around it
+        nested_in_mapping = path =~ %r{eventMappings\[\d+\]/actions\[}
+        if ACTION_LIST_KEY_NAMES.include?(k) && !mapping_actions && v.is_a?(Array) && !v.empty? &&
+           v.all? { |e| e.is_a?(Hash) && e['type'].is_a?(String) }
+          check_list.call(v, child, nested_in_mapping ? true : false)
+        end
+        check_list.call(v, child, true) if mapping_actions
+        walk.call(v, child)
+      end
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
+  npc_nodes.each do |id, node|
+    pat = node.dig('behavior', 'patrol')
+    next unless pat.is_a?(Hash)
+    next unless pat['startDeferred'] == true || (pat['startWhen'].is_a?(String) && pat['startWhen'].strip != '')
+    unless started.include?(id) || (pat['startWhen'].is_a?(String) && pat['startWhen'].strip != '')
+      issues << "⚠️ WARNING: '#{id}' has a startDeferred patrol that no start_patrol action names (and no startWhen), so it never moves."
+    end
+    if node['needs'] || node.dig('behavior', 'needs')
+      issues << "⚠️ WARNING: '#{id}' has a deferred patrol and needs; start_patrol suspends its needs for good (as any scripted move does)."
+    end
+  end
   issues
 end
 
@@ -8535,11 +8694,22 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                  'list; gate doors open from requires alone, so use requires (or drop the gate).')
       end
 
-      # North and south doors only (door-gates.js register() declines a side gate)
-      if %w[east west].include?(door['direction'].to_s)
-        warn.call("'rooms/#{room_id}/doors[#{i}]' has a gate on its #{door['direction']} door into " \
-                  "'#{door['connectedRoom']}'. Gates work on north and south doors only; this door will behave " \
-                  'as an ordinary locked door.')
+      # The live window (door-gates.js isInert): an optional condition in the action-condition
+      # grammar. The engine treats an unparsable one as always live, so it is an error here.
+      if door['gate'].key?('activeIf')
+        active_if = door['gate']['activeIf']
+        problem = action_condition_problem(active_if)
+        if problem
+          err.call("'rooms/#{room_id}/doors[#{i}]/gate/activeIf' #{problem}. The engine reads an unparsable " \
+                   'condition as always live, so the gate would never be inert.')
+        else
+          declared = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+          active_if.scan(/globalVars\.(\w+)/).flatten.uniq.each do |name|
+            next if declared.key?(name)
+
+            err.call("'rooms/#{room_id}/doors[#{i}]/gate/activeIf' reads globalVars.#{name}, which is not a declared global.")
+          end
+        end
       end
 
       # The gate's secured room is its entry's connectedRoom, so the entry must lead into
@@ -8767,12 +8937,12 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
 
   # closeDoor names a room with no gate (scenario-schema.json closeDoor: "Warns if the door is
   # not a gate"). door-gates.js closeNow matches a gate whose own room or connectedRoom is the
-  # id, among the gates it registers: enabled, on a north or south door, on an entry doors.js
+  # id, among the gates it registers: enabled, on an entry doors.js
   # reads. Anything else only logs a console warning in play. Unknown room ids are reported by
   # the schema's room reference check, so they are skipped here.
   if rooms.any?
     gated = BreakEscape::NpcHabits.gate_entries(json_data)
-                                  .reject { |g| %w[east west].include?(g[:direction].to_s) || g[:doorway] }
+                                  .reject { |g| g[:doorway] }
                                   .flat_map { |g| [g[:room], g[:connected_room]] }.grep(String).to_set
     walk_close = lambda do |node, path|
       case node
@@ -9392,6 +9562,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
   run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }
   run.call('check_interaction_warnings') { check_interaction_warnings(json_data) }
+  run.call('check_action_keys') { check_action_keys(json_data) }
   run.call('check_revoke_card_globals') { check_revoke_card_globals(json_data) }
   run.call('check_engine_limits') { check_engine_limits(json_data) }
   run.call('check_vm_flags_load_bearing') { check_vm_flags_load_bearing(json_data) }

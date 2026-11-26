@@ -115,14 +115,14 @@
           "from": { "name": "Unknown visitor", "address": "At the gate, no badge" }, "time": "09:12",
           "transcript": [
             { "who": "Visitor", "text": "Cheers, I'm with them." },
-            { "who": "Visitor", "text": "(slips in behind a badge-holder at the gate and heads for the stairs)" }
+            { "who": "Visitor", "text": "(slips in behind a badge-holder at the gate and heads into the studio)" }
           ],
           "truth": { "isPhish": true, "flags": ["tailgating", "no_escort"],
             "perFlagNote": {
-              "tailgating": "They badged in on someone else's card, which is exactly what a wedge or a held door lets happen.",
-              "no_escort": "Heading up alone, with nobody signing for them." },
+              "tailgating": "They came in behind someone else's badge, which is exactly what a wedge or a held door lets happen.",
+              "no_escort": "Into the studio alone, with nobody signing for them." },
             "ifTrusted": "An unbadged stranger is loose on the studio floor, where client plans and screens are open.",
-            "reportReply": "Thanks, we caught them on the stairs; they weren't expected.", "reportReplyByVerdict": {"report": "Thanks, we caught them on the stairs; they weren't expected.", "verify": "Thanks for checking: they weren't on the list, and we've sent someone to find them."} },
+            "reportReply": "Thanks, we caught them in the studio; they weren't expected.", "reportReplyByVerdict": {"report": "Thanks, we caught them in the studio; they weren't expected.", "verify": "Thanks for checking: they weren't on the list, and we've sent someone to find them."} },
           "factorStrings": {
             "tailgating": { "redFlag": "Someone followed an authorised person through a secure door without badging in." },
             "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } },
@@ -234,7 +234,7 @@
       "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by the partners. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
       "flipHeading": "Now you're the one on the desk",
       "flipIntro": "This is how your approach looked from Delphine's side of the counter. The lines picked out below are what got the door open.",
-      "flipDefenderLine": "The call landed. What happened at the door is above; now you're the one on the desk, and the same kinds of visitor are on their way.",
+      "flipDefenderLine": "Your approach landed. What happened at the door is above; now you're the one on the desk, and the same kinds of visitor are on their way.",
       "flipNoSend": "You thought better of it and walked, so there's nothing to replay. The same kinds of visitor are about to reach your desk, and now the call is yours.",
       "flipMissed": "No call to replay this time. The same kinds of visitor are about to reach your desk, and now the call is yours.",
       "flipMissedHeading": "Your turn on the desk",

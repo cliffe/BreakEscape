@@ -94,7 +94,7 @@ Chidi Okeke: Right, sorted. New one's on a sticky note on my screen so I don't f
 { kit_ca02_cv_choice == "report" || kit_ca02_cv_choice == "enable" || kit_ca02_cv_choice == "silent" || kit_ca02_done:
     -> ca02
 }
-Chidi Okeke: Blank page, just a box saying enable editing and content. Do I click?
+Chidi Okeke: Microsoft's blocked it. He's sent steps to get round it. Do I?
 { kit_ca02_cv_choice == "":
     ~ kit_ca02_cv_choice = "asked"
 }
@@ -103,7 +103,7 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
     Chidi Okeke: Right. Reported it, and I'll give Fatima a shout.
     #exit_conversation
     -> DONE
-+ [Click it. Word says that about anything downloaded from email.]
++ [Follow his steps. It's only a CV.]
     ~ kit_ca02_cv_choice = "enable"
     Chidi Okeke: Grand. Clicked it. #delivery: cheerful, unbothered
     #exit_conversation
@@ -123,9 +123,9 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
 
 === ca02_react ===
 { kit_key_caught:
-    Chidi Okeke: Good spot. That "enable content" box is the whole trick. Click it and you run whatever's tucked inside. #delivery: easy-going, approving
+    Chidi Okeke: Good spot. That blocked CV was the whole trick. Follow his steps and you run whatever's tucked inside. #delivery: easy-going, approving
 - else:
-    Chidi Okeke: A real CV just opens. One that begs you to enable content is after that one click to let it loose. #delivery: easy-going, matter-of-fact
+    Chidi Okeke: A real CV just opens. One that talks you round Office's block wants you to take that one step and let it loose. #delivery: easy-going, matter-of-fact
 }
 -> bye
 

@@ -51,9 +51,27 @@ Unverified: no real-fps run of t01, t03 or the walking shots on the capture disp
 
 ## Recorded marks
 
-| take | length | drop % | key marks (trimmed s) | checked against frames / notes |
-|---|---|---|---|---|
-| | | | | |
+### Captures (25 Nov, serial, display :147, keyless server :3456, `female_office_worker_v2`)
+
+Nine takes, one attempt each, all `pass: true`, full frame (1920x1080), no retries. Output in `~/video-takes-local/ca11/takes/` (`video_out/ca11/takes` symlinked to it, as ca18). Gate figures are the constant-offset-corrected residuals (`residualStartMs`/`residualEndMs` in `check.json`); the raw `offsetOk*` flags read false before correction and are not the gate. Sidecars are drafts (`_draft:true`): Step 6 was not in this brief.
+
+t08 dry run (25 Nov): failed once on the script (`checkSprite` is not exported by `_ca11.mjs`); fixed by renaming to `spriteCheck`, the name the other ca11 takes use; passed on the second run (scratch footage, 34.6 s, 0.27% dropped, residual -15 / +15 ms).
+
+| take | length (s) | drop % | residual A/V start / end (ms) | POST /tts | contact sheet and notes |
+|---|---|---|---|---|---|
+| t01_yusuf_hook | 8.10 | 0.33 | +9 / -9 | 1 line, 200 audio/mpeg ("Handovers go out fast...", 58533 bytes in cl) | Yusuf at the desk, then his portrait; line 1 reads in the bar. Chat closes before sentence 2, per script. `tts-response` 3.88 s, `h1_audio_start` 4.10 s |
+| t03_choices_reveal | 41.40 | 0.23 | +12 / -13 | none | Choices cards, montage (caller, export, redaction), Defend intro. Frames read as the script says |
+| t03b_choices_reveal_narrow | 41.14 | 0.23 | -3 / +3 | none | Same beats at 560 px |
+| t06_inbox_list | 15.54 | 0.56 | +4 / -4 | none | Six-row list, then the 11:15 card |
+| t06b_inbox_list_narrow | 15.44 | 0.57 | +1 / -2 | none | Same at 560 px |
+| t07_printout_beat | 13.60 | 0.21 | -12 / +11 | bark 1 200 audio/mpeg (76437 bytes); bark 2 not requested (blocked by design) | `audio-log`: blocked 1, cutsBackwards 0, anyMuted false, bark 1 plays to 7.04 s. Yusuf walks to the tray during the bark |
+| t07b_stepaway_panel | 7.30 | 0.35 | +1 / -1 | none | "Before the debrief" panel, both buttons in frame |
+| t07c_stepaway_panel_narrow | 7.44 | 0.34 | -10 / +10 | none | Same at 560 px |
+| t08_yusuf_cooler | 34.57 | 0.27 | -8 / +8 | none | Yusuf walks from his post to the cooler (right of frame), stays, walks back; camera follows him and returns to the player |
+
+Seated NPCs: none of the nine takes has an NPC meant to sit. Yusuf is the only NPC in frame in the walking and dialogue shots and stands in them. The contact sheets are too small to confirm his stance at the desk in t01 and t07.
+
+Not checked: the trimmed `.mkv` files were not viewed at full size; the take `.take.json` sidecars still need Step 6.
 
 ## Movement shots (25 Nov)
 

@@ -489,6 +489,21 @@ end
   node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
 end
 
+$gate_live_notes = {}
+# A gate with a live window (E1 gate.activeIf): drawn as a gate, with a note saying when it is live.
+# While the condition does not hold the gate is inert (door-gates.js), so the note matters.
+(habits_copy['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(habits_copy) : []).each do |entry|
+  next if entry[:doorway]
+
+  cond = entry[:gate]['activeIf']
+  next unless cond.is_a?(String) && !cond.strip.empty?
+
+  note = "gate: live while #{cond.gsub(/globalVars\./, '')}"
+  ($gate_live_notes[entry[:connected_room]] ||= []) << note   # the rooms graph reads this below
+  node = $nodes["door_#{entry[:connected_room]}"]   # an unlocked room has no door node
+  node[:label] = "#{node[:label]}<br/>#{note}" if node
+end
+
 # A split gated door (GATED_DOOR_SERVER_CHECK_PLAN.md §12): the server owns the way in. The door
 # opens on a server-owned pass (walk in behind the guard wearing it) or on a cloned/held requires
 # card at the reader, and the server credits the passage itself. Label it so the structure is
@@ -2414,6 +2429,7 @@ rooms.each do |room_id, room|
   klass = room['locked'] ? 'lock' : 'room'
   label = room_label(room_id, room)
   label += '<br/>(locked)' if room['locked']
+  ($gate_live_notes[room_id] || []).each { |note| label += "<br/>#{note}" }
   rooms_nodes[room_id] = { label: label, klass: klass, optional: false }
 end
 

@@ -1,0 +1,13 @@
+{
+  "key": "72f6a28a1e16add105a4bf3905e37021",
+  "npc": "ca15_niamh_doherty",
+  "text": "Who's on the Shipley run?",
+  "voice": "Leda",
+  "style": "Tarrowby's operations assistant, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:17:32Z"
+}

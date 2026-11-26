@@ -1,0 +1,13 @@
+{
+  "key": "59d7d26f88a61b3b8995157fa5839c82",
+  "npc": "nilesh_solanki",
+  "text": "Next door. Somewhere people stop for a minute.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:16:54Z"
+}

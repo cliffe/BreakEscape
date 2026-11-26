@@ -123,3 +123,14 @@ test('a route with multiRoom off warns too: the engine runs actions only on a mu
     out = issues(withNpc(routeNpc({ useObject: 'reader', useMs: 2500 })));
     assert.ok(!out.some(s => s.includes('waypoint actions run only on a multi-room route')), out.join('\n'));
 });
+
+// (4) patrol.waypoints outside the room's patrol bounds (2 tiles in from the map edge) are dropped
+// by the engine; room_aw_merrin_lobby is a 10x10 map, so x and y must be 2..8.
+test('a patrol waypoint outside the patrol bounds warns, an inside one does not', { skip }, () => {
+    const sc = (wps) => ({ rooms: { hall: { type: 'room_aw_merrin_lobby', npcs: [patrolNpc({ waypoints: wps })], objects: [] } } });
+    const bad = issues(sc([{ x: 1.5, y: 3.5 }, { x: 6.5, y: 3.0 }])).filter((s) => s.includes('outside the room'));
+    assert.equal(bad.length, 1);
+    assert.match(bad[0], /waypoint 0 \(1\.5,3\.5\)/);
+    assert.deepEqual(issues(sc([{ x: 2.0, y: 3.5 }, { x: 8, y: 8 }])).filter((s) => s.includes('outside the room')), []);
+    assert.equal(issues(sc([{ x: 5, y: 8.5 }])).filter((s) => s.includes('outside the room')).length, 1);
+});

@@ -71,7 +71,7 @@ HOSTS = {
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
 LINES = {
     ('e2', 'defend'): (
-        "Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.",
+        "Thanks for covering the recruitment inbox while I'm in interviews. Seven messages are waiting on the kiosk. Treat them the way you would on a normal day.",
         {'catch': ('You held back that application whose CV wanted content switched on, so nothing ran on the HR machine.',
                    'A real CV just opens. One that asks you to enable content first is the one to report.'),
          'miss': ('That application whose CV wanted content switched on was the one to stop.',
@@ -163,17 +163,17 @@ EPISODES = {
                    'keywords': ['Phishing', 'Malicious documents', 'Security awareness', 'Usable security']}],
         'defend': {
             'name': 'CV lures: the recruitment inbox',
-            'brief': "Awareness episode E2, inbox only. You're covering the recruitment inbox at Tarrowby Logistics, a fictional haulier, and six messages are waiting, applications and CVs among them. Some are real and some were built to trick you: sort them, and report anything that doesn't sit right.",
-            'endGoal': 'Sort the six messages at the training kiosk.',
+            'brief': "Awareness episode E2, inbox only. You're covering the recruitment inbox at Tarrowby Logistics, a fictional haulier, and seven messages are waiting, applications and CVs among them. Some are real and some were built to trick you: sort them, and report anything that doesn't sit right.",
+            'endGoal': 'Sort the seven messages at the training kiosk.',
             'aim': ('recruitment_inbox_aim', 'Cover the recruitment inbox', 'Sort the recruitment inbox at the training kiosk.'),
             'task': ('sort_recruitment_inbox', 'Sort the recruitment inbox'),
-            'kiosk': ('A touch-screen kiosk showing the Tarrowby recruitment inbox. Six messages are waiting.',
+            'kiosk': ('A touch-screen kiosk showing the Tarrowby recruitment inbox. Seven messages are waiting.',
              'A touch-screen kiosk showing the Tarrowby recruitment inbox. Nothing left to do here.'),
             'display': 'CV lures: spot it',
-            'desc': "An awareness episode of about 8 minutes for HR and recruitment staff, on the inbox side only. Cover the recruitment inbox at Tarrowby Logistics, a fictional company: six messages, applications and CVs among them, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+            'desc': "An awareness episode of about 8 minutes for HR and recruitment staff, on the inbox side only. Cover the recruitment inbox at Tarrowby Logistics, a fictional company: seven messages, applications and CVs among them, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': {'type': 'success', 'title': 'Recruitment inbox done',
-                       'body': "You've worked through all six messages; the debrief goes through each one."},
+                       'body': "You've worked through all seven messages; the debrief goes through each one."},
         },
         'check': {
             'items_pre': 'Ten emails from the Tarrowby recruitment inbox: applications, CVs and messages from colleagues and agencies.',

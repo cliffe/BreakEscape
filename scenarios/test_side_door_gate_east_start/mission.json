@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Side-door gate, secured room first",
+  "description": "Throwaway engine test for E1 R1 B1: the learner starts inside the room the side-door gate guards, so the outer room has not loaded when he first clicks the door. The gate sprite must survive the click and open to let him out. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 3,
+  "test_type": "gate_doors",
+  "test_objective": "Verify that clicking the door of the secured room before the outer room has loaded loads it, routes the click to the gate, and destroys no sprite (live window on, no vest, he is inside so it opens to leave); then close the window (switch in the west room) and check the gate is an ordinary door from outside, loading and unlocking the east room"
+}

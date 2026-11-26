@@ -1,0 +1,13 @@
+{
+  "key": "bb6348ed4d4837367814ff482a621b9a",
+  "npc": "fatima_begum",
+  "text": "Thanks for covering the recruitment inbox while I'm in interviews. Seven messages are waiting on the kiosk. Treat them the way you would on a normal day.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures_defend",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T00:55:26Z"
+}

@@ -1047,8 +1047,19 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
     clearTimeout(cap);
 }
 
-export function handleUnlock(lockable, type) {
+export function handleUnlock(lockable, type, opts = {}) {
     console.log('UNLOCK ATTEMPT');
+    // opts.handshake: the caller (doors.js, its room pre-load) already sent the 'unlocked'
+    // request and played the click sound; answer with its response rather than ask again
+    if (opts?.handshake) {
+        const resp = opts.handshake.response;
+        if (resp && resp.success) {
+            unlockTarget(lockable, type, lockable.layer, resp);
+        } else if (!resp?.secondStepCancelled) {
+            window.gameAlert('Access denied', 'error', 'Error', lockedHintDuration(lockable, 3000, 'Access denied'));
+        }
+        return;
+    }
     playUISound('lock');
 
     // A sign-in PC never goes through unlockTarget (not even with locks disabled): its

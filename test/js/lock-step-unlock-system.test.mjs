@@ -171,3 +171,19 @@ test('a gated door with no opener, or an ungated door, takes the lock-type branc
     await settle();
     assert.equal(unlockCalls.length, 0);
 });
+
+test('E1 R2 m3: handleUnlock with a handshake answers from it, sends no request, and plays no second sound', async () => {
+    reset({ answer: loadAnswer('open_door').body });
+    const d = door({ locked: false, lockType: undefined });
+    handleUnlock(d, 'door', { handshake: { response: { success: true, roomData: { id: 'records_room' } } } });
+    await settle();
+    assert.equal(unlockCalls.length, 0, 'no unlock request: the pre-load already sent it');
+    assert.equal(globalThis.__unlockedDoors.length, 1, 'the door opens from the handshake response');
+    // a refused handshake says so, and opens nothing
+    reset();
+    handleUnlock(door({ locked: false }), 'door', { handshake: { response: null } });
+    await settle();
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0][0], 'Access denied');
+    assert.equal(globalThis.__unlockedDoors.length, 0);
+});

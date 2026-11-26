@@ -10,20 +10,20 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
 
 | Metric | Value |
 |---|---|
-| Story aims | 1 |
-| Total tasks | 1 (0 optional) |
+| Story aims | 5 |
+| Total tasks | 17 (8 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 15 |
-| AND-gate convergences | 0 |
+| AND-gate convergences | 1 |
 | Rooms | 10 |
 | Puzzle graph nodes / edges | 44 / 71 |
-| Story graph nodes / edges | 1 / 0 |
+| Story graph nodes / edges | 6 / 3 |
 
 ## Critical Path
 
-0 hops through story aims — minimum mandatory sequence to reach mission completion:
+2 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-****
+**Test the network → + → Report back**
 
 ## How to Read These Diagrams
 
@@ -223,9 +223,21 @@ flowchart TD
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
   aim_aim_office{{"Test the office"}}
+  aim_aim_network{{"Test the network"}}
+  aim_aim_around{{"Look around (optional)"}}
+  aim_aim_deeper{{"Go deeper (optional)"}}
+  aim_aim_wrap{{"Report back"}}
+  aim_andgate_aim_wrap((" + "))
 
+  aim_aim_office --> aim_andgate_aim_wrap
+  aim_aim_network --> aim_andgate_aim_wrap
+  aim_andgate_aim_wrap --> aim_aim_wrap
 
-  class aim_aim_office aim
+  class aim_aim_office,aim_aim_around,aim_aim_deeper aim
+  class aim_aim_network,aim_aim_wrap,aim_andgate_aim_wrap critical
+
+  classDef optional stroke-dasharray:5 2
+  class aim_aim_around,aim_aim_deeper optional
 ```
 
 ## Story + Puzzle (Integrated)
@@ -298,6 +310,11 @@ flowchart TD
   cred_src_julian_rdp_file{"julian.rdp"}
   cred_lorna_door_pw{"Lorna Easton password<br/>(leaston)"}
   aim_aim_office{{"Test the office"}}
+  aim_aim_network{{"Test the network"}}
+  aim_aim_around{{"Look around (optional)"}}
+  aim_aim_deeper{{"Go deeper (optional)"}}
+  aim_aim_wrap{{"Report back"}}
+  aim_andgate_aim_wrap((" + "))
 
   door_server_room --> server_room
   door_partner_office --> partner_office
@@ -370,7 +387,17 @@ flowchart TD
   cred_julian_rdp --> lock_julian_pc
   lock_reception_pc --> cred_lorna_door_pw
   cred_lorna_door_pw --> lock_door_controller
+  aim_aim_office --> aim_andgate_aim_wrap
+  aim_aim_network --> aim_andgate_aim_wrap
+  aim_andgate_aim_wrap --> aim_aim_wrap
   door_meeting_room -.-> aim_aim_office
+  lock_reception_pc -.-> aim_aim_office
+  door_comms_cupboard -.-> aim_aim_office
+  lock_julian_pc -.-> aim_aim_network
+  door_server_room -.-> aim_aim_around
+  lock_thandiwe_laptop -.-> aim_aim_around
+  lock_yasmin_pc -.-> aim_aim_around
+  lock_door_controller -.-> aim_aim_deeper
 
   class door_server_room,door_partner_office,door_meeting_room,door_comms_cupboard,lock_reception_pc,lock_thandiwe_laptop,lock_yasmin_pc,lock_door_controller,lock_julian_pc,jack_meeting_jack,jack_managed_port,jack_guest_vlan_port,wifiap_staff_ap,wifiap_guest_ap,implant_reception_pc lock
   class server_room,partner_office,meeting_room,comms_cupboard,open_plan,reception,kitchen,net_office_lan,net_guest,net_server_lan room
@@ -378,7 +405,11 @@ flowchart TD
   class resource_client_letters,resource_finance_share container
   class pivot_julian_pc,pivot_reception_pc,pivot_thandiwe_laptop,pivot_yasmin_pc,pivot_door_controller gate
   class cred_src_julian_rdp_file item
-  class aim_aim_office aim
+  class aim_aim_office,aim_aim_around,aim_aim_deeper aim
+  class aim_aim_network,aim_aim_wrap,aim_andgate_aim_wrap critical
+
+  classDef optional stroke-dasharray:5 2
+  class aim_aim_around,aim_aim_deeper optional
   class node_start start
 ```
 

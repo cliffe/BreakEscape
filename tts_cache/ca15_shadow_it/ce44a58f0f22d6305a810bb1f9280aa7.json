@@ -1,0 +1,13 @@
+{
+  "key": "ce44a58f0f22d6305a810bb1f9280aa7",
+  "npc": "ca15_joanne_pell",
+  "text": "Who's on the Shipley run?",
+  "voice": "Zephyr",
+  "style": "Tarrowby's operations coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:17:15Z"
+}

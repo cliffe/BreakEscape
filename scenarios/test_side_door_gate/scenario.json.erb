@@ -1,0 +1,74 @@
+{
+  "scenario_id": "test_side_door_gate",
+  "scenario_name": "Test: Side-door gate",
+  "scenario_brief": "Throwaway engine test. A gate on an east-west door with a live window. Nothing to solve.",
+  "endGoal": "Walk into the east room.",
+  "version": "1.0",
+  "show_scenario_brief": "never",
+  "disableAttacks": true,
+  "creditsTheme": "cyber",
+  "startRoom": "west_room",
+  "lighting": { "enabled": true, "defaultMode": "on" },
+  "player": {
+    "id": "player",
+    "displayName": "Tester",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+  "globalVariables": { "test_window_on": false, "test_window_done": false, "test_vest": false },
+  "objectives": [
+    { "aimId": "enter", "title": "Reach the east room", "description": "Outside the window the gate is an ordinary door; inside it you need the vest.", "status": "active", "order": 0,
+      "tasks": [ { "taskId": "enter_east", "title": "Enter the east room", "type": "enter_room", "targetRoom": "east_room", "status": "active" } ] }
+  ],
+  "startItemsInInventory": [],
+  "rooms": {
+    "west_room": {
+      "type": "room_lw_records",
+      "door_sign": "West Room",
+      "connections": { "east": "east_room" },
+      "doors": [
+        { "connectedRoom": "east_room", "direction": "east",
+          "gate": { "openFor": ["opener"], "openRadius": 64, "holdMs": 2500, "playerMayPassIf": "test_vest",
+                    "activeIf": "globalVars.test_window_on && !globalVars.test_window_done" } }
+      ],
+      "npcs": [
+        { "id": "opener", "displayName": "Opener", "npcType": "person", "position": { "x": 3, "y": 3 },
+          "spriteSheet": "male_security_guard_v2", "spriteTalk": "assets/characters/len_talk.png",
+          "behavior": { "patrol": { "enabled": true, "multiRoom": true, "waypointMode": "sequential", "pauseForPlayer": false, "speed": 90,
+            "route": [
+              { "room": "west_room", "waypoints": [ { "x": 3, "y": 3, "dwellTime": 8000 } ] },
+              { "room": "east_room", "waypoints": [ { "x": 3, "y": 3, "dwellTime": 4000 } ] }
+            ] } } }
+      ],
+      "objects": [
+        { "type": "notes", "id": "switch_window_on", "name": "Switch: window on", "position": { "x": 2, "y": 6 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "text": "Window on (gate live).",
+          "triggerOnInteract": [ { "type": "set_global", "key": "test_window_on", "value": true }, { "type": "set_global", "key": "test_window_done", "value": false } ],
+          "observations": "Click: the live window opens. An unvested player is barred." },
+        { "type": "notes", "id": "switch_window_off", "name": "Switch: window off", "position": { "x": 4, "y": 6 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "text": "Window off (gate inert).",
+          "triggerOnInteract": [ { "type": "set_global", "key": "test_window_done", "value": true } ],
+          "observations": "Click: the live window closes. The gate becomes an ordinary door." },
+        { "type": "notes", "id": "switch_vest", "name": "Switch: vest", "position": { "x": 6, "y": 6 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "text": "Vest on.",
+          "triggerOnInteract": [ { "type": "set_global", "key": "test_vest", "value": true } ],
+          "observations": "Click: the pass global (playerMayPassIf) becomes true." }
+      ]
+    },
+    "east_room": {
+      "type": "room_lw_ceo",
+      "door_sign": "East Room",
+      "connections": { "west": "west_room" },
+      "npcs": [],
+      "objects": [
+        { "type": "notes", "id": "east_notice", "name": "Notice", "position": { "x": 3, "y": 3 },
+          "takeable": false, "readable": true, "interactable": true, "active": true,
+          "observations": "A notice.", "text": "You made it in." }
+      ]
+    }
+  }
+}

@@ -45,8 +45,37 @@ Not verified: any recording (capture, sync, dropped frames), the sprite (BE_SPRI
 
 ## Recorded marks
 
-| take | length | drop % | key marks (trimmed s) | checked against frames / notes |
-|---|---|---|---|---|
+### Captures (25 Nov, serial, display :147, keyless server :3456, `female_office_worker_v2`)
+
+Thirteen takes, one attempt each, all `pass: true`, full frame (1920x1080), no retries. Output in `~/video-takes-local/ca16/takes/` (`video_out/ca16/takes` symlinked to it, as ca11). Gate figures are the constant-offset-corrected residuals (`residualStartMs`/`residualEndMs` in `check.json`). Sidecars are drafts (`_draft:true`): Step 6 was not in this brief.
+
+t08 dry run (25 Nov): passed on the first run. The script imported `checkSprite`, which `_ca16.mjs` does not export (it exports `spriteCheck`). I renamed both uses before the dry run, so the dry run never failed. Scratch footage, 35.14 s, 0.27% dropped, residual +11 / -12 ms. Darren's trip: triggered at 1.5 s, at the cooler at 5.9 s, 214 px from his post, back at the post at 32.5 s.
+
+| take | length (s) | drop % | residual A/V start / end (ms) | POST /tts | contact sheet and notes |
+|---|---|---|---|---|---|
+| t01_anjali_hook | 17.84 | 0.50 | -5 / +5 | 1 line, 200 audio/mpeg (`tts-proof` ok) | Anjali's line in the bar from 8.7 s; line pair 8668 to 16461 ms (durMs 7793). `s2_in` and `s2_out` are estimates (`est: true`), not playback edges: cut on the line pair |
+| t02_brief | 9.93 | 0.28 | +12 / -13 | none (no voice) | Brief panel from 1 s; Start visible. Advice sentence hidden, not checked at full size |
+| t02b_brief_narrow | 9.73 | 0.28 | -4 / +4 | none | Same at 560 px |
+| t03_choices_reveal | 37.44 | 0.25 | -3 / +3 | none | Choice cards, the montage (23 to 36 s) and the led page. Frames read as the script says |
+| t03b_choices_reveal_narrow | 37.27 | 0.25 | +14 / -14 | none | Same beats at 560 px |
+| t04_concern_form | 16.43 | 0.54 | -14 / +14 | none | Launch panel 0 to 6 s, then the Build step with nothing picked, report empty |
+| t04b_concern_form_narrow | 16.37 | 0.18 | -4 / +3 | none | Same at 560 px |
+| t05_inbox_list | 13.23 | 0.65 | -4 / +4 | none | Full frame at 4.5 s read: Reuben's preview is blank, row height kept. **The Opportunities row still shows the approach text ("We pay people at firms li...")**: see open items |
+| t05b_inbox_list_narrow | 13.27 | 0.65 | -3 / +2 | none | Same at 560 px |
+| t06_lookup_panel | 8.33 | 0.93 | -4 / +4 | none | "Before the debrief" with Look up and Carry on in frame. Drop close to the 1% gate |
+| t06b_lookup_panel_narrow | 8.34 | 0.96 | -15 / +15 | none | Same at 560 px. Drop close to the 1% gate |
+| t07_niamh_ask | 16.80 | 0.53 | -6 / +5 | 2 lines, both 200 audio/mpeg: bark 1 "Hang on, my screen's thrown me out." and the ask "It won't take my password at all. Could I borrow your login for an hour?" | Niamh arrives beside the player at 4.2 s after the press; the ask starts at +6.39 s (the doc's +6.0 to +6.4 s). Amber cue, no bubble at the ask |
+| t08_darren_cooler | 35.13 | 0.27 | -19 / +19 | none (quiet by design) | Darren walks to the cooler and back; the camera follows out and back, then returns to the player |
+
+Seated NPCs: none of the thirteen takes shows an NPC that the scenario declares as seated. The ca16 scenario gives Darren a `needsHome` facing south at (2.5, 7) and no seat or pose. The contact sheets are too small to confirm stance, so this is unverified at full size. Niamh is "at her PC" before her ask (the dry-run note); her seated pose before the press was not checked at full size.
+
+Open items for the edit and the orchestrator:
+- **t05 spoiler check.** Only Reuben's preview is blanked. The Opportunities row shows the unknown contact's approach text in the list hold (frame at 4.5 s). Decide whether the list shot crops it, blanks it, or is used at all. The list mark also logs Reuben's preview text in the marks file (data only, not on screen).
+- **t01 and t07 voice.** Both voiced lines in t07 return 200 with no `line-start` pair, so the lines are proved by `tts-response` and `audio-start`/`audio-end` marks, not by `watchVoice`. t01 has the pair.
+- **Full-size checks.** Only the t05 frame was viewed at full size. The other twelve were judged from contact sheets. Trimmed `.mkv` files were not viewed at full size.
+- **Sidecars.** The `.take.json` files are drafts and need Step 6.
+- **Scout length.** The voiced line lengths were not compared with the scout's ffprobe values.
+
 
 ## Movement shots (25 Nov)
 

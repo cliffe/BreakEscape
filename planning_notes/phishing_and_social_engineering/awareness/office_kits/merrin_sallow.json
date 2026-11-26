@@ -28,10 +28,6 @@
         "satisfies": "rest",
         "restores": 70,
         "useSeconds": 8,
-        "useFrom": {
-          "dx": 0,
-          "dy": -1
-        },
         "capacity": 2,
         "chatter": "pool"
       }
@@ -349,24 +345,25 @@
             },
             {
               "_kitKey": "chg_ca12_visitor_go",
+              "_comment": "r3 trailer script (26 Nov): Camila walks in from the lobby through the side-door gate (openFor Camila) to the step-in tile, replacing the old pop at the east door plus a 2 s patrolOverride. npc_arrived (owner walk) then sets kit_ca12_visitor_there as before.",
               "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
               "condition": "value === true && globalVars.kit_ca12_out === true",
               "onceOnly": true,
-              "setVisible": true
-            },
-            {
-              "_kitKey": "chg_ca12_visitor_go_2",
-              "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
-              "condition": "value === true && globalVars.kit_ca12_out === true",
-              "onceOnly": true,
-              "delayMs": 2000,
-              "patrolOverride": {
-                "targetTile": {
+              "walkIn": {
+                "from": "lobby",
+                "to": {
                   "x": 6.5,
                   "y": 4.5
                 },
                 "speed": 90
               }
+            },
+            {
+              "_kitKey": "chg_ca12_visitor_go_2",
+              "_comment": "Retired 2026-11-26: the walk to the step-in tile is now the walkIn in chg_ca12_visitor_go. Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
+              "condition": "data.retired_2026_11_26 === true && value === true && globalVars.kit_ca12_out === true",
+              "onceOnly": true
             },
             {
               "_kitKey": "npc_arrived_camila_ospina_sets_ca12_visitor_there",

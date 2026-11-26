@@ -1,0 +1,919 @@
+{
+    "mission": "ca16",
+    "id": "ca16_trailer_r1_narrow",
+    "theme": "ca",
+    "title": "Cyber Aware ca16 trailer, round 1 (narrow-panel takes t02b to t06b; render 9:16 and 1:1 from this file)",
+    "script": {
+        "heading": "ca16 trailer script (insider risk)",
+        "owner_card": "none yet",
+        "brief": "See docs/video/scripts/ca16_trailer_script.md and tmp/handover/ca0/HANDOVER_edit_ca16.md. Model ca13 and ca15. Marks from the 25 Nov takes (trimmed seconds); Sulafat_v2 VO. DEFAULTS the owner can change: (1) PeaceFolk Quiet Reflection from 52.667 s (own track, its soft pulse and a resolved ending suit a wellbeing concern); (2) t04b is 9:16 at integer 1x (zoom 0.5625) with bars (header bar 724 px, no retake); (3) hook out 16.35, led_page 4.4 s; (4) Brief panel's 170 px gap kept; (5) the 'hard week' concern chip kept; (6) Hana line 2 hidden by a #0f152a patch (wide x 850 y 348 548x60; narrow x 958 y 576 226x184); (7) Darren cutaway DROPPED: the 9:16 and 1:1 previews show black bands at the room edge, so topic is the Brief panel alone, 4.1 s; (8) stripe #6b4c9a from awareness BRAND_SET.md (quayholt_insurance). Chips: THE TRAINING ROOM, QUAYHOLT BRIEF, YOUR CALLS, YOUR TURN, RAISE A CONCERN, A LEAVER'S WEEK."
+    },
+    "fps": 30,
+    "length": 72.1,
+    "music": {
+        "track": "PeaceFolk/Quiet Reflection.mp3",
+        "analysis": "quiet_reflection_75.json",
+        "start": 52.667,
+        "length": 72.1,
+        "gain_db": -5,
+        "fade_in": 0,
+        "fade_out": 2.5,
+        "alternatives": [
+            "PeaceFolk/Quiet Reflection.mp3 @74.576",
+            "PeaceFolk/Gently Decaying.mp3 @66.314"
+        ]
+    },
+    "beat": {
+        "bpm": 142.4,
+        "period": 0.4213,
+        "offset": 0
+    },
+    "duck": {
+        "db": -10,
+        "attack": 0.12,
+        "release": 0.3
+    },
+    "audio": {
+        "fade_ms": 8,
+        "target_lufs": -14,
+        "true_peak": -1.5
+    },
+    "seat_labels": {
+        "attack": "YOUR CALLS",
+        "defend": "DEFENDER"
+    },
+    "shots": [
+        {
+            "id": "hook",
+            "type": "gameplay",
+            "duration": 4.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t01_anjali_hook.trimmed.mkv",
+                "in": 11.95,
+                "out": 16.35
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t01 Anjali sentence 2, speech 12.13 to 16.15 (silencedetect), comma pause 14.40 to 14.66, chat closes 16.556; window ends above y 885 so the take's bar (y 895 to 1060, prints sentence 3) is cropped in every format; sentence 2 burned as two cues | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                },
+                "9:16": {
+                    "cx": 0.69,
+                    "cy": 0.42,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.68,
+                    "cy": 0.42,
+                    "zoom": 1
+                }
+            },
+            "dialogue": true,
+            "lines": [
+                {
+                    "start": 0.18,
+                    "end": 2.7,
+                    "speaker": "Anjali",
+                    "text": "This week someone's leaving\nand there's a bit of talk"
+                },
+                {
+                    "start": 2.7,
+                    "end": 4.2,
+                    "speaker": "Anjali",
+                    "text": "going round."
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            },
+            "masks": [
+                {
+                    "x": 0,
+                    "y": 885,
+                    "w": 1920,
+                    "h": 195,
+                    "color": "#000000"
+                }
+            ]
+        },
+        {
+            "preset": "ca-open",
+            "id": "open",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "title": "Insider risk",
+                "company": "Quayholt Insurance",
+                "stripe": "#6b4c9a"
+            },
+            "duration": 5.4
+        },
+        {
+            "id": "topic",
+            "type": "gameplay",
+            "duration": 4.1,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t02b_brief_narrow.trimmed.mkv",
+                "in": 4.3,
+                "out": 8.4
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Brief panel opens at 3.81; crop above the scope notice (top y 613 wide, about 647 narrow); 170 px blank gap under the heading kept (reads as a pause) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.20 s"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "QUAYHOLT BRIEF",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.315,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.3,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.3,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "red_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "attack",
+            "duration": 3.1,
+            "join": {
+                "type": "cut"
+            },
+            "text": [
+                "Make the week's calls"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Attack-side chapter card, title only | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            }
+        },
+        {
+            "id": "pick_offer",
+            "type": "gameplay",
+            "duration": 3.4,
+            "join": {
+                "type": "seam"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 11.77,
+                "out": 15.17
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Offer card with its two options, nothing marked; panel 554 px fits the 9:16 window at zoom 1.0 on the narrow take | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.17 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "YOUR CALLS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "pick_export",
+            "type": "gameplay",
+            "duration": 3.7,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 17.55,
+                "out": 21.25
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Export-favour card, pick shown, no marks | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.10 s"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "YOUR CALLS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "led_page",
+            "type": "gameplay",
+            "duration": 4.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 24.2,
+                "out": 28.6
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "A week later montage, only two cards (offer and export), page static about 24.3 to 36.9 | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "YOUR CALLS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "led_offer",
+            "type": "gameplay",
+            "duration": 5.0,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 28.6,
+                "out": 33.6
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Punch-in on the offer card; in 9:16 the export card cannot be cropped out (accepted, a later beat) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "YOUR CALLS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.42,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.42,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.42,
+                    "zoom": 2
+                }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "led_export",
+            "type": "gameplay",
+            "duration": 4.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+                "in": 32.3,
+                "out": 36.7
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Punch-in on the export card, same static page | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "attack",
+                "chip": "YOUR CALLS",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.62,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.62,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.66,
+                    "zoom": 2
+                }
+            },
+            "voPos": {
+                "9:16": "top",
+                "1:1": "top"
+            }
+        },
+        {
+            "id": "flip",
+            "type": "gameplay",
+            "duration": 2.6,
+            "join": {
+                "type": "flip"
+            },
+            "source": {
+                "file": "t04b_concern_form_narrow.trimmed.mkv",
+                "in": 4.2,
+                "out": 6.8
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Raise a concern launch panel (launch panel 3.98 to 7.29), seat flips to defend; t04b bezel 560 wide | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "YOUR TURN",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "blue_card",
+            "type": "card",
+            "style": "ca",
+            "chapter": "defend",
+            "duration": 3.6,
+            "join": {
+                "type": "seam"
+            },
+            "text": [
+                "Raise a concern · Sort the messages"
+            ],
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Defend-side chapter card, title only | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            }
+        },
+        {
+            "id": "concern",
+            "type": "gameplay",
+            "duration": 5.2,
+            "join": {
+                "type": "seam"
+            },
+            "source": {
+                "file": "t04b_concern_form_narrow.trimmed.mkv",
+                "in": 10.7,
+                "out": 15.9
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Form open from 10.34; 'A colleague has seemed to be having a hard week' chip kept (names nobody); t04b header bar is 724 px wide so 9:16 runs at 1x (zoom 0.5625) with bars (owner, no retake) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch | 520 retake: marks moved +0.10 s"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "RAISE A CONCERN",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.458,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 0.5625
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1
+                }
+            }
+        },
+        {
+            "id": "list",
+            "type": "gameplay",
+            "duration": 3.4,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t05b_inbox_list_narrow.trimmed.mkv",
+                "in": 3.05,
+                "out": 6.45
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Inbox list from 2.84, six rows; Opportunities row left as is (same offer already on screen, fictional) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "A LEAVER'S WEEK",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.275,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.444444,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.4,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "hana",
+            "type": "gameplay",
+            "duration": 5.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t05b_inbox_list_narrow.trimmed.mkv",
+                "in": 7.8,
+                "out": 13.0
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Hana card; line 2 hidden by a patch the colour of the card (#0f152a, sampled the same wide and narrow): wide x 850 y 348 548x60, narrow x 958 y 576 226x184 (green bar at x 950 to 956 stays) | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "defend",
+                "chip": "A LEAVER'S WEEK",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.27,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.444444,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.4,
+                    "zoom": 2
+                }
+            },
+            "masks": [
+                {
+                    "x": 958,
+                    "y": 576,
+                    "w": 226,
+                    "h": 184,
+                    "color": "#0f152a"
+                }
+            ]
+        },
+        {
+            "id": "look_up",
+            "type": "gameplay",
+            "duration": 3.2,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t06b_lookup_panel_narrow.trimmed.mkv",
+                "in": 4.2,
+                "out": 7.4
+            },
+            "audio": {
+                "gain_db": -6
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "Look-up panel from 2.94, buttons 3.85; no verdict button pressed | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.5,
+                    "cy": 0.5,
+                    "zoom": 2
+                }
+            }
+        },
+        {
+            "id": "niamh_end",
+            "type": "gameplay",
+            "duration": 5.5,
+            "join": {
+                "type": "cut"
+            },
+            "source": {
+                "file": "t07_niamh_ask.trimmed.mkv",
+                "in": 10.03,
+                "out": 15.53
+            },
+            "audio": {
+                "gain_db": 0,
+                "dialogue": true,
+                "duck_music": true
+            },
+            "spoiler": {
+                "reviewed": false,
+                "shows_code": false,
+                "shows_identity": false,
+                "shows_ending": false,
+                "keypad_partial": null,
+                "note": "t07 bark 1 audio ends 9.69, ask audio starts 11.33; in 10.03 is 0.34 s after bark 1; speech 11.62 to 13.29 and 13.61 to 15.29, out 15.53; no on-screen bar (speech bubbles hidden) so burned captions in every aspect | CA: spoilers not an issue (owner), no masks beyond the Hana line-2 patch"
+            },
+            "seat": {
+                "seat": "full",
+                "chip": "THE TRAINING ROOM",
+                "stripe": "#6b4c9a"
+            },
+            "framing": {
+                "16:9": {
+                    "cx": 0.397,
+                    "cy": 0.47,
+                    "zoom": 2
+                },
+                "9:16": {
+                    "cx": 0.43,
+                    "cy": 0.48,
+                    "zoom": 1.125
+                },
+                "1:1": {
+                    "cx": 0.4,
+                    "cy": 0.5,
+                    "zoom": 2
+                }
+            },
+            "dialogue": true,
+            "lines": [
+                {
+                    "start": 1.59,
+                    "end": 3.26,
+                    "speaker": "Niamh",
+                    "text": "It won't take my password\nat all."
+                },
+                {
+                    "start": 3.58,
+                    "end": 5.26,
+                    "speaker": "Niamh",
+                    "text": "Could I borrow your login\nfor an hour?"
+                }
+            ],
+            "caption": {
+                "16:9": true,
+                "9:16": true,
+                "1:1": true
+            }
+        },
+        {
+            "preset": "ca-close",
+            "id": "close",
+            "join": {
+                "type": "seam"
+            },
+            "ca": {
+                "name": "Insider risk",
+                "tagline": "Make the calls · See where they lead",
+                "hacktivity": "Hacktivity",
+                "cta": "Learn on Hacktivity.co.uk",
+                "layout": {
+                    "1:1": {
+                        "mark_y": 0.14
+                    }
+                },
+                "wordmark": [
+                    "HACKTIVITY",
+                    "CYBER AWARE"
+                ]
+            },
+            "duration": 5.5
+        }
+    ],
+    "vo": [
+        {
+            "id": "v1",
+            "start": 4.42,
+            "end": 9.532,
+            "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+            "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v1.mp3"
+        },
+        {
+            "id": "v1c",
+            "start": 9.9,
+            "end": 12.156,
+            "text": "This episode: insider risk.",
+            "caption": "This episode:\ninsider risk.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v1c.mp3"
+        },
+        {
+            "id": "v2",
+            "start": 14.1,
+            "end": 16.476,
+            "text": "First, make the week's calls.",
+            "caption": "First, make\nthe week's calls.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v2.mp3"
+        },
+        {
+            "id": "v3",
+            "start": 17.2,
+            "end": 19.768,
+            "text": "Someone offers you money for access.",
+            "caption": "Someone offers you\nmoney for access.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v3.mp3"
+        },
+        {
+            "id": "v4",
+            "start": 20.6,
+            "end": 23.144,
+            "text": "A colleague who's leaving asks a favour.",
+            "caption": "A colleague who's leaving\nasks a favour.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v4.mp3"
+        },
+        {
+            "id": "v5",
+            "start": 24.3,
+            "end": 27.06,
+            "text": "A week on, see where each one led.",
+            "caption": "A week on, see where\neach one led.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v5.mp3"
+        },
+        {
+            "id": "v5b",
+            "start": 28.7,
+            "end": 32.972,
+            "text": "A reply brought pressure, then sign-in prompts that night.",
+            "caption": "A reply brought pressure,\nthen sign-in prompts that night.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v5b.mp3"
+        },
+        {
+            "id": "v12",
+            "start": 33.7,
+            "end": 36.7,
+            "text": "The client list sat in a personal inbox.",
+            "caption": "The client list sat\nin a personal inbox.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v12.mp3"
+        },
+        {
+            "id": "v6",
+            "start": 38.1,
+            "end": 39.252,
+            "text": "Now it's your turn.",
+            "caption": "Now it's your turn.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v6.mp3"
+        },
+        {
+            "id": "v7",
+            "start": 40.7,
+            "end": 43.7,
+            "text": "Raise a concern and sort the messages.",
+            "caption": "Raise a concern and\nsort the messages.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v7.mp3"
+        },
+        {
+            "id": "v8",
+            "start": 44.3,
+            "end": 45.692,
+            "text": "Build a short report.",
+            "caption": "Build a short report.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v8.mp3"
+        },
+        {
+            "id": "v9a",
+            "start": 49.5,
+            "end": 51.66,
+            "text": "Six messages, one week.",
+            "caption": "Six messages, one week.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v9a.mp3"
+        },
+        {
+            "id": "v10",
+            "start": 52.9,
+            "end": 55.828,
+            "text": "A colleague's locked out. What would you do?",
+            "caption": "A colleague's locked out.\nWhat would you do?",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v10.mp3"
+        },
+        {
+            "id": "v11",
+            "start": 58.1,
+            "end": 60.068,
+            "text": "Then Niamh asks you something.",
+            "caption": "Then Niamh asks\nyou something.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v11.mp3"
+        },
+        {
+            "id": "v13",
+            "start": 66.8,
+            "end": 71.288,
+            "text": "Make the calls, see where they lead, on Hacktivity.co.uk.",
+            "caption": "Make the calls, see where\nthey lead, on Hacktivity.co.uk.",
+            "file": "/home/cliffe/video-takes-local/ca16/vo/Sulafat_v2/trim/v13.mp3"
+        }
+    ]
+}

@@ -1160,11 +1160,11 @@
             },
             {
               "condition": "globalVars.kit_ca02_cv_choice === 'report'",
-              "value": "Chidi's PC. The CV is closed, nothing enabled, and reported."
+              "value": "Chidi's PC. The CV is closed, still blocked, and reported."
             },
             {
               "condition": "globalVars.kit_ca02_out === true",
-              "value": "Chidi's PC. A CV for the driver job, open in Word. The page is blank except for a box: 'This document is protected. Enable editing, then enable content, to view it.'"
+              "value": "Chidi's PC. A CV for the driver job, open in Word under a red bar: 'Microsoft has blocked macros from running because the source of this file is untrusted.' Beside it, the candidate's email says how to get round that."
             }
           ],
           "position": {
@@ -1306,7 +1306,7 @@
               "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_cv_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
-              "bark": "Blank page, just a box saying enable editing and content. Do I click?",
+              "bark": "Microsoft's blocked it. He's sent steps to get round it. Do I?",
               "targetKnot": "ca02_cv"
             },
             {

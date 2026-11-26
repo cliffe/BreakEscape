@@ -15,9 +15,20 @@
  * every guard that counts is in it (those it opened for, lastGuards, while open; those
  * near, while shut). A careful gate bars the player as a false playerMayPassIf does.
  *
- * North and south doors only. register() declines a gate on an east or west door with
- * one console warning, and the door stays an ordinary locked door (a side doorway is two
- * sprites a tile apart, so the far one would never join the gate). The validator warns.
+ * North/south and east/west doors. A side (east/west) doorway is two 1x1 sprites a tile
+ * apart, one per room; both join one gate, grouped by the doorway's centre on the shared
+ * wall boundary (g.cx, g.cy: east sprite x + 16, west sprite x - 16, same y). g.x and g.y
+ * stay the registering sprite's own position. Every distance rule reads g.cx/g.cy. The
+ * side body is the whole 32x32 tile of each sprite, the walk grid is carved with
+ * markSideDoorCorridor, and the sprites animate with the side sheet.
+ *
+ * Live window (`activeIf`, either axis): an optional condition in the action-condition
+ * grammar (utils/global-condition.js, read through window.parseActionCondition). Absent,
+ * or a condition that does not parse, means always live. While it does not hold the gate
+ * is INERT: the player is never barred and never keeps it shut, from either side, and his
+ * click on the shut gate opens it for one holdMs (the exitOpen path) with no credential and
+ * no look at the room's lock; `openFor` NPCs still open it as they near; the events are
+ * today's, with `inert: true` added to the payload. See isInert().
  *
  * - Opens when any `openFor` NPC's centre is within `openRadius` of the door centre.
  * - Stays open while one is, and for `holdMs` after the last one leaves.
@@ -77,7 +88,13 @@
  * rooms create a sprite for one doorway, so sprites are grouped by position and
  * toggled together; the far room's sprite joins whichever loads first (pending).
  * Events: door_gate_opened / door_gate_closed / door_gate_denied, each with
- * { roomId, connectedRoom, direction }.
+ * { roomId, connectedRoom, direction }. door_gate_opened/closed carry `inert: true` when the
+ * gate was outside its live window at the moment of that toggle (so the two can differ if the
+ * window changes mid-hold). door_gate_guard_turned_back also carries x, y (the registering
+ * sprite's position) and cx, cy (the doorway's centre, 16 px off for a side gate).
+ *
+ * NPCs and an inert gate: outside its window a gate stays openFor-only for NPC walkers (it
+ * is an ordinary door for the player alone). A walker not on openFor is not routed through it.
  *
  * Sound: a gate whose door has an RFID lock plays the door release (`rfid_unlock`, the
  * same sound as any RFID lock) each time it opens, whoever it opens for, and when a
@@ -114,8 +131,15 @@ const TILE = 32;
 // How far past the doorway's centre a click on an open gate walks the player
 // (walkThroughTarget): clear of a north or south wall's depth, or of a side wall
 const WALK_THROUGH_NS_PX = 2 * TILE;
+// East and west: from the doorway's centre on the wall boundary, a tile and a half into the far
+// room: the centre of the first floor tile past that room's wall column (one tile would stop on
+// the door tile itself, inside the body footprint that holds a gate open)
 const WALK_THROUGH_SIDE_PX = 1.5 * TILE;
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' };
+
+function isSideProps(props) {
+    return !!props && (props.isSideDoor === true || props.direction === 'east' || props.direction === 'west');
+}
 
 function W() { return typeof window !== 'undefined' ? window : {}; }
 
@@ -133,6 +157,8 @@ export function normaliseGate(raw) {
         playerMayPassIf: typeof raw.playerMayPassIf === 'string' && raw.playerMayPassIf ? raw.playerMayPassIf : null,
         // The guards who do not hold the door for the player (holdsDoors false)
         noHold: Array.isArray(raw.noHold) ? raw.noHold.filter(s => typeof s === 'string') : [],
+        // The live window: a condition string, or null for a gate that is always live
+        activeIf: typeof raw.activeIf === 'string' && raw.activeIf.trim() ? raw.activeIf : null,
         // The open sound: undefined plays the door release when the door has an RFID lock,
         // a string plays that sound key, false silences the gate
         sound: raw.sound === false ? false : (typeof raw.sound === 'string' && raw.sound ? raw.sound : undefined)
@@ -168,15 +194,19 @@ export function gateSoundKey(g) {
 
 /**
  * The door's collision body (doors.js): the 8px strip at the bottom of the N/S door's
- * 1x2-tile sprite. Only this blocks the player, so only overlapping it means
+ * 1x2-tile sprite (a side door's body is its whole tile, both tiles of the doorway).
+ * Only this blocks the player, so only overlapping it means
  * "switching it on, or shutting now, would trap him".
  */
 function doorBodyRect(g) {
+    if (g.side) return doorRect(g);
     return { left: g.x - TILE / 2, right: g.x + TILE / 2, top: g.y + TILE - 8, bottom: g.y + TILE };
 }
 
-/** The doorway's footprint: the 1x2-tile N/S sprite. */
+/** The doorway's footprint: the 1x2-tile N/S sprite, or the two side tiles. */
 function doorRect(g) {
+    // A side doorway: both 32x32 tiles, one per room, either side of the boundary
+    if (g.side) return { left: g.cx - TILE, right: g.cx + TILE, top: g.cy - TILE / 2, bottom: g.cy + TILE / 2 };
     return { left: g.x - TILE / 2, right: g.x + TILE / 2, top: g.y - TILE, bottom: g.y + TILE };
 }
 
@@ -221,6 +251,7 @@ export class DoorGates {
         // key -> Set of unconfigured N/S sprites whose doorway has no gate yet (the far
         // room's sprite, created before the configured one). They join when it registers.
         this.pending = new Map();
+        this._conds = new Map();   // activeIf string -> parsed function, or null
     }
 
     reset() { this.groups.clear(); this.pending.clear(); }
@@ -228,24 +259,30 @@ export class DoorGates {
     _key(x, y) { return `${Math.round(x / 8)},${Math.round(y / 8)}`; }
 
     /**
+     * Where a door sprite's doorway is: its group key, whether it is a side doorway, and the
+     * doorway's centre. A N/S doorway is at the sprite. A side doorway is on the wall
+     * boundary between the two tiles (east sprite x + 16, west sprite x - 16, same y).
+     */
+    _doorway(props, sprite) {
+        const x = props.worldX ?? sprite.x;
+        const y = props.worldY ?? sprite.y;
+        if (!isSideProps(props)) return { key: this._key(x, y), side: false, cx: x, cy: y };
+        const cx = props.direction === 'west' ? x - TILE / 2 : x + TILE / 2;
+        return { key: `s${this._key(cx, y)}`, side: true, cx, cy: y };
+    }
+
+    /**
      * Register a door sprite as a gate (doors.js, on creation). `rawGate` may be null
      * for the second room's sprite of a doorway; if the doorway has no gate yet, that
      * sprite waits in `pending` and joins when the configured sprite registers. A gate
-     * on an east or west door is declined with a console warning (see the header).
+     * on an east or west door groups both side sprites by the doorway's centre.
      * @returns {boolean} whether the sprite is a gate now
      */
     register(sprite, rawGate, now = Date.now()) {
         const props = sprite?.doorProperties;
         if (!props) return false;
         const cfg = normaliseGate(rawGate);
-        if (props.isSideDoor) {
-            if (cfg) {
-                console.warn(`door-gates: gate declined on the ${props.direction} door ${props.roomId} -> ${props.connectedRoom}: ` +
-                    'gates work on north and south doors only, so this stays an ordinary locked door');
-            }
-            return false;
-        }
-        const key = this._key(props.worldX ?? sprite.x, props.worldY ?? sprite.y);
+        const { key, side, cx, cy } = this._doorway(props, sprite);
         let g = this.groups.get(key);
         if (!g) {
             if (!cfg) {
@@ -264,6 +301,9 @@ export class DoorGates {
                 requires: props.requires ?? null,
                 lockType: props.lockType ?? null,
                 x: props.worldX ?? sprite.x, y: props.worldY ?? sprite.y,
+                // The doorway's centre: every distance rule reads this (a side gate's
+                // g.x/g.y are the registering sprite's own position)
+                side, cx, cy,
                 roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction,
                 // The room the gate guards: the connectedRoom of the door entry carrying the
                 // config (the validator puts it on the entry into the locked room). Fixed here
@@ -286,7 +326,7 @@ export class DoorGates {
         if (joining.length > 1 && !g.open) {
             const pm = W().pathfindingManager;
             if (pm) {
-                pm.unmarkDoor?.(g.x, g.y, g.direction);
+                this._unmarkAll(pm, g);
                 pm.rebuildWorldGrid?.();
             }
         }
@@ -322,6 +362,41 @@ export class DoorGates {
         }
     }
 
+    /**
+     * A sprite that doors.js had treated as an ordinary door (it was still pending when the
+     * click or NPC began) joined a gate while its room was loading: put the gate's bodies and
+     * path grid back as they were (doors.js openDoor, before it would have destroyed the sprite).
+     */
+    reassert(sprite, now = Date.now()) {
+        const g = sprite?.doorProperties?.gateKey && this.groups.get(sprite.doorProperties.gateKey);
+        if (!g) return false;
+        this._applyBodies(g, now);
+        if (!g.open) {
+            const pm = W().pathfindingManager;
+            if (pm) {
+                this._unmarkAll(pm, g);
+                pm.rebuildWorldGrid?.();
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Drop the doorway from the path grid at the group's centre and at every sprite of it.
+     * doors.js stores a side corridor at the clicked sprite's own position, which can sit a
+     * tile from the registering sprite's (g.x/g.y); unmarking only g.x/g.y would leave it
+     * carved through a shut gate (E1 R2 m1).
+     */
+    _unmarkAll(pm, g) {
+        pm.unmarkDoor?.(g.x, g.y, g.direction);
+        for (const s of g.sprites || []) {
+            const p = s?.doorProperties;
+            if (p && typeof p.worldX === 'number' && typeof p.worldY === 'number') {
+                pm.unmarkDoor?.(p.worldX, p.worldY, p.direction || g.direction);
+            }
+        }
+    }
+
     isGate(sprite) { return !!sprite?.doorProperties?.gateKey && this.groups.has(sprite.doorProperties.gateKey); }
 
     /**
@@ -331,7 +406,36 @@ export class DoorGates {
      * so a gate click is still caught and denied even when `doorProperties.gate` is
      * absent, keeping player access decoupled from the room's server lock state.
      */
-    groupAtPosition(x, y) { return this.groups.get(this._key(x, y)) || null; }
+    groupAtPosition(x, y, direction = null) {
+        if (direction) {
+            const side = direction === 'east' || direction === 'west';
+            return this.groups.get(side ? this._doorway({ direction, isSideDoor: true }, { x, y }).key : this._key(x, y)) || null;
+        }
+        return this.groups.get(this._key(x, y))
+            || this.groups.get(this._doorway({ direction: 'east' }, { x, y }).key)
+            || this.groups.get(this._doorway({ direction: 'west' }, { x, y }).key) || null;
+    }
+
+    /**
+     * Whether the gate's live window is shut (activeIf does not hold). Read fresh each call
+     * (cheap: the parsed condition is cached), so a tick and a click see the same globals.
+     * No activeIf, no parser loaded, or a condition that does not parse: live, never inert.
+     */
+    isInert(g) {
+        const src = g?.cfg?.activeIf;
+        if (!src) return false;
+        let fn = this._conds.get(src);
+        if (fn === undefined) {
+            const parse = W().parseActionCondition;
+            if (typeof parse !== 'function') return false;   // not loaded: not cached, live
+            try { fn = parse(src) || null; } catch (e) { fn = null; }
+            this._conds.set(src, fn);
+        }
+        if (!fn) return false;
+        let holds = false;
+        try { holds = fn(W().gameState?.globalVariables || {}) === true; } catch (e) { holds = true; }
+        return !holds;
+    }
 
     /** The gate groups for a door named by the room it leads to (or comes from). */
     groupsFor(roomId) {
@@ -343,7 +447,7 @@ export class DoorGates {
     /** State of the gate(s) into `roomId`, for tests and playtests (window.doorGates.state). */
     state(roomId) {
         return this.groupsFor(roomId).map(g => ({
-            key: g.key, open: g.open, x: g.x, y: g.y, roomId: g.roomId, connectedRoom: g.connectedRoom,
+            key: g.key, open: g.open, x: g.x, y: g.y, cx: g.cx, cy: g.cy, side: !!g.side, inert: this.isInert(g), roomId: g.roomId, connectedRoom: g.connectedRoom,
             direction: g.direction, sprites: g.sprites.size, forcedUntil: g.forcedUntil,
             playerHoldUntil: g.playerHoldUntil || 0, requires: g.requires ?? null,
             securedRoom: g.securedRoom ?? null, exitHoldUntil: g.exitHoldUntil || 0, bodyOff: !!g.bodyOff,
@@ -385,14 +489,17 @@ export class DoorGates {
     _applySprite(sprite, open) {
         const props = sprite.doorProperties;
         if (props) props.open = open;
+        const side = isSideProps(props);
+        const sheet = side ? 'door_side_sheet_32' : 'door_32';
         try {
             if (open) {
-                if (sprite.scene?.anims?.exists?.('door_open')) sprite.play('door_open');
+                const anim = side ? 'door_side_open' : 'door_open';
+                if (sprite.scene?.anims?.exists?.(anim)) sprite.play(anim);
             } else if (sprite.anims && typeof sprite.playReverse === 'function' && sprite.anims.currentAnim) {
                 sprite.playReverse(sprite.anims.currentAnim.key);
                 sprite.once?.('animationcomplete', () => {
-                    if (!props?.open && sprite.scene && sprite.texture?.key !== 'door_32') {
-                        sprite.setTexture?.('door_32', 0);
+                    if (!props?.open && sprite.scene && sprite.texture?.key !== sheet) {
+                        sprite.setTexture?.(sheet, 0);
                     }
                 });
             } else {
@@ -406,9 +513,9 @@ export class DoorGates {
     _afterToggle(g, eventName) {
         const w = W();
         w.npcSightOcclusion?.invalidate?.();
-        w.eventDispatcher?.emit?.(eventName, {
-            roomId: g.roomId, connectedRoom: g.connectedRoom, direction: g.direction
-        });
+        const data = { roomId: g.roomId, connectedRoom: g.connectedRoom, direction: g.direction };
+        if (this.isInert(g)) data.inert = true;
+        w.eventDispatcher?.emit?.(eventName, data);
     }
 
     /**
@@ -425,7 +532,7 @@ export class DoorGates {
         const p = w.player;
         if (!p) return null;
         const c = centreOf(p);
-        const volume = gateSoundVolume(Math.hypot(c.x - g.x, c.y - g.y));
+        const volume = gateSoundVolume(Math.hypot(c.x - g.cx, c.y - g.cy));
         if (volume <= 0) return null;
         try {
             if (typeof w.playUISound === 'function') w.playUISound('door_release', { key, volume });
@@ -447,7 +554,11 @@ export class DoorGates {
         // The body rule before it returns: solid at once for a player it does not let through
         this._applyBodies(g, now);
         const pm = W().pathfindingManager;
-        if (pm) {
+        if (pm && g.side) {
+            // One corridor through both tiles of the side doorway
+            pm.markSideDoorCorridor?.(g.x, g.y, g.direction);
+            pm.rebuildWorldGrid?.();
+        } else if (pm) {
             pm.markDoorWalkable?.(g.roomId, g.x, g.y, g.direction);
             pm.markDoorWalkable?.(g.connectedRoom, g.x, g.y, OPPOSITE[g.direction]);
             // Synchronously: the NPC's next path request must see the open doorway
@@ -481,7 +592,7 @@ export class DoorGates {
             if (!g.cfg || g.open || !g.cfg.openFor.includes(npcId)) continue;
             if (Array.isArray(roomIds) && roomIds.length &&
                 !roomIds.includes(g.roomId) && !roomIds.includes(g.connectedRoom)) continue;
-            const d = Math.hypot(from.x - g.x, from.y - g.y);
+            const d = Math.hypot(from.x - g.cx, from.y - g.cy);
             if (!best || d < best.d) best = { g, d };
         }
         if (!best) return null;
@@ -491,7 +602,10 @@ export class DoorGates {
         // turned back after GUARD_TURN_BACK_MS: a guard held at his badge reader does not
         // walk up to the door.
         if (best.d <= g.cfg.openRadius) return null;
-        const pt = { x: g.x, y: g.y + (from.y >= g.y ? reach : -reach) };
+        // N/S: in front of the doorway along y. Side: along x, on the doorway's centre row
+        const pt = g.side
+            ? { x: g.cx + (from.x >= g.cx ? reach : -reach), y: g.cy }
+            : { x: g.cx, y: g.cy + (from.y >= g.cy ? reach : -reach) };
         return { ...pt, roomId: g.roomId, connectedRoom: g.connectedRoom };
     }
 
@@ -537,6 +651,7 @@ export class DoorGates {
      */
     openToPlayer(g, now = Date.now()) {
         if (!g?.open) return false;
+        if (this.isInert(g)) return true;   // outside its live window a gate is an ordinary door
         if (now < (g.playerHoldUntil || 0)) return true;
         const name = g.cfg?.playerMayPassIf;
         if (name) return !!W().gameState?.globalVariables?.[name];
@@ -566,6 +681,9 @@ export class DoorGates {
      *   'granted' - he holds a credential the gate takes; it is opened for him now
      *   'pass'    - the gate is open and he may walk through; nothing to say
      *   'denied'  - refuse, with the door's hint
+ *   'inert_enter' - outside its live window, the player clicks from outside: nothing is
+ *               opened here. doors.js makes sure the secured room is loaded (an unlocked
+ *               one goes through the ordinary 'unlocked' handshake), then exitOpen()s the gate
      * Inside answers first, so leaving never presents a credential or refuses. Outside,
      * the credential answers first, so a clone opens (and is credited) even while the
      * gate happens to be open for a guard.
@@ -573,6 +691,11 @@ export class DoorGates {
      * @param {{holdsCredential?: boolean, connectedRoom?: string, playerRoom?: string, now?: number}} click
      */
     clickOutcome(g, { holdsCredential = false, connectedRoom = null, playerRoom = currentPlayerRoom(), now = Date.now() } = {}) {
+        // Outside its live window the gate is an ordinary door, from either side. From inside
+        // the secured room the click opens it as the leaving click does (below). From outside
+        // nothing is opened here: the room behind it may never have loaded, and the server may
+        // refuse it, so doors.js loads it first and calls exitOpen() once it exists
+        if (g && g.cfg && this.isInert(g) && !(playerRoom && playerRoom === g.securedRoom)) return 'inert_enter';
         if (g && playerRoom && playerRoom === g.securedRoom) {
             if (g.open) return 'leave';
             this.exitOpen(g, now);
@@ -595,7 +718,7 @@ export class DoorGates {
         const props = doorSprite?.doorProperties;
         if (!props || !feet || !Number.isFinite(feet.x) || !Number.isFinite(feet.y)) return null;
         const g = (props.gateKey && this.groups.get(props.gateKey))
-            || this.groupAtPosition(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y);
+            || this.groupAtPosition(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y, props.direction);
         if (!g?.open) return null;
         const inside = !!playerRoom && playerRoom === g.securedRoom;
         if (!inside && !this.openToPlayer(g, now)) return null;
@@ -605,14 +728,14 @@ export class DoorGates {
         // against the doorway's centre line, which walks a player standing in the doorway
         // past that line back the way he came (review R1 n4).
         const towards = playerRoom === g.roomId ? dir : (playerRoom === g.connectedRoom ? OPPOSITE[dir] : null);
-        // East and west: register() declines a gate on a side door, so this does not run in
-        // the game today; it is kept for a side gate later (review R1 n3)
-        if (dir === 'east' || dir === 'west') {
-            const east = towards ? towards === 'east' : feet.x < g.x;
-            return { x: east ? g.x + WALK_THROUGH_SIDE_PX : g.x - WALK_THROUGH_SIDE_PX, y: g.y + TILE / 2 };
+        // East and west: from the doorway's centre on the wall boundary, one tile into the far
+        // room, on the centre row of the carved corridor, whichever sprite was clicked
+        if (g.side) {
+            const east = towards ? towards === 'east' : feet.x < g.cx;
+            return { x: east ? g.cx + WALK_THROUGH_SIDE_PX : g.cx - WALK_THROUGH_SIDE_PX, y: g.cy };
         }
-        const south = towards ? towards === 'south' : feet.y < g.y;
-        return { x: g.x, y: south ? g.y + WALK_THROUGH_NS_PX : g.y - WALK_THROUGH_NS_PX };
+        const south = towards ? towards === 'south' : feet.y < g.cy;
+        return { x: g.cx, y: south ? g.cy + WALK_THROUGH_NS_PX : g.cy - WALK_THROUGH_NS_PX };
     }
 
     /**
@@ -635,7 +758,7 @@ export class DoorGates {
         this._applyBodies(g, now);
         const pm = W().pathfindingManager;
         if (pm) {
-            pm.unmarkDoor?.(g.x, g.y, g.direction);
+            this._unmarkAll(pm, g);
             pm.rebuildWorldGrid?.();
         }
         console.log(`🚪 Gate closed: ${g.roomId} ↔ ${g.connectedRoom}`);
@@ -697,7 +820,7 @@ export class DoorGates {
     }
 
     _gateInfo(g) {
-        return { roomId: g.roomId, connectedRoom: g.connectedRoom, direction: g.direction, x: g.x, y: g.y };
+        return { roomId: g.roomId, connectedRoom: g.connectedRoom, direction: g.direction, x: g.x, y: g.y, cx: g.cx, cy: g.cy };
     }
 
     /** openFor guards near the shut gate whose route wants to take them across it. */
@@ -709,7 +832,7 @@ export class DoorGates {
             const s = npcSprite(id);
             if (!s || s.visible === false) continue;
             const c = centreOf(s);
-            if (Math.hypot(c.x - g.x, c.y - g.y) > g.cfg.openRadius) continue;
+            if (Math.hypot(c.x - g.cx, c.y - g.cy) > g.cfg.openRadius) continue;
             const b = bm?.getBehavior?.(id);
             if (b?.wantsToCrossGate?.(info)) ids.push(id);
         }
@@ -803,7 +926,7 @@ export class DoorGates {
             const s = npcSprite(npcId);
             if (!s || s.visible === false) continue;
             const c = centreOf(s);
-            if (Math.hypot(c.x - g.x, c.y - g.y) > g.cfg.openRadius) continue;
+            if (Math.hypot(c.x - g.cx, c.y - g.cy) > g.cfg.openRadius) continue;
             if (now < g.forcedUntil || this._playerBarred(g)) return this._gateInfo(g);
         }
         return null;
@@ -821,7 +944,7 @@ export class DoorGates {
             const s = npcSprite(id);
             if (!s || s.visible === false) continue;
             const c = centreOf(s);
-            if (Math.hypot(c.x - g.x, c.y - g.y) <= g.cfg.openRadius) ids.push(id);
+            if (Math.hypot(c.x - g.cx, c.y - g.cy) <= g.cfg.openRadius) ids.push(id);
         }
         return ids;
     }
@@ -835,6 +958,7 @@ export class DoorGates {
     careful(g) {
         const cfg = g?.cfg;
         if (!cfg || cfg.playerMayPassIf || !cfg.noHold?.length) return false;
+        if (this.isInert(g)) return false;
         const guards = g.open ? [...(g.lastGuards || [])] : this.nearGuardIds(g);
         return guards.length > 0 && guards.every(id => cfg.noHold.includes(id));
     }
@@ -848,10 +972,12 @@ export class DoorGates {
      */
     _playerBarred(g) {
         if (currentPlayerRoom() === g.securedRoom) return false;
+        // Outside its live window the gate bars nobody (an ordinary door)
+        if (this.isInert(g)) return false;
         const p = W().player;
         if (!p) return false;
         const c = centreOf(p);
-        if (Math.hypot(c.x - g.x, c.y - g.y) > g.cfg.openRadius) return false;
+        if (Math.hypot(c.x - g.cx, c.y - g.cy) > g.cfg.openRadius) return false;
         // Undisguised: the gate's playerMayPassIf global is false
         const name = g.cfg.playerMayPassIf;
         if (name && !W().gameState?.globalVariables?.[name]) return true;
