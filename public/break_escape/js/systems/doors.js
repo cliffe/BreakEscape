@@ -669,7 +669,7 @@ async function handleDoorInteraction(doorSprite) {
     // doorProperties or by a registered group at the doorway position, so this holds
     // even for a sprite that lost its `gate` field on a room reload.
     const gateGroup = window.doorGates?.groups?.get?.(props.gateKey)
-        || window.doorGates?.groupAtPosition?.(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y)
+        || window.doorGates?.groupAtPosition?.(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y, props.direction)
         || null;
     if (props.gate || gateGroup) {
         // Both rooms' sprites of the doorway take the same click: answer once
@@ -681,7 +681,17 @@ async function handleDoorInteraction(doorSprite) {
         const outcome = window.doorGates?.clickOutcome?.(gateGroup, {
             holdsCredential: false, connectedRoom: props.connectedRoom
         }) || 'denied';
-        if (outcome === 'exit' || outcome === 'leave') return;
+        if (outcome === 'exit' || outcome === 'leave') {
+            // Outside its live window a gate opens for the player from outside too (E1): the
+            // room behind it may never have loaded, and he is about to walk into it
+            if (outcome === 'exit' && gateGroup && window.doorGates?.isInert?.(gateGroup) &&
+                window.currentPlayerRoom !== gateGroup.securedRoom &&
+                !window.rooms?.[gateGroup.securedRoom] && window.loadRoom) {
+                Promise.resolve(window.loadRoom(gateGroup.securedRoom)).catch(err =>
+                    console.warn(`Failed to load room ${gateGroup.securedRoom}:`, err));
+            }
+            return;
+        }
         // Clone-as-entry: a held credential satisfying the locked room's `requires`
         // (physical keycard or a clone saved on the rfid cloner) opens the gate — the
         // taught alternative to tailgating. It behaves exactly like an ordinary

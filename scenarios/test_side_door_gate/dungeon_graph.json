@@ -1,0 +1,25 @@
+{
+  "scenario": "test_side_door_gate",
+  "start_room": "west_room",
+  "nodes": [
+    {
+      "id": "west_room",
+      "label": "West Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "east_room",
+      "label": "East Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "west_room",
+      "to": "east_room",
+      "soft": false
+    }
+  ]
+}
