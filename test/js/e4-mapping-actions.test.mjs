@@ -581,3 +581,78 @@ test('R2 m4: the reload docs name the stop half', () => {
     assert.match(schema, /A stop \(patrolOverride\) is not saved/);
     assert.match(schema, /start_patrol action or patrol\.startWhen sets it off/);
 });
+
+// ===================================================================== round 3 (E4 review R3)
+// R2 M1's arrival half, through the real updatePatrol: a stop beyond a shut gate. The walker walks
+// back to the gate (no arrival there), the gate opens, and he arrives at the stop once; if the gate
+// stays shut he never arrives and does not re-plan every frame.
+function gateStopWalker() {
+    const pos = { x: 100, y: 100 };
+    const b = patroller({ waypoints: WAYPOINTS, enabled: true, speed: 40 });
+    Object.assign(b.config.patrol, {
+        multiRoom: true,
+        route: [{ room: 'hall', waypoints: [{ tileX: 2, tileY: 2 }] }, { room: 'lobby', waypoints: [{ tileX: 9, tileY: 2 }] }],
+        currentSegmentIndex: 1
+    });
+    b.sprite = { npcId: 'jun', x: pos.x, y: pos.y, scene: { time: { now: 1000 } }, body: { center: pos, setVelocity() {} } };
+    b.direction = 'right'; b.currentState = 'patrol';
+    b.npcBodyPos = () => ({ x: pos.x, y: pos.y });
+    b.playAnimation = () => {};
+    b._clearPatrolPathDebug = () => {};
+    b._drawPatrolPathDebug = () => {};
+    b._handleBlockerAhead = () => false;
+    b._checkPathStuck = () => false;
+    b._resetAvoidForNewTarget = () => {};
+    let now = 1000;
+    b.clockNow = () => now;
+    const gate = { open: false };
+    const plans = [];
+    b.pathfindingManager = {
+        findNearestWalkableWorldCell: (x, y) => ({ x, y }),
+        findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        // the stop at x 400 is beyond the gate: no path while it is shut; the gate's spot (x 200) is open floor
+        findWorldPath: (sx, sy, ex, ey, cb) => { plans.push([ex, ey]); cb(ex >= 300 && !gate.open ? [] : [{ x: ex, y: ey }]); }
+    };
+    window.doorGates = { approachPoint: (id, from) => (gate.open || Math.hypot(from.x - 200, from.y - 100) < 20 ? null : { x: 200, y: 100 }) };
+    window.npcNeedsSystem = { onExternalMove() {} };
+    quietSync(() => b.goToAndStay(400, 100, 80, {}));
+    const frame = () => {
+        now += 100;
+        quietSync(() => b.updatePatrol(now, 100));
+        const n = b.currentPath[b.pathIndex];
+        if (n) {
+            const dx = n.x - pos.x, dy = n.y - pos.y, d = Math.hypot(dx, dy) || 1, s = Math.min(d, 20);
+            pos.x += dx / d * s; pos.y += dy / d * s; b.sprite.x = pos.x; b.sprite.y = pos.y;
+        }
+    };
+    return { b, pos, gate, plans, frame, clean: () => { delete window.doorGates; delete window.npcNeedsSystem; } };
+}
+
+test('R3 M1 arrival: the gate leg is no arrival; once the gate opens he arrives at the stop, once', () => {
+    const w = gateStopWalker();
+    try {
+        const arrived = [];
+        w.b._triggerGoToStayArrival = function () { arrived.push({ x: w.pos.x, y: w.pos.y }); this._stopOnArrival = false; this._goToStayDest = null; this.config.patrol.enabled = false; this.currentPath = []; };
+        for (let i = 0; i < 40 && Math.abs(w.pos.x - 200) > 8; i++) w.frame();
+        assert.ok(Math.abs(w.pos.x - 200) <= 8, `walked back to the gate spot (x ${w.pos.x})`);
+        for (let i = 0; i < 5; i++) w.frame();
+        assert.equal(arrived.length, 0, 'standing at the gate is not the arrival');
+        assert.equal(w.b._stopOnArrival, true, 'the move is still live');
+        w.gate.open = true;   // door-gates opens it as he nears, and tells him
+        w.b.gateOpened();
+        for (let i = 0; i < 60 && !arrived.length; i++) w.frame();
+        assert.equal(arrived.length, 1, 'one arrival');
+        assert.ok(Math.abs(arrived[0].x - 400) < 32, `at the stop, not the gate (x ${arrived[0].x})`);
+    } finally { w.clean(); }
+});
+
+test('R3 M1 arrival: a gate that stays shut gives no arrival and no plan every frame', () => {
+    const w = gateStopWalker();
+    try {
+        let arrivals = 0;
+        w.b._triggerGoToStayArrival = () => { arrivals++; };
+        for (let i = 0; i < 100; i++) w.frame();   // 10 s of game time
+        assert.equal(arrivals, 0);
+        assert.ok(w.plans.length < 20, `retries are backed off (${w.plans.length} plans in 100 frames)`);
+    } finally { w.clean(); }
+});
