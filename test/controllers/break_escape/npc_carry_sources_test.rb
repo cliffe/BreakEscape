@@ -114,5 +114,44 @@ module BreakEscape
         skip "not reachable through the inventory route (#{response.status})"
       end
     end
+
+    # === M1: id collisions ====================================================
+
+    test 'a start item reusing a rejected room object id is not indexed' do
+      locked = { 'type' => 'drawer', 'id' => 'locked_box', 'name' => 'Locked', 'takeable' => true, 'needsTag' => 'dirty_mugs',
+                 'locked' => true, 'lockType' => 'key', 'requires' => 'some_key' }
+      build(scenario(start_items: [tagged('locked_box')], office_objects: [locked]))
+      assert_nil @game.carriable_object_index['locked_box']
+    end
+
+    test 'an id defined by a start item and an NPC itemsHeld is ambiguous and not indexed' do
+      holder = { 'id' => 'bob', 'displayName' => 'Bob', 'npcType' => 'person', 'position' => { 'x' => 5, 'y' => 3 },
+                 'itemsHeld' => [tagged('twice_mugs')] }
+      build(scenario(start_items: [tagged('twice_mugs')], npcs_extra: [holder]))
+      assert_nil @game.carriable_object_index['twice_mugs']
+    end
+
+    # === M3: more soft-lock guards ============================================
+
+    test 'ids named by collect objectives, wear gates or camelCase lock fields are not carriable' do
+      objs = [tagged('wanted_a'), tagged('wanted_b'), tagged('worn_c'), tagged('plain_d')]
+      scn = scenario(office_objects: objs)
+      scn['objectives'] = [{ 'tasks' => [{ 'type' => 'collect_items', 'targetItemIds' => ['wanted_a'], 'targetItems' => ['wanted_b'] }] }]
+      scn['rooms']['kitchen']['objects'] << { 'type' => 'wardrobe', 'id' => 'rack', 'wearGate' => { 'itemId' => 'worn_c' } }
+      build(scn)
+      idx = @game.carriable_object_index
+      %w[wanted_a wanted_b worn_c].each { |id| assert_nil idx[id], "#{id} is named as a requirement" }
+      assert idx['plain_d'].present?, 'ordinary dressing still carriable'
+    end
+
+    test 'camelCase lock fields and tool types disqualify an object' do
+      objs = [tagged('k1', 'keyId' => 'x'), tagged('k2', 'cardId' => 'x'), tagged('k3', 'opensLock' => 'x'), tagged('k4', 'unlocks' => 'x'),
+              tagged('t1', 'type' => 'lockpick'), tagged('t2', 'type' => 'rfid_cloner'), tagged('t3', 'type' => 'fingerprint_kit'),
+              tagged('ok')]
+      build(scenario(office_objects: objs))
+      idx = @game.carriable_object_index
+      %w[k1 k2 k3 k4 t1 t2 t3].each { |id| assert_nil idx[id], "#{id} is disqualified" }
+      assert idx['ok'].present?
+    end
   end
 end

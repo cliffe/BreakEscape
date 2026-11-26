@@ -211,25 +211,149 @@ module BreakEscape
       assert_equal false, g.carry_object!('office', 'grace', 'office_mugs2'), 'one item per NPC'
     end
 
+    # === an item an NPC hands over, dropped by the player =====================
     # An item an NPC hands over (itemsHeld) and the player drops again is carriable by a needs
     # NPC once the drop is saved (ca15_shadow_it's red-team stick). Refused before: the client
-    # undid its pick-up and the item stayed highlighted at the NPC's hand.
-    test 'a player-dropped item from an NPC itemsHeld is carriable, and only once the drop is saved' do
-      build
+    # undid its pick-up and the item stayed highlighted at the NPC's hand. Every case here
+    # drops through the real add_object player_drop path, never a hand-written objects_added.
+
+    STICK = { 'type' => 'usb_storage_swivel', 'id' => 'handed_stick', 'name' => 'Stick', 'takeable' => true,
+              'droppable' => true, 'needsTag' => 'tag_stick' }.freeze
+
+    # Bob holds the stick in the scenario; the player already has a copy in the inventory
+    # (an NPC give), as the client's drop menu sees it.
+    def build_with_stick(extra_held: [], player_state: {})
+      build(player_state)
       g = @game.reload
-      stick = { 'type' => 'usb_storage_swivel', 'id' => 'handed_stick', 'name' => 'Stick', 'takeable' => true, 'needsTag' => 'tag_stick' }
-      bad = { 'type' => 'key', 'id' => 'handed_key', 'name' => 'Key', 'takeable' => true, 'needsTag' => 'tag_stick' }
-      g.scenario_data['rooms']['office']['npcs'][1]['itemsHeld'] = [stick, bad]
+      g.scenario_data['rooms']['office']['npcs'][1]['itemsHeld'] = [STICK.deep_dup] + extra_held
+      g.player_state['inventory'] = [STICK.deep_dup]
       g.save!
-      g = @game.reload
+      @game.reload
+    end
+
+    def drop_item(item_id, room: 'office', type: 'usb_storage_swivel')
+      post update_room_game_url(@game), params: {
+        roomId: room, actionType: 'add_object', sourceType: 'player_drop',
+        data: { id: item_id, type: type, name: 'x', x: 100, y: 100 }
+      }, as: :json
+      # The client then removes the item from the inventory (the drop itself does not).
+      post inventory_game_url(@game), params: { action_type: 'remove', item: { 'id' => item_id, 'type' => type } }, as: :json if response.successful?
+    end
+
+    def take_into_inventory(type, id)
+      post inventory_game_url(@game), params: { action_type: 'add', item: { 'type' => type, 'id' => id, 'name' => id } }, as: :json
+    end
+
+    test 'a player-dropped item from an NPC itemsHeld is carriable, and only once the drop is saved' do
+      g = build_with_stick(extra_held: [{ 'type' => 'key', 'id' => 'handed_key', 'name' => 'Key', 'takeable' => true, 'needsTag' => 'tag_stick' }])
       assert g.carriable_object_index['handed_stick'].present?, 'in the allowlist'
       assert g.carriable_object_index['handed_key'].nil?, 'a key type never is'
-      assert_equal false, g.carry_object!('office', 'grace', 'handed_stick'), 'not dropped in the room yet'
-      g.player_state['room_states'] ||= {}
-      g.player_state['room_states']['office'] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
-      g.player_state['room_states']['office']['objects_added'] << stick.merge('x' => 100, 'y' => 100)
+      carry('grace', 'handed_stick')
+      assert_response :unprocessable_entity, 'not dropped in the room yet'
+      drop_item('handed_stick')
+      assert_response :success
+      assert(@game.reload.player_state.dig('room_states', 'office', 'objects_added').any? { |o| o['id'] == 'handed_stick' })
+      carry('grace', 'handed_stick')
+      assert_response :success
+      assert_equal 'handed_stick', carry_state.dig('grace', 'itemId')
+    end
+
+    test 'a forged add with no source gets a _cadd_ id and cannot be carried' do
+      build
+      post update_room_game_url(@game), params: {
+        roomId: 'office', actionType: 'add_object',
+        data: { id: 'office_mugs', type: 'dirty_mugs1', name: 'Forged', needsTag: 'dirty_mugs', x: 90, y: 90 }
+      }, as: :json
+      added = @game.reload.player_state.dig('room_states', 'office', 'objects_added') || []
+      forged = added.find { |o| o['name'] == 'Forged' }
+      assert forged, 'the unsourced add is stored'
+      assert_match(/_cadd_/, forged['id'], 'with a fresh server id')
+      carry('grace', forged['id'])
+      assert_response :unprocessable_entity
+      carry('grace', 'office_mugs')
+      assert_response :success, 'the scenario mug itself is untouched by the forged add'
+    end
+
+    test 'a dropped item in a room the NPC cannot reach is refused, and an undropped held item is refused' do
+      build_with_stick
+      g = @game.reload
+      g.scenario_data['rooms']['storeroom']['npcs'] = [{ 'id' => 'sam', 'displayName' => 'Sam', 'npcType' => 'person',
+                                                          'position' => { 'x' => 2, 'y' => 2 } }]
       g.save!
-      assert_equal true, @game.reload.carry_object!('office', 'grace', 'handed_stick')
+      carry('grace', 'handed_stick')
+      assert_response :unprocessable_entity, 'still in the holder hand, not on a floor'
+      drop_item('handed_stick', room: 'storeroom')
+      assert_response :success
+      carry('grace', 'handed_stick', room: 'storeroom')
+      assert_response :unprocessable_entity, 'storeroom has no route to the carrier'
+      assert_nil carry_state
+    end
+
+    test 'a held item whose id a door requires is not carriable' do
+      build_with_stick
+      g = @game.reload
+      g.scenario_data['rooms']['vault']['requires'] = 'handed_stick'
+      g.save!
+      assert_nil @game.reload.carriable_object_index['handed_stick']
+      drop_item('handed_stick')
+      carry('grace', 'handed_stick')
+      assert_response :unprocessable_entity
+    end
+
+    test 'a carried dropped item is served in the hand, put down on request, and cannot be put down once taken back' do
+      build_with_stick
+      drop_item('handed_stick')
+      carry('grace', 'handed_stick')
+      assert_response :success
+      assert npc_held('office', 'grace').any? { |i| i['id'] == 'handed_stick' }, 'served in the carrier hand'
+      assert_not room_objects('office').any? { |o| o['id'] == 'handed_stick' }, 'off the floor'
+
+      put_down('grace', 'handed_stick', room: 'kitchen', position: { px: 40, py: 50 })
+      assert_response :success
+      assert room_objects('kitchen').any? { |o| o['id'] == 'handed_stick' }, 'landed in the kitchen'
+      assert_nil carry_state['grace']
+    end
+
+    test 'taking a carried dropped item back from the carrier hand ends its serving and blocks the put-down' do
+      build_with_stick(player_state: { 'encounteredNPCs' => %w[grace bob] })
+      drop_item('handed_stick')
+      carry('grace', 'handed_stick')
+      assert_response :success
+      take_into_inventory('usb_storage_swivel', 'handed_stick')
+      assert_response :success, response.body
+      assert_not npc_held('office', 'grace').to_a.any? { |i| i['id'] == 'handed_stick' }, 'no longer served in the hand'
+      put_down('grace', 'handed_stick', room: 'kitchen')
+      assert_response :unprocessable_entity, 'the player holds it, so no duplicate lands on the floor'
+    end
+
+    test 'a held id that collides with a rejected room object is not indexed, nor swaps in for it' do
+      build_with_stick
+      g = @game.reload
+      # office_key is a key-type room object with a needsTag (rejected). Bob also "holds" an
+      # innocent definition under the same id.
+      g.scenario_data['rooms']['office']['npcs'][1]['itemsHeld'] << { 'type' => 'dirty_mugs1', 'id' => 'office_key', 'name' => 'Not a key',
+                                                                       'takeable' => true, 'needsTag' => 'dirty_mugs' }
+      g.scenario_data['rooms']['office']['npcs'][1]['itemsHeld'] << { 'type' => 'dirty_mugs1', 'id' => 'locked_box', 'name' => 'Not locked',
+                                                                       'takeable' => true, 'needsTag' => 'dirty_mugs' }
+      g.save!
+      g = @game.reload
+      assert_nil g.carriable_object_index['office_key']
+      assert_nil g.carriable_object_index['locked_box']
+      carry('grace', 'locked_box')
+      assert_response :unprocessable_entity, 'the real locked box in the office never lifts'
+      carry('grace', 'office_key')
+      assert_response :unprocessable_entity
+    end
+
+    test 'an id held by two NPCs is ambiguous and not indexed' do
+      build_with_stick
+      g = @game.reload
+      g.scenario_data['rooms']['office']['npcs'][0]['itemsHeld'] = [STICK.deep_dup]
+      g.save!
+      assert_nil @game.reload.carriable_object_index['handed_stick']
+      drop_item('handed_stick')
+      carry('grace', 'handed_stick')
+      assert_response :unprocessable_entity
     end
 
     test 'put down or consume of an item the NPC does not carry is refused' do
