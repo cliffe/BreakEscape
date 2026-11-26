@@ -64,13 +64,14 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <div class="wrap">
   <header style="display:grid;gap:6px">
-    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 25 Nov 2026 (night)</div>
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 26 Nov 2026 (m09 v3)</div>
     <h1>Mission trailers with the new spy avatars</h1>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="This round">
     <button class="tab" role="tab" id="tab-m01v15" aria-selected="false" data-cut="m01v15">m01 · v15</button>
     <button class="tab" role="tab" id="tab-m09v2" aria-selected="false" data-cut="m09v2">m09 · v2</button>
+    <button class="tab" role="tab" id="tab-m09v3" aria-selected="false" data-cut="m09v3">m09 · v3</button>
   </nav>
   <p class="why" style="margin:0;color:var(--muted);font-size:13px">Earlier rounds and the finished m02–m08 trailers stay on the first review page. This page holds the rounds made since 25 Nov.</p>
   <div id="earlier" hidden></div>
@@ -164,6 +165,44 @@ const CUTS = {
    "t": "Anything on screen a viewer should not see?",
    "o": null
   }
+ ]
+},
+  m09v3: {
+ "doc": "feedback/m09_trailer_v3",
+ "title": "m09 Digital Archaeology · 60 s trailer · v3 (Midnight Trigger, whole-number scales)",
+ "videoLabel": "16:9",
+ "video": "/_blob/b0d3914a988a86ef39b4667393b1281c",
+ "videos": [
+  ["9:16", "/_blob/3001b735854bcebaf9d90e4234d86f16", "p916"],
+  ["1:1", "/_blob/fad2c5c3563562ba8efed34976b14c29", "p11"]
+ ],
+ "stats": [
+  "60.0 s each",
+  "1920×1080, 1080×1920, 1080×1080 at 30 fps",
+  "−14.0 LUFS, true peak −1.5 dB",
+  "music: Midnight Trigger from 93.0 s (kept)"
+ ],
+ "changedLabel": "What changed since v2 (your notes)",
+ "changed": [
+  "Noor is re-filmed with her fixed mouth animation (the visemes were re-picked so her nose stays still). Same line, same 4.2 s slot.",
+  "Every gameplay shot is now at a whole-number scale (1×, 2× or 3×), so the pixels are even. NPC chats are zoomed out: 1× in 16:9, 2× in 9:16 and 1:1.",
+  "In 16:9 the game's own subtitle bar now shows on Netherton, Noor and Jesse, and acts as their caption. Sorensen's wide shot is at 2× so her name bar stays off screen, as in v2.",
+  "Minigame panels drop to 1× where 2× would cut them off (the wipe console, lockpicks, the password screen in 9:16 and 1:1).",
+  "Music, the password screen and Dillard's shot are unchanged, as you asked."
+ ],
+ "standinLabel": "Stand-in and compromises",
+ "standin": [
+  "The password screen in 9:16 is smaller than in v2: its panel is wider than the 2× window, so whole-number scaling leaves it at 1×. See the question.",
+  "Real Hacking is still the stand-in console footage.",
+  "Checked by me: contact sheets in all three aspects, Noor's frames from the new take, loudness and captions. Not watched end to end."
+ ],
+ "srt": "1\n00:00:03,220 --> 00:00:10,320\nDirector Magnus Netherton: We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\n\n2\n00:00:14,603 --> 00:00:18,303\nNoor Haddad: We're closed. Nobody comes in for a deed at this hour.\n\n3\n00:00:21,533 --> 00:00:25,793\nJesse Tran: Paper. You people break into buildings at night for paper.\n\n4\n00:00:34,813 --> 00:00:39,133\nLyle Dillard: Dillard, Statewide Security. Stay where you are.\n\n5\n00:00:42,883 --> 00:00:47,733\nMargaret Sorensen: Everyone ENTROPY ever placed is filed in this room, dear.\n\n6\n00:00:48,633 --> 00:00:51,583\nMargaret Sorensen: By morning, I'll be the only index you can ask.\n",
+ "questions": [
+  {"k": "noor", "t": "Noor's mouth animation now", "o": [["ok", "Right", "", 1], ["fix", "Still off", "Say what"]]},
+  {"k": "scale", "t": "Whole-number scales: chats zoomed out, subtitle bar showing in 16:9", "o": [["ok", "Better", "", 1], ["tight", "Zoom chats in to 2× and crop the bar", "Faces bigger, bar off"], ["fix", "Mixed", "Say which shots"]]},
+  {"k": "pw916", "t": "The password screen in 9:16 (1×, small)", "o": [["ok", "Keep 1×", "Whole-number rule holds", 1], ["frac", "Allow 1.5× for this UI panel", "Readable, slightly uneven pixels"]]},
+  {"k": "pace", "t": "Pace: anything too fast or too slow? Which shot would you cut or lengthen?", "o": null},
+  {"k": "seen", "t": "Anything on screen a viewer should not see?", "o": null}
  ]
 },
   m09v2: {
@@ -273,7 +312,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m01v15";
+let current = "m09v3";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_b1"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
@@ -334,8 +373,8 @@ async function persist(manual){
 }
 function showSaved(){ const st=document.getElementById("savestatus"); if (st && !st.textContent) st.textContent = db ? "" : "Answers keep in this browser until the page connects."; }
 
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab",current);}catch(_){} }));
-try { const t=localStorage.getItem(LS+"_tab"); if (t && CUTS[t]) current=t; } catch(_){}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab3",current);}catch(_){} }));
+try { const t=localStorage.getItem(LS+"_tab3"); if (t && CUTS[t]) current=t; } catch(_){}
 const EARLIER = new Set([...document.querySelectorAll("#earlier .tab")].map(t=>t.dataset.cut));
 if (EARLIER.has(current)) document.getElementById("earlier").open = true;
 document.getElementById("copybtn").addEventListener("click",async()=>{ const box=document.getElementById("copybox"), s=document.getElementById("copystatus");
