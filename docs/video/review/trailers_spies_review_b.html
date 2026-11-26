@@ -64,7 +64,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <div class="wrap">
   <header style="display:grid;gap:6px">
-    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 26 Nov 2026 (m09 v3)</div>
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 26 Nov 2026 (m10 v3)</div>
     <h1>Mission trailers with the new spy avatars</h1>
   </header>
 
@@ -72,6 +72,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
     <button class="tab" role="tab" id="tab-m01v15" aria-selected="false" data-cut="m01v15">m01 · v15</button>
     <button class="tab" role="tab" id="tab-m09v2" aria-selected="false" data-cut="m09v2">m09 · v2</button>
     <button class="tab" role="tab" id="tab-m09v3" aria-selected="false" data-cut="m09v3">m09 · v3</button>
+    <button class="tab" role="tab" id="tab-m10v3" aria-selected="false" data-cut="m10v3">m10 · v3</button>
   </nav>
   <p class="why" style="margin:0;color:var(--muted);font-size:13px">Earlier rounds and the finished m02–m08 trailers stay on the first review page. This page holds the rounds made since 25 Nov.</p>
   <div id="earlier" hidden></div>
@@ -151,6 +152,108 @@ const CUTS = {
     [
      "fix",
      "Off",
+     "Say which"
+    ]
+   ]
+  },
+  {
+   "k": "pace",
+   "t": "Pace: anything too fast or too slow? Which shot would you cut or lengthen?",
+   "o": null
+  },
+  {
+   "k": "seen",
+   "t": "Anything on screen a viewer should not see?",
+   "o": null
+  }
+ ]
+},
+  m10v3: {
+ "doc": "feedback/m10_trailer_v3",
+ "title": "m10 Full Disclosure · 60 s trailer · v3 (Hybrid Attack, whole-number scales)",
+ "videoLabel": "16:9",
+ "video": "/_blob/b863b9a5b078bc1f5cec495f2bdfda16",
+ "videos": [
+  [
+   "9:16",
+   "/_blob/6af731c32fa32022e7479f31b6e57a6f",
+   "p916"
+  ],
+  [
+   "1:1",
+   "/_blob/78d46c141041d3d62d0269bc3985f5de",
+   "p11"
+  ]
+ ],
+ "stats": [
+  "60.0 s each",
+  "1920×1080, 1080×1920, 1080×1080 at 30 fps",
+  "−14.0 LUFS, true peak −1.55 dB",
+  "music: Hybrid Attack 1 from 98.6 s"
+ ],
+ "changedLabel": "What changed since v1 (your notes)",
+ "changed": [
+  "The four quick flash shots are gone. A wide shot of the team takes their place, so the Mission 10 card still lands on the music's lift.",
+  "The Tesseract is re-filmed with his new thin wire glasses (your pick E) and a new mouth animation made from them.",
+  "The gallery guard's line is re-filmed now that guards walk in and out of rooms: he says it, then heads for the door.",
+  "Every gameplay shot is at a whole-number scale (1×, 2× or 3×), as on m09 v3. The quick crescendo cuts are re-framed so each face or panel sits fully inside the frame in every aspect.",
+  "The ending stops before the Tesseract gives any figures."
+ ],
+ "standinLabel": "Stand-in and compromises",
+ "standin": [
+  "Real Hacking is the console clip of the release note being read. No flag or secret is on screen.",
+  "In 9:16 the guard's speech bubble starts right at the left edge for the first half second; the burned caption carries the line throughout.",
+  "Checked by me: contact sheets in all three aspects, frames of the two re-filmed shots, loudness and captions. Not watched end to end."
+ ],
+ "srt": "1\n00:00:05,000 --> 00:00:09,170\nDirector Magnus Netherton: At six he publishes everything we ever catalogued.\n\n2\n00:00:11,937 --> 00:00:14,077\nQuintero: I don't like doors that know your name.\n\n3\n00:00:14,767 --> 00:00:17,127\nDirector Magnus Netherton: It puts WREN on this team.\n\n4\n00:00:20,010 --> 00:00:22,980\nAgent 0x00 HaX: Top row. The third breaker from the left feeds the shutter.\n\n5\n00:00:24,813 --> 00:00:27,843\nGallery guard: Camera's dead again. I'll go and look.\n\n6\n00:00:34,650 --> 00:00:36,500\nNow it's my turn.\n\n7\n00:00:37,903 --> 00:00:39,703\nTunnel guard: Nobody said let you through armed.\n\n8\n00:00:44,233 --> 00:00:48,673\nTesseract: Your service spent decades hoarding the world's weak points.\n\n9\n00:00:49,467 --> 00:00:51,737\nTesseract: At six, I give them back.\n",
+ "questions": [
+  {
+   "k": "tess",
+   "t": "The Tesseract's new glasses and mouth in the ending",
+   "o": [
+    [
+     "ok",
+     "Right",
+     "",
+     1
+    ],
+    [
+     "fix",
+     "Still off",
+     "Say what"
+    ]
+   ]
+  },
+  {
+   "k": "gallery",
+   "t": "The gallery guard's line (he walks off towards the door)",
+   "o": [
+    [
+     "ok",
+     "Keep",
+     "",
+     1
+    ],
+    [
+     "fix",
+     "Change",
+     "Say what"
+    ]
+   ]
+  },
+  {
+   "k": "music",
+   "t": "Hybrid Attack 1 on m10",
+   "o": [
+    [
+     "ok",
+     "Keep",
+     "",
+     1
+    ],
+    [
+     "alt",
+     "Try another",
      "Say which"
     ]
    ]
@@ -312,7 +415,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m09v3";
+let current = "m10v3";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_b1"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
@@ -373,8 +476,8 @@ async function persist(manual){
 }
 function showSaved(){ const st=document.getElementById("savestatus"); if (st && !st.textContent) st.textContent = db ? "" : "Answers keep in this browser until the page connects."; }
 
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab3",current);}catch(_){} }));
-try { const t=localStorage.getItem(LS+"_tab3"); if (t && CUTS[t]) current=t; } catch(_){}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab4",current);}catch(_){} }));
+try { const t=localStorage.getItem(LS+"_tab4"); if (t && CUTS[t]) current=t; } catch(_){}
 const EARLIER = new Set([...document.querySelectorAll("#earlier .tab")].map(t=>t.dataset.cut));
 if (EARLIER.has(current)) document.getElementById("earlier").open = true;
 document.getElementById("copybtn").addEventListener("click",async()=>{ const box=document.getElementById("copybox"), s=document.getElementById("copystatus");
