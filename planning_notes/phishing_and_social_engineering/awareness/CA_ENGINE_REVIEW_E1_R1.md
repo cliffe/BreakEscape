@@ -100,3 +100,18 @@ The plan, 1.5 (`walkThroughTarget` "stays correct ... `y: g.y + TILE / 2`"), con
 
 - Live behaviour (1b): the `test_side_door_gate` proof and the lab records-door tailgate re-run. The latter matters less now that the N/S paths are shown to be unchanged, but plan line 469 still asks for it.
 - Whether `openDoor`'s far-room bookkeeping recreates a destroyed gate sprite after a reload (it bears on how lasting B1's damage is).
+
+## Fix round (commits 244915830 source, d3d97c0c3 tests and scenario)
+
+Tests: new `test/js/door-gates-r1-fixes.test.mjs` (9 cases, all fail against 1fdfc0c97 and pass now). It loads doors.js by data URL with its imports stubbed, as `door-snap.test.mjs` does.
+
+- **B1 fixed, both parts.** `handleDoorInteraction` loads an unloaded, not-locked connected room first (through the ordinary `unlocked` handshake, `loadRoomBehindDoor`), then looks the gate up again. `openDoor` (`finishOpeningDoor`, `processRoomDoors`) refuses a gate sprite; if the room load adopted the sprite mid-open, `doorGates.reassert()` puts the bodies and path grid back. `removeMatchingDoorSprite` skips gate sprites. Scenario: `scenarios/test_side_door_gate_east_start` (start in `east_room`, window on). It is a sibling folder, because a scenario folder holds one `startRoom`.
+- **M1 fixed.** `clickOutcome` returns `inert_enter` for any inert click from outside (open or shut) and opens nothing. doors.js `enterThroughInertGate` runs the `unlocked` handshake for an unlocked, unloaded room, loads it, and calls `exitOpen` only if `window.rooms[securedRoom]` exists and the window is still inert; otherwise "Access denied" and the gate stays shut. The validator WARN (an `activeIf` gate into a `locked` room that is neither start nor world room) is added to `E1_validator_todo.md` for E4.
+- **m1 fixed:** `WALK_THROUGH_SIDE_PX` is 1.5 tiles (test: target clear of both door tiles). **m2 fixed:** the lab-ux-ui side stub has two sprites a tile apart and asserts a shared `gateKey` and equal targets. **m4 fixed:** `_gateInfo` and so the guard events carry `cx, cy`. **m6 fixed:** door-gates.js header documents `inert` on open/close, `cx, cy`, and that an inert gate stays `openFor`-only for NPCs.
+- **m3 decided, not changed:** an inert gate stays `openFor`-only for NPC walkers (header says so). ca12's walkers are all on `openFor`.
+- **m5 not fixed here:** a validator WARN (side gate where either room has more than one connection on that side) belongs to E4's validator work; added to `E1_validator_todo.md`.
+- **Plan text 1.5 (`walkThroughTarget` bullet, deviation 1)** is in `CA_PILOT_MECHANICS_PLAN.md`, which this fix round did not edit; it should read: the side walk target is `{ x: cx ± 1.5 * TILE, y: cy }`.
+
+### M2 plan (deferred: needs npc-walk.js, which E4 may touch)
+
+In `npc-walk.js` `goTo` (around lines 443-467), when `E.doorGates()?.isGate(d.sprite)` and the walker is on the gate's `openFor`, ask `doorGates.approachPoint(w.id, hereRoom, [hereRoom, farRoom])`. Walk to that in-radius point first (the doorway's centre row for a side gate), let proximity open the gate, then take the through leg. `gateOpened()` (door-gates.js:529) re-asks after the re-path. `doorClosed` (`npc-walk.js:427`) must not treat the lobby sprite's `locked` (the studio's lock) as a reason to skip the approach once the door is a gate. Test in `npc-walk-gate.test.mjs`: an `openFor` walker spawned 160 px from a shut side gate ends with `how === 'walked'`; one not on `openFor` is not routed. The pending-sprite half of M2 is closed by the B1 guards (`openDoorForNpc` -> `openDoor` now refuses a sprite that has become a gate, and `reassert()` restores it).
