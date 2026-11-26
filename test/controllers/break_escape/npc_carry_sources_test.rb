@@ -33,12 +33,12 @@ module BreakEscape
       }
     end
 
-    def build(scn)
+    def build(scn, player_state = {})
       @game = create_access_game(
         mission: break_escape_missions(:ceo_exfil),
         player: break_escape_demo_users(:test_user),
         scenario: scn,
-        player_state: { 'currentRoom' => 'office', 'unlockedRooms' => %w[office kitchen] }
+        player_state: { 'currentRoom' => 'office', 'unlockedRooms' => %w[office kitchen] }.merge(player_state)
       )
     end
 
@@ -83,16 +83,18 @@ module BreakEscape
     test 'an unlocked container content with a needsTag is carriable once taken and dropped' do
       box = { 'type' => 'suitcase', 'id' => 'desk_box', 'name' => 'Desk box', 'takeable' => false,
               'contents' => [tagged('box_mugs')] }
-      build(scenario(office_objects: [box]))
+      build(scenario(office_objects: [box]), 'unlockedObjects' => ['desk_box'])
       inventory_add(tagged('box_mugs'))
       assert_response :success, response.body
       assert_carriable_after_drop('box_mugs')
     end
 
     test 'a flag-station itemsHeld item with a needsTag is carriable once taken and dropped' do
-      station = { 'type' => 'workstation', 'id' => 'flag_desk', 'name' => 'Flag desk', 'takeable' => false,
+      station = { 'type' => 'flag-station', 'id' => 'flag_desk', 'name' => 'Flag desk', 'takeable' => false,
+                  'flags' => ['flag{mug}'],
+                  'flagRewards' => [{ 'type' => 'give_item', 'item_type' => 'dirty_mugs1', 'item_name' => 'station mugs' }],
                   'itemsHeld' => [tagged('station_mugs')] }
-      build(scenario(office_objects: [station]))
+      build(scenario(office_objects: [station]), 'submitted_flags' => ['flag{mug}'])
       inventory_add(tagged('station_mugs'))
       if response.successful? && held_ids.include?('station_mugs')
         assert_carriable_after_drop('station_mugs')
