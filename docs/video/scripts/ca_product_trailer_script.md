@@ -1,75 +1,80 @@
-# Hacktivity Cyber Aware: product trailer script (60 s), draft R1
+# Hacktivity Cyber Aware: product trailer script (60 s), draft R2
 
-Purpose: sell the Cyber Aware course as a whole, on the /cyber-aware landing page hero (replacing the ca03 trailer) and the main-page teaser band. Aspects 16:9, 9:16, 1:1. Shorter cuts later.
+Purpose: sell the Cyber Aware course as a whole, in the /cyber-aware landing page hero (replacing the ca03 trailer) and the main-page teaser band. Aspects 16:9, 9:16, 1:1. Shorter cuts later.
 
-Audience: two viewers at once. An individual who might play the free course, and someone at an organisation who buys training for staff. The first 35 s sell the experience to both; the organisation beat comes after.
+Audience: an individual who might play the free course, and someone who buys training for an organisation's staff. The first 42 s sell the experience to both; the organisation beat follows.
 
-Spine (USP): the player runs the scam first, in the attacker's own terms, then switches seats and catches the same trick as staff. Every beat serves that order: attack, flip, defend, takeaway.
+Spine (USP): the player runs the scam first, in the attacker's own terms, then switches seats and catches the same kind of trick as staff. One episode carries the spine from end to end (ca12: talk past the front desk, then sit at that desk), and one carries it again at the close (ca13: write the hidden line, then watch the assistant pass it on).
 
 ## Rules this script keeps
 
-- Narrator VO all the way through; every point spoken over footage. No bullet slides. Cards only for the title and the end.
-- Claims come only from the live landing page (Hacktivity cf5a3d20, `app/views/cyber_aware/`): about 15 minutes per episode, about an hour per course, nothing to install, runs in the browser, easy staff sign-up, courses easy to assign, a dashboard of each person's progress, CSV export of results, a short check at the start and end of each course.
-- Pending owner checks, so marked and with a fallback: the word "only" in the USP line. Left out entirely: "whether people report what they spot" (unverified).
-- Never: SCORM, SSO, LMS, figures, completion or improvement rates, customer names, compliance claims.
-- Pixel art at integer scale only (16:9 and 1:1 zoom 1 or 2; 9:16 zoom 0.5625, 1.125 or 1.6875). Less zoom on NPC chats.
-- CA spoilers are fine.
-- Narrator: Sulafat (the voice of the CA episode trailers), so the product trailer sounds like the course. Reuse ca00 v1 as recorded.
-- Music: one PeaceFolk track already used by the CA trailers (candidates below); hits on the flip and the end card.
+- Narrator VO over footage; points spoken, never bullet slides. Cards for the title and the end only. Game-style chips (the CA trailers' chip look) label seats and claims.
+- No narrator over a character line.
+- Claims come only from the live landing page (Hacktivity cf5a3d20, `app/views/cyber_aware/`) and the features in Hacktivity's code: about 15 minutes per episode, about an hour per course, nothing to install, staff invited to an organisation, courses chosen for the organisation, a progress page for organisers per course, results exported as CSV.
+- "Most episodes" start in the attack seat: six of the twenty (ca11, ca15, ca16, ca17, ca19, ca20) swap it for everyday choices, as the landing page says.
+- Pending owner checks, marked with fallbacks: "only" in the USP line; the organiser footage. Left out: any claim about whether people report what they spot.
+- Never: SCORM, SSO, LMS, figures, rates, customer names, compliance.
+- Footage from Cyber Aware episodes only (ca00 to ca20). The physical pen test lab is a separate product and stays out.
+- Integer pixel scale: 16:9 and 1:1 zoom 1 or 2; 9:16 zoom 0.5625, 1.125 or 1.6875. NPC chats at the lowest (16:9 and 1:1 zoom 1, 9:16 0.5625), with their words in burned captions. Builders and inboxes at 2 / 1.125 / 2 only where the panel fits a 540 px wide 9:16 frame.
+- Narrator: Sulafat, the CA trailers' voice. ca00 v1 reused as recorded.
+- Words per second: target 2.6, linted under 3.0.
 
-## Beat sheet
+## Timeline
 
-Times are targets for a 60 s cut. Source timings are from the shot bank (`tmp/handover/vid2/ca_product/SHOT_BANK.md`); every shot gets a frame check before lock.
+Every shot gets a frame check before lock (the right UI on screen, the line's words where stated, no objectives panel naming a technique).
 
-| # | Time | Beat | Picture | Sound |
-|---|---|---|---|---|
-| 1 | 0.0-2.6 | Cold open | ca01 supplier email builder, the player typing the fake bank change (`t02_attack_run` 30.0-32.6) | VO1 |
-| 2 | 2.6-5.0 | Hook | ca12 the phone pretext, reception gives in (`t06_the_call` 15.0-17.1) | in-game: Delphine, "Go on then, I'll buzz you through." |
-| 3 | 5.0-10.2 | Title | ca00 training room wide (`t01_room_wide` 0.5-4.0) with the Cyber Aware title over it, then cut on the hit | VO2 (ca00 v1, reused) |
-| 4 | 10.2-15.4 | Attack seat | four quick builds, 1.3 s each: ca03 help desk call (`t02_attack_run` 28.1), ca06 QR and text (`t02_attack_run` 29.4), ca13 hidden line for the AI summary (`t01_attack_run` 7.3), ca10 fake check page (`t03_fake_check_builder` 5.5) | VO3 |
-| 5 | 15.4-19.6 | The flip | ca00 seat flip (`t07_flip` 21.9-23.9), held on the music hit, then ca01 Adaeze at her desk (`t03_adaeze_flip`) | VO4 |
-| 6 | 19.6-27.0 | Defend seat | ca01 payments inbox (`t04_payments_inbox` 3.0), ca06 work phone (`t05_work_phone_runB` 8.0), ca12 visitor at reception (`t12_tailgater_card` 5.9), ca18 sign-in alerts (`t04_defend_list` 6.93) | VO5, then VO5b |
-| 7 | 27.0-31.6 | The catch, in a voice | ca01 Adaeze end (`t05_adaeze_end` 14.65-19.3), no zoom | in-game: Adaeze, "Ring the person back on a number you already hold..." |
-| 8 | 31.6-36.4 | Debrief | ca12 Lorna, no blame (`t14_lorna_noblame` 16.32-20.22) or an episode's debrief screen | VO6 |
-| 9 | 36.4-41.6 | Length | quick variety: ca09 password guess, ca07 cloned voice build, ca14 public posts research, ca20 café | VO7 |
-| 10 | 41.6-48.4 | For organisations | organiser screens: staff sign-up, assigning a course, the progress dashboard, the CSV export (see open question Q1) | VO8 |
-| 11 | 48.4-53.4 | USP | back to the attack seat: ca12 tailgate in the lab cut (`lab_t15_disguise_tailgate` 3.2-6.2), then the matching catch (`t12_tailgater_card`) | VO9 |
-| 12 | 53.4-60.0 | End card | hero line card, Hacktivity Cyber Aware title, URL | VO10, music out on the hit |
+| # | Time | Beat | Picture | Chip | Sound |
+|---|---|---|---|---|---|
+| 1 | 0.0-3.0 | Cold open | ca01 `t02_attack_run` 30.0-32.2 (supplier email builder), then 38.3-39.1 (the send) | YOU: THE ATTACKER | VO1 at 0.2 |
+| 2 | 3.0-5.4 | Front desk gives in | ca12 `t06_the_call` from about 16.7, out at the end of "...buzz you through" (set by ear; never into "Studio's up the stairs") | FRONT DESK | Delphine: "Go on then, I'll buzz you through." |
+| 3 | 5.4-10.6 | Title | ca06 `t02_attack_run` 29.4-32.0 (writing the text), ca13 `t01_attack_run` hidden-line step, 2.6 s (frame check for the line on screen); title over both | YOU: THE ATTACKER | VO2 (reused), music hit at 10.6 |
+| 4 | 10.6-15.6 | Attack seat | ca00 `t04_osint_note` 4.9-6.6 (target), `t05_pretext_card` 5.3-7.0 (pretext), `t06_the_call` 12.2-13.8 (the call, no line audible) | YOU: THE ATTACKER | VO3 |
+| 5 | 15.6-18.1 | The flip | ca00 `t07_flip` 21.6-24.1, held on the hit | YOU: THE ATTACKER, then YOU: THE STAFF on the hit | music hit, no VO |
+| 6 | 18.1-24.3 | Same visitors | ca12 `t13_lorna_flip` 2.44-8.54 | YOU: THE STAFF | Lorna: "You talked your way through that door just now. Here you're the one being asked, same visitors." |
+| 7 | 24.3-29.7 | Defend seat | ca06 `t05_work_phone_runB` 8.0-9.8, ca12 `t12_tailgater_card` 5.9-7.7, ca01 `t04_payments_inbox` 3.0-4.8 (the email from beat 1, now arriving) | YOU: THE STAFF | VO5 |
+| 8 | 29.7-37.0 | The catch, in a voice | ca01 `t05_adaeze_end` 14.7-21.9, zoom at the lowest | YOU: THE STAFF | Adaeze: "Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny." |
+| 9 | 37.0-42.4 | Length | ca10 `t03_fake_check_builder` 6.0-7.8, ca20 `t03_choices_reveal` 16.0-17.8 (the laptop choice), ca18 `t04_defend_list` 6.93-8.73 | 15 MIN / EPISODE, then 1 HOUR / COURSE, on the spoken phrases | VO7 |
+| 10 | 42.4-49.6 | For organisations | three organiser screens, 2.4 s each, placed at 1x or 2x in a bordered frame: staff and courses, the progress page, the CSV export. PLACEHOLDER until the owner picks the footage | ORGANISERS, PROGRESS, RESULTS | VO8 |
+| 11 | 49.6-54.6 | USP | ca13 `t01_attack_run` hidden-line build 2.5 s, then ca13 `t02_assist_window` 11.75-14.25 (the assistant passes it on) | YOU: THE ATTACKER, then YOU: THE STAFF | VO9 |
+| 12 | 54.6-60.0 | End card | hero line over the Cyber Aware title; hacktivity.co.uk; small line "Nothing to install. Runs in your browser." | none | VO10 at 54.9, URL held 2 s after; music resolves |
 
-## Narrator lines
+## Lines
 
-Word rate target 2.6 words/s, linted under 3.0.
+Narrator (Sulafat):
+- VO1: "This is a scam. You're writing it." (7 words, about 2.6 s)
+- VO2 (ca00 v1, 5.11 s): "Hacktivity Cyber Aware: Security awareness training you can play."
+- VO3: "Most episodes start in the scammer's chair. Pick a target, build the pretext, make the call." (15 words, about 5.2 s)
+- VO5: "Now it lands on you. Your inbox, your phone, your front desk." (12 words, about 4.4 s)
+- VO7: "About fifteen minutes an episode. About an hour a course." (10 words, about 3.8 s)
+- VO8: "For organisations: invite your staff, choose the courses, follow their progress, and export the results." (15 words, about 5.6 s)
+- VO9, pending "only": "The only security awareness training where your staff play the attacker first." (12 words, about 4.6 s). Fallback: "Security awareness training where your staff play the attacker first."
+- VO10: "Play the scammer. Then catch the scam." (7 words, about 2.8 s)
 
-- VO1 (cold open): "This is a scam. You're writing it." (6 words, about 2.3 s)
-- VO2 (title, reused ca00 v1, 5.11 s): "Hacktivity Cyber Aware: Security awareness training you can play."
-- VO3 (attack seat): "Every episode starts in the scammer's chair. Pick a target, build the pretext, send it." (14 words, about 5.2 s)
-- VO4 (flip): "Then you switch seats. Same company, other side of the desk." (11 words, about 4.0 s)
-- VO5 (defend): "Now it lands on you. Your inbox, your phone, your front desk." (12 words, about 4.4 s)
-- VO5b (the spine's payoff): "You built it, so you know the tells." (8 words, about 2.8 s)
-- VO6 (debrief): "Each one ends with what gave it away, and a rule of thumb to keep." (15 words, about 4.6 s)
-- VO7 (length): "About fifteen minutes an episode, about an hour a course. Nothing to install." (13 words, about 4.8 s)
-- VO8 (organisations): "For organisations: sign your staff up, assign a course, follow progress on the dashboard, and export the results." (18 words, about 6.4 s)
-- VO9 (USP, PENDING "only"): "The only security awareness training where your staff play the attacker first." (12 words, about 4.6 s). Fallback if "only" is not confirmed: "Security awareness training where your staff play the attacker first."
-- VO10 (end): "Play the scammer. Then catch the scam." (7 words, about 2.8 s)
+In-game (cached take audio; each confirmed by ear at build):
+- Delphine (ca12), about 1.9 s.
+- Lorna (ca12 flip), about 6.1 s.
+- Adaeze (ca01 end), about 6.8 s.
 
-Narrator total about 47 s with two in-game lines (about 6.5 s). That is dense for 60 s; review should say what to cut. Candidates: VO6 (fold the debrief into VO5b), or VO7's "Nothing to install".
+Speech in total: about 34.6 s narrator plus 14.8 s in-game, about 49 s of 60, with silent air at 0.0-0.2, the flip (2.5 s), and the end card's URL hold.
 
-## Cards
+## Captions and silent watch
 
-- Title (beat 3): "HACKTIVITY CYBER AWARE", small line "Security awareness training you can play" only if VO2 is not enough on a silent watch.
-- End (beat 12): "Play the scammer. Then catch the scam." over the title, "hacktivity.co.uk" below. No "Play now" button text unless the landing page uses it.
-- Captions: the .srt carries every spoken line. Burned captions on 9:16 and 1:1 (silent autoplay on social and the main-page band); 16:9 small or none (it sits in the hero, which may autoplay muted: open question Q3).
+- Every spoken line is in the .srt.
+- 9:16 and 1:1: all lines burned, in the bars, not over the picture. The game's own subtitle bar is cropped or too small at these scales.
+- 16:9: pending the owner. The hero may autoplay muted, so the default is small burned captions on all lines.
+- Silent reading of the spine: the seat chip changes from YOU: THE ATTACKER to YOU: THE STAFF on the flip's music hit; the same email (ca01) is built in beat 1 and arrives in beat 7; the front desk is talked past in beat 2 and staffed in beat 6.
+- Title card subline is fixed: "Security awareness training you can play".
 
 ## Music
 
-Candidates (already cleared and used on the CA trailers): Guitar Motif (ca01, ca04, ca13, ca19), Quietly Cinematic (ca00, ca02, ca09, ca11). Pick the one with a clear hit near 15 s from its in-point for the flip and a resolving phrase for the end card. Beat grid measured at build.
+One PeaceFolk track already used by the CA trailers: Guitar Motif (ca01, ca04, ca13, ca19) or Quietly Cinematic (ca00, ca02, ca09, ca11). Choose at build by measuring the beat grid: a clear hit near 10.6 s (title) and 15.6 s (flip) from its in-point, and a resolving phrase for 54.6 s.
 
 ## Open questions for the owner (via AC0)
 
-- Q1, organiser footage: no CA trailer shows the dashboard, sign-up, assignment or CSV export. Options: (a) capture the Hacktivity organiser screens on a demo organisation (needs a Hacktivity server off ports 3000/3001 and demo rows, which need a yes), (b) use the landing page screenshots, framed as product shots, (c) keep game footage under VO8. Recommended: (a).
-- Q2, the USP line's "only" (pending, as on the landing page).
-- Q3, 16:9 captions in the hero: burned small captions, or none (the page may autoplay muted).
+- Organiser footage (beat 10): capture the real organiser screens on a demo organisation (needs a yes for a Hacktivity server off ports 3000/3001 and demo rows), or game footage under VO8 and the chips only. Recommended: capture.
+- "only" in the USP line.
+- 16:9 captions in the hero: small burned captions (default) or none.
 
-## Fun and USP rubric (trailer reading)
+## Fun and USP rubric (what the trailer shows)
 
-The rubric scores episodes; for a trailer the reviewers score whether the trailer shows each item: F1 hook in the first 3 s, F3 agency (choices with outcomes), F4 named staff, F5 length claim, O1 attacker method shown, O2 human weakness, O3 the named defence with a visible cue, O4 tone empowering not frightening, A1 claims true, A2 nothing operational, P1 the habit applied in a new situation.
+F1 hook in 3 s (a scam being written); F4 named, voiced staff (Delphine, Lorna, Adaeze); F5 length claim; O1 the attacker's method shown (builder, pretext, call, send); O2 the weakness is human (the front desk gives in); O3 the named defence with a cue (Adaeze's call-back rule); O4 empowering tone (Lorna's "same visitors"); A1 every claim from the landing page or Hacktivity code; A2 nothing operational. Thin: F3 agency (one choice shot, ca20) and P1 practice; a trailer of this length shows them only in passing.
