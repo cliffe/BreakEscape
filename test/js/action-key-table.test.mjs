@@ -51,7 +51,7 @@ const check = (scenario) => {
 const base = (actions, extra = {}) => ({
   globalVariables: { seen: false },
   rooms: {
-    open_plan: { objects: [{ id: 'stick', type: 'stick', droppable: true }], npcs: [{ id: 'jun', npcType: 'person', eventMappings: [{ eventPattern: 'x', actions }] }] },
+    open_plan: { objects: [{ id: 'stick', type: 'stick', droppable: true }], npcs: [{ id: 'jun', npcType: 'person', behavior: { patrol: { waypoints: [{ x: 1, y: 1 }] } }, eventMappings: [{ eventPattern: 'x', actions }] }] },
     lobby: {}
   },
   ...extra
