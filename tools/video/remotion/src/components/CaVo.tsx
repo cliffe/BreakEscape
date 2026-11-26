@@ -21,6 +21,8 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
   const t = frame / fps;
   const cue = (edit.vo || []).find((c: any) => t >= c.start - 1e-6 && t < c.end - 1e-6);
   if (!cue || !cue.text) return null;
+  // edit-level vo_captions {aspect: false}: no burned announcer text in that aspect (audio still plays; the .srt keeps the cue)
+  if (edit.vo_captions?.[aspect] === false) return null;
   // vo_skin "safetynet": the announcer is drawn in the SAFETYNET caption plate at the character captions' position; caption: false hides the burned text
   if (edit.vo_skin === 'safetynet') {
     if (cue.caption === false) return null;

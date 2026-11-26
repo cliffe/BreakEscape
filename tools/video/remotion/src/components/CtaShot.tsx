@@ -4,6 +4,7 @@ import { HexRain } from './HexRain';
 import { GlitchFX } from './GlitchFX';
 import { PIXEL_FONT } from '../fonts';
 import { LogoMorph, logoHeight } from './EndLogos';
+import { staticFile } from 'remotion';
 
 /**
  * The closing piece (v7), one continuous shot:
@@ -37,6 +38,27 @@ export const CtaShot: React.FC<{ shot: any; w: number; h: number; frame: number;
 
   const sz = (f: number) => Math.max(8, Math.round((w * f) / 8) * 8);
   const pl = L.play || { cx: 0.5, cy: 0.44, size: 0.058 }, ul = L.url || { cx: 0.5, cy: 0.58, size: 0.033 };
+  // shot.cta_title = { svg?, scale: {aspect: n}, cy: {aspect: frac} }: the game's pixel title above "Play now", integer scale,
+  // crisp black outline (four 0-blur shadows), revealed as the red reaches its top (same front model as the logo), brief glitch on arrival
+  const ct = shot.cta_title;
+  let titleEl: React.ReactNode = null;
+  if (ct) {
+    const sc = Math.max(1, Math.round(ct.scale?.[aspect] ?? 10));
+    const tw = 57 * sc, th = 25 * sc;
+    const tx = Math.round((w - tw) / 2), ty = Math.round(h * (ct.cy?.[aspect] ?? 0.28) - th / 2);
+    const tHit = 0.3 + 0.65 * Math.pow(Math.max(0, ty) / (h + 56), 1 / 1.6);
+    if (frame >= start && p >= tHit) {
+      const ol = Math.max(2, Math.round(sc / 2));
+      const outline = `drop-shadow(${ol}px 0 0 #000) drop-shadow(-${ol}px 0 0 #000) drop-shadow(0 ${ol}px 0 #000) drop-shadow(0 -${ol}px 0 #000)`;
+      const img = <img src={staticFile(ct.svg || 'brand/safetynet_licence_to_hack.svg')} width={tw} height={th} style={{ display: 'block', imageRendering: 'pixelated' }} />;
+      const tg = Math.max(0, 1 - (p - tHit) / 0.09);
+      titleEl = (
+        <div style={{ position: 'absolute', left: tx, top: ty, width: tw, height: th, filter: outline }}>
+          {tg > 0 ? <GlitchFX id="cta-title" w={tw} h={th} params={{ seed: frame * 5 + 3, k: tg, maxShift: Math.round(tw * 0.08), split: Math.max(2, sc), thick: 0.12, hide: tg * 0.3 }}>{img}</GlitchFX> : img}
+        </div>
+      );
+    }
+  }
   const labels = [
     { text: cu.play ?? 'Play now', cx: Math.round(w * pl.cx), cy: Math.round(h * pl.cy), size: sz(pl.size) },
     { text: cu.url ?? 'hacktivity.co.uk', cx: Math.round(w * ul.cx), cy: Math.round(h * ul.cy), size: sz(ul.size) },
@@ -54,6 +76,7 @@ export const CtaShot: React.FC<{ shot: any; w: number; h: number; frame: number;
       ) : null}
       {shot.burned_line && frame >= Math.round((shot.burned_line.from ?? 0) * fps) && frame < Math.round((shot.burned_line.to ?? 0) * fps) ? <BurnedLine text={shot.burned_line.text} w={w} h={h} /> : null}
       {frame >= start ? <HexRain frame={frame} w={w} h={h} p={p} cw={cu.cw ?? 20} ch={cu.ch ?? 28} seed={cu.seed ?? 5} label={labels} /> : null}
+      {titleEl}
     </div>
   );
 };
