@@ -35,6 +35,8 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
   const tl = edit.theme === 'cc' && edit.cc ? { ...tlCa, shots: tlCa.shots.map((s: any) => ({ ...s, cc: { ...edit.cc, ...(s.cc || {}) } })) } : tlCa;
   // edit-level caption_top {"9:16": fraction} lifts the burned dialogue captions in portrait (absent: unchanged)
   if (edit.caption_top) tl.shots = tl.shots.map((s: any) => ({ ...s, caption_top: edit.caption_top }));
+  // edit-level caption_skin "pixel": dialogue captions in Press Start 2P with the text's own line breaks (product trailer); absent: unchanged
+  if (edit.caption_skin) tl.shots = tl.shots.map((s: any) => ({ ...s, caption_skin: edit.caption_skin }));
   const source: [number, number] = edit.source_size || [1920, 1080];
 
   const shots = tl.shots.map((s: any) => (
@@ -97,7 +99,7 @@ const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source })
   }
   const gp = <Gameplay shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} fps={fps} available={available} source={source} />;
   const gt = shot.title_plate ? <>{gp}<CaTitlePlate shot={shot} w={w} h={h} localSec={frame / fps} /></> : gp; // title over footage (product trailer), inside the seat frame
-  const g = seatOf(shot) ? <CaSeats shot={shot} w={w} h={h}>{gt}</CaSeats> : gt;
+  const g = seatOf(shot) ? <CaSeats shot={shot} w={w} h={h} localSec={frame / fps}>{gt}</CaSeats> : gt;
   // shot.hit = { frames: 3, k, ... }: a 2-3 frame glitch on the shot's first frames (an impact on a hard cut), same engine as the joins
   const hit = shot.hit;
   if (hit && frame < (hit.frames ?? 3)) {
