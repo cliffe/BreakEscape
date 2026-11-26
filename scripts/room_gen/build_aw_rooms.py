@@ -232,15 +232,27 @@ OPEN_PLAN_SHEET = "room_tarrowby_open_plan_20"      # room_aw_tarrowby's shell w
 OPEN_PLAN_OPS = [
     ("delete", 49, 50, 51, 52, 54, 55, 56, 57),
     ("add", "items", "binder_shelves1", 140, 74),        # ops folders behind Joanne's desk
-    ("add", "items", "aes_shelving1", 196, 74),          # depot parts and boxes behind desk 2
+    ("add", "items", "aes_shelving1", 196, 76),          # depot parts and boxes behind desk 2
     ("add", "items", "m09_county_map1", 104, 44),        # delivery territory map, where the portrait hung
     ("add", "items", "aw_logo_tarrowby1", 250, 38),      # the Tarrowby plate, where the ACCOUNTS sign was
-    ("add", "items", "window_blinds1", 356, 56),
-    ("add", "items", "window_blinds1", 400, 56),
-    ("add", "items", "aes_hivis_hook1", 446, 60),        # hi-vis and hard hat by the yard door side
-    ("add", "items", "notice_board1", 484, 62),
-    ("add", "items", "rota_board1", 534, 58),
-    ("add", "items", "first_aid_cabinet1", 566, 62),
+    ("add", "items", "window_blinds1", 350, 56),
+    ("add", "items", "window_blinds1", 392, 56),
+    ("add", "items", "aes_hivis_hook1", 436, 59),        # hi-vis and hard hat by the yard door side
+    ("add", "items", "notice_board1", 470, 59),
+    ("add", "items", "rota_board1", 516, 58),
+    ("add", "items", "first_aid_cabinet1", 548, 59),     # right edge 576: clear of the NE door corner
+    # Round 2 (live check): the camera and the east bin were inside the frame / the copier's footprint.
+    ("move", 58, 72, 30),
+    ("move", 60, 582, 240),
+    # The lower half is the yard end of the depot office: a parcel corner (south-east), a pallet truck,
+    # a wet-floor sign by the cooler and a plant on the east side. Nothing within 2 tiles of the
+    # kettle stand point (14,6) = (448,192), the cooler (9.5,7) or the west door run.
+    ("add", "items", "aes_pallet_truck1", 396, 303),
+    ("add", "items", "aes_pallet1", 436, 304),
+    ("add", "items", "supply_boxes1", 472, 306),
+    ("add", "items", "m09_box_trolley1", 508, 306),
+    ("add", "items", "wet_floor_sign1", 340, 244),
+    ("add", "items", "plant-large1", 588, 150),
 ]
 
 
