@@ -96,11 +96,9 @@ module BreakEscape
                   'itemsHeld' => [tagged('station_mugs')] }
       build(scenario(office_objects: [station]), 'submitted_flags' => ['flag{mug}'])
       inventory_add(tagged('station_mugs'))
-      if response.successful? && held_ids.include?('station_mugs')
-        assert_carriable_after_drop('station_mugs')
-      else
-        skip "not reachable through the inventory route (#{response.status})"
-      end
+      assert_response :success, "the inventory add must succeed: #{response.body}"
+      assert_includes held_ids, 'station_mugs', 'the add stored the item'
+      assert_carriable_after_drop('station_mugs')
     end
 
     test 'a declared grant item with a needsTag is carriable once taken and dropped' do
@@ -108,11 +106,9 @@ module BreakEscape
                  'triggerOnInteract' => [{ 'type' => 'give_item', 'item' => tagged('grant_mugs') }] }
       build(scenario(office_objects: [poster]))
       inventory_add(tagged('grant_mugs'))
-      if response.successful? && held_ids.include?('grant_mugs')
-        assert_carriable_after_drop('grant_mugs')
-      else
-        skip "not reachable through the inventory route (#{response.status})"
-      end
+      assert_response :success, "the inventory add must succeed: #{response.body}"
+      assert_includes held_ids, 'grant_mugs', 'the add stored the item'
+      assert_carriable_after_drop('grant_mugs')
     end
 
     # === M1: id collisions ====================================================
@@ -129,6 +125,47 @@ module BreakEscape
                  'itemsHeld' => [tagged('twice_mugs')] }
       build(scenario(start_items: [tagged('twice_mugs')], npcs_extra: [holder]))
       assert_nil @game.carriable_object_index['twice_mugs']
+    end
+
+    test 'an id held by a normal NPC and by an account-only NPC is ambiguous and not indexed' do
+      holder = { 'id' => 'bob', 'displayName' => 'Bob', 'npcType' => 'person', 'position' => { 'x' => 5, 'y' => 3 },
+                 'itemsHeld' => [tagged('shared_mugs')] }
+      account = { 'id' => 'deskadmin', 'displayName' => 'Desk Admin', 'npcType' => 'person', 'accountOnly' => true,
+                  'creds' => { 'username' => 'deskadmin', 'password' => 'Desk-Admin-1' }, 'itemsHeld' => [tagged('shared_mugs')] }
+      build(scenario(npcs_extra: [holder, account]))
+      assert_nil @game.carriable_object_index['shared_mugs']
+    end
+
+    # === Negative: the item was never legitimately obtained ===================
+
+    def assert_carry_refused_untaken(item_id)
+      carry(item_id)
+      assert_response :unprocessable_entity, "carry must be refused: #{response.body}"
+      assert_nil @game.reload.player_state.dig('npcCarry', 'grace'), 'no npcCarry entry is saved'
+      assert_not_includes (@game.player_state['npcCarry'] || {}).values.map { |v| v['itemId'] }, item_id
+    end
+
+    test 'a locked container content cannot be carried before the container is unlocked' do
+      box = { 'type' => 'suitcase', 'id' => 'locked_desk_box', 'name' => 'Locked box', 'takeable' => false,
+              'locked' => true, 'lockType' => 'key', 'requires' => 'box_key', 'contents' => [tagged('sealed_mugs')] }
+      build(scenario(office_objects: [box]))
+      assert_carry_refused_untaken('sealed_mugs')
+    end
+
+    test 'a flag-station item cannot be carried before its flag is submitted' do
+      station = { 'type' => 'flag-station', 'id' => 'flag_desk', 'name' => 'Flag desk', 'takeable' => false,
+                  'flags' => ['flag{mug}'],
+                  'flagRewards' => [{ 'type' => 'give_item', 'item_type' => 'dirty_mugs1', 'item_name' => 'station mugs' }],
+                  'itemsHeld' => [tagged('station_mugs')] }
+      build(scenario(office_objects: [station]))
+      assert_carry_refused_untaken('station_mugs')
+    end
+
+    test 'a grant item the player never held cannot be carried' do
+      poster = { 'type' => 'poster', 'id' => 'prize_poster', 'name' => 'Prize poster', 'takeable' => false,
+                 'triggerOnInteract' => [{ 'type' => 'give_item', 'item' => tagged('grant_mugs') }] }
+      build(scenario(office_objects: [poster]))
+      assert_carry_refused_untaken('grant_mugs')
     end
 
     # === M3: more soft-lock guards ============================================
