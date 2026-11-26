@@ -1,10 +1,10 @@
 {
  "mission": "m10",
- "id": "m10_trailer60_v1",
+ "id": "m10_trailer60_v3",
  "title": "SAFETYNET: Licence to Hack, m10 Full Disclosure 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v1 first edit list (2026-11-24): not rendered. Music SpyAgro/Hybrid Attack 1 from 98.599 s (140.02 BPM, 0.4285 s), 1 s fade-out. Mission 10 card on the 10.28 lift + 10.92 hit. All boundaries frame-aligned, snap false. Framings other than the dialogue portraits are untested guesses: check per aspect.",
+ "status": "v2 edit list (2026-11-25): owner notes. Four flash_* shots removed, replaced by post_team (t25) so the Mission 10 card still lands on the 10.28 lift; cr_* crescendo framings refitted so NPCs and panels sit fully inside per aspect. gallery_bark (t16) and the Tesseract ending (t14) await re-takes. Not rendered. Music SpyAgro/Hybrid Attack 1 from 98.599 s, 1 s fade-out.",
  "music": {
   "track": "SpyAgro/Hybrid Attack 1.mp3",
   "analysis": "hybrid_attack_1_60.json",
@@ -94,19 +94,19 @@
    "note": "hook: Netherton, silencedetect voice 79.40-83.57; in 80.40, J-cut pre 1.1 (audio from 79.30), L-cut post 0.9 (to 83.70, inside the pause before the next sentence). Bar cropped in 16:9. t10 is a monolith: never outside 79.30-83.70 here.",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.72,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.72,
-     "cy": 0.39,
-     "zoom": 1.3
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -140,34 +140,34 @@
    ]
   },
   {
-   "id": "flash_arakawa",
+   "id": "post_team",
    "type": "gameplay",
-   "duration": 0.4667,
+   "duration": 1.8667,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t22_post_faces.trimmed.mkv",
-    "in": 4.7,
-    "out": 5.1667
+    "file": "t25_walk_gate.trimmed.mkv",
+    "in": 6.2,
+    "out": 8.0667
    },
-   "note": "team face flash, subtitle bar cropped off in every aspect; cx 0.68 measured on the source (faces sit right of centre). Kowalczyk is not in this flash.",
+   "note": "v2 fill for the removed flash_* shots (owner 25 Nov): forward post with the team at the table, player on the floor, from t25 (full-frame camera, no launcher, no names). Keeps card_mission on the 10.28 lift. Framing 9:16/1:1 centred left of the player so the team table and the player both sit inside.",
    "framing": {
     "16:9": {
-     "cx": 0.68,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
-     "cx": 0.68,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cx": 0.42,
+     "cy": 0.5,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.68,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cx": 0.45,
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "audio": {
@@ -179,136 +179,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "portrait only, bar cropped, no names"
-   }
-  },
-  {
-   "id": "flash_malhotra",
-   "type": "gameplay",
-   "duration": 0.4667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t22_post_faces.trimmed.mkv",
-    "in": 14.3,
-    "out": 14.7667
-   },
-   "note": "team face flash, subtitle bar cropped off in every aspect; cx 0.68 measured on the source (faces sit right of centre). Kowalczyk is not in this flash.",
-   "framing": {
-    "16:9": {
-     "cx": 0.68,
-     "cy": 0.19,
-     "zoom": 2.6
-    },
-    "9:16": {
-     "cx": 0.68,
-     "cy": 0.32,
-     "zoom": 1.6
-    },
-    "1:1": {
-     "cx": 0.68,
-     "cy": 0.26,
-     "zoom": 2.0
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "portrait only, bar cropped, no names"
-   }
-  },
-  {
-   "id": "flash_price",
-   "type": "gameplay",
-   "duration": 0.4667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t22_post_faces.trimmed.mkv",
-    "in": 20.6,
-    "out": 21.0667
-   },
-   "note": "team face flash, subtitle bar cropped off in every aspect; cx 0.68 measured on the source (faces sit right of centre). Kowalczyk is not in this flash.",
-   "framing": {
-    "16:9": {
-     "cx": 0.68,
-     "cy": 0.19,
-     "zoom": 2.6
-    },
-    "9:16": {
-     "cx": 0.68,
-     "cy": 0.32,
-     "zoom": 1.6
-    },
-    "1:1": {
-     "cx": 0.68,
-     "cy": 0.26,
-     "zoom": 2.0
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "portrait only, bar cropped, no names"
-   }
-  },
-  {
-   "id": "flash_marchetti",
-   "type": "gameplay",
-   "duration": 0.4667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t22_post_faces.trimmed.mkv",
-    "in": 35.2,
-    "out": 35.6667
-   },
-   "note": "team face flash, subtitle bar cropped off in every aspect; cx 0.68 measured on the source (faces sit right of centre). Kowalczyk is not in this flash.",
-   "framing": {
-    "16:9": {
-     "cx": 0.68,
-     "cy": 0.19,
-     "zoom": 2.6
-    },
-    "9:16": {
-     "cx": 0.68,
-     "cy": 0.32,
-     "zoom": 1.6
-    },
-    "1:1": {
-     "cx": 0.68,
-     "cy": 0.26,
-     "zoom": 2.0
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "portrait only, bar cropped, no names"
+    "note": "map view, no panel, no names"
    }
   },
   {
@@ -350,18 +221,18 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.0
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.7,
-     "cy": 0.435,
-     "zoom": 1.15
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.7,
-     "cy": 0.43,
-     "zoom": 1.2
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -431,19 +302,19 @@
    "note": "Netherton portrait, voice 263.77-266.13; pre 1.25 (audio from 263.717, inside the pause after the previous line). Picture is Netherton only: no frame names the sleeper. Bar says WREN (a codename).",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.66,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.72,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.72,
-     "cy": 0.39,
-     "zoom": 1.3
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -515,17 +386,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.2
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -558,17 +429,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.6
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
@@ -619,17 +490,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.6
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.6
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -654,25 +525,25 @@
    },
    "source": {
     "file": "t16_gallery_bark.trimmed.mkv",
-    "in": 7.6,
-    "out": 11.0333
+    "in": 5.5333,
+    "out": 8.9666
    },
-   "note": "gallery guard bark, voice 7.88-9.19 + 10.00-10.91; two rooms in frame: crop to the gallery and the guard with his bubble. Framing is a guess: check.",
+   "note": "gallery guard bark, voice ~5.9-7.24 + 7.94-8.86 (26 Nov re-take, hall guards stood down); the guard walks west to the door while barking. 9:16 cx 0.66 keeps the whole bubble in from 5.6 to 8.9 s (checked on frames 26 Nov).",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.3
+     "cx": 0.64,
+     "cy": 0.52,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.66,
+     "cy": 0.55,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.64,
      "cy": 0.5,
-     "zoom": 1.2
+     "zoom": 1
     }
    },
    "audio": {
@@ -744,17 +615,17 @@
     "16:9": {
      "cx": 0.55,
      "cy": 0.45,
-     "zoom": 1.3
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.55,
      "cy": 0.45,
-     "zoom": 1.0
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.55,
      "cy": 0.45,
-     "zoom": 1.2
+     "zoom": 1
     }
    },
    "audio": {
@@ -832,17 +703,17 @@
     "16:9": {
      "cx": 0.45,
      "cy": 0.38,
-     "zoom": 2.0
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.45,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.45,
      "cy": 0.38,
-     "zoom": 1.9
+     "zoom": 2
     }
    },
    "audio": {
@@ -894,19 +765,19 @@
    "note": "release console screen: times only (early access 04:00, release 06:00 UTC, now 03:30); 9:16 and 1:1 framed to the panel's full width. Tesseract's \"Now it's my turn.\" runs as a vo cue.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
+     "cx": 0.49,
      "cy": 0.5,
-     "zoom": 2.0
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.49,
      "cy": 0.5,
-     "zoom": 0.62
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.49,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -939,17 +810,17 @@
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.6
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.3
+     "zoom": 1
     }
    },
    "audio": {
@@ -980,19 +851,19 @@
    "note": "tunnel guard portrait, voice 13.02-14.82; crop the toast (about 13 s) or accept; out before the choices (15.44)",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.735,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.79,
-     "cy": 0.39,
-     "zoom": 1.5
+     "cx": 0.72,
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1041,19 +912,19 @@
    "note": "tight on the grapple, fight sound from the take; out before the swing lands (no KO)",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.5
+     "cx": 0.53,
+     "cy": 0.48,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.53,
+     "cy": 0.48,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.2
+     "zoom": 1
     }
    },
    "audio": {
@@ -1081,22 +952,22 @@
     "in": 30.2,
     "out": 30.4667
    },
-   "note": "crescendo cut: mid-pick, pins setting. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: mid-pick, pins setting. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.9
+     "cx": 0.395,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 0.95
+     "cx": 0.395,
+     "cy": 0.5,
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.2
+     "cx": 0.395,
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "audio": {
@@ -1124,22 +995,22 @@
     "in": 16.0,
     "out": 16.2333
    },
-   "note": "crescendo cut: records cupboard pad, three wrong digits, no-match. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: records cupboard pad, three wrong digits, no-match. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.9
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.95
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.4
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "audio": {
@@ -1167,22 +1038,22 @@
     "in": 13.2,
     "out": 13.4333
    },
-   "note": "crescendo cut: cloner: UID rows must be blurred, check the frame. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: cloner: UID rows must be blurred, check the frame. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 3.0
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.3
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.7
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1210,22 +1081,22 @@
     "in": 6.0,
     "out": 6.2667
    },
-   "note": "crescendo cut: red FORCED lamp; framing guess. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: red FORCED lamp; framing guess. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.9
+     "cy": 0.5,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 0.95
+     "cy": 0.5,
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.2
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "audio": {
@@ -1253,22 +1124,22 @@
     "in": 6.2,
     "out": 6.4333
    },
-   "note": "crescendo cut: face, bar off. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.45,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cx": 0.7,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.45,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cx": 0.7,
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.45,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cx": 0.7,
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1296,22 +1167,22 @@
     "in": 4.4,
     "out": 4.6333
    },
-   "note": "crescendo cut: Kowalczyk face, bar OFF in every aspect (it names her); only here, between team faces, far from the WREN card. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: Kowalczyk face, bar OFF in every aspect (it names her); only here, between team faces, far from the WREN card. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cx": 0.718,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cx": 0.718,
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cx": 0.718,
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1339,22 +1210,22 @@
     "in": 10.9,
     "out": 11.1667
    },
-   "note": "crescendo cut: face, bar off. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cx": 0.708,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cx": 0.708,
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cx": 0.708,
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1382,22 +1253,22 @@
     "in": 25.0,
     "out": 25.2333
    },
-   "note": "crescendo cut: dust brushing. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: dust brushing. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
+     "cx": 0.499,
      "cy": 0.5,
-     "zoom": 1.7
+     "zoom": 1
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.499,
      "cy": 0.5,
-     "zoom": 0.85
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.499,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -1425,22 +1296,22 @@
     "in": 27.5,
     "out": 27.7333
    },
-   "note": "crescendo cut: reader, Access Granted. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: reader, Access Granted. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 3.0
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.3
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.7
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1468,22 +1339,22 @@
     "in": 22.0,
     "out": 22.2333
    },
-   "note": "crescendo cut: empty flag station (No flags submitted yet). Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: empty flag station (No flags submitted yet). Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 2.4
+     "cx": 0.499,
+     "cy": 0.498,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.499,
+     "cy": 0.498,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.9
+     "cx": 0.499,
+     "cy": 0.498,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1511,22 +1382,22 @@
     "in": 35.9,
     "out": 36.1667
    },
-   "note": "crescendo cut: face, bar off. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cx": 0.705,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cx": 0.705,
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cx": 0.705,
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1554,22 +1425,22 @@
     "in": 39.4,
     "out": 39.6333
    },
-   "note": "crescendo cut: core pad cut BEFORE the 4th digit: check the display shows at most 3. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: core pad cut BEFORE the 4th digit: check the display shows at most 3. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.9
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.95
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.4
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "audio": {
@@ -1597,22 +1468,22 @@
     "in": 48.0,
     "out": 48.2333
    },
-   "note": "crescendo cut: face, bar off. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cx": 0.698,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cx": 0.698,
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cx": 0.698,
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1640,22 +1511,22 @@
     "in": 41.7,
     "out": 41.9667
    },
-   "note": "crescendo cut: face, bar OFF in every aspect (the bar may name the character). Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: face, bar OFF in every aspect (the bar may name the character). Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cx": 0.708,
+     "cy": 0.26,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cx": 0.708,
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cx": 0.708,
+     "cy": 0.27,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1683,22 +1554,22 @@
     "in": 31.0,
     "out": 31.2333
    },
-   "note": "crescendo cut: kettle prop. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: kettle prop. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.7
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 0.85
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.1
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 1
     }
    },
    "audio": {
@@ -1726,22 +1597,22 @@
     "in": 36.2,
     "out": 36.4333
    },
-   "note": "crescendo cut: Messages list only, before the thread and its reply choices. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: Messages list only, before the thread and its reply choices. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.7
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 0.85
+     "cy": 0.455,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -1769,22 +1640,22 @@
     "in": 22.0,
     "out": 22.3
    },
-   "note": "crescendo cut: dusted plate: text must not show digits (take closes before the observation). Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: dusted plate: text must not show digits (take closes before the observation). Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
+     "cx": 0.499,
      "cy": 0.5,
-     "zoom": 1.7
+     "zoom": 1
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.499,
      "cy": 0.5,
-     "zoom": 0.85
+     "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.499,
      "cy": 0.5,
-     "zoom": 1.1
+     "zoom": 1
     }
    },
    "audio": {
@@ -1809,25 +1680,25 @@
    },
    "source": {
     "file": "t14_tesseract_core.trimmed.mkv",
-    "in": 14.4333,
-    "out": 16.9666
+    "in": 12.9667,
+    "out": 15.5
    },
-   "note": "Tesseract portrait wide, voice 12.13-16.57; pre 2.3 (audio from 12.1333); bar cropped in 16:9",
+   "note": "Tesseract portrait wide, voice 10.68-15.12 (26 Nov re-take, E glasses); pre 2.3 (audio from 10.6667); bar cropped in 16:9; integer scale 25 Nov: 16:9 at 2x (cy 0.28) so the name bar stays cropped",
    "framing": {
     "16:9": {
-     "cx": 0.615,
-     "cy": 0.4,
-     "zoom": 1.3
+     "cx": 0.6,
+     "cy": 0.28,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.73,
-     "cy": 0.405,
-     "zoom": 1.25
+     "cy": 0.4444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.73,
-     "cy": 0.39,
-     "zoom": 1.3
+     "cy": 0.3,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1870,25 +1741,25 @@
    },
    "source": {
     "file": "t14_tesseract_core.trimmed.mkv",
-    "in": 16.9667,
-    "out": 19.9
+    "in": 15.5,
+    "out": 18.4333
    },
-   "note": "Tesseract close, voice 17.37-19.64, cut in the pause after weak points; OUT 19.90, never past 20.2 (the stakes figure line starts 20.86). Bar off.",
+   "note": "Tesseract close, voice 15.93-18.20 (26 Nov re-take), cut in the pause after weak points; OUT 18.43, never past 19.2 (the stakes figure line starts 19.39). Bar off.",
    "framing": {
     "16:9": {
      "cx": 0.74,
      "cy": 0.2,
-     "zoom": 3.0
+     "zoom": 3
     },
     "9:16": {
      "cx": 0.73,
      "cy": 0.3,
-     "zoom": 1.8
+     "zoom": 1.6875
     },
     "1:1": {
      "cx": 0.73,
      "cy": 0.25,
-     "zoom": 2.2
+     "zoom": 2
     }
    },
    "audio": {

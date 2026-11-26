@@ -121,3 +121,93 @@ Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `n
   - `#delivery: dry and quiet, one beat of old familiarity` (keep her calm-under-pressure style, tts-audio rule 3)
   - State: fresh game (no `m09_completed`), `t02_briefing`, the first choice.
   - Why: it makes "he invited SAFETYNET in" chilling on its own. It is the host image Tesseract's arrival line pays off.
+
+## Plan: m10_trailer60.json v1 (24 Nov, planning agent; no images viewed)
+
+Built from the picks, the owner questions, `docs/video/takes_m10.md` (runs 1 and 2) and the trimmed marker files. Voice times are **silencedetect onsets/ends** (-38 dB, 0.12 s) on the trimmed takes, not the line-start markers (which run 0.2 to 0.3 s early). Structure and plan format copy `m09_trailer60.json`: presets, `snap: false`, frame-aligned boundaries, glitch joins into cards, hard cuts elsewhere, `lines[]` times relative to the shot start, `caption` 16:9 false / 9:16 true / 1:1 true on dialogue shots, `spoiler{}` on every shot. Total 1800 frames = 60.00 s. Every framing below is a starting point copied from m09's equivalents: the edit agent checks the in and out frame per aspect (and should do it with small crops, a few at a time, then hand over).
+
+### Music
+
+SpyAgro **"Hybrid Attack 1"** (`SpyAgro/Hybrid Attack 1.mp3`, analysis `hybrid_attack_1_60.json`, 140.02 BPM, beat 0.4285 s, bar 1.714 s), window **98.599 to 158.588** (bar aligned; the analysis's second-best window, build 2.17). Output time = track time minus 98.599.
+- 0 to 5.1 loud tail under the open preset, **drop 5.14** (103.74) to near-silence under the hook and the team flash.
+- **Lift 10.28 (108.88) + strongest hit in the track 10.92 (109.52, 1.00) = Mission 10 card** (card at 10.2667, half a frame early).
+- Drop 13.71: quiet bars 13.7 to 17.1 under Quintero, the WREN card and the sleeper line (dialogue in the clear).
+- **Lift 17.14 = `Disable the / Security` card.** Drop 20.57: quiet under HaX's call. Lift 24.0 under the isolator panel into the gallery bark.
+- Lift 30.85 (129.45) under the console clip: from here the track is loud to the end. **Hit 34.28 inside the `It Goes / at Six` card**; hit 37.70 on the cut into the tunnel guard; hits 38.57, 41.14 under the fight.
+- Loud bed under the crescendo and Tesseract (duck -10 dB); the track's own decay starts at 59.99 (158.59): `fade_out` 1.0 is enough (no hard stop).
+- `alternatives`: Hybrid Attack 2 from 122.4 (quiet 0 to 10.5, lift 10.5, then flat and loud to the end, no natural end); Hybrid Attack 1 from 76.317 (analysis best, loud from the start, no quiet bed for the hook).
+- Not reused: every track in the README table, Midnight Trigger, Cold Bond Circuit. Entropy Failsafe (the picks' placeholder) was never analysed and has vocals over seven voiced lines: dropped for Hybrid Attack 1, which the README and m09 left for m10.
+
+### Cards (glitch join in; text; output time)
+
+| id | text | start-end | music |
+|---|---|---|---|
+| card_mission | `Mission 10` / `Full` / `Disclosure` | 10.2667-11.7667 (1.5) | lift 10.28 + hit 10.92 |
+| card_wren | `WREN Is on` / `the Team` | 14.4667-15.9667 (1.5) | quiet bar (sleeper line J-cuts in at 14.72) |
+| card_security | `Disable the` / `Security` | 17.1333-18.6333 (1.5) | lift 17.14 |
+| card_real | `Real` / `Hacking` | 27.9667-29.1667 (1.2) | mid-bar; lift 30.85 lands under the console |
+| card_six | `It Goes` / `at Six` | 33.3333-34.5333 (1.2) | hit 34.28 |
+
+### Shot table
+
+Output times in seconds (frames in brackets). Source times are trimmed-take seconds (`~/video-takes-local/m10/takes/<take>.trimmed.mkv`; the clip from `~/video-takes-local/m10/clips/`). Voice times are in source seconds. Muted = `gain_db -120`.
+
+| # | id | output | take | source in-out | audio / line (source voice times) | framing intent (16:9 / 9:16 / 1:1) | spoiler notes |
+|---|---|---|---|---|---|---|---|
+| 0 | `safetynet-open` preset | 0-6 (180) | | | hook voice J-cuts in at 4.9 | preset | |
+| 1 | hook_netherton | 6.0-8.4 (72) | t10_briefing | 80.40-82.80 | Netherton "At six he publishes everything we ever catalogued." voice 79.40-83.57; **pre 1.1** (audio from 79.30), **post 0.9** (audio to 83.70, inside the 83.57-84.25 pause, before "Every flaw..."); gain +2, duck; line start -1.00 end 3.17 | portrait UI-free, subtitle bar and the "Skip cutscene" button (right) cropped out in 16:9: start from m09 hook {cx .615 cy .4 z 1.3}; 9:16 {cx .72 cy .405 z 1.25}; 1:1 {cx .72 cy .39 z 1.3} | t10 is a 4.5 min monolith naming the whole cast: never outside 79.30-83.70 here. The bar shows the whole ink line ("Every flaw..."), not a spoiler, cropped anyway. |
+| 2-5 | flash_arakawa, flash_malhotra, flash_price, flash_marchetti | 8.4-10.2667 (14 each) | t22_post_faces | 4.70, 14.30, 20.60, 35.20 (+0.4667 each) | muted; the hook voice L-cuts over the first three | face crops, bar off in every aspect (m09 flash framing {16:9 cy .19 z 2.6; 9:16 cy .32 z 1.6; 1:1 cy .26 z 2.0}, cx read per face) | **Kowalczyk is not in this flash** (she goes to the crescendo, far from the WREN card). No map frames (team copies). |
+| 6 | card_mission | 10.2667-11.7667 (45) | card | | | | |
+| 7 | quintero | 11.7667-14.4667 (81) | t11_quintero | 10.40-13.10 | Quintero "I don't like doors that know your name." voice 10.57-12.71; gain +2, duck; line 0.17-2.31 | conversation view only (portrait, wanted board behind): person-chat portrait {9:16 cx .70 cy .435 z 1.15; 1:1 cy .43 z 1.2}; 16:9 wide enough to keep the board | Never the map part (1.5-9 s: six team copies incl. Kowalczyk). Out before the menu (choices after 14.12). |
+| 8 | card_wren | 14.4667-15.9667 (45) | card | | sleeper voice starts under it at 14.72 | | |
+| 9 | sleeper_netherton | 15.9667-17.1333 (35) | t10_briefing | 264.9667-266.1333 | Netherton "It puts WREN on this team." voice 263.77-266.13; **pre 1.25** (audio from 263.717, inside the 263.24-263.77 pause after "Placed eleven years ago."); post 0; line -1.20 to 1.16 | **Netherton's portrait**, same framing as shot 1 | The picture is Netherton, never the team or Kowalczyk. The bar says WREN (a codename, no name). The shots either side are a card and Quintero's portrait: no frame names the sleeper. |
+| 10 | card_security | 17.1333-18.6333 (45) | card | | | | |
+| 11 | power_strike | 18.6333-19.8 (35) | t12_power_room (or **t27_walk_power if it passes**, HUD-free) | 8.40-9.5667 (entered 8.74; door/light sound 8.19-9.81) | take audio low (-6) for the light hum | t12 has the full HUD (objectives top left, hotbar and hearts): crop it off, centre the room {16:9 z 1.4; 9:16 z 1.0; 1:1 z 1.2} | objectives panel lists task text only; still crop it. |
+| 12 | hax_call | 19.8-23.2 (102) | t12_power_room | 12.40-15.80 | HaX (phone) "Top row. The third breaker from the left feeds the shutter." voice 12.61-15.58; gain +2, duck; line 0.21-3.18 | phone call screen; it should fit 9:16 (check); crop the transcript's older lines if they show ("That's his sheet..." at 11.12) | out before the choices (16.23). |
+| 13 | isolator_panel | 23.2-24.5333 (40) | t12_power_room | 38.30-39.6333 (click 37.78-38.08; panel text seen at 38.5 and 41.5) | take audio -6 | the "GALLERY SHUTTER: ISOLATED ... GALLERY CAMERA: OFF" text panel cropped in; panel is wide: 9:16 letterbox zoom 0.5625-1 | Wendell's bark and the green lamp were **not captured**: this panel is the payoff. Check the panel is already up at 38.30 (else in 38.5). |
+| 14 | gallery_bark | 24.5333-27.9667 (103) | t16_gallery_bark | 7.60-11.0333 | Guard bark "Camera's dead again. I'll go and look." voice 7.88-9.19 + 10.00-10.91 (bubble from 7.5, bar copy 10-12.5); gain +2, duck; line 0.28-3.31 | two rooms in frame: crop to the gallery and the guard with his bubble; 9:16 centred on the guard | no names, no codes. |
+| 15 | card_real | 27.9667-29.1667 (36) | card | | | | |
+| 16 | walk_vm | 29.1667-30.3333 (35) | **t25_walk_gate if it passes** | about the last 1.2 s before the launcher would open | muted | map walk to the gate console | out before the launcher (login post-it). **Fallback:** t21 flag station 21.0-22.1667 (empty, "No flags submitted yet"), cropped in. |
+| 17 | real_hacking | 30.3333-32.3333 (60) | clip m10_console_fileread_clip.mp4 | 0.40-2.40 (note lands at 0.53) | clip audio -6 | text spans the full width (crop x0-1010 at 1.875x): 16:9 z 1.0; 9:16 {cx .5 z 0.5625} letterbox; 1:1 {cx .5 z 0.5625} | `placeholder: false` (lint warns, as m08/m09). CONSOLE_CLIPS: no flag, password or secret; flag line never scrolls in. **Check no casualty figure in the city-by-city plan text.** |
+| 18 | cyberchef | 32.3333-33.3333 (30) | **t28_cyberchef if it passes** | its operation pane | muted | crop to the recipe and output panes | neutral example; if the final cut shows m03's ROT13 too, change the sentence. **Fallback:** 0.2 s more console (out 2.6) and 0.8 s of the t21 flag station, or the t21 flag station alone. |
+| 19 | card_six | 33.3333-34.5333 (36) | card | | | | |
+| 20 | clock_panel | 34.5333-36.5333 (60) | t15_server_hall | 12.60-14.60 | muted; **vo** Tesseract "Now it's my turn." from t14_tesseract_core voice 6.94-8.59: extract 6.85-8.70 to `~/video-takes-local/m10/vo/tess_my_turn.wav`, vo cue start 34.65 end 36.50 (see owner question 2) | "Release Console Screen: EARLY ACCESS 04:00 . RELEASE 06:00 UTC . NOW 03:30" cropped in; letterbox in 9:16 | times only, no code. |
+| 21 | tunnel_in | 36.5333-37.6333 (33) | t13_tunnel_guard (or **t26_walk_tunnel if it passes**) | 4.60-5.70 (entered 5.67) | muted | map, into the tunnel; tight on the doorway | the forward post map at about 2 s has team copies: stay after 4.6. |
+| 22 | guard_armed | 37.6333-40.2333 (78) | t13_tunnel_guard | 12.75-15.35 | Guard "Nobody said let you through armed." voice 13.02-14.82; gain +2, duck; line 0.27-2.07 | guard portrait (GUARD POST): person-chat framing; **crop the toast** "Guard hunts on you..." (about 13 s) or accept | the player's choice [Out of my way.] (11.85) is off screen; out before 15.44 (choices). |
+| 23 | charge | 40.2333-42.3333 (63) | t13_tunnel_guard | 17.60-19.70 | take audio 0 (the fight sound) | tight on the grapple, red health bar fine | not past the swing (no KO). |
+| 24-40 | crescendo, 17 hard cuts, muted (126 frames) | 42.3333-46.5333 | see list | see list | Tesseract's voice J-cuts in at 44.23 | each a tight crop, bar off on faces | see list |
+| 41 | ending_wide | 46.5333-49.0667 (76) | t14_tesseract_core | 14.4333-16.9667 | Tesseract "Your service spent decades hoarding the world's weak points." voice 12.13-16.57; **pre 2.3** (audio from 12.1333); line -2.30 to 2.14 | portrait wide, bar cropped in 16:9 (m09 ending_wide framing) | |
+| 42 | ending_close | 49.0667-52.0 (88) | t14_tesseract_core | 16.9667-19.90 | "At six, I give them back." voice 17.37-19.64 (pause 18.16-18.76 after "At six,"); line 0.40-2.67; **hit** 3 frames {k .55 shift .05 pix .12} | 3x UI-free face (m09 ending_close {16:9 cy .2 z 3.0; 9:16 cy .3 z 1.8; 1:1 cy .25 z 2.2}, cx read off the frame) | **out 19.90, never past 20.2**: the "City by city ..." line and its bar with the stakes figure start at 20.86. Cut in the 16.57-17.37 pause after "weak points." |
+| 43 | `hacktivity-close` preset | 52-60 (240) | | | | preset | |
+
+Crescendo cuts (output start, frames, take, source in): cr_lockpick 42.3333 8f t17 30.20 (mid-pick, pins setting); cr_pad 42.6 7f t17 16.00 (records cupboard pad, 3 wrong digits, checked no-match); cr_cloner 42.8333 7f t18 13.20 (UID rows blurred: check the blur on the frame); cr_alarm 43.0667 8f t17 6.00 (crop in on the red FORCED lamp); cr_arakawa2 43.3333 7f t22 6.20; **cr_kowalczyk 43.5667 7f t23 4.40** (bar off; between two team faces, as the takes' editor note asks); cr_reader 43.8 8f t18 27.50 (Access Granted); cr_dust 44.0667 7f t19 25.00 (brushing); cr_imran 44.3 7f t24 10.90; cr_flag 44.5333 7f t21 22.00 (empty flag station); cr_asante 44.7667 8f t15 35.90; cr_pad_core 45.0333 7f t20 39.40 (**before the 4th digit**: digits go in one at a time from 38.7 and the 4th auto-submits about 43; check the display shows at most 3); cr_fonoti 45.2667 7f t20 48.00; cr_nightshade 45.5 8f t22 41.70; cr_kettle 45.7667 7f t21 31.00; cr_phone 46.0 7f t21 36.20 (Messages list, before the thread and its reply choices); cr_dust_plate 46.2333 9f t20 22.00. Left out of the crescendo: the t18 password screen (its prompt text names the file, "CASUALTY MODEL, CORRECTED": question 4), the t21 incident file (story-heavy), t24's gary_tech flash (shows HaX, not Gary).
+
+### Spoiler rules for the JSON's `spoiler_rules`
+
+- No PIN, password, code, UID or flag value on screen; pads show at most 3 digits that are not a code; the t20 core pad is cut before the 4th digit.
+- Kowalczyk's face (t23) only in the crescendo, between other team faces; never next to `WREN Is on / the Team`. The sleeper picture is Netherton's portrait. Nothing that names the sleeper next to the sleeper beat.
+- t10 only inside its marked windows (hook 79.30-83.70, sleeper 263.72-266.13). Never the stakes-figure line (t10 110.9-123.9) nor t14 after 20.2.
+- No menu, reply choices, toast (crop the t13 toast), task panel, launcher post-it, door or bench log, incident file.
+- t24's gary_tech flash is not used (shows HaX's portrait; under investigation).
+
+### Owner questions (suggested answers)
+
+1. **Hook cut**: "At six he publishes everything we ever catalogued." only (4.2 s of voice, cut in the 83.57-84.25 pause)? Suggest yes.
+2. **Tesseract's mid-cut voice.** The City-by-city VO is out (hard rule: t14 stops at 20.2). Replace it with "Now it's my turn." (t14, 1.65 s) as a vo cue over the NOW 03:30 panel, or leave the panel to the music? Suggest the vo cue: it keeps his voice in the middle and needs no new audio. (The edit agent extracts the clip; it is a cut of an existing take, not a new TTS line.)
+3. **Opening team flash** (Arakawa, Malhotra, Price, Marchetti under the hook's tail, as m09's team flash), a departure from the picks, which had no flash there. Suggest keep: it fills the quiet bar before the lift and sets up "on the team" with Kowalczyk held back.
+4. **Password screen** in the crescendo shows "CASUALTY MODEL, CORRECTED" (a puzzle hint). Crop to the empty field, or leave it out? Suggest leave it out (17 cuts already).
+5. **Wendell's bark** was not captured; the mechanic beat ends on the isolator panel text. Re-take t12 for the bark later, or accept? Suggest accept for v1.
+6. **Music**: Hybrid Attack 1 from 98.599 by ear (suggest yes); Hybrid Attack 2 from 122.4 as the second choice.
+7. **Console clip**: the file read shows Tesseract's release plan text ("What stops it ... A full stop needs the core console"). Fine as story, no secret? Suggest keep, once a frame check shows no casualty figure.
+
+### Picks that can't be filled
+
+- Wendell Briggs's bark and the green isolator lamp (t12: not on screen, lamp too small): panel text used instead.
+- The City-by-city VO (barred by the spoiler rule) and Netherton's own "City by city from six..." (t10 90.88-99.08, outside the marked windows).
+- Gary Whitlock's face (t24 gary_tech shows HaX's portrait), Victoria Sterling's phone chat (t21 opened no Victoria thread), Pieter Vos and the Minder (no take), the PIN cracker (no take), the VM launcher (t01 needs the VM), a separate key lock (none exists; the lockpick stands in).
+- The incident-file notes (story-heavy; dropped) and the Quintero fallback line (not scripted).
+- t25, t26, t27 and t28 are not run: shots 16 and 18 depend on them (fallbacks given); shots 11 and 21 have t12/t13 sources and only upgrade if t27/t26 pass.
+
+### Next agent
+
+Write `tools/video/edits/m10_trailer60.json` (id `m10_trailer60_v1`, mission `m10`) from `m09_trailer60.json`'s structure with the table above; music block `{"track": "SpyAgro/Hybrid Attack 1.mp3", "analysis": "hybrid_attack_1_60.json", "start": 98.599, "length": 60, "fade_out": 1.0}` and beat `{"bpm": 140.02, "period": 0.4285, "offset": 0}`; check in and out frames per aspect a few shots at a time; run the lint until 0 errors (1 expected warning on `placeholder: false`); update the README music row when it is final.
