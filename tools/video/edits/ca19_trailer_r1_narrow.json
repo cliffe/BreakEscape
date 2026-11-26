@@ -511,8 +511,8 @@
    },
    "source": {
     "file": "t05b_inbox_list_narrow.trimmed.mkv",
-    "in": 6.7,
-    "out": 10.7
+    "in": 6.6,
+    "out": 10.6
    },
    "audio": {
     "gain_db": -6
@@ -523,7 +523,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "six-row list, Piledocs focus ring accepted; out is before the row click (10.56 / 10.906); 9:16 window x 600-1140 cuts times and the attachment icon | CA: spoilers not an issue (owner)"
+    "note": "six-row list, Piledocs focus ring accepted; out is before the card opens (10.795 row_open); 520 px retake: panel x 700-1220, 9:16 z1.125 window y 0-960 shows the whole panel, 1:1 z2 window y 10-550 | CA: spoilers not an issue (owner)"
    },
    "seat": {
     "seat": "defend",
@@ -538,14 +538,17 @@
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 0.5625
+     "cy": 0.444444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.259259,
+     "zoom": 2
     }
+   },
+   "voPos": {
+    "1:1": "top"
    }
   },
   {
@@ -557,8 +560,8 @@
    },
    "source": {
     "file": "t05b_inbox_list_narrow.trimmed.mkv",
-    "in": 12.15,
-    "out": 17.75
+    "in": 12.0,
+    "out": 17.6
    },
    "audio": {
     "gain_db": -6
@@ -569,7 +572,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "13:24 card opened, body hidden, pane below empty | CA: spoilers not an issue (owner)"
+    "note": "card opened (frame:card 11.995), body and actions hidden, pane below empty; 520 px retake: 16:9 and 1:1 z2 window y 70-610 holds tabs, list and the card heading and meta; 9:16 z1.125 window y 0-960 | CA: spoilers not an issue (owner)"
    },
    "seat": {
     "seat": "defend",
@@ -579,19 +582,22 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.27037,
+     "cy": 0.314815,
      "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 0.5625
+     "cy": 0.444444,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.314815,
+     "zoom": 2
     }
+   },
+   "voPos": {
+    "1:1": "top"
    }
   },
   {
