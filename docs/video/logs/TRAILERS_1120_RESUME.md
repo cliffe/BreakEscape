@@ -370,3 +370,11 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - Owner picks via AC0: Tesseract E (thin wire) approved, covering the talk init, PixelLab talk, visemes --from-talk and the m10 t14 re-take. The walk fades stay (walklocked keep, walkvisible accept). voicedtext: spoken dialogue is exempt from rule 2 (VID2's generator change). Scrub: /data/footage isn't reachable from here, so the fix list goes to the owner via AC0 (told). Never write to ~/safetynet-footage.
 - Running: a Sonnet agent on Tesseract E (init, talk, visemes, in-game portrait on :3026). It commits on this branch and reports the hash, sheet and screenshot paths.
 - Next: send the Tesseract hash to AC0; Haiku re-takes m10 t14 (Tesseract), plus t16 (gallery guard, setup --unlock gallery --set gallery_open=true) once T413 lands; re-cut ending_wide/ending_close; bump to m10_trailer60_v3; render when CA0/VID2 free the machine; add an m10 tab on page B.
+
+## State 26 Nov, ~02:00
+
+- Merged main 797198b06 (T413 walk-in fix landed) as 5b123f43b.
+- Tesseract E assets: e517d594d (init, talk, visemes --from-talk --top 25, blink glasses patched). Hash sent to AC0. The headshot and walk sprite still have the old glasses; that's an optional question for the owner.
+- m10 re-takes recorded in ~/video-takes-local/m10/takes: t14 (needed breach_call_done=true), t16 (needed hall_guards_stood_down=true). Headers fixed (7458db660).
+- m10 v3 edit: ending_wide/close re-timed −1.4667 s (7458db660); gallery_bark re-timed −2.0667 s (dc8cb149d); 9:16 cx 0.66 (f2b6201f8). Lint is 0 errors (the clip warning is a lint path quirk; the clip is in m10/clips).
+- NEXT: when CA0 pings after its render queue, run `bash $S/render6.sh m10:16:9 m10:9:16 m10:1:1`, pre-flight (60 s, −14 LUFS, TP < −1, contact sheets, spoiler check: no stakes figure, no codes), enc_v3.sh, then an m10v3 tab on page B (doc feedback/m10_trailer_v3).
