@@ -12,11 +12,11 @@ export default async (page, bridge, mark) => {
   await openKiosk(page, bridge, mark);
   await pressButton(page, /^Start$/); await sleep(900);
   await pressButton(page, /Make the choices/); await sleep(1200);
-  await pressEl(page, /^Send the pack to your personal email/); mark('c1_pick'); await sleep(900);
+  await pressEl(page, /^Send the (pack|client files) to your personal email/); mark('c1_pick'); await sleep(900);
   await pressButton(page, /^Next/); await sleep(1000);
   await pressEl(page, /^Ask IT for an approved team channel/); mark('c2_pick'); await sleep(900);
   await pressButton(page, /^Next/); await sleep(1000);
-  await pressEl(page, /^Plug the visitor's stick into your laptop/); mark('c3_pick'); await sleep(900);
+  await pressEl(page, /^Plug the visitor's (USB )?stick into your (work )?laptop/); mark('c3_pick'); await sleep(900);
   await pressButton(page, /^Next/); await sleep(1000);
   await pressEl(page, /^Hold off, and ask IT/); mark('c4_pick'); await sleep(900);
   await hideText(page, /^Your call/i);

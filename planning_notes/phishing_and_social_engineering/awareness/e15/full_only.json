@@ -7,7 +7,7 @@
     "beats": [
       {
         "id": "personal_email",
-        "situation": "The share has crawled to a halt and the pack is due Monday. Colin: \"Just email the pack to your personal address and finish it off at home.\" The compose window offers \"Me (personal)\" in the autocomplete.",
+        "situation": "The share has crawled to a halt and the client files are due Monday. Colin: \"Just email the files to your personal address and finish them off at home.\" The compose window offers \"Me (personal)\" in the autocomplete.",
         "options": [
           {
             "id": "ask_nilesh",
@@ -17,7 +17,7 @@
           },
           {
             "id": "send_personal",
-            "label": "Send the pack to your personal email to finish at home",
+            "label": "Send the client files to your personal email to finish at home",
             "safe": false
           }
         ]
@@ -45,7 +45,7 @@
         "options": [
           {
             "id": "plug_visitor",
-            "label": "Plug the visitor's stick into your laptop",
+            "label": "Plug the visitor's USB stick into your work laptop",
             "safe": false
           },
           {
@@ -86,15 +86,15 @@
     "_notes": "flipMontageByChoice goes into the FULL erb only, at social.awarenessEpisode.strings.flipMontageByChoice. It is ERB-ONLY and must be added to STRINGS_ERB_ONLY_OK in test/js/social-awareness-fragment-erb-parity.test.mjs (ENG-04 adds it there, like flipDefenderLineByChoice). flipHeading ('Six months later') is NOT here: it lives in defend.json's strings and is shared by both shells. Keyed beat then option; every outer key is a real beat and every inner key a real option of that beat (ENG-04 lint). personal_email is shown first (it is the flipBeat); the montage still shows every beat. Text is verbatim from E15 section 10. The 'Your choice' / 'the version where it was taken instead' framing is in the text, not applied by the engine, so a line is authored for BOTH options of every beat (the unsafe-option fallback never fires for E15).",
     "flipMontageByChoice": {
       "personal_email": {
-        "send_personal": "Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
-        "ask_nilesh": "Through remote access the pack never left the firm, so there was nothing outside to find. The version where it went to a personal inbox instead was broken into with a reused password and copied."
+        "send_personal": "Months on, the personal inbox was broken into with a reused password; the client files sat in its sent items, and the client got a convincing fake invoice built from it.",
+        "ask_nilesh": "Through remote access the client files never left the firm, so there was nothing outside to find. In the version where they went to a personal inbox, that inbox was broken into with a reused password and the files were copied."
       },
       "drivers_chat": {
         "add_to_group": "The chat grew to forty people, two of them long gone from the firm. A photo of a delivery note with a customer's home address was passed on outside it.",
         "ask_channel": "IT set up a team channel within a day, and anyone who left lost access with their account. The version where the personal group chat stayed in use had a delivery note photo passed on outside the firm."
       },
       "visitor_stick": {
-        "plug_visitor": "The surveyor's stick had been in three other firms' laptops first. It copied the folders it could reach, and Tarrowby had to tell two clients.",
+        "plug_visitor": "The surveyor's USB stick had been in three other firms' laptops first. The moment it went in, it copied the folders it could reach, and Tarrowby had to tell two clients.",
         "send_link": "The drawings came through the firm's link and were checked on the way in, so nothing arrived on a stick. The version where the stick went into the laptop carried a program that copied the folders it could reach."
       },
       "rota_app": {

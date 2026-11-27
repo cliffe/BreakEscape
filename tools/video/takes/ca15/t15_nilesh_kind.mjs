@@ -25,7 +25,7 @@ export default async (page, bridge, mark) => {
   const up = waitNpcPortrait(page, bridge, mark, /Nilesh/i, 30000); up.catch(() => {});
   await interactRetry(bridge, 'nilesh_solanki', mark); mark('interact');
   await up;
-  const l = await vw.waitForLine(/careless|Before we flip|That's the lot|Nilesh, service desk/i, 30000);
+  const l = await vw.waitForLine(/careless|Before we flip|Before we go on|That's the lot|Nilesh, service desk/i, 30000);
   if (!l) throw new Error('no line voiced; heard: ' + JSON.stringify(vw.lines.map(x => x.text)));
   if (!/Nobody was careless/.test(l.text)) throw new Error('chat opened on the wrong line: ' + l.text);
   mark('line_start', null, l.start); mark('line_end', { durMs: l.durMs }, l.end);

@@ -25,10 +25,11 @@ VAR hub_quiet = false
             Nilesh Solanki: A stick in the post is a found stick, whatever the note says. It comes to us, and nobody plugs it in.
         - else:
             Nilesh Solanki: That stick posted in, marked from the client, was the one to bring to us.
-            Nilesh Solanki: The moment someone opens a file on that stick, it could run malware, first on that machine and then on the share.
+            Nilesh Solanki: A stick like that can run code the moment it's plugged in, first on that machine and then on the share.
         }
     - else:
-        Nilesh Solanki: Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.
+        Nilesh Solanki: Nilesh, service desk. Today's about shadow IT. That's work done on devices, apps or accounts IT doesn't know about, usually as a shortcut.
+        Nilesh Solanki: On the kiosk, USB sticks that turned up, 'quicker way' messages, then a board of approved swaps. Ask us first, we'd rather help than clean up.
     }
 }
 + [Thanks, Nilesh.]
