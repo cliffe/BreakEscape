@@ -1,0 +1,13 @@
+{
+  "key": "0a4143b24d21f4d8318f1f1458e1d065",
+  "npc": "nilesh_solanki",
+  "text": "Personal email, a free app, a stray USB stick. If something's slowing you down, ask us first.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T02:09:21Z"
+}

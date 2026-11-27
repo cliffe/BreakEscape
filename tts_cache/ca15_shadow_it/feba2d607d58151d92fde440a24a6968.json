@@ -1,0 +1,13 @@
+{
+  "key": "feba2d607d58151d92fde440a24a6968",
+  "npc": "ca15_joanne_pell",
+  "text": "The file share's crawling again.",
+  "voice": "Zephyr",
+  "style": "Tarrowby's operations coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T02:16:51Z"
+}

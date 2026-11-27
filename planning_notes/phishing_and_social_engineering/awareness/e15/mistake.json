@@ -8,7 +8,7 @@
     "beats": [
       {
         "id": "personal_email",
-        "situation": "The share has crawled to a halt and the pack is due Monday. Colin: \"Just email the pack to your personal address and finish it off at home.\" The compose window offers \"Me (personal)\" in the autocomplete.",
+        "situation": "The share has crawled to a halt and the client files are due Monday. Colin: \"Just email the files to your personal address and finish them off at home.\" The compose window offers \"Me (personal)\" in the autocomplete.",
         "options": [
           {
             "id": "ask_nilesh",
@@ -18,7 +18,7 @@
           },
           {
             "id": "send_personal",
-            "label": "Send the pack to your personal email to finish at home",
+            "label": "Send the client files to your personal email to finish at home",
             "safe": false
           }
         ]
@@ -46,7 +46,7 @@
         "options": [
           {
             "id": "plug_visitor",
-            "label": "Plug the visitor's stick into your laptop",
+            "label": "Plug the visitor's USB stick into your work laptop",
             "safe": false
           },
           {

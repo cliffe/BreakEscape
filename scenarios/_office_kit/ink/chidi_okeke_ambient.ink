@@ -46,7 +46,7 @@ Chidi Okeke: Now then. Drinks machine's over there if you fancy one.
 
 === ca15 ===
 { kit_key_caught:
-    Chidi Okeke: Nice. Deadline on and a free transfer tool looks grand, but then nobody can say where the client pack's gone.
+    Chidi Okeke: Nice. Deadline on and a free transfer tool looks grand, but then nobody can say where the client files have gone.
 - else:
     Chidi Okeke: We're always chasing a quicker way to shift big files before a deadline. The approved one feels slow.
 }

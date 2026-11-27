@@ -36,12 +36,12 @@ export async function toWorldBeatPanel(page, bridge, mark = () => {}) {
   await openKiosk(page, bridge, mark);
   await pressButton(page, /^Start$/); await sleep(900);
   await pressButton(page, /Make the choices/); await sleep(1000);
-  for (const [re, n] of [[/^Send the pack to your personal email/, 1], [/^Ask IT for an approved team channel/, 2], [/^Plug the visitor's stick into your laptop/, 3], [/^Hold off, and ask IT/, 4]]) {
+  for (const [re, n] of [[/^Send the (pack|client files) to your personal email/, 1], [/^Ask IT for an approved team channel/, 2], [/^Plug the visitor's (USB )?stick into your (work )?laptop/, 3], [/^Hold off, and ask IT/, 4]]) {
     await pressEl(page, re); mark('setup-c' + n); await sleep(700);
     if (n < 4) { await pressButton(page, /^Next/); await sleep(900); }
   }
   await pressButton(page, /See where they led/); await sleep(900);
   if (!(await waitButton(page, /^Look up/, 8000))) throw new Error('Look up button never showed; buttons ' + JSON.stringify(await buttons(page)));
-  const h = await page.evaluate(() => /One from the red-team kit/i.test(document.body.innerText));
+  const h = await page.evaluate(() => /One from the red-team kit|Try the attacker's side/i.test(document.body.innerText));
   if (!h) throw new Error('"One from the red-team kit" heading not visible');
 }

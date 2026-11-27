@@ -2,7 +2,7 @@
   "scenario_id": "ca16_insider_risk",
   "scenario_name": "Insider risk: a leaver's week",
   "titleScreenName": "Insider risk",
-  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
+  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. Insider risk is harm that comes from people who already have access: mostly by accident, sometimes on purpose. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
   "endGoal": "Play out the week, then raise a concern fairly and sort the messages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -561,7 +561,7 @@
           {
             "id": "fc_offer_when",
             "kind": "when",
-            "label": "The message came on Tuesday evening"
+            "label": "The message came in the evening, at 19:42"
           },
           {
             "id": "fc_offer_where",
@@ -626,7 +626,7 @@
         },
         "weakestTells": "The signs most often missed: {names} ({counts} each).",
         "weakestTell": "The sign most often missed: {names} ({counts}).",
-        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, hosted by Anjali Rao from information security. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, hosted by Anjali Rao from information security. Insider risk is harm that comes from people who already have access: mostly by accident, sometimes on purpose. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
         "flipHeading": "A week later",
         "allRight": "You handled every one of these the right way. Nothing to pick over here.",
         "allPhishRight": "Every risk was raised, with every sign named.",
@@ -636,6 +636,10 @@
         "defendOnly": "The offers and the rumours here are the kind that catch decent people. The ones you were caught out by are shown below, with what good looks like, and a fair way to raise a concern.",
         "teamLine": "By reporting or checking {n} of these rather than acting on them, you warned the team where it mattered and pointed colleagues to the safe route, without treating anyone as a suspect.",
         "conceptPanel": [
+          {
+            "heading": "What insider risk means",
+            "text": "Insider risk is harm that comes from people who already have access. Most of it is an accident or a careless favour: a borrowed login, a client list sent to a personal inbox. A small part is deliberate, and it often starts with an approach from outside: money for access. Whichever it is, the response is the same: take the facts to the right person, and leave suspicion of colleagues out of it."
+          },
           {
             "heading": "Seen, said, true",
             "text": "The colleague the office was whispering about, Samira: what people saw was her in early, taking calls in the stairwell, visiting HR. What was said was that she was leaving with Ross, a manager also on his way out. What was true was that her father was in hospital all week. Unusual is not the same as wrong, and a kind word comes first. Rumours tend to land on the person already having the hardest week."
@@ -665,7 +669,7 @@
             "report": "The version where someone replied instead: the pressure grew and the sign-in prompts came that night. Reporting it, without a word back, stopped it and warned the team. You are not in trouble for being approached."
           },
           "shared_login": {
-            "log_in_for_him": "Reuben clicked the wrong shortcut and opened the HR drive, under your name, on the record until it was explained. Harmless this time; a reset would have cost two minutes.",
+            "log_in_for_him": "Reuben clicked the wrong shortcut and opened the HR drive, under your name, on the record until it was explained. Nothing was taken this time, but the record says it was you; a reset would have cost two minutes.",
             "service_desk": "The version where a login was shared: whatever was opened went on the record of whoever's login it was. The service desk reset it in minutes instead."
           },
           "rumour": {

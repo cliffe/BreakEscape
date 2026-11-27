@@ -723,7 +723,7 @@
         {
           "type": "usb_storage_swivel",
           "id": "kit_ca15_stick",
-          "name": "Memory stick",
+          "name": "USB stick",
           "sprite": "usb_storage_swivel",
           "takeable": false,
           "interactable": true,
@@ -732,7 +732,7 @@
             "x": 1.15,
             "y": 5.4
           },
-          "observations": "A small memory stick on the floor. No name, no label.",
+          "observations": "A small USB memory stick on the floor. No name, no label.",
           "observationVariants": [
             {
               "condition": "globalVars.kit_ca15_stick_taken === true",
@@ -761,7 +761,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.kit_ca15_at_tray === true",
-              "value": "Lost property. A memory stick has gone in with the rest, waiting for its owner."
+              "value": "Lost property. A USB stick has gone in with the rest, waiting for its owner."
             }
           ]
         }

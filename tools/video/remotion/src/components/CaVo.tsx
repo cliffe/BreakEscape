@@ -47,7 +47,7 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
     const local = t - shot.startSec;
     const line = (shot.lines || []).find((l: any) => local >= l.start && local < l.end);
     if (line) {
-      if (shot.caption?.[aspect] && shot.seat) bottom = caCaptionBox(w, h, line, shot.caption_skin).occupied + gap * 2;
+      if (shot.caption?.[aspect] && shot.seat) bottom = caCaptionBox(w, h, line, shot.caption_skin, !!shot.caption_breaks).occupied + gap * 2;
       else if (w > h) bottom = Math.round(h * 0.23) + gap; // the game's own subtitle bar fills the bottom 22% of the take
       else bottom = Math.round(h * 0.06);
     }

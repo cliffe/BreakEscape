@@ -1,0 +1,13 @@
+{
+  "key": "f64426aacb79ea3a3f5a4e43833cd38c",
+  "npc": "nilesh_solanki",
+  "text": "That's shadow IT for you. If the official way's slow, tell us rather than building your own way round.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T02:09:11Z"
+}
