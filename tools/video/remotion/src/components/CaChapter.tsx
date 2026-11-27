@@ -1,6 +1,7 @@
 import React from 'react';
 import { CA, CaTab, CaMark, unit, snapTo, isStacked, tabFont, fitSize, textWidth, crisp } from '../ca';
 import { GNF_FONT, VT_FONT } from '../fonts';
+import { chapterRevealFrame } from '../timeline.js';
 
 const GRID = (u: number, tint: string) => `repeating-linear-gradient(0deg, transparent 0, transparent ${7 * u}px, ${tint} ${7 * u}px, ${tint} ${8 * u}px), repeating-linear-gradient(90deg, transparent 0, transparent ${7 * u}px, ${tint} ${7 * u}px, ${tint} ${8 * u}px)`;
 
@@ -35,11 +36,9 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
   const colW = inner - sq - 3 * sq;
   const bSize = bSizes.find((s) => bullets.every((b) => vtW(b, s) <= colW * (stacked ? 2 : 1) * 0.92)) || bSizes[bSizes.length - 1];
   const fps = 30;
-  // bullets one after another; shot.reveal {start, each} (seconds) paces them for reading (owner, ca12 r3: "slower for each sentence")
+  // bullets one after another; shot.reveal {start, each} or {at: [s, ...]} (seconds) paces them for reading (owner, ca12 r3: "slower for each sentence")
   const rv = shot.reveal;
-  const revealAt = (i: number) => rv
-    ? Math.round(((rv.start ?? 1.2) + i * (rv.each ?? 2)) * fps)
-    : 14 + Math.round(i * 0.7 * fps * (bullets.length > 2 ? 0.8 : 1));
+  const revealAt = (i: number) => chapterRevealFrame(rv, i, bullets.length, fps); // rv.at [s, ...] overrides start/each per line
   const fadeIn = (i: number) => Math.min(1, Math.max(0, (frame - revealAt(i)) / 6)); // 0.2 s fade, stepped by frame
   const tabDrop = Math.round((1 - Math.min(1, Math.max(0, (frame - 2) / 4))) * -tf * 3);
   const mS = Math.max(16, Math.round(tf * 0.9 / 2) * 2);

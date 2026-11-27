@@ -146,7 +146,17 @@ tl.shots.forEach((s, i) => {
         if ((s.body || []).some((b) => typeof b !== 'string' || b.length > 60)) W(id, 'chapter card: bullet lines of more than 60 characters will wrap on 9:16');
         if (s.text?.[0] && String(typeof s.text[0] === 'string' ? s.text[0] : s.text[0].text).length > 28) W(id, 'chapter card: heading over 28 characters');
         if (s.tool || s.tab || s.seat) E(id, 'chapter card sets its own tab: no tool, tab or seat');
-        if (s.reveal != null) {
+        if (s.reveal != null && s.reveal.at != null) {
+          const at = s.reveal.at, n = (s.body || []).length;
+          if (!Array.isArray(at) || !at.every((x) => typeof x === 'number' && Number.isFinite(x))) E(id, 'chapter card: reveal.at must be an array of numbers (seconds from the card start)');
+          else {
+            if (at.length !== n) E(id, `chapter card: reveal.at has ${at.length} entries but the card has ${n} body lines`);
+            if (at.some((x) => x < 0)) E(id, 'chapter card: reveal.at must not be negative');
+            if (!at.every((x, i) => i === 0 || x > at[i - 1])) E(id, `chapter card: reveal.at must ascend: ${at.join(', ')}`);
+            if (s.duration != null && at.some((x) => x >= s.duration)) E(id, `chapter card: reveal.at has a time at or past the card's end (${s.duration} s)`);
+            else if (s.duration != null && at.length && at[at.length - 1] + 1.5 > s.duration) W(id, `chapter card: the last bullet shows at ${at[at.length - 1]} s and has under 1.5 s on screen (duration ${s.duration} s)`);
+          }
+        } else if (s.reveal != null) {
           const st = s.reveal.start ?? 1.2, ea = s.reveal.each ?? 2, n = (s.body || []).length;
           if (!(st >= 0) || !(ea > 0)) E(id, 'chapter card: reveal.start must be >= 0 and reveal.each > 0 (seconds)');
           else if (n && s.duration != null && st + (n - 1) * ea + 1.5 > s.duration) E(id, `chapter card: the last bullet shows at ${(st + (n - 1) * ea).toFixed(1)} s and needs 1.5 s on screen; duration is ${s.duration} s`);

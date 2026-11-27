@@ -138,3 +138,13 @@ export const stackedTitleLines = (text, stacked) => {
   if (!stacked || words.length < 2) return [words.join(' ')];
   const k = Math.floor(words.length / 2); return [words.slice(0, k).join(' '), words.slice(k).join(' ')];
 };
+
+/**
+ * Frame at which chapter-card bullet i appears. reveal.at (seconds from the card's start, one per line) wins when it is an array;
+ * otherwise reveal {start, each} paces them uniformly; with no reveal the original default pacing applies.
+ */
+export function chapterRevealFrame(reveal, i, count, fps = 30) {
+  if (reveal && Array.isArray(reveal.at)) return Math.round(reveal.at[i] * fps);
+  if (reveal) return Math.round(((reveal.start ?? 1.2) + i * (reveal.each ?? 2)) * fps);
+  return 14 + Math.round(i * 0.7 * fps * (count > 2 ? 0.8 : 1));
+}
