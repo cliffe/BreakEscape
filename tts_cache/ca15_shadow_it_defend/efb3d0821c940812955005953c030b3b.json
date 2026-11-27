@@ -1,0 +1,13 @@
+{
+  "key": "efb3d0821c940812955005953c030b3b",
+  "npc": "nilesh_solanki",
+  "text": "A stick like that can run code the moment it's plugged in, and from that machine it can reach the share.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T02:09:40Z"
+}

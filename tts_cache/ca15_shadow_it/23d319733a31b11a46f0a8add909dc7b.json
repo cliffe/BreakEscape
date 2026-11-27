@@ -1,0 +1,13 @@
+{
+  "key": "23d319733a31b11a46f0a8add909dc7b",
+  "npc": "nilesh_solanki",
+  "text": "A real attacker's stick can run code the moment it's plugged in. That's why unknown devices come to us first.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T02:09:06Z"
+}

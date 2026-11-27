@@ -1,0 +1,13 @@
+{
+  "key": "b97a71d565fa1715ba577c1b9f9825c8",
+  "npc": "nilesh_solanki",
+  "text": "On the kiosk there are USB sticks that turned up and 'quicker way' messages to sort. Ask us first, we'd rather help than clean up.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T02:09:51Z"
+}

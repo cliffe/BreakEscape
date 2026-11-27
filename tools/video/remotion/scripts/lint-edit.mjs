@@ -143,10 +143,25 @@ tl.shots.forEach((s, i) => {
         if (!['attack', 'defend'].includes(s.chapter)) E(id, `chapter must be attack|defend, got ${s.chapter}`);
         if (!(s.text?.length === 1)) E(id, 'chapter card needs exactly one text[] line (the GNF heading)');
         if ((s.body || []).length > 3) E(id, 'chapter card: at most three bullet lines (body[])');
-        if ((s.body || []).some((b) => typeof b !== 'string' || b.length > 60)) W(id, 'chapter card: bullet lines of more than 60 characters will wrap on 9:16');
+        // body bullets: an unbroken bullet keeps the legacy 60-character warning; a bullet with forced breaks ("\n", rendered pre-line) is checked per line at 28
+        (s.body || []).forEach((b, bi) => {
+          if (typeof b !== 'string') { W(id, `chapter card: body[${bi}] must be a string`); return; }
+          if (b.includes('\n')) { b.split('\n').forEach((l, li) => { if (l.length > 28) E(id, `chapter card: body[${bi}] line ${li + 1} is ${l.length} characters (forced-break lines are at most 28)`); }); }
+          else if (b.length > 60) W(id, 'chapter card: bullet lines of more than 60 characters will wrap on 9:16');
+        });
         if (s.text?.[0] && String(typeof s.text[0] === 'string' ? s.text[0] : s.text[0].text).length > 28) W(id, 'chapter card: heading over 28 characters');
         if (s.tool || s.tab || s.seat) E(id, 'chapter card sets its own tab: no tool, tab or seat');
-        if (s.reveal != null) {
+        if (s.reveal != null && s.reveal.at != null) {
+          const at = s.reveal.at, n = (s.body || []).length;
+          if (!Array.isArray(at) || !at.every((x) => typeof x === 'number' && Number.isFinite(x))) E(id, 'chapter card: reveal.at must be an array of numbers (seconds from the card start)');
+          else {
+            if (at.length !== n) E(id, `chapter card: reveal.at has ${at.length} entries but the card has ${n} body lines`);
+            if (at.some((x) => x < 0)) E(id, 'chapter card: reveal.at must not be negative');
+            if (!at.every((x, i) => i === 0 || x > at[i - 1])) E(id, `chapter card: reveal.at must ascend: ${at.join(', ')}`);
+            if (s.duration != null && at.some((x) => x >= s.duration)) E(id, `chapter card: reveal.at has a time at or past the card's end (${s.duration} s)`);
+            else if (s.duration != null && at.length && at[at.length - 1] + 1.5 > s.duration) W(id, `chapter card: the last bullet shows at ${at[at.length - 1]} s and has under 1.5 s on screen (duration ${s.duration} s)`);
+          }
+        } else if (s.reveal != null) {
           const st = s.reveal.start ?? 1.2, ea = s.reveal.each ?? 2, n = (s.body || []).length;
           if (!(st >= 0) || !(ea > 0)) E(id, 'chapter card: reveal.start must be >= 0 and reveal.each > 0 (seconds)');
           else if (n && s.duration != null && st + (n - 1) * ea + 1.5 > s.duration) E(id, `chapter card: the last bullet shows at ${(st + (n - 1) * ea).toFixed(1)} s and needs 1.5 s on screen; duration is ${s.duration} s`);
@@ -247,6 +262,12 @@ tl.shots.forEach((s, i) => {
           else if (ins.label) { const u = Math.max(1, Math.round(Math.min(ow, oh) / 540)), tf = Math.max(16, Math.round((Math.min(ow, oh) * 0.022) / 8) * 8), ts = Math.max(8, Math.round((tf * 0.67) / 8) * 8); const th = ts + 2 * Math.round(ts * 0.5) + 4 * u; if (p.y < th) W(id, `${tag}.at["${a}"]: y ${p.y} leaves no room for the label tab above (needs ${th} px)`); }
         }
       });
+    }
+    if (s.caption_breaks != null && typeof s.caption_breaks !== 'boolean') E(id, 'caption_breaks must be true or false');
+    if (s.caption_breaks === true) for (const [li, l] of (s.lines || []).entries()) {
+      // the speaker prefix sits on the first line of the plain skin; the pixel skin puts it on its own line above
+      const segs = String(l.text ?? '').split('\n');
+      segs.forEach((seg, si) => { const n = seg.length + (si === 0 && l.speaker && edit.caption_skin !== 'pixel' ? l.speaker.length + 2 : 0); if (n > 28) E(id, `lines[${li}] caption line ${si + 1} is ${n} characters (caption_breaks lines are at most 28)`); });
     }
     if (s.dialogue) {
       if (!s.audio?.dialogue || !s.audio.duck_music) E(id, 'dialogue shot needs audio.dialogue and audio.duck_music true');

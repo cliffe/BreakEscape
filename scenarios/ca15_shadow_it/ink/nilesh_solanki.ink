@@ -45,6 +45,7 @@ VAR ca15_drop_said = false
 - else:
     { ca15_drop_used and not ca15_drop_said:
         Nilesh Solanki: Nobody was careless there. She was being kind, and that's what a drop relies on.
+        Nilesh Solanki: A real attacker's stick can run code the moment it's plugged in. That's why unknown devices come to us first.
         ~ ca15_drop_said = true
     - else:
     { kit_defend_done && (kit_ca15_done || not kit_ca15_out) && not kit_ca15_host_said:
@@ -61,10 +62,11 @@ VAR ca15_drop_said = false
         ~ kit_ca15_host_said = true
     - else:
     { episode_e15_shadow_it_defend_complete:
-        Nilesh Solanki: That's the lot. If the official way's slow, tell us rather than building your own way round.
+        Nilesh Solanki: That's shadow IT for you. If the official way's slow, tell us rather than building your own way round.
         Nilesh Solanki: And nobody gets told off for asking.
     - else:
-        Nilesh Solanki: Nilesh, service desk. Something slowing you down? Ask us first. We'd rather help than clean up.
+        Nilesh Solanki: Nilesh, service desk. Today's about shadow IT. That's work done on devices, apps or accounts IT doesn't know about, usually as a shortcut.
+        Nilesh Solanki: Personal email, a free app, a stray USB stick. If something's slowing you down, ask us first.
         Nilesh Solanki: Start at the kiosk. Play out the Friday, then sort what's actually waiting.
     }
     }
@@ -81,8 +83,8 @@ VAR ca15_drop_said = false
 // server-known: ca15_red_stick is in his itemsHeld), sets ca15_drop_given, then the
 // learner can ask why it works or just take it. Both paths park the hub quietly.
 === red_stick ===
-Nilesh Solanki: Before we flip, one from the red-team kit. A stick, no label, no note. #delivery: stepping into the red-team host role, conspiratorial but light
-Nilesh Solanki: It's a safe tracker, booked in with IT. It only tells us who opened it. #delivery: stepping into the red-team host role, conspiratorial but light
+Nilesh Solanki: Before we go on, try the attacker's side. One USB stick, no label, no note. #delivery: stepping into the red-team host role, conspiratorial but light
+Nilesh Solanki: To a work PC it's an unknown device. Ours is harmless, it only tells us when it's plugged in. #delivery: stepping into the red-team host role, conspiratorial but light
 #give_item:usb_storage_swivel:ca15_red_stick
 Nilesh Solanki: Leave it next door, somewhere people stop. Then watch who picks it up. #delivery: stepping into the red-team host role, conspiratorial but light
 ~ ca15_drop_given = true

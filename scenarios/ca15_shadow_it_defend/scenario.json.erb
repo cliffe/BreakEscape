@@ -2,7 +2,7 @@
   "scenario_id": "ca15_shadow_it_defend",
   "scenario_name": "Shadow IT: the shortcuts",
   "titleScreenName": "Shadow IT",
-  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way' messages are waiting: some are safe, some aren't. Match each shortcut to the approved way, then sort the messages. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check.",
+  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. This one is about shadow IT: staff using devices, apps, accounts or services that IT doesn't know about or hasn't approved, usually as a shortcut. Client files are due by Monday and the share is slow. USB sticks that turned up and 'quicker way' messages are waiting: some are safe, some aren't. Match each shortcut to the approved way, then sort the messages. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check.",
   "endGoal": "Sort the inbox and match the swaps at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -26,7 +26,7 @@
     {
       "aimId": "shortcuts_aim",
       "title": "Sort the shortcuts",
-      "description": "Go through the found sticks and shortcut messages and match each to the approved way at the training kiosk.",
+      "description": "Sort the USB sticks that turned up and the shortcut messages, and match each shortcut to the approved way at the training kiosk.",
       "status": "active",
       "order": 0,
       "missionConclusion": true,
@@ -83,7 +83,7 @@
         "reportReply": "Thanks. IT has it and will point you to the approved way.",
         "id": "e15_shortcuts_inbox",
         "title": "Shadow IT: the shortcuts",
-        "brief": "It's Friday, the Monday pack is due and the share is slow. Six things are waiting: found sticks, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify, then tick what you noticed. Checking when you're unsure is always fine, though a real message does take a colleague's time to check.",
+        "brief": "It's Friday, client files are due on Monday and the share is slow. Six things are waiting: USB sticks that turned up, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify, then tick what you noticed. Checking when you're unsure is always fine, though a real message does take a colleague's time to check.",
         "realLabel": "Real notices and replies",
         "scoringProfile": "awareness",
         "scoring": {
@@ -115,7 +115,7 @@
             }
           },
           "teamBadge": "Risky shortcuts stopped for the team: {n}",
-          "teamBadgeTitle": "Found sticks and unsafe shortcuts you reported or checked this round rather than acting on them",
+          "teamBadgeTitle": "Unknown USB sticks and unsafe shortcuts you reported or checked this round rather than acting on them",
           "phishCaughtLabel": "Caught in time",
           "scoreLine": "Right call is most of the score; naming what's wrong is the rest."
         },
@@ -160,7 +160,7 @@
         },
         "criticalWhat": "taking a risky shortcut",
         "skillNames": {
-          "found_media": "Spotting a found or posted stick",
+          "found_media": "Spotting a found, posted or giveaway USB stick",
           "unapproved_tool": "Spotting an unapproved tool or app"
         },
         "outcome": {
@@ -186,7 +186,7 @@
             "to": "you@tarrowby.example",
             "subject": "A padded envelope came in for you, marked from the client",
             "time": "13:20",
-            "body": "Hi,\nA padded envelope came in for you this morning, marked from the client. Inside there's a USB stick and a handwritten note: 'Survey results for the Monday pack, please load these on. Any problems call me on 07700 900142.'\nIt's at the front desk whenever you want it.\nReception",
+            "body": "Hi,\nA padded envelope came in for you this morning, marked from the client. Inside there's a USB stick and a handwritten note: 'Survey results for the client files due Monday, please load these on. Any problems call me on 07700 900142.'\nIt's at the front desk whenever you want it.\nReception",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -255,7 +255,7 @@
               "whyFine": {
                 "pretextRelevant": "Nobody asked for this, but an unprompted offer is common to real and fake mail alike. What gives this away is the unapproved tool, not that it turned up uninvited."
               },
-              "ifTrusted": "The pack would sit on a service nobody at Tarrowby has checked, behind a link anyone could pass on.",
+              "ifTrusted": "The client files would sit on a service nobody at Tarrowby has checked, behind a link anyone could pass on.",
               "reportReply": "Thanks. For big files there's an approved way: a file-sharing link to named people that expires. The service desk sets it up in a couple of minutes.",
               "kindLine": "This was an unapproved free site, not the approved way to send a big file.",
               "reportLine": "Right to flag it. The service desk can set up an approved link that expires, and nobody is in trouble.",
@@ -354,14 +354,14 @@
               "address": "no-reply@tarrowby.example"
             },
             "to": "you@tarrowby.example",
-            "subject": "Shauna Lofthouse shared 'Monday pack, final' with you",
+            "subject": "Shauna Lofthouse shared 'Client files for Monday, final' with you",
             "time": "14:10",
-            "body": "Shauna Lofthouse has shared a file with you through the Tarrowby file-sharing service.\nFile: Monday pack, final\nThis link is for you only and expires in 7 days.\n{{link:open}}",
+            "body": "Shauna Lofthouse has shared a file with you through the Tarrowby file-sharing service.\nFile: Client files for Monday, final\nThis link is for you only and expires in 7 days.\n{{link:open}}",
             "links": [
               {
                 "id": "open",
-                "text": "fileshare.tarrowby.example/s/monday-pack",
-                "destination": "https://fileshare.tarrowby.example/s/monday-pack"
+                "text": "fileshare.tarrowby.example/s/monday-client-files",
+                "destination": "https://fileshare.tarrowby.example/s/monday-client-files"
               }
             ],
             "auth": {
@@ -378,7 +378,7 @@
                 "unapproved_tool": "This is the approved file-sharing service, not a free site: it's on tarrowby.example, shared to a named person, and the link expires. That's exactly the safe way to send a big file.",
                 "default": "A share-link email is just what a phish copies, so it's fair to look twice. But this one is Tarrowby's own service on tarrowby.example, from a colleague you know, to you, with an end date. Open it."
               },
-              "falseAlarmCost": "If a genuine share goes unopened, the Monday pack sits unread and the deadline slips while Shauna waits or someone checks it."
+              "falseAlarmCost": "If a genuine share goes unopened, Monday's client files sit unread and the deadline slips while Shauna waits or someone checks it."
             }
           },
           {
@@ -421,7 +421,7 @@
       },
       "variant": "defendOnly",
       "durationTargetMin": 8,
-      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional firm. In scope: a short set of found sticks and messages, and the approved swaps.",
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional firm. In scope: shadow IT, the shortcuts staff take round IT. A short set of USB sticks that turned up and messages, and the approved swaps.",
       "stages": [
         "brief",
         "defend",
@@ -436,24 +436,24 @@
       "strings": {
         "weakestTells": "The risks most often missed: {names} ({counts} each).",
         "weakestTell": "The risk most often missed: {names} ({counts}).",
-        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way' messages are waiting: some are safe, some aren't. Match each shortcut to the approved way, then sort the messages. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check.",
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. This one is about shadow IT: staff using devices, apps, accounts or services that IT doesn't know about or hasn't approved, usually as a shortcut. Client files are due by Monday and the share is slow. USB sticks that turned up and 'quicker way' messages are waiting: some are safe, some aren't. Match each shortcut to the approved way, then sort the messages. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check.",
         "allRight": "You took the safe route on every one of these. Nothing to pick over here.",
         "allPhishRight": "Every risky shortcut was stopped, with every reason named.",
         "noBlameLine": "Shortcuts are well meant, usually taken under a deadline. Being caught by one is no fault of yours; Colin was right that the share was slow. The move is to tell IT so the data gets somewhere safe.",
         "noBlameLineCritical": "These shortcuts are tempting when a deadline bites, so a miss here says more about the pressure than about you. The points only show where to look next time.",
-        "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and if you're unsure about something, report it to IT. If personal data went to a personal account, the data protection officer needs to know too.",
+        "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. Work stays in work places, not your personal email, personal cloud or a free online service. A USB stick or other device IT hasn't checked, whether found, posted, handed over or given away, goes to IT unplugged. If the official way is slow, tell IT rather than build your own way round, and if you're unsure about something, report it to IT. If personal data went to a personal account, the data protection officer needs to know too.",
         "habitLine": "When the official way is too slow, tell IT rather than build your own way round it.",
-        "defendIntro": "Now go through the found sticks and 'quicker way' messages and decide what to do with each. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
+        "defendIntro": "Now go through the USB sticks that turned up and the 'quicker way' messages and decide what to do with each. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
         "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
-        "teamLine": "By reporting or checking {n} of the risky ones rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
+        "teamLine": "By reporting or checking {n} of the risky ones rather than acting on them, you kept an unknown USB stick or a risky shortcut away from the rest of your team.",
         "conceptPanel": [
           {
-            "heading": "About that stick",
-            "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT."
+            "heading": "Shadow IT, and those USB sticks",
+            "text": "Shadow IT is staff using devices, apps, accounts or services that IT doesn't know about or hasn't approved, usually as a shortcut under a deadline. Sending client files through a free transfer site or a free PDF editor is shadow IT. So is any device IT hasn't checked, down to a USB stick.\n\nAn unknown USB stick can run code the moment it's plugged in, before anyone opens a file. That holds whether it was found, posted in or given away at a stand. The stick that came in the post was not from the client, who had posted nothing. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT unplugged."
           },
           {
             "heading": "If the quick route is taken",
-            "text": "Six months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client."
+            "text": "Six months on it surfaces: a service nobody can reach still holds the client files with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client."
           }
         ]
       },
@@ -484,7 +484,7 @@
         "cards": [
           {
             "id": "sw_partner_computer",
-            "situation": "Finishing Monday's pack on your partner's computer at home because your own is slow",
+            "situation": "Finishing Monday's client files on your partner's computer at home because your own is slow",
             "answer": "laptop_remote",
             "reason": "Work stays on the work laptop. Use remote access from home, where the firm can still protect and back up the data."
           },
@@ -760,7 +760,7 @@
           "interactable": true,
           "active": true,
           "locked": false,
-          "observations": "A touch-screen kiosk showing a Tarrowby desktop: found sticks, shortcut messages and the approved swaps to match.",
+          "observations": "A touch-screen kiosk showing a Tarrowby desktop: USB sticks that turned up, shortcut messages and the approved swaps to match.",
           "observationVariants": [
             {
               "condition": "globalVars.episode_e15_shadow_it_defend_defend_complete",
