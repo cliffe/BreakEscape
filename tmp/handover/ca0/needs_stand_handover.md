@@ -15,3 +15,7 @@ office_coffee (west) 10px side gap, -16 -> 2px gap, 0; kitchen copier 17 -> 1; w
 2. Run bin/test-js (needs tests at least: test/js/npc-needs*.test.mjs, needs-*.test.mjs); look for golden/ops-unchanged fixtures that record NPC positions and re-record only those changed, list reasons.
 3. grep tools/video/takes/ for needs-driven NPC positions (coffee/cooler/printer marks) and say whether a landed trailer take needs a retake (CA trailers: any take showing an NPC at a machine will shift by up to ~16px).
 4. Kill my server on :3456 when done (only my PIDs).
+
+## Known failures after the fix (verify against HEAD~1 whether pre-existing, else fix or re-record)
+- test/js/npc-needs-slots.test.mjs test 12 "adapter: cross-room place then pickup..." 138.5 !== 132: placeHeld sets the item halfway between target centre and approachCell, so the new cell moves it. Likely a deliberate re-record of the expected position (the fake sprite in that test has size, so the new aim applies).
+- test/js/npc-needs-return-standing-npc.test.mjs fails as a whole file: not yet looked at (may be pre-existing; run with git stash-free check: `git show HEAD~1:...npc-needs.js` copy).
