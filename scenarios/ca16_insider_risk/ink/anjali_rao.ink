@@ -54,8 +54,8 @@ VAR hub_quiet = false
         Anjali Rao: That's them handled. Your login is you, offers get reported, and a concern that comes to nothing is never a failure.
         Anjali Rao: Nobody's in trouble for being approached, and nobody's a suspect for having a hard week.
     - else:
-        Anjali Rao: Anjali Rao, information security. This week someone's leaving and there's a bit of talk going round. You're not here to catch anyone.
-        Anjali Rao: Insider risk is harm from people who already have access. Mostly by accident, sometimes on purpose.
+        Anjali Rao: Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly by accident, sometimes on purpose.
+        Anjali Rao: This week someone's leaving and there's a bit of talk going round. You're not here to catch anyone.
         Anjali Rao: Keep your login yours, tell me what gets offered to you, and if something gives you pause, bring me the facts rather than a theory.
         Anjali Rao: Start at the kiosk. Make this week's calls first, then raise a concern and sort the messages.
     }

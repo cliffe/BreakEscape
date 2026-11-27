@@ -84,3 +84,21 @@ The full episode's :57 is unchanged and keeps its clip (`tts_cache/ca16_insider_
 
 1. **Order of the full welcome.** The twin says name, definition, then "You're not here to catch anyone". The full episode says name, the week, "You're not here to catch anyone", then the definition. Matching the twin would put the reassurance straight after "sometimes on purpose" in both, at the cost of re-voicing :57 as well. Kept as is for now.
 2. **Outside approach in the card.** Should the deliberate example say where it usually starts, for instance "A small part is deliberate, and it often starts with an approach from outside: money for access"? It would bring the attacker's side into the definition. Not changed.
+
+## Addendum: integrator decisions applied (same day)
+
+Both owner questions were answered and applied, text only.
+
+- **ca16a, full welcome order.** The definition now follows Anjali's name, as in the twin: name and definition, then the week and "You're not here to catch anyone", then the habits and the kiosk. The first line is word for word the twin's first line. Still four lines before the choice.
+- **ca16b, card.** "A small part is deliberate, such as taking money for access." became "A small part is deliberate, and it often starts with an approach from outside: money for access." in both erbs and `e16/defend.json`. "Rare" stays out (approved).
+
+The "Lines to voice" table above is superseded by this one:
+
+| File:line | Text |
+|---|---|
+| `scenarios/ca16_insider_risk/ink/anjali_rao.ink:57` | Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly by accident, sometimes on purpose. |
+| `scenarios/ca16_insider_risk/ink/anjali_rao.ink:58` | This week someone's leaving and there's a bit of talk going round. You're not here to catch anyone. |
+| `scenarios/ca16_insider_risk_defend/ink/anjali_rao.ink:31` | Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly by accident, sometimes on purpose. |
+| `scenarios/ca16_insider_risk_defend/ink/anjali_rao.ink:32` | You're not here to catch anyone. Tell me what you're offered. At the kiosk, raise a concern as facts, then sort the messages. |
+
+Orphaned clips: `tts_cache/ca16_insider_risk/a33a8692d706675e6bb7a526170a3311` (the old full :57) and `tts_cache/ca16_insider_risk_defend/bfbd24db169f97936ddefae2935cb8e9` (the old one-line twin welcome).
