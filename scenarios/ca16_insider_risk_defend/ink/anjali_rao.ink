@@ -28,8 +28,8 @@ VAR hub_quiet = false
             Anjali Rao: Ten minutes on your login would sit in the audit under your name, and he might reach data he has no business in.
         }
     - else:
-        Anjali Rao: Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly it's an accident, now and then it's on purpose.
-        Anjali Rao: You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.
+        Anjali Rao: Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly by accident, sometimes on purpose.
+        Anjali Rao: You're not here to catch anyone. Tell me what you're offered. At the kiosk, raise a concern as facts, then sort the messages.
     }
 }
 + [Thanks, Anjali.]

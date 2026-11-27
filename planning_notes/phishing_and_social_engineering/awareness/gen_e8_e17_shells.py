@@ -468,7 +468,7 @@ LINES = {
                   "That number is on the attacker's screen. Read it back, or tap Approve, and the sender walks straight into your account.")},
         'Thanks, Nilesh.', 'Any time.'),
     ('e16', 'defend'): (
-        "Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly it's an accident, now and then it's on purpose. You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.",
+        "Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly by accident, sometimes on purpose.\n        Anjali Rao: You're not here to catch anyone. Tell me what you're offered. At the kiosk, raise a concern as facts, then sort the messages.",
         {'catch': ("You kept your sign-in to yourself and sent him to the service desk, so none of his actions landed under your name.",
                    'Lending a login feels kind, but it leaves you answerable for whatever is done with it.'),
          'miss': ('That ask to borrow your sign-in, from a colleague locked out and under pressure, was the one to turn down.',
