@@ -1,0 +1,13 @@
+{
+  "key": "b4640cd9e34160c9cdb5dbcf1c9893d7",
+  "npc": "kit_chidi_okeke",
+  "text": "Nice. Deadline on and a free transfer tool looks grand, but then nobody can say where the client files have gone.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T02:09:58Z"
+}
