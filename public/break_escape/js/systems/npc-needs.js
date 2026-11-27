@@ -230,6 +230,65 @@ export const CALL_PICTURES = 3;
  * magnet is food the player puts out: it lowers the level at which an NPC that knows about it acts
  * on a need it satisfies (never raising the need itself), and is eaten a serving at a time.
  */
+// Where an NPC's feet should be to use an item: at the item's floor base, measured from the feet
+// collider (20 x 10 px, centre = body.center, so its bottom edge is centre.y + 5), not from the
+// item's centre. `rect` is the sprite's drawn box { left, right, top, bottom } and `elevation` its
+// depth lift: the sprite is drawn at depth bottom + 0.5 + elevation, so its floor base is
+// bottom + elevation (an item on a desk or hung on a back wall stands on the floor further down
+// than it is drawn). Returns { x, y, side, away, reach } (the ideal feet-centre point, the side of
+// the item it is on, the unit step away from the item and how far (px) a free cell may be taken
+// from it), or null to keep the old aim at the item's centre (no geometry, an elevated item with
+// a useFrom tile offset, or useFrom {0, 0}). useFrom now names a SIDE (the larger of |dx|, |dy|;
+// its sign picks which), not a tile distance. The drawn feet touch the base line. The 20x10 body
+// (npc-sprites.js) sits below the art: the 80x80 frames end their feet at about y 69 and the body
+// centre is y 71, so the centre goes ART_FEET_BELOW_CENTRE (2 px) below the base line, not the
+// body's bottom edge (that stood NPCs ~9 px back from a table or machine).
+export const FEET_HALF_W = 10;
+export const FEET_HALF_H = 5;
+export const FEET_TOUCH = 1;
+const ART_FEET_BELOW_CENTRE = 2;
+const AWAY = { south: { dx: 0, dy: 1 }, north: { dx: 0, dy: -1 }, east: { dx: 1, dy: 0 }, west: { dx: -1, dy: 0 } };
+export function approachTarget(obj, rect, elevation = 0) {
+    if (!obj || !rect) return null;
+    if (![rect.left, rect.right, rect.top, rect.bottom, elevation].every(Number.isFinite)) return null;
+    const elev = elevation > 0 ? elevation : 0;
+    const base = rect.bottom + elev;
+    const cx = (rect.left + rect.right) / 2;
+    const at = (side, x, y, reach) => ({ x, y, side, away: AWAY[side], reach });
+    const uf = obj.affordance?.useFrom;
+    let side = 'south';
+    if (uf && Number.isFinite(uf.dx) && Number.isFinite(uf.dy)) {
+        if (elev > 0 || (uf.dx === 0 && uf.dy === 0)) return null;
+        side = Math.abs(uf.dy) > Math.abs(uf.dx) ? (uf.dy > 0 ? 'south' : 'north') : (uf.dx > 0 ? 'east' : 'west');
+    }
+    const reach = uf ? 16 : 24;
+    const feetY = base + ART_FEET_BELOW_CENTRE;
+    // Behind the item: the drawn feet go in from its top edge to where its table top or counter
+    // ends (about a third of the way down), not a body-height above its top
+    if (side === 'north') return at(side, cx, rect.top + ART_FEET_BELOW_CENTRE + Math.min(12, (rect.bottom - rect.top) * 0.3), reach);
+    if (side === 'east') return at(side, rect.right + FEET_HALF_W + FEET_TOUCH, feetY, reach);
+    if (side === 'west') return at(side, rect.left - FEET_HALF_W - FEET_TOUCH, feetY, reach);
+    return at(side, cx, feetY, reach);
+}
+// Probe points for a nearest-open-cell search from an approachTarget: steps of `step` px away from
+// the item (never back towards it) and sideways, nearest the target first. The caller takes the
+// first probe that lands in a walkable cell.
+export function approachProbes(aim, step = 8) {
+    const out = [];
+    const n = Math.ceil(aim.reach / step);
+    const px = aim.away.dy !== 0 ? 1 : 0, py = aim.away.dx !== 0 ? 1 : 0;   // sideways axis
+    for (let k = 0; k <= n; k++) {
+        for (let j = -n; j <= n; j++) {
+            const x = aim.x + aim.away.dx * k * step + px * j * step;
+            const y = aim.y + aim.away.dy * k * step + py * j * step;
+            // sideways steps cost double, so a side stand point slides along its side before it
+            // slides round the corner, and a front one stays in front
+            out.push({ x, y, d: k * step + 2 * Math.abs(j) * step, j: Math.abs(j) });
+        }
+    }
+    return out.filter(p => p.d <= aim.reach + 0.5).sort((a, b) => a.d - b.d || a.j - b.j);
+}
+
 export function magnetOf(aff) {
     const m = aff?.magnet;
     if (!m || typeof m !== 'object') return null;
@@ -3520,7 +3579,7 @@ export class NPCNeedsSystem {
         const moveId = this._nextMoveId();
         job.moveId = moveId;
         // arriveWithin: walk on to the cell itself (the behaviour layer's default stops a tile short)
-        return this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
+        return this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 3, moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
     }
 
     /**
@@ -5299,6 +5358,13 @@ export function createEngineWorld() {
         const ox = sp.originX ?? 0.5, oy = sp.originY ?? 0.5;
         return { x: sp.x + w * (0.5 - ox), y: sp.y + h * (0.5 - oy) };
     };
+    // The sprite's drawn box in world px, origin-aware (null with no size)
+    const spriteRect = (sp) => {
+        const w = sp.displayWidth || sp.width || 0, h = sp.displayHeight || sp.height || 0;
+        if (!w || !h) return null;
+        const left = sp.x - w * (sp.originX ?? 0.5), top = sp.y - h * (sp.originY ?? 0.5);
+        return { left, right: left + w, top, bottom: top + h };
+    };
     // Affordance presets (office-presets.js, slice 4): window.officePresets resolves the object's
     // own fields over its type's preset when the scenario says "officePresets": true
     const affordanceOf = (sp) => {
@@ -5545,17 +5611,29 @@ export function createEngineWorld() {
             const f = findSprite(id);
             return f ? describe(f.roomId, f.key, f.sp) : null;
         },
-        approachCell(obj) {
+        approachCell(obj, opts) {
             const pm = W().pathfindingManager;
             const uf = obj.affordance?.useFrom;
             if (pm?.findNearestWalkableWorldCell) {
+                // Feet at the item's floor base (approachTarget): a desk keeps the old aim (its user
+                // sits behind it), and window.__needsLegacyApproach restores the old one for A/B checks
+                const sp = obj._sprite;
+                const geo = !obj.desk && !opts?.legacy && !W().__needsLegacyApproach && sp && !sp.destroyed ? spriteRect(sp) : null;
+                const aim = geo ? approachTarget(obj, geo, sp.elevation ?? 0) : null;
+                const magnetOnTable = !!(obj.affordance?.magnet && sp && W().tableDrop?.approach);
+                if (aim && !magnetOnTable) {
+                    for (const p of approachProbes(aim)) {
+                        const c = pm.findNearestWalkableWorldCell(p.x, p.y, 0);
+                        if (c) return c;
+                    }
+                }
                 if (uf && Number.isFinite(uf.dx) && Number.isFinite(uf.dy)) {
                     const c = pm.findNearestWalkableWorldCell(obj.x + uf.dx * TILE, obj.y + uf.dy * TILE, 1);
                     if (c) return c;
                 }
                 // Slice 23: a magnet standing on a table is used from the table's edge (item-drop.js)
-                if (obj.affordance?.magnet && obj._sprite && W().tableDrop?.approach) {
-                    const c = W().tableDrop.approach(obj._sprite, obj.roomId, (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r));
+                if (magnetOnTable) {
+                    const c = W().tableDrop.approach(sp, obj.roomId, (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r));
                     if (c) return c;
                 }
                 // Item on the floor: stand on it. Furniture: the nearest walkable cell.
@@ -5984,7 +6062,9 @@ export function createEngineWorld() {
             let at;
             if (pa && Number.isFinite(pa.dx) && Number.isFinite(pa.dy)) at = { x: target.x + pa.dx * TILE, y: target.y + pa.dy * TILE };
             else {
-                const cell = this.approachCell(target);
+                // The old aim: a delivered item lands on the near side of the target's centre, not
+                // at the (now lower) feet-at-base stand point
+                const cell = this.approachCell(target, { legacy: true });
                 at = cell ? { x: (target.x + cell.x) / 2, y: (target.y + cell.y) / 2 } : { x: target.x, y: target.y };
             }
             delete rec._needsCarried[itemId];
