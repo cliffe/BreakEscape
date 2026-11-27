@@ -5607,14 +5607,14 @@ export function createEngineWorld() {
             const f = findSprite(id);
             return f ? describe(f.roomId, f.key, f.sp) : null;
         },
-        approachCell(obj) {
+        approachCell(obj, opts) {
             const pm = W().pathfindingManager;
             const uf = obj.affordance?.useFrom;
             if (pm?.findNearestWalkableWorldCell) {
                 // Feet at the item's floor base (approachTarget): a desk keeps the old aim (its user
                 // sits behind it), and window.__needsLegacyApproach restores the old one for A/B checks
                 const sp = obj._sprite;
-                const geo = !obj.desk && !W().__needsLegacyApproach && sp && !sp.destroyed ? spriteRect(sp) : null;
+                const geo = !obj.desk && !opts?.legacy && !W().__needsLegacyApproach && sp && !sp.destroyed ? spriteRect(sp) : null;
                 const aim = geo ? approachTarget(obj, geo, sp.elevation ?? 0) : null;
                 const magnetOnTable = !!(obj.affordance?.magnet && sp && W().tableDrop?.approach);
                 if (aim && !magnetOnTable) {
@@ -6058,7 +6058,9 @@ export function createEngineWorld() {
             let at;
             if (pa && Number.isFinite(pa.dx) && Number.isFinite(pa.dy)) at = { x: target.x + pa.dx * TILE, y: target.y + pa.dy * TILE };
             else {
-                const cell = this.approachCell(target);
+                // The old aim: a delivered item lands on the near side of the target's centre, not
+                // at the (now lower) feet-at-base stand point
+                const cell = this.approachCell(target, { legacy: true });
                 at = cell ? { x: (target.x + cell.x) / 2, y: (target.y + cell.y) / 2 } : { x: target.x, y: target.y };
             }
             delete rec._needsCarried[itemId];
