@@ -1,0 +1,78 @@
+# ca15 trailer script r4 (owner round r2): review R1, sell and truth
+
+Script: `docs/video/scripts/ca15_trailer_script_r4.md` (header "owner round r2", 27 Nov, 73.26 s). Checked against `tmp/handover/ca0/ca15_usb_placement.md`, `scenarios/ca15_shadow_it/scenario.json.erb` (last scenario commit ba20f8a25), `ink/nilesh_solanki.ink`, the r3 script and its reviews R1 to R5, and the rubric in `tmp/handover/ac0/CA_FUN_USP_RUBRIC.md`. Reviewer: Opus (sell and truth). 27 Nov 2026. No renders, no machine use; frame claims are the script's own unless stated.
+
+Counts: 0 Blocker, 5 Major, 6 Minor.
+
+## Verdict
+
+r4 does what the owner asked. "Shadow IT" is on the open card and spoken by 13 s, defined by 17 s, and every shot after that is an example of it, then the attacker's view, then the learner's turn. "Pack", "red-team kit", "tracker", "session note", "Look up" and "Carry on" are gone from VO, cards, chips and tabs. The house rules hold: every VO line is under 2.0 words a second, no dashes in VO, every card, caption and chip is 28 characters or fewer, no "Break Escape", the close plate reads "Learn on Hacktivity.co.uk", and "Cyber Security" does not appear split or joined wrongly.
+
+The weak points are all in the second half of the stick story. The sharpest-last escalation lands on a repeat (a stick, then "even a USB stick" over another stick). The reveal says "Now the attacker's side" without telling a first-time viewer that they left the stick Joanne just picked up. And v27 claims every shortcut is an attacker's way in, which two of the four cards do not support. The inbox window also contradicts itself on verdict buttons. All five fixes are wording or take-window changes; none adds a take beyond the two already planned.
+
+## Findings
+
+| # | Rank | Where | Finding | Fix |
+|---|---|---|---|---|
+| 1 | Major | v27, beat 12 | Truth. "Each shortcut is an attacker's way in." overclaims. Of the four cards' consequences (erb :689-706), the personal inbox (attacker, fake invoice) and the visitor's stick (copied folders) are attacks. The rota in the free app ends in loss ("vanished when the free app closed the unused account") and the group chat in a leak with no attacker ("a photo ... was passed on outside it"). The debrief's own claim is narrower: a shortcut "leaves a gap worth taking" (erb :671). A practitioner would let "a way in" pass for the inbox, not for "each". | Replace v27 with **"An attacker only needs one shortcut."** (6 words, est. 2.6 s clip plus lead and tail, ends about 2.9 s; window 4.42; 1.36 w/s; margin about 1.5 s). Caption "An attacker only needs / one shortcut." (22 / 13). It is true of the one consequence on screen, keeps the attacker's point of view and makes no claim about the other three. Alternative closer to the episode text: "Each shortcut leaves a gap worth taking." (7 words, same timing as v27). |
+| 2 | Major | v25, v26, beats 7 and 8 (the author's "two sticks in a row" flag) | Clarity. Beat 7's card reads "Plug the visitor's stick into your laptop" under "An untrusted device on the work network." A sound-off viewer already knows the device is a USB stick. Beat 8 then says "Even a USB stick." over another stick, so the escalation word "even" lands on something just shown, and the viewer has to work out that these are two different sticks. The difference that matters (a stick someone handed you, then a stick nobody owns) is never said. | Keep v25 as written (the owner's words). Replace v26 with **"Even a found USB stick."** (5 words, est. 2.15 s plus lead and tail, ends about 2.5 s; window 3.16; 1.58 w/s; margin about 0.66 s). Caption "Even a found USB stick." (23). "Found" separates it from the visitor's stick and sets up Joanne's "see whose it is". Voice it as the script says, slower and lower. |
+| 3 | Major | v18, beat 10, and the reveal reorder | Sell and truth. The cut from Joanne plugging in (beat 9) to the drop (beat 10) is the trailer's reveal, and the only VO is "Now the attacker's side." That names a side but not the twist. A first-time viewer sees a glitch and someone walking in with a stick, and may read it as a second, unrelated stick. The reorder (in the game the drop comes first, erb `red_stick` `after: "mistake"`, then the find) is honest only if the viewer understands it as a rewind. Saying "you left that stick" makes the rewind explicit, and it is the USP in attacker terms: you are the one who planted it. | Replace v18 with **"Now you're the attacker. You left that stick."** (8 words, est. 3.43 s plus 0.2 lead and 0.15 tail, ends about 3.78 s; window 4.42; 1.81 w/s; margin about 0.64 s). Caption "Now you're the attacker. / You left that stick." (24 / 20). True: beat 8 and 9 show the same `red_stick` the learner drops at 29.45-33.87 of t11. New TTS under the standing yes; retire the cached v18 for this cut. |
+| 4 | Major | Beat 14 window, section 5 row 14 | Rules and truth (the script contradicts itself). The row says in 1.75, out 7.43 "so the Trust / Report / Delete / Verify buttons (from 6.78 in t06) never show". 1.75 + 5.68 = 7.43, so the window runs 0.65 s past 6.78 and the opened Benmoor row with its four verbs is on screen at the end of the shot. The r3 script and the R1 timing review put the t06 list at 2.77 and the row opening at 6.77, which also means 1.75 to 2.77 is not the list: it is likely the triage brief, which today says "the Monday pack" and spells out "Trust, Report, Delete or Verify" (erb :232). v28 ends about 4.5 s into the shot, so no narration sits over the buttons, but the shot as specified shows them, and the beat description ("then the Benmoor 'USB catalogue' row") wants them. | t06b is a new take anyway: change its script to hold the list for 6.0 s before opening any row, add a mark `list_shown`, and set beat 14 to in = `list_shown`, out + 5.68. Assert in the take that no row is open at out. Drop "then the Benmoor 'USB catalogue' row" from the beat description; v28 names the kinds. If the stand-in t06 has to be used, cut in at 2.77 and out at 6.74 (4.0 s) and give the spare 1.68 s to beat 15. |
+| 5 | Major | v22, beat 4 | Clarity of the one defining line. "The shortcuts staff take round IT." Heard once at speed, "shortcuts staff" can parse as a noun ("the shortcuts staff", a team), and the sentence has no verb for the listener until "take". This is the definition the owner asked for, so it has to land first time with the sound on. With the sound off the caption breaks "The shortcuts staff take / round IT." which reads, but is still the weaker form. | Replace v22 with **"When staff take shortcuts round IT."** (6 words, same est. 2.7 s; window 3.79; 1.58 w/s; margin about 0.89 s). Caption "When staff take shortcuts / round IT." (25 / 9). It follows "This episode: Shadow IT." as a definition and keeps the owner's words "staff" and "shortcuts". |
+| 6 | Minor | Beat 13, blue card and v15 | Two near-identical sentences on screen at once: the card "You sort the shortcuts" and the burned caption "You sort what's waiting." | Burn no caption on beat 13, as the house already does for v1 and v11 on the open and close cards. The card carries it; v15 stays as voiced. |
+| 7 | Minor | Beat 10 chip `SAFE TEST STICK` | "Safe" on screen three seconds after "Even a found USB stick" undercuts the danger point, and a viewer can read it as a verdict on sticks. The chip's job is the sanction. | Chip **`AUTHORISED TEST`** (15 characters). Matches the episode brief ("an authorised exercise", erb :5) and the debrief ("an authorised test"). |
+| 8 | Minor | v28, beat 14 | "a quicker way round" is a half-phrase that does not tie back to the definition. | **"Posted sticks, free tools, and quicker ways round IT."** (9 words, est. 3.86 s plus lead and tail, ends about 4.2 s; window 5.68; 1.58 w/s; margin about 1.5 s). Caption "Posted sticks, free tools, / and quicker ways round IT." (26 / 25). Still names kinds only, and the inbox does hold a posted stick, a giveaway stick, a free transfer site and a free PDF editor (erb :317-460), so it gives nothing away. |
+| 9 | Minor | v25 "on the work network" | Truth, small. Card 3 says "your laptop" and its consequence says the stick "copied the folders it could reach" (erb :698). Nothing in the episode says "network". A work laptop with work folders is on the work network in any normal reading, and these are the owner's words, so I would keep the line. | Keep v25. Ask the option (a) fix to use "work network" or "work laptop" in the drop framing (Nilesh or the debrief), so the trailer phrase has a home in the game. |
+| 10 | Minor | Beat 10, drop shot | t11 rewrites `#be-hide-hud` to show the inventory and toasts. If that exposes the objectives panel, its task title reads "Leave the red-team stick where someone will find it" (erb :61), banned jargon. The script checks only the item name. | Add to the 31.5-33.0 frame check: objectives panel hidden at 29.45-33.87, else box it in the `masks` lane. |
+| 11 | Minor | Beats 3 to 7, sell | Five of the first eight shots after the hook are kiosk panels or cards (beat 3 panel, beat 4 card, beats 5 to 7 choice cards), 15 s of text with one click each. The VO carries it, and the owner asked for the shortcuts, so it stays. It is the slowest stretch of the cut. | No change to beats 5 to 7. Optional: if t11 has 3.16 s of the open-plan staff at work before the learner enters (before 29.45, learner not in frame), use it for beat 3 under "This episode: Shadow IT." with chip `THE OFFICE`, and drop the `EVERYDAY CHOICES` panel. It puts staff on screen before v22 says "staff". Frame check first; keep beat 3 as is if no clean window exists. |
+
+Not findings, checked:
+
+- Hook (beat 1): Joanne's bark "Someone's dropped a memory stick. Whose is this?" is the erb text (:1595); the PC line "I'll just plug it in and see whose it is." is :1613; Nilesh's "Nobody was careless there. She was being kind, and that's what a drop relies on." is `nilesh_solanki.ink:47`; Fatima's "No name on it, nothing. What do you reckon I do with it?" is :1175 / :1283. All quoted correctly.
+- v23 and v24 match cards 1 and 4 after the fix (card 4 needs none; card 1's option will read "Send the client files to your personal email to finish at home").
+- "Untrusted device on the work network" is shown: in text by card 3 and, in the world, by Joanne putting an unknown stick into her work PC (beat 9). The second is the stronger proof and comes straight after.
+- Nilesh's read moved ahead of the six-months page: no word says "then" across it, and with finding 3 the rewind is stated. A1 holds.
+- Beat 8 and 9 under the `SHORTCUT` tab, then Nilesh's "Nobody was careless there": coherent under option (a) (plugging in rather than handing in is the shortcut round IT; she meant well). It keeps the no-blame tone.
+- Close "Take the shortcut, see where it leads.": reads as an invitation to play the mistake half, and "see where it leads" frames the consequence. Keep.
+- THE DEPOT chip: the site is "the Shipley depot" (erb :1338); plain enough.
+
+## Rubric (CA fun and USP, trailer-observable, 0 to 3)
+
+The rubric file now has 13 items (P1 added 21 Nov). As in the r3 reviews, F2, F5, F6 and O3 cannot be seen in a trailer; A1 and A2 are gates. Scores are for the script as written, with the score after the findings in brackets.
+
+| Item | Score | Evidence |
+|---|---|---|
+| F1 Early hook | 3 | Joanne at the kettle, 0 to 4.4 s: "Someone's dropped a memory stick. Whose is this?", both sentences heard, bubble whole for 2.65 s |
+| F3 Agency | 2 | Three shortcut picks on the beat (beats 5 to 7), one outcome shown (card 1's six months on) and one in the world (Joanne's find of the dropped stick). The other picks' outcomes are off screen |
+| F4 Living world | 3 | Joanne and Niamh at the kettle with chatter ("Who's nicked the big mug?"), Joanne carries the stick to her PC, Nilesh reads it kindly, Fatima asks |
+| O1 Attacker method | 2 (2) | Under `ATTACKER`: the learner walks in and drops the stick by the kettle, then (shown earlier) a colleague picks it up and plugs it in. Two steps visible. What the drop gets the attacker is no longer shown (the tracker payoff was cut for clarity), so it stays at 2. Finding 3 makes the steps readable as the attacker's, but adds no payoff |
+| O2 Attacker reasoning | 3 | "She was being kind, and that's what a drop relies on" names the human lever, not a flaw; v27 (finding 1) adds the attacker's economy |
+| O4 Tone | 3 | VO says "staff", never "you were careless"; "Nobody was careless there"; no fear words. Finding 7 removes the one word ("safe") that muddies the stakes |
+| P1 Practice or outcome | 2 | Fresh cases follow (the inbox, Fatima's stick) with the learner's answers off screen by design; consequences play out in the world (Joanne) and on the six-months page |
+| A1 Accuracy (gate) | conditional (pass) | Quoted lines all check out. v27's "each" fails for the rota and the group chat (finding 1); the beat 14 window shows what the script says it hides (finding 4) |
+| A2 Safe takeaway (gate) | pass | Pattern level only; no device, payload or tooling detail; the drop is shown as an authorised exercise |
+
+18 of 21 as written, 18 of 21 with the findings; A1 passes once finding 1 lands. The script's own 18 of 21 is right. No point is available without bringing back an attacker payoff (the r1 "tracker reports home"), and the owner's clarity note outweighs it.
+
+## The three owner questions
+
+1. **The hook's last words.** Recommend the default: picture out at 45.40 with the bubble whole for 2.65 s, and "Whose is this?" finishing 0.52 s over the open card as an L-cut. Both sentences are heard and the whole line is on screen, which is what the owner asked for. A hold or freeze to cover the last 0.52 s needs one to two beats from the open card, and v1 (5.11 s) no longer fits there. The t11 retake is a full 59 s room run that also risks the leftover stick sprite bug. Show the L-cut on the review page with a note pointing at the owner's request, and retake only if they turn it down.
+
+2. **Second shortcut: free app or the drivers' group chat.** Recommend the free app. With it the three cards are an inbox, an app and a device, which is the NCSC's own list (accounts, apps and services, devices) and gives the viewer three distinct things. The group chat repeats "personal" a third time (personal inbox, personal account, personal phones), its consequence is a leak with no attacker, and staff phones are not "on the work network", so it does not sharpen v25.
+
+3. **Defend half stand-ins.** Recommend waiting for t16 and t06b. Under option (a) beat 5 has no clean stand-in at all (card 1 says "pack" in both the situation and the option), so the cut cannot ship before the fix whatever is chosen for beats 12 and 14. A black box over a word in a text panel is the kind of half-concept the owner sent r1 back for, and v23 saying "Client files" over a boxed word looks like something is being hidden. t16 is needed anyway for beats 6 and 7, and t06b is the t06 script with a longer list hold (finding 4).
+
+## Lines to voice if the findings are taken
+
+| id | Line | Words | Est. seconds |
+|---|---|---|---|
+| v22 | When staff take shortcuts round IT. | 6 | 2.7 |
+| v23 | Client files, sent to a personal inbox. | 7 | 3.0 |
+| v24 | A free app, on a personal account. | 7 | 3.0 |
+| v25 | An untrusted device on the work network. | 7 | 3.0 |
+| v26 | Even a found USB stick. | 5 | 2.2 |
+| v18b | Now you're the attacker. You left that stick. | 8 | 3.4 |
+| v27 | An attacker only needs one shortcut. | 6 | 2.6 |
+| v28 | Posted sticks, free tools, and quicker ways round IT. | 9 | 3.9 |
+
+v18b replaces the cached v18 in this cut; give it a new id so the r3 clip stays on disk.
