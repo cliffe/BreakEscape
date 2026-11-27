@@ -1,0 +1,13 @@
+{
+  "key": "826c1ebbe1fb47257dd260d4f88de690",
+  "npc": "joanne_pell",
+  "text": "That's the alarm. Coats on, out we go.",
+  "voice": "Zephyr",
+  "style": "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:20:56Z"
+}

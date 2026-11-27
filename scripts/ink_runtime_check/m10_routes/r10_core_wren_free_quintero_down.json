@@ -1,0 +1,79 @@
+{
+ "steps": [
+  {
+   "note": "WREN reveal with Quintero knocked out: the player gets the Stop her choice instead."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true,
+    "whodunit_live": true,
+    "quintero_ko": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Someone corrected your sheet",
+    "Go on.",
+    "Only a shock",
+    "And the last one",
+    "Better you",
+    "Stop it"
+   ]
+  },
+  {
+   "said": [
+    "The service door opens. Kowalczyk comes through it fast and goes for the key."
+   ],
+   "notSaid": [
+    "Quintero comes in from the lock",
+    "Quintero is already through"
+   ]
+  },
+  {
+   "expect": {
+    "wren_entering": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Stop her"
+   ]
+  },
+  {
+   "said": [
+    "You get to her first. She doesn't fight you for it.",
+    "I sent her mum flowers."
+   ]
+  },
+  {
+   "expect": {
+    "wren_stopped": true,
+    "wren_at_core": true
+   }
+  }
+ ]
+}

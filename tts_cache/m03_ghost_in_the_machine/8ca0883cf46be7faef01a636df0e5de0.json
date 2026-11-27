@@ -1,0 +1,14 @@
+{
+  "key": "8ca0883cf46be7faef01a636df0e5de0",
+  "npc": "terry_mott",
+  "text": "Right. That's the police, then. Stay where you are.",
+  "delivery": "frustrated and aggressive, hard and raised, clipped; he means to be obeyed Every word clearly enunciated, his South London accent and age kept.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T01:54:20Z"
+}

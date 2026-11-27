@@ -1,0 +1,13 @@
+{
+  "key": "eea0a733475a8e795a06a77666b848b1",
+  "npc": "patricia_phone",
+  "text": "Skint and on the overnight rota. That's a lead, not a case. Half my caseload is skint.",
+  "voice": "Kore",
+  "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice. On the phone.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:58:40Z"
+}

@@ -1,0 +1,92 @@
+
+## R9 (cycle 3, D4-1/D4-3/D4-8): Ffion and Terry by day, then again at night in the same session, no reload. Reopens land on the knot of the saved choices.
+   {set {"briefing_played":true,"cloner_explained":true}}
+
+--- ffion ---
+  Ffion Rees: Afternoon! You'll be the three o'clock, is it? I'm Ffion.
+  Ffion Rees: Ms. Sterling mentioned you'd be coming in for a consultation.
+  Ffion Rees: Sign in for me, and I'll print you a badge.
+  Narrator: She slides a clipboard across the desk.
+  Ffion Rees: Ms. Sterling's in the conference room. Straight up the hallway, first door on the left.
+     (3 options)
+ > Where do I sign?
+  Narrator: You sign the visitor log.
+  Ffion Rees: There you go. Keep it on show, or the guard has kittens.
+  Ffion Rees: The conference room's behind the card reader on the left -- staff badges only. Ms. Sterling's strict about that. She doesn't come out to fetch people.
+  Ffion Rees: First time at a place like this, is it?
+     (4 options)
+ > Freelance. Small jobs, mostly. I'm told she's hard to impress.
+  Ffion Rees: She is. Don't let her scare you, she's like that with everyone.
+  Ffion Rees: Tip? Let her do the talking. She likes an audience.
+  Ffion Rees: Anything else, love?
+     (5 options)
+ > What's Ms. Sterling like?
+  Ffion Rees: Oh, she's brilliant. Does the big conferences, gets quoted in the papers. Bit terrifying, mind.
+     (3 options)
+ > Does she work late?
+  Ffion Rees: Some nights, yeah. The cleaners find her at her desk gone midnight.
+  Ffion Rees: Rings for a taxi at two in the morning and still beats me in.
+  Ffion Rees: What else can I do for you?
+     (5 options)
+ > Thanks. I'll head through.
+  Ffion Rees: Go on, then. Shout if you need anything.
+  [chat closes]
+
+--- terry ---
+  Terry Mott: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
+  Terry Mott: If Ms. Sterling wanted you back here, she'd have told me. She hasn't.
+     (2 options)
+ > When do you knock off?
+  Terry Mott: Knock off? Not till six tomorrow morning. Double shift. Afternoons in here, then the night rounds.
+  Terry Mott: Why?
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"victoria_card_cloned":true}}
+
+## night: Ffion's question must play now (D4-1)
+
+--- ffion ---
+  Ffion Rees: Oh! You made me jump. I only came back for my charger.
+  Ffion Rees: Is Ms. Sterling expecting you this late?
+     (3 options)
+ > Left my notebook in the conference room. I'll be two minutes.
+  Ffion Rees: Go on, then. I'll tell the guard you're about, so he doesn't jump on you.
+  [chat closes]
+
+--- ffion ---
+  Ffion Rees: Found it. Charger was in the biscuit tin, don't ask.
+ > Night, Ffion.
+  Ffion Rees: Go on, I'm locking the drawer. Don't let the guard scare you.
+  [chat closes]
+
+## Terry: straight to his challenge (D4-8), Ffion's story read (D3-2)
+
+--- terry ---
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Ffion said there'd be someone about. Notebook, was it? Should've known it'd be you. Conference room's the other end of the building.
+  Terry Mott: So what are you doing in my corridor?
+     (5 options)
+ > Wrong turn. I'll find it.
+  Terry Mott: Then you've taken the scenic route. Through the executive wing.
+  Terry Mott: Back the way you came. And if I see you in here again, I won't be asking.
+  [chat closes]
+
+## next reopen: the hub, cold, after the notebook exit
+
+--- terry ---
+  Narrator: The guard's torch swings your way again.
+ > Talk to the guard
+  Terry Mott: You again.
+     (4 options)
+ > Long night ahead of you?
+  Terry Mott: Told you this afternoon. On till six. Quiet, most nights.
+  Terry Mott: Though tonight's been more eventful than usual.
+  Terry Mott: I do my rounds. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+     (3 options)
+ > Fair enough.
+  Terry Mott: Well?
+     (3 options)
+ > I'll let you get on.
+  Terry Mott: I've got your face now. Don't make me use it.
+  [chat closes]
+
+[stats] spoken/narrated lines 38, choices 13, longest run without a choice 5 (ffion); runs>=6: 

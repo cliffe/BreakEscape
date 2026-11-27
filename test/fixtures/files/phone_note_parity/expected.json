@@ -1,0 +1,15 @@
+{
+  "lines": {
+    "Plain opening.": null,
+    "Conditional line.": "dry",
+    "Line with a note above.": "from the line above",
+    "In the tunnel.": "echoing",
+    "After the tunnel.": "back again",
+    "Glued part one and part two.": "glued note",
+    "Block line one.": null,
+    "Block line two.": "block end",
+    "Diverted line.": "crisp",
+    "Closing line.": null
+  },
+  "server_skips": ["Glued part one and part two."]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ecebfc3eb82abec463a6567859fd69e2",
+  "npc": "agnieszka_duda",
+  "text": "To whoever cloned that voice, a trusted payment is money gone the same day, and a call back on a known number is what they can't copy.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:08:58Z"
+}

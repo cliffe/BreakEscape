@@ -1,0 +1,13 @@
+{
+  "key": "f1fadd08b7867328f52fb3c43c297233",
+  "npc": "briefing_cutscene",
+  "text": "CryptoSecure Recovery has a stand in the Computing foyer. They're funding something called the Keyholder Studentship. Nine thousand a year, fees paid.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

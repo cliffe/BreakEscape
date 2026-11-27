@@ -1,0 +1,21 @@
+{
+  "key": "ea03b58c0da2e7b0284595618b7f3962",
+  "npc": "ghost_phone",
+  "text": "My share stays where it is. A clean exit, for once.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:07:19Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/ea03b58c0da2e7b0284595618b7f3962.mp3",
+    "clean_md5": "67c7b64568fb3c4f9399c467b5a0e117",
+    "baked_md5": "30a4b433a556e44107174a0d533408c8",
+    "baked": "2026-11-24"
+  }
+}

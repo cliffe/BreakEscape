@@ -1,0 +1,473 @@
+require 'test_helper'
+require_relative '../support/network_model_scenario'
+
+# Slice 9.3a step 1 (ACCESS_MODEL_SLICE_9_3_PLAN.md, sections 3 and 4.2): the shared rules
+# in BreakEscape::NetworkModel, the two player_state keys and the resource content ids.
+class NetworkModelTest < ActiveSupport::TestCase
+  NM = BreakEscape::NetworkModel
+
+  def data
+    @data ||= NetworkModelScenario.scenario
+  end
+
+  def ids(entries)
+    entries.map { |entry| entry[:object]['id'] }
+  end
+
+  test 'membership comes from the object, else from its room, else none' do
+    rooms = data['rooms']
+    assert_equal 'office_lan', NM.network_of(rooms['desk_room']['objects'][0], rooms['desk_room']),
+                 'an object network of its own'
+    assert_equal 'office_lan', NM.network_of(rooms['kiosk_room']['objects'][0], rooms['kiosk_room']),
+                 "the room's default"
+    assert_nil NM.network_of(rooms['desk_room']['objects'][1], rooms['desk_room']), 'neither'
+
+    own = { 'network' => 'workshop_lan' }
+    assert_equal 'workshop_lan', NM.network_of(own, { 'network' => 'office_lan' }), "the object's own value wins"
+    assert_nil NM.network_of({ 'network' => '  ' }, nil)
+  end
+
+  test 'the networks, the jacks and their networks' do
+    assert_equal %w[office_lan workshop_lan], NM.networks(data).keys
+    jacks = NM.jacks(data)
+    assert_equal %w[comms_port server_port bench_port], ids(jacks)
+    assert_equal %w[office_lan office_lan workshop_lan], jacks.map { |j| j[:network] }
+  end
+
+  # Sorted by id, not in scenario order: scenario_data is stored as jsonb, which keeps
+  # object keys sorted by length then bytes, so authored order cannot survive (D3).
+  test 'the hosts and resources on a network, sorted by id' do
+    assert_equal %w[door_box kiosk_pc lena_pc sam_pc], ids(NM.sign_in_objects_on('office_lan', data)),
+                 'every sign-in object on the network, sorted by id'
+    assert_equal %w[bench_pc], ids(NM.sign_in_objects_on('workshop_lan', data))
+    assert_equal %w[ledger_archive print_queue scanned_inbox], NM.resources_on('office_lan', data).map(&:first)
+    assert_equal %w[bench_notes], NM.resources_on('workshop_lan', data).map(&:first)
+    assert_empty NM.sign_in_objects_on(nil, data)
+    assert_empty NM.resources_on('', data)
+  end
+
+  test 'nothing under a sign-in object is a room object' do
+    paths = NM.room_objects(data).map { |entry| entry[:object]['id'] }
+    refute_includes paths, 'door_codes'
+    refute_includes paths, 'sam_local'
+    assert_includes paths, 'vault_prize', "an ordinary container's contents are walked"
+  end
+
+  test 'a rogue device definition is found in each of the five homes' do
+    %w[room container start npc grant].each do |home|
+      found = NM.rogue_device_definitions(NetworkModelScenario.with_device_home(home))
+      assert_equal [home], found.map { |f| f[:home] }, home
+      assert_equal 'kit_dropbox', found.first[:item]['id'], home
+    end
+  end
+
+  test 'a rogue device needs an id' do
+    scenario = NetworkModelScenario.scenario
+    scenario['rooms']['lobby']['objects'][0].delete('id')
+    assert_empty NM.rogue_device_definitions(scenario)
+  end
+
+  test 'reach_conditions: one open route on the same network or with none, no route across' do
+    resources = NM.resources(data)
+    assert_equal [[]], NM.reach_conditions(data, 'office_lan', resources['scanned_inbox'])
+    assert_equal [], NM.reach_conditions(data, 'workshop_lan', resources['scanned_inbox'])
+    assert_equal [], NM.reach_conditions(data, nil, resources['scanned_inbox'])
+    assert_equal [[]], NM.reach_conditions(data, 'workshop_lan', { 'kind' => 'printer' })
+    assert_equal [[]], NM.reach_conditions(data, nil, { 'kind' => 'printer' })
+  end
+
+  # Slice 9.3b sub-slice K (ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.1): links and the pivot.
+  def linked_scenario(links)
+    {
+      'networks' => { 'a' => { 'name' => 'A' }, 'b' => { 'name' => 'B' }, 'c' => { 'name' => 'C' },
+                      'd' => { 'name' => 'D' } },
+      'networkLinks' => links
+    }
+  end
+
+  test 'network_links keeps only two-item pairs of defined, distinct networks' do
+    d = linked_scenario([%w[a b], %w[b c], %w[a x], %w[a], %w[a a], 'junk', %w[a b c]])
+    assert_equal [%w[a b], %w[b c]], NM.network_links(d)
+  end
+
+  test 'linked_networks is undirected and sorted' do
+    d = linked_scenario([%w[a b], %w[c a]])
+    assert_equal %w[b c], NM.linked_networks(d, 'a')
+    assert_equal %w[a], NM.linked_networks(d, 'b')
+    assert_empty NM.linked_networks(d, 'd')
+    assert_empty NM.linked_networks(d, nil)
+  end
+
+  test 'reach_paths: a chain is shortest first, the same network is a single node, no link is none' do
+    chain = linked_scenario([%w[a b], %w[b c], %w[c d]])
+    assert_equal [%w[a b c d]], NM.reach_paths(chain, 'a', 'd')
+    assert_equal [%w[a]], NM.reach_paths(chain, 'a', 'a')
+    assert_empty NM.reach_paths(linked_scenario([%w[a b]]), 'a', 'd')
+  end
+
+  test 'reach_paths: a cycle gives both directions, shortest first and ordered' do
+    cycle = linked_scenario([%w[a b], %w[b c], %w[c d], %w[a d]])
+    assert_equal [%w[a d], %w[a b c d]], NM.reach_paths(cycle, 'a', 'd')
+  end
+
+  test 'reach_paths is capped at eight' do
+    # a and f joined through ten parallel middle networks plus a direct link: eleven simple
+    # paths, so the pivot keeps the first eight.
+    middles = (1..10).map { |i| "m#{i}" }
+    nets = { 'a' => { 'name' => 'A' }, 'f' => { 'name' => 'F' } }
+    middles.each { |m| nets[m] = { 'name' => m } }
+    links = middles.flat_map { |m| [['a', m], [m, 'f']] } + [%w[a f]]
+    d = { 'networks' => nets, 'networkLinks' => links }
+    assert_equal NM::REACH_PATHS_CAP, NM.reach_paths(d, 'a', 'f').length
+    assert_operator NM.all_reach_paths(d, 'a', 'f').length, :>, NM::REACH_PATHS_CAP
+  end
+
+  test 'reach_conditions over a link: same network, linked, and unreachable' do
+    d = linked_scenario([%w[a b]])
+    res_on_b = { 'network' => 'b' }
+    assert_equal [[]], NM.reach_conditions(d, 'a', res_on_b), 'linked, no offWhen: one empty route'
+    assert_equal [[]], NM.reach_conditions(d, 'b', res_on_b), 'same network'
+    assert_equal [], NM.reach_conditions(d, 'a', { 'network' => 'd' }), 'no link'
+    assert_equal [[]], NM.reach_conditions(d, 'a', { 'kind' => 'printer' }), 'no network'
+  end
+
+  # ---- Outages (sub-slice O, 5.2) ----
+
+  test 'truthy? is false for each globals-relevant falsy value and true for everything else' do
+    [nil, false, 0, 0.0, ''].each { |falsy| refute NM.truthy?(falsy), "#{falsy.inspect} should be falsy" }
+    ['false', 'x', '0', true, 1, -1, 0.1, [], {}, ' '].each { |truthy| assert NM.truthy?(truthy), "#{truthy.inspect} should be truthy" }
+  end
+
+  test 'reach_conditions over a link carries each network offWhen global on the route' do
+    d = linked_scenario([%w[a b]])
+    d['networks']['a']['offWhen'] = 'a_down'
+    d['networks']['b']['offWhen'] = 'b_down'
+    res_on_b = { 'network' => 'b' }
+    assert_equal [%w[a_down b_down]], NM.reach_conditions(d, 'a', res_on_b), 'both networks on the route are conditions'
+    assert_equal [['b_down']], NM.reach_conditions(d, 'b', res_on_b), 'same network: its own offWhen only'
+    # The station network's own outage is a condition even for a same-network resource.
+    assert_equal [['a_down']], NM.reach_conditions(d, 'a', { 'network' => 'a' })
+  end
+
+  test 'reach_conditions keeps a network offWhen in the { name: value } form on the route' do
+    d = linked_scenario([%w[a b]])
+    d['networks']['a']['offWhen'] = { 'a_power' => 'off' }
+    d['networks']['b']['offWhen'] = 'b_down'
+    res_on_b = { 'network' => 'b' }
+    # The hash form is carried whole, so a consumer can evaluate it with globals_hold?; it is not
+    # dropped as a route that is always up (the pre-ruling behaviour).
+    assert_equal [[{ 'a_power' => 'off' }, 'b_down']], NM.reach_conditions(d, 'a', res_on_b)
+    assert_equal [[{ 'a_power' => 'off' }]], NM.reach_conditions(d, 'a', { 'network' => 'a' })
+  end
+
+  test 'a scenario with no networks answers empty everywhere' do
+    bare = { 'startRoom' => 'lobby', 'rooms' => { 'lobby' => { 'objects' => [{ 'id' => 'pc', 'lockType' => 'login' }] } } }
+    assert_empty NM.networks(bare)
+    assert_empty NM.resources(bare)
+    assert_empty NM.jacks(bare)
+    assert_empty NM.sign_in_objects_on('office_lan', bare)
+    assert_empty NM.resources_on('office_lan', bare)
+    assert_empty NM.rogue_device_definitions(bare)
+    [nil, [], 'x', {}].each do |junk|
+      assert_empty NM.networks(junk)
+      assert_empty NM.jacks(junk)
+      assert_empty NM.rogue_device_definitions(junk)
+    end
+  end
+
+  test 'resource content ids are stamped once, and a second run changes nothing' do
+    scenario = NetworkModelScenario.scenario
+    scenario['resources']['scanned_inbox']['contents'] << { 'type' => 'text_file', 'name' => 'unnamed.txt',
+                                                            'contents' => [{ 'type' => 'notes', 'name' => 'deep' }] }
+    game = BreakEscape::Game.new(scenario_data: scenario)
+    game.prepare_scenario_data!
+    added = game.scenario_data['resources']['scanned_inbox']['contents'][1]
+    assert_equal 'scanned_inbox_content_1', added['id']
+    assert_equal 'scanned_inbox_content_1_content_0', added['contents'][0]['id']
+    assert_equal 'inbox_letter', game.scenario_data['resources']['scanned_inbox']['contents'][0]['id'], 'an authored id is kept'
+
+    before = game.scenario_data.deep_dup
+    game.prepare_scenario_data!
+    assert_equal before, game.scenario_data
+  end
+
+  test 'the two player_state keys are defaults: filled on create, dropped and refilled by a reset' do
+    game = create_access_game(
+      mission: break_escape_missions(:ceo_exfil),
+      player: break_escape_demo_users(:test_user),
+      scenario: NetworkModelScenario.scenario
+    )
+    assert_equal({}, game.player_state['footholds'])
+    assert_equal [], game.player_state['gainedFootholds']
+
+    game.player_state['footholds'] = { 'jack_comms_port' => { 'via' => 'jack' } }
+    game.player_state['gainedFootholds'] = ['comms_port']
+    game.save!
+    game.reset_player_state!
+    assert_equal({}, game.reload.player_state['footholds'])
+    assert_equal [], game.player_state['gainedFootholds']
+  end
+
+  # Slice 9.3b sub-slice I: the grant_foothold enumerator keeps only server-run paths.
+  test 'grant_foothold_actions keeps server-run paths and reads the shape and needs' do
+    sc = {
+      'rooms' => {
+        'office' => { 'objects' => [
+          { 'id' => 'socket', 'triggerOnInteract' => [
+            { 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true, 'needsHeld' => 'badusb', 'name' => 'BadUSB' }
+          ] }
+        ] }
+      },
+      'timers' => [
+        { 'id' => 't', 'actions' => [{ 'type' => 'grant_foothold', 'pc' => 'sam_pc', 'needsDropped' => 'stick', 'name' => 'Stick' }] }
+      ],
+      # Neither of these is a server-run path, so both are dropped.
+      'flagRewards' => [{ 'type' => 'grant_foothold', 'pc' => 'x_pc', 'needsDropped' => 'kit' }],
+      'eventMappings' => { 'ev' => [{ 'type' => 'grant_foothold', 'pc' => 'y_pc', 'needsSession' => true }] }
+    }
+    actions = NM.grant_foothold_actions(sc)
+    by_pc = actions.map { |a| [a[:pc], a[:shape]] }.sort
+    assert_equal [%w[lena_pc session], %w[sam_pc dropped]], by_pc
+    session = actions.find { |a| a[:pc] == 'lena_pc' }
+    assert_equal 'badusb', session[:needs_held]
+    assert_match %r{triggerOnInteract}, session[:path]
+    dropped = actions.find { |a| a[:pc] == 'sam_pc' }
+    assert_equal 'stick', dropped[:needs_dropped]
+    assert_match %r{timers\[0\]/actions\[0\]}, dropped[:path]
+  end
+
+  # Slice 9.3b sub-slice W (ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.3): Wi-Fi.
+  test 'wifi_of reads a network block, and absent psk means an open network' do
+    d = NetworkModelScenario.scenario
+    d['networks']['guest_wifi'] = { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } }
+    d['networks']['visitor_wifi'] = { 'name' => 'Visitor Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Open' } }
+    assert_equal({ 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' }, NM.wifi_of(d, 'guest_wifi'))
+    assert_nil NM.wifi_of(d, 'visitor_wifi')['psk']
+    assert_nil NM.wifi_of(d, 'office_lan'), 'a network with no wifi block'
+    assert_nil NM.wifi_of(d, 'no_such_net')
+  end
+
+  test 'wifi_aps lists objects with wifiAp on a network that defines wifi' do
+    d = NetworkModelScenario.scenario
+    d['networks']['guest_wifi'] = { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } }
+    d['rooms']['lobby']['objects'] << { 'id' => 'guest_ap', 'type' => 'pc', 'name' => 'AP', 'wifiAp' => true, 'network' => 'guest_wifi' }
+    d['rooms']['lobby']['objects'] << { 'id' => 'guest_ap2', 'type' => 'pc', 'name' => 'AP2', 'wifiAp' => true, 'network' => 'guest_wifi' }
+    # wifiAp on a network with no wifi block is not an access point
+    d['rooms']['lobby']['objects'] << { 'id' => 'bogus_ap', 'type' => 'pc', 'name' => 'Bogus', 'wifiAp' => true, 'network' => 'office_lan' }
+    assert_equal %w[guest_ap guest_ap2], ids(NM.wifi_aps(d)).sort
+  end
+
+  test 'readers default for a game from before this slice' do
+    game = BreakEscape::Game.new(scenario_data: NetworkModelScenario.scenario, player_state: {})
+    assert_equal({}, game.network_footholds)
+    assert_equal [], game.gained_footholds
+    game.player_state = { 'footholds' => 'junk', 'gainedFootholds' => 'junk' }
+    assert_equal({}, game.network_footholds)
+    assert_equal [], game.gained_footholds
+  end
+
+  # Ops core S1 (OPS_CORE_PLAN.md 5.1, 11.1): hosts, discovery?, hosts_on, services_of.
+  def ops_data
+    {
+      'networks' => { 'office_lan' => { 'name' => 'Office LAN', 'discovery' => 'scan' },
+                      'open_lan' => { 'name' => 'Open LAN' }, 'odd_lan' => { 'name' => 'Odd', 'discovery' => 'maybe' } },
+      'hosts' => {
+        'print01' => { 'name' => 'Printer', 'network' => 'office_lan',
+                       'services' => [{ 'name' => 'print', 'port' => 9100, 'product' => 'P', 'version' => '1' }] },
+        'cam01' => { 'name' => 'Camera', 'network' => 'office_lan' },
+        'lost01' => { 'name' => 'Lost', 'network' => 'no_such_lan' },
+        'junk' => 'not a hash',
+        '_note' => { 'name' => 'a note', 'network' => 'office_lan' }
+      },
+      'rooms' => { 'lobby' => { 'objects' => [
+        { 'id' => 'files01', 'type' => 'pc', 'name' => 'Files', 'lockType' => 'login', 'network' => 'office_lan',
+          'services' => [{ 'name' => 'files', 'port' => 445, 'product' => 'F', 'version' => '3' }] },
+        { 'id' => 'plain_pc', 'type' => 'pc', 'name' => 'Plain', 'network' => 'office_lan' }
+      ] } }
+    }
+  end
+
+  test 'hosts reads the top-level map, hashes only, notes skipped; absent or malformed is empty' do
+    assert_equal %w[cam01 lost01 print01], NM.hosts(ops_data).keys.sort
+    assert_equal({}, NM.hosts({}))
+    assert_equal({}, NM.hosts({ 'hosts' => [] }))
+    assert_equal({}, NM.hosts(nil))
+  end
+
+  test 'discovery? is true only for scan; open, absent, odd values and unknown networks are false' do
+    d = ops_data
+    assert NM.discovery?(d, 'office_lan')
+    refute NM.discovery?(d, 'open_lan')
+    refute NM.discovery?(d, 'odd_lan')
+    refute NM.discovery?(d, 'nowhere')
+    refute NM.discovery?(d, nil)
+  end
+
+  test 'hosts_on lists both kinds sorted by id, leaves out a hosts entry with an unknown network' do
+    list = NM.hosts_on('office_lan', ops_data)
+    assert_equal %w[cam01 files01 print01], list.map { |h| h[:id] }
+    assert_equal %w[device pc device], list.map { |h| h[:kind] }
+    assert_equal 'Files', list[1][:object]['name']
+    assert_equal({ 'name' => 'Camera', 'network' => 'office_lan' }, list[0][:object])
+    assert_equal ['office_lan'], list.map { |h| h[:network] }.uniq
+    assert_equal [0, 1, 1], list.map { |h| h[:services].length }
+    assert_empty NM.hosts_on('no_such_lan', ops_data)
+    assert_empty NM.hosts_on(nil, ops_data)
+    assert_empty NM.hosts_on('open_lan', ops_data)
+  end
+
+  test 'hosts_on lists the sign-in object when a hosts entry shares its id' do
+    d = ops_data
+    d['hosts']['files01'] = { 'name' => 'Clash', 'network' => 'office_lan' }
+    list = NM.hosts_on('office_lan', d).select { |h| h[:id] == 'files01' }
+    assert_equal ['pc'], list.map { |h| h[:kind] }
+  end
+
+  test 'services_of takes a record, an object or an entry, reads at most 8, skips malformed entries' do
+    many = (1..12).map { |i| { 'name' => "s#{i}", 'port' => i, 'product' => 'P', 'version' => '1' } }
+    assert_equal 8, NM.services_of({ 'services' => many }).length
+    assert_equal %w[s1 s2], NM.services_of({ 'services' => [many[0], 'junk', nil, many[1]] }).map { |s| s['name'] }
+    assert_equal [], NM.services_of({ 'services' => 'junk' })
+    assert_equal [], NM.services_of({})
+    assert_equal [], NM.services_of(nil)
+    rec = NM.hosts_on('office_lan', ops_data).find { |h| h[:id] == 'print01' }
+    assert_equal %w[print], NM.services_of(rec).map { |s| s['name'] }
+  end
+
+  test 'the S1 helpers change nothing for an existing scenario' do
+    assert_equal({}, NM.hosts(data))
+    NM.networks(data).each_key do |id|
+      refute NM.discovery?(data, id)
+      assert_equal NM.sign_in_objects_on(id, data).map { |e| e[:object]['id'] }, NM.hosts_on(id, data).map { |h| h[:id] }
+    end
+  end
+
+  # Ops core S2 (OPS_CORE_PLAN.md 5.1, 11.1): finding ids, weaknesses, decoys.
+  def findings_data
+    svc = lambda do |name, weak, decoy|
+      { 'name' => name, 'port' => 80, 'product' => 'P', 'version' => '1', 'weaknesses' => weak, 'decoys' => decoy }
+    end
+    w = ->(id) { { 'id' => id, 'class' => 'misconfig', 'severity' => 'low' } }
+    d = ->(id) { { 'id' => id, 'class' => 'unpatched', 'severity' => 'low', 'falseBecause' => 'x' } }
+    {
+      'networks' => { 'lan' => { 'name' => 'LAN' } },
+      'hosts' => { 'print01' => { 'name' => 'Printer', 'network' => 'lan',
+                                  'services' => [svc.call('web', [w.call('b_weak'), w.call('a_weak')], [d.call('old_banner')]),
+                                                 svc.call('ftp', 'junk', nil)] } },
+      'rooms' => { 'lobby' => { 'objects' => [
+        { 'id' => 'files01', 'type' => 'pc', 'name' => 'Files', 'lockType' => 'login', 'network' => 'lan',
+          'services' => [svc.call('smb', (1..6).map { |i| w.call("w#{i}") } + ['junk', {}], (1..5).map { |i| d.call("d#{i}") })] }
+      ] } }
+    }
+  end
+
+  test 'finding_id joins host, service and weakness ids with dots' do
+    assert_equal 'print01.web.a_weak', NM.finding_id('print01', 'web', 'a_weak')
+  end
+
+  test 'weaknesses and decoys yield each with host, service and finding id, sorted, at most 4 each, malformed skipped' do
+    ws = NM.weaknesses(findings_data)
+    assert_equal %w[files01.smb.w1 files01.smb.w2 files01.smb.w3 files01.smb.w4 print01.web.a_weak print01.web.b_weak],
+                 ws.map { |r| r[:finding_id] }
+    first = ws.last
+    assert_equal 'print01', first[:host_id]
+    assert_equal 'device', first[:host][:kind]
+    assert_equal 'web', first[:service_name]
+    assert_equal 'web', first[:service]['name']
+    assert_equal 'weakness', first[:kind]
+    assert_equal 'b_weak', first[:id]
+    assert_equal 'b_weak', first[:entry]['id']
+    ds = NM.decoys(findings_data)
+    assert_equal %w[files01.smb.d1 files01.smb.d2 files01.smb.d3 files01.smb.d4 print01.web.old_banner], ds.map { |r| r[:finding_id] }
+    assert_equal ['decoy'], ds.map { |r| r[:kind] }.uniq
+  end
+
+  test 'weaknesses and decoys of a scenario with none, or malformed data, are empty and never raise' do
+    assert_equal [], NM.weaknesses(data)
+    assert_equal [], NM.decoys(data)
+    assert_equal [], NM.weaknesses(nil)
+    assert_equal [], NM.decoys({ 'hosts' => 'junk' })
+  end
+
+  test 'findings_of merges the weaknesses and decoys of one service by finding id, four of each, with the right kind' do
+    data = findings_data
+    svc = NM.hosts_on_all(data).find { |h| h[:id] == 'files01' }[:services].find { |s| s['name'] == 'smb' }
+    found = NM.findings_of('files01', svc)
+    assert_equal %w[files01.smb.d1 files01.smb.d2 files01.smb.d3 files01.smb.d4 files01.smb.w1 files01.smb.w2 files01.smb.w3 files01.smb.w4],
+                 found.map { |r| r[:finding_id] }
+    assert_equal %w[decoy] * 4 + %w[weakness] * 4, found.map { |r| r[:kind] }
+    assert_equal ['files01'], found.map { |r| r[:host_id] }.uniq
+    assert_equal [], NM.findings_of('files01', 'junk')
+    assert_equal [], NM.findings_of('files01', { 'name' => 'x' })
+  end
+
+  test 'findings_of keeps one record per finding id, the weakness before a decoy of the same id' do
+    svc = { 'name' => 'web', 'weaknesses' => [{ 'id' => 'same', 'class' => 'misconfig', 'severity' => 'low' }],
+            'decoys' => [{ 'id' => 'same', 'class' => 'unpatched', 'severity' => 'low', 'falseBecause' => 'x' },
+                         { 'id' => 'other', 'class' => 'unpatched', 'severity' => 'low', 'falseBecause' => 'y' }] }
+    3.times do
+      found = NM.findings_of('h1', svc)
+      assert_equal %w[h1.web.other h1.web.same], found.map { |r| r[:finding_id] }
+      assert_equal 'weakness', found.last[:kind]
+    end
+  end
+
+  test 'hosts_on_all lists every host of every network once' do
+    all = NM.hosts_on_all(findings_data)
+    assert_equal %w[files01 print01], all.map { |h| h[:id] }.sort
+    assert_equal all.length, all.map { |h| h[:id] }.uniq.length
+    assert_equal [], NM.hosts_on_all(nil)
+  end
+
+  # ---- S3: technique cards (OPS_CORE_PLAN.md 5.1, 11.1) ----
+
+  test 'techniques reads the registry: hashes only, notes skipped, malformed data empty' do
+    reg = { '_note' => { 'name' => 'x' }, 'a' => { 'name' => 'A', 'worksOn' => { 'class' => 'misconfig' } }, 'b' => 'junk' }
+    assert_equal %w[a], NM.techniques({ 'techniques' => reg }).keys
+    assert_equal({}, NM.techniques(data))
+    assert_equal({}, NM.techniques(nil))
+    assert_equal({}, NM.techniques({ 'techniques' => [1] }))
+  end
+
+  test 'technique_matches? by class only, class and product, class product and version, and each near miss' do
+    service = { 'name' => 'web', 'product' => 'Brackley ShareServe', 'version' => '3.1' }
+    weakness = { 'id' => 'w', 'class' => 'unpatched' }
+    works = ->(extra) { { 'worksOn' => { 'class' => 'unpatched' }.merge(extra) } }
+    assert NM.technique_matches?(works.call({}), service, weakness), 'class only'
+    assert NM.technique_matches?(works.call('product' => 'Brackley ShareServe'), service, weakness), 'class and product'
+    assert NM.technique_matches?(works.call('product' => 'Brackley ShareServe', 'versions' => %w[3.0 3.1]), service, weakness)
+    assert NM.technique_matches?(works.call('versions' => %w[3.1]), service, weakness), 'versions without a product'
+    refute NM.technique_matches?({ 'worksOn' => { 'class' => 'misconfig' } }, service, weakness), 'class differs'
+    refute NM.technique_matches?(works.call('product' => 'Brackley ShareServ'), service, weakness), 'product is exact'
+    refute NM.technique_matches?(works.call('product' => 'brackley shareserve'), service, weakness), 'product is case-exact'
+    refute NM.technique_matches?(works.call('versions' => %w[3.0 3.2]), service, weakness), 'version not listed'
+    refute NM.technique_matches?(works.call('versions' => '3.1'), service, weakness), 'versions must be a list'
+    refute NM.technique_matches?({}, service, weakness), 'no worksOn'
+    refute NM.technique_matches?(nil, service, weakness)
+    refute NM.technique_matches?(works.call({}), nil, weakness)
+    refute NM.technique_matches?(works.call({}), service, nil)
+  end
+
+  test 'technique_items finds a card in a room, a container, an NPC, a share, the start inventory and a grant' do
+    card = ->(id) { { 'id' => id, 'type' => 'technique_card', 'name' => id, 'technique_card' => 'factory_accounts' } }
+    other = { 'id' => 'plain', 'type' => 'notes', 'name' => 'plain' }
+    scenario = {
+      'startItemsInInventory' => [card.call('c_start'), other],
+      'resources' => { 'share1' => { 'kind' => 'file_share', 'contents' => [card.call('c_share')] }, '_n' => 'junk' },
+      'timers' => [{ 'id' => 't', 'afterMs' => 1, 'actions' => [{ 'type' => 'give_item', 'item' => card.call('c_grant') }] }],
+      'rooms' => { 'lobby' => {
+        'objects' => [card.call('c_room'), other,
+                      { 'id' => 'crate', 'type' => 'safe', 'name' => 'Crate', 'contents' => [card.call('c_box')] }],
+        'npcs' => [{ 'id' => 'npc1', 'itemsHeld' => [card.call('c_npc'), 'junk'] }]
+      } }
+    }
+    found = NM.technique_items(scenario).to_h { |rec| [rec[:item]['id'], rec[:home]] }
+    assert_equal({ 'c_room' => 'room', 'c_box' => 'container', 'c_start' => 'start', 'c_npc' => 'npc',
+                   'c_share' => 'share', 'c_grant' => 'grant' }, found)
+    rec = NM.technique_items(scenario).find { |r| r[:item]['id'] == 'c_box' }
+    assert_equal 'rooms/lobby/objects[2]/contents[0]', rec[:path]
+    assert_equal [], NM.technique_items(data)
+    assert_equal [], NM.technique_items(nil)
+    assert_equal [], NM.technique_items({ 'rooms' => 'junk', 'startItemsInInventory' => 'junk' })
+  end
+end

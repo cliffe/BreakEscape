@@ -1,0 +1,13 @@
+{
+  "key": "e3b171dea74aa4a2fcada5fe5e8ee545",
+  "npc": "tomasz",
+  "text": "You've beaten me to both — the inbox triaged and the fixes picked. Keen. Sit down and we'll close this out.",
+  "voice": "Alnilam",
+  "style": "In-house security lead at a small British firm, mid thirties, Polish-born, fifteen years in the UK. Speak with a consistent light Polish-accented English throughout — do not shift to any other accent. Mid-range pitch; quick pace. Dry, deadpan and practical, a man who has seen a lot of phishing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:39:26Z"
+}

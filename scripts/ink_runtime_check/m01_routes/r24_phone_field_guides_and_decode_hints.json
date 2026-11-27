@@ -1,0 +1,24 @@
+{
+ "steps": [
+  {"note": "R24: field-guide requests and the decode hint. Each request appears only once its offer is made (password list, workstation, cipher note), hands over the guide once, and goes from the hub. A player who is past the SSH flag no longer sees the SSH tip."},
+  {"talk": "phone", "knot": "support_hub", "picks": ["I'm good for now"]},
+  {"said": ["[choice] Got any general advice"],
+   "notSaid": ["[choice] I'd like that ops manual", "[choice] Send me the CyberChef decoding guide", "[choice] How do I decode these notes", "[choice] Send me the lockpicking field guide"]},
+  {"set": {"password_list_found": true}},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["I'd like that ops manual", "I appreciate the support"]},
+  {"said": ["[choice] I'd like that ops manual", "I'm uploading the SSH and Linux basics manual to your secure terminal", "Hydra, and the filesystem navigation", "That's what I'm here for. Now go dark and finish this"],
+   "notSaid": ["[choice] Send me the CyberChef decoding guide", "[choice] I need the privilege escalation guide"]},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["I'm good for now"]},
+  {"notSaid": ["[choice] I'd like that ops manual"]},
+  {"set": {"whiteboard_cipher_seen": true}},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["How do I decode these notes", "What do the decoded messages tell me", "Send me the CyberChef decoding guide", "Understood", "I'm good for now"]},
+  {"said": ["[choice] How do I decode these notes", "[choice] Send me the CyberChef decoding guide", "You've found encoded notes", "drag \"From Base64\" into the recipe", "Decode first, questions after", "I'm uploading the CyberChef decoding guide now", "Keep it simple: identify, decode, verify"]},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["I'm good for now"]},
+  {"said": ["[choice] Got any general advice"],
+   "notSaid": ["[choice] How do I decode these notes", "[choice] Send me the CyberChef decoding guide"]},
+  {"set": {"ssh_flag_submitted": true, "server_room_entered": true}},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["I need the privilege escalation guide", "Thanks, I'll use it", "I'm good for now"]},
+  {"said": ["[choice] I need the privilege escalation guide", "Good. Keep pressure on the target account"],
+   "notSaid": ["[choice] SSH brute force help", "[choice] Privilege escalation guidance"]}
+ ]
+}

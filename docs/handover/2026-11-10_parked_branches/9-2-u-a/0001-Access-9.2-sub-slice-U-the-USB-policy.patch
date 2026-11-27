@@ -1,0 +1,1695 @@
+From b98f6af026d490d9e6f1308fd05705b633eeff61 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:26:30 +0000
+Subject: [PATCH 1/9] Access 9.2 sub-slice U: the USB policy
+
+pc-policy.js (the table, what a policy governs, the plant decision), the refusal
+at the end of an NPC delivery with the usb_refused mutter, the move on to a
+permitted object or the put-down, the player's refused plant, usbClass and
+storage_blocked in the schema, validate_access_work.rb with the USB checks, and
+test_access_work beats U1 to U3 with their run report.
+---
+ README_scenario_design.md                     |  23 +
+ .../ACCESS_MODEL_SLICE_9_2_BUILD_LOG.md       |  39 ++
+ .../break_escape/js/systems/interactions.js   |  15 +-
+ public/break_escape/js/systems/npc-needs.js   |  84 ++-
+ public/break_escape/js/systems/pc-policy.js   |  83 +++
+ scenarios/test_access_work/PLAYTEST.md        |  67 +++
+ scenarios/test_access_work/ink/staff.ink      |  23 +
+ scenarios/test_access_work/ink/staff.json     |   1 +
+ scenarios/test_access_work/mission.json       |   9 +
+ .../reports/2026-11-10_run_u.md               |  21 +
+ scenarios/test_access_work/scenario.json.erb  | 496 ++++++++++++++++++
+ scripts/scenario-schema.json                  |   3 +-
+ scripts/validate_access_work.rb               | 191 +++++++
+ scripts/validate_scenario.rb                  |   3 +
+ test/js/examine-minigame.test.mjs             |   1 +
+ test/js/interaction-warning.test.mjs          |   1 +
+ test/js/minigame-launch-routes.test.mjs       |   1 +
+ test/js/network-links-routing.test.mjs        |   1 +
+ test/js/npc-needs-usb-policy.test.mjs         | 130 +++++
+ test/js/pc-policy.test.mjs                    |  85 +++
+ test/js/validator-access-work.test.mjs        | 100 ++++
+ 21 files changed, 1370 insertions(+), 7 deletions(-)
+ create mode 100644 docs/achitechture/ACCESS_MODEL_SLICE_9_2_BUILD_LOG.md
+ create mode 100644 public/break_escape/js/systems/pc-policy.js
+ create mode 100644 scenarios/test_access_work/PLAYTEST.md
+ create mode 100644 scenarios/test_access_work/ink/staff.ink
+ create mode 100644 scenarios/test_access_work/ink/staff.json
+ create mode 100644 scenarios/test_access_work/mission.json
+ create mode 100644 scenarios/test_access_work/reports/2026-11-10_run_u.md
+ create mode 100644 scenarios/test_access_work/scenario.json.erb
+ create mode 100644 scripts/validate_access_work.rb
+ create mode 100644 test/js/npc-needs-usb-policy.test.mjs
+ create mode 100644 test/js/pc-policy.test.mjs
+ create mode 100644 test/js/validator-access-work.test.mjs
+
+diff --git a/README_scenario_design.md b/README_scenario_design.md
+index 036594200..d36976757 100644
+--- a/README_scenario_design.md
++++ b/README_scenario_design.md
+@@ -987,6 +987,29 @@ The owner's return carries what the screen was: `workstation_owner_returned:<id>
+ 
+ This event carries no `usePayload`, so write the capture's `address` and `host` in the mapping (neither is a secret; the server serves the password by matching the address to the NPC's `creds`). A once-only mapping is not spent while its condition is false, so returns before the plant do not use it up. For the capture to be certain, the PC must lock on every leave (`locksScreenOnLeave: true` and no `lockChance`).
+ 
++### Work, frustration and workarounds
++
++Access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): staff whose work depends on resources and on their own PC, who get visibly frustrated when it fails, and who route round the controls that stop them. `scenarios/test_access_work` is the feature scenario; copy its shapes.
++
++#### USB policy
++
++A policy (top-level `policies`, referenced by an object's `policy` or by `defaultPolicy`) may say `usb`:
++
++| `usb` | An item with `"usbClass": "storage"` | An item with `"usbClass": "hid"` |
++|---|---|---|
++| `"allowed"` or absent | accepted | accepted |
++| `"storage_blocked"` | refused | accepted |
++| `"blocked"` | refused | refused |
++
++- **`usbClass`** goes on the item: `"storage"` for a memory stick, `"hid"` for a device that presents itself as a keyboard. An item with no `usbClass` is never refused: a hardware keylogger between the keyboard and the PC is not a USB device the policy can see.
++- **What a policy governs.** Only an object that is a workstation by its own fields (`workstation: true`, `lockChance`, `locksScreenOnLeave` or `lockType: "login"`) or that names a `policy` itself. A `defaultPolicy` never reaches a lost property tray, a shredder or a printer.
++- **The two lessons.** A device control policy that blocks storage does not stop a device that presents as a keyboard (`storage_blocked` accepts `hid`). And people route round a refusal: an NPC whose own PC refuses a dropped stick takes it to the next object that accepts its tag and does not refuse it (a kiosk nobody manages). With nowhere else, they put it down where they stand and leave it; the player can pick it up again.
++- **What the player sees.** An NPC refused a device says a line from the `usb_refused` pool ("USB's disabled. Typical."), fires `npc_use_refused:<objectId>` with `{ npcId, objectId, itemId, tag, usbClass }`, and no `npc_used` fires, so nothing mapped to the use runs. The engine has no spoken text of its own: put the pool in the scenario's top-level `chatter` (any NPC may say it) or an NPC's own. Without a line the NPC shows the `blocked` picture, and the validator warns.
++- **The player's own plant.** A `requiresItem` object under a policy that refuses every matching held item shows "USB storage is disabled on this PC." (or "USB devices are disabled on this PC." under `blocked`), fires `usb_refused:<objectId>` with `{ objectId, itemId, usbClass }`, runs no action and consumes nothing. With several matching items the first one the policy accepts is used. A sign-in PC answers a click with its own flow, so **a plant at a sign-in PC goes on a separate object beside it (a dock, a USB hub) that names the same `policy`**.
++- **How strong it is.** Device payoffs are globals the browser sets, so the policy is as strong as the payoff it guards.
++
++The validator errors on an unknown `usb`, `social` or `usbClass` value, and warns when a blocking policy governs only objects whose items have no `usbClass` (it refuses nothing), when an object no policy governs takes a device the default policy would refuse (you may have meant a refusal), and when an NPC that can be refused a device has no `usb_refused` line.
++
+ ### Container Objects
+ 
+ Containers hold `contents` arrays of nested items. Every container with `contents` **must** declare `locked: true` or `locked: false`.
+diff --git a/docs/achitechture/ACCESS_MODEL_SLICE_9_2_BUILD_LOG.md b/docs/achitechture/ACCESS_MODEL_SLICE_9_2_BUILD_LOG.md
+new file mode 100644
+index 000000000..bdc5bd395
+--- /dev/null
++++ b/docs/achitechture/ACCESS_MODEL_SLICE_9_2_BUILD_LOG.md
+@@ -0,0 +1,39 @@
++# Access model slice 9.2: build log
++
++The build of `ACCESS_MODEL_SLICE_9_2_PLAN.md` (cleared at review round 5). Each entry says what was
++built and every place the build had to depart from the plan because the code had moved or the plan
++did not fit it, with the smallest faithful adjustment made.
++
++## Sub-slice U: the USB policy (2026-11-10)
++
++Built: `systems/pc-policy.js` (new, sets `window.pcPolicy`); in `npc-needs.js` the refusal at the
++end of a carry (`_refuseUse`: `npc_use_refused`, the `usb_refused` mutter, the move to the next
++accepting object that does not refuse the class, else the put-down and the `s.refused` memory),
++`mutter(npcId, topic)`, `_grumble`'s options argument, the `usb_refused` picture, and `usbClass`
++and `usbPolicy` in `describe`; the plant decision in the `requiresItem` branch of
++`interactions.js`; the schema's `usbClass` and `storage_blocked`; `scripts/validate_access_work.rb`
++(new) with the USB checks; `scenarios/test_access_work` with beats U1 to U3, its `PLAYTEST.md` and
++the run report `reports/2026-11-10_run_u.md` (all three beats pass, no leaks); the "USB policy"
++section of `README_scenario_design.md`.
++
++Adjustments:
++
++1. **The carried device's class is read at pick-up.** `_completeJob` cannot describe a carried item
++   in the node stub (it is out of the world), so the class is stored on the job when the item is
++   picked up (`job.usbClass`). The target's `usbPolicy` comes from `describe` as the plan says.
++2. **The refusal table is copied into `npc-needs.js`** (`usbRefusedBy`), as `requiredGlobalsHold`
++   is, because the file imports nothing; a test checks it agrees with `pc-policy.js`.
++3. **`pc-policy.js` has no apostrophes.** Four node tests (`examine-minigame`, `interaction-warning`,
++   `minigame-launch-routes`, `network-links-routing`) load `interactions.js` with every import
++   replaced by a `data:` URL inside a single-quoted specifier; they now inline the real
++   `pc-policy.js` that way, which an apostrophe would break. The file says so at its top.
++4. **One tag per beat in `test_access_work`.** A refused NPC carries the device on to any loaded
++   object that accepts its tag (plan 7, step 2), wherever it is, so Priya's stick would have gone
++   to Lena's kiosk. Each beat's NPC has its own tag (`dev_usb`, `vault_usb`, `post_usb`) and the
++   lobby has one device per beat, named for it.
++5. **Expected validator output.** U3's tray is the plan's own "an item with `usbClass` accepted by
++   an object the policy does not govern while the default blocks its class" warning (section 10),
++   so the scenario raises it by design; 11.1's "nothing else" is read as "nothing else
++   unexpected", and `PLAYTEST.md` lists it.
++6. **The needs regression captures** (11, point 5) are made once, at the end of sub-slice A, over
++   both sub-slices' needs changes, rather than twice.
+diff --git a/public/break_escape/js/systems/interactions.js b/public/break_escape/js/systems/interactions.js
+index cc7b509e3..406b7aa8f 100644
+--- a/public/break_escape/js/systems/interactions.js
++++ b/public/break_escape/js/systems/interactions.js
+@@ -13,6 +13,7 @@ import { applyActions } from './apply-actions.js';
+ import { resolveObjectField } from '../utils/conditional-text.js';
+ import { requiresItemHint } from './requires-item-hint.js';
+ import { hintToastMs } from '../utils/locked-hint.js';
++import { plantRefusal } from './pc-policy.js';
+ import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
+ import { npcReachDistSq } from './npc-reach.js';
+ import { shouldExamine, startExamine } from './examine.js';
+@@ -967,10 +968,22 @@ export function handleObjectInteraction(sprite) {
+         const req = sprite.scenarioData.requiresItem;
+         if (req) {
+             const wanted = Array.isArray(req) ? req : [req];
+-            const held = (window.inventory?.items || []).find(it => {
++            const matching = (window.inventory?.items || []).filter(it => {
+                 const d = it?.scenarioData || {};
+                 return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
+             });
++            // The USB policy (access slice 9.2 U, plan 7): the first matching item the object's
++            // policy accepts; refused only when every matching item is refused
++            const plant = plantRefusal(matching, sprite.scenarioData, window.gameScenario);
++            if (plant.refusal) {
++                const objectId = sprite.scenarioData.id || sprite.objectId || null;
++                window.gameAlert?.(plant.refusal, 'warning', '', hintToastMs(plant.refusal));
++                window.eventDispatcher?.emit(`usb_refused:${objectId}`, {
++                    objectId, itemId: plant.refusedItem?.scenarioData?.id || null, usbClass: plant.usbClass || null
++                });
++                return;
++            }
++            const held = plant.item;
+             if (!held) {
+                 // requiresItemHintVariants gives one hint per state (first match wins).
+                 const hint = requiresItemHint(sprite.scenarioData);
+diff --git a/public/break_escape/js/systems/npc-needs.js b/public/break_escape/js/systems/npc-needs.js
+index 66c68e988..581333a9f 100644
+--- a/public/break_escape/js/systems/npc-needs.js
++++ b/public/break_escape/js/systems/npc-needs.js
+@@ -83,7 +83,9 @@ export const PICTURE_CHATTER = Object.freeze({
+     news: Object.freeze(['social']),
+     // Slice 19: a desk-phone call nobody hears (or with no lines left) shows the phone
+     phone: Object.freeze(['phone']),
+-    phone_message: Object.freeze(['phone'])
++    phone_message: Object.freeze(['phone']),
++    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused
++    usb_refused: Object.freeze(['blocked'])
+ });
+ const PICTURE_DEFAULT = Object.freeze(['social']);
+ // The needs that have an icon of their own (npc-action-icons.js NPC_ICON_NAMES; not imported, so
+@@ -196,6 +198,17 @@ export function chatterPool(topic, scenarioChatter, npcChatter) {
+     };
+ }
+ 
++/**
++ * The USB policy table (ACCESS_MODEL_SLICE_9_2_PLAN 7), copied from pc-policy.js usbRefused
++ * because this file imports nothing. `usb` is the target's effective value (null: not governed).
++ */
++export function usbRefusedBy(usb, usbClass) {
++    if (usbClass !== 'storage' && usbClass !== 'hid') return false;
++    if (usb === 'blocked') return true;
++    if (usb === 'storage_blocked') return usbClass === 'storage';
++    return false;
++}
++
+ /** requireGlobal: a name (truthy) or { name: value } (all must match). Copied from npc-sight-challenge.js (review m10). */
+ export function requiredGlobalsHold(requireGlobal, globals) {
+     if (!requireGlobal) return true;
+@@ -418,6 +431,9 @@ export class NPCNeedsSystem {
+             leashNoted: {},
+             avoidNoted: {},
+             privateNoted: {},
++            // Access slice 9.2 U: items a USB policy refused with nowhere else to take them (put
++            // down, and not picked up again by this NPC)
++            refused: new Set(),
+             urgentFlag: {},
+             mode: 'idle',
+             prevMode: null,
+@@ -1653,19 +1669,33 @@ export class NPCNeedsSystem {
+      * One line from the `grumble` pool as a speech bubble (getState().talking), seeded by the
+      * turn-back count. Overheard like a chat line (npc_overheard); no npc_chatted (it is no chat).
+      */
+-    _grumble(s, objectId, reason = 'avoid', chosen = null) {
++    _grumble(s, objectId, reason = 'avoid', chosen = null, opts = null) {
+         // Slice 18a: the topic is chosen before _pickBark, by lines: grumble_<reason> when that pool
+         // has lines, else grumble when it has (the lab's spoken grumbles), else grumble_<reason>'s
+         // picture. _pickBark gives a picture, never null, for a topic with no lines, so it cannot be
+         // tried and fallen back from. An off or gone picture is the need's own icon.
+         const topic = chosen || this._grumbleTopic(s, reason);
+         const need = s.job?.need;
+-        const icons = reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null;
+-        const pick = this._pickBark(s, topic, { icons });
++        // Access 9.2: a caller's options ({ ignoreCooldown, icons }) win; icons: null is the topic's own picture
++        const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
++        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown });
+         if (!pick) return;
+         this._showSaying(s, pick, topic, objectId);
+     }
+ 
++    /**
++     * Access slice 9.2 (plan 5.5): one line from `topic` (a mutter) over one NPC, through the grumble
++     * path with the chatter cooldown ignored; the topic's own picture with no line. False for an
++     * NPC the system does not run.
++     */
++    mutter(npcId, topic) {
++        const s = this.states.get(npcId);
++        if (!s || typeof topic !== 'string' || !topic) return false;
++        this._log(npcId, 'mutter', { topic });
++        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null });
++        return true;
++    }
++
+     /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
+     _showSaying(s, pick, topic, objectId) {
+         const { line, idx, picture, pool } = pick;
+@@ -1814,7 +1844,8 @@ export class NPCNeedsSystem {
+         const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
+         const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
+             && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false)
+-            && !this._reservedFrom(o.id, s.npcId));   // slice 17: someone else's printout
++            && !this._reservedFrom(o.id, s.npcId)   // slice 17: someone else's printout
++            && !s.refused?.has(o.id));   // access 9.2 U: a device refused with nowhere to take it
+         const item = this._nearestReachable(s, items, pos);
+         if (!item) return null;
+         // Deliveries honour the room rules only: `private` limits uses, not drops (OQ26)
+@@ -2098,6 +2129,7 @@ export class NPCNeedsSystem {
+                 const item = this.world.getObject(job.itemId);
+                 if (!item || !item.pickable) { this._itemGone(s); this._abortJob(s, 'item_gone', { cancel: true }); this._goHome(s); return; }
+                 if (item.slot) job.slot = true;
++                if (typeof item.usbClass === 'string') job.usbClass = item.usbClass;   // access 9.2 U
+             }
+             if (!arrived) {
+                 if (this.clockMs >= job.deadline) this._failJob(s, 'timeout');
+@@ -2154,6 +2186,8 @@ export class NPCNeedsSystem {
+         const n = job.need ? s.needs[job.need] : null;
+         const obj = this.world.getObject(job.targetId);
+         const aff = obj?.affordance || job.aff || {};
++        // Access slice 9.2 U (plan 7): the target's USB policy refuses the carried device's class
++        if (job.carrying && job.usbClass && usbRefusedBy(obj?.usbPolicy ?? null, job.usbClass)) { this._refuseUse(s); return; }
+         if (n && s.temptBack[job.need]) delete s.temptBack[job.need];
+         if (n) {
+             let restores = asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0;
+@@ -2210,6 +2244,42 @@ export class NPCNeedsSystem {
+         this._goHome(s, { stayPut });
+     }
+ 
++    /**
++     * Access slice 9.2 U (plan 7): the target refused the carried device. Nothing is consumed and
++     * no npc_used fires; npc_use_refused and a usb_refused mutter do. The job carries on to the
++     * nearest other free, reachable object that accepts the tag and does not refuse the class;
++     * with none, the NPC puts the device down where it stands, remembers it and goes home.
++     */
++    _refuseUse(s) {
++        const id = s.npcId;
++        const job = s.job;
++        this._log(id, 'use_refused', { tag: job.tag || undefined, target: job.targetId, item: job.itemId, usbClass: job.usbClass });
++        this._emit(`npc_use_refused:${job.targetId}`, { npcId: id, objectId: job.targetId, itemId: job.itemId, tag: job.tag, usbClass: job.usbClass });
++        this._grumble(s, job.targetId, 'usb_refused', 'usb_refused', { ignoreCooldown: true, icons: null });
++        (job.refusedBy || (job.refusedBy = [])).push(job.targetId);
++        const pos = this.world.npcPos(id);
++        const targets = this._objects().filter(o => o.affordance && asList(o.affordance.accepts).includes(job.tag)
++            && !job.refusedBy.includes(o.id) && !usbRefusedBy(o.usbPolicy ?? null, job.usbClass)
++            && this._free(s, o) && this._permitted(s, o, false));
++        const next = pos ? this._nearestReachable(s, targets, pos) : null;
++        if (next) {
++            job.targetId = next.id;
++            job.phase = 'goto_target';
++            job.useUntil = 0;
++            this._log(id, 'retarget', { target: next.id, item: job.itemId });
++            this._leavePost(s);
++            return;
++        }
++        this.world.dropHeld(id, job.itemId);
++        this._worldChanged();
++        s.refused.add(job.itemId);
++        this._log(id, 'put_down', { item: job.itemId });
++        const stayPut = s.atPost && this._targetsOwnPost(s);
++        s.job = null;
++        this._clearBackoffs();
++        this._goHome(s, { stayPut });
++    }
++
+     /** Player proximity at use time: { playerNearby, playerDistance }. */
+     _playerProximity(npcId) {
+         const p = typeof this.world.playerProximity === 'function' ? this.world.playerProximity(npcId) : null;
+@@ -3312,6 +3382,10 @@ export function createEngineWorld() {
+         if (typeof sd.phoneOwner === 'string' && sd.phoneOwner) { out.phoneOwner = sd.phoneOwner; if (sd.rings !== undefined) out.rings = sd.rings; }
+         // Slice 18b-i: a hidden object (reveal global not true) is no use target
+         if (sd.affordance && globalOf(sp)) out.revealOnGlobal = globalOf(sp);
++        // Access slice 9.2 U (plan 7): a device's class, and a target's effective USB policy
++        if (typeof sd.usbClass === 'string') out.usbClass = sd.usbClass;
++        const usbPolicy = W().pcPolicy?.usbPolicyFor?.(sd, W().gameScenario) ?? null;
++        if (usbPolicy) out.usbPolicy = usbPolicy;
+         return out;
+     };
+     // A producer's reveal slots, by id, and the free test (loaded, not destroyed, active, global not
+diff --git a/public/break_escape/js/systems/pc-policy.js b/public/break_escape/js/systems/pc-policy.js
+new file mode 100644
+index 000000000..a70f3b6b0
+--- /dev/null
++++ b/public/break_escape/js/systems/pc-policy.js
+@@ -0,0 +1,83 @@
++/**
++ * (No apostrophes in this file: some node tests inline it as a data: URL inside a quoted import.)
++ * The USB policy (ACCESS_MODEL_SLICE_9_2_PLAN.md section 7, sub-slice U). Pure, with no imports,
++ * so node tests load it directly. The `policy` of a PC (else the scenario `defaultPolicy`) may say
++ * `usb`: `allowed` (the default), `storage_blocked` or `blocked`. An item with `usbClass`
++ * (`storage` or `hid`) is subject to it; an item without one is never refused. Only an object that
++ * is a workstation by its own fields, or that names a `policy` itself, is governed, so a default
++ * policy never makes a tray, a shredder or a printer refuse a memory stick.
++ *
++ * The module also sets window.pcPolicy to the same functions, which the needs adapter reads
++ * (npc-needs.js keeps its rule of no imports).
++ */
++
++export const USB_VALUES = Object.freeze(["allowed", "storage_blocked", "blocked"]);
++export const USB_CLASSES = Object.freeze(["storage", "hid"]);
++
++export const USB_REFUSAL_LINES = Object.freeze({
++    storage_blocked: "USB storage is disabled on this PC.",
++    blocked: "USB devices are disabled on this PC."
++});
++
++/** workstation-state.js isWorkstation, copied (that module reads window at load). */
++function isWorkstationData(data) {
++    return !!data && typeof data === "object" && !!data.id &&
++        (data.workstation === true || data.locksScreenOnLeave !== undefined || data.lockChance !== undefined ||
++         data.lockType === "login");
++}
++
++/** The object own policy, else the scenario defaultPolicy, as workstation-state.js policyFor resolves it; none: null. */
++export function effectivePolicy(objectData, scenario) {
++    const sc = scenario && typeof scenario === "object" ? scenario : {};
++    const name = (objectData && typeof objectData.policy === "string" && objectData.policy) || sc.defaultPolicy;
++    const p = name && sc.policies && typeof sc.policies === "object" ? sc.policies[name] : null;
++    return p && typeof p === "object" ? p : null;
++}
++
++/** Whether a usb policy governs this object: a workstation by its own fields, or one naming a policy. */
++export function usbGoverned(objectData) {
++    if (!objectData || typeof objectData !== "object") return false;
++    return isWorkstationData(objectData) || (typeof objectData.policy === "string" && !!objectData.policy);
++}
++
++/** The table of section 7: true when `usb` refuses an item of `usbClass`. */
++export function usbRefused(usb, usbClass) {
++    if (!USB_CLASSES.includes(usbClass)) return false;
++    if (usb === "blocked") return true;
++    if (usb === "storage_blocked") return usbClass === "storage";
++    return false;
++}
++
++/** The effective `usb` value for an object ("allowed" when its policy says nothing), or null when not governed. */
++export function usbPolicyFor(objectData, scenario) {
++    if (!usbGoverned(objectData)) return null;
++    const p = effectivePolicy(objectData, scenario);
++    const v = p?.usb;
++    return USB_VALUES.includes(v) ? v : "allowed";
++}
++
++/** The usbClass of a held inventory item (its scenarioData, or the item itself). */
++function classOf(item) {
++    const d = item?.scenarioData || item || {};
++    return typeof d.usbClass === "string" ? d.usbClass : null;
++}
++
++/**
++ * The plant decision of the player. `heldItems` are the held items that match the object
++ * requiresItem, in inventory order. Returns { item, refusal }: the first item the policy of the object
++ * accepts and refusal null; or, when every matching item is refused, item null and the refusal
++ * line (and `usbClass` of the first refused item). With no items: { item: null, refusal: null }.
++ */
++export function plantRefusal(heldItems, objectData, scenario) {
++    const list = Array.isArray(heldItems) ? heldItems.filter(Boolean) : [];
++    if (!list.length) return { item: null, refusal: null };
++    const usb = usbPolicyFor(objectData, scenario);
++    if (!usb) return { item: list[0], refusal: null };
++    const ok = list.find(it => !usbRefused(usb, classOf(it)));
++    if (ok) return { item: ok, refusal: null };
++    return { item: null, refusal: USB_REFUSAL_LINES[usb] || USB_REFUSAL_LINES.blocked, usbClass: classOf(list[0]), refusedItem: list[0] };
++}
++
++const pcPolicy = Object.freeze({ effectivePolicy, usbGoverned, usbRefused, usbPolicyFor, plantRefusal, USB_REFUSAL_LINES });
++if (typeof window !== "undefined") window.pcPolicy = pcPolicy;
++export default pcPolicy;
+diff --git a/scenarios/test_access_work/PLAYTEST.md b/scenarios/test_access_work/PLAYTEST.md
+new file mode 100644
+index 000000000..570833d61
+--- /dev/null
++++ b/scenarios/test_access_work/PLAYTEST.md
+@@ -0,0 +1,67 @@
++# test_access_work: scripted playtest (slice 9.2, U1 to U3 and W1 to W7)
++
++The scripted runs for access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
++section 11.1 and the build steps of sub-slices U and A). One room per beat, each with a sign.
++The scenario is for testing, not play. After every beat check what is on screen, what the server
++recorded and what reached the browser.
++
++**The needs clock is never stepped while an outage holds or a failure park is running** (plan 11,
++point 4). The server's pace floors measure server time; a stepped needs clock outruns it, the
++NPC's next failure comes sooner than the floor allows and the report is refused as `tooSoon`. A
++run that steps the needs clock by hand is not an honest client. The clock is stepped only for
++the auto lock, and such moves are marked "exercised, not earned".
++
++## Setup (each run)
++
++A keyless server on a free port (never touch :3000; use :3001 or another free port). In a
++container, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` and pass `--headless`.
++
++```bash
++export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
++tools/playtest/start-keyless-server.sh
++PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_work
++S=<scratchpad>/test_access_work
++tools/playtest/session-start.sh --url <URL> --headless \
++  --log $S/session-<game_id>.jsonl --capture-responses $S/<run>-responses.jsonl
++tools/playtest/cmd.sh <game_id> '{"cmd":"bootstrap"}'
++```
++
++The two checks after every beat:
++
++```bash
++BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
++BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> $S/<run>-responses.jsonl
++```
++
++The leak check must say `VERDICT: no leaks found` after every beat.
++
++Watch an NPC with
++`{"cmd":"eval","fn":"() => window.__test.needs.state('lena')"}` (its `job`, `mode` and `talking`).
++Every beat ticks a task in the one aim; `window.__test.getState().objectives` lists them.
++
++## Expected validator output
++
++`LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_work/scenario.json.erb --no-graph`:
++no errors. Among the `work:` lines, one warning for U3's `lost_property_tray`, which takes a storage
++stick and is governed by no policy although the default blocks storage: that is the beat's point
++(plan 7, "Which objects a usb policy governs"). From sub-slice A, also the "work never succeeds"
++warning for Kai (W5).
++
++## Run U: U1 to U3 (one new game, about 5 minutes)
++
++Pick up the five USB devices on the lobby floor first: `kit_usb` and `kit_badusb` (Lena's),
++`vault_usb` and `vault_usb_2` (Priya's, and the spare for the dock), `post_usb` (Kofi's). Each is
++named for its beat. Drop a device with
++`{"cmd":"inventoryAct","item":"kit_usb","entry":"Drop here"}`.
++
++| Beat | Do | Expect on screen | Events and tasks | Server record afterwards |
++|---|---|---|---|---|
++| U1 | Enter `usb_room` (north). Drop `kit_usb`. Wait about 15 seconds. Then drop `kit_badusb` | Lena picks the stick up and works at her PC for five seconds; she says a `usb_refused` line ("USB's disabled. Typical." or "Blocked again. Brilliant.") and carries it to the kiosk, which takes it. Then she takes the keyboard-type device to her own PC, which takes it with no line | `npc_use_refused:lena_pc` (`usbClass: "storage"`), then `npc_used:kiosk_pc` (`tag: "dev_usb"`), then `npc_used:lena_pc` (`tag: "dev_badusb"`). Tasks `u1_refused`, `u1_kiosk`, `u1_hid` | None |
++| U2 | Enter `vault_room` (east of the lobby). Drop `vault_usb`. Wait about 20 seconds. Then, holding `vault_usb_2`, click the USB dock | Priya takes the stick to her PC, says a `usb_refused` line and puts it down by her PC; she does not pick it up again. The dock click shows "USB devices are disabled on this PC." and `vault_usb_2` stays in the inventory | `npc_use_refused:priya_pc`, then `usb_refused:priya_dock`. The global `u2_dock_planted` stays false. Tasks `u2_refused`, `u2_dock` | None |
++| U3 | Enter `post_room` (south). Drop `post_usb` | Kofi carries it to the lost property tray and leaves it there, with no line | `npc_used:lost_property_tray`, no `npc_use_refused`. Task `u3_tray` | None |
++
++Request budget: sub-slice U sends no new request. The leak check finds nothing.
++
++## Earned secrets
++
++Run U types no secret.
+diff --git a/scenarios/test_access_work/ink/staff.ink b/scenarios/test_access_work/ink/staff.ink
+new file mode 100644
+index 000000000..dec328ce2
+--- /dev/null
++++ b/scenarios/test_access_work/ink/staff.ink
+@@ -0,0 +1,23 @@
++VAR hub_quiet = false
++=== start ===
++# speaker:npc
++Sorry, busy. What is it?
++~ hub_quiet = true
++-> hub
++
++=== hub ===
++{hub_quiet:
++    ~ hub_quiet = false
++- else:
++    # speaker:npc
++    Anything else?
++}
+++ [How's work today?]
++    # speaker:npc
++    Ask me again when the systems are working.
++    -> hub
+++ [I'll let you get on.] #exit_conversation
++    ~ hub_quiet = true
++    # speaker:npc
++    Cheers.
++    -> hub
+diff --git a/scenarios/test_access_work/ink/staff.json b/scenarios/test_access_work/ink/staff.json
+new file mode 100644
+index 000000000..04080ee40
+--- /dev/null
++++ b/scenarios/test_access_work/ink/staff.json
+@@ -0,0 +1 @@
++{"inkVersion":21,"root":[[["done",{"#n":"g-0"}],null],"done",{"start":["#","^speaker:npc","/#","^Sorry, busy. What is it?","\n","ev",true,"/ev",{"VAR=":"hub_quiet","re":true},{"->":"hub"},null],"hub":[["ev",{"VAR?":"hub_quiet"},"/ev",[{"->":".^.b","c":true},{"b":["\n","ev",false,"/ev",{"VAR=":"hub_quiet","re":true},{"->":"hub.0.5"},null]}],[{"->":".^.b"},{"b":["\n","#","^speaker:npc","/#","^Anything else?","\n",{"->":"hub.0.5"},null]}],"nop","\n","ev","str","^How's work today?","/str","/ev",{"*":".^.c-0","flg":4},"ev","str","^I'll let you get on.","/str","/ev",{"*":".^.c-1","flg":4},{"c-0":["\n","#","^speaker:npc","/#","^Ask me again when the systems are working.","\n",{"->":"hub"},null],"c-1":["^ ","#","^exit_conversation","/#","\n","ev",true,"/ev",{"VAR=":"hub_quiet","re":true},"#","^speaker:npc","/#","^Cheers.","\n",{"->":"hub"},null]}],null],"global decl":["ev",false,{"VAR=":"hub_quiet"},"/ev","end",null]}],"listDefs":{}}
+\ No newline at end of file
+diff --git a/scenarios/test_access_work/mission.json b/scenarios/test_access_work/mission.json
+new file mode 100644
+index 000000000..b2548ef5e
+--- /dev/null
++++ b/scenarios/test_access_work/mission.json
+@@ -0,0 +1,9 @@
++{
++  "display_name": "Test: Access model work and USB policy",
++  "description": "Test of access model slice 9.2: the USB policy (a PC refuses a storage stick and its owner takes it to a kiosk; a keyboard-type device gets through; a dock refuses the player's own plant; a tray under a blocking default accepts). Nothing to solve.",
++  "difficulty_level": 1,
++  "collection": "test_scenarios",
++  "estimated_duration_minutes": 15,
++  "test_type": "access_model",
++  "test_objective": "Prove usbClass and the usb policy field: npc_use_refused, the usb_refused mutter, delivery to a permitted object, the put-down with nowhere else, the player's refused plant, and that only workstations and objects naming a policy are governed"
++}
+diff --git a/scenarios/test_access_work/reports/2026-11-10_run_u.md b/scenarios/test_access_work/reports/2026-11-10_run_u.md
+new file mode 100644
+index 000000000..81ba7a688
+--- /dev/null
++++ b/scenarios/test_access_work/reports/2026-11-10_run_u.md
+@@ -0,0 +1,21 @@
++# Run U (U1 to U3), 2026-11-10
++
++Scripted regression run of sub-slice U on a keyless server (port 3017, the builder's own), game
++128, headless Chromium through the `window.__test` bridge. Session log and captured responses were
++kept in the builder's scratchpad (`u-session.jsonl`, `u-responses.jsonl`). Nothing typed; no
++secret used.
++
++| Beat | Result | Evidence |
++|---|---|---|
++| U1 | **Pass** | Lena polled once a second: `goto_target:lena_pc`, `using:lena_pc` for 5 s, then `goto_target:kiosk_pc` with "USB's disabled. Typical." showing, `using:kiosk_pc`, `returning`, `idle`. The keyboard-type device went to `lena_pc` and was used there with no line. Tasks `u1_refused`, `u1_kiosk`, `u1_hid` completed |
++| U2 | **Pass** | Priya: `using:priya_pc`, then `idle` with "Blocked again. Brilliant."; the stick lay visible at (496, 107) in `vault_room`, and 15 s later she was still idle (not picked up again). Dock click: the alert "USB devices are disabled on this PC.", `vault_usb_2` still in the inventory, `u2_dock_planted` false. Tasks `u2_refused`, `u2_dock` completed |
++| U3 | **Pass** | Kofi: `goto_item`, `goto_target:lost_property_tray`, `using`, `idle`, with no line at any poll. Task `u3_tray` completed |
++
++`verify-run.rb 128 --access`: no sessions, sign-ins, clones, copies, failures or lockouts, as
++expected (sub-slice U writes nothing on the server).
++
++`access-leak-check.rb 128 u-responses.jsonl`: every rule 0, `VERDICT: no leaks found.`
++
++Harness note: the first `interact` on `vault_usb_2` from across the lobby landed on a neighbouring
++stick (`approach-click-acted`); a `moveToNear` then `interact` picked it up. A harness matter with
++five items a tile apart, not a game bug.
+diff --git a/scenarios/test_access_work/scenario.json.erb b/scenarios/test_access_work/scenario.json.erb
+new file mode 100644
+index 000000000..8d3130121
+--- /dev/null
++++ b/scenarios/test_access_work/scenario.json.erb
+@@ -0,0 +1,496 @@
++{
++  "scenario_brief": "TEST: Access model slice 9.2, work and the USB policy\n\nA test floor for ACCESS_MODEL_SLICE_9_2_PLAN.md: the USB policy (U1 to U3). Each beat has a sign and its own room. Nothing to solve.",
++  "endGoal": "Test only: run the slice 9.2 beats.",
++  "startRoom": "lobby",
++  "startPosition": {
++    "x": 6,
++    "y": 6
++  },
++  "npcNeedsSeed": "test_access_work",
++  "npcWindupMs": 0,
++  "needsDebugOverlay": true,
++  "officePresets": true,
++  "chatter": {
++    "usb_refused": [
++      "USB's disabled. Typical.",
++      "Blocked again. Brilliant."
++    ]
++  },
++  "policies": {
++    "managed": {
++      "autoLockMin": 5,
++      "maxAttempts": null,
++      "usb": "storage_blocked",
++      "social": "allowed"
++    },
++    "locked_down": {
++      "autoLockMin": 5,
++      "maxAttempts": null,
++      "usb": "blocked",
++      "social": "allowed"
++    },
++    "lax": {
++      "autoLockMin": null,
++      "maxAttempts": null,
++      "usb": "allowed",
++      "social": "allowed"
++    },
++    "strict": {
++      "autoLockMin": 5,
++      "maxAttempts": 3,
++      "usb": "storage_blocked",
++      "social": "allowed"
++    }
++  },
++  "defaultPolicy": "managed",
++  "globalVariables": {
++    "u2_dock_planted": false
++  },
++  "objectives": [
++    {
++      "aimId": "usb_beats",
++      "title": "Run the USB policy beats",
++      "description": "Test only. Each task ticks when its beat's event fires.",
++      "status": "active",
++      "order": 0,
++      "tasks": [
++        {
++          "taskId": "u1_refused",
++          "title": "U1: Lena's PC refuses the storage stick",
++          "type": "custom",
++          "status": "active"
++        },
++        {
++          "taskId": "u1_kiosk",
++          "title": "U1: Lena takes the stick to the kiosk",
++          "type": "custom",
++          "status": "active"
++        },
++        {
++          "taskId": "u1_hid",
++          "title": "U1: Lena's PC takes the keyboard-type device",
++          "type": "custom",
++          "status": "active"
++        },
++        {
++          "taskId": "u2_refused",
++          "title": "U2: Priya's PC refuses the stick and she puts it down",
++          "type": "custom",
++          "status": "active"
++        },
++        {
++          "taskId": "u2_dock",
++          "title": "U2: the dock refuses your stick",
++          "type": "custom",
++          "status": "active"
++        },
++        {
++          "taskId": "u3_tray",
++          "title": "U3: Kofi leaves the stick in the tray, no refusal",
++          "type": "custom",
++          "status": "active"
++        }
++      ]
++    }
++  ],
++  "rooms": {
++    "lobby": {
++      "type": "room_reception",
++      "door_sign": "Lobby",
++      "connections": {
++        "north": "usb_room",
++        "east": "vault_room",
++        "south": "post_room"
++      },
++      "objects": [
++        {
++          "type": "notes1",
++          "id": "sign_lobby",
++          "name": "Sign: Start here",
++          "position": {
++            "x": 4,
++            "y": 3
++          },
++          "takeable": false,
++          "readable": true,
++          "readDisplay": "gameDisplay",
++          "addToNotes": false,
++          "text": "Slice 9.2 test floor. USB policy: Lena north (U1), Priya east (U2), Kofi south (U3).\nThe USB devices are on the floor here, one per beat, each named for its beat.",
++          "observations": "A beat sign on a stand."
++        },
++        {
++          "type": "usb",
++          "id": "kit_usb",
++          "name": "USB stick for Lena (storage)",
++          "sprite": "usb_bowl1",
++          "position": {
++            "x": 2,
++            "y": 5
++          },
++          "takeable": true,
++          "interactable": true,
++          "active": true,
++          "droppable": true,
++          "needsTag": "dev_usb",
++          "usbClass": "storage",
++          "observations": "A plain USB memory stick (storage)."
++        },
++        {
++          "type": "usb",
++          "id": "kit_badusb",
++          "name": "Keyboard-type USB device for Lena",
++          "sprite": "usb_bowl1",
++          "position": {
++            "x": 3,
++            "y": 5
++          },
++          "takeable": true,
++          "interactable": true,
++          "active": true,
++          "droppable": true,
++          "needsTag": "dev_badusb",
++          "usbClass": "hid",
++          "observations": "Looks like a memory stick, but it presents itself to a PC as a keyboard (hid)."
++        },
++        {
++          "type": "usb",
++          "id": "vault_usb",
++          "name": "USB stick for Priya (storage)",
++          "sprite": "usb_bowl1",
++          "position": {
++            "x": 4,
++            "y": 5
++          },
++          "takeable": true,
++          "interactable": true,
++          "active": true,
++          "droppable": true,
++          "needsTag": "vault_usb",
++          "usbClass": "storage",
++          "observations": "A plain USB memory stick (storage)."
++        },
++        {
++          "type": "usb",
++          "id": "vault_usb_2",
++          "name": "Spare USB stick for the dock (storage)",
++          "sprite": "usb_bowl1",
++          "position": {
++            "x": 5,
++            "y": 5
++          },
++          "takeable": true,
++          "interactable": true,
++          "active": true,
++          "droppable": true,
++          "needsTag": "vault_usb_spare",
++          "usbClass": "storage",
++          "observations": "A plain USB memory stick (storage)."
++        },
++        {
++          "type": "usb",
++          "id": "post_usb",
++          "name": "USB stick for Kofi (storage)",
++          "sprite": "usb_bowl1",
++          "position": {
++            "x": 6,
++            "y": 5
++          },
++          "takeable": true,
++          "interactable": true,
++          "active": true,
++          "droppable": true,
++          "needsTag": "post_usb",
++          "usbClass": "storage",
++          "observations": "A plain USB memory stick (storage)."
++        }
++      ],
++      "npcs": []
++    },
++    "usb_room": {
++      "type": "room_office",
++      "door_sign": "U1 Lena",
++      "connections": {
++        "south": "lobby"
++      },
++      "objects": [
++        {
++          "type": "notes1",
++          "id": "sign_u1",
++          "name": "Sign: U1 Storage refused, then the kiosk",
++          "position": {
++            "x": 2,
++            "y": 3
++          },
++          "takeable": false,
++          "readable": true,
++          "readDisplay": "gameDisplay",
++          "addToNotes": false,
++          "text": "U1. Drop Lena's storage stick here (click it in your inventory, Drop here). Lena takes it to her PC, which refuses storage: she mutters and takes it to the kiosk, which takes it.\nThen drop the keyboard-type device: her PC takes it.",
++          "observations": "A beat sign on a stand."
++        },
++        {
++          "type": "pc",
++          "id": "lena_pc",
++          "name": "Lena's PC",
++          "position": {
++            "x": 5,
++            "y": 3
++          },
++          "takeable": false,
++          "policy": "managed",
++          "affordance": {
++            "accepts": [
++              "dev_usb",
++              "dev_badusb"
++            ],
++            "useSeconds": 5
++          },
++          "observations": "Lena's PC, under the managed policy: USB storage is disabled."
++        },
++        {
++          "type": "pc3",
++          "id": "kiosk_pc",
++          "name": "Kiosk PC",
++          "position": {
++            "x": 8,
++            "y": 6
++          },
++          "takeable": false,
++          "policy": "lax",
++          "affordance": {
++            "accepts": [
++              "dev_usb"
++            ],
++            "useSeconds": 5
++          },
++          "observations": "A kiosk PC that nobody manages. It takes anything."
++        }
++      ],
++      "npcs": [
++        {
++          "id": "lena",
++          "displayName": "Lena Fox",
++          "npcType": "person",
++          "position": {
++            "x": 5,
++            "y": 5
++          },
++          "spriteSheet": "female_office_worker_v2",
++          "spriteTalk": "assets/characters/female_office_worker_talk.png",
++          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
++          "storyPath": "scenarios/test_access_work/ink/staff.json",
++          "currentKnot": "start",
++          "behavior": {
++            "facePlayer": true,
++            "facePlayerDistance": 96
++          },
++          "needsHome": "lena_pc",
++          "interests": {
++            "dev_usb": {
++              "weight": 2
++            },
++            "dev_badusb": {
++              "weight": 2
++            }
++          },
++          "eventMappings": [
++            {
++              "eventPattern": "npc_use_refused:lena_pc",
++              "onceOnly": true,
++              "completeTask": "u1_refused",
++              "condition": "data.usbClass === 'storage'"
++            },
++            {
++              "eventPattern": "npc_used:kiosk_pc",
++              "onceOnly": true,
++              "completeTask": "u1_kiosk",
++              "condition": "data.npcId === 'lena' && data.tag === 'dev_usb'"
++            },
++            {
++              "eventPattern": "npc_used:lena_pc",
++              "onceOnly": true,
++              "completeTask": "u1_hid",
++              "condition": "data.npcId === 'lena' && data.tag === 'dev_badusb'"
++            }
++          ]
++        }
++      ]
++    },
++    "vault_room": {
++      "type": "room_office",
++      "door_sign": "U2 Priya",
++      "connections": {
++        "west": "lobby"
++      },
++      "objects": [
++        {
++          "type": "notes1",
++          "id": "sign_u2",
++          "name": "Sign: U2 Refused outright, and your own plant",
++          "position": {
++            "x": 2,
++            "y": 3
++          },
++          "takeable": false,
++          "readable": true,
++          "readDisplay": "gameDisplay",
++          "addToNotes": false,
++          "text": "U2. Drop Priya's storage stick here: Priya's PC refuses every USB device and nothing else takes it, so she puts it down by her PC.\nThen, holding the spare stick, click the USB dock: USB devices are disabled on this PC, and you keep the stick.",
++          "observations": "A beat sign on a stand."
++        },
++        {
++          "type": "pc",
++          "id": "priya_pc",
++          "name": "Priya's PC",
++          "position": {
++            "x": 5,
++            "y": 3
++          },
++          "takeable": false,
++          "policy": "locked_down",
++          "affordance": {
++            "accepts": [
++              "vault_usb"
++            ],
++            "useSeconds": 5
++          },
++          "observations": "Priya's PC, under the locked-down policy: every USB device is disabled."
++        },
++        {
++          "type": "usb_bowl1",
++          "id": "priya_dock",
++          "name": "USB dock",
++          "position": {
++            "x": 7,
++            "y": 3
++          },
++          "takeable": false,
++          "interactable": true,
++          "policy": "locked_down",
++          "requiresItem": "usb",
++          "requiresItemHint": "You need a USB device to plug in here.",
++          "triggerOnInteract": [
++            {
++              "type": "set_global",
++              "key": "u2_dock_planted",
++              "value": true
++            }
++          ],
++          "observations": "A USB dock wired to Priya's PC. Same policy as the PC."
++        }
++      ],
++      "npcs": [
++        {
++          "id": "priya",
++          "displayName": "Priya Nair",
++          "npcType": "person",
++          "position": {
++            "x": 5,
++            "y": 5
++          },
++          "spriteSheet": "female_scientist_v2",
++          "spriteTalk": "assets/characters/female_scientist_talk.png",
++          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
++          "storyPath": "scenarios/test_access_work/ink/staff.json",
++          "currentKnot": "start",
++          "behavior": {
++            "facePlayer": true,
++            "facePlayerDistance": 96
++          },
++          "needsHome": "priya_pc",
++          "interests": {
++            "vault_usb": {
++              "weight": 2
++            }
++          },
++          "eventMappings": [
++            {
++              "eventPattern": "npc_use_refused:priya_pc",
++              "onceOnly": true,
++              "completeTask": "u2_refused"
++            },
++            {
++              "eventPattern": "usb_refused:priya_dock",
++              "onceOnly": true,
++              "completeTask": "u2_dock"
++            }
++          ]
++        }
++      ]
++    },
++    "post_room": {
++      "type": "room_office",
++      "door_sign": "U3 Kofi",
++      "connections": {
++        "north": "lobby"
++      },
++      "objects": [
++        {
++          "type": "notes1",
++          "id": "sign_u3",
++          "name": "Sign: U3 A default policy does not reach a tray",
++          "position": {
++            "x": 2,
++            "y": 3
++          },
++          "takeable": false,
++          "readable": true,
++          "readDisplay": "gameDisplay",
++          "addToNotes": false,
++          "text": "U3. Drop Kofi's storage stick here: Kofi puts it in the lost property tray. No refusal and no mutter, although the floor's default policy blocks storage: a tray is not a PC.",
++          "observations": "A beat sign on a stand."
++        },
++        {
++          "type": "bin1",
++          "id": "lost_property_tray",
++          "name": "Lost property tray",
++          "position": {
++            "x": 6,
++            "y": 3
++          },
++          "takeable": false,
++          "affordance": {
++            "accepts": [
++              "post_usb"
++            ],
++            "useSeconds": 3
++          },
++          "observations": "A tray for lost property. Not a PC; no policy."
++        }
++      ],
++      "npcs": [
++        {
++          "id": "kofi",
++          "displayName": "Kofi Mensah",
++          "npcType": "person",
++          "position": {
++            "x": 5,
++            "y": 5
++          },
++          "spriteSheet": "male_office_worker_v2",
++          "spriteTalk": "assets/characters/male_office_worker_talk.png",
++          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
++          "storyPath": "scenarios/test_access_work/ink/staff.json",
++          "currentKnot": "start",
++          "behavior": {
++            "facePlayer": true,
++            "facePlayerDistance": 96
++          },
++          "interests": {
++            "post_usb": {
++              "weight": 2
++            }
++          },
++          "eventMappings": [
++            {
++              "eventPattern": "npc_used:lost_property_tray",
++              "onceOnly": true,
++              "completeTask": "u3_tray",
++              "condition": "data.npcId === 'kofi'"
++            }
++          ]
++        }
++      ]
++    }
++  }
++}
+diff --git a/scripts/scenario-schema.json b/scripts/scenario-schema.json
+index c66753ce6..f9919a71e 100644
+--- a/scripts/scenario-schema.json
++++ b/scripts/scenario-schema.json
+@@ -191,7 +191,7 @@
+         "properties": {
+           "autoLockMin": { "type": ["number", "null"], "minimum": 0, "description": "Game minutes after the owner leaves before an open screen locks; 0 locks in the leave roll; null: no auto lock." },
+           "maxAttempts": { "type": ["integer", "null"], "minimum": 1, "description": "Server-counted failed sign-ins per PC and username before a lockout; null: no limit." },
+-          "usb": { "type": "string", "enum": ["allowed", "blocked"] },
++          "usb": { "type": "string", "enum": ["allowed", "storage_blocked", "blocked"], "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 7): allowed (default) accepts every USB device; storage_blocked refuses items with usbClass storage; blocked refuses storage and hid. Governs only a workstation or an object that names a policy." },
+           "social": { "type": "string", "enum": ["allowed", "blocked"] },
+           "remote": { "type": "string", "enum": ["allowed", "blocked"], "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4): whether a sign-in PC under this policy takes a remote sign-in through a foothold. Absent means allowed; a blocked PC is still listed in the network view, marked remote sign-in off." },
+           "_comment": { "type": "string" }
+@@ -5279,6 +5279,7 @@
+         "identity": { "type": "string", "description": "Access model section 3: for readability, the NPC id whose card this keycard is; the validator checks that NPC carries its card_id." },
+         "needsTag": { "type": "string", "description": "NPC needs system: one tag. NPCs with a matching interests entry are drawn to this item." },
+         "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
++        "usbClass": { "type": "string", "enum": ["storage", "hid"], "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 7): the USB device class a policy's usb value judges. storage: a memory stick; hid: a device that presents itself as a keyboard. An item with no usbClass is never refused." },
+         "holds": { "type": "object", "description": "An inventory holder (engine plan section 6): captures true lists se_captures, items true files held items whose storeIn equals this item's id.", "properties": { "captures": { "type": "boolean" }, "items": { "type": "boolean" } }, "patternProperties": { "^_": {} }, "additionalProperties": false },
+         "storeIn": { "type": "string", "minLength": 1, "description": "The id of the holder item this item is filed in while both are held (engine plan section 6). An item with storeIn is never added to the Notepad." },
+         "leftBehindBy": { "type": "string", "minLength": 1, "description": "Left-behind item (NPC needs, OFFICE_LIFE_PLAN 2.10, slice 11): the id of the NPC (with needsHome) who sometimes leaves this item at its post. On each real leave a seeded roll under leftBehindChance shows it at its declared spot (object_revealed:<id> with leftBehindBy; npc_left_post gains leftBehind); on return the owner picks it up again (hidden, global false, no server call). Taken by the player, it is gone for good (npc_left_item_gone:<npcId> on the owner's return). Needs its own revealOnGlobal, which the engine owns; a reload files it away. A non-takeable readable notes* item must use readDisplay gameDisplay." },
+diff --git a/scripts/validate_access_work.rb b/scripts/validate_access_work.rb
+new file mode 100644
+index 000000000..2e5974d27
+--- /dev/null
++++ b/scripts/validate_access_work.rb
+@@ -0,0 +1,191 @@
++# frozen_string_literal: true
++
++# Access model slice 9.2 lints: the USB policy (sub-slice U) and work, outages and frustration
++# (sub-slice A). docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md section 10.
++#
++# Entry points, called from scripts/validate_scenario.rb:
++#
++#   ValidateAccessWork.check(json_data)        -> issue strings ("❌ ERROR: work: ...", ...)
++#   ValidateAccessWork.report_lines(json_data) -> the work report as lines; [] when nothing applies
++#
++# No line ever quotes a password.
++module ValidateAccessWork
++  USB_VALUES = %w[allowed storage_blocked blocked].freeze
++  SOCIAL_VALUES = %w[allowed blocked].freeze
++  USB_CLASSES = %w[storage hid].freeze
++
++  module_function
++
++  def err(issues, msg) = issues << "❌ ERROR: work: #{msg}"
++  def warn(issues, msg) = issues << "⚠️ WARNING: work: #{msg}"
++
++  def check(json_data)
++    issues = []
++    return issues unless json_data.is_a?(Hash)
++
++    check_usb(json_data, issues)
++    issues
++  end
++
++  def report_lines(_json_data)
++    []
++  end
++
++  # ── shared walks ──────────────────────────────────────────────────────
++
++  # Every object in every room, with nested contents and itemsHeld: [{ obj:, room: }]
++  def all_objects(json_data)
++    out = []
++    walk = lambda do |list, room|
++      Array(list).each do |o|
++        next unless o.is_a?(Hash)
++
++        out << { obj: o, room: room }
++        walk.call(o['contents'], room)
++        walk.call(o['itemsHeld'], room)
++      end
++    end
++    (json_data['rooms'] || {}).each do |room_id, room|
++      next unless room.is_a?(Hash)
++
++      walk.call(room['objects'], room_id)
++      Array(room['npcs']).each { |n| walk.call(n['itemsHeld'], room_id) if n.is_a?(Hash) }
++    end
++    walk.call(json_data['startItemsInInventory'], nil)
++    out
++  end
++
++  def room_npcs(json_data)
++    (json_data['rooms'] || {}).flat_map do |room_id, room|
++      next [] unless room.is_a?(Hash)
++
++      Array(room['npcs']).select { |n| n.is_a?(Hash) && n['id'] }.map { |n| { npc: n, room: room_id } }
++    end
++  end
++
++  def workstation?(o)
++    o.is_a?(Hash) && o['id'] &&
++      (o['workstation'] == true || o.key?('locksScreenOnLeave') || o.key?('lockChance') || o['lockType'] == 'login')
++  end
++
++  def chatter_off?(json_data) = json_data['chatter'] == false
++
++  # Whether pool `topic` has a line for this NPC: the scenario's pool plus the NPC's own.
++  def pool_has_line?(json_data, npc, topic)
++    [json_data['chatter'], npc['chatter']].any? do |c|
++      next false unless c.is_a?(Hash)
++
++      v = c[topic]
++      v = v['lines'] if v.is_a?(Hash)
++      Array(v).any? { |l| l.is_a?(String) && !l.strip.empty? }
++    end
++  end
++
++  # ── sub-slice U: the USB policy ──────────────────────────────────────
++
++  def usb_governed?(o) = workstation?(o) || (o['policy'].is_a?(String) && !o['policy'].empty?)
++
++  def effective_policy_name(o, json_data)
++    name = o['policy'].is_a?(String) && !o['policy'].empty? ? o['policy'] : json_data['defaultPolicy']
++    name.is_a?(String) ? name : nil
++  end
++
++  def usb_value(json_data, name)
++    p = (json_data['policies'] || {})[name]
++    v = p.is_a?(Hash) ? p['usb'] : nil
++    USB_VALUES.include?(v) ? v : 'allowed'
++  end
++
++  def usb_refused?(usb, cls)
++    return false unless USB_CLASSES.include?(cls)
++    return true if usb == 'blocked'
++
++    usb == 'storage_blocked' && cls == 'storage'
++  end
++
++  # The object's effective usb value, or nil when not governed
++  def usb_policy_for(o, json_data)
++    return nil unless usb_governed?(o)
++
++    name = effective_policy_name(o, json_data)
++    name ? usb_value(json_data, name) : 'allowed'
++  end
++
++  # Items an object takes: by an NPC delivery (affordance.accepts tags) or the player's plant (requiresItem)
++  def taken_items(o, items)
++    tags = Array(o.dig('affordance', 'accepts')).grep(String)
++    req = o['requiresItem']
++    wanted = req.nil? ? [] : Array(req).grep(String)
++    items.select do |it|
++      (tags.include?(it['needsTag']) && it['needsTag']) ||
++        wanted.include?(it['type']) || wanted.include?(it['id']) || wanted.include?(it['name'])
++    end
++  end
++
++  def check_usb(json_data, issues)
++    (json_data['policies'] || {}).each do |name, p|
++      next unless p.is_a?(Hash)
++
++      err(issues, "policies.#{name}.usb is '#{p['usb']}'; use one of #{USB_VALUES.join(', ')}.") if p.key?('usb') && !USB_VALUES.include?(p['usb'])
++      err(issues, "policies.#{name}.social is '#{p['social']}'; use one of #{SOCIAL_VALUES.join(', ')}.") if p.key?('social') && !SOCIAL_VALUES.include?(p['social'])
++    end
++    entries = all_objects(json_data)
++    entries.each do |e|
++      o = e[:obj]
++      next unless o.key?('usbClass')
++
++      err(issues, "item '#{o['id'] || o['name']}' has usbClass '#{o['usbClass']}'; use storage or hid.") unless USB_CLASSES.include?(o['usbClass'])
++    end
++    items = entries.map { |e| e[:obj] }
++    takers = entries.map { |e| e[:obj] }.select { |o| o.dig('affordance', 'accepts') || o['requiresItem'] }
++
++    # A blocking policy that governs only objects whose items have no usbClass does nothing there
++    (json_data['policies'] || {}).each do |name, p|
++      next unless p.is_a?(Hash) && USB_VALUES.include?(p['usb']) && p['usb'] != 'allowed'
++
++      governed = takers.select { |o| usb_governed?(o) && effective_policy_name(o, json_data) == name }
++      next if governed.empty?
++      next if governed.any? { |o| taken_items(o, items).any? { |it| USB_CLASSES.include?(it['usbClass']) } }
++
++      warn(issues, "policies.#{name} sets usb '#{p['usb']}', but every object it governs that takes an item " \
++                   "(#{governed.map { |o| o['id'] }.compact.join(', ')}) takes only items with no usbClass: the policy refuses nothing there.")
++    end
++
++    # A device accepted by an object no policy governs while the default policy blocks its class
++    default_name = json_data['defaultPolicy'].is_a?(String) ? json_data['defaultPolicy'] : nil
++    default_usb = default_name ? usb_value(json_data, default_name) : 'allowed'
++    if default_usb != 'allowed'
++      takers.reject { |o| usb_governed?(o) }.each do |o|
++        devices = taken_items(o, items).select { |it| usb_refused?(default_usb, it['usbClass']) }
++        next if devices.empty?
++
++        warn(issues, "'#{o['id']}' takes #{devices.map { |it| "'#{it['id']}'" }.join(', ')} (usbClass #{devices.map { |it| it['usbClass'] }.uniq.join(', ')}) " \
++                     "and is not a workstation and names no policy, so the default policy '#{default_name}' (usb #{default_usb}) " \
++                     "does not reach it: it accepts the device. Name a policy on it if a refusal was meant.")
++      end
++    end
++
++    # The mutter: an NPC that can be refused a device needs a usb_refused line (plan 5.5)
++    return if chatter_off?(json_data)
++
++    room_npcs(json_data).each do |e|
++      npc = e[:npc]
++      tags = (npc['interests'].is_a?(Hash) ? npc['interests'].keys : [])
++      next if tags.empty?
++
++      refusable = tags.any? do |tag|
++        devices = items.select { |it| it['needsTag'] == tag && USB_CLASSES.include?(it['usbClass']) }
++        devices.any? do |it|
++          takers.any? do |o|
++            Array(o.dig('affordance', 'accepts')).include?(tag) && usb_refused?(usb_policy_for(o, json_data), it['usbClass'])
++          end
++        end
++      end
++      next unless refusable
++      next if pool_has_line?(json_data, npc, 'usb_refused')
++
++      warn(issues, "#{npc['id']} can be refused a USB device, but no usb_refused line is in the scenario's chatter " \
++                   "or the NPC's own: the student sees only a picture. Copy the pool from test_access_work.")
++    end
++  end
++end
+diff --git a/scripts/validate_scenario.rb b/scripts/validate_scenario.rb
+index 26474ffb3..bb4144428 100755
+--- a/scripts/validate_scenario.rb
++++ b/scripts/validate_scenario.rb
+@@ -29,6 +29,7 @@ require_relative '../lib/break_escape/access_identities'
+ require_relative '../lib/break_escape/npc_habits'
+ require_relative '../lib/break_escape/npc_habits/clues'
+ require_relative 'validate_npc_habits'
++require_relative 'validate_access_work'
+ 
+ # Try to load json-schema gem, provide helpful error if missing
+ begin
+@@ -527,6 +528,7 @@ def check_unknown_fields(json_data)
+     completesTask completesTaskOnOpen
+     puzzle_graph_links hintOnlyFlags acceptsVmLabels
+     affordance needsTag droppable officeType
++    usbClass
+     workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
+     phoneOwner rings
+     actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
+@@ -6649,6 +6651,7 @@ def main
+     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
+     common_issues += check_network_model(json_data)
+     common_issues += check_capture_log(json_data)
++    common_issues += ValidateAccessWork.check(json_data)
+     common_issues += ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report,
+                                                         scenario_dir: File.dirname(erb_path))
+     common_issues += check_tooling_pass4c(json_data, repo_root)
+diff --git a/test/js/examine-minigame.test.mjs b/test/js/examine-minigame.test.mjs
+index 2442f692d..2eb7bc4da 100644
+--- a/test/js/examine-minigame.test.mjs
++++ b/test/js/examine-minigame.test.mjs
+@@ -40,6 +40,7 @@ const stubs = {
+     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
+     // the real hint resolver and the real duration rule (the requiresItem refusal test below)
+     './requires-item-hint.js': dataUrl(readFileSync(join(js, 'systems/requires-item-hint.js'), 'utf8')
++    './pc-policy.js': dataUrl(readFileSync(join(js, 'systems/pc-policy.js'), 'utf8')),
+         .replace("'../utils/conditional-text.js'", `'${dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8'))}'`)),
+     '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
+     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
+diff --git a/test/js/interaction-warning.test.mjs b/test/js/interaction-warning.test.mjs
+index 899673b6c..2b1573d94 100644
+--- a/test/js/interaction-warning.test.mjs
++++ b/test/js/interaction-warning.test.mjs
+@@ -48,6 +48,7 @@ const stubs = {
+   './interaction-walls.js': 'export function interactionLineClear(){return true;}',
+   '../utils/locked-hint.js': 'export function hintToastMs(){ return 6000; }',
+   './requires-item-hint.js': 'export function requiresItemHint(data){ return (data && data.requiresItemHint) || ""; }',
++  './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
+   './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
+   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
+   './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
+diff --git a/test/js/minigame-launch-routes.test.mjs b/test/js/minigame-launch-routes.test.mjs
+index 379f92e09..490492526 100644
+--- a/test/js/minigame-launch-routes.test.mjs
++++ b/test/js/minigame-launch-routes.test.mjs
+@@ -50,6 +50,7 @@ const stubs = {
+     '../utils/conditional-text.js': dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')),
+     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
+     './requires-item-hint.js': dataUrl('export function requiresItemHint(d) { return d?.requiresItemHint; }'),
++    './pc-policy.js': dataUrl(readFileSync(join(js, 'systems/pc-policy.js'), 'utf8')),
+     '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
+     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
+     './examine.js': dataUrl('export function shouldExamine() { return false; } export function startExamine() {}'),
+diff --git a/test/js/network-links-routing.test.mjs b/test/js/network-links-routing.test.mjs
+index 3a2dbbf52..3d2cf73fb 100644
+--- a/test/js/network-links-routing.test.mjs
++++ b/test/js/network-links-routing.test.mjs
+@@ -38,6 +38,7 @@ const stubs = {
+     '../utils/conditional-text.js': dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')),
+     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
+     './requires-item-hint.js': dataUrl(readFileSync(join(js, 'systems/requires-item-hint.js'), 'utf8')
++    './pc-policy.js': dataUrl(readFileSync(join(js, 'systems/pc-policy.js'), 'utf8')),
+         .replace("'../utils/conditional-text.js'", `'${dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8'))}'`)),
+     '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
+     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
+diff --git a/test/js/npc-needs-usb-policy.test.mjs b/test/js/npc-needs-usb-policy.test.mjs
+new file mode 100644
+index 000000000..c358ce1c7
+--- /dev/null
++++ b/test/js/npc-needs-usb-policy.test.mjs
+@@ -0,0 +1,130 @@
++// The USB policy in the needs system (access slice 9.2 sub-slice U): an NPC carrying a device to
++// a PC whose policy refuses its class. Spec: ACCESS_MODEL_SLICE_9_2_PLAN.md section 7.
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { NPCNeedsSystem } from '../../public/break_escape/js/systems/npc-needs.js';
++import { makeWorld } from './fixtures/needs-stub-world.mjs';
++
++// dropHeld puts the item back where the NPC stands (the live adapter does the same)
++function world(cfg) {
++    const w = makeWorld(cfg);
++    w.world.dropHeld = (npcId, itemId) => {
++        w.calls.dropped.push({ npcId, itemId });
++        const o = w.objs.find(x => x.id === itemId);
++        const p = w.pos[npcId];
++        if (o) { o.roomId = 'office'; o.x = p.x; o.y = p.y; }
++    };
++    return w;
++}
++
++function setup({ lenaPolicy = 'storage_blocked', kiosk = true, usbClass = 'storage', chatter } = {}) {
++    const cfg = {
++        npcs: {
++            lena: { pos: { x: 100, y: 100 }, rec: { id: 'lena', needsHome: 'lena_pc', interests: { dev_usb: { weight: 2 } }, ...(chatter ? {} : {}) } }
++        },
++        objects: [
++            { id: 'lena_pc', x: 100, y: 68, affordance: { accepts: ['dev_usb'], useSeconds: 5 }, usbPolicy: lenaPolicy },
++            ...(kiosk ? [{ id: 'kiosk_pc', x: 300, y: 68, affordance: { accepts: ['dev_usb'], useSeconds: 5 }, usbPolicy: 'allowed' }] : [])
++        ]
++    };
++    const w = world(cfg);
++    if (chatter) w.world.chatterConfig = () => chatter;
++    const sys = new NPCNeedsSystem(w.world, { seed: 'usb', manualClock: true });
++    w.attach(sys);
++    sys.registerAll();
++    sys.step(2000);
++    const item = { id: 'kit_usb', x: 150, y: 150, roomId: 'office', pickable: true, needsTag: 'dev_usb' };
++    if (usbClass) item.usbClass = usbClass;
++    w.objs.push(item);
++    return { sys, w };
++}
++
++const named = (w, prefix) => w.calls.emits.filter(e => e.name.startsWith(prefix));
++
++test('storage refused at a managed PC (no npc_used), then delivered to a permitted one', () => {
++    const { sys, w } = setup();
++    sys.step(30000);
++    const refused = named(w, 'npc_use_refused:');
++    assert.equal(refused.length, 1);
++    assert.equal(refused[0].name, 'npc_use_refused:lena_pc');
++    assert.deepEqual(refused[0].data, { npcId: 'lena', objectId: 'lena_pc', itemId: 'kit_usb', tag: 'dev_usb', usbClass: 'storage' });
++    assert.equal(named(w, 'npc_used:lena_pc').length, 0);
++    const used = named(w, 'npc_used:kiosk_pc');
++    assert.equal(used.length, 1);
++    assert.equal(used[0].data.itemId, 'kit_usb');
++    assert.deepEqual(w.calls.consumed, [{ npcId: 'lena', itemId: 'kit_usb' }]);
++    const log = sys.getLog().filter(e => e.npc === 'lena').map(e => e.ev);
++    assert.ok(log.indexOf('use_refused') < log.indexOf('retarget'));
++    assert.ok(log.indexOf('retarget') < log.indexOf('used'));
++    // she left her post for the kiosk (a real leave) and came back
++    assert.ok(named(w, 'npc_left_post:lena').some(e => e.data.targetId === 'kiosk_pc'));
++});
++
++test('with nowhere else, the device is put down and not picked up again', () => {
++    const { sys, w } = setup({ lenaPolicy: 'blocked', kiosk: false });
++    sys.step(60000);
++    assert.equal(named(w, 'npc_use_refused:lena_pc').length, 1);
++    assert.deepEqual(w.calls.dropped, [{ npcId: 'lena', itemId: 'kit_usb' }]);
++    assert.equal(w.calls.consumed.length, 0);
++    assert.equal(named(w, 'npc_used:').length, 0);
++    const item = w.objs.find(o => o.id === 'kit_usb');
++    assert.equal(item.roomId, 'office');
++    assert.equal(sys.getLog().filter(e => e.npc === 'lena' && e.ev === 'picked_up').length, 1, 'picked up once only');
++    assert.equal(sys.getState('lena').job, null);
++});
++
++test('a hid item is accepted under storage_blocked and refused under blocked', () => {
++    let { sys, w } = setup({ usbClass: 'hid' });
++    sys.step(30000);
++    assert.equal(named(w, 'npc_use_refused:').length, 0);
++    assert.equal(named(w, 'npc_used:lena_pc').length, 1);
++    ({ sys, w } = setup({ usbClass: 'hid', lenaPolicy: 'blocked' }));
++    sys.step(30000);
++    assert.equal(named(w, 'npc_use_refused:lena_pc').length, 1);
++    assert.equal(named(w, 'npc_used:kiosk_pc').length, 1);
++});
++
++test('an item with no usbClass is never refused', () => {
++    const { sys, w } = setup({ usbClass: null, lenaPolicy: 'blocked' });
++    sys.step(30000);
++    assert.equal(named(w, 'npc_use_refused:').length, 0);
++    assert.equal(named(w, 'npc_used:lena_pc').length, 1);
++});
++
++test('an ungoverned tray (usbPolicy null) under a blocking default accepts', () => {
++    const { sys, w } = setup({ lenaPolicy: null, kiosk: false });
++    sys.step(30000);
++    assert.equal(named(w, 'npc_use_refused:').length, 0);
++    assert.equal(named(w, 'npc_used:lena_pc').length, 1);
++});
++
++test('the mutter: a usb_refused line for its time, seeded; the picture without one', () => {
++    const chatter = { usb_refused: ["USB's disabled. Typical.", 'Not this again.'] };
++    const runOnce = () => {
++        const { sys, w } = setup({ chatter });
++        let seen = null;
++        for (let i = 0; i < 120 && !seen; i++) { sys.step(250); const t = sys.getState('lena').talking; if (t && t.topic === 'usb_refused') seen = { ...t, at: sys.clockMs }; }
++        return seen;
++    };
++    const a = runOnce(), b = runOnce();
++    assert.ok(a, 'the mutter shows');
++    assert.ok(chatter.usb_refused.includes(a.line));
++    assert.equal(a.line, b.line, 'seeded');
++    // no line: the blocked picture
++    const { sys } = setup();
++    let pic = null;
++    for (let i = 0; i < 120 && !pic; i++) { sys.step(250); const t = sys.getState('lena').talking; if (t && t.topic === 'usb_refused') pic = t; }
++    assert.ok(pic);
++    assert.equal(pic.picture, 'blocked');
++});
++
++test('mutter(npcId, topic) is public and ignores the chatter cooldown', () => {
++    const chatter = { usb_refused: ['One.'], work_fail: ['Two.'] };
++    const { sys } = setup({ chatter, kiosk: false, lenaPolicy: null });
++    assert.equal(sys.mutter('lena', 'work_fail'), true);
++    assert.equal(sys.getState('lena').talking.line, 'Two.');
++    sys.step(5000);
++    assert.equal(sys.mutter('lena', 'usb_refused'), true);
++    assert.equal(sys.getState('lena').talking.line, 'One.');
++    assert.equal(sys.mutter('nobody', 'work_fail'), false);
++});
+diff --git a/test/js/pc-policy.test.mjs b/test/js/pc-policy.test.mjs
+new file mode 100644
+index 000000000..42d0fa7e3
+--- /dev/null
++++ b/test/js/pc-policy.test.mjs
+@@ -0,0 +1,85 @@
++// The USB policy module (systems/pc-policy.js), access slice 9.2 sub-slice U.
++// Spec: docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md section 7.
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { effectivePolicy, usbGoverned, usbRefused, usbPolicyFor, plantRefusal, USB_REFUSAL_LINES } from '../../public/break_escape/js/systems/pc-policy.js';
++import { usbRefusedBy } from '../../public/break_escape/js/systems/npc-needs.js';
++
++const scenario = {
++    defaultPolicy: 'managed',
++    policies: {
++        managed: { usb: 'storage_blocked', autoLockMin: 5 },
++        locked_down: { usb: 'blocked' },
++        lax: { usb: 'allowed' },
++        quiet: { autoLockMin: 3 }
++    }
++};
++
++test('the table: allowed or absent accepts both; storage_blocked refuses storage only; blocked refuses both', () => {
++    for (const usb of ['allowed', undefined, null]) {
++        assert.equal(usbRefused(usb, 'storage'), false);
++        assert.equal(usbRefused(usb, 'hid'), false);
++    }
++    assert.equal(usbRefused('storage_blocked', 'storage'), true);
++    assert.equal(usbRefused('storage_blocked', 'hid'), false);
++    assert.equal(usbRefused('blocked', 'storage'), true);
++    assert.equal(usbRefused('blocked', 'hid'), true);
++    // an item with no usbClass is never refused
++    assert.equal(usbRefused('blocked', undefined), false);
++    assert.equal(usbRefused('blocked', null), false);
++});
++
++test('the needs copy of the table agrees with the module', () => {
++    for (const usb of ['allowed', 'storage_blocked', 'blocked', null]) {
++        for (const cls of ['storage', 'hid', null, 'other']) assert.equal(usbRefusedBy(usb, cls), usbRefused(usb, cls), `${usb}/${cls}`);
++    }
++});
++
++test('effectivePolicy: the PC\'s own policy, else the default, else null', () => {
++    assert.deepEqual(effectivePolicy({ id: 'pc', policy: 'lax' }, scenario), scenario.policies.lax);
++    assert.deepEqual(effectivePolicy({ id: 'pc' }, scenario), scenario.policies.managed);
++    assert.equal(effectivePolicy({ id: 'pc' }, { policies: scenario.policies }), null);
++    assert.equal(effectivePolicy({ id: 'pc', policy: 'nope' }, scenario), null);
++});
++
++test('usbGoverned: a workstation by its fields or an object naming a policy; not a tray under a default', () => {
++    assert.equal(usbGoverned({ id: 'a', lockType: 'login' }), true);
++    assert.equal(usbGoverned({ id: 'a', workstation: true }), true);
++    assert.equal(usbGoverned({ id: 'a', lockChance: 0 }), true);
++    assert.equal(usbGoverned({ id: 'a', locksScreenOnLeave: true }), true);
++    assert.equal(usbGoverned({ id: 'dock', policy: 'locked_down' }), true);
++    assert.equal(usbGoverned({ id: 'tray', type: 'bin' }), false);
++    assert.equal(usbPolicyFor({ id: 'tray', type: 'bin' }, scenario), null);
++    assert.equal(usbPolicyFor({ id: 'pc', lockType: 'login' }, scenario), 'storage_blocked');
++    assert.equal(usbPolicyFor({ id: 'pc', lockType: 'login', policy: 'quiet' }, scenario), 'allowed');
++    assert.equal(usbPolicyFor({ id: 'dock', policy: 'locked_down' }, scenario), 'blocked');
++});
++
++const stick = { scenarioData: { id: 'kit_usb', type: 'usb', usbClass: 'storage' } };
++const badusb = { scenarioData: { id: 'kit_badusb', type: 'usb', usbClass: 'hid' } };
++const logger = { scenarioData: { id: 'keylogger', type: 'keylogger' } };
++
++test('plantRefusal: the first held item the policy accepts is used', () => {
++    const dock = { id: 'dock', policy: 'managed' };
++    assert.deepEqual(plantRefusal([stick, badusb], dock, scenario), { item: badusb, refusal: null });
++    assert.deepEqual(plantRefusal([badusb, stick], dock, scenario), { item: badusb, refusal: null });
++    // an item with no usbClass is never refused
++    assert.deepEqual(plantRefusal([logger], { id: 'd', policy: 'locked_down' }, scenario), { item: logger, refusal: null });
++});
++
++test('plantRefusal: refused only when every matching item is refused, with the line for the value', () => {
++    const r1 = plantRefusal([stick], { id: 'dock', policy: 'managed' }, scenario);
++    assert.equal(r1.item, null);
++    assert.equal(r1.refusal, 'USB storage is disabled on this PC.');
++    assert.equal(r1.usbClass, 'storage');
++    const r2 = plantRefusal([stick, badusb], { id: 'dock', policy: 'locked_down' }, scenario);
++    assert.equal(r2.item, null);
++    assert.equal(r2.refusal, USB_REFUSAL_LINES.blocked);
++    assert.equal(r2.refusal, 'USB devices are disabled on this PC.');
++});
++
++test('plantRefusal: a non-governed object under a blocking default is not refused; nothing held is no refusal', () => {
++    const sc = { ...scenario, defaultPolicy: 'locked_down' };
++    assert.deepEqual(plantRefusal([stick], { id: 'tray' }, sc), { item: stick, refusal: null });
++    assert.deepEqual(plantRefusal([], { id: 'dock', policy: 'locked_down' }, sc), { item: null, refusal: null });
++});
+diff --git a/test/js/validator-access-work.test.mjs b/test/js/validator-access-work.test.mjs
+new file mode 100644
+index 000000000..8bdb2386b
+--- /dev/null
++++ b/test/js/validator-access-work.test.mjs
+@@ -0,0 +1,100 @@
++// scripts/validate_access_work.rb (access slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md section 10):
++// the USB policy (sub-slice U) and work, outages and frustration (sub-slice A). One fixture per
++// error and warning, and a clean fixture that raises none.
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { spawnSync } from 'node:child_process';
++import { fileURLToPath } from 'node:url';
++import { dirname, join } from 'node:path';
++
++const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
++const ruby = spawnSync('ruby', ['--version']);
++const skip = ruby.status !== 0 && 'ruby not found';
++
++function run(scenario, fn = 'check') {
++    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
++      puts JSON.generate(ValidateAccessWork.${fn}(JSON.parse(STDIN.read)))`;
++    const r = spawnSync('ruby', ['-e', script], {
++        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
++    });
++    assert.equal(r.status, 0, r.stderr);
++    return JSON.parse(r.stdout.trim().split('\n').pop());
++}
++const issues = s => run(s, 'check');
++const errors = list => list.filter(s => s.startsWith('❌'));
++const warnings = list => list.filter(s => s.startsWith('⚠️'));
++const has = (list, frag) => list.some(s => s.includes(frag));
++const assertHas = (list, frag) => assert.ok(has(list, frag), `expected "${frag}" in:\n${list.join('\n')}`);
++const clone = o => JSON.parse(JSON.stringify(o));
++
++// ── sub-slice U ────────────────────────────────────────────────────────
++
++function usbClean() {
++    return {
++        startRoom: 'lobby',
++        chatter: { usb_refused: ["USB's disabled. Typical."] },
++        policies: { managed: { usb: 'storage_blocked' }, lax: { usb: 'allowed' }, locked_down: { usb: 'blocked' } },
++        defaultPolicy: 'managed',
++        rooms: {
++            lobby: {
++                type: 'room_office',
++                objects: [
++                    { id: 'kit_usb', type: 'usb', name: 'USB stick', needsTag: 'dev_usb', droppable: true, usbClass: 'storage' },
++                    { id: 'lena_pc', type: 'pc', name: 'PC', workstation: true, affordance: { accepts: ['dev_usb'] } },
++                    { id: 'kiosk_pc', type: 'pc', name: 'Kiosk', workstation: true, policy: 'lax', affordance: { accepts: ['dev_usb'] } },
++                    { id: 'priya_dock', type: 'usb_hub', name: 'Dock', policy: 'locked_down', requiresItem: 'usb', triggerOnInteract: [] }
++                ],
++                npcs: [{ id: 'lena', displayName: 'Lena', npcType: 'person', needsHome: 'lena_pc', interests: { dev_usb: { weight: 2 } } }]
++            }
++        }
++    };
++}
++
++test('USB: a clean fixture raises nothing', { skip }, () => {
++    assert.deepEqual(issues(usbClean()), []);
++});
++
++test('USB: an unknown usb or social value, and an unknown usbClass, are errors', { skip }, () => {
++    const s = usbClean();
++    s.policies.managed.usb = 'storage_only';
++    s.policies.lax.social = 'sometimes';
++    s.rooms.lobby.objects[0].usbClass = 'mouse';
++    const e = errors(issues(s));
++    assertHas(e, "policies.managed.usb is 'storage_only'");
++    assertHas(e, "policies.lax.social is 'sometimes'");
++    assertHas(e, "usbClass 'mouse'");
++});
++
++test('USB: a blocking policy over objects whose items have no usbClass does nothing', { skip }, () => {
++    const s = usbClean();
++    delete s.rooms.lobby.objects[0].usbClass;
++    const w = warnings(issues(s));
++    assertHas(w, 'policies.managed sets usb');
++    assertHas(w, 'policies.locked_down sets usb');
++});
++
++test('USB: a device accepted by an ungoverned object under a blocking default is warned', { skip }, () => {
++    const s = usbClean();
++    s.rooms.lobby.objects.push({ id: 'lost_property_tray', type: 'bin', name: 'Tray', affordance: { accepts: ['dev_usb'] } });
++    const w = warnings(issues(s));
++    assertHas(w, "'lost_property_tray' takes 'kit_usb'");
++    // a non-blocking default does not warn
++    s.defaultPolicy = 'lax';
++    assert.ok(!has(issues(s), 'lost_property_tray'));
++});
++
++test('USB: an NPC that can be refused a device needs a usb_refused line, except under "chatter": false', { skip }, () => {
++    const s = usbClean();
++    delete s.chatter;
++    assertHas(warnings(issues(s)), 'lena can be refused a USB device');
++    s.rooms.lobby.npcs[0].chatter = { usb_refused: ['Typical.'] };
++    assert.ok(!has(issues(s), 'can be refused'));
++    const t = usbClean();
++    t.chatter = false;
++    assert.ok(!has(issues(t), 'can be refused'));
++    // nobody can be refused: the PC accepts the class
++    const u = usbClean();
++    delete u.chatter;
++    u.rooms.lobby.objects[0].usbClass = 'hid';
++    assert.ok(!has(issues(u), 'can be refused'));
++});
+-- 
+2.43.0
+

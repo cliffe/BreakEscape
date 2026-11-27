@@ -1,0 +1,13 @@
+{
+  "key": "3c71e9a313dfcbdf716d6f8aa7c0138d",
+  "npc": "kit_fatima_begum",
+  "text": "Half the office still uses the same password everywhere. Scary when you think about it.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:16:27Z"
+}

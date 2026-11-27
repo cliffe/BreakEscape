@@ -1,0 +1,13 @@
+{
+  "key": "476ece1e479091d7f765b1942c69840d",
+  "npc": "agent_nightshade",
+  "text": "Go and get your proof. Whichever way it points, it'll be worth more than a guess.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is the mole, not yet unmasked, being interviewed by an agent he once taught: warm, unhurried, helpful to a fault. The only tell is that nothing rattles him -- in a building full of frightened people, he is serene.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:39:29Z"
+}

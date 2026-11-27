@@ -1,0 +1,10 @@
+Make portrait for Yasmin Chaudhry
+A British Pakistani woman in her mid forties with medium-brown skin, the finance controller at a London architecture practice. Composed, precise, quietly authoritative. Dark brown hair with a few strands of grey, pulled back into a neat low bun, small gold stud earrings. She wears a tailored charcoal-grey blazer over a deep teal silk blouse, slim black trousers with a thin black belt, and a slim staff lanyard. No hijab.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, first render. Reframed with reframe_portrait.py --flip. Awareness check-mission host (art batch C). Age and ethnicity from BRAND_SET.md (Merrin & Sallow).

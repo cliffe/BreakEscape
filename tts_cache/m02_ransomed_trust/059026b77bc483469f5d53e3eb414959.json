@@ -1,0 +1,13 @@
+{
+  "key": "059026b77bc483469f5d53e3eb414959",
+  "npc": "narrator",
+  "text": "Sister Doyle looks round for the first time.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:46:47Z"
+}

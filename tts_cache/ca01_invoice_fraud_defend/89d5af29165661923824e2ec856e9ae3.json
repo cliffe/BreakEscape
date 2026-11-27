@@ -1,0 +1,13 @@
+{
+  "key": "89d5af29165661923824e2ec856e9ae3",
+  "npc": "adaeze_okafor",
+  "text": "So now we ring the supplier back on a number we already hold before any payee change.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T23:43:15Z"
+}

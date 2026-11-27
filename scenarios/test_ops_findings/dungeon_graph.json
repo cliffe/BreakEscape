@@ -1,0 +1,265 @@
+{
+  "scenario": "test_ops_findings",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_back_office",
+      "label": "Back office<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "back_office",
+      "label": "Back office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_files01",
+      "label": "File server<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_desk01",
+      "label": "Desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_ian",
+      "label": "Ian Okafor sign-in<br/>(iokafor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_office_port",
+      "label": "Office wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_annex_port",
+      "label": "Annex wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "host_camrec01",
+      "label": "Camera recorder<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "host_printer01",
+      "label": "Second floor printer<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "weak_files01_backup_archive_login",
+      "label": "File server<br/>backup :873<br/>weak_auth / high<br/>(report only)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_files01_backup_backup_list",
+      "label": "File server<br/>backup :873<br/>cleartext / low<br/>(report only)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_files01_files_open_share",
+      "label": "File server<br/>files :445<br/>misconfig / medium<br/>fixed if share_locked<br/>(report only)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_printer01_admin_page_factory_login",
+      "label": "Second floor printer<br/>Admin page :80<br/>default_creds / high<br/>(report only)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "comms_room",
+      "label": "Comms room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "supply_room",
+      "label": "Supply room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_findings_audit",
+      "label": "Findings audit<br/>network_swept, host_scanned, service_checked, finding_confirmed",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "cred_archivist_login",
+      "label": "Ian Okafor password<br/>(iokafor)",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_back_office",
+      "to": "back_office",
+      "soft": false
+    },
+    {
+      "from": "back_office",
+      "to": "lock_desk01",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_ian",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_files01",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_desk01",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "jack_office_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_annex_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_annex_port",
+      "soft": false
+    },
+    {
+      "from": "jack_annex_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "host_camrec01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "host_printer01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_desk01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_files01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_files01_backup_archive_login",
+      "soft": false,
+      "label": "backup"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_files01_backup_backup_list",
+      "soft": false,
+      "label": "backup"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_files01_files_open_share",
+      "soft": false,
+      "label": "files"
+    },
+    {
+      "from": "host_printer01",
+      "to": "weak_printer01_admin_page_factory_login",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "comms_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "supply_room",
+      "soft": false
+    },
+    {
+      "from": "lock_desk01",
+      "to": "cred_archivist_login",
+      "soft": false
+    },
+    {
+      "from": "cred_archivist_login",
+      "to": "lock_files01",
+      "soft": false
+    },
+    {
+      "from": "cred_archivist_login",
+      "to": "lock_desk01",
+      "soft": false
+    },
+    {
+      "from": "cred_archivist_login",
+      "to": "weak_files01_backup_archive_login",
+      "soft": false
+    }
+  ]
+}

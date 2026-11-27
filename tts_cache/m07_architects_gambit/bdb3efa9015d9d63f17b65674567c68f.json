@@ -1,0 +1,13 @@
+{
+  "key": "bdb3efa9015d9d63f17b65674567c68f",
+  "npc": "adaeze_okafor",
+  "text": "He puts everything on it. Even the PIN for the badge station.",
+  "voice": "Gacrux",
+  "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent General American accent with a light Nigerian inflection throughout, do not shift to any other accent.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:05:59Z"
+}

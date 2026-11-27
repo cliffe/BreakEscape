@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: CA01 invoice fraud (panel)",
+  "description": "Panel build of the awareness episode E1 (invoice fraud) in the Brightwell training room: the step-away debrief panel, the ca01_recall set piece (missing-payment board notice), and the hand-authored layer-3 chain (Agnieszka walks to the board and reads the notice, Adaeze follows up). Two ambient staff, coffee/cooler, kiosk-quiet-gated chatter, kit_ globals and host mappings. Stub content. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

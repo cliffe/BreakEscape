@@ -1,0 +1,25 @@
+{
+  "scenario": "test-rfid",
+  "start_room": "test_lobby",
+  "nodes": [
+    {
+      "id": "door_test_secure",
+      "label": "Test Secure<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "test_secure",
+      "label": "Test Secure",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_test_secure",
+      "to": "test_secure",
+      "soft": false
+    }
+  ]
+}

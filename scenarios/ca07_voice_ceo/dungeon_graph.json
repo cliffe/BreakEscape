@@ -1,0 +1,10 @@
+{
+  "scenario": "ca07_voice_ceo",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

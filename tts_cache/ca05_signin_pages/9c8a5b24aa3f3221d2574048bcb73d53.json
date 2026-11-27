@@ -1,0 +1,13 @@
+{
+  "key": "9c8a5b24aa3f3221d2574048bcb73d53",
+  "npc": "niamh_doherty",
+  "text": "Any time.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:21:10Z"
+}

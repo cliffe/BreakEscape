@@ -1,0 +1,9 @@
+1 queued behind a conversation: "queued"
+1 after ringWhile fails (queued): {"state":null,"banner":false,"rows":0,"callback":null,"phoneEvents":[]}
+1 after the conversation ends + 25 s: {"state":null,"banner":false,"phoneEvents":[]}
+2 right after the fire: {"state":null,"banner":false}
+2 onceOnly after 3 s: {"state":null,"latchEvents":2,"ringsShown":0}
+3 handler runs before any clock tick (synchronous): 200
+3 not onceOnly, self-triggering, after 3 s: {"handlerRuns":200,"state":null}
+4 later write then drop: {"state":null,"stage":1}
+5 forced + ringWhile false: "ringing"

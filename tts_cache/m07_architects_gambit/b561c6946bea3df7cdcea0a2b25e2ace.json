@@ -1,0 +1,21 @@
+{
+  "key": "b561c6946bea3df7cdcea0a2b25e2ace",
+  "npc": "the_architect",
+  "text": "You still have a door open. I'd hurry, but that's your business.",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:17:17Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/b561c6946bea3df7cdcea0a2b25e2ace.mp3",
+    "clean_md5": "072fac4c4c23983dfcafb866d62642e8",
+    "baked_md5": "cf4a99a78f01d573bccc5c0a674c5241",
+    "baked": "2026-11-24"
+  }
+}

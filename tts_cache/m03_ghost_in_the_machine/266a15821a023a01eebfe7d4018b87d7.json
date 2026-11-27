@@ -1,0 +1,13 @@
+{
+  "key": "266a15821a023a01eebfe7d4018b87d7",
+  "npc": "agent_nightshade",
+  "text": "Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:50:48Z"
+}

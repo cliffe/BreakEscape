@@ -1,0 +1,14 @@
+{
+  "key": "30f0e52b4d2fb631adcf18d48466082c",
+  "npc": "kit_chidi_okeke",
+  "text": "Good spot. That blocked CV was the whole trick. Follow his steps and you run whatever's tucked inside.",
+  "delivery": "easy-going, approving",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:28:16Z"
+}

@@ -1,0 +1,14 @@
+{"steps":[
+{"note":"R9 (cycle 3, D4-1/D4-3/D4-8): Ffion and Terry by day, then again at night in the same session, no reload. Reopens land on the knot of the saved choices."},
+{"set":{"briefing_played":true,"cloner_explained":true}},
+{"talk":"ffion","picks":["Where do I sign","Freelance. Small","What's Ms. Sterling like","work late","Thanks. I'll head"]},
+{"talk":"terry","picks":["knock off"]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"victoria_card_cloned":true}},
+{"note":"night: Ffion's question must play now (D4-1)"},
+{"talk":"ffion","picks":["notebook"]},
+{"talk":"ffion","picks":["Night, Ffion"]},
+{"note":"Terry: straight to his challenge (D4-8), Ffion's story read (D3-2)"},
+{"talk":"terry","picks":["Wrong turn"]},
+{"note":"next reopen: the hub, cold, after the notebook exit"},
+{"talk":"terry","picks":["Talk to the guard","Long night","Fair enough","let you get on"]}
+]}

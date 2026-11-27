@@ -1,0 +1,117 @@
+{
+ "steps": [
+  {
+   "note": "Core, all three answers land: the Join path. Show me how it works, then the key, then a hand on it. Each step offers a way back; the last asks once more. Yes publishes and sets the joined ending."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Someone corrected your sheet",
+    "Go on.",
+    "Only a shock",
+    "And the last one",
+    "Better you",
+    "Show me how it works"
+   ]
+  },
+  {
+   "said": [
+    "All three of your answers landed",
+    "It's a key. You press it. Everything I've told you happens.",
+    "You've beaten me. Now you want the key?",
+    "Eleven hundred to twenty-six hundred people, the first month",
+    "You can still step back."
+   ],
+   "notSaid": [
+    "You couldn't answer me. Then let it be you."
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Step back",
+    "Show me how it works",
+    "Give me the key"
+   ]
+  },
+  {
+   "said": [
+    "As you like.",
+    "You were asking how it works.",
+    "0x00. Don't.",
+    "If you take it, the mission ends here, and you work for ENTROPY."
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Step away",
+    "Show me how it works",
+    "Give me the key",
+    "Put your hand on the key",
+    "No."
+   ]
+  },
+  {
+   "said": [
+    "The key console asks once. Publish the database to everyone, now?",
+    "You take your hand off the key."
+   ],
+   "notSaid": [
+    "Thank you, Agent."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "",
+    "console_choice": ""
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Put your hand on the key",
+    "Yes. Publish it"
+   ]
+  },
+  {
+   "said": [
+    "Thank you, Agent."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "joined",
+    "console_choice": "joined",
+    "database_outcome": "published"
+   }
+  }
+ ]
+}

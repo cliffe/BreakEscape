@@ -1,0 +1,13 @@
+{
+  "key": "69d26ad9761d7469064a0682202f5708",
+  "npc": "arakawa_gate",
+  "text": "She wants a telescope. I'm getting her a telescope.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:04:42Z"
+}

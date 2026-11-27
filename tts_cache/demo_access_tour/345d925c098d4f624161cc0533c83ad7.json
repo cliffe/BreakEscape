@@ -1,0 +1,13 @@
+{
+  "key": "345d925c098d4f624161cc0533c83ad7",
+  "npc": "delphine",
+  "text": "Visitors sign in on the tablet by the door. This screen's staff only.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:47:15Z"
+}

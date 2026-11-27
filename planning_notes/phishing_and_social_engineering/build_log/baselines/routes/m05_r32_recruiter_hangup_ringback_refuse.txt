@@ -1,0 +1,150 @@
+
+## R32 (phase 4 dialogue C1, D5-5): the player hangs up on the Recruiter's offer, rings back and says no. The refusal is recorded, she remembers it on a third call, and the debrief says the player turned her down.
+   {set {"torres_identified":true}}
+      [aim unlocked: confront_insider]
+      [mapping agent_0x99_handler: set named_before_portal=true]
+      [david_torres shown]
+
+--- recruiter ---
+  Narrator: Caller ID: TALENTSTACK EXECUTIVE RECRUITING.
+  Agent. Or whatever they're calling you this week.
+  I run TalentStack. Executive search, mostly technical roles.
+  You've spent the last few hours putting a name to one of my placements. I thought I'd save you wondering who I am.
+      [ink: recruiter_contacted_player=true]
+  David Torres. QD-001, if you prefer the file number.
+     (3 options)
+ > How many more "placements" do you have?
+  Forty-seven under evaluation, last I checked. Give or take. Torres was never the only iron in the fire.
+  Everyone has a price. I call that an operating philosophy, and it has never once failed me.
+  The only variable is what currency they'll take.
+  Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score.
+     (2 options)
+ > What were you actually after?
+  Project Heisenberg was never going to a foreign buyer. Nobody's shopping this around.
+  ENTROPY wants the key material and the rollout schedule for your national dispatch network. Nine-nine-nine call routing.
+  We keep it. We integrate it. Operation Schrödinger, if your file needs a name.
+     (2 options)
+ > Why does ENTROPY want control of emergency dispatch?
+  Control? Nobody wants to run it. We want the minutes.
+  A forty-to-seventy-minute failover window during the key-rotation cutover, across twelve regions, in the first wave alone.
+  The Architect's office ran the numbers before signing off. Thirty to forty-five excess deaths, where minutes decide things: cardiac, stroke, structure fires.
+  It's filed as an acceptable cost of acquisition. I didn't file it. I just recruited the man who could get us the schedule.
+     (2 options)
+ > That number was known before Torres ever touched the data.
+  Known and signed. Yes.
+  Here's why I actually called. What you do with Torres doesn't much interest me. He's already spent.
+  But I'd rather you didn't spend the next six months chasing the rest of my pipeline.
+  Under Torres' keyboard there's an envelope addressed to a PO box in Reading. Forty-seven names.
+  Leave it out of your report. Let my courier have it.
+  In return, nothing in this operation points at you. No loose thread, no file with your face in it.
+      [ink: recruiter_deal_offered=true]
+  Everyone has a price, agent. I'm asking what yours is.
+     (3 options)
+ > I'm done talking. This call's over.
+  Time's short for both of us, then.
+  [chat closes]
+   [PASS] recruiter_deal_offered = true (expected true)
+   [PASS] recruiter_deal_decided = false (expected false)
+   [PASS] recruiter_deal_accepted = false (expected false)
+   [PASS] said: "Control? Nobody wants to run it. We want the minutes."
+   [PASS] said: "A forty-to-seventy-minute failover window"
+   [PASS] said: "Time's short for both of us"
+
+--- recruiter ---
+     (2 options)
+ > Ring the TalentStack number back.
+  Still deciding? The offer doesn't improve with age, agent.
+  Forty-seven names. One call from you protects them, or leaves them where they are. In my pipeline.
+     (3 options)
+ > No deal.
+      [ink: recruiter_deal_decided=true]
+  Then we're done. I'll close your file.
+  Narrator: She hangs up first.
+  [chat closes]
+   [PASS] recruiter_deal_decided = true (expected true)
+   [PASS] recruiter_deal_accepted = false (expected false)
+   [PASS] said: "Still deciding?"
+   [PASS] said: "Then we're done. I'll close your file."
+   [PASS] said: "She hangs up first."
+   [PASS] not said: "[choice] I already told you"
+   [PASS] not said: "Think it over"
+
+--- recruiter ---
+     (2 options)
+ > Ring the TalentStack number back.
+  You said no once. I heard you.
+  Narrator: She hangs up first.
+  [chat closes]
+   [PASS] said: "You said no once. I heard you."
+   {set {"found_medical_bills":true,"found_door_log":true,"found_pamphlet":true,"found_upload_schedule":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"final_choice":"arrest","torres_arrested":true,"found_pipeline_list":true}}
+      [mapping agent_0x99_handler: set case_motive=true]
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [aim unlocked: gather_evidence]
+      [task: name_a_suspect]
+      [task: establish_motive]
+      [mapping agent_0x99_handler: set case_exfil=true]
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [task: access_bludit_vm]
+   [text agent_0x99_handler +1500ms] Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into.
+   [text agent_0x99_handler +1500ms] Foothold flag in. You're on the research portal's box now. Find out who's been living on it.
+      [mapping agent_0x99_handler: set privesc_guide_offered=true]
+   [text agent_0x99_handler +1500ms] Manifest flag verified. Staged by badge 4471, no name on it. Find who carries that spare. The authorisation sits where only root can read. Sudo guide's yours.
+      [mapping agent_0x99_handler: set architect_approval_confirmed=true]
+   [text agent_0x99_handler +1500ms] Root flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this.
+      [task unlocked: call_in_after_sweep]
+
+--- debrief ---
+      [ink: debrief_played=true]
+  Narrator: SAFETYNET headquarters, Thursday, nine o'clock. HaX has your report up on the screen.
+  Agent HaX: Let's go through it.
+  Agent HaX: You built enough to move, and you closed it. There are gaps in the file, but it'll stand.
+  Agent HaX: QDC's readiness review passed. Nobody asked who told Patricia to stop looking.
+  Agent HaX: The final upload stopped at ninety-one per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
+  Agent HaX: Without those, what they have is a very expensive paperweight.
+     (2 options)
+ > How close was it?
+  Agent HaX: Nine per cent to spare. You bought that yourself.
+  Agent HaX: The badge log was in your kit. Its front-door lines had him all along.
+  Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, his thumbprint.
+  Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw him.
+     (2 options)
+ > And the research portal?
+  Agent HaX: Old software with a known flaw nobody had patched, and an admin login sitting in a handover note.
+  Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
+     (2 options)
+ > Whose job was it to fix that?
+  Agent HaX: Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean audit more than a safe one.
+  Agent HaX: For the training file: money. Debts he didn't declare, and treatment no insurer would touch.
+  Agent HaX: Hours. Two in the morning, week after week, and nobody asked why.
+  Agent HaX: An approach. A recruiter's leaflet, with a deadline scribbled on the back.
+  Agent HaX: You held him and Patricia called the police. He hasn't said a word to them or to us.
+  Agent HaX: Our evidence reached them without our name on it. What a court gives him is out of our hands.
+  Agent HaX: Elena's treatment is unfunded. She has months, maybe. Sofia and Miguel may watch that with their father on remand.
+     (2 options)
+ > He did this. Actions have consequences.
+  Agent HaX: They do. For everyone near him.
+  Agent HaX: Without him, we're blind on the Initiative. The placements carry on. We have forty-seven names, and no idea which of them she's already turned.
+  Agent HaX: And the Recruiter. She rang you, she made you an offer, and you turned her down.
+  Agent HaX: The TalentStack list went into your report. We've reached three of the forty-seven already. That's three she doesn't get.
+  Agent HaX: The Architect's authorisation is the part I keep coming back to. A casualty projection, reviewed, and filed as an acceptable cost.
+     (2 options)
+ > Same hand as the other cells?
+  Agent HaX: The same hand.
+  Agent HaX: Ransomware Incorporated. Zero Day Syndicate. Critical Mass. Now the Insider Threat Initiative.
+  Agent HaX: The cells share suppliers, targets and a signature. The Architect runs them like a business.
+  Agent HaX: And pays them like one. The Initiative got eight hundred and forty-seven thousand dollars for this job alone.
+  Agent HaX: The authorisation goes up on Task Force Null's wall, with every other directive we've pulled off a cell.
+  Agent HaX: Somebody pays the Architect, too. Next, we follow the money.
+     (2 options)
+ > I'd do it the same way again.
+  Agent HaX: I know. I read the report.
+  Agent HaX: Go home. Take the rest of the day.
+      [task: hear_debrief]
+  Agent HaX: That's everything.
+  [end]
+   [PASS] said: "you turned her down"
+   [PASS] not said: "You never answered her offer"
+   [PASS] longest run 7 (recruiter) <= 9
+
+[stats] spoken/narrated lines 63, choices 14, longest run without a choice 7 (recruiter); runs>=6: recruiter:7, debrief:6, debrief:7, debrief:6
+[result] all expectations met

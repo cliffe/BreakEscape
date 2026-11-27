@@ -1,0 +1,14 @@
+{
+  "key": "3cd49648fc203f5db242e6ee4332fcaf",
+  "npc": "kit_darren_price",
+  "text": "Someone flagged that one quick. Once they're in an account they send as you, so a fast shout boxes them in.",
+  "delivery": "approving, dry",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:42:47Z"
+}

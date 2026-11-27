@@ -1,0 +1,13 @@
+game 2344 (gate_direct)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+timeline: ["-|toast:false|room:reading_room|heard:false|cage:false|rang:false@0.2","terminal_closed@0.6","-|toast:false|room:restricted_stacks|heard:false|cage:false|rang:false@3.5","-|toast:true|room:restricted_stacks|heard:false|cage:false|rang:false@6.5","arrived_at_gate@6.7","door_unlock_attempt:restricted_cage@7.0","nightshade_phone:ringing|toast:true|room:restricted_stacks|heard:false|cage:false|rang:true@17.1"]
+shot gate_direct_ring_at_gate
+  "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true"
+call: {"bar":"ON CALL 0:01","subs":["AGENT 0X47 'NIGHTSHADE': Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line."],"choices":[],"end":true}
+chose: "1. Why help me?"
+chose: "1. Noted."
+rings once (walk back, expect none):
+  room: "reading_room"
+  no ring in 8s (good)
+  "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true"
+/tts requests: ["nightshade_phone","Agent 0x00. I'd ask how the leave was, but HaX would tell me"] ["nightshade_phone","Sorensen's card is on custom keys. Crack the keys first, the"] ["nightshade_phone","That plan cabinet isn't on her schedule. It never was. Whate"] ["nightshade_phone","I'd rather be useful than watched. Tonight I get to be both."] ["nightshade_phone","Every lock is a promise somebody made years ago. Most of the"] 

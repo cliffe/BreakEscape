@@ -1,0 +1,13 @@
+{
+  "key": "a248010390eaac1bccf88994177430d7",
+  "npc": "darren_price",
+  "text": "That sign-in prompt at two in the morning, the one Leila hadn't started, was the one to turn down.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:50:13Z"
+}

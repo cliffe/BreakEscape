@@ -1,0 +1,13 @@
+{
+  "key": "fe7d3a626e1947a4334ea14a08f8ffe7",
+  "npc": "eleanor_vance",
+  "text": "This is the clearest operational security failure.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:37Z"
+}

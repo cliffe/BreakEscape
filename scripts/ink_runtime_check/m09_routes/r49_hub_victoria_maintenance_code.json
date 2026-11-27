@@ -1,0 +1,17 @@
+{
+"imports": { "m03_victoria_fate": "recruited" },
+"globals": { "dock_heard": true },
+"steps": [
+{ "note": "R49: Victoria's route. With Victoria recruited, entering the restricted stacks makes HaX text that her people read the building's mail (a mapping text), and the hub grows a Can Victoria's people row. Asking sets maintenance_code_used and HaX gives the code and the print cabinet clue. The row stays until the cage opens (no given flag, by design); the mapping text does not repeat once the code is used." },
+{ "enter": "restricted_stacks" },
+{ "said": ["First time we've used Victoria. Her people read this building's mail. Ask me about that gate"] },
+{ "set": { "stacks_entered": true } },
+{ "talk": "phone", "knot": "support_hub", "picks": ["Can Victoria's people", "That's all for now"] },
+{ "said": ["[choice] Can Victoria's people get me through that gate", "There's a maintenance code for that gate. Sorensen never changed it", "The cabinet in there takes her print. It's on the stamp on her shelf"] },
+{ "expect": { "maintenance_code_used": true } },
+{ "talk": "phone", "knot": "support_hub", "reload": true },
+{ "said": ["[choice] Can Victoria's people"] },
+{ "enter": "restricted_stacks" },
+{ "notSaid": ["First time we've used Victoria"] }
+]
+}

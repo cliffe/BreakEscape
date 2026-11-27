@@ -1,0 +1,14 @@
+{
+  "key": "06529e51704533f03e3ee715e78fc6cf",
+  "npc": "closing_debrief",
+  "text": "Yes. I will put my own name in the report beside his. You were right to make me say it aloud.",
+  "delivery": "after a long pause, quietly",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:18:52Z"
+}

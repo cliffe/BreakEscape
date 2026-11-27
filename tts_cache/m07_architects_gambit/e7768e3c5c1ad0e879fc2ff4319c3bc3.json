@@ -1,0 +1,13 @@
+{
+  "key": "e7768e3c5c1ad0e879fc2ff4319c3bc3",
+  "npc": "closing_debrief",
+  "text": "His. The Architect let us capture them. Our threat desk did not derive one.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:52:56Z"
+}

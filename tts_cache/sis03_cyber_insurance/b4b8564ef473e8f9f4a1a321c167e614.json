@@ -1,0 +1,13 @@
+{
+  "key": "b4b8564ef473e8f9f4a1a321c167e614",
+  "npc": "eleanor_vance",
+  "text": "Open the NCSC brief. See what the intelligence assessment says. Then we'll talk about the decision.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:02Z"
+}

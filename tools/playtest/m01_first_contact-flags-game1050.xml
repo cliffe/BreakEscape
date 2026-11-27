@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<flag_hints xmlns="http://www.github/cliffe/SecGen/marker">
+  <system>
+    <system_name>shatter_server</system_name>
+    <challenge><flag>flag{m01_first_contact_shatter_server_1_0afe52}</flag></challenge>
+    <challenge><flag>flag{m01_first_contact_shatter_server_2_52c0fd}</flag></challenge>
+    <challenge><flag>flag{m01_first_contact_shatter_server_3_7d6a9e}</flag></challenge>
+    <challenge><flag>flag{m01_first_contact_shatter_server_4_1e6126}</flag></challenge>
+  </system>
+</flag_hints>

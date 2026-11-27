@@ -1,0 +1,13 @@
+{
+  "key": "68165c92f6c61d4b9040580bd8e24993",
+  "npc": "eleanor_vance",
+  "text": "It is. Our syndicate partners are going to ask tough questions. But the alternative — invoking an exclusion with uncertain legal standing — is riskier.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:57Z"
+}

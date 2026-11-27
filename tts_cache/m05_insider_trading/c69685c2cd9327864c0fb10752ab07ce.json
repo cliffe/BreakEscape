@@ -1,0 +1,13 @@
+{
+  "key": "c69685c2cd9327864c0fb10752ab07ce",
+  "npc": "bernadette_lyons",
+  "text": "Then I'll leave you the good ones.",
+  "voice": "Callirrhoe",
+  "style": "Quantum Dynamics' evening cleaner, in her late 50s, dry, unhurried and kind. Speak with a consistent Dublin accent throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:44:43Z"
+}

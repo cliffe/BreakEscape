@@ -1,0 +1,98 @@
+{
+  "scenario_brief": "TEST: patrol NPCs and the player by walls, a one-tile gap and a locked door\n\nThree patrols on fixed waypoints (random patrols steer round the player and never make contact):\n\n1. Wall Walker shuttles along the north wall between two waypoints. Stand in its way against the wall: it must not pass through you or push you into the wall.\n2. Gap Guard shuttles through the one-tile gap in the desk row at the south of the room (one 32 px tile wide). It pauses when you are near. Stand in the gap and walk through it: you must never be stuck.\n3. Door Watcher shuttles toward the locked door in the north wall (north-west corner). Stand between it and the door: you must never end up on the far side of the locked door.\n\nTEST DURATION: 2 to 3 minutes. Nothing to solve.",
+  "endGoal": "Engine test only: stand in the patrols' way and check you are never passed through, pushed into a wall or pushed across the locked door.",
+  "startRoom": "hall",
+  "startPosition": { "x": 5, "y": 4 },
+
+  "player": {
+    "id": "player",
+    "displayName": "Test Agent",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 }
+  },
+
+  "rooms": {
+    "hall": {
+      "type": "room_office",
+      "door_sign": "Patrol Test",
+      "connections": { "north": "vault" },
+      "objects": [
+        { "type": "table", "name": "Desk 1", "position": { "x": 0.875, "y": 6.5 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Desk 2", "position": { "x": 3.6875, "y": 6.5 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Desk 3", "position": { "x": 6.4375, "y": 6.5 }, "takeable": false, "sprite": "desk1", "tableItems": [] }
+      ],
+      "npcs": [
+        {
+          "id": "wall_walker",
+          "displayName": "Wall Walker",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 2.1 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "waypoints": [ { "x": 3.5, "y": 2.1 }, { "x": 8, "y": 2.1 } ],
+              "waypointMode": "sequential",
+              "loop": true,
+              "pauseForPlayer": false
+            }
+          }
+        },
+        {
+          "id": "gap_guard",
+          "displayName": "Gap Guard",
+          "npcType": "person",
+          "position": { "x": 3.6, "y": 5.4 },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "speed": 70,
+              "waypoints": [ { "x": 3.6, "y": 5.4 }, { "x": 3.6, "y": 8 } ],
+              "waypointMode": "sequential",
+              "loop": true,
+              "pauseForPlayer": true
+            }
+          }
+        },
+        {
+          "id": "door_watcher",
+          "displayName": "Door Watcher",
+          "npcType": "person",
+          "position": { "x": 2, "y": 4 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "waypoints": [ { "x": 2, "y": 4 }, { "x": 2, "y": 2.1 } ],
+              "waypointMode": "sequential",
+              "loop": true,
+              "pauseForPlayer": false
+            }
+          }
+        }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9999",
+      "difficulty": "easy",
+      "connections": { "south": "hall" },
+      "objects": []
+    }
+  }
+}

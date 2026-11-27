@@ -1,0 +1,49 @@
+
+## R33 (fix-check N4): talking to Park again in the same room after '(Back off.)' counts as the return. The second visit warns ('Second time. There isn't a third.') and the way out says 'Next time he swings.' A third in-place talk without the projection is the swing. Elena's password line and the Listener Capture give the capitals (N1; the capture text is in the scenario, checked by grep).
+   {enter generator_room}
+      [mapping agent_0x99: set generator_hall_reached=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   {enter cable_vault}
+      [mapping agent_0x99: set vault_entered=true]
+   [opens thomas_park @start (person-chat)]
+
+--- park ---
+  Narrator: He is kneeling at an open junction box on the control run to the transfer switch. He doesn't stop working.
+  Thomas Park: Four minutes and I'd have been out. Four.
+     (4 options)
+ > Nothing. I was never here. (Back off.)
+  Narrator: You back into the dark of the stairwell. He waits, then goes back to the junction box.
+      [ink: park_resolved="evaded"]
+      [set_global park_resolved=evaded]
+  [chat closes]
+   [PASS] park_resolved = "evaded" (expected "evaded")
+
+--- park ---
+  Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
+  Thomas Park: Second time. There isn't a third.
+     (4 options)
+ > Nothing. I was never here. (Back off. Next time he swings.)
+  Narrator: You back into the dark of the stairwell. He waits, then goes back to the junction box.
+      [set_global park_resolved=evaded]
+  [chat closes]
+   [PASS] said: "Second time. There isn't a third."
+   [PASS] said: "[choice] Nothing. I was never here. (Back off. Next time he swings.)"
+
+--- park ---
+  Narrator: He sets the wire down on the mat without looking round.
+  Thomas Park: I said there wasn't a third.
+  Narrator: He comes up off his knees with the crimping tool swinging. This is going to be a fight.
+      [ink: park_resolved="ko"]
+      [set_global park_resolved=ko]
+      [engine: thomas_park hostile]
+   [text agent_0x99 +1000ms] Park's swinging. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.
+   [text agent_0x99 +5500ms] To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the vault, and won't wait while you read.
+  [chat closes]
+   [PASS] said: "I said there wasn't a third."
+   [PASS] park_resolved = "ko" (expected "ko")
+
+[stats] spoken/narrated lines 9, choices 2, longest run without a choice 3 (park); runs>=6: 
+[result] all expectations met

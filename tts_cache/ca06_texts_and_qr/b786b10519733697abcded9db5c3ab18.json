@@ -1,0 +1,13 @@
+{
+  "key": "b786b10519733697abcded9db5c3ab18",
+  "npc": "chidi_okeke",
+  "text": "There, both ends done. If a message wants a code scanned or a link tapped, open the app yourself instead.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T17:14:48Z"
+}

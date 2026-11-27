@@ -1,0 +1,13 @@
+{
+  "key": "4e16c3e76ce526c7339b26b9b4dc104e",
+  "npc": "eleanor_vance",
+  "text": "I've written the archive code on this access slip. Use it on the north door.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:21Z"
+}

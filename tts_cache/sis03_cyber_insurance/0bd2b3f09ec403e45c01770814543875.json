@@ -1,0 +1,13 @@
+{
+  "key": "0bd2b3f09ec403e45c01770814543875",
+  "npc": "eleanor_vance",
+  "text": "Warranty W-07 required full IT-to-OT network segmentation by December thirty-first, 2025. No dual-homed systems. No bidirectional jump servers. Firewall-enforced isolation.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:45Z"
+}

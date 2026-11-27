@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R6: the contingency file is read; Kevin's hub offers the warning, the player first backs out, then tells him: kevin_choice warn, kevin_protected true."},
+  {"set": {"contingency_file_read": true}},
+  {"talk": "kevin", "knot": "hub", "picks": ["I need to tell you something about Derek", "Actually, it's nothing", "I need to tell you something about Derek", "Kevin. Stop. Derek is planning", "Act normal. We handle Derek"]},
+  {"said": ["[choice] I need to tell you something about Derek", "If you say so. I'll be here if you change your mind", "Fake logs, forged emails, all pointing to you", "I have two kids", "You're not just an auditor, are you"],
+   "notSaid": ["[choice] I have evidence that implicates you", "I'll send a copy to my personal email and a solicitor"]},
+  {"expect": {"kevin_choice": "warn", "kevin_protected": true}}
+ ]
+}

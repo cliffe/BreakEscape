@@ -1,0 +1,13 @@
+{
+  "key": "7fea2642a1be76c51a38e25aa1e38ec4",
+  "npc": "eleanor_vance",
+  "text": "Why invest in cyber security if the insurance fails when you face the exact threat you're buying insurance for?",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:47Z"
+}

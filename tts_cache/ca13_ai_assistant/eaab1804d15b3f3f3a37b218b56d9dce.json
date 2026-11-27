@@ -1,0 +1,13 @@
+{
+  "key": "eaab1804d15b3f3f3a37b218b56d9dce",
+  "npc": "kit_agnieszka_duda",
+  "text": "Hiya. The water cooler's over there if you need it.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:26Z"
+}

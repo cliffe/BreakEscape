@@ -1,0 +1,13 @@
+{
+  "key": "de5808ded82f7ecb82ef5867bae65381",
+  "npc": "tomasz_wisniewski",
+  "text": "I only keep the queue running.",
+  "voice": "Algieba",
+  "style": "Evening app-support lead at a cryptocurrency exchange, in his 50s, careful and reassuring. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:08:08Z"
+}

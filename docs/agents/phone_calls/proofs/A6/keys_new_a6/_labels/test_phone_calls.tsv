@@ -1,0 +1,54 @@
+01d6e9dc72131e9b232fc42b35125839	caller_voicemail	You did not pick up. That is fine.	
+022544c8e21268c993ac0d165326f6b1	guard	Fine. Carry on.	
+07c42373c5831fcc5e0502b3b0a33a94	caller_forced	This is the forced caller. You can hear me now.	
+08cd682449e2fad8d99cccc3b9cab38a	caller_basic	Then listen carefully. This is the middle of the call.	
+0cd9e04a966f60c222d433938afcea8c	desk_contact	You placed this one from the thread. Shall I close the file?	
+15f275c3c8ed2daa5051b899efa76f2e	caller_voicemail	You picked up this time. Good.	
+16308bc704360b3a80773da04e7d78ca	caller_thread	This is the thread caller. You can hear me now.	
+165e63de4ad4ca4613ea599ac46ce673	caller_thread	These are the call's own lines, not the thread's.	
+16f4f5023e7f67004d39d6cb44bf43cc	caller_basic	Anytime.	
+1c79ca624ef9202ca1c861a3309c66a8	caller_debrief	Bringing you in now.	
+1e87acd72083193ee7d3d203021919dd	caller_debrief	It is time. Are you ready to be brought in?	
+25ba34ce932dfa2ac1d95bf6063ad5c6	legacy_voiced	This is a legacy voiced call with no ring. It opens at once.	
+27ecf2ada648aa58bcbf19f994b506c5	caller_hold	This is the hold caller. You can hear me now.	
+2d1f43d547795858d7e188ccd2ecd748	debrief_host	Welcome. This is the opening briefing. Close it when you are done.	
+3abff35e2a3ada3cf3ac7cd2a22c78b1	desk_contact	That is all from the desk.	
+3eff30abe194c96993816f916ee47265	caller_terminal	You did not pick up. The terminal will keep it.	
+4652b593105584765a77f5a5562b5ca2	caller_queue_b	Second caller, after the first.	
+4b2447913a7dff151c423d9f142276a5	caller_debrief	Take your time, then.	
+4ce5237f72b97defed8de6d708c7d622	caller_basic	Nothing else to add.	
+4dd1f0c0b92a5a9b223af5f8cf1fe847	caller_voicemail	Leave this with me. I will ring again.	
+59987a7c3c62c56b624707562131455d	timed_caller	This call came in on a timer, before you did anything.	
+5af9ccd6f6e22841e929019815de4781	legacy_voiced	Carrying on. The line stays open.	
+5ca44eeafaa89efe672835f9ec38681d	guard	Hold on. What are you doing in here?	
+5f4782d4308350074e9322a8ebb1d33d	desk_contact	Back again. This is the desk line, second time round.	
+6281f4e8b4a522fe1784c3dd47731fbf	caller_basic	There you are. I was about to give up.	
+6284b969e6423ac142a60f8141bb1fad	away_contact	You caught me at my desk.	
+68ca28845a364a6e950bf85793d5dcf4	debrief_host	Good. A call will come in shortly.	
+6a830fd945fa10f52db0479d5f2177b7	caller_basic	Right. That is the whole call.	
+75c93094a7c17c9f47b539f6f8a359d4	debrief_host	Good to see you.	
+7842804fadeda773239b6029334d9c17	caller_replace	This is the newer call, the only one that should ring.	
+84aba9a17c959da1124e6bfc86580435	debrief_host	Hello. I am the person to talk to.	
+8806f7cb873d7ac2ffddc9896261e0da	brute	Grr.	
+88db1cf292163668617dc02b1f6d63f7	caller_queue	First caller on the line.	
+902576d2e27c89813a77d8e166bc6a0b	desk_contact	Take your time.	
+90989cf10222dc5df3a537fef8d69a01	caller_patient	That is all I had.	
+91b2a45ed30188126bd55dc2ff56e5ad	caller_basic	Thanks for ringing back.	
+9427323d1a492e7e908a80fc23b88739	caller_replace	This is the old call. You should not hear it.	
+aabe00a4d1c758ceca4044f83292ec5d	caller_decline	Glad you picked up.	
+aacc49f3b21a742b9cc78689b1804ee7	desk_contact	Closing it now.	
+abe8bfab98c86c9a12dd55eb47ecab86	caller_basic	I only wanted to check the line works.	
+af51376d4c951383ba4edfd0f2895ed5	caller_patient	Good, you picked up quickly.	
+c51f705b49e348db633758fb6df1c853	caller_patient	Goodbye.	
+cd8bff56869ba6ea8e880996be45deae	debrief_host	Now the debrief. You came straight from the call.	
+d815675f0bf14b31543ca2c79ecf1a99	caller_decline	That is all.	
+da34478d9a3c755c2e9392d2741bcbfb	debrief_host	Good. That is all.	
+dd32df1f974eb901ad2744c00f0f1560	guard	Move along.	
+e29eb9a1c35c5c07cbb6e1636f91e842	caller_basic	Understood. Goodbye.	
+e4b560947afcb64c4903b5986c24e79f	caller_popup	This is the popup caller. You can hear me now.	
+e632bbb18d87149722b3f09a939c7538	desk_contact	Desk line. Go ahead.	
+e6381e48d85609adcf3d4dab0730f356	caller_patient	You took your time. I almost gave up.	
+e78d8b182e0d845c2b680c86a9289a81	hidden_contact	Now you can reach me.	
+ef65b0023961c54e475ad547b4e71494	caller_basic	Good, you're there.	
+f71426f7ff1d341e46d3d05871f4920c	caller_debrief	Stay sharp in there, and say nothing you do not have to.	
+fff72fc45c0cca37e7bd8859c52154b7	caller_terminal	Terminal here. You picked up this time.	

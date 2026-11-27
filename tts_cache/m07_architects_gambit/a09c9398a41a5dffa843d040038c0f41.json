@@ -1,0 +1,13 @@
+{
+  "key": "a09c9398a41a5dffa843d040038c0f41",
+  "npc": "closing_debrief",
+  "text": "Three Ghost Protocol operatives are in custody. Their traffic is our first hard line between Michael Reeves and the Architect.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:48:15Z"
+}

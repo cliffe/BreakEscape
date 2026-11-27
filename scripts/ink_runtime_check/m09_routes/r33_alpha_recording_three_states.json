@@ -1,0 +1,19 @@
+{
+"steps": [
+{ "note": "R33: the deck in the tape room three ways. Tapes not pulled: empty spools. Tapes pulled before the identity scene: a voice HaX cannot yet name. Pulled and after the scene: the lecture clip." },
+{ "talk": "alpha", "knot": "deck" },
+{ "said": ["Empty spools. Degaussed"],
+  "notSaid": ["A man clears his throat", "The best lock there is opens for the right name"] },
+{ "expect": { "alpha_clip_played": false } },
+{ "set": { "deck_pulled": "alpha_tapes" } },
+{ "talk": "alpha", "knot": "deck" },
+{ "said": ["A man clears his throat in a lecture hall", "I know whose voice that is. After"],
+  "notSaid": ["Empty spools", "The best lock there is opens for the right name"] },
+{ "expect": { "alpha_clip_played": false } },
+{ "set": { "identity_scene_done": true } },
+{ "talk": "alpha", "knot": "deck" },
+{ "said": ["The best lock there is opens for the right name", "build your own way out first", "He gave that lecture every year"],
+  "notSaid": ["Empty spools", "I know whose voice that is"] },
+{ "expect": { "alpha_clip_played": true } }
+]
+}

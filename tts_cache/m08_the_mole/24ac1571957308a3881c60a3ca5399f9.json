@@ -1,0 +1,13 @@
+{
+  "key": "24ac1571957308a3881c60a3ca5399f9",
+  "npc": "director_netherton",
+  "text": "There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:45:13Z"
+}

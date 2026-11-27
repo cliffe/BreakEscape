@@ -1,0 +1,8 @@
+{
+  "display_name": "Test: deduction, night train",
+  "description": "Fixture for a strict deduction case: tampering at timed stops, recovery routes, a knockout judged at the final call, and a loss that ends in honest credits. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "scoring": "tasks"
+}

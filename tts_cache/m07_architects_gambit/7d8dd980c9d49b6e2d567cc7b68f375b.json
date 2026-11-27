@@ -1,0 +1,13 @@
+{
+  "key": "7d8dd980c9d49b6e2d567cc7b68f375b",
+  "npc": "closing_debrief",
+  "text": "Your field notes say the Trojan Horse projection was understated.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:05:50Z"
+}

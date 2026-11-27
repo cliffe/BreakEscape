@@ -1,0 +1,13 @@
+{
+  "key": "807c0413df7b19f03b17c9e6568a6040",
+  "npc": "nilesh_solanki",
+  "text": "You moved on the weak password, which is the one habit that quietly blunts most of this.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:20Z"
+}

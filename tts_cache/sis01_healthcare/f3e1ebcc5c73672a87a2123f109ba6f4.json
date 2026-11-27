@@ -1,0 +1,13 @@
+{
+  "key": "f3e1ebcc5c73672a87a2123f109ba6f4",
+  "npc": "ravi_anand",
+  "text": "Sunday night's might be clean. I can scan it for everything we've pulled off the SIEM. It takes a few minutes.",
+  "voice": "Puck",
+  "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

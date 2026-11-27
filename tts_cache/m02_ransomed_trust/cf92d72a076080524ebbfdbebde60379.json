@@ -1,0 +1,13 @@
+{
+  "key": "cf92d72a076080524ebbfdbebde60379",
+  "npc": "narrator",
+  "text": "Then she snaps it back, and speaks into it.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:45:37Z"
+}

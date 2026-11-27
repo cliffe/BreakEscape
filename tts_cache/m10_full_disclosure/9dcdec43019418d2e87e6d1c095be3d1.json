@@ -1,0 +1,13 @@
+{
+  "key": "9dcdec43019418d2e87e6d1c095be3d1",
+  "npc": "malhotra_post",
+  "text": "I sat in the second van all night with my headset off. The log was right there.",
+  "voice": "Zubenelgenubi",
+  "style": "SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:11:56Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "a8c4ef884508070138b5da6a75bc55eb",
+  "npc": "narrator",
+  "text": "If you take it, the mission ends here, and you work for ENTROPY.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:53:18Z"
+}

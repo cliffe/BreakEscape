@@ -1,0 +1,13 @@
+{
+  "key": "7c89d7bbfc8d41f2e31ca06c3fcf4d37",
+  "npc": "lorna_easton",
+  "text": "That's the one that leans on a busy morning and a friendly face.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater_defend",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T17:15:44Z"
+}

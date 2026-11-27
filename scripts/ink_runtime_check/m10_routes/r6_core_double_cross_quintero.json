@@ -1,0 +1,45 @@
+{
+ "imports": {
+  "m09_recruiter_offer": "double_crossed",
+  "m09_kowalczyk_reply": "warm"
+ },
+ "steps": [
+  {
+   "note": "Core after a double-cross: Kowalczyk is already at the service door, empty-handed, and Quintero takes her. Warm reply earns the cracker line. No WREN beat later (wren_at_core is set)."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Kowalczyk is standing by the service door, empty-handed.",
+    "it proves nothing. It has to be one of theirs.",
+    "Quintero comes in from the lock and takes Kowalczyk by the arm.",
+    "She told me you'd break it. The Recruiter.",
+    "You thanked me for the cracker. I nearly stayed for that.",
+    "She goes out through the lock without looking back at him.",
+    "Zero Day has it. You didn't stop that one."
+   ],
+   "notSaid": [
+    "Nobody comes. Kowalczyk looks at you, and waits.",
+    "The service door opens. Kowalczyk comes through it fast"
+   ]
+  },
+  {
+   "expect": {
+    "wren_at_core": true,
+    "sleeper_caught": true,
+    "quintero_enters_core": true
+   }
+  }
+ ]
+}

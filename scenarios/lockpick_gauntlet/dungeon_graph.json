@@ -1,0 +1,377 @@
+{
+  "scenario": "lockpick_gauntlet",
+  "start_room": "antechamber",
+  "nodes": [
+    {
+      "id": "door_gate_1",
+      "label": "Gate 1 — 3 Pins<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gate_1",
+      "label": "Gate 1 — 3 Pins",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_gate_2",
+      "label": "Gate 2 — 4 Pins<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gate_2",
+      "label": "Gate 2 — 4 Pins",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_gate_3",
+      "label": "Gate 3 — 5 Pins<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gate_3",
+      "label": "Gate 3 — 5 Pins",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_gate_4",
+      "label": "Gate 4 — 5 Pins (Medium)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gate_4",
+      "label": "Gate 4 — 5 Pins (Medium)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_gate_5",
+      "label": "Gate 5 — 6 Pins (Medium)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gate_5",
+      "label": "Gate 5 — 6 Pins (Medium)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_gate_6",
+      "label": "Gate 6 — 6 Pins (Hard)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gate_6",
+      "label": "Gate 6 — 6 Pins (Hard)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_gate_7",
+      "label": "Gate 7 — 7 Pins (Hard)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gate_7",
+      "label": "Gate 7 — 7 Pins (Hard)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_key_room_a",
+      "label": "Key Room A — 8 Pins (Hard)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "key_room_a",
+      "label": "Key Room A — 8 Pins (Hard)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_keyed_door_1",
+      "label": "Keyed Door 1 — Select the Key (4-cut)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "keyed_door_1",
+      "label": "Keyed Door 1 — Select the Key (4-cut)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_keyed_door_2",
+      "label": "Keyed Door 2 — Select the Key (6-cut)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "keyed_door_2",
+      "label": "Keyed Door 2 — Select the Key (6-cut)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_vault",
+      "label": "The Vault — Select the Key (8-cut)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vault",
+      "label": "The Vault — Select the Key (8-cut)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "antechamber",
+      "label": "Range Entry",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_set",
+      "label": "Lock Pick Set",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "brass_key_4_cut",
+      "label": "Brass Key (4-cut)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "steel_key_4_cut",
+      "label": "Steel Key (4-cut)",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "nickel_key_4_cut",
+      "label": "Nickel Key (4-cut)",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "gold_key_6_cut",
+      "label": "Gold Key (6-cut)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "iron_key_6_cut",
+      "label": "Iron Key (6-cut)",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "copper_key_6_cut",
+      "label": "Copper Key (6-cut)",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "master_key_8_cut",
+      "label": "Master Key (8-cut)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "bronze_key_8_cut",
+      "label": "Bronze Key (8-cut)",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "silver_key_8_cut",
+      "label": "Silver Key (8-cut)",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "grandmaster_s_trophy",
+      "label": "Grandmaster's Trophy",
+      "kind": "item",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_gate_1",
+      "to": "gate_1",
+      "soft": false
+    },
+    {
+      "from": "door_gate_2",
+      "to": "gate_2",
+      "soft": false
+    },
+    {
+      "from": "door_gate_3",
+      "to": "gate_3",
+      "soft": false
+    },
+    {
+      "from": "door_gate_4",
+      "to": "gate_4",
+      "soft": false
+    },
+    {
+      "from": "door_gate_5",
+      "to": "gate_5",
+      "soft": false
+    },
+    {
+      "from": "door_gate_6",
+      "to": "gate_6",
+      "soft": false
+    },
+    {
+      "from": "door_gate_7",
+      "to": "gate_7",
+      "soft": false
+    },
+    {
+      "from": "door_key_room_a",
+      "to": "key_room_a",
+      "soft": false
+    },
+    {
+      "from": "door_keyed_door_1",
+      "to": "keyed_door_1",
+      "soft": false
+    },
+    {
+      "from": "door_keyed_door_2",
+      "to": "keyed_door_2",
+      "soft": false
+    },
+    {
+      "from": "door_vault",
+      "to": "vault",
+      "soft": false
+    },
+    {
+      "from": "antechamber",
+      "to": "lock_pick_set",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_gate_1",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_gate_2",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_gate_3",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_gate_4",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_gate_5",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_gate_6",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_gate_7",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_set",
+      "to": "door_key_room_a",
+      "soft": false
+    },
+    {
+      "from": "key_room_a",
+      "to": "brass_key_4_cut",
+      "soft": false
+    },
+    {
+      "from": "brass_key_4_cut",
+      "to": "door_keyed_door_1",
+      "soft": false
+    },
+    {
+      "from": "key_room_a",
+      "to": "steel_key_4_cut",
+      "soft": true
+    },
+    {
+      "from": "key_room_a",
+      "to": "nickel_key_4_cut",
+      "soft": true
+    },
+    {
+      "from": "keyed_door_1",
+      "to": "gold_key_6_cut",
+      "soft": false
+    },
+    {
+      "from": "gold_key_6_cut",
+      "to": "door_keyed_door_2",
+      "soft": false
+    },
+    {
+      "from": "keyed_door_1",
+      "to": "iron_key_6_cut",
+      "soft": true
+    },
+    {
+      "from": "keyed_door_1",
+      "to": "copper_key_6_cut",
+      "soft": true
+    },
+    {
+      "from": "keyed_door_2",
+      "to": "master_key_8_cut",
+      "soft": false
+    },
+    {
+      "from": "master_key_8_cut",
+      "to": "door_vault",
+      "soft": false
+    },
+    {
+      "from": "keyed_door_2",
+      "to": "bronze_key_8_cut",
+      "soft": true
+    },
+    {
+      "from": "keyed_door_2",
+      "to": "silver_key_8_cut",
+      "soft": true
+    },
+    {
+      "from": "vault",
+      "to": "grandmaster_s_trophy",
+      "soft": false
+    }
+  ]
+}

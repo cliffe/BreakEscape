@@ -1,0 +1,13 @@
+{
+  "key": "311c93947309518fccb9d7398fc4d7e5",
+  "npc": "ama_owusu",
+  "text": "Asked again. Lorna, Darren, Gwen and Yusuf should be up for coffee within a couple of minutes. Anjali only moves for water.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T10:17:54Z"
+}

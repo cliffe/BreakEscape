@@ -1,0 +1,13 @@
+{
+  "key": "b23c2be5ea515a46f2156c439bf8d0ae",
+  "npc": "fairbairn",
+  "text": "She'll read it too, the one who nearly wired that invoice to a spoofed supplier last quarter. Nothing in it points at her. Thank you.",
+  "voice": "Sadaltager",
+  "style": "Managing director who founded a small British firm, early sixties, white Scottish. Speak with a consistent soft Edinburgh Scottish accent throughout — do not shift to any other accent. Lower-mid pitch; unhurried, careful pace. Courteous and a little formal: a client who has agreed to the test and wants it done properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:38:51Z"
+}

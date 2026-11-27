@@ -1,0 +1,13 @@
+{
+  "key": "10d3dbcbbdbb3358b3d5dba64d98b3e4",
+  "npc": "duty_guard_b",
+  "text": "Whoa. Hands where I can see them.",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:25:52Z"
+}

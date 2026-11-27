@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model work and USB policy",
+  "description": "Test of access model slice 9.2: the USB policy (a PC refuses a storage stick and its owner takes it to a kiosk; a keyboard-type device gets through; a dock refuses the player's own plant; a tray under a blocking default accepts). Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 15,
+  "test_type": "access_model",
+  "test_objective": "Prove usbClass and the usb policy field: npc_use_refused, the usb_refused mutter, delivery to a permitted object, the put-down with nowhere else, the player's refused plant, and that only workstations and objects naming a policy are governed"
+}

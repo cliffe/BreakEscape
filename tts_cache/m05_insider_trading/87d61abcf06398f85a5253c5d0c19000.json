@@ -1,0 +1,13 @@
+{
+  "key": "87d61abcf06398f85a5253c5d0c19000",
+  "npc": "niamh_doherty",
+  "text": "Everyone's very quiet today.",
+  "voice": "Leda",
+  "style": "Quantum Dynamics' internal communications officer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T17:39:49Z"
+}

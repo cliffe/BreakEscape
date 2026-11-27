@@ -1,0 +1,13 @@
+{
+  "key": "2770957cbcb08a29b8dcf044308bc0c4",
+  "npc": "eleanor_vance",
+  "text": "The FDP terminal is waiting. Trace the causal chain — breach to physical damage. Come back when you have it.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:33:03Z"
+}

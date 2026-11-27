@@ -1,0 +1,13 @@
+{
+  "key": "c23fdd15e928f5515e77d0beb88e80fc",
+  "npc": "zainab_hussain",
+  "text": "Who switched the coffee off?",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:47:20Z"
+}

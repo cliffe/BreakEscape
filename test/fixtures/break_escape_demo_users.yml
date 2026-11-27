@@ -1,0 +1,9 @@
+test_user:
+  handle: test_user
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>
+
+other_user:
+  handle: other_user
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>

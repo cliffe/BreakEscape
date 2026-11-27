@@ -1,0 +1,1 @@
+ℹ Desk boxes: legacy in 6 map(s) (room_pnw_checkpoint, room_pnw_genhall, room_pnw_ops, room_pnw_scada, room_pnw_servers, room_pnw_vault); footprint in 0

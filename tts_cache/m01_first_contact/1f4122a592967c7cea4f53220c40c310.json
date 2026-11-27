@@ -1,0 +1,13 @@
+{
+  "key": "1f4122a592967c7cea4f53220c40c310",
+  "npc": "graham_whitfield",
+  "text": "Thirty years and still no decent mug.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:31:17Z"
+}

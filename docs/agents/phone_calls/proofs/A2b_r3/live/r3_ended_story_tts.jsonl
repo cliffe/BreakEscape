@@ -1,0 +1,10 @@
+{"t":1794485199112,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794485199797,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794485214149,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794485215564,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794485217048,"npc_id":"caller_basic","text":"Right. That is the whole call.","delivery":null,"status":503}
+{"t":1794485733396,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794485733914,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794485748364,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794485749803,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794485751377,"npc_id":"caller_basic","text":"Right. That is the whole call.","delivery":null,"status":503}

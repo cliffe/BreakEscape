@@ -1,0 +1,13 @@
+{
+  "key": "c75beb740497b7161ff69cbd61ac3742",
+  "npc": "narrator",
+  "text": "For the first time tonight, he looks surprised.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A building full of machinery that is about to be used against people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:25:05Z"
+}

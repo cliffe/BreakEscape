@@ -1,0 +1,130 @@
+{
+  "scenario_id": "test_timer_system",
+  "scenario_name": "Test: Countdown Timer System",
+  "scenario_brief": "TIMER WIDGET TEST\n\nThis scenario tests the countdown timer HUD widget (Phase 5 implementation).\n\nTEST PROCEDURE:\n1. Game starts — verify timer widget appears (top-right corner)\n2. Widget shows 'Next Event: 00:30' format (mm:ss)\n3. Watch timer count down\n4. At 5 minutes mark: text/border should turn AMBER\n5. At 1 minute mark: text/border should turn RED with pulsing animation\n6. At 0 seconds: timer fires and bed_state_1 global becomes 'alert'\n7. Widget updates to show next timer (bed_state_2)\n\nEXPECTED BEHAVIOR:\n- Timer is always visible (unless no pending timers)\n- Countdown is smooth and accurate\n- Color changes happen at correct thresholds\n- When timer fires, NPC reacts (dialogue)\n\nTEST DURATION: 3-5 minutes\n\nNOTE: This is a visual/timing test only. No gameplay objectives.",
+  "endGoal": "Verify countdown timer widget displays, updates, and changes urgency colors correctly.",
+  "startRoom": "test_room_1",
+  "globalVariables": {
+    "timer_test_active": true,
+    "bed_state_1": "normal",
+    "bed_state_2": "normal",
+    "bed_state_3": "normal"
+  },
+  "timers": [
+    {
+      "id": "timer_test_1",
+      "label": "First Alert",
+      "delayMs": 30000,
+      "condition": "globalVars.timer_test_active",
+      "setGlobal": { "bed_state_1": "alert" },
+      "showCountdown": true,
+      "onceOnly": true
+    },
+    {
+      "id": "timer_test_2",
+      "label": "Second Alert",
+      "delayMs": 120000,
+      "condition": "globalVars.timer_test_active && globalVars.bed_state_1 === 'alert'",
+      "setGlobal": { "bed_state_2": "alert" },
+      "showCountdown": true,
+      "onceOnly": true
+    },
+    {
+      "id": "timer_test_3",
+      "label": "Final Alert",
+      "delayMs": 300000,
+      "condition": "globalVars.timer_test_active && globalVars.bed_state_2 === 'alert'",
+      "setGlobal": { "bed_state_3": "critical" },
+      "showCountdown": true,
+      "onceOnly": true
+    }
+  ],
+  "rooms": {
+    "test_room_1": {
+      "type": "room_hospital_ward",
+      "door_sign": "Timer Test Chamber",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "timer_test_npc",
+          "displayName": "Test Monitor",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "male_nerd_v2",
+          "storyPath": "scenarios/test_timer_system/ink/test_timer_monitor.ink.json",
+          "currentKnot": "idle",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:bed_state_1",
+              "condition": "value === 'alert'",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "first_alert",
+              "bark": "First timer fired!"
+            },
+            {
+              "eventPattern": "global_variable_changed:bed_state_2",
+              "condition": "value === 'alert'",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "second_alert",
+              "bark": "Second timer fired!"
+            },
+            {
+              "eventPattern": "global_variable_changed:bed_state_3",
+              "condition": "value === 'critical'",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "final_alert",
+              "bark": "Final timer fired — test complete!"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Test Instructions",
+          "takeable": false,
+          "readable": true,
+          "text": "COUNTDOWN TIMER WIDGET TEST\n\nWatch the timer in the top-right corner:\n\n1. Widget shows 'First Alert — 00:30'\n2. Observe color changes:\n   - White (normal)\n   - AMBER at 5 minutes remaining\n   - RED (pulsing) at 1 minute remaining\n3. At 30s: 'bed_state_1' becomes 'alert'\n4. Monitor says: 'First timer fired!'\n5. Widget updates to show next timer\n6. Process repeats for remaining timers\n\nTEST COMPLETE when final alert fires (≈5 min)."
+        }
+      ]
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "obj_timer_test",
+      "title": "Observe Timer System",
+      "description": "Watch the countdown timer and verify color changes and firing.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "task_see_timer",
+          "title": "Timer appears",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_see_amber",
+          "title": "Amber warning",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_see_red",
+          "title": "Red critical",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_timer_fires",
+          "title": "Timers fire",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

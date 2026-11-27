@@ -1,0 +1,67 @@
+
+## R18 (puzzle chains R3, m-R3-1): the early-KO route. Irina is knocked out, her dropped executive badge opens the wing after flag 3 but before the fund, and the player locks out the CEO's safe twice. at_console is false outside the data centre, so neither the warning nor console_tripped fires (the cover is already strained by Irina's KO). The fund is then traced on the console first time: TRACED THROUGH THE MIXER.
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+   {ko irina_volkova}
+      [engine: irina_volkova knocked out -> cover_strained=true]
+      [HaX text: Someone on that floor is going to ring the FCA...]
+      [engine: npc_ko:irina_volkova -> irina_fate_decided=true]
+   {set {"irina_exec_badge_given":true,"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true}}
+   {room server_room}
+   {room data_center}
+      [engine: room_entered:data_center mapping -> entered_data_center=true]
+      [HaX text: That console opens one cold slot's file by number. One number per try, and it logs each. The transaction server has the other half of Priya's write-up.]
+      [engine: room_entered:data_center mapping -> at_console=true]
+   {room executive_wing}
+      [HaX text: You're upstairs without his wallet. You can't freeze or watch a slot you haven't found. It's on the custody console.]
+      [engine: room_entered:executive_wing mapping -> at_console=false]
+   [PASS] at_console = false (expected false)
+   {set {"door_open_satoshi_office":true}}
+   {room satoshi_office}
+   {PIN pad: wrong code, pad closes (result non-null)}
+   {PIN pad: wrong code, pad closes (result non-null)}
+   [PASS] not said: "That console just logged"
+   [PASS] not said: "That console logs every slot it opens"
+   [PASS] console_warned = false (expected false)
+   [PASS] console_tripped = false (expected false)
+   {room executive_wing}
+   {room data_center}
+      [engine: room_entered:data_center mapping -> at_console=true]
+   {set {"found_architects_fund":true,"flag4_submitted":true,"found_wallet_keys":true}}
+
+--- credits ---
+   MISSION COMPLETE
+   FOLLOW THE MONEY
+   THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER
+   ENTROPY FINANCIAL NETWORK: PARTIALLY MAPPED
+   ── ASSETS ──
+   ── PERSONNEL ──
+   CHECKPOINT GUARD: Waved you through on the FCA cover
+   DR. IRINA VOLKOVA: Knocked down on the trading floor before her part was settled
+   'SATOSHI NAKAMOTO II': Detained — handed to the police
+   FCA COVER: strained — somebody at HashChain rang the FCA
+   ── THE ARCHITECT ──
+   IDENTITY: Unknown — safe contents never recovered
+   72 hours. Six cells. Some of them were already paid.
+   [PASS] said: "TRACED THROUGH THE MIXER"
+   [PASS] not said: "FOUND BY ELIMINATION"
+   [PASS] longest run 2 (guard) <= 9
+
+[stats] spoken/narrated lines 5, choices 2, longest run without a choice 2 (guard); runs>=6: 
+[result] all expectations met

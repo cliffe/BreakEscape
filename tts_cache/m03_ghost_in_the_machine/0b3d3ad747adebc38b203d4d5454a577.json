@@ -1,0 +1,13 @@
+{
+  "key": "0b3d3ad747adebc38b203d4d5454a577",
+  "npc": "danny_foster",
+  "text": "Of course there's a next one. Nobody pays for two hundred and fourteen hospitals to use one.",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T23:51:13Z"
+}

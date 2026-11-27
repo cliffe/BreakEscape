@@ -1,0 +1,61 @@
+Validating scenario: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/planning_notes/phishing_and_social_engineering/deduction/sidecar/drafts/B/validate_copy/no_deduction/test_social_deduction_b/scenario.json.erb
+Using schema: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scripts/scenario-schema.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 1112 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+✓ No unknown fields
+
+⏭️ Skipping ink file validation (--skip-ink)
+
+Checking objective task wiring...
+✓ Objective task wiring OK
+
+Checking room layout geometry...
+Checking door alignment...
+[DEPRECATION NOTICE] json-schema support for MultiJSON is deprecated and will be removed in a future version. To stop using MultiJSON, add `JSON::Validator.use_multi_json = false` to your application's initialization code.
+✓ Room layout geometry OK — no world-space overlaps
+
+✓ Door alignment OK
+
+Validating against schema...
+Checking for common issues...
+Checking recommended fields...
+✓ Schema validation passed!
+⚠️ Found 20 issue(s) and suggestion(s):
+
+1. 💡 SUGGESTION: Consider adding VM launcher terminals (type: 'vm-launcher') for hacking challenges. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+2. 💡 SUGGESTION: Consider adding flag station terminals (type: 'flag-station') for VM flag submission. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+3. 💡 SUGGESTION: Consider adding at least one PC container (type: 'pc') with files (type: 'text_file') in 'contents' array. Use collection_group on files and a matching targetGroup task to track reading progress. See scenarios/m01_first_contact/scenario.json.erb (it_room/kevin_office) for example
+4. 💡 SUGGESTION: Consider adding an opening briefing cutscene — a person NPC with timedConversation (delay: 0, targetKnot: '...', waitForEvent: 'game_loaded', skipIfGlobal: 'briefing_played', setGlobalOnStart: 'briefing_played') in the starting room. See scenarios/m01_first_contact/scenario.json.erb (briefing_cutscene) for example
+5. 💡 SUGGESTION: Consider adding event-driven closing debrief cutscene using this architecture:
+6.    1. Add global variable to scenario.globalVariables (e.g., 'start_debrief_cutscene': false)
+7.    2. In phone NPC's Ink story, add tags: #set_global:start_debrief_cutscene:true and #exit_conversation
+8.    3. Create person NPC with eventMappings: [{eventPattern: 'global_variable_changed:start_debrief_cutscene', condition: 'value === true', conversationMode: 'person-chat', targetKnot: 'start', background: 'assets/backgrounds/hq1.png', onceOnly: true}]
+9.    4. Add behavior: {initiallyHidden: true} to person NPC so it doesn't appear in-world
+10.    See scenarios/m01_first_contact/scenario.json.erb (closing_debrief_person) for complete reference implementation
+11. 💡 SUGGESTION: Consider adding patrol waypoints to at least one person NPC for dynamic movement. Add behavior.patrol.waypoints array with {x, y} coordinates, or behavior.patrol.route for multi-room patrols. See scenarios/m01_first_contact/scenario.json.erb for NPCs with hostile behavior and movement.
+12. 💡 SUGGESTION: Consider adding variety in lock types — scenarios typically use 3+ different mechanisms (key, pin, rfid, password, flag). Currently using: pin. m01 uses all five lock types: key (doors/briefcases), pin (safes/cabinets), rfid (server room), password (computers), flag (encrypted archive). See scenarios/m01_first_contact/scenario.json.erb for examples
+13. 💡 SUGGESTION: Consider adding RFID locks (lockType: 'rfid') for high-security areas. Requires an rfid_cloner tool and an NPC or item with a card_id. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+14. 💡 SUGGESTION: Consider adding password locks (lockType: 'password') for computers and workstations — passwords are discovered through investigation. See scenarios/m01_first_contact/scenario.json.erb (derek_computer, kevin workstation) for examples
+15. 💡 SUGGESTION: Consider adding security tools (lockpick, fingerprint_kit, pin-cracker, bluetooth_scanner, rfid_cloner) for interactive gameplay. In m01, a lockpick is held by kevin_park and obtained by defeating him, enabling key-locked doors. See scenarios/m01_first_contact/scenario.json.erb for examples
+16. 💡 SUGGESTION: Consider adding containers (safe, bin, pc, briefcase, suitcase) with contents for hidden items and layered puzzle design. In m01, multiple safes and bins contain key evidence items. See scenarios/m01_first_contact/scenario.json.erb for examples
+17. 💡 SUGGESTION: Consider adding readable items (notes, notes2, notes5, text_file) for storytelling and clues. Readable items with onRead.setVariable can trigger story events when a player reads them. See scenarios/m01_first_contact/scenario.json.erb for examples
+18. 💡 SUGGESTION: Consider adding a 'music' section with events array to drive dynamic music changes. In m01, music changes when the briefing ends, when a threat is revealed, and when the debrief begins. See scenarios/m01_first_contact/scenario.json.erb for example
+19. 💡 SUGGESTION: Consider adding at least one hostile NPC (behavior: { hostile: true }) to create physical danger and tension. In m01, sarah_martinez, derek_lawson, and kevin_park are all hostile. See scenarios/m01_first_contact/scenario.json.erb for examples
+20. 💡 SUGGESTION: Consider adding puzzle_graph_unlocks to key items (clue notes inside locked containers, NPC-held keys, submit_flags tasks) to enable the dungeon graph generator. Run 'ruby scripts/generate_dungeon_graph.rb <scenario>' to visualise puzzle flow. See README_scenario_design.md §Dungeon Graph Metadata for field reference.
+
+⚠️ Found 1 missing recommended field(s):
+
+1. Missing recommended: No NPCs with 'timedConversation' - consider adding one for immersive starting cut-scenes
+
+✓ Validation complete!

@@ -1,0 +1,13 @@
+{
+  "key": "23277cf4e7bfa24b18b75d51d4ad5cd4",
+  "npc": "kit_darren_price",
+  "text": "Good thinking. Keeping sign-ins to one person saves a lot of untangling later.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca00_first_play",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:29Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "1d80db5fa848fb4403148f6e91eb706a",
+  "npc": "narrator",
+  "text": "Sterling's still on the phone, her back to the door.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:26:48Z"
+}

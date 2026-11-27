@@ -1,0 +1,76 @@
+{
+  "scenario": "test_multiple_connections",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_hub",
+      "label": "Hub<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "hub",
+      "label": "Hub",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server1",
+      "label": "Server1<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server1",
+      "label": "Server1",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server2",
+      "label": "Server2<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server2",
+      "label": "Server2",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server3",
+      "label": "Server3<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server3",
+      "label": "Server3",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_hub",
+      "to": "hub",
+      "soft": false
+    },
+    {
+      "from": "door_server1",
+      "to": "server1",
+      "soft": false
+    },
+    {
+      "from": "door_server2",
+      "to": "server2",
+      "soft": false
+    },
+    {
+      "from": "door_server3",
+      "to": "server3",
+      "soft": false
+    }
+  ]
+}

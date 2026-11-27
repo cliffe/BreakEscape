@@ -1,0 +1,10 @@
+Make portrait for Anjali Rao
+An Indian woman of about 35, originally from Bengaluru, now an information security analyst at a British insurance firm, with warm medium-brown skin, an oval face and a calm, attentive look. Long thick straight black hair in a low plait over one shoulder, dark brown eyes behind slim black rectangular glasses, and a small gold nose stud. She wears a mustard-yellow knitted cardigan over a plain white round-neck top, charcoal-grey tailored trousers and a thin brown leather belt, with a slim silver watch. Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Batch D (check-mission hosts), batch generation approved by the user with no first-image sign-off.

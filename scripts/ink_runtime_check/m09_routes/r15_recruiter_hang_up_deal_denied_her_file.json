@@ -1,0 +1,10 @@
+{
+"imports": { "m05_recruiter_deal_accepted": true },
+"steps": [
+{ "note": "R15: m05 deal accepted and never confessed. She opens with the one-more-name line, the player hangs up, HaX stands in for her and the player pulls her file. Recorded as named." },
+{ "talk": "recruiter", "knot": "call", "picks": ["Hang up", "Her file", "On my way"] },
+{ "said": ["Forty-seven names, and nothing points at you", "[choice] Hang up", "She's started the wipe on her tape deck", "First name on it is a handler in Baltimore"],
+  "notSaid": ["Noted. Later", "Margaret's shredding", "Then I'll tidy my own desk"] },
+{ "expect": { "recruiter_offer": "named", "deck_pulled": "her_file", "recruiter_gone": true, "deck_choice_made": true } }
+]
+}

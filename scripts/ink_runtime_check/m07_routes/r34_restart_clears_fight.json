@@ -1,0 +1,187 @@
+{
+ "globals": {
+  "briefing_played": true,
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {
+   "note": "R34 (engine regression 2026-10-17, finding 3): Park and Hollis go hostile and the player is knocked out. The Restart calms both (engine 7.1d: npc_hostile_state_changed {isHostile:false, reset:true}), so their 'ko' resolutions clear. Park speaks first on entry again and can be talked round; the credits don't say 'Fought off' or 'Went for you'. A plain calm without reset (not emitted in m07) and a KO'd NPC are left alone."
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": [
+    "Walk at him",
+    "Put it down"
+   ]
+  },
+  {
+   "expect": {
+    "hollis_resolved": "ko"
+   }
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "talk": "park",
+   "picks": [
+    "Then finish it"
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "ko"
+   }
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "thomas_park",
+    "isHostile": false
+   }
+  },
+  {
+   "expect": {
+    "park_resolved": "ko"
+   }
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "ray_hollis",
+    "isHostile": false,
+    "reset": true
+   }
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "thomas_park",
+    "isHostile": false,
+    "reset": true
+   }
+  },
+  {
+   "expect": {
+    "hollis_resolved": "",
+    "park_resolved": ""
+   }
+  },
+  {
+   "creditsNotSaid": [
+    "Fought off, not stopped",
+    "Went for you, left standing"
+   ]
+  },
+  {
+   "read": "casualty_projection"
+  },
+  {
+   "set": {
+    "casualty_projection_found": true
+   }
+  },
+  {
+   "talk": "park",
+   "reload": "page",
+   "picks": [
+    "Read this",
+    "The building's empty"
+   ]
+  },
+  {
+   "said": [
+    "He is kneeling at an open junction box",
+    "They said a building"
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "talked"
+   }
+  },
+  {
+   "creditsSaid": [
+    "THOMAS PARK: Talked"
+   ]
+  },
+  {
+   "note": "Mercer: a fight reset by a Restart clears mercer_fate; a KO'd Mercer keeps his."
+  },
+  {
+   "talk": "mercer",
+   "picks": [
+    "Say nothing",
+    "Doctor, this ends here",
+    "Away from the console"
+   ]
+  },
+  {
+   "expect": {
+    "mercer_fate": "ko"
+   }
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "james_mercer",
+    "isHostile": false,
+    "reset": true
+   }
+  },
+  {
+   "expect": {
+    "mercer_fate": ""
+   }
+  },
+  {
+   "note": "Blind A m2: the splice gets its own question once; repeats of 'Step away' get a shorter answer; the stand-down doesn't repeat the tap line as news."
+  },
+  {
+   "set": {
+    "park_resolved": ""
+   }
+  },
+  {
+   "read": "vault_trunk_runs"
+  },
+  {
+   "talk": "park",
+   "reload": "wipe",
+   "picks": [
+    "Step away",
+    "Step away",
+    "north trunk",
+    "Read this",
+    "The building's empty"
+   ]
+  },
+  {
+   "said": [
+    "I lean four inches",
+    "They didn't need me for the building",
+    "Find who put it in"
+   ],
+   "notSaid": [
+    "The north trunk run's tapped. Months ago."
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "talked"
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

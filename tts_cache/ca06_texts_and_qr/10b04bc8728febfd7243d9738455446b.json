@@ -1,0 +1,13 @@
+{
+  "key": "10b04bc8728febfd7243d9738455446b",
+  "npc": "kit_zainab_hussain",
+  "text": "Hiya. Help yourself to the drinks machine, it's just there.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:15:10Z"
+}

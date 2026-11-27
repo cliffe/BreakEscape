@@ -1,0 +1,13 @@
+{
+  "key": "58742ddb75397f1c08a0d471b3a9ab78",
+  "npc": "zainab_hussain",
+  "text": "Visitor passes are Ffion's job, not mine.",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:42:05Z"
+}

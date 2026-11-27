@@ -1,0 +1,490 @@
+<title>Trailer Review Two</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a dossier — one tab per mission cut, the player on top, the questions as a numbered case sheet below. */
+:root{
+  --bg:#f3f1ee; --panel:#ffffff; --fg:#1d1a1c; --muted:#5e5658; --line:#d9d2d0;
+  --accent:#b3122e; --accent-fg:#ffffff; --cyan:#0f7f8c; --chip:#efe7e5;
+  --display:"Press Start 2P", ui-monospace, monospace;
+  --body:"IBM Plex Sans", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141113; --panel:#1e1a1c; --fg:#eee8e6; --muted:#a69c9e; --line:#3a3234;
+  --accent:#e0324f; --accent-fg:#ffffff; --cyan:#4fd0dc; --chip:#2a2326; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141113; --panel:#1e1a1c; --fg:#eee8e6; --muted:#a69c9e; --line:#3a3234;
+  --accent:#e0324f; --accent-fg:#ffffff; --cyan:#4fd0dc; --chip:#2a2326; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+h1{font-family:var(--display);font-size:clamp(15px,3vw,20px);line-height:1.5;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:13px;line-height:1.6;margin:0 0 8px;letter-spacing:.02em}
+.kicker{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font-family:var(--display);font-size:11px;padding:10px 14px;border:2px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.tab[aria-selected="false"]{border-color:var(--accent);background:var(--accent);color:var(--accent-fg)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.card{background:var(--panel);border:2px solid var(--line);padding:16px;display:grid;gap:12px;min-width:0}
+video{width:100%;max-width:100%;aspect-ratio:16/9;background:#000;display:block}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-items:start}
+.vgrid video.p916{aspect-ratio:9/16;max-height:75vh;width:auto;margin:0 auto}
+.vgrid video.p11{aspect-ratio:1/1}
+.empty{aspect-ratio:16/9;max-width:100%;display:grid;place-items:center;background:var(--chip);color:var(--muted);font-family:var(--mono);text-align:center;padding:16px}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:12px;background:var(--chip);padding:3px 8px;font-variant-numeric:tabular-nums}
+ul{margin:0;padding-left:20px}
+li{margin:2px 0}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.earlier{border:2px solid var(--line);padding:10px 12px;background:var(--panel)}
+.earlier summary{font-family:var(--display);font-size:11px;color:var(--fg)}
+.earlier[open] summary{margin-bottom:10px}
+pre{font-family:var(--mono);font-size:12px;white-space:pre-wrap;margin:8px 0 0;overflow-x:auto}
+.q{display:grid;gap:8px;border-top:2px solid var(--line);padding-top:14px}
+.q:first-child{border-top:0;padding-top:0}
+.q h3{margin:0;font-size:15px;font-weight:600}
+.q .why{margin:0;color:var(--muted);font-size:13px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.opt{display:flex;gap:8px;align-items:flex-start;border:2px solid var(--line);padding:10px;cursor:pointer;min-width:0}
+.opt:has(input:checked){border-color:var(--accent)}
+.opt input{margin-top:3px;accent-color:var(--accent)}
+.opt b{display:block;font-size:14px}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.sug{font-family:var(--mono);font-size:10px;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em}
+textarea{width:100%;box-sizing:border-box;min-height:56px;font:inherit;font-size:14px;padding:8px;border:2px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.primary{font-family:var(--display);font-size:11px;padding:12px 16px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer}
+button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:2px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#copybox{width:100%;min-height:140px;font-family:var(--mono);font-size:12px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:6px">
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 26 Nov 2026 (m10 v3)</div>
+    <h1>Mission trailers with the new spy avatars</h1>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="This round">
+    <button class="tab" role="tab" id="tab-m01v15" aria-selected="false" data-cut="m01v15">m01 · v15</button>
+    <button class="tab" role="tab" id="tab-m09v2" aria-selected="false" data-cut="m09v2">m09 · v2</button>
+    <button class="tab" role="tab" id="tab-m09v3" aria-selected="false" data-cut="m09v3">m09 · v3</button>
+    <button class="tab" role="tab" id="tab-m10v3" aria-selected="false" data-cut="m10v3">m10 · v3</button>
+  </nav>
+  <p class="why" style="margin:0;color:var(--muted);font-size:13px">Earlier rounds and the finished m02–m08 trailers stay on the first review page. This page holds the rounds made since 25 Nov.</p>
+  <div id="earlier" hidden></div>
+
+  <main id="cut"></main>
+
+  <section class="card" aria-labelledby="copyh">
+    <h2 id="copyh">Copy answers</h2>
+    <p class="why" style="margin:0;color:var(--muted);font-size:13px">Your answers save to this page as you go. This box holds the same answers as text, if you would rather paste them into chat.</p>
+    <textarea id="copybox" readonly></textarea>
+    <div class="bar"><button class="ghost" id="copybtn" type="button">Copy</button><span class="status" id="copystatus"></span></div>
+  </section>
+</div>
+
+<script>
+const CUTS = {
+  m01v15: {
+ "doc": "feedback/m01_trailer_v15",
+ "title": "m01 First Contact · 60 s trailer · v15 (Action Dub)",
+ "videoLabel": "16:9",
+ "video": "/_blob/3a98840162c9e41d7b98c3163908bbc4",
+ "videos": [
+  ["9:16", "/_blob/a38c5f054301cb8124811540d8e5382e",
+   "p916"
+  ],
+  ["1:1", "/_blob/21ce0a1df42414ac0bc51f84d2607372",
+   "p11"
+  ]
+ ],
+ "stats": [
+  "60.0 s each",
+  "1920×1080, 1080×1920, 1080×1080 at 30 fps",
+  "−14.0 LUFS, true peak −1.5 dB",
+  "music: SpyAgro Action Dub from 0.7 s",
+  "31 shots"
+ ],
+ "changedLabel": "What changed since v14",
+ "changed": [
+  "Your pick: the music is Action Dub (m09 v1 moves to Midnight Trigger, so the two no longer share a track). The window starts on a downbeat at 0.7 s, so every cut sits on its 0.5 s beat grid.",
+  "Mission 1 card on the track's lift at 10.0 s; Real Hacking on 16.0; People Keep Vanishing on 22.0; Before the Sunday Launch on the lift at 42.0.",
+  "Derek's wide line plays through the quiet bar (48–50 s); the hard cut to his close-up lands on the hit at 50.0, and the call to action on 52.0, with the track's strongest hit under it at 54.0.",
+  "Cards are 1.5 s each, as in v13–v14. Derek's darker read from v14 is kept."
+ ],
+ "standinLabel": "Stand-in and compromises",
+ "standin": [
+  "Checked by me: contact sheets in all three aspects, frames of the shots that moved (the reception and office in-points, the end of HaX's hook), loudness and captions. Not watched end to end, and the beat fit is from the track's analysis, not my ears."
+ ],
+ "srt": "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:23,560 --> 00:00:27,040\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:27,500 --> 00:00:30,890\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:31,500 --> 00:00:35,590\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,941 --> 00:00:49,311\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,050 --> 00:00:51,870\nDerek Lawson: That's optimisation.\n",
+ "questions": [
+  {
+   "k": "music",
+   "t": "Action Dub on m01 (quiet open, lift on the Mission card)",
+   "o": [
+    [
+     "ok",
+     "Keep",
+     "",
+     1
+    ],
+    [
+     "alt",
+     "Try another",
+     "Say which"
+    ]
+   ]
+  },
+  {
+   "k": "cuts",
+   "t": "Cards and Derek's cut on the beat",
+   "o": [
+    [
+     "ok",
+     "Right",
+     "",
+     1
+    ],
+    [
+     "fix",
+     "Off",
+     "Say which"
+    ]
+   ]
+  },
+  {
+   "k": "pace",
+   "t": "Pace: anything too fast or too slow? Which shot would you cut or lengthen?",
+   "o": null
+  },
+  {
+   "k": "seen",
+   "t": "Anything on screen a viewer should not see?",
+   "o": null
+  }
+ ]
+},
+  m10v3: {
+ "doc": "feedback/m10_trailer_v3",
+ "title": "m10 Full Disclosure · 60 s trailer · v3 (Hybrid Attack, whole-number scales)",
+ "videoLabel": "16:9",
+ "video": "/_blob/b863b9a5b078bc1f5cec495f2bdfda16",
+ "videos": [
+  [
+   "9:16",
+   "/_blob/6af731c32fa32022e7479f31b6e57a6f",
+   "p916"
+  ],
+  [
+   "1:1",
+   "/_blob/78d46c141041d3d62d0269bc3985f5de",
+   "p11"
+  ]
+ ],
+ "stats": [
+  "60.0 s each",
+  "1920×1080, 1080×1920, 1080×1080 at 30 fps",
+  "−14.0 LUFS, true peak −1.55 dB",
+  "music: Hybrid Attack 1 from 98.6 s"
+ ],
+ "changedLabel": "What changed since v1 (your notes)",
+ "changed": [
+  "The four quick flash shots are gone. A wide shot of the team takes their place, so the Mission 10 card still lands on the music's lift.",
+  "The Tesseract is re-filmed with his new thin wire glasses (your pick E) and a new mouth animation made from them.",
+  "The gallery guard's line is re-filmed now that guards walk in and out of rooms: he says it, then heads for the door.",
+  "Every gameplay shot is at a whole-number scale (1×, 2× or 3×), as on m09 v3. The quick crescendo cuts are re-framed so each face or panel sits fully inside the frame in every aspect.",
+  "The ending stops before the Tesseract gives any figures."
+ ],
+ "standinLabel": "Stand-in and compromises",
+ "standin": [
+  "Real Hacking is the console clip of the release note being read. No flag or secret is on screen.",
+  "In 9:16 the guard's speech bubble starts right at the left edge for the first half second; the burned caption carries the line throughout.",
+  "Checked by me: contact sheets in all three aspects, frames of the two re-filmed shots, loudness and captions. Not watched end to end."
+ ],
+ "srt": "1\n00:00:05,000 --> 00:00:09,170\nDirector Magnus Netherton: At six he publishes everything we ever catalogued.\n\n2\n00:00:11,937 --> 00:00:14,077\nQuintero: I don't like doors that know your name.\n\n3\n00:00:14,767 --> 00:00:17,127\nDirector Magnus Netherton: It puts WREN on this team.\n\n4\n00:00:20,010 --> 00:00:22,980\nAgent 0x00 HaX: Top row. The third breaker from the left feeds the shutter.\n\n5\n00:00:24,813 --> 00:00:27,843\nGallery guard: Camera's dead again. I'll go and look.\n\n6\n00:00:34,650 --> 00:00:36,500\nNow it's my turn.\n\n7\n00:00:37,903 --> 00:00:39,703\nTunnel guard: Nobody said let you through armed.\n\n8\n00:00:44,233 --> 00:00:48,673\nTesseract: Your service spent decades hoarding the world's weak points.\n\n9\n00:00:49,467 --> 00:00:51,737\nTesseract: At six, I give them back.\n",
+ "questions": [
+  {
+   "k": "tess",
+   "t": "The Tesseract's new glasses and mouth in the ending",
+   "o": [
+    [
+     "ok",
+     "Right",
+     "",
+     1
+    ],
+    [
+     "fix",
+     "Still off",
+     "Say what"
+    ]
+   ]
+  },
+  {
+   "k": "gallery",
+   "t": "The gallery guard's line (he walks off towards the door)",
+   "o": [
+    [
+     "ok",
+     "Keep",
+     "",
+     1
+    ],
+    [
+     "fix",
+     "Change",
+     "Say what"
+    ]
+   ]
+  },
+  {
+   "k": "music",
+   "t": "Hybrid Attack 1 on m10",
+   "o": [
+    [
+     "ok",
+     "Keep",
+     "",
+     1
+    ],
+    [
+     "alt",
+     "Try another",
+     "Say which"
+    ]
+   ]
+  },
+  {
+   "k": "pace",
+   "t": "Pace: anything too fast or too slow? Which shot would you cut or lengthen?",
+   "o": null
+  },
+  {
+   "k": "seen",
+   "t": "Anything on screen a viewer should not see?",
+   "o": null
+  }
+ ]
+},
+  m09v3: {
+ "doc": "feedback/m09_trailer_v3",
+ "title": "m09 Digital Archaeology · 60 s trailer · v3 (Midnight Trigger, whole-number scales)",
+ "videoLabel": "16:9",
+ "video": "/_blob/b0d3914a988a86ef39b4667393b1281c",
+ "videos": [
+  ["9:16", "/_blob/3001b735854bcebaf9d90e4234d86f16", "p916"],
+  ["1:1", "/_blob/fad2c5c3563562ba8efed34976b14c29", "p11"]
+ ],
+ "stats": [
+  "60.0 s each",
+  "1920×1080, 1080×1920, 1080×1080 at 30 fps",
+  "−14.0 LUFS, true peak −1.5 dB",
+  "music: Midnight Trigger from 93.0 s (kept)"
+ ],
+ "changedLabel": "What changed since v2 (your notes)",
+ "changed": [
+  "Noor is re-filmed with her fixed mouth animation (the visemes were re-picked so her nose stays still). Same line, same 4.2 s slot.",
+  "Every gameplay shot is now at a whole-number scale (1×, 2× or 3×), so the pixels are even. NPC chats are zoomed out: 1× in 16:9, 2× in 9:16 and 1:1.",
+  "In 16:9 the game's own subtitle bar now shows on Netherton, Noor and Jesse, and acts as their caption. Sorensen's wide shot is at 2× so her name bar stays off screen, as in v2.",
+  "Minigame panels drop to 1× where 2× would cut them off (the wipe console, lockpicks, the password screen in 9:16 and 1:1).",
+  "Music, the password screen and Dillard's shot are unchanged, as you asked."
+ ],
+ "standinLabel": "Stand-in and compromises",
+ "standin": [
+  "The password screen in 9:16 is smaller than in v2: its panel is wider than the 2× window, so whole-number scaling leaves it at 1×. See the question.",
+  "Real Hacking is still the stand-in console footage.",
+  "Checked by me: contact sheets in all three aspects, Noor's frames from the new take, loudness and captions. Not watched end to end."
+ ],
+ "srt": "1\n00:00:03,220 --> 00:00:10,320\nDirector Magnus Netherton: We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\n\n2\n00:00:14,603 --> 00:00:18,303\nNoor Haddad: We're closed. Nobody comes in for a deed at this hour.\n\n3\n00:00:21,533 --> 00:00:25,793\nJesse Tran: Paper. You people break into buildings at night for paper.\n\n4\n00:00:34,813 --> 00:00:39,133\nLyle Dillard: Dillard, Statewide Security. Stay where you are.\n\n5\n00:00:42,883 --> 00:00:47,733\nMargaret Sorensen: Everyone ENTROPY ever placed is filed in this room, dear.\n\n6\n00:00:48,633 --> 00:00:51,583\nMargaret Sorensen: By morning, I'll be the only index you can ask.\n",
+ "questions": [
+  {"k": "noor", "t": "Noor's mouth animation now", "o": [["ok", "Right", "", 1], ["fix", "Still off", "Say what"]]},
+  {"k": "scale", "t": "Whole-number scales: chats zoomed out, subtitle bar showing in 16:9", "o": [["ok", "Better", "", 1], ["tight", "Zoom chats in to 2× and crop the bar", "Faces bigger, bar off"], ["fix", "Mixed", "Say which shots"]]},
+  {"k": "pw916", "t": "The password screen in 9:16 (1×, small)", "o": [["ok", "Keep 1×", "Whole-number rule holds", 1], ["frac", "Allow 1.5× for this UI panel", "Readable, slightly uneven pixels"]]},
+  {"k": "pace", "t": "Pace: anything too fast or too slow? Which shot would you cut or lengthen?", "o": null},
+  {"k": "seen", "t": "Anything on screen a viewer should not see?", "o": null}
+ ]
+},
+  m09v2: {
+ "doc": "feedback/m09_trailer_v2",
+ "title": "m09 Digital Archaeology · 60 s trailer · v2 (Midnight Trigger)",
+ "videoLabel": "16:9",
+ "video": "/_blob/0155d9dc28ecbe485c13939150c06a43",
+ "videos": [
+  ["9:16", "/_blob/c87be1da798148cffe61c81924f3bc60",
+   "p916"
+  ],
+  ["1:1", "/_blob/d2b512ed3500820a904fa061548ad78a",
+   "p11"
+  ]
+ ],
+ "stats": [
+  "60.0 s each",
+  "1920×1080, 1080×1920, 1080×1080 at 30 fps",
+  "−14.0 LUFS, true peak −1.5 dB",
+  "music: Midnight Trigger from 93.0 s"
+ ],
+ "changedLabel": "What changed since v1 (your notes)",
+ "changed": [
+  "Music is Midnight Trigger from 93.0 s; every cut re-fitted to its beat grid.",
+  "The \"Vigenère / Cipher\" card is gone. The salvage password screen now comes after Real Hacking, before the console.",
+  "Dillard starts on his portrait (no pop-in) and his whole line plays: 4.7 s. Re-centred on him in 9:16 and 1:1.",
+  "Netherton's hook ends at 10.3 s, then the team-face flash (10.4–11.5), with the Mission 9 card on the 11.5 beat.",
+  "A lockpick shot opens the crescendo; Sorensen's ending cuts wide-to-close on 48.6 and the call to action is on 52.0."
+ ],
+ "standinLabel": "Stand-in and compromises",
+ "standin": [
+  "Noor's shot is the v1 take: her mouth animation is being fixed in the game, then she is re-filmed for v3.",
+  "The password screen shows its in-game hint (it names the cipher, not the word or the answer). In 9:16 the screen is small in the frame; see the question.",
+  "In 1:1, three edges are tight: the wipe console panel is cut at its left edge, a scrap of a game toast shows at the left of Dillard's first frame, and the crate caption above the lockpick is cut at the top.",
+  "Checked by me: contact sheets in all three aspects, loudness and captions. Not watched end to end."
+ ],
+ "srt": "1\n00:00:03,220 --> 00:00:10,320\nDirector Magnus Netherton: We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\n\n2\n00:00:14,603 --> 00:00:18,303\nNoor Haddad: We're closed. Nobody comes in for a deed at this hour.\n\n3\n00:00:21,533 --> 00:00:25,793\nJesse Tran: Paper. You people break into buildings at night for paper.\n\n4\n00:00:34,813 --> 00:00:39,133\nLyle Dillard: Dillard, Statewide Security. Stay where you are.\n\n5\n00:00:42,883 --> 00:00:47,733\nMargaret Sorensen: Everyone ENTROPY ever placed is filed in this room, dear.\n\n6\n00:00:48,633 --> 00:00:51,583\nMargaret Sorensen: By morning, I'll be the only index you can ask.\n",
+ "questions": [
+  {
+   "k": "music",
+   "t": "Midnight Trigger on m09",
+   "o": [
+    [
+     "ok",
+     "Keep",
+     "",
+     1
+    ],
+    [
+     "alt",
+     "Try another",
+     "Say which"
+    ]
+   ]
+  },
+  {
+   "k": "pw",
+   "t": "The password screen with its hint, after Real Hacking",
+   "o": [
+    [
+     "ok",
+     "Keep as it is",
+     "",
+     1
+    ],
+    [
+     "zoom",
+     "Keep, zoom in on it in 9:16 and 1:1",
+     ""
+    ],
+    [
+     "cut",
+     "Drop it",
+     ""
+    ]
+   ]
+  },
+  {
+   "k": "dillard",
+   "t": "Dillard's shot (portrait open, full line)",
+   "o": [
+    [
+     "ok",
+     "Right",
+     "",
+     1
+    ],
+    [
+     "short",
+     "Shorter",
+     "Say where to cut"
+    ]
+   ]
+  },
+  {
+   "k": "pace",
+   "t": "Pace: anything too fast or too slow? Which shot would you cut or lengthen?",
+   "o": null
+  },
+  {
+   "k": "seen",
+   "t": "Anything on screen a viewer should not see?",
+   "o": null
+  }
+ ]
+}
+};
+const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
+
+let current = "m10v3";
+let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
+let db = null;
+const LS = "safetynet_trailer_review_b1"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
+try { const s = JSON.parse(localStorage.getItem(LS) || "null"); if (s) answers = Object.assign(answers, s); } catch (_) {}
+
+function el(tag, attrs, ...kids){ const e=document.createElement(tag); for (const [k,v] of Object.entries(attrs||{})) { if (k==="class") e.className=v; else if (k==="text") e.textContent=v; else e.setAttribute(k,v);} for (const c of kids) if (c) e.append(c); return e; }
+
+function render(){
+  const c = CUTS[current], a = answers[current] || (answers[current] = {});
+  const main = document.getElementById("cut"); main.replaceChildren();
+  const top = el("section",{class:"card"});
+  top.append(el("h2",{text:c.title}));
+  if (c.intro) top.append(el("p",{class:"why",text:c.intro}));
+  if (c.video){ if (c.videoLabel) top.append(el("div",{class:"kicker",text:c.videoLabel})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.src=c.video; if (c.poster) v.poster=c.poster; top.append(v); }
+  else if (!c.noVideo) top.append(el("div",{class:"empty",text:"Render in progress: the video appears here when it is ready."}));
+  if (c.clips){ c.clips.forEach(([lab,src,txt])=>{ const b=el("div",{class:"q"}); b.append(el("h3",{text:lab}), el("p",{class:"why",text:txt})); const au=el("audio",{controls:"",preload:"metadata"}); au.src=src; au.style.width="100%"; b.append(au); top.append(b); }); }
+  if (c.videos){ const g=el("div",{class:"vgrid"}); c.videos.forEach(([lab,src,cls])=>{ const b=el("div",{}); b.append(el("div",{class:"kicker",text:lab})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.className=cls; v.src=src; b.append(v); g.append(b); }); top.append(g); }
+  if (c.video2){ top.append(el("div",{class:"kicker",text:c.video2Label||"Alternative"})); const v2=el("video",{controls:"",preload:"metadata",playsinline:""}); v2.src=c.video2; top.append(v2); }
+  if (c.stats && c.stats.length){ const s=el("div",{class:"stats"}); c.stats.forEach(x=>s.append(el("span",{class:"chip",text:x}))); top.append(s); }
+  if (c.changed){ const ch=el("div",{}, el("div",{class:"kicker",text:c.changedLabel||"What changed"})); const ul=el("ul"); c.changed.forEach(x=>ul.append(el("li",{text:x}))); ch.append(ul); top.append(ch); }
+  if (c.standin){ const sd=el("div",{}, el("div",{class:"kicker",text:c.standinLabel||"Stand-in or missing"})); const ul2=el("ul"); c.standin.forEach(x=>ul2.append(el("li",{text:x}))); sd.append(ul2); top.append(sd); }
+  if (c.srt){ const d=el("details"); d.append(el("summary",{text:"Captions (.srt)"}), el("pre",{text:c.srt})); top.append(d); }
+  main.append(top);
+
+  const form=el("section",{class:"card"}); form.append(el("h2",{text:"Questions"}));
+  const qs=(c.noVerdict?[]:[{k:"verdict",t:"Verdict",o:VERDICT.map(([v,l,d])=>[v,l,d])}]).concat(c.questions);
+  qs.forEach((q,i)=>{
+    const box=el("div",{class:"q"}); box.append(el("h3",{text:(i+1)+". "+q.t}));
+    if (q.o){ const opts=el("div",{class:"opts",role:"radiogroup","aria-label":q.t});
+      q.o.forEach(([v,l,d,sug])=>{ const id=current+"_"+q.k+"_"+v; const inp=el("input",{type:"radio",name:current+"_"+q.k,id,value:v}); if (a[q.k]===v) inp.checked=true;
+        inp.addEventListener("change",()=>{a[q.k]=v; changed();});
+        const lab=el("label",{class:"opt",for:id}); const txt=el("span"); txt.append(el("b",{text:l})); if (d) txt.append(el("small",{text:d})); if (sug) txt.append(el("span",{class:"sug",text:"suggested"})); lab.append(inp,txt); opts.append(lab); });
+      box.append(opts); }
+    const ta=el("textarea",{id:current+"_"+q.k+"_note",placeholder:q.o?"Note (optional)":"Your answer","aria-label":q.t+" note"}); ta.value=a[q.k+"_note"]||"";
+    ta.addEventListener("input",()=>{a[q.k+"_note"]=ta.value; changed();}); box.append(ta); form.append(box);
+  });
+  const bar=el("div",{class:"bar"}); const save=el("button",{class:"primary",type:"button",id:"savebtn",text:"Save answers"}); const st=el("span",{class:"status",id:"savestatus"});
+  save.addEventListener("click",()=>persist(true)); bar.append(save,st); form.append(bar);
+  main.append(form);
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected", String(t.dataset.cut===current)));
+  fillCopy(); showSaved();
+}
+
+function fillCopy(){
+  const lines=[];
+  for (const key of Object.keys(CUTS)){ const c=CUTS[key], a=answers[key]||{}; const qs=(c.noVerdict?[]:[{k:"verdict",t:"Verdict",o:VERDICT}]).concat(c.questions);
+    const got=qs.filter(q=>a[q.k]||a[q.k+"_note"]); if (!got.length) continue; lines.push("["+c.title+"]");
+    got.forEach(q=>{ const opt=q.o&&q.o.find(o=>o[0]===a[q.k]); lines.push(q.k+" ("+q.t+"): "+(opt?opt[1]:"-")+(a[q.k+"_note"]?" - "+a[q.k+"_note"]:"")); }); }
+  document.getElementById("copybox").value=lines.join("\n");
+}
+let timer=null;
+function changed(){ try{localStorage.setItem(LS,JSON.stringify(answers));}catch(_){} fillCopy(); clearTimeout(timer); timer=setTimeout(()=>persist(false),1200); }
+async function persist(manual){
+  const st=document.getElementById("savestatus");
+  if (!db){ if (st) st.textContent = manual ? "Saved in this browser only (sign in to save to the page)." : "Saved in this browser."; return; }
+  try { await db.doc(CUTS[current].doc).set(Object.assign({}, answers[current], {updated: new Date().toISOString()})); if (st) st.textContent="Saved to the page."; }
+  catch(e){ if (st) st.textContent="Could not save to the page ("+(e&&e.code||"error")+"); kept in this browser."; }
+}
+function showSaved(){ const st=document.getElementById("savestatus"); if (st && !st.textContent) st.textContent = db ? "" : "Answers keep in this browser until the page connects."; }
+
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab4",current);}catch(_){} }));
+try { const t=localStorage.getItem(LS+"_tab4"); if (t && CUTS[t]) current=t; } catch(_){}
+const EARLIER = new Set([...document.querySelectorAll("#earlier .tab")].map(t=>t.dataset.cut));
+if (EARLIER.has(current)) document.getElementById("earlier").open = true;
+document.getElementById("copybtn").addEventListener("click",async()=>{ const box=document.getElementById("copybox"), s=document.getElementById("copystatus");
+  try{ await navigator.clipboard.writeText(box.value); s.textContent="Copied."; } catch(_){ box.select(); s.textContent="Selected: press Ctrl+C."; } });
+render();
+
+(async()=>{ try{ if (!window.claude || !window.claude.use) return; db = await window.claude.use("db"); if (!db) return;
+  for (const key of Object.keys(CUTS)){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
+  render(); } catch(_){} })();
+</script>

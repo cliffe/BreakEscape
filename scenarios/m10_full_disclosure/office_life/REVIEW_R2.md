@@ -1,0 +1,22 @@
+# m10 office life: plan review R2
+
+Reviewer tier: planning tier, read-only. Plan reviewed at commit 795e13bf4.
+
+**Counts: 1 blocker, 3 majors, 6 minors.** Outcomes are decided below; the PLAN.md rewrite for them is not applied yet (see HANDOVER.md).
+
+| # | Sev | Finding | Evidence | Outcome (decided) |
+|---|---|---|---|---|
+| 1 | B | Credits added only to `credits_sections.json` make the render raise: the ERB holds a pasted copy and checks it matches. | `scenario.json.erb:884`, `:1171-1176`, `safetynet_join` key at `:1050` | Fix: add identical entries to both the JSON and the ERB `credits_fragment` heredoc; "change both together" in 2.6 and 10.6. |
+| 2 | M | `chaseRange` 112 does not let go before the table's north side: a player above the kettle is about 87 px away, beside Netherton about 92 px. Anchor is the spawn body centre. | `npc-chase-leash.js:25-35`; `npc-behavior.js:571-577`, `:1112-1119` | Fix: range set below the measured distance from home to the nearest north-side table reach cell and Netherton's talk cells (estimate 64); measured figures into 2.1; 10.4 adds those cells. Incident-file cell (6,8), lore only (`:2621-2631`), stays inside any useful range: say so. |
+| 3 | M | Victoria is not phone-only: Despina is also `victoria_gallery` and `victoria_threat`, in person in the gallery after the breach, when `ex_fp_door_open` plays. Vance (Orus) is phone only. | voice table `:504`, `:505`; `:2430`, `:3878`/`:3888`, `:3902`/`:3911`, `:2450` | Fix: correct 1A and QUESTIONS Q2a to name all three Victoria records and the post-breach overlap. Keep Sofia on Despina as recommended (the skill keeps a course character's voice), with option: re-voice Sofia in m10 only to a voice m10 leaves free (Vindemiatrix or Achernar). |
+| 4 | M | Exchanges 2 and 3 have no trigger tied to the player being in the yard; brews after the briefing come only from decay (about 20 needs-minutes). | PLAN 2.3 | Fix: two more cooldown-gated mapped breaks on Darren after the hide helper, `!globalVars.fp_staff_upset`: `global_variable_changed:split_started` (`value === true`) and `room_entered:forward_post` with `globalVars.breach_open === true && !globalVars.closing_done`. Section 7 cooldown row 2 to 4. L4 at walking pace, no manual clock. |
+| 5 | m | `startSound` never plays without `roomTone`. | `npc-office-visuals.js:337-338` | Fix: drop `startSound`. |
+| 6 | m | The work lamp barely reaches the kettle (about 11 to 23% of peak at 65 to 75 px). | `lighting.js:677-682` | Fix: keep the slice 6 render; pre-plan a small light at the crate like the existing (6.0,8.4) r40 0.3 entry, listed as a possible lighting change. |
+| 7 | m | VARs in `m10_carryover_vars.ink` recompile 31 including files. | grep INCLUDE | Fix: declare the two VARs in `m10_six_oclock.ink` only (only it reads them; sync covers declared VARs, `npc-conversation-state.js:498-512`). |
+| 8 | m | Credits: KO clauses carry `"style": "warning"`; `safetynet_join` (E6) has no entry; entries after WREN end the section on support staff. | `music/closing-sequence.js:64-80`; `credits_sections.json` | Fix: add `style: warning` to the KO clauses; add both entries to `safetynet_join` too; place them before Kowalczyk in `safetynet`. |
+| 9 | m | forward_post's npcs array ends in an ERB loop that writes its own commas. | `:2552-2573`, last literal NPC ends `:2543` | Fix: 2.7 says the records go after the record ending at `:2543`, before the loop, each followed by a comma. |
+| 10 | m | Spawn `position` should equal the measured home (fractional tiles) so the chase anchor and home agree; cast-variety line and Darren's age conflict not stated. | `npc-behavior.js:571-577` | Fix: `position` = measured home in tiles; one line comparing ages and backgrounds with the yard cast; Darren 40s per `BRAND_SET.md:84` resolved. |
+
+Checked sound: missions plan rules 1 to 10 and section 2 limits; V2 not triggered; V5 clear; V10 statically satisfied; section 7 caps (heard_ 3/8, onceOnly 7/10); the :345 Tier 0 entry offered as Q1b; `after_end_json` followed by one mapping renders valid JSON; six o'clock :334 and :375; `leash`/`chaseRange` field names (schema :4540-4541); section 8 field names; besideCell.
+
+Unchecked: end of forward_post's objects array (:2740) against ERB; new crate collision against the row-8 lane (slice 6 and L2); `isGlobalVariable`; validator on `startSound`; minimum needs timing against the briefing window.

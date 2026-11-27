@@ -1,0 +1,13 @@
+{
+  "key": "9ad0bde318389bb287142f1de8e4b834",
+  "npc": "jun_watanabe",
+  "text": "Third one today. Don't judge.",
+  "voice": "Puck",
+  "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:41:45Z"
+}

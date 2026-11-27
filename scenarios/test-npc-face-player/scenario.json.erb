@@ -1,0 +1,228 @@
+{
+  "scenario_brief": "Test scenario for NPC face player behavior - Phase 2",
+  "endGoal": "Test NPCs turning to face player in all 8 directions",
+  "startRoom": "test_face_player",
+
+  "player": {
+    "id": "player",
+    "displayName": "Test Agent",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "rooms": {
+    "test_face_player": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "npc_center",
+          "displayName": "Center NPC (Default Behavior)",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "_comment": "Default behavior - should face player when within 3 tiles (96px)"
+        },
+
+        {
+          "id": "npc_north",
+          "displayName": "North NPC",
+          "npcType": "person",
+          "position": { "x": 5, "y": 2 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned north of center - should face DOWN when player approaches from south"
+        },
+
+        {
+          "id": "npc_south",
+          "displayName": "South NPC",
+          "npcType": "person",
+          "position": { "x": 5, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned south of center - should face UP when player approaches from north"
+        },
+
+        {
+          "id": "npc_east",
+          "displayName": "East NPC",
+          "npcType": "person",
+          "position": { "x": 8, "y": 5 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned east of center - should face LEFT when player approaches from west"
+        },
+
+        {
+          "id": "npc_west",
+          "displayName": "West NPC",
+          "npcType": "person",
+          "position": { "x": 2, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned west of center - should face RIGHT when player approaches from east"
+        },
+
+        {
+          "id": "npc_northeast",
+          "displayName": "Northeast NPC",
+          "npcType": "person",
+          "position": { "x": 8, "y": 2 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned northeast - should face DOWN-LEFT when player approaches"
+        },
+
+        {
+          "id": "npc_northwest",
+          "displayName": "Northwest NPC",
+          "npcType": "person",
+          "position": { "x": 2, "y": 2 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned northwest - should face DOWN-RIGHT when player approaches"
+        },
+
+        {
+          "id": "npc_southeast",
+          "displayName": "Southeast NPC",
+          "npcType": "person",
+          "position": { "x": 8, "y": 8 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned southeast - should face UP-LEFT when player approaches"
+        },
+
+        {
+          "id": "npc_southwest",
+          "displayName": "Southwest NPC",
+          "npcType": "person",
+          "position": { "x": 2, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "_comment": "Positioned southwest - should face UP-RIGHT when player approaches"
+        },
+
+        {
+          "id": "npc_far",
+          "displayName": "Far NPC (Out of Range)",
+          "npcType": "person",
+          "position": { "x": 1, "y": 1 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 64
+          },
+          "_comment": "Smaller range (2 tiles) - should NOT face player unless very close"
+        },
+
+        {
+          "id": "npc_disabled",
+          "displayName": "Disabled NPC (No Face Player)",
+          "npcType": "person",
+          "position": { "x": 9, "y": 1 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false
+          },
+          "_comment": "Face player disabled - should NEVER turn to face player"
+        }
+      ]
+    }
+  }
+}

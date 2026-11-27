@@ -1,0 +1,13 @@
+{
+  "key": "cffdc8a00a23076793720844e7ef0af3",
+  "npc": "narrator",
+  "text": "He peels the sticky note off the edge of his monitor and hands it over. The password goes into your notes.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:08:11Z"
+}

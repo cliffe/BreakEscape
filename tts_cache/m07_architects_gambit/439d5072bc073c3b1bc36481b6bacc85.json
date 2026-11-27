@@ -1,0 +1,13 @@
+{
+  "key": "439d5072bc073c3b1bc36481b6bacc85",
+  "npc": "james_mercer",
+  "text": "Each time it was costed, deferred and declined by people who couldn't tell you what a phase angle was.",
+  "voice": "Iapetus",
+  "style": "An engineer in his late fifties who costed the deaths himself and signed the page. Consistent General American accent, Pacific Northwest, throughout -- do not shift to any other accent. Low-to-mid pitch; professorial and unhurried, a lecturer's cadence, pausing where a lecturer pauses. Never defensive, because he does not think he is being accused of anything he has not already conceded.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:20:19Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "070e3ebdc2a43f039128069e01705627",
+  "npc": "quintero",
+  "text": "Orders don't fall off couriers, Director.",
+  "voice": "Kore",
+  "style": "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:44:48Z"
+}

@@ -1,0 +1,25 @@
+TAP version 13
+# Subtest: defaults are built from the scenario, with no mission-specific wording
+ok 1 - defaults are built from the scenario, with no mission-specific wording
+  ---
+  duration_ms: 5.446063
+  ...
+# Subtest: scenario wording overrides the defaults
+ok 2 - scenario wording overrides the defaults
+  ---
+  duration_ms: 2.135553
+  ...
+# Subtest: reopen: the completion global marks it done; tab_viewed globals mark tabs visited
+ok 3 - reopen: the completion global marks it done; tab_viewed globals mark tabs visited
+  ---
+  duration_ms: 0.804387
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 253.332547

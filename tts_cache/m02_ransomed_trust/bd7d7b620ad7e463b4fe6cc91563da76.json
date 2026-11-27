@@ -1,0 +1,13 @@
+{
+  "key": "bd7d7b620ad7e463b4fe6cc91563da76",
+  "npc": "narrator",
+  "text": "A short answer crackles back. It isn't yes.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:56:23Z"
+}

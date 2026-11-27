@@ -1,0 +1,13 @@
+{
+  "key": "e8c9a88f252415cb82bf3398d6c76e9a",
+  "npc": "kit_camila_ospina",
+  "text": "Lovely, thanks. I'll find her myself.",
+  "voice": "Zephyr",
+  "style": "A client-side account rep in her mid 40s, confident and friendly, with the easy manner of someone sure she is expected. Speak with a consistent London accent with a light Colombian inflection throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:50:53Z"
+}

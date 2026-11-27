@@ -1,0 +1,13 @@
+{
+  "key": "048780aff9bd5f26b7b2666cff6c2ae9",
+  "npc": "kowalczyk",
+  "text": "Stores froze everything Nightshade ever signed for. This one's mine. Never been through stores, never been near him.",
+  "voice": "Pulcherrima",
+  "style": "SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:19:46Z"
+}

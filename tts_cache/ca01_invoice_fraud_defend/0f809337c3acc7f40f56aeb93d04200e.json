@@ -1,0 +1,13 @@
+{
+  "key": "0f809337c3acc7f40f56aeb93d04200e",
+  "npc": "adaeze_okafor",
+  "text": "Thanks for covering the payments inbox before the three o'clock run. It's open on the kiosk.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:10Z"
+}

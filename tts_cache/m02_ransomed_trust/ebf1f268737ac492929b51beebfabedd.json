@@ -1,0 +1,13 @@
+{
+  "key": "ebf1f268737ac492929b51beebfabedd",
+  "npc": "security_guard_patrol",
+  "text": "Blank IT pass. So what are you here for, on an IT pass?",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:55:47Z"
+}

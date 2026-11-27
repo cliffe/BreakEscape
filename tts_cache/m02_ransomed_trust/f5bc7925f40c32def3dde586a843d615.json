@@ -1,0 +1,13 @@
+{
+  "key": "f5bc7925f40c32def3dde586a843d615",
+  "npc": "security_guard_patrol",
+  "text": "Six weeks I've had that man in my notebook. Twice I was told to leave it. And now you're telling me he let them in.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:13:43Z"
+}

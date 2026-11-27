@@ -1,0 +1,272 @@
+{
+  "scenario_brief": "Test scenario for NPC personal space behavior - Phase 4",
+  "endGoal": "Test NPCs maintaining personal space and backing away from player",
+  "startRoom": "test_personal_space",
+
+  "player": {
+    "id": "player",
+    "displayName": "Test Agent",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "rooms": {
+    "test_personal_space": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "personal_space_basic",
+          "displayName": "Basic Personal Space",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 48,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            }
+          },
+          "_comment": "Standard personal space: backs away when player within 48px (1.5 tiles), 5px increments"
+        },
+
+        {
+          "id": "personal_space_large",
+          "displayName": "Large Personal Space",
+          "npcType": "person",
+          "position": { "x": 8, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 96,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            }
+          },
+          "_comment": "Large bubble: backs away when player within 96px (3 tiles)"
+        },
+
+        {
+          "id": "personal_space_small",
+          "displayName": "Small Personal Space",
+          "npcType": "person",
+          "position": { "x": 2, "y": 3 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 32,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            }
+          },
+          "_comment": "Small bubble: only backs away when very close (32px, 1 tile)"
+        },
+
+        {
+          "id": "personal_space_fast",
+          "displayName": "Fast Backing",
+          "npcType": "person",
+          "position": { "x": 8, "y": 8 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 48,
+              "backAwaySpeed": 60,
+              "backAwayDistance": 50
+            }
+          },
+          "_comment": "Fast backing: 10px increments instead of 5px"
+        },
+
+        {
+          "id": "personal_space_slow",
+          "displayName": "Slow Backing",
+          "npcType": "person",
+          "position": { "x": 2, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 48,
+              "backAwaySpeed": 15,
+              "backAwayDistance": 3
+            }
+          },
+          "_comment": "Slow backing: 3px increments, very subtle"
+        },
+
+        {
+          "id": "personal_space_corner",
+          "displayName": "Corner Test (Wall Blocking)",
+          "npcType": "person",
+          "position": { "x": 1, "y": 1 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 64,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            }
+          },
+          "_comment": "Positioned in corner - tests wall collision detection when backing"
+        },
+
+        {
+          "id": "personal_space_with_patrol",
+          "displayName": "Personal Space + Patrol",
+          "npcType": "person",
+          "position": { "x": 5, "y": 2 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "changeDirectionInterval": 3000,
+              "bounds": {
+                "x": 128,
+                "y": 32,
+                "width": 96,
+                "height": 96
+              }
+            },
+            "personalSpace": {
+              "enabled": true,
+              "distance": 48,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            }
+          },
+          "_comment": "Patrols normally, but backs away when player gets close (priority test)"
+        },
+
+        {
+          "id": "personal_space_toggle",
+          "displayName": "Personal Space Toggle",
+          "npcType": "person",
+          "position": { "x": 10, "y": 5 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-personal-space-toggle.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": false,
+              "distance": 48,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            }
+          },
+          "_comment": "Starts disabled, can be toggled via Ink #personal_space:64 tag"
+        },
+
+        {
+          "id": "personal_space_very_shy",
+          "displayName": "Very Shy (Extreme)",
+          "npcType": "person",
+          "position": { "x": 5, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 128,
+              "backAwaySpeed": 40,
+              "backAwayDistance": 8
+            }
+          },
+          "_comment": "Extreme personal space: 128px (4 tiles), backs away quickly"
+        },
+
+        {
+          "id": "no_personal_space",
+          "displayName": "No Personal Space (Disabled)",
+          "npcType": "person",
+          "position": { "x": 9, "y": 1 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": false
+            }
+          },
+          "_comment": "Personal space disabled - should NOT back away, just face player"
+        }
+      ]
+    }
+  }
+}

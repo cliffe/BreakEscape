@@ -1,0 +1,161 @@
+{
+    "scenario_brief": "Welcome to the SecGen VM Lab! This environment is designed to teach you about Linux security and attack techniques. You have access to two VMs:\n\n• **kali** - Attacker machine with penetration testing tools\n• **desktop** - Target system running vulnerable services\n\nYour mission is to launch these VMs, exploit vulnerabilities, and capture flags demonstrating your understanding of the attack vectors.",
+    "endGoal": "Successfully launch the 'kali' and 'desktop' VMs, perform attacks, and capture all available flags to complete the lab.",
+    "startRoom": "lab_entrance",
+    "startItemsInInventory": [],
+    "rooms": {
+        "lab_entrance": {
+            "type": "room_reception",
+            "connections": {
+                "north": "lab_workstation"
+            },
+            "locked": false,
+            "objects": [
+                {
+                    "type": "notes",
+                    "name": "Lab Welcome Guide",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Welcome to the SecGen Linux Introduction Lab!\n\nSTART HERE:\n1. Interact with the VM LAUNCHER TERMINAL\n2. Select and launch the 'kali' VM first\n3. Then launch the 'desktop' VM\n\nWhat each VM does:\n  • kali - Your attack platform (Kali Linux with hacking tools)\n  • desktop - The target system (vulnerable Linux services)\n\nOnce running:\n1. Connect to the desktop VM from kali\n2. Find and exploit vulnerabilities\n3. Capture flags along the way\n4. Submit flags at the FLAG STATION TERMINAL\n\nEach flag you submit will unlock rewards and progression.\n\nGood luck, and learn responsibly!",
+                    "observations": "A comprehensive guide to the lab environment"
+                },
+                {
+                    "type": "notes",
+                    "name": "Lab Rules",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Lab Rules & Information:\n\n- VMs are automatically destroyed after 1 hour of inactivity\n- Screenshots and evidence capture recommended\n- All traffic is logged for learning purposes\n- Contact lab administrator if VMs fail to start\n- Estimated time: 30-45 minutes\n- Difficulty: Beginner to Intermediate",
+                    "observations": "Important lab operational information"
+                }
+            ]
+        },
+        "lab_workstation": {
+            "type": "room_office",
+            "connections": {
+                "south": "lab_entrance",
+                "east": "flag_room"
+            },
+            "locked": false,
+            "objects": [
+                {
+                    "type": "vm-launcher",
+                    "id": "vm_launcher_1",
+                    "name": "Kali Console Terminal",
+                    "takeable": false,
+                    "observations": "A terminal interface for accessing the Kali Linux VM. Ready to launch.",
+                    "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+                    "vm": <%= vm_object('kali', {"id":1,"title":"kali","ip":"192.168.1.10","enable_console":true}) %>
+                },
+                {
+                    "type": "vm-launcher",
+                    "id": "vm_launcher_2",
+                    "name": "Desktop Lab Terminal",
+                    "takeable": false,
+                    "observations": "A terminal interface for accessing the Desktop Linux VM. Ready to launch.",
+                    "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+                    "vm": <%= vm_object('desktop', {"id":2,"title":"desktop","ip":"192.168.1.20","enable_console":true}) %>
+                },
+                {
+                    "type": "notes",
+                    "name": "Attack Hints",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Attack Strategy for kali → desktop:\n\n1. FROM KALI - Reconnaissance:\n   - Use 'nmap' on desktop to scan open ports\n   - Example: nmap -sV <desktop-ip>\n   - Identify running services and versions\n   - Research known vulnerabilities\n\n2. FROM KALI - Exploitation:\n   - Look for weak credentials on desktop\n   - Try common default passwords\n   - Use Metasploit or manual exploitation\n   - Escalate privileges if needed\n\n3. ON DESKTOP - Flag Capture:\n   - Flags typically located in:\n     /flag.txt (root flag)\n     /home/*/flag.txt (user flags)\n     /etc/shadow or /etc/passwd\n     Database files (/var/lib/mysql/)\n\n4. Submit Flags:\n   - Return to this game\n   - Find the FLAG STATION TERMINAL\n   - Enter captured flags (format: flag{...})\n   - Receive points and unlock rewards",
+                    "observations": "Strategic guidance for completing the lab objectives"
+                }
+            ]
+        },
+        "flag_room": {
+            "type": "room_office",
+            "connections": {
+                "west": "lab_workstation",
+                "north": "server_room"
+            },
+            "locked": false,
+            "objects": [
+                {
+                    "type": "flag-station",
+                    "id": "flag_station_desktop",
+                    "name": "Desktop Flag Terminal",
+                    "takeable": false,
+                    "observations": "Submit flags captured from the Desktop VM here.",
+                    "acceptsVms": ["desktop"],
+                    "flags": <%= flags_for_vm('desktop', ['flag{test_desktop_1}', 'flag{test_desktop_2}']) %>,
+                    "flagRewards": [
+                        {
+                            "type": "give_item",
+                            "item_name": "Server Room Keycard",
+                            "description": "First flag unlocks access to the server room"
+                        },
+                        {
+                            "type": "unlock_door",
+                            "target_room": "server_room",
+                            "description": "Second flag unlocks the server room door"
+                        }
+                    ],
+                    "itemsHeld": [
+                        {
+                            "type": "keycard",
+                            "name": "Server Room Keycard",
+                            "card_id": "server_keycard",
+                            "takeable": true,
+                            "observations": "A keycard with 'SERVER ROOM' printed on it"
+                        }
+                    ]
+                },
+                {
+                    "type": "notes",
+                    "name": "Flag Format",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Flag Format Information:\n\nFlags in this lab follow the standard CTF format:\n  flag{...}\n\nCommon flag locations:\n  - /flag.txt\n  - /root/flag.txt\n  - /home/user/flag.txt\n  - Environment variables\n  - Application data\n\nWhen submitting:\n1. Enter the complete flag text (including 'flag{}' wrapper)\n2. Click SUBMIT\n3. Wait for verification\n4. Receive confirmation and rewards\n\nYou may submit multiple flags.\nAlready-submitted flags cannot be re-submitted.",
+                    "observations": "Guide on flag capture and submission"
+                },
+                {
+                    "type": "notes",
+                    "name": "Progress Tracker",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Lab Progress Tracking:\n\nTotal Flags Available: Multiple (see Flag Station for exact count)\n\nObjectives:\n□ Launch Kali VM\n□ Launch Desktop VM\n□ Complete reconnaissance\n□ Identify vulnerabilities\n□ Perform exploitation\n□ Capture flags\n□ Submit all flags\n\nEstimated Points:\n- Each flag: 10-50 points (varies by difficulty)\n- Lab completion bonus: 25 points\n- Documentation bonus: 10 points\n\nYour progress is auto-saved with each flag submission.",
+                    "observations": "Real-time progress tracking for lab completion"
+                }
+            ]
+        },
+        "server_room": {
+            "type": "room_servers",
+            "connections": {
+                "south": "flag_room"
+            },
+            "locked": true,
+            "lockType": "rfid",
+            "requires": ["server_keycard"],
+            "objects": [
+                {
+                    "type": "flag-station",
+                    "id": "flag_station_kali",
+                    "name": "Kali Flag Terminal",
+                    "takeable": false,
+                    "observations": "Submit flags captured from the Kali VM here. Advanced challenges only.",
+                    "acceptsVms": ["kali"],
+                    "flags": <%= flags_for_vm('kali', []) %>,
+                    "flagRewards": [
+                        {
+                            "type": "emit_event",
+                            "event_name": "kali_flag_captured",
+                            "description": "Triggers a custom game event"
+                        }
+                    ]
+                },
+                {
+                    "type": "notes",
+                    "name": "Reward Types Guide",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "FLAG REWARD TYPES:\n\n1. give_item - Adds an item to your inventory\n   Example: Keycard, tool, document\n\n2. unlock_door - Opens a locked door\n   Example: Access to new areas\n\n3. emit_event - Triggers a game event\n   Example: NPC dialogue, cutscene, objective completion\n\n4. reveal_secret - Shows hidden information\n   Example: Password hints, map locations\n\nRewards are given in order:\n- First flag = first reward\n- Second flag = second reward\n- etc.\n\nSome stations accept flags from specific VMs only!",
+                    "observations": "Documentation on the flag reward system"
+                }
+            ]
+        }
+    }
+}
+

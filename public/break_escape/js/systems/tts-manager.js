@@ -1,0 +1,644 @@
+/**
+ * TTS Manager - Text-to-Speech audio playback for person-chat conversations
+ *
+ * Fetches server-generated MP3 audio for NPC dialog lines and plays via HTML5 Audio.
+ * Supports preloading next line while current plays. Gracefully degrades if TTS
+ * is unavailable (no API key, network error, etc.).
+ *
+ * Audio is routed through MusicController (shared AudioContext): the HTMLMediaElement
+ * feeds an AnalyserNode (mouth animation) then MusicController.voiceGain so the
+ * Voice / Master sliders in the music widget affect TTS level.
+ */
+
+import { ApiClient } from '../api-client.js';
+import MusicController from '../music/music-controller.js';
+import { envelopeFromSamples, alignToEnvelope, outputLeadMs } from '../minigames/person-chat/lip-sync.js';
+
+class TTSManager {
+    constructor() {
+        this.audio = new Audio();
+        this.enabled = true;
+        this.volume = 0.8;
+        this.preloadCache = new Map(); // "npcId|text" -> { url: objectURL, blob } (blob kept for lip-sync)
+        this.onEndedCallback = null;
+        this.playing = false;
+        this._hasSrc = false; // Whether audio.src has been set to a real URL
+        this.currentText = null; // Line now playing — read by portraits for lip-sync
+        this.playSeq = 0;        // Bumped by every play() call: a token for "this play, not a later one of the same line"
+        this.lipSync = null;     // { text, timeline } fitted to the line's audio (see _alignLipSync)
+        this.lipSyncPending = null; // the line's text while its audio is being decoded for lip sync
+
+        // Web Audio: one MediaElementSource per <audio> element, shared context
+        this._mediaElementSource = null;
+        this._analyser = null;
+        this._distanceNode = null;   // gain between the analyser and the voice bus (setDistanceGain)
+        this.distanceGain = 1;
+        this._amplitudeBuffer = null;
+        this._ttsAudioRouted = false;
+
+        // Per-speaker voice FX (distortion / filtering). Keyed by npcId → profile object or preset name.
+        // The active profile is inserted into the graph as: source → [FX] → analyser → voiceGain.
+        this._fxProfiles = new Map();
+        this._activeFXProfile = null; // resolved profile object currently wired into the graph
+        this._fxChain = null;         // { input, output, nodes, oscs } of the live FX chain
+
+        this.audio.volume = 1;
+        this.audio.addEventListener('ended', () => {
+            this.playing = false;
+            if (this.onEndedCallback) {
+                this.onEndedCallback();
+            }
+        });
+
+        this.audio.addEventListener('error', () => {
+            this.playing = false;
+        });
+    }
+
+    /**
+     * Play TTS audio for a dialogue line
+     * @param {string} npcId - NPC identifier
+     * @param {string} text - Clean dialogue text (no "Speaker: " prefix)
+     * @param {Object} [options]
+     * @param {string|null} [options.delivery] - the line's #delivery: note (tts-delivery.js), never shown
+     * @param {number} [options.volume] - 0..1 distance volume for this line (chatter, D34); 1 = full
+     * @param {Function|null} [options.cancelled] - asked once the clip has loaded and before its first
+     *   sample: true means the caller gave up on it (R3 m1), so it is dropped unplayed and null returned
+     * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable or if a later
+     *   play() took over while this one was loading (it then leaves the audio element alone)
+     */
+    async play(npcId, text, { delivery = null, volume = 1, cancelled = null } = {}) {
+        const seq = ++this.playSeq;
+        // A later play() owns the element once it has started: a superseded call must not set
+        // src (that fires 'emptied' on the newer clip) or play its own line over it
+        const superseded = () => seq !== this.playSeq;
+        if (!this.enabled || !text || !text.trim()) return null;
+
+        // Stop any current playback
+        this.stop();
+
+        // Select the FX profile for this speaker (clean for narrator/player/unregistered NPCs).
+        // Done before routing so the graph is built with the right chain the first time.
+        this._setActiveFXProfile(this._resolveFXProfile(npcId));
+
+        // Shared graph: MediaElement → [FX] → analyser → voiceGain (requires user gesture for ctx)
+        this._ensureAudioContext();
+
+        try {
+            const key = this._cacheKey(npcId, text, delivery);
+
+            // Check preload cache first
+            let audioUrl, blob;
+            const cached = this.preloadCache.get(key);
+
+            if (cached) {
+                // Consume from preload cache
+                this.preloadCache.delete(key);
+                ({ url: audioUrl, blob } = cached);
+            } else {
+                // Fetch from server
+                blob = await ApiClient.getTTS(npcId, text, delivery);
+                if (!blob || superseded()) return null;
+                audioUrl = URL.createObjectURL(blob);
+            }
+
+            // A clip with the voice FX baked in (X-Voice-FX-Baked) plays clean through the graph;
+            // the speaker's run-time profile stays for its unbaked clips (new lines, stand-ins)
+            if (blob && blob.voiceFxBaked) this._setActiveFXProfile(null);
+
+            this.audio.src = audioUrl;
+            this._hasSrc = true;
+            this._alignLipSync(blob, audioUrl, text); // async; portraits use text timing until it lands
+
+            // Wait for metadata to get duration
+            const duration = await new Promise((resolve, reject) => {
+                const onLoaded = () => {
+                    cleanup();
+                    resolve(Math.ceil(this.audio.duration * 1000));
+                };
+                const onError = () => {
+                    cleanup();
+                    reject(new Error('Audio load failed'));
+                };
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('Audio load timeout'));
+                }, 10000);
+
+                const cleanup = () => {
+                    this.audio.removeEventListener('loadedmetadata', onLoaded);
+                    this.audio.removeEventListener('error', onError);
+                    clearTimeout(timeout);
+                };
+
+                this.audio.addEventListener('loadedmetadata', onLoaded);
+                this.audio.addEventListener('error', onError);
+            });
+            if (superseded()) return null;
+            if (cancelled && cancelled()) { this.stop(); return null; }   // R3 m1: given up on while it loaded: never audible
+
+            this.currentText = text;
+            this.playing = true;
+            this.setDistanceGain(volume, true);   // before the first sample, so a faint line never starts loud
+
+            // Resume shared context if suspended (autoplay policy)
+            if (MusicController.context?.state === 'suspended') {
+                MusicController.context.resume().catch(() => {});
+            }
+
+            await this.audio.play();
+            if (superseded()) return null;
+
+            console.log(`[TTS] Playing for ${npcId}: "${text.substring(0, 40)}..." (${duration}ms)`);
+            return duration;
+        } catch (error) {
+            if (superseded()) return null;   // the newer play's state, not ours
+            this.playing = false;
+            console.warn('[TTS] Play failed:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Preload audio for an upcoming line (fetch but don't play)
+     * @param {string} npcId - NPC identifier
+     * @param {string} text - Dialogue text
+     * @param {Object} [options]
+     * @param {string|null} [options.delivery] - the line's #delivery: note
+     */
+    async preload(npcId, text, { delivery = null } = {}) {
+        if (!this.enabled || !text || !text.trim()) return;
+
+        const key = this._cacheKey(npcId, text, delivery);
+        if (this.preloadCache.has(key)) return;
+
+        try {
+            const blob = await ApiClient.getTTS(npcId, text, delivery);
+            if (blob) {
+                this.preloadCache.set(key, { url: URL.createObjectURL(blob), blob });
+                console.log(`[TTS] Preloaded: "${text.substring(0, 40)}..."`);
+            }
+        } catch (error) {
+            // Silently fail — preloading is best-effort
+        }
+    }
+
+    /**
+     * Stop current playback
+     */
+    stop() {
+        this.currentText = null;
+        this.lipSync = null;
+        this.lipSyncPending = null;
+        if (this.playing) {
+            this.audio.pause();
+            this.audio.currentTime = 0;
+            this.playing = false;
+        }
+        // Use removeAttribute instead of src = '' to avoid the
+        // "Invalid URI. Load of media resource failed." browser error
+        // that fires whenever an empty string is assigned to audio.src.
+        if (this._hasSrc) {
+            if (this.audio.src.startsWith('blob:')) {
+                URL.revokeObjectURL(this.audio.src);
+            }
+            this.audio.removeAttribute('src');
+            this._hasSrc = false;
+        }
+    }
+
+    /**
+     * Check if audio is currently playing
+     * @returns {boolean}
+     */
+    isPlaying() {
+        return this.playing;
+    }
+
+    /**
+     * Set callback for when audio finishes playing
+     * @param {Function} callback
+     */
+    onEnded(callback) {
+        this.onEndedCallback = callback;
+    }
+
+    /**
+     * Set volume (0.0 - 1.0) — drives MusicController voice bus (same as music widget Voice slider).
+     * @param {number} vol
+     */
+    setVolume(vol) {
+        this.volume = Math.max(0, Math.min(1, vol));
+        MusicController.setVoiceVolume(this.volume);
+        this.audio.volume = 1;
+    }
+
+    /**
+     * Distance volume for the line playing (0..1), on top of the Voice slider. A gain node between
+     * the analyser (mouth animation keeps the full signal) and the voice bus; with no Web Audio
+     * routing it falls back to the element volume. Reset to 1 by the next play() without a volume.
+     * @param {number} vol
+     * @param {boolean} [immediate] - set at once (a new line) rather than easing (following the player)
+     */
+    setDistanceGain(vol, immediate = false) {
+        const v = Number.isFinite(vol) ? Math.max(0, Math.min(1, vol)) : 1;
+        this.distanceGain = v;
+        const ctx = MusicController?.context;
+        try {
+            if (this._distanceNode && ctx) {
+                if (immediate) { this._distanceNode.gain.cancelScheduledValues(ctx.currentTime); this._distanceNode.gain.setValueAtTime(v, ctx.currentTime); }
+                else this._distanceNode.gain.setTargetAtTime(v, ctx.currentTime, 0.1);
+            }
+            else if (!this._ttsAudioRouted) this.audio.volume = v * this.volume;
+        } catch (_) { /* a gain that cannot be set leaves the line at its last volume */ }
+    }
+
+    /**
+     * Enable/disable TTS
+     * @param {boolean} enabled
+     */
+    setEnabled(enabled) {
+        this.enabled = enabled;
+        if (!enabled) this.stop();
+    }
+
+    /**
+     * Clean up resources
+     */
+    destroy() {
+        this.stop();
+        for (const { url } of this.preloadCache.values()) {
+            URL.revokeObjectURL(url);
+        }
+        this.preloadCache.clear();
+        this.onEndedCallback = null;
+
+        this._disposeFXChain();
+        try { this._mediaElementSource?.disconnect(); } catch (_) {}
+        try { this._analyser?.disconnect(); } catch (_) {}
+        this._mediaElementSource = null;
+        this._analyser = null;
+        try { this._distanceNode?.disconnect(); } catch (_) {}
+        this._distanceNode = null;
+        this._amplitudeBuffer = null;
+        this._ttsAudioRouted = false;
+        this._activeFXProfile = null;
+    }
+
+    /**
+     * Decode the line's audio and fit its mouth shapes to the loudness curve, so they change
+     * when the sounds happen rather than being spread evenly over the line. Runs beside
+     * playback; the result is only kept if that line is still the one loaded. Any failure
+     * leaves lipSync null and the portrait falls back to text timing.
+     *
+     * Reads the Blob itself: fetch() on its blob: URL is refused by the page's CSP
+     * (connect-src has no blob:).
+     * @private
+     */
+    async _alignLipSync(blob, audioUrl, text) {
+        const ctx = MusicController?.context;
+        if (!ctx?.decodeAudioData || !blob?.arrayBuffer) return;
+        // While this is set the portrait follows the live level, not the text timeline
+        // (lipSyncPending in person-chat-portraits). Cleared however the decode ends.
+        this.lipSyncPending = text;
+        try {
+            const buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
+            if (this.audio.src !== audioUrl) return; // a newer line has started
+            const envelope = envelopeFromSamples(buffer.getChannelData(0), buffer.sampleRate);
+            const timeline = alignToEnvelope(text, envelope);
+            if (timeline) this.lipSync = { text, timeline };
+        } catch (error) {
+            console.warn('[TTS] Lip-sync alignment unavailable:', error.message);
+        } finally {
+            if (this.lipSyncPending === text && this.audio.src === audioUrl) this.lipSyncPending = null;
+        }
+    }
+
+    /**
+     * How far ahead of the clip position the portrait reads its viseme timeline (ms): the
+     * audio context's output latency, or a default when the browser does not report one.
+     * Applied to the lookup only; playback is never shifted.
+     */
+    lipSyncLeadMs() {
+        return outputLeadMs(MusicController?.context || null);
+    }
+
+    /**
+     * Get current RMS amplitude of TTS audio (0.0 – 1.0).
+     * Returns 0 when not playing or Web Audio API is unavailable.
+     */
+    getAmplitude() {
+        if (!this._analyser || !this.playing) return 0;
+        this._analyser.getByteTimeDomainData(this._amplitudeBuffer);
+        let sum = 0;
+        const len = this._amplitudeBuffer.length;
+        for (let i = 0; i < len; i++) {
+            const v = (this._amplitudeBuffer[i] - 128) / 128;
+            sum += v * v;
+        }
+        return Math.sqrt(sum / len); // RMS amplitude
+    }
+
+    /**
+     * Returns true when TTS audio is above the noise-gate threshold.
+     * Only reflects TTS audio – game SFX routed through Phaser are unaffected.
+     * @param {number} threshold - Amplitude threshold (default 0.02)
+     */
+    isSpeaking(threshold = 0.02) {
+        return this.getAmplitude() > threshold;
+    }
+
+    /**
+     * Register a voice-FX profile for a speaker (an NPC id). The FX is applied whenever TTS plays
+     * for that speaker. Pass null to clear. Profile may be a preset name (see VOICE_FX_PRESETS) or
+     * an object: { highpass, lowpass, drive, ringMod:{frequency,mix}, makeup }.
+     * @param {string} speakerId
+     * @param {string|Object|null} profile
+     */
+    setVoiceFX(speakerId, profile) {
+        if (!speakerId) return;
+        if (profile) this._fxProfiles.set(speakerId, profile);
+        else this._fxProfiles.delete(speakerId);
+    }
+
+    /**
+     * Resolve a registered profile (preset name or object) to a concrete FX profile object.
+     * @private
+     */
+    _resolveFXProfile(npcId) {
+        const raw = this._fxProfiles.get(npcId);
+        if (!raw) return null;
+        if (typeof raw === 'string') return TTSManager.VOICE_FX_PRESETS[raw] || null;
+        return raw;
+    }
+
+    /**
+     * Switch the active FX profile, rebuilding the graph if it changed and the graph is live.
+     * @private
+     */
+    _setActiveFXProfile(profile) {
+        if (profile === this._activeFXProfile) return;
+        this._activeFXProfile = profile || null;
+        if (this._ttsAudioRouted) this._connectGraph();
+    }
+
+    /** @private */
+    _ensureAudioContext() {
+        if (this._ttsAudioRouted) return;
+        const ctx = MusicController?.context;
+        if (!ctx) {
+            console.warn('[TTS] MusicController.context unavailable; TTS uses element volume only');
+            this.audio.volume = this.volume;
+            return;
+        }
+        try {
+            if (!this._mediaElementSource) {
+                this._mediaElementSource = ctx.createMediaElementSource(this.audio);
+            }
+            if (!this._analyser) {
+                this._analyser = ctx.createAnalyser();
+                this._analyser.fftSize = 256;
+                this._analyser.smoothingTimeConstant = 0.2;
+                this._amplitudeBuffer = new Uint8Array(this._analyser.frequencyBinCount);
+            }
+            this._connectGraph();
+            this.audio.volume = 1;
+            this._ttsAudioRouted = true;
+        } catch (e) {
+            console.warn('[TTS] Web Audio routing unavailable, mouth animation may be disabled:', e.message);
+            // Do NOT null _mediaElementSource here: a MediaElementSource can only be created ONCE
+            // per <audio> element. If a later node constructor threw, the source is already bound —
+            // clearing the reference would make the next _ensureAudioContext() call
+            // createMediaElementSource() again → InvalidStateError, permanently killing routing.
+            // Keep the source; only reset the retryable analyser bits.
+            this._analyser = null;
+            this._amplitudeBuffer = null;
+            this.audio.volume = this.volume;
+        }
+    }
+
+    /**
+     * (Re)wire the shared graph: source → [FX chain, if any] → analyser → voiceGain.
+     * Safe to call repeatedly; disconnects existing links and rebuilds the FX chain each time.
+     * @private
+     */
+    _connectGraph() {
+        const ctx = MusicController?.context;
+        if (!ctx || !this._mediaElementSource || !this._analyser) return;
+
+        try { this._mediaElementSource.disconnect(); } catch (_) {}
+        try { this._analyser.disconnect(); } catch (_) {}
+        this._disposeFXChain();
+
+        let tail = this._mediaElementSource;
+        if (this._activeFXProfile) {
+            this._fxChain = this._buildFXChain(ctx, this._activeFXProfile);
+            if (this._fxChain) {
+                tail.connect(this._fxChain.input);
+                tail = this._fxChain.output;
+            }
+        }
+        tail.connect(this._analyser);
+        if (!this._distanceNode) {
+            this._distanceNode = ctx.createGain();
+            this._distanceNode.gain.value = this.distanceGain ?? 1;
+        }
+        try { this._distanceNode.disconnect(); } catch (_) {}
+        this._analyser.connect(this._distanceNode);
+        this._distanceNode.connect(MusicController.voiceGain);
+    }
+
+    /**
+     * Build an FX chain from a profile. Returns { input, output, nodes, oscs } or null.
+     * Chain order: input → pitchShift(dry + shifted layer) → highpass → lowpass → waveshaper(drive)
+     * → ringMod(dry/wet) → makeup → output. With lowpassAfterDrive the lowpass follows the
+     * waveshaper instead, so it also trims the drive's high-frequency grit.
+     * Every stage is optional; the whole thing degrades to a passthrough gain.
+     * @private
+     */
+    _buildFXChain(ctx, p) {
+        const nodes = [];
+        const oscs = [];
+        const push = n => { nodes.push(n); return n; };
+
+        const input = push(ctx.createGain());
+        let node = input;
+
+        if (p.pitchShift && p.pitchShift.semitones && p.pitchShift.mix > 0) {
+            node = this._buildPitchShift(ctx, node, p.pitchShift, push, oscs);
+        }
+        if (p.highpass) {
+            const hp = push(ctx.createBiquadFilter());
+            hp.type = 'highpass'; hp.frequency.value = p.highpass; hp.Q.value = 0.707;
+            node.connect(hp); node = hp;
+        }
+        const addLowpass = () => {
+            const lp = push(ctx.createBiquadFilter());
+            lp.type = 'lowpass'; lp.frequency.value = p.lowpass; lp.Q.value = 0.707;
+            node.connect(lp); node = lp;
+        };
+        if (p.lowpass && !p.lowpassAfterDrive) addLowpass();
+        if (p.drive) {
+            const ws = push(ctx.createWaveShaper());
+            ws.curve = this._makeDistortionCurve(p.drive);
+            ws.oversample = '2x';
+            node.connect(ws); node = ws;
+        }
+        if (p.lowpass && p.lowpassAfterDrive) addLowpass();
+        if (p.ringMod && p.ringMod.mix > 0) {
+            const freq = p.ringMod.frequency ?? 80;
+            const mix = Math.min(1, p.ringMod.mix);
+            const dry = push(ctx.createGain()); dry.gain.value = 1 - mix;
+            const ringIn = push(ctx.createGain()); ringIn.gain.value = 0; // baseline; oscillator swings it -1..1
+            const wet = push(ctx.createGain()); wet.gain.value = mix;
+            const sum = push(ctx.createGain());
+            const osc = ctx.createOscillator();
+            osc.type = 'sine'; osc.frequency.value = freq;
+            osc.connect(ringIn.gain); osc.start(); oscs.push(osc);
+            node.connect(dry); dry.connect(sum);
+            node.connect(ringIn); ringIn.connect(wet); wet.connect(sum);
+            node = sum;
+        }
+
+        const makeup = push(ctx.createGain());
+        makeup.gain.value = p.makeup ?? 1;
+        node.connect(makeup); node = makeup;
+
+        return { input, output: node, nodes, oscs };
+    }
+
+    /**
+     * Delay-line pitch shifter (two modulated delays, crossfaded) blended with the dry signal.
+     * It changes pitch without touching playbackRate, so a clip keeps its duration and the
+     * engine still advances on the element's ended event. Each delay's time ramps at a steady
+     * rate (1 - ratio seconds per second) and wraps once per period; the two delays are half a
+     * period apart and each one's sin² window is zero at its own wrap, so the jumps are silent
+     * and the two windows always sum to 1. The shifted layer lags by up to maxDelay seconds.
+     * cfg: { semitones, mix (shifted layer gain), dry (dry gain, default 1), maxDelay (s, default 0.1) }
+     * @private
+     */
+    _buildPitchShift(ctx, from, cfg, push, oscs) {
+        const curves = TTSManager.pitchShiftCurves(ctx.sampleRate, cfg.semitones, cfg.maxDelay);
+        const sum = push(ctx.createGain());
+        const dry = push(ctx.createGain()); dry.gain.value = cfg.dry ?? 1;
+        from.connect(dry); dry.connect(sum);
+        const wet = push(ctx.createGain()); wet.gain.value = Math.min(2, cfg.mix);
+        wet.connect(sum);
+
+        const loopSource = (data) => {
+            const buf = ctx.createBuffer(1, data.length, ctx.sampleRate);
+            buf.getChannelData(0).set(data);
+            const src = ctx.createBufferSource();
+            src.buffer = buf; src.loop = true;
+            oscs.push(src);
+            return src;
+        };
+        const sources = [];
+        for (const [ramp, window] of [[curves.rampA, curves.windowA], [curves.rampB, curves.windowB]]) {
+            const delay = push(ctx.createDelay(curves.maxDelay + 0.05));
+            delay.delayTime.value = 0;
+            const fade = push(ctx.createGain()); fade.gain.value = 0;
+            const rampSrc = loopSource(ramp); rampSrc.connect(delay.delayTime);
+            const fadeSrc = loopSource(window); fadeSrc.connect(fade.gain);
+            sources.push(rampSrc, fadeSrc);
+            from.connect(delay); delay.connect(fade); fade.connect(wet);
+        }
+        // Start every modulator on the same tick so the four loops stay phase-locked.
+        const t0 = ctx.currentTime + 0.01;
+        for (const src of sources) src.start(t0);
+        return sum;
+    }
+
+    /** @private */
+    _disposeFXChain() {
+        if (!this._fxChain) return;
+        for (const o of this._fxChain.oscs || []) {
+            try { o.stop(); } catch (_) {}
+            try { o.disconnect(); } catch (_) {}
+        }
+        for (const n of this._fxChain.nodes || []) {
+            try { n.disconnect(); } catch (_) {}
+        }
+        this._fxChain = null;
+    }
+
+    /**
+     * Standard waveshaper distortion curve. `amount` ~ 0 (clean) to ~50 (heavy).
+     * @private
+     */
+    _makeDistortionCurve(amount) {
+        const k = typeof amount === 'number' ? amount : 0;
+        const n = 44100;
+        const curve = new Float32Array(n);
+        const deg = Math.PI / 180;
+        for (let i = 0; i < n; i++) {
+            const x = (i * 2) / n - 1;
+            curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+        }
+        return curve;
+    }
+
+    /** @private */
+    _cacheKey(npcId, text, delivery = null) {
+        return delivery ? `${npcId}|${text}|${delivery}` : `${npcId}|${text}`;
+    }
+}
+
+/**
+ * Named voice-FX presets. Reference by name from a scenario NPC's voice config
+ * (e.g. "voice": { ..., "fx": "voice-distortion" }) or pass a custom object.
+ *
+ * Tuning knobs per profile:
+ *   highpass / lowpass — band-limit the voice (a tight band = telephone/radio feel)
+ *   drive              — waveshaper saturation (grit). ~0 clean, ~6 subtle, ~20 heavy
+ *   pitchShift         : { semitones, mix, dry, maxDelay }. A delay-line shifted layer (mix)
+ *                        blended with the dry voice (dry). Duration is unchanged.
+ *   lowpassAfterDrive  : true puts the lowpass after the waveshaper (trims its grit)
+ *   ringMod            — { frequency, mix }. Metallic/masked edge. mix is the most
+ *                        aggressive knob — lower it (or delete ringMod) to soften.
+ *   makeup             — output gain to compensate for level lost to filtering/drive
+ */
+TTSManager.VOICE_FX_PRESETS = {
+    // Anonymised, encrypted-comms voice: an octave-down layer under the dry voice, then a soft
+    // drive and a band limit with a faint metallic edge. Deliberately masked but still
+    // intelligible. Used for Ghost (ENTROPY), m07 and lab_tesseract_trials. The highpass sits low
+    // enough to keep the sub-octave; the lowpass follows the drive so it trims the drive's grit.
+    // Ghost (m02, m10) and the Architect (m07) now have the trailer's chain baked into their
+    // clips (tools/voice_fx/bake.py); this preset only covers their clips that are not baked.
+    'voice-distortion': {
+        pitchShift: { semitones: -12, mix: 0.65, dry: 0.75 },
+        highpass: 80, drive: 3, lowpass: 3200, lowpassAfterDrive: true,
+        ringMod: { frequency: 75, mix: 0.03 }, makeup: 1.3
+    },
+    // Clean radio/handset band with light grit, no ring mod.
+    'radio': { highpass: 500, lowpass: 3000, drive: 10, makeup: 1.5 },
+    // Heavier robotic/vocoder-ish edge.
+    'robot': { highpass: 150, lowpass: 3800, drive: 4, ringMod: { frequency: 50, mix: 0.35 }, makeup: 1.5 }
+};
+
+/**
+ * Modulation curves for the delay-line pitch shifter: one period of each delay's time (seconds)
+ * and of each delay's crossfade window. Pure, so tests can check the shapes.
+ * ratio = 2^(semitones/12); the delay changes at (1 - ratio) s/s, so a period lasts
+ * maxDelay / |1 - ratio| seconds (0.2 s for an octave down with the default 0.1 s).
+ */
+TTSManager.pitchShiftCurves = function (sampleRate, semitones, maxDelay = 0.1) {
+    const ratio = Math.pow(2, semitones / 12);
+    const rate = Math.abs(1 - ratio) || 1e-6;
+    const period = maxDelay / rate;
+    const n = Math.max(2, Math.round(period * sampleRate));
+    const rampA = new Float32Array(n), rampB = new Float32Array(n);
+    const windowA = new Float32Array(n), windowB = new Float32Array(n);
+    const down = ratio < 1;
+    for (let i = 0; i < n; i++) {
+        const a = i / n, b = (a + 0.5) % 1;
+        // Pitch down: the delay grows through the period. Pitch up: it shrinks.
+        rampA[i] = maxDelay * (down ? a : 1 - a);
+        rampB[i] = maxDelay * (down ? b : 1 - b);
+        windowA[i] = Math.sin(Math.PI * a) ** 2;
+        windowB[i] = Math.sin(Math.PI * b) ** 2;
+    }
+    return { ratio, period: n / sampleRate, maxDelay, rampA, rampB, windowA, windowB };
+};
+
+export default TTSManager;

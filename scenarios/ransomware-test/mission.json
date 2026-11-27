@@ -1,0 +1,19 @@
+{
+  "display_name": "Ransomware Impact Test",
+  "description": "Test scenario for Ransomware Display minigame mechanics.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "MAT",
+      "topic": "Malware & Attack Technologies",
+      "keywords": ["Ransomware", "Malware responses", "Incident response"]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Decision making", "Crisis response"]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "3685c5a051fb314305b31261b13f2b1b",
+  "npc": "agnieszka_duda",
+  "text": "I would log that you told me, naturally. Which is why people tell me less than they might.",
+  "voice": "Callirrhoe",
+  "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:49:02Z"
+}

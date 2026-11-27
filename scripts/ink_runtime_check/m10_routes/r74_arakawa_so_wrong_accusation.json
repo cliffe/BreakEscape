@@ -1,0 +1,57 @@
+{
+ "steps": [
+  {
+   "note": "Arakawa's security-office copy with the whodunit live: 'This room was waiting for you', the accusation taken back ('I didn't hear it'), then confirmed. He is sent to the post and the sent-back copy says 'Going'."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "security_office_entered": true
+   }
+  },
+  {
+   "talk": "aso",
+   "picks": [
+    "You're WREN",
+    "Forget I said it",
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "This room was waiting for you. Stay low.",
+    "If that's wrong, Arakawa's off the raid till you can clear him. Sure?",
+    "Okay. I didn't hear it.",
+    "You were standing right next to me. Think.",
+    "Officer Arakawa, back to the post. We'll manage down there without you."
+   ],
+   "notSaid": [
+    "They took that from a long way off."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "arakawa",
+    "wrong_accusation": true,
+    "accused": ""
+   }
+  },
+  {
+   "talk": "aso",
+   "picks": [
+    "Go on"
+   ]
+  },
+  {
+   "said": [
+    "Going."
+   ],
+   "notSaid": [
+    "This room was waiting for you."
+   ]
+  }
+ ]
+}

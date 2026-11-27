@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: m06 N-6-1: the typing indicator does nothing once the phone UI is torn down
+ok 1 - m06 N-6-1: the typing indicator does nothing once the phone UI is torn down
+  ---
+  duration_ms: 6.426478
+  ...
+# Subtest: m06 N-6-1: lines waiting to be typed are set before the tags, which can close the phone
+ok 2 - m06 N-6-1: lines waiting to be typed are set before the tags, which can close the phone
+  ---
+  duration_ms: 1.407896
+  ...
+# ✅ Room State Sync system loaded
+# ✅ Synced item removal from room data_center: architects_fund_doc
+# Subtest: m06 N-6-1: a container item's stand-in id is never sent as a room removal (was a 422)
+ok 3 - m06 N-6-1: a container item's stand-in id is never sent as a room removal (was a 422)
+  ---
+  duration_ms: 16.471234
+  ...
+# Subtest: m08 N-8-2: the text viewer darkens its white copy icons on light panels, not in the dark scheme
+ok 4 - m08 N-8-2: the text viewer darkens its white copy icons on light panels, not in the dark scheme
+  ---
+  duration_ms: 1.200134
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 361.484799
+exit 0

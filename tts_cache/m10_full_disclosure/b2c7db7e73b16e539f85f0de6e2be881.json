@@ -1,0 +1,13 @@
+{
+  "key": "b2c7db7e73b16e539f85f0de6e2be881",
+  "npc": "arakawa_post",
+  "text": "Sheriff opened the road at four. I'll still make Billings by Saturday.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:12:00Z"
+}

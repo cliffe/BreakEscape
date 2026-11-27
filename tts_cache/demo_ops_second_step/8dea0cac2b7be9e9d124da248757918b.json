@@ -1,0 +1,13 @@
+{
+  "key": "8dea0cac2b7be9e9d124da248757918b",
+  "npc": "niamh_doherty",
+  "text": "How was the weekend?",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, covering reception today. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:00:21Z"
+}

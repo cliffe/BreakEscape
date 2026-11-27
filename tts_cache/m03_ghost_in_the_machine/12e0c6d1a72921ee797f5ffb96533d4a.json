@@ -1,0 +1,13 @@
+{
+  "key": "12e0c6d1a72921ee797f5ffb96533d4a",
+  "npc": "director_netherton",
+  "text": "HaX runs you, Nightshade the technical side. Listen to both.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:50:42Z"
+}

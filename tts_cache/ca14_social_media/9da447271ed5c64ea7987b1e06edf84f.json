@@ -1,0 +1,13 @@
+{
+  "key": "9da447271ed5c64ea7987b1e06edf84f",
+  "npc": "kit_lorna_easton",
+  "text": "Turns out there's a fake account in a partner's name. Everyone's comparing notes.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:15:26Z"
+}

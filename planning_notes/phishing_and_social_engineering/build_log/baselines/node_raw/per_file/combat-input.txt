@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: fists mode: a click on an NPC or beside the player punches
+ok 1 - fists mode: a click on an NPC or beside the player punches
+  ---
+  duration_ms: 0.540244
+  ...
+# Subtest: fists mode: a click on open floor walks
+ok 2 - fists mode: a click on open floor walks
+  ---
+  duration_ms: 0.056595
+  ...
+# Subtest: the toast uses the NPC gender, else the sprite sheet, else is neutral
+ok 3 - the toast uses the NPC gender, else the sprite sheet, else is neutral
+  ---
+  duration_ms: 0.083513
+  ...
+# Subtest: the toast shows at most once every 3 s
+ok 4 - the toast shows at most once every 3 s
+  ---
+  duration_ms: 0.160597
+  ...
+# Subtest: wiring: game.js walks on an open-floor fists click; interactions.js shows the toast
+ok 5 - wiring: game.js walks on an open-floor fists click; interactions.js shows the toast
+  ---
+  duration_ms: 0.87478
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 71.092837

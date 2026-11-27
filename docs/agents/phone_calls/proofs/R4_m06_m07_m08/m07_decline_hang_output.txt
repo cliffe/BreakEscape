@@ -1,0 +1,17 @@
+game 2355 (decline_hang)
+T-30 done: rows=["Call: No caller ID"]
+fire T-20
+banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t20","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+shot decline_hang_t20_banner
+after decline: {"cur":null,"q":0,"banner":null,"bimg":null} rows=["Call: No caller ID","Missed call: No caller ID","Voicemail"]
+"opened the_architect"
+thread: "No caller ID. The line opens before you speak. | Don't look for the trace. It isn't there. | I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch. | Who am I speaking to? | Someone with a little of your attention tonight and no interest in wasting it. | There is a decision in front of you tonight. Make it however you like. I only want to see it made. | Let it hurt afterwards, not during. I expect you've been told that. | The line drops. The log shows one call: no number, no name. | ☎ | Call: No caller ID | ☎ | Missed call: No caller ID | ☎ | Voicemail | Transcript: | Busy. Of course. You've sent your team. | Transcript: | You covered Washington. San Francisco and the vendors are on your clock. | Transcript: | Did you decide with a number, or with your stomach? | A carrier tone on a channel that should not have one. Nobody on it. He calls when he chooses."
+voice bubbles: ["Transcript:\nBusy. Of course. You've sent your team.","Transcript:\nYou covered Washington. San Francisco and the vendors are on your clock.","Transcript:\nDid you decide with a number, or with your stomach?"]
+shot decline_hang_thread
+choices: ["1. (Hang up.)"]  player bubbles before: {"dom":1,"hist":["Who am I speaking to?"]}
+click: "chose Hang up"
+player bubbles after (expect none): {"dom":0,"hist":["Who am I speaking to?"]}
+thread after: null
+mg=null
+shot decline_hang_after_hangup
+architect /tts: "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "Someone with a little of your attention tonight and no interest in wasting it." "There is a decision in front of you tonight. Make it however you like. I only want to see it made." "Let it hurt afterwards, not during. I expect you've been told that." 

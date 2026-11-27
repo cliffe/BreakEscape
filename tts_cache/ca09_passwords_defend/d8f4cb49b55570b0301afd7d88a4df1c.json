@@ -1,0 +1,13 @@
+{
+  "key": "d8f4cb49b55570b0301afd7d88a4df1c",
+  "npc": "nilesh_solanki",
+  "text": "Another pallet backlog.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:02:29Z"
+}

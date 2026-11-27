@@ -1,0 +1,13 @@
+{
+  "key": "446f267468c6c5e5401409fa05d47c41",
+  "npc": "agnieszka_duda",
+  "text": "I've been hiding at my desk, Graham.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:37:04Z"
+}

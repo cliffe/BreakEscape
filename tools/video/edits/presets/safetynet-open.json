@@ -1,0 +1,39 @@
+{
+ "id": "title",
+ "type": "title",
+ "duration": 6.0,
+ "snap": true,
+ "join": {
+  "type": "cut"
+ },
+ "title": {
+  "art": "brand/c1_keyhole_hookpick6.png",
+  "svg": "brand/safetynet_licence_to_hack.svg",
+  "scale": {
+   "16:9": 12,
+   "9:16": 16,
+   "1:1": 15
+  },
+  "reveal_start": 72,
+  "reveal_frames": 30,
+  "pos": {
+   "x": 0.583,
+   "y": 0.5
+  }
+ },
+ "spoiler": {
+  "reviewed": true,
+  "shows_code": false,
+  "shows_identity": false,
+  "shows_ending": false,
+  "keypad_partial": null,
+  "note": "Veo opening clip (agent walks into the keyhole) with the title; no spoilers"
+ },
+ "clip": {
+  "file": "spy_into_frame.mp4",
+  "frames": 117,
+  "audio": {
+   "gain_db": -4
+  }
+ }
+}

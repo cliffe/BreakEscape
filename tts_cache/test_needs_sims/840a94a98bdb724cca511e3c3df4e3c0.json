@@ -1,0 +1,13 @@
+{
+  "key": "840a94a98bdb724cca511e3c3df4e3c0",
+  "npc": "neil",
+  "text": "Soon as you let me get back to it, pet.",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:06:06Z"
+}

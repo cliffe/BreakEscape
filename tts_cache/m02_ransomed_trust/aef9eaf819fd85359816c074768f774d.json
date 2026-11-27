@@ -1,0 +1,13 @@
+{
+  "key": "aef9eaf819fd85359816c074768f774d",
+  "npc": "ernesto_bautista",
+  "text": "Radio. A ward calls, I go. Then I come back here and wait for the next one.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:39:19Z"
+}

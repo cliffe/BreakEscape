@@ -1,0 +1,57 @@
+
+## R16 (puzzle chains R4-1 to R4-3). Part 1: HaX's first open at the gate (briefing only). The status check offers only 'Not yet. I'm at the gate.'; no 'inside' answers, no 'Met Robert Vance'.
+   {set {"briefing_played":true}}
+
+--- phone ---
+  Agent, status check. Are you inside the facility?
+ > Not yet. I'm at the gate.
+  Then the badge. Routine audit, came early. Once you're past him: Vance, then something in Hall 1 that isn't on their feed.
+  [chat closes]
+   [PASS] said: "Not yet. I'm at the gate."
+   [PASS] said: "Then the badge"
+   [PASS] not said: "Met Robert Vance"
+   [PASS] not said: "Beginning investigation now"
+   [PASS] not said: "I'm in. Anything new"
+
+## Part 2: Relay's card cloned and the workshop reached, then Cipher down. HaX doesn't send the player after Relay's card.
+   {set {"guard_admitted":true,"checkpoint_passed":true,"vance_met":true,"vance_provided_keycard":true,"relay_card_cloned":true,"server_room_reached":true,"operative_cipher_defeated":true,"operatives_defeated":1,"plant_reader_seen":true,"fingerprint_kit_found":true,"vance_spoken":true}}
+
+--- phone ---
+     (6 options)
+ > I've put one of their people down.
+  One down. Check what he dropped.
+  And the hall doesn't care who's winning. Watch the hydrogen panel.
+     (5 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "One down. Check what he dropped."
+   [PASS] not said: "Relay's the one carrying a workshop card"
+
+## Part 3: kit and Vance's print in hand. The plant-reader hint and 'Where do I stand?' say to use it, not to go back for it.
+   {set {"vance_print_lifted":true,"anomaly_detected":true,"attack_mechanism_known":true,"all_flags_in":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+
+--- phone ---
+     (6 options)
+ > How do I get through the plant-room reader?
+  You've got his print. Put it on the reader in Hall 2. That's all it checks for.
+     (5 options)
+ > Where do I stand?
+  You know how they did it. The plant room's off Hall 2, and its reader wants Vance's print.
+  You've got it. Use it on the reader.
+     (5 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+     (5 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "You've got his print. Put it on the reader in Hall 2."
+   [PASS] said: "You've got it. Use it on the reader."
+   [PASS] not said: "duty panel in Hall 1"
+
+[stats] spoken/narrated lines 10, choices 7, longest run without a choice 2 (phone); runs>=6: 
+[result] all expectations met

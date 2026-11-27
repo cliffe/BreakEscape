@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: normaliseSpriteStyle reads colours and clamps values; empty blocks are null
+ok 1 - normaliseSpriteStyle reads colours and clamps values; empty blocks are null
+  ---
+  duration_ms: 3.06784
+  ...
+# Subtest: the flicker is a short two-dip burst, at most two flashes every 2.5 s
+ok 2 - the flicker is a short two-dip burst, at most two flashes every 2.5 s
+  ---
+  duration_ms: 0.569493
+  ...
+# Subtest: the style multiplies the engine alpha and follows its changes (hide, reveal, fades)
+ok 3 - the style multiplies the engine alpha and follows its changes (hide, reveal, fades)
+  ---
+  duration_ms: 0.79242
+  ...
+# Subtest: flicker dips the alpha briefly, then recovers; still under reduced motion
+ok 4 - flicker dips the alpha briefly, then recovers; still under reduced motion
+  ---
+  duration_ms: 1.93753
+  ...
+# Subtest: glow uses postFX on WebGL, is removed with the sprite, and is skipped on Canvas
+ok 5 - glow uses postFX on WebGL, is removed with the sprite, and is skipped on Canvas
+  ---
+  duration_ms: 0.453433
+  ...
+# Subtest: the light: none when hidden, dimmer when knocked out, follows the flicker
+ok 6 - the light: none when hidden, dimmer when knocked out, follows the flicker
+  ---
+  duration_ms: 0.312583
+  ...
+# Subtest: lighting stamps the glow for styled NPCs in the room being drawn only
+ok 7 - lighting stamps the glow for styled NPCs in the room being drawn only
+  ---
+  duration_ms: 0.733587
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 154.597468

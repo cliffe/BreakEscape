@@ -1,0 +1,29 @@
+{
+  "display_name": "Test: Network Segmentation Map",
+  "description": "Test scenario for MG-04 — Network Segmentation Map. Players review a hospital network topology with incomplete zone segmentation and make the decision to sever the enterprise-to-clinical link.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Network Security",
+      "keywords": ["Network segmentation", "Firewall rules", "Legacy exception rules", "Zone isolation"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Security Operations & Incident Management",
+      "keywords": ["Incident response", "Network isolation", "Ransomware response", "Isolation decision"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Cyber Physical Systems",
+      "keywords": ["Clinical network", "Safety-critical systems", "EHR availability", "Infusion pump fleet"]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk Management & Governance",
+      "keywords": ["Security-safety trade-off", "Risk assessment", "Clinical consequence", "Dual-use decision"]
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+{
+  "scenario_id": "test_event_cascade",
+  "scenario_name": "Test: Event-Driven NPC Cascades",
+  "scenario_brief": "EVENT CASCADE TEST (Phase 1-2)\n\nThis scenario tests event-driven NPC state transitions and multi-NPC reactions to global variable changes.\n\nTEST PROCEDURE:\n\nPART 1 - Single Event Trigger:\n1. Game starts with three NPCs: Patient (bed), Nurse (patrol), Manager (office)\n2. Interact with PATIENT BED\n3. This sets 'patient_alert' = true\n4. OBSERVE:\n   • Patient NPC plays \"alert\" dialogue\n   • Nurse STOPS patrol and walks to patient bed\n   • Manager receives alert message in console log\n\nPART 2 - Secondary Cascade:\n5. Interact with ALARM BUTTON\n6. This sets 'major_incident' = true\n7. OBSERVE:\n   • All NPCs get updated dialogue\n   • Nurse SPEEDS UP (setPatrolSpeed: 150)\n   • Nurse REDUCES dwelling time (setDwellMultiplier: 0.3)\n   • Patient state changes to 'critical'\n   • Color-coded narrative message appears\n\nEXPECTED BEHAVIOR:\n- Global variable changes broadcast to all listening NPCs\n- Each NPC reacts according to eventMappings\n- Multiple actions execute in sequence (setGlobal → state change → dialogue)\n- Condition guards prevent duplicate reactions\n- onceOnly flag prevents repeated firing\n\nTEST DURATION: 2-3 minutes\n\nKEY VALIDATION:\n✓ Initial event triggers single NPC response\n✓ Nurse patrol override works (goToAndStay)\n✓ Secondary event triggers multi-NPC cascade\n✓ Speed/dwell overrides take effect immediately\n✓ All NPCs receive and react to broadcasts\n✓ Conditions prevent unwanted triggers",
+  "endGoal": "Verify event cascades trigger coordinated multi-NPC responses.",
+  "startRoom": "cascade_test_room",
+  "globalVariables": {
+    "patient_alert": false,
+    "major_incident": false,
+    "patient_state": "stable",
+    "nurse_speed": 80
+  },
+  "rooms": {
+    "cascade_test_room": {
+      "type": "room_hospital_ward",
+      "door_sign": "Event Cascade Test",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "test_patient",
+          "displayName": "Test Patient",
+          "npcType": "person",
+          "position": { "x": 2, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_event_cascade/ink/test_patient.ink.json",
+          "currentKnot": "stable",
+          "voice": {
+            "name": "Kore",
+            "style": "Frightened hospital patient, breathless and distressed.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "facePlayer": false,
+            "immovable": true
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:patient_alert",
+              "condition": "value === true",
+              "onceOnly": true,
+              "targetKnot": "alert_state",
+              "setGlobal": { "patient_state": "alert" },
+              "bark": "Something's wrong, please help!"
+            },
+            {
+              "eventPattern": "global_variable_changed:major_incident",
+              "condition": "value === true",
+              "onceOnly": true,
+              "targetKnot": "critical_state",
+              "setGlobal": { "patient_state": "critical" }
+            }
+          ]
+        },
+        {
+          "id": "test_nurse_cascade",
+          "displayName": "Cascade Test Nurse",
+          "npcType": "person",
+          "position": { "x": 6, "y": 3 },
+          "spriteSheet": "female_security_guard_v2",
+          "storyPath": "scenarios/test_event_cascade/ink/test_cascade_nurse.ink.json",
+          "currentKnot": "patrol_idle",
+          "voice": {
+            "name": "Aoede",
+            "style": "Calm, professional nurse — composed under pressure, clipped and efficient.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "pauseForPlayer": false,
+              "waypoints": [
+                { "x": 6, "y": 3, "dwellTime": 2000 },
+                { "x": 8, "y": 6, "dwellTime": 3000 },
+                { "x": 3, "y": 3, "dwellTime": 2000 }
+              ],
+              "waypointMode": "sequential",
+              "loop": true
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:patient_alert",
+              "condition": "value === true",
+              "onceOnly": true,
+              "barkDelay": 800,
+              "targetKnot": "patient_alert_response",
+              "patrolOverride": {
+                "targetTile": { "x": 2, "y": 5 },
+                "speed": 120,
+                "stopOnArrival": true
+              },
+              "bark": "I'm coming!"
+            },
+            {
+              "eventPattern": "global_variable_changed:major_incident",
+              "condition": "value === true",
+              "onceOnly": true,
+              "barkDelay": 800,
+              "targetKnot": "incident_response",
+              "setPatrolSpeed": 150,
+              "setDwellMultiplier": 0.3,
+              "bark": "MAJOR INCIDENT DECLARED"
+            }
+          ]
+        },
+        {
+          "id": "test_manager",
+          "displayName": "Test Manager",
+          "npcType": "person",
+          "position": { "x": 15, "y": 3 },
+          "spriteSheet": "male_nerd_v2",
+          "storyPath": "scenarios/test_event_cascade/ink/test_manager.ink.json",
+          "currentKnot": "idle",
+          "voice": {
+            "name": "Charon",
+            "style": "Slightly flustered middle manager, Australian accent, trying to sound authoritative.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:patient_alert",
+              "condition": "value === true",
+              "onceOnly": true,
+              "barkDelay": 1600,
+              "bark": "Patient alert received"
+            },
+            {
+              "eventPattern": "global_variable_changed:major_incident",
+              "condition": "value === true",
+              "onceOnly": true,
+              "barkDelay": 1600,
+              "conversationMode": "person-chat",
+              "targetKnot": "escalation_protocol",
+              "bark": "ESCALATION PROTOCOL ACTIVATED"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Test Instructions",
+          "position": { "x": 2, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "text": "EVENT CASCADE TEST\n\nPART 1: Initial Trigger\n---\n1. Observe nurse on patrol loop\n2. Click PATIENT BED (lower left)\n3. This sets: patient_alert = true\n4. WATCH:\n   ✓ Patient says: \"Something's wrong!\"\n   ✓ Nurse STOPS patrol\n   ✓ Nurse walks to patient (coordinates 2,5)\n   ✓ Nurse says: \"I'm coming!\"\n   ✓ Manager says: \"Patient alert received\"\n\nPART 2: Cascade Trigger\n---\n5. Click ALARM BUTTON (center)\n6. This sets: major_incident = true\n7. WATCH:\n   ✓ Patient's state changes to critical\n   ✓ Nurse RESUMES patrol (from patient location)\n   ✓ Nurse moves FASTER (150 px/s vs 120)\n   ✓ Nurse pauses LESS at stations (0.3x dwell)\n   ✓ Nurse says: \"MAJOR INCIDENT DECLARED\"\n   ✓ Manager says: \"ESCALATION PROTOCOL ACTIVATED\"\n\nKEY OBSERVATIONS:\n- All NPCs hear broadcasts of variable changes\n- Each NPC reacts per their eventMappings\n- Multiple systems coordinate (patrol + speed + state)\n- Order of dialogue indicates timing/sequencing"
+        },
+        {
+          "type": "pc",
+          "id": "patient_bed",
+          "name": "Patient Bed",
+          "position": { "x": 2, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A hospital bed with a patient looking distressed.",
+          "locked": false,
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "patient_alert", "value": true },
+            { "type": "emit_event", "event_name": "patient_bed_interaction" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "alarm_button",
+          "name": "RED ALARM BUTTON",
+          "position": { "x": 5, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A large red emergency alarm button on the wall.",
+          "locked": false,
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "major_incident", "value": true },
+            { "type": "emit_event", "event_name": "major_incident_triggered" }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "Cascade Test Legend",
+          "position": { "x": 8, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "text": "NPC POSITIONS:\n- Patient: (2,5) — lower left bed\n- Nurse: (6,3) — patrol route\n- Manager: (15,3) — right side\n\nINTERACTIVE OBJECTS:\n- Patient Bed (2,5): Triggers patient_alert event\n- Red Button (5,5): Triggers major_incident event\n\nEVENT FLOW:\npatient_alert → Nurse overrides patrol → walks to (2,5)\nmajor_incident → Nurse speed up + dwell down\n\nVALIDATION:\n✓ Multiple NPCs react independently\n✓ Conditions are evaluated correctly\n✓ onceOnly prevents duplicate responses\n✓ Cascade effects compound (both events = full response)"
+        }
+      ]
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "obj_cascade_test",
+      "title": "Test Event Cascades",
+      "description": "Trigger events and observe coordinated NPC reactions.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "task_observe_patrol",
+          "title": "Observe normal patrol",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_trigger_alert",
+          "title": "Trigger patient alert",
+          "type": "unlock_object",
+          "targetObject": "patient_bed",
+          "status": "active"
+        },
+        {
+          "taskId": "task_observe_first_cascade",
+          "title": "Observe first cascade",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_trigger_incident",
+          "title": "Trigger major incident",
+          "type": "unlock_object",
+          "targetObject": "alarm_button",
+          "status": "active"
+        },
+        {
+          "taskId": "task_observe_second_cascade",
+          "title": "Observe full cascade",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "7fb65fe94af0ededdecf09f0966cc151",
+  "npc": "kit_agnieszka_duda",
+  "text": "Graham, that supplier's replied already, thanking you for the list. Now they want each buyer's direct line.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:39:41Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e74153ff4eabfea2449612a13384c163",
+  "npc": "pharmacist_npc",
+  "text": "Right. Where's Bed 2's chart?",
+  "voice": "Enceladus",
+  "style": "British Pakistani clinical pharmacist in his early thirties, professional and brisk. Speak with a consistent Bradford, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:53:06Z"
+}

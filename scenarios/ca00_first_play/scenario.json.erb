@@ -1,0 +1,345 @@
+{
+  "scenario_id": "ca00_first_play",
+  "scenario_name": "Before you start: how this works",
+  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. This is a short brief before your first episode: how the course works, what is recorded, and how to report. Nothing real is asked for and there is nothing to get wrong.",
+  "endGoal": "Read the brief at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "npcThoughts": false,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "finish_brief_aim",
+      "title": "Read the brief",
+      "description": "Read the brief at the kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_core_00_first_play_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "You're set",
+        "body": "Start your first episode whenever you're ready."
+      },
+      "tasks": [
+        {
+          "taskId": "say_hello",
+          "title": "Say hello to a colleague",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "complete_brief",
+          "title": "Read the brief",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "se_awareness_records": [],
+    "episode_core_00_first_play_state": {},
+    "episode_core_00_first_play_done": false,
+    "kit_ep": "ca00"
+  },
+  "ttsPregenerateChatter": true,
+  "social": {
+    "awarenessEpisode": {
+      "id": "core_00_first_play",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "brief",
+      "durationTargetMin": 5,
+      "scopeNote": "An authorised exercise at Quayholt Insurance, a fictional company. Everything here is practice; nothing you do leaves the game.",
+      "stages": [
+        "brief"
+      ],
+      "conclusionTaskId": "complete_brief",
+      "doneGlobal": "episode_core_00_first_play_done",
+      "oncePerLearner": true,
+      "strings": {
+        "briefCards": [
+          {
+            "heading": "Welcome",
+            "text": "This is practice at Quayholt Insurance, a company we made up for the course. Nothing here is real, and nobody is trying to catch you out.\n\nYou will meet the kinds of messages, calls and pages that turn up in a normal working day, and decide what you would do.\n\nThis brief takes about 5 minutes. Most episodes after it take about 15 minutes; the spot-it versions are shorter."
+          },
+          {
+            "heading": "How it works",
+            "text": "The kiosk steps through a short brief and then a first half. In most episodes you play the attacker and build the attack from a company's public details; in a few you make the everyday choices yourself and see where they lead. Then comes a scored defend half where you sort the post, and a debrief.\n\nIn the defend half you choose Trust, Report, Delete, and sometimes Verify, then tick what gave each item away. Only the defend half is scored. The first half never is."
+          },
+          {
+            "heading": "Nothing real is asked for",
+            "text": "The course never asks for your real password, bank details or personal information. Any sign-in page or form you see is a model, filled with made-up details, and it captures nothing."
+          },
+          {
+            "heading": "What we record, and who sees it",
+            "text": "We record the items, your verdicts, the flags you tick and the times. The record holds no free text.\n\nYour game is linked to your account. Your organiser, the person who runs this course for your team, can see your name, email, progress and results. For how your organisation handles that information, see your organisation's privacy notice."
+          },
+          {
+            "heading": "Why anyone targets you",
+            "text": "Most attackers are criminals after money, and they want what your access opens: your email, your logins, the data you can see. It is rarely about you in particular.\n\nMost attacks begin with a message, a call or a stolen password, in the middle of normal work."
+          },
+          {
+            "heading": "The habit to keep",
+            "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+          },
+          {
+            "heading": "Report, and no blame",
+            "text": "For emails, use the Report button. For anything else, a call, a text, a visitor, a mistake, tell the security team or the service desk.\n\nReporting when you are unsure is never wrong, and reporting a mistake quickly is thanked, not blamed. The way to report here shows in every debrief."
+          }
+        ],
+        "briefDone": "Got it",
+        "finishedHeading": "Brief read",
+        "finished": "Close the kiosk to carry on.",
+        "alreadySeen": "You have seen this already. Start your first episode whenever you are ready."
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "playlist": "peacefolk",
+        "fade": false,
+        "_comment": "Cyber Aware score: the PeaceFolk tracks (D331)"
+      }
+    ]
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "anjali_rao",
+          "voice": {
+            "name": "Kore",
+            "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "displayName": "Anjali Rao",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "anjali_rao",
+          "spriteTalk": "assets/characters/anjali_rao_talk.png",
+          "spriteVisemes": "assets/characters/anjali_rao_visemes.png",
+          "storyPath": "scenarios/ca00_first_play/ink/anjali_rao.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_core_00_first_play_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "complete_brief"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_niamh_doherty",
+              "onceOnly": true,
+              "completeTask": "say_hello"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_darren_price",
+              "onceOnly": true,
+              "completeTask": "say_hello"
+            }
+          ]
+        },
+        {
+          "id": "kit_darren_price",
+          "displayName": "Darren Price",
+          "person": "darren_price",
+          "npcType": "person",
+          "position": {
+            "x": 2.5,
+            "y": 7.0
+          },
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/darren_price_ambient.json",
+          "currentKnot": "ca00",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2.5,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Orus",
+            "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          }
+        },
+        {
+          "id": "kit_niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "person": "niamh_doherty",
+          "npcType": "person",
+          "position": {
+            "x": 4.0,
+            "y": 7.0
+          },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/niamh_doherty_ambient.json",
+          "currentKnot": "ca00",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.0,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Leda",
+            "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 55
+            }
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with a short brief for new learners, ready to read.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_core_00_first_play_done",
+              "value": "A touch-screen kiosk. The brief has been read."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "core_00_first_play"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2
+          }
+        }
+      ]
+    }
+  }
+}

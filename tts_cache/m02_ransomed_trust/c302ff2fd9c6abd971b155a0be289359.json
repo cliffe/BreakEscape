@@ -1,0 +1,13 @@
+{
+  "key": "c302ff2fd9c6abd971b155a0be289359",
+  "npc": "receptionist",
+  "text": "There's a fella on night security. Plain suit, no uniform, no lanyard from us. Very polite. Very.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

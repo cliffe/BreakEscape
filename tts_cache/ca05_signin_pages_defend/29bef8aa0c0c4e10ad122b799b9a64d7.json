@@ -1,0 +1,13 @@
+{
+  "key": "29bef8aa0c0c4e10ad122b799b9a64d7",
+  "npc": "kit_anjali_rao",
+  "text": "The alerts keep flagging lookalike sign-in pages. They're getting harder to tell apart.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:46Z"
+}

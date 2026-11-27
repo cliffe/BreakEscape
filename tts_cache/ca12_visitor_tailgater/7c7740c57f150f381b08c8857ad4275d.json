@@ -1,0 +1,13 @@
+{
+  "key": "7c7740c57f150f381b08c8857ad4275d",
+  "npc": "lorna_easton",
+  "text": "Nobody's in trouble for slowing a pushy visitor down.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:48Z"
+}

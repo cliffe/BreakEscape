@@ -1,0 +1,13 @@
+{
+  "key": "51c1802e08bdd77604d9a3973791bc01",
+  "npc": "ama_owusu",
+  "text": "His PC blocks new devices, but an administrator's session let it through. It typed as if it were Graham, and now you can see the office network from his desk. That's a foothold. Close the window; the demo stops there.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:01:15Z"
+}

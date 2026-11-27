@@ -1,0 +1,32 @@
+TAP version 13
+# ⚔️ NPC calm_clerk hostile: false → false
+# ⚔️ State unchanged for calm_clerk (already false), skipping event
+# Subtest: a hurt hostile that is not KO is calm and at full health after the reset
+ok 1 - a hurt hostile that is not KO is calm and at full health after the reset
+  ---
+  duration_ms: 3.166069
+  ...
+# Subtest: an NPC the scenario starts hostile goes back to hostile, at full health
+ok 2 - an NPC the scenario starts hostile goes back to hostile, at full health
+  ---
+  duration_ms: 0.258486
+  ...
+# Subtest: hostility restored from a save but never loaded is reset too
+ok 3 - hostility restored from a save but never loaded is reset too
+  ---
+  duration_ms: 0.277651
+  ...
+# Subtest: game-over Restart resets and saves before it reloads
+ok 4 - game-over Restart resets and saves before it reloads
+  ---
+  duration_ms: 0.383963
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 119.158797

@@ -1,0 +1,13 @@
+{
+  "key": "153c0f9a2293ef84f1a659fb9424bf70",
+  "npc": "narrator",
+  "text": "HaX is folded into the corner with a coffee she has let go stone cold. Off the wire, she is smaller than she sounds on it.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:45:26Z"
+}

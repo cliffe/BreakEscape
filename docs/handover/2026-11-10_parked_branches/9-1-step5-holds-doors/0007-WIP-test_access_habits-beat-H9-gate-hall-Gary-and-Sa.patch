@@ -1,0 +1,956 @@
+From 52ebd26506a74421301ddf7072ab4823982e581b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:50:43 +0000
+Subject: [PATCH 7/8] WIP: test_access_habits beat H9 (gate hall, Gary and
+ Sara)
+
+Scenario, rooms, guards, mappings and dungeon graph are in and H9 passed a browser run
+(game 133). Incomplete: PLAYTEST.md has no H9 section and its validator expectations are
+not updated; the H1 to H8 rerun stopped inside H8; the report is not written.
+---
+ .../test_access_habits/dungeon_graph.html     |  86 ++++-
+ .../test_access_habits/dungeon_graph.json     |  77 +++++
+ scenarios/test_access_habits/dungeon_graph.md |  84 ++++-
+ .../test_access_habits/scenario.json.erb      | 323 +++++++++++++++++-
+ 4 files changed, 532 insertions(+), 38 deletions(-)
+
+diff --git a/scenarios/test_access_habits/dungeon_graph.html b/scenarios/test_access_habits/dungeon_graph.html
+index b45986e09..8fd23bf99 100644
+--- a/scenarios/test_access_habits/dungeon_graph.html
++++ b/scenarios/test_access_habits/dungeon_graph.html
+@@ -71,7 +71,7 @@
+   <h1>test_access_habits — dependency graph</h1>
+   <p class="sub">TEST: Access model awareness and habits
+ 
+-A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Eight beats, each with a sign.…</p>
++A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Nine beats, each with a sign.…</p>
+   <div class="tab-bar">
+     <button class="tab-btn active" data-tab="puzzle"     onclick="showTab('puzzle',this)">Puzzle Graph</button>
+     <button class="tab-btn"        data-tab="story"      onclick="showTab('story',this)">Story Aims</button>
+@@ -138,13 +138,13 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+     </div>
+     <table>
+       <tr><th>Aims (story objectives)</th><td class="val">1</td></tr>
+-      <tr><th>Total tasks</th><td class="val">8</td></tr>
+-      <tr><th>Optional tasks</th><td class="val">0 / 8</td></tr>
++      <tr><th>Total tasks</th><td class="val">9</td></tr>
++      <tr><th>Optional tasks</th><td class="val">0 / 9</td></tr>
+       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
+       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
+-      <tr><th>Physical locks (puzzle)</th><td class="val">9</td></tr>
+-      <tr><th>Rooms</th><td class="val">9</td></tr>
+-      <tr><th>Puzzle nodes / edges</th><td class="val">29 / 99</td></tr>
++      <tr><th>Physical locks (puzzle)</th><td class="val">11</td></tr>
++      <tr><th>Rooms</th><td class="val">12</td></tr>
++      <tr><th>Puzzle nodes / edges</th><td class="val">36 / 106</td></tr>
+       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
+     </table>
+   </div>
+@@ -173,6 +173,10 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   node_start(("▶"))
+   node_start --> lobby
+ 
++  door_store_a["Store A<br/>RFID lock"]
++  store_a("Store A")
++  door_store_b["Store B<br/>RFID lock<br/>gate: not held by sara"]
++  store_b("Store B")
+   lock_dana_pc["Dana's PC<br/>Sign-in"]
+   lock_ian_pc["Ian's PC<br/>Sign-in"]
+   lock_omar_pc["Omar's PC<br/>Sign-in"]
+@@ -182,6 +186,9 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   lock_lena_pc["Lena's PC<br/>Sign-in"]
+   lock_tom_pc["Tom's PC<br/>Sign-in"]
+   lock_tom_locker["Gym locker<br/>Password lock"]
++  card_store_a_badge{"Store A badge<br/>(Gary Whitlock)"}
++  gate_hall("Gate hall")
++  card_store_b_badge{"Store B badge<br/>(Sara Quinn)"}
+   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+   dana_room("Dana")
+   signin_ian{"Ian Shaw sign-in<br/>(ishaw)"}
+@@ -203,6 +210,8 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   clue_password_memo{"IT notice"}
+   lobby("Lobby")
+ 
++  door_store_a --> store_a
++  door_store_b --> store_b
+   dana_room --> lock_dana_pc
+   ian_room --> lock_ian_pc
+   omar_room --> lock_omar_pc
+@@ -212,6 +221,10 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   lena_room --> lock_lena_pc
+   tom_room --> lock_tom_pc
+   tom_room --> lock_tom_locker
++  gate_hall --> card_store_a_badge
++  card_store_a_badge --> door_store_a
++  gate_hall --> card_store_b_badge
++  card_store_b_badge --> door_store_b
+   dana_room --> signin_dana
+   signin_dana --> lock_dana_pc
+   signin_dana --> lock_ian_pc
+@@ -301,11 +314,12 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
+ 
+-  class lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
+-  class signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+-  class dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
++  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+   class clue_mei_photo,clue_mei_calendar,clue_password_memo item
+   class node_start start`,
+       story:      `flowchart TD
+@@ -349,6 +363,10 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   node_start(("▶"))
+   node_start --> lobby
+ 
++  door_store_a["Store A<br/>RFID lock"]
++  store_a("Store A")
++  door_store_b["Store B<br/>RFID lock<br/>gate: not held by sara"]
++  store_b("Store B")
+   lock_dana_pc["Dana's PC<br/>Sign-in"]
+   lock_ian_pc["Ian's PC<br/>Sign-in"]
+   lock_omar_pc["Omar's PC<br/>Sign-in"]
+@@ -358,6 +376,9 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   lock_lena_pc["Lena's PC<br/>Sign-in"]
+   lock_tom_pc["Tom's PC<br/>Sign-in"]
+   lock_tom_locker["Gym locker<br/>Password lock"]
++  card_store_a_badge{"Store A badge<br/>(Gary Whitlock)"}
++  gate_hall("Gate hall")
++  card_store_b_badge{"Store B badge<br/>(Sara Quinn)"}
+   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+   dana_room("Dana")
+   signin_ian{"Ian Shaw sign-in<br/>(ishaw)"}
+@@ -380,6 +401,8 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   lobby("Lobby")
+   aim_habits_beats{{"Run the habits beats"}}
+ 
++  door_store_a --> store_a
++  door_store_b --> store_b
+   dana_room --> lock_dana_pc
+   ian_room --> lock_ian_pc
+   omar_room --> lock_omar_pc
+@@ -389,6 +412,10 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   lena_room --> lock_lena_pc
+   tom_room --> lock_tom_pc
+   tom_room --> lock_tom_locker
++  gate_hall --> card_store_a_badge
++  card_store_a_badge --> door_store_a
++  gate_hall --> card_store_b_badge
++  card_store_b_badge --> door_store_b
+   dana_room --> signin_dana
+   signin_dana --> lock_dana_pc
+   signin_dana --> lock_ian_pc
+@@ -478,11 +505,12 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
+ 
+-  class lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
+-  class signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+-  class dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
++  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+   class clue_mei_photo,clue_mei_calendar,clue_password_memo item
+   class aim_habits_beats aim
+   class node_start start`,
+@@ -515,6 +543,9 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   mei_room("Mei")
+   lena_room("Lena")
+   tom_room("Tom")
++  gate_hall("Gate hall")
++  store_a["Store A<br/>(locked)"]
++  store_b["Store B<br/>(locked)"]
+ 
+   lobby --> dana_room
+   lobby --> ian_room
+@@ -523,9 +554,13 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
++  gate_hall --> store_a
++  gate_hall --> store_b
+ 
+-  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room room
++  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
++  class store_a,store_b lock
+   class node_start start`,
+       contents:   `flowchart TD
+ 
+@@ -556,6 +591,9 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   mei_room("Mei")
+   lena_room("Lena")
+   tom_room("Tom")
++  gate_hall("Gate hall")
++  store_a["Store A<br/>(locked)"]
++  store_b["Store B<br/>(locked)"]
+   rc_sign_lobby_1{"Sign: Start here"}
+   rc_npc_rowan_price_2("Rowan Price")
+   rc_dana_pc_3{"Dana's PC"}
+@@ -596,6 +634,11 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   rc_locker_note_38{"Note on the locker"}
+   rc_sign_h7_39{"Sign: H7 Reused password"}
+   rc_npc_tom_fletcher_40("Tom Fletcher")
++  rc_sign_h9_41{"Sign: H9 Holds doors, and does not"}
++  rc_npc_gary_whitlock_42("Gary Whitlock")
++  rc_npc_sara_quinn_43("Sara Quinn")
++  rc_sign_store_a_44{"Sign: Store A"}
++  rc_sign_store_b_45{"Sign: Store B"}
+ 
+   lobby --> dana_room
+   lobby --> ian_room
+@@ -604,7 +647,10 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
++  gate_hall --> store_a
++  gate_hall --> store_b
+   lobby --> rc_sign_lobby_1
+   lobby --> rc_npc_rowan_price_2
+   dana_room --> rc_dana_pc_3
+@@ -645,10 +691,16 @@ A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, secti
+   tom_room --> rc_locker_note_38
+   tom_room --> rc_sign_h7_39
+   tom_room --> rc_npc_tom_fletcher_40
+-
+-  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room room
+-  class rc_sign_lobby_1,rc_dana_pc_3,rc_dana_coffee_4,rc_sign_h1_5,rc_ian_pc_7,rc_ian_coffee_8,rc_sign_h2_9,rc_omar_pc_11,rc_omar_coffee_12,rc_sign_h3_13,rc_priya_pc_15,rc_priya_coffee_16,rc_sign_h4_17,rc_kai_pc_19,rc_kai_coffee_20,rc_sign_h5_21,rc_mei_pc_23,rc_mei_coffee_24,rc_mei_photo_25,rc_mei_calendar_26,rc_password_memo_27,rc_sign_h6_28,rc_lena_pc_30,rc_lena_coffee_31,rc_sign_h8_32,rc_tom_pc_34,rc_tom_coffee_35,rc_tom_kit_list_37,rc_locker_note_38,rc_sign_h7_39 item
+-  class rc_npc_rowan_price_2,rc_npc_dana_reyes_6,rc_npc_ian_shaw_10,rc_npc_omar_haddad_14,rc_npc_priya_nair_18,rc_npc_kai_brennan_22,rc_npc_mei_lin_29,rc_npc_lena_fox_33,rc_npc_tom_fletcher_40 npc
++  gate_hall --> rc_sign_h9_41
++  gate_hall --> rc_npc_gary_whitlock_42
++  gate_hall --> rc_npc_sara_quinn_43
++  store_a --> rc_sign_store_a_44
++  store_b --> rc_sign_store_b_45
++
++  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
++  class store_a,store_b lock
++  class rc_sign_lobby_1,rc_dana_pc_3,rc_dana_coffee_4,rc_sign_h1_5,rc_ian_pc_7,rc_ian_coffee_8,rc_sign_h2_9,rc_omar_pc_11,rc_omar_coffee_12,rc_sign_h3_13,rc_priya_pc_15,rc_priya_coffee_16,rc_sign_h4_17,rc_kai_pc_19,rc_kai_coffee_20,rc_sign_h5_21,rc_mei_pc_23,rc_mei_coffee_24,rc_mei_photo_25,rc_mei_calendar_26,rc_password_memo_27,rc_sign_h6_28,rc_lena_pc_30,rc_lena_coffee_31,rc_sign_h8_32,rc_tom_pc_34,rc_tom_coffee_35,rc_tom_kit_list_37,rc_locker_note_38,rc_sign_h7_39,rc_sign_h9_41,rc_sign_store_a_44,rc_sign_store_b_45 item
++  class rc_npc_rowan_price_2,rc_npc_dana_reyes_6,rc_npc_ian_shaw_10,rc_npc_omar_haddad_14,rc_npc_priya_nair_18,rc_npc_kai_brennan_22,rc_npc_mei_lin_29,rc_npc_lena_fox_33,rc_npc_tom_fletcher_40,rc_npc_gary_whitlock_42,rc_npc_sara_quinn_43 npc
+   class rc_tom_locker_36 container
+   class node_start start`
+     };
+diff --git a/scenarios/test_access_habits/dungeon_graph.json b/scenarios/test_access_habits/dungeon_graph.json
+index 66440c5c8..6566eaf21 100644
+--- a/scenarios/test_access_habits/dungeon_graph.json
++++ b/scenarios/test_access_habits/dungeon_graph.json
+@@ -2,6 +2,30 @@
+   "scenario": "test_access_habits",
+   "start_room": "lobby",
+   "nodes": [
++    {
++      "id": "door_store_a",
++      "label": "Store A<br/>RFID lock",
++      "kind": "lock",
++      "optional": false
++    },
++    {
++      "id": "store_a",
++      "label": "Store A",
++      "kind": "room",
++      "optional": false
++    },
++    {
++      "id": "door_store_b",
++      "label": "Store B<br/>RFID lock<br/>gate: not held by sara",
++      "kind": "lock",
++      "optional": false
++    },
++    {
++      "id": "store_b",
++      "label": "Store B",
++      "kind": "room",
++      "optional": false
++    },
+     {
+       "id": "lock_dana_pc",
+       "label": "Dana's PC<br/>Sign-in",
+@@ -56,6 +80,24 @@
+       "kind": "lock",
+       "optional": false
+     },
++    {
++      "id": "card_store_a_badge",
++      "label": "Store A badge<br/>(Gary Whitlock)",
++      "kind": "key",
++      "optional": false
++    },
++    {
++      "id": "gate_hall",
++      "label": "Gate hall",
++      "kind": "room",
++      "optional": false
++    },
++    {
++      "id": "card_store_b_badge",
++      "label": "Store B badge<br/>(Sara Quinn)",
++      "kind": "key",
++      "optional": false
++    },
+     {
+       "id": "signin_dana",
+       "label": "Dana Reyes sign-in<br/>(dreyes)",
+@@ -178,6 +220,16 @@
+     }
+   ],
+   "edges": [
++    {
++      "from": "door_store_a",
++      "to": "store_a",
++      "soft": false
++    },
++    {
++      "from": "door_store_b",
++      "to": "store_b",
++      "soft": false
++    },
+     {
+       "from": "dana_room",
+       "to": "lock_dana_pc",
+@@ -223,6 +275,26 @@
+       "to": "lock_tom_locker",
+       "soft": false
+     },
++    {
++      "from": "gate_hall",
++      "to": "card_store_a_badge",
++      "soft": false
++    },
++    {
++      "from": "card_store_a_badge",
++      "to": "door_store_a",
++      "soft": false
++    },
++    {
++      "from": "gate_hall",
++      "to": "card_store_b_badge",
++      "soft": false
++    },
++    {
++      "from": "card_store_b_badge",
++      "to": "door_store_b",
++      "soft": false
++    },
+     {
+       "from": "dana_room",
+       "to": "signin_dana",
+@@ -675,6 +747,11 @@
+       "to": "mei_room",
+       "soft": false
+     },
++    {
++      "from": "kai_room",
++      "to": "gate_hall",
++      "soft": false
++    },
+     {
+       "from": "lena_room",
+       "to": "tom_room",
+diff --git a/scenarios/test_access_habits/dungeon_graph.md b/scenarios/test_access_habits/dungeon_graph.md
+index e3762da8a..9807d0473 100644
+--- a/scenarios/test_access_habits/dungeon_graph.md
++++ b/scenarios/test_access_habits/dungeon_graph.md
+@@ -4,19 +4,19 @@
+ 
+ TEST: Access model awareness and habits
+ 
+-A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Eight beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks.
++A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Nine beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks. Beyond Kai, the gate hall (H9): Gary holds his door into store A for you; Sara will not open hers into store B with you near.
+ 
+ ## Scenario Statistics
+ 
+ | Metric | Value |
+ |---|---|
+ | Story aims | 1 |
+-| Total tasks | 8 (0 optional) |
++| Total tasks | 9 (0 optional) |
+ | VM flag challenges | 0 |
+-| Physical locks | 9 |
++| Physical locks | 11 |
+ | AND-gate convergences | 0 |
+-| Rooms | 9 |
+-| Puzzle graph nodes / edges | 29 / 99 |
++| Rooms | 12 |
++| Puzzle graph nodes / edges | 36 / 106 |
+ | Story graph nodes / edges | 1 / 0 |
+ 
+ ## Critical Path
+@@ -71,6 +71,10 @@ flowchart TD
+   node_start(("▶"))
+   node_start --> lobby
+ 
++  door_store_a["Store A<br/>RFID lock"]
++  store_a("Store A")
++  door_store_b["Store B<br/>RFID lock<br/>gate: not held by sara"]
++  store_b("Store B")
+   lock_dana_pc["Dana's PC<br/>Sign-in"]
+   lock_ian_pc["Ian's PC<br/>Sign-in"]
+   lock_omar_pc["Omar's PC<br/>Sign-in"]
+@@ -80,6 +84,9 @@ flowchart TD
+   lock_lena_pc["Lena's PC<br/>Sign-in"]
+   lock_tom_pc["Tom's PC<br/>Sign-in"]
+   lock_tom_locker["Gym locker<br/>Password lock"]
++  card_store_a_badge{"Store A badge<br/>(Gary Whitlock)"}
++  gate_hall("Gate hall")
++  card_store_b_badge{"Store B badge<br/>(Sara Quinn)"}
+   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+   dana_room("Dana")
+   signin_ian{"Ian Shaw sign-in<br/>(ishaw)"}
+@@ -101,6 +108,8 @@ flowchart TD
+   clue_password_memo{"IT notice"}
+   lobby("Lobby")
+ 
++  door_store_a --> store_a
++  door_store_b --> store_b
+   dana_room --> lock_dana_pc
+   ian_room --> lock_ian_pc
+   omar_room --> lock_omar_pc
+@@ -110,6 +119,10 @@ flowchart TD
+   lena_room --> lock_lena_pc
+   tom_room --> lock_tom_pc
+   tom_room --> lock_tom_locker
++  gate_hall --> card_store_a_badge
++  card_store_a_badge --> door_store_a
++  gate_hall --> card_store_b_badge
++  card_store_b_badge --> door_store_b
+   dana_room --> signin_dana
+   signin_dana --> lock_dana_pc
+   signin_dana --> lock_ian_pc
+@@ -199,11 +212,12 @@ flowchart TD
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
+ 
+-  class lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
+-  class signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+-  class dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
++  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+   class clue_mei_photo,clue_mei_calendar,clue_password_memo item
+   class node_start start
+ ```
+@@ -261,6 +275,10 @@ flowchart TD
+   node_start(("▶"))
+   node_start --> lobby
+ 
++  door_store_a["Store A<br/>RFID lock"]
++  store_a("Store A")
++  door_store_b["Store B<br/>RFID lock<br/>gate: not held by sara"]
++  store_b("Store B")
+   lock_dana_pc["Dana's PC<br/>Sign-in"]
+   lock_ian_pc["Ian's PC<br/>Sign-in"]
+   lock_omar_pc["Omar's PC<br/>Sign-in"]
+@@ -270,6 +288,9 @@ flowchart TD
+   lock_lena_pc["Lena's PC<br/>Sign-in"]
+   lock_tom_pc["Tom's PC<br/>Sign-in"]
+   lock_tom_locker["Gym locker<br/>Password lock"]
++  card_store_a_badge{"Store A badge<br/>(Gary Whitlock)"}
++  gate_hall("Gate hall")
++  card_store_b_badge{"Store B badge<br/>(Sara Quinn)"}
+   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+   dana_room("Dana")
+   signin_ian{"Ian Shaw sign-in<br/>(ishaw)"}
+@@ -292,6 +313,8 @@ flowchart TD
+   lobby("Lobby")
+   aim_habits_beats{{"Run the habits beats"}}
+ 
++  door_store_a --> store_a
++  door_store_b --> store_b
+   dana_room --> lock_dana_pc
+   ian_room --> lock_ian_pc
+   omar_room --> lock_omar_pc
+@@ -301,6 +324,10 @@ flowchart TD
+   lena_room --> lock_lena_pc
+   tom_room --> lock_tom_pc
+   tom_room --> lock_tom_locker
++  gate_hall --> card_store_a_badge
++  card_store_a_badge --> door_store_a
++  gate_hall --> card_store_b_badge
++  card_store_b_badge --> door_store_b
+   dana_room --> signin_dana
+   signin_dana --> lock_dana_pc
+   signin_dana --> lock_ian_pc
+@@ -390,11 +417,12 @@ flowchart TD
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
+ 
+-  class lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
+-  class signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+-  class dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
++  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
++  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+   class clue_mei_photo,clue_mei_calendar,clue_password_memo item
+   class aim_habits_beats aim
+   class node_start start
+@@ -434,6 +462,9 @@ flowchart TD
+   mei_room("Mei")
+   lena_room("Lena")
+   tom_room("Tom")
++  gate_hall("Gate hall")
++  store_a["Store A<br/>(locked)"]
++  store_b["Store B<br/>(locked)"]
+ 
+   lobby --> dana_room
+   lobby --> ian_room
+@@ -442,9 +473,13 @@ flowchart TD
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
++  gate_hall --> store_a
++  gate_hall --> store_b
+ 
+-  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room room
++  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
++  class store_a,store_b lock
+   class node_start start
+ ```
+ 
+@@ -482,6 +517,9 @@ flowchart TD
+   mei_room("Mei")
+   lena_room("Lena")
+   tom_room("Tom")
++  gate_hall("Gate hall")
++  store_a["Store A<br/>(locked)"]
++  store_b["Store B<br/>(locked)"]
+   rc_sign_lobby_1{"Sign: Start here"}
+   rc_npc_rowan_price_2("Rowan Price")
+   rc_dana_pc_3{"Dana's PC"}
+@@ -522,6 +560,11 @@ flowchart TD
+   rc_locker_note_38{"Note on the locker"}
+   rc_sign_h7_39{"Sign: H7 Reused password"}
+   rc_npc_tom_fletcher_40("Tom Fletcher")
++  rc_sign_h9_41{"Sign: H9 Holds doors, and does not"}
++  rc_npc_gary_whitlock_42("Gary Whitlock")
++  rc_npc_sara_quinn_43("Sara Quinn")
++  rc_sign_store_a_44{"Sign: Store A"}
++  rc_sign_store_b_45{"Sign: Store B"}
+ 
+   lobby --> dana_room
+   lobby --> ian_room
+@@ -530,7 +573,10 @@ flowchart TD
+   dana_room --> omar_room
+   ian_room --> kai_room
+   priya_room --> mei_room
++  kai_room --> gate_hall
+   lena_room --> tom_room
++  gate_hall --> store_a
++  gate_hall --> store_b
+   lobby --> rc_sign_lobby_1
+   lobby --> rc_npc_rowan_price_2
+   dana_room --> rc_dana_pc_3
+@@ -571,10 +617,16 @@ flowchart TD
+   tom_room --> rc_locker_note_38
+   tom_room --> rc_sign_h7_39
+   tom_room --> rc_npc_tom_fletcher_40
+-
+-  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room room
+-  class rc_sign_lobby_1,rc_dana_pc_3,rc_dana_coffee_4,rc_sign_h1_5,rc_ian_pc_7,rc_ian_coffee_8,rc_sign_h2_9,rc_omar_pc_11,rc_omar_coffee_12,rc_sign_h3_13,rc_priya_pc_15,rc_priya_coffee_16,rc_sign_h4_17,rc_kai_pc_19,rc_kai_coffee_20,rc_sign_h5_21,rc_mei_pc_23,rc_mei_coffee_24,rc_mei_photo_25,rc_mei_calendar_26,rc_password_memo_27,rc_sign_h6_28,rc_lena_pc_30,rc_lena_coffee_31,rc_sign_h8_32,rc_tom_pc_34,rc_tom_coffee_35,rc_tom_kit_list_37,rc_locker_note_38,rc_sign_h7_39 item
+-  class rc_npc_rowan_price_2,rc_npc_dana_reyes_6,rc_npc_ian_shaw_10,rc_npc_omar_haddad_14,rc_npc_priya_nair_18,rc_npc_kai_brennan_22,rc_npc_mei_lin_29,rc_npc_lena_fox_33,rc_npc_tom_fletcher_40 npc
++  gate_hall --> rc_sign_h9_41
++  gate_hall --> rc_npc_gary_whitlock_42
++  gate_hall --> rc_npc_sara_quinn_43
++  store_a --> rc_sign_store_a_44
++  store_b --> rc_sign_store_b_45
++
++  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
++  class store_a,store_b lock
++  class rc_sign_lobby_1,rc_dana_pc_3,rc_dana_coffee_4,rc_sign_h1_5,rc_ian_pc_7,rc_ian_coffee_8,rc_sign_h2_9,rc_omar_pc_11,rc_omar_coffee_12,rc_sign_h3_13,rc_priya_pc_15,rc_priya_coffee_16,rc_sign_h4_17,rc_kai_pc_19,rc_kai_coffee_20,rc_sign_h5_21,rc_mei_pc_23,rc_mei_coffee_24,rc_mei_photo_25,rc_mei_calendar_26,rc_password_memo_27,rc_sign_h6_28,rc_lena_pc_30,rc_lena_coffee_31,rc_sign_h8_32,rc_tom_pc_34,rc_tom_coffee_35,rc_tom_kit_list_37,rc_locker_note_38,rc_sign_h7_39,rc_sign_h9_41,rc_sign_store_a_44,rc_sign_store_b_45 item
++  class rc_npc_rowan_price_2,rc_npc_dana_reyes_6,rc_npc_ian_shaw_10,rc_npc_omar_haddad_14,rc_npc_priya_nair_18,rc_npc_kai_brennan_22,rc_npc_mei_lin_29,rc_npc_lena_fox_33,rc_npc_tom_fletcher_40,rc_npc_gary_whitlock_42,rc_npc_sara_quinn_43 npc
+   class rc_tom_locker_36 container
+   class node_start start
+ ```
+diff --git a/scenarios/test_access_habits/scenario.json.erb b/scenarios/test_access_habits/scenario.json.erb
+index 92c65d041..c5d1eba92 100644
+--- a/scenarios/test_access_habits/scenario.json.erb
++++ b/scenarios/test_access_habits/scenario.json.erb
+@@ -1,6 +1,6 @@
+ {
+-  "scenario_brief": "TEST: Access model awareness and habits\n\nA test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Eight beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks.",
+-  "endGoal": "Test only: run the eight habits beats.",
++  "scenario_brief": "TEST: Access model awareness and habits\n\nA test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Nine beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks. Beyond Kai, the gate hall (H9): Gary holds his door into store A for you; Sara will not open hers into store B with you near.",
++  "endGoal": "Test only: run the nine habits beats.",
+   "startRoom": "lobby",
+   "startPosition": {
+     "x": 7,
+@@ -24,7 +24,10 @@
+     }
+   },
+   "globalVariables": {
+-    "h3_note_seen": false
++    "h3_note_seen": false,
++    "h9_a_opened": false,
++    "h9_b_opened": false,
++    "h9_sara_turned_back": false
+   },
+   "accountProfiles": {
+     "staff_desktop": {
+@@ -101,6 +104,12 @@
+           "title": "H8: use Lena's screen on a leave she leaves it open",
+           "type": "custom",
+           "status": "active"
++        },
++        {
++          "taskId": "h9_holds_doors",
++          "title": "H9: follow Gary into store A; Sara's door into store B stops you",
++          "type": "custom",
++          "status": "active"
+         }
+       ]
+     }
+@@ -128,7 +137,7 @@
+           "readable": true,
+           "readDisplay": "gameDisplay",
+           "addToNotes": false,
+-          "text": "Eight beats, a sign at each. Dana north (H1), Ian east (H2), Priya south (H4), Lena west (H8).\nOmar is beyond Dana (H3), Kai beyond Ian (H5), Mei beyond Priya (H6) and Tom beyond Lena (H7). Nobody here will tell you how careful they are: watch.",
++          "text": "Nine beats, a sign at each. Dana north (H1), Ian east (H2), Priya south (H4), Lena west (H8).\nOmar is beyond Dana (H3), Kai beyond Ian (H5), Mei beyond Priya (H6) and Tom beyond Lena (H7). The gate hall is beyond Kai (H9). Nobody here will tell you how careful they are: watch.",
+           "observations": "A sign on a stand."
+         }
+       ],
+@@ -203,6 +212,16 @@
+               "onceOnly": true,
+               "completeTask": "h8_sometimes",
+               "condition": "data.via === 'claim'"
++            },
++            {
++              "eventPattern": "door_gate_denied",
++              "condition": "data.roomId === 'store_b' && globalVars.h9_a_opened && globalVars.h9_sara_turned_back && globalVars.h9_b_opened",
++              "completeTask": "h9_holds_doors"
++            },
++            {
++              "eventPattern": "door_gate_denied",
++              "condition": "data.connectedRoom === 'store_b' && globalVars.h9_a_opened && globalVars.h9_sara_turned_back && globalVars.h9_b_opened",
++              "completeTask": "h9_holds_doors"
+             }
+           ]
+         }
+@@ -599,7 +618,8 @@
+       "type": "room_office",
+       "door_sign": "Kai",
+       "connections": {
+-        "west": "ian_room"
++        "west": "ian_room",
++        "east": "gate_hall"
+       },
+       "objects": [
+         {
+@@ -1068,6 +1088,299 @@
+           }
+         }
+       ]
++    },
++    "gate_hall": {
++      "type": "room_office",
++      "door_sign": "Gate hall",
++      "connections": {
++        "west": "kai_room",
++        "north": "store_a",
++        "south": "store_b"
++      },
++      "doors": [
++        {
++          "connectedRoom": "store_a",
++          "direction": "north",
++          "gate": {
++            "openFor": [
++              "gary"
++            ],
++            "openRadius": 80,
++            "holdMs": 6000
++          }
++        },
++        {
++          "connectedRoom": "store_b",
++          "direction": "south",
++          "gate": {
++            "openFor": [
++              "sara"
++            ],
++            "openRadius": 80,
++            "holdMs": 6000
++          }
++        }
++      ],
++      "objects": [
++        {
++          "type": "notes1",
++          "id": "sign_h9",
++          "name": "Sign: H9 Holds doors, and does not",
++          "position": {
++            "x": 4,
++            "y": 4
++          },
++          "takeable": false,
++          "readable": true,
++          "readDisplay": "gameDisplay",
++          "addToNotes": false,
++          "text": "H9. Gary and Sara badge through the gates here: Gary north into store A, Sara south into store B.\nStand beside Gary's door and walk in behind him. Then try Sara's: wait close by and she will not open it; stand well back and she goes through, but the door will not let you follow.",
++          "observations": "A sign on a stand."
++        }
++      ],
++      "npcs": [
++        {
++          "id": "gary",
++          "displayName": "Gary Whitlock",
++          "npcType": "person",
++          "position": {
++            "x": 7,
++            "y": 3
++          },
++          "spriteSheet": "male_security_guard_v2",
++          "spriteTalk": "assets/characters/len_talk.png",
++          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
++          "storyPath": "scenarios/test_access_habits/ink/owner.json",
++          "currentKnot": "start",
++          "awareness": "low",
++          "behavior": {
++            "patrol": {
++              "enabled": true,
++              "multiRoom": true,
++              "waypointMode": "sequential",
++              "pauseForPlayer": false,
++              "speed": 90,
++              "route": [
++                {
++                  "room": "gate_hall",
++                  "waypoints": [
++                    {
++                      "x": 7,
++                      "y": 3,
++                      "dwellTime": 6000
++                    },
++                    {
++                      "x": 1,
++                      "y": 2,
++                      "action": {
++                        "unlockRoom": "store_a"
++                      }
++                    }
++                  ]
++                },
++                {
++                  "room": "store_a",
++                  "waypoints": [
++                    {
++                      "x": 5,
++                      "y": 5
++                    },
++                    {
++                      "x": 2,
++                      "y": 8
++                    }
++                  ]
++                }
++              ]
++            }
++          },
++          "eventMappings": [
++            {
++              "eventPattern": "gary_never_fires",
++              "unlockDoor": "store_a"
++            },
++            {
++              "eventPattern": "door_gate_opened",
++              "condition": "data.roomId === 'store_a'",
++              "setGlobal": {
++                "h9_a_opened": true
++              }
++            },
++            {
++              "eventPattern": "door_gate_opened",
++              "condition": "data.connectedRoom === 'store_a'",
++              "setGlobal": {
++                "h9_a_opened": true
++              }
++            }
++          ],
++          "creds": {
++            "card": {
++              "name": "Store A badge",
++              "card_id": "store_a_badge",
++              "rfid_protocol": "EM4100"
++            }
++          }
++        },
++        {
++          "id": "sara",
++          "displayName": "Sara Quinn",
++          "npcType": "person",
++          "position": {
++            "x": 7,
++            "y": 6
++          },
++          "spriteSheet": "female_security_guard_v2",
++          "spriteTalk": "assets/characters/female_security_guard_talk.png",
++          "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
++          "storyPath": "scenarios/test_access_habits/ink/owner.json",
++          "currentKnot": "start",
++          "awareness": "high",
++          "behavior": {
++            "patrol": {
++              "enabled": true,
++              "multiRoom": true,
++              "waypointMode": "sequential",
++              "pauseForPlayer": false,
++              "speed": 90,
++              "route": [
++                {
++                  "room": "gate_hall",
++                  "waypoints": [
++                    {
++                      "x": 7,
++                      "y": 6,
++                      "dwellTime": 6000
++                    },
++                    {
++                      "x": 2,
++                      "y": 8,
++                      "action": {
++                        "unlockRoom": "store_b"
++                      }
++                    }
++                  ]
++                },
++                {
++                  "room": "store_b",
++                  "waypoints": [
++                    {
++                      "x": 5,
++                      "y": 4
++                    },
++                    {
++                      "x": 2,
++                      "y": 2
++                    }
++                  ]
++                }
++              ]
++            }
++          },
++          "eventMappings": [
++            {
++              "eventPattern": "sara_never_fires",
++              "unlockDoor": "store_b"
++            },
++            {
++              "eventPattern": "door_gate_opened",
++              "condition": "data.roomId === 'store_b'",
++              "setGlobal": {
++                "h9_b_opened": true
++              }
++            },
++            {
++              "eventPattern": "door_gate_opened",
++              "condition": "data.connectedRoom === 'store_b'",
++              "setGlobal": {
++                "h9_b_opened": true
++              }
++            },
++            {
++              "eventPattern": "door_gate_guard_turned_back",
++              "condition": "data.npcId === 'sara'",
++              "setGlobal": {
++                "h9_sara_turned_back": true
++              }
++            },
++            {
++              "eventPattern": "door_gate_denied",
++              "condition": "data.roomId === 'store_b'",
++              "cooldown": 4000,
++              "bark": "Not with you behind me. Ask at reception."
++            },
++            {
++              "eventPattern": "door_gate_denied",
++              "condition": "data.connectedRoom === 'store_b'",
++              "cooldown": 4000,
++              "bark": "Not with you behind me. Ask at reception."
++            }
++          ],
++          "creds": {
++            "card": {
++              "name": "Store B badge",
++              "card_id": "store_b_badge",
++              "rfid_protocol": "EM4100"
++            }
++          }
++        }
++      ]
++    },
++    "store_a": {
++      "type": "room_office",
++      "door_sign": "Store A",
++      "locked": true,
++      "lockType": "rfid",
++      "requires": "store_a_badge",
++      "connections": {
++        "south": "gate_hall"
++      },
++      "npcs": [],
++      "objects": [
++        {
++          "type": "notes1",
++          "id": "sign_store_a",
++          "name": "Sign: Store A",
++          "position": {
++            "x": 4,
++            "y": 4
++          },
++          "takeable": false,
++          "readable": true,
++          "readDisplay": "gameDisplay",
++          "addToNotes": false,
++          "text": "Store A. You followed Gary in: his gate opened beside you and stayed open after him.",
++          "observations": "A sign on a stand."
++        }
++      ]
++    },
++    "store_b": {
++      "type": "room_office",
++      "door_sign": "Store B",
++      "locked": true,
++      "lockType": "rfid",
++      "requires": "store_b_badge",
++      "connections": {
++        "north": "gate_hall"
++      },
++      "npcs": [],
++      "objects": [
++        {
++          "type": "notes1",
++          "id": "sign_store_b",
++          "name": "Sign: Store B",
++          "position": {
++            "x": 4,
++            "y": 4
++          },
++          "takeable": false,
++          "readable": true,
++          "readDisplay": "gameDisplay",
++          "addToNotes": false,
++          "text": "Store B. You should not be able to read this in the H9 run: Sara's gate never lets you through.",
++          "observations": "A sign on a stand."
++        }
++      ]
+     }
+   }
+ }
+-- 
+2.43.0
+

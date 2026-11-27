@@ -1,0 +1,13 @@
+{
+  "key": "cbbd0d62e848bf3f4150acb318c8240d",
+  "npc": "narrator",
+  "text": "The cloner buzzes once. Old prox. It didn't even have to work for it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:00:44Z"
+}

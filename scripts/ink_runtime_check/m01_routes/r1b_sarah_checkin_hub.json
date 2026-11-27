@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R3: Sarah's check-in hands over badge and key and completes the task; the staff question stays hidden until influence reaches 3."},
+  {"talk": "sarah", "picks": ["Thanks. I'm here to audit", "Tell me about Kevin", "I'll talk to him"]},
+  {"said": ["Here's your visitor badge and a key for the main office area", "Kevin's our IT manager"], "notSaid": ["Anyone else I should know about"]},
+  {"tasks": {"check_in_reception": "completed"}},
+  {"talk": "sarah", "picks": ["I noticed the manager's office", "That sounds suspicious", "Anyone else I should know about", "That seems unusual", "Thanks, I'll get started"]},
+  {"said": ["Her briefcase is still in there", "Anyone else I should know about", "Derek Lawson, Senior Marketing Manager. He's... intense"]}
+ ]
+}

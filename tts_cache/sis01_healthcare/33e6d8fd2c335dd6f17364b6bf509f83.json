@@ -1,0 +1,13 @@
+{
+  "key": "33e6d8fd2c335dd6f17364b6bf509f83",
+  "npc": "dr_sharma",
+  "text": "Yes. If a claim depends on how the network's built, whoever changes the network has to check it.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

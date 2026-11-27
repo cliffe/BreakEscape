@@ -1,0 +1,13 @@
+{
+  "key": "b735f06a560aec87752ef7fd6afba055",
+  "npc": "opening_briefing_cutscene",
+  "text": "The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI, running at a heightened security posture. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, faintly wrong -- a voice built to reassure, doing it in a building where nobody is reassured.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:16:52Z"
+}

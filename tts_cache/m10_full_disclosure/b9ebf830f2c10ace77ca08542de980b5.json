@@ -1,0 +1,13 @@
+{
+  "key": "b9ebf830f2c10ace77ca08542de980b5",
+  "npc": "lock_guard",
+  "text": "Door's open, so I guess my shift's done. Go on through.",
+  "voice": "Rasalgethi",
+  "style": "Night-shift guard, thirty-four, Samoan-American from West Valley City, Utah. Consistent Utah American accent throughout -- do not shift to any other accent. Deep, slow, polite; big enough that he never needs to raise his voice.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:36:58Z"
+}

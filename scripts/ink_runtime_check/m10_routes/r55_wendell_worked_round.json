@@ -1,0 +1,48 @@
+{
+ "steps": [
+  {
+   "note": "Wendell at the generator panel: the player never tells him what the servers are for. 'Never mind' leaves the shutter to be cut by hand (cut_by_hand) and he only repeats that he does not touch what he is not paid to touch; Dale is not warned."
+  },
+  {
+   "talk": "wendell",
+   "picks": [
+    "Who do you think owns",
+    "Never mind"
+   ]
+  },
+  {
+   "said": [
+    "Kept these generators running for Uncle Sam all through the eighties.",
+    "Data company out of Denver.",
+    "Suit yourself. I'll be at the panel if anybody needs a breaker."
+   ],
+   "notSaid": [
+    "Dale's on the next shift.",
+    "There. Key's turned, breaker's down."
+   ]
+  },
+  {
+   "expect": {
+    "wendell_outcome": "worked_round",
+    "cut_by_hand": true,
+    "gallery_shutter_cut": false,
+    "server_hall_warned": false
+   }
+  },
+  {
+   "talk": "wendell",
+   "picks": [
+    "Stay out of the server hall"
+   ]
+  },
+  {
+   "said": [
+    "I don't touch what I'm not paid to touch.",
+    "Wasn't planning on it."
+   ],
+   "notSaid": [
+    "Dale's staying home."
+   ]
+  }
+ ]
+}

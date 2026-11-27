@@ -1,0 +1,81 @@
+{
+ "steps": [
+  {
+   "note": "Core, fewer than two answers land (seated): the dangerous moment. Fire is the lethal ending; he never presses the key."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Zero Day has it. You didn't stop that one",
+    "Still HaX."
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Your schedule puts the hospitals",
+    "Go on.",
+    "The pump flaw",
+    "And the last one",
+    "Your schedule sends the pumps",
+    "Stop it",
+    "Put him through",
+    "And if we keep them",
+    "And if ours go",
+    "There's a third way"
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Secure it",
+    "You're under arrest",
+    "Fire."
+   ]
+  },
+  {
+   "said": [
+    "None of your answers landed. He turned every one",
+    "Arrest me, then.",
+    "One key, and the first city's list goes out anyway",
+    "His hand is on the key. You fire.",
+    "I'll sign under you."
+   ],
+   "notSaid": [
+    "He holds out his wrists",
+    "Ask me, then."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "lethal"
+   }
+  }
+ ]
+}

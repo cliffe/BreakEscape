@@ -1,0 +1,13 @@
+{
+  "key": "7b5baa6a1bbfa35fce5eeda1f0aa8f77",
+  "npc": "narrator",
+  "text": "She doesn't look up as you go.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:26:59Z"
+}

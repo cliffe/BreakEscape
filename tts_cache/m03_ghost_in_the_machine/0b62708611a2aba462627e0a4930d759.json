@@ -1,0 +1,13 @@
+{
+  "key": "0b62708611a2aba462627e0a4930d759",
+  "npc": "victoria_sterling",
+  "text": "To find out what you're worth. Your CV only tells me what you cost.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:15:00Z"
+}

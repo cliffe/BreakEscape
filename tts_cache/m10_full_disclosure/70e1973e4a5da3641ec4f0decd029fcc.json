@@ -1,0 +1,13 @@
+{
+  "key": "70e1973e4a5da3641ec4f0decd029fcc",
+  "npc": "director_netherton",
+  "text": "Quintero, take a minder. The service tunnel. Go.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:45:38Z"
+}

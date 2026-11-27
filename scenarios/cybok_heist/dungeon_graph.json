@@ -1,0 +1,75 @@
+{
+  "scenario": "cybok_heist",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_admin_office",
+      "label": "Admin Office - Authorized Personnel Only<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "admin_office",
+      "label": "Admin Office - Authorized Personnel Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_professors_office",
+      "label": "Professor's Office - Do Not Disturb!<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "professors_office",
+      "label": "Professor's Office - Do Not Disturb!",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_professor_s_briefcase",
+      "label": "Professor's briefcase<br/>Lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_professor_s_pc",
+      "label": "Professor's PC<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_wall_safe",
+      "label": "Wall Safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_admin_office",
+      "to": "admin_office",
+      "soft": false
+    },
+    {
+      "from": "door_professors_office",
+      "to": "professors_office",
+      "soft": false
+    },
+    {
+      "from": "admin_office",
+      "to": "lock_professor_s_briefcase",
+      "soft": false
+    },
+    {
+      "from": "professors_office",
+      "to": "lock_professor_s_pc",
+      "soft": false
+    },
+    {
+      "from": "professors_office",
+      "to": "lock_wall_safe",
+      "soft": false
+    }
+  ]
+}

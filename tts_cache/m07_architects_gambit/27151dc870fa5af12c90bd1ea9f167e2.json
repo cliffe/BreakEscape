@@ -1,0 +1,13 @@
+{
+  "key": "27151dc870fa5af12c90bd1ea9f167e2",
+  "npc": "thomas_park",
+  "text": "You heard me the first time.",
+  "voice": "Rasalgethi",
+  "style": "A plant maintenance technician in his forties, sent to break the one thing that would have held the load. Consistent Korean-American accent, Pacific Northwest, throughout -- do not shift to any other accent. Mid-low pitch; short sentences, steady pace. Practical, terse, hands-first. Not a believer, and increasingly aware of it.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:28:37Z"
+}

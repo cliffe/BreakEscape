@@ -1,0 +1,10 @@
+{
+"steps": [
+{ "note": "R21: HaX's identity scene with no carry-over: the hand line opens it, Netherton names Tesseract, the cold confession form, the player says she should have told them. Albion line is the default form." },
+{ "talk": "phone", "knot": "identity_scene", "picks": ["You should have told me", "Understood"] },
+{ "said": ["Same hand", "I said we would not name him until we could prove it. We can. Dr Adrian Tesseract", "eighty-seven per cent", "He was mine. I wanted the other thirteen", "I didn't say it", "Yes. I should have", "You get all of it from now on", "Seven years, and nobody turned it off", "This is the hole Critical Mass came through at Albion"],
+  "notSaid": ["I gave you his name after HashChain", "I told you somebody taught me that line", "Don't be kind about it", "You've read his memo and the draft", "His tapes are on the bench"] },
+{ "expect": { "hax_confession_answer": "should_have_told", "identity_scene_done": true, "hand_matched": true } },
+{ "tasks": { "hear_the_name": "completed", "match_the_hand": "completed", "send_the_notice": "unlocked" } }
+]
+}

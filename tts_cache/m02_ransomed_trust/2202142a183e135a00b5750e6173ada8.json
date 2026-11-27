@@ -1,0 +1,13 @@
+{
+  "key": "2202142a183e135a00b5750e6173ada8",
+  "npc": "narrator",
+  "text": "Static. Nobody answers, and she lets it go.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:55:28Z"
+}

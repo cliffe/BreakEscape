@@ -1,0 +1,9 @@
+{
+"steps": [
+{ "note": "R1: a cold start, nothing imported. The briefing falls to its defaults: the traitor kept a ticket, HaX is sorry about the leave, the wall tells the short version (five or more missions unplayed). Quintero's answer is recorded." },
+{ "talk": "briefing", "picks": ["Who are the last two", "What's the Publication", "Schedule attached", "Let's go", "Quintero's right"] },
+{ "said": ["The traitor we took two days ago kept a one-way ticket", "Sorry about the leave", "Albion, a grid battery site", "The rest are files you can read on the plane", "Destruction. Series numbers", "Then don't make me right", "Bring me a name I can say in court"],
+  "notSaid": ["Nightshade cleared his locker", "Your tags lit up", "You put me on the floor at the Citadel", "Your card from Albion", "Keep not asking", "St. Catherine's, a hospital held to ransom"] },
+{ "expect": { "raid_team_answer": "quintero" } }
+]
+}

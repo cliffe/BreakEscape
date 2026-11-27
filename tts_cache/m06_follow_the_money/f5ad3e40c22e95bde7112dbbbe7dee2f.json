@@ -1,0 +1,13 @@
+{
+  "key": "f5ad3e40c22e95bde7112dbbbe7dee2f",
+  "npc": "narrator",
+  "text": "Kemal takes off his watch and pockets it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:49:12Z"
+}

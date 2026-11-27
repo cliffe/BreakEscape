@@ -1,0 +1,56 @@
+{
+ "imports": {
+  "m08_nightshade_triple_agent": true,
+  "m09_nightshade_shown_file": true,
+  "m09_completed": true
+ },
+ "steps": [
+  {
+   "note": "Nightshade at the table, shown his file in m09: full payment, the wrong entry three, the override key, then he stays at the post. Re-talk gives the rest line."
+  },
+  {
+   "talk": "nightshade",
+   "picks": [
+    "Go on. All of it",
+    "Why would he lie to you",
+    "Stay at the post"
+   ]
+  },
+  {
+   "said": [
+    "He wrote fifteen years of me in his own hand.",
+    "Helena gave us the entries he built from.",
+    "The blast door reads one badge by name. Yours.",
+    "Entry three, the inner door.",
+    "Believe the drawings.",
+    "Because he expected me to sell you",
+    "Nightshade's Override Key",
+    "Look for whoever went where nobody watches.",
+    "Leave him here and nobody below sees him with us.",
+    "I'll settle for knowing you did."
+   ],
+   "notSaid": [
+    "All of it, as promised.",
+    "Then I'll hold your door at the lock."
+   ]
+  },
+  {
+   "expect": {
+    "door_scene_done": true,
+    "nightshade_taken_in": false
+   }
+  },
+  {
+   "talk": "nightshade",
+   "picks": []
+  },
+  {
+   "said": [
+    "I'll be here. Out of sight is where I'm useful."
+   ],
+   "notSaid": [
+    "He wrote fifteen years of me"
+   ]
+  }
+ ]
+}

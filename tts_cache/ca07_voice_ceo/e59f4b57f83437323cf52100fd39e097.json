@@ -1,0 +1,13 @@
+{
+  "key": "e59f4b57f83437323cf52100fd39e097",
+  "npc": "kit_graham_whitfield",
+  "text": "Ravinder's on the line, from his mobile.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:10:13Z"
+}

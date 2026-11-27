@@ -1,0 +1,13 @@
+{
+  "key": "6b6967c165a208f998c136a324f7a75a",
+  "npc": "background_agent",
+  "text": "Somebody's been at the lockers in here. I've told everyone I didn't see who. Very convincingly.",
+  "voice": "Puck",
+  "style": "An off-duty SAFETYNET agent in his forties pretending to read while eavesdropping on everyone. Consistent Geordie (Newcastle) accent throughout -- do not shift to any other accent. Low, conspiratorial pitch; unhurried pace. Gossipy and paranoid, enjoying the drama a little too much.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:48:16Z"
+}

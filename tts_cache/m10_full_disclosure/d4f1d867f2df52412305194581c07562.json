@@ -1,0 +1,13 @@
+{
+  "key": "d4f1d867f2df52412305194581c07562",
+  "npc": "six_oclock",
+  "text": "Torres's channel paid out at five. Two of the Recruiter's placements are in custody.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:16:55Z"
+}

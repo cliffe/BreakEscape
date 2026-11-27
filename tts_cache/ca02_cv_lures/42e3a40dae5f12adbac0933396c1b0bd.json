@@ -1,0 +1,13 @@
+{
+  "key": "42e3a40dae5f12adbac0933396c1b0bd",
+  "npc": "fatima_begum",
+  "text": "Chidi, IT have just cut your machine off. The driver applications are all on there.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:38:57Z"
+}

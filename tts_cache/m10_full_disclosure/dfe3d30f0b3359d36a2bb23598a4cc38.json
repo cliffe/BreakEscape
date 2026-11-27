@@ -1,0 +1,13 @@
+{
+  "key": "dfe3d30f0b3359d36a2bb23598a4cc38",
+  "npc": "narrator",
+  "text": "Netherton and HaX walk you to the van end. Kowalczyk sits in the back of the second van, cuffed.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:44:33Z"
+}

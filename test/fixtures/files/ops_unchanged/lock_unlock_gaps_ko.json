@@ -1,0 +1,892 @@
+{
+  "name": "lock_unlock_gaps_ko",
+  "description": "S8c unit 01: an NPC-held locked bag dropped by a knock-out, then opened and emptied, before any S8c engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_id": "test_unlock_gaps",
+    "scenario_name": "Test: combination, cryptex and NPC-held containers",
+    "scenario_brief": "Engine check (unlock gaps build). Every answer is on the Codes note in the lobby; read it first.\n\n0. Open the Pocket Cryptex you start with (in your tray).\n1. Read the Codes note.\n2. Open the Locker (three dials).\n3. Open the Cryptex.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops.\n5. Open the Vault door.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex.",
+    "endGoal": "Check combination and cryptex locks (objects and doors), a dropped NPC-held container and a locked start item.",
+    "startRoom": "lobby",
+    "startItemsInInventory": [
+      {
+        "type": "bag1",
+        "id": "test_start_cryptex",
+        "name": "Pocket Cryptex",
+        "takeable": true,
+        "locked": true,
+        "lockType": "cryptex",
+        "requires": "TINDER",
+        "cryptexConfig": {
+          "wheelCount": 6
+        },
+        "contents": [
+          {
+            "type": "notes",
+            "id": "test_start_note",
+            "name": "Pocket Note",
+            "takeable": true,
+            "readable": true,
+            "text": "The pocket cryptex opened."
+          }
+        ]
+      }
+    ],
+    "rooms": {
+      "lobby": {
+        "type": "room_office",
+        "door_sign": "Lobby",
+        "connections": {
+          "north": "vault"
+        },
+        "npcs": [
+          {
+            "id": "test_courier",
+            "displayName": "Courier",
+            "npcType": "person",
+            "position": {
+              "x": 7,
+              "y": 4
+            },
+            "spriteSheet": "female_security_guard_v2",
+            "storyPath": "scenarios/ink/generic-npc.json",
+            "currentKnot": "start",
+            "itemsHeld": [
+              {
+                "type": "bag1",
+                "id": "test_courier_bag",
+                "name": "Courier Bag",
+                "takeable": true,
+                "locked": true,
+                "lockType": "password",
+                "requires": "Satchel42",
+                "contents": [
+                  {
+                    "type": "notes",
+                    "id": "test_delivery_memo",
+                    "name": "Delivery Memo",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Delivery confirmed."
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "objects": [
+          {
+            "type": "notes",
+            "id": "test_codes_note",
+            "name": "Codes",
+            "position": {
+              "x": 2,
+              "y": 2
+            },
+            "takeable": true,
+            "readable": true,
+            "text": "Pocket cryptex TINDER. Locker 12-30-5. Cryptex CIPHER. Courier bag Satchel42. Vault 7-21-39. Archive KEYS."
+          },
+          {
+            "type": "safe",
+            "id": "test_combo_locker",
+            "name": "Locker",
+            "position": {
+              "x": 4,
+              "y": 2
+            },
+            "locked": true,
+            "lockType": "combination",
+            "requires": "12-30-5",
+            "contents": [
+              {
+                "type": "notes",
+                "id": "test_locker_note",
+                "name": "Locker Note",
+                "takeable": true,
+                "readable": true,
+                "text": "The locker opened."
+              }
+            ]
+          },
+          {
+            "type": "safe",
+            "id": "test_cryptex_box",
+            "name": "Cryptex",
+            "position": {
+              "x": 6,
+              "y": 2
+            },
+            "locked": true,
+            "lockType": "cryptex",
+            "requires": "CIPHER",
+            "cryptexConfig": {
+              "wheelCount": 6
+            },
+            "contents": [
+              {
+                "type": "notes",
+                "id": "test_cryptex_scroll",
+                "name": "Scroll",
+                "takeable": true,
+                "readable": true,
+                "text": "The cryptex opened."
+              }
+            ]
+          }
+        ]
+      },
+      "vault": {
+        "type": "room_office",
+        "door_sign": "Vault",
+        "locked": true,
+        "lockType": "combination",
+        "requires": "7-21-39",
+        "connections": {
+          "south": "lobby",
+          "north": "archive"
+        },
+        "objects": []
+      },
+      "archive": {
+        "type": "room_office",
+        "door_sign": "Archive",
+        "locked": true,
+        "lockType": "cryptex",
+        "requires": "KEYS",
+        "cryptexConfig": {
+          "wheelCount": 4
+        },
+        "connections": {
+          "south": "vault"
+        },
+        "objects": []
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "lobby",
+    "unlockedRooms": [
+      "lobby"
+    ],
+    "encounteredNPCs": [
+      "test_courier"
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "room_lobby",
+      "method": "GET",
+      "path": "room/lobby"
+    },
+    {
+      "id": "courier_bag_container_held",
+      "method": "GET",
+      "path": "container/test_courier_bag"
+    },
+    {
+      "id": "courier_bag_held_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_courier_bag",
+        "method": "password",
+        "attempt": "Satchel42"
+      }
+    },
+    {
+      "id": "knock_out_courier",
+      "method": "POST",
+      "path": "update_room",
+      "params": {
+        "roomId": "lobby",
+        "actionType": "update_npc_state",
+        "data": {
+          "npcId": "test_courier",
+          "stateChanges": {
+            "isKO": true,
+            "currentHP": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "drop_courier_bag",
+      "method": "POST",
+      "path": "update_room",
+      "params": {
+        "roomId": "lobby",
+        "actionType": "add_object",
+        "sourceNpcId": "test_courier",
+        "sourceType": "npc_defeated",
+        "data": {
+          "type": "bag1",
+          "id": "test_courier_bag",
+          "name": "Courier Bag",
+          "x": 64,
+          "y": 64
+        }
+      }
+    },
+    {
+      "id": "room_lobby_with_drop",
+      "method": "GET",
+      "path": "room/lobby"
+    },
+    {
+      "id": "courier_bag_container_locked",
+      "method": "GET",
+      "path": "container/test_courier_bag"
+    },
+    {
+      "id": "courier_bag_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_courier_bag",
+        "method": "password",
+        "attempt": "wrong"
+      }
+    },
+    {
+      "id": "courier_bag_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_courier_bag",
+        "method": "password",
+        "attempt": "Satchel42"
+      }
+    },
+    {
+      "id": "courier_bag_container_open",
+      "method": "GET",
+      "path": "container/test_courier_bag"
+    },
+    {
+      "id": "pickup_courier_bag",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "bag1",
+          "id": "test_courier_bag",
+          "name": "Courier Bag"
+        },
+        "source_npc_id": "test_courier"
+      }
+    },
+    {
+      "id": "take_delivery_memo",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "notes",
+          "id": "test_delivery_memo",
+          "name": "Delivery Memo"
+        }
+      }
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_office",
+              "connections": {
+                "north": "vault"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "vault": {
+              "type": "room_office",
+              "connections": {
+                "north": "archive",
+                "south": "lobby"
+              },
+              "locked": true,
+              "lockType": "combination",
+              "door_sign": "Vault"
+            },
+            "archive": {
+              "type": "room_office",
+              "connections": {
+                "south": "vault"
+              },
+              "locked": true,
+              "lockType": "cryptex",
+              "door_sign": "Archive",
+              "cryptexConfig": {
+                "wheelCount": 4
+              }
+            }
+          },
+          "endGoal": "Check combination and cryptex locks (objects and doors), a dropped NPC-held container and a locked start item.",
+          "startRoom": "lobby",
+          "scenario_id": "test_unlock_gaps",
+          "formatVersion": 3,
+          "scenario_name": "Test: combination, cryptex and NPC-held containers",
+          "scenario_brief": "Engine check (unlock gaps build). Every answer is on the Codes note in the lobby; read it first.\n\n0. Open the Pocket Cryptex you start with (in your tray).\n1. Read the Codes note.\n2. Open the Locker (three dials).\n3. Open the Cryptex.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops.\n5. Open the Vault door.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex.",
+          "characterSprites": [
+            "female_security_guard_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "test_start_cryptex",
+              "name": "Pocket Cryptex",
+              "type": "bag1",
+              "locked": true,
+              "lockType": "cryptex",
+              "takeable": true,
+              "hasContents": true,
+              "cryptexConfig": {
+                "wheelCount": 6
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "room_lobby",
+        "status": 200,
+        "body": {
+          "room_id": "lobby",
+          "room": {
+            "npcs": [
+              {
+                "id": "test_courier",
+                "npcType": "person",
+                "position": {
+                  "x": 7,
+                  "y": 4
+                },
+                "itemsHeld": [
+                  {
+                    "id": "test_courier_bag",
+                    "name": "Courier Bag",
+                    "type": "bag1",
+                    "locked": true,
+                    "lockType": "password",
+                    "takeable": true,
+                    "hasContents": true
+                  }
+                ],
+                "storyPath": "scenarios/ink/generic-npc.json",
+                "currentKnot": "start",
+                "displayName": "Courier",
+                "spriteSheet": "female_security_guard_v2"
+              }
+            ],
+            "type": "room_office",
+            "objects": [
+              {
+                "id": "test_codes_note",
+                "name": "Codes",
+                "text": "Pocket cryptex TINDER. Locker 12-30-5. Cryptex CIPHER. Courier bag Satchel42. Vault 7-21-39. Archive KEYS.",
+                "type": "notes",
+                "position": {
+                  "x": 2,
+                  "y": 2
+                },
+                "readable": true,
+                "takeable": true
+              },
+              {
+                "id": "test_combo_locker",
+                "name": "Locker",
+                "type": "safe",
+                "locked": true,
+                "lockType": "combination",
+                "position": {
+                  "x": 4,
+                  "y": 2
+                },
+                "hasContents": true
+              },
+              {
+                "id": "test_cryptex_box",
+                "name": "Cryptex",
+                "type": "safe",
+                "locked": true,
+                "lockType": "cryptex",
+                "position": {
+                  "x": 6,
+                  "y": 2
+                },
+                "cryptexConfig": {
+                  "wheelCount": 6
+                },
+                "hasContents": true
+              }
+            ],
+            "door_sign": "Lobby",
+            "connections": {
+              "north": "vault"
+            }
+          }
+        }
+      },
+      {
+        "id": "courier_bag_container_held",
+        "status": 404,
+        "body": {
+          "error": "Container not found: test_courier_bag"
+        }
+      },
+      {
+        "id": "courier_bag_held_right",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "knock_out_courier",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "drop_courier_bag",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "room_lobby_with_drop",
+        "status": 200,
+        "body": {
+          "room_id": "lobby",
+          "room": {
+            "npcs": [
+              {
+                "id": "test_courier",
+                "npcType": "person",
+                "position": {
+                  "x": 7,
+                  "y": 4
+                },
+                "itemsHeld": [
+                  {
+                    "id": "test_courier_bag",
+                    "name": "Courier Bag",
+                    "type": "bag1",
+                    "locked": true,
+                    "lockType": "password",
+                    "takeable": true,
+                    "hasContents": true
+                  }
+                ],
+                "storyPath": "scenarios/ink/generic-npc.json",
+                "currentKnot": "start",
+                "displayName": "Courier",
+                "spriteSheet": "female_security_guard_v2",
+                "isKO": true,
+                "currentHP": 0
+              }
+            ],
+            "type": "room_office",
+            "objects": [
+              {
+                "id": "test_codes_note",
+                "name": "Codes",
+                "text": "Pocket cryptex TINDER. Locker 12-30-5. Cryptex CIPHER. Courier bag Satchel42. Vault 7-21-39. Archive KEYS.",
+                "type": "notes",
+                "position": {
+                  "x": 2,
+                  "y": 2
+                },
+                "readable": true,
+                "takeable": true
+              },
+              {
+                "id": "test_combo_locker",
+                "name": "Locker",
+                "type": "safe",
+                "locked": true,
+                "lockType": "combination",
+                "position": {
+                  "x": 4,
+                  "y": 2
+                },
+                "hasContents": true
+              },
+              {
+                "id": "test_cryptex_box",
+                "name": "Cryptex",
+                "type": "safe",
+                "locked": true,
+                "lockType": "cryptex",
+                "position": {
+                  "x": 6,
+                  "y": 2
+                },
+                "cryptexConfig": {
+                  "wheelCount": 6
+                },
+                "hasContents": true
+              },
+              {
+                "x": 64,
+                "y": 64,
+                "id": "test_courier_bag",
+                "name": "Courier Bag",
+                "type": "bag1",
+                "active": true,
+                "locked": true,
+                "visible": true,
+                "lockType": "password",
+                "takeable": true,
+                "interactable": true,
+                "hasContents": true
+              }
+            ],
+            "door_sign": "Lobby",
+            "connections": {
+              "north": "vault"
+            }
+          }
+        }
+      },
+      {
+        "id": "courier_bag_container_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: test_courier_bag"
+        }
+      },
+      {
+        "id": "courier_bag_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "courier_bag_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "test_delivery_memo",
+              "name": "Delivery Memo",
+              "text": "Delivery confirmed.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "courier_bag_container_open",
+        "status": 200,
+        "body": {
+          "container_id": "test_courier_bag",
+          "contents": [
+            {
+              "id": "test_delivery_memo",
+              "name": "Delivery Memo",
+              "text": "Delivery confirmed.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "pickup_courier_bag",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "take_delivery_memo",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_office",
+              "connections": {
+                "north": "vault"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "vault": {
+              "type": "room_office",
+              "connections": {
+                "north": "archive",
+                "south": "lobby"
+              },
+              "locked": true,
+              "lockType": "combination",
+              "door_sign": "Vault"
+            },
+            "archive": {
+              "type": "room_office",
+              "connections": {
+                "south": "vault"
+              },
+              "locked": true,
+              "lockType": "cryptex",
+              "door_sign": "Archive",
+              "cryptexConfig": {
+                "wheelCount": 4
+              }
+            }
+          },
+          "endGoal": "Check combination and cryptex locks (objects and doors), a dropped NPC-held container and a locked start item.",
+          "startRoom": "lobby",
+          "scenario_id": "test_unlock_gaps",
+          "formatVersion": 3,
+          "scenario_name": "Test: combination, cryptex and NPC-held containers",
+          "scenario_brief": "Engine check (unlock gaps build). Every answer is on the Codes note in the lobby; read it first.\n\n0. Open the Pocket Cryptex you start with (in your tray).\n1. Read the Codes note.\n2. Open the Locker (three dials).\n3. Open the Cryptex.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops.\n5. Open the Vault door.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex.",
+          "characterSprites": [
+            "female_security_guard_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "test_start_cryptex",
+              "name": "Pocket Cryptex",
+              "type": "bag1",
+              "locked": true,
+              "lockType": "cryptex",
+              "takeable": true,
+              "hasContents": true,
+              "cryptexConfig": {
+                "wheelCount": 6
+              }
+            },
+            {
+              "x": 64,
+              "y": 64,
+              "id": "test_courier_bag",
+              "name": "Courier Bag",
+              "type": "bag1",
+              "active": true,
+              "locked": false,
+              "visible": true,
+              "contents": [
+                {
+                  "id": "test_delivery_memo",
+                  "name": "Delivery Memo",
+                  "text": "Delivery confirmed.",
+                  "type": "notes",
+                  "readable": true,
+                  "takeable": true
+                }
+              ],
+              "lockType": "password",
+              "takeable": true,
+              "interactable": true
+            },
+            {
+              "id": "test_delivery_memo",
+              "name": "Delivery Memo",
+              "text": "Delivery confirmed.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {},
+      "footholds": {},
+      "inventory": [
+        {
+          "id": "test_start_cryptex",
+          "name": "Pocket Cryptex",
+          "type": "bag1",
+          "locked": true,
+          "lockType": "cryptex",
+          "takeable": true,
+          "hasContents": true,
+          "cryptexConfig": {
+            "wheelCount": 6
+          }
+        },
+        {
+          "x": 64,
+          "y": 64,
+          "id": "test_courier_bag",
+          "name": "Courier Bag",
+          "type": "bag1",
+          "active": true,
+          "locked": false,
+          "visible": true,
+          "contents": [
+            {
+              "id": "test_delivery_memo",
+              "name": "Delivery Memo",
+              "text": "Delivery confirmed.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ],
+          "lockType": "password",
+          "takeable": true,
+          "interactable": true
+        },
+        {
+          "id": "test_delivery_memo",
+          "name": "Delivery Memo",
+          "text": "Delivery confirmed.",
+          "type": "notes",
+          "readable": true,
+          "takeable": true
+        }
+      ],
+      "pinDusted": {},
+      "mfaPending": {},
+      "mfaPrompts": {},
+      "copiedItems": [],
+      "currentRoom": "lobby",
+      "mfaAccounts": {},
+      "opsFindings": {},
+      "room_states": {
+        "lobby": {
+          "npc_states": {
+            "test_courier": {
+              "isKO": true,
+              "currentHP": 0
+            }
+          },
+          "object_states": {},
+          "objects_added": [
+            {
+              "x": 64,
+              "y": 64,
+              "id": "test_courier_bag",
+              "name": "Courier Bag",
+              "type": "bag1",
+              "active": true,
+              "locked": true,
+              "visible": true,
+              "contents": [
+                {
+                  "id": "test_delivery_memo",
+                  "name": "Delivery Memo",
+                  "text": "Delivery confirmed.",
+                  "type": "notes",
+                  "readable": true,
+                  "takeable": true
+                }
+              ],
+              "lockType": "password",
+              "requires": "Satchel42",
+              "takeable": true,
+              "interactable": true
+            }
+          ],
+          "objects_removed": []
+        }
+      },
+      "signedInPcs": [],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "unlockedRooms": [
+        "lobby"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "test_courier"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [
+        "test_courier_bag"
+      ],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

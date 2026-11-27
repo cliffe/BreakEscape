@@ -1,0 +1,13 @@
+{
+  "key": "ffdadc4d9fd6f96b9392c358fcd5b338",
+  "npc": "narrator",
+  "text": "She feeds another sheaf into the shredder and doesn't turn round.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:32:24Z"
+}

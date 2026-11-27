@@ -1,0 +1,13 @@
+{
+  "key": "dde73fb8f83e33f398de6d74965e10de",
+  "npc": "narrator",
+  "text": "Her eyes go to the diary open on her desk, and away again.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:55:01Z"
+}

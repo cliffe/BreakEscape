@@ -1,0 +1,13 @@
+{
+  "key": "5c9fe4272de14e6863afa764be2889ab",
+  "npc": "blockchain_analyst",
+  "text": "But we're the door either side of it, so our own logs can see the middle.",
+  "voice": "Leda",
+  "style": "Blockchain forensics analyst in her mid-thirties, British-Indian, who loves the work and has not yet understood what her own graph proves. Speak with a consistent Northern English (Leeds) accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick pace. Enthusiastic and technical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T19:21:11Z"
+}

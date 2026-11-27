@@ -1,0 +1,13 @@
+{
+  "key": "743c1d212da7a6441ac9a613a96522bb",
+  "npc": "eleanor_vance",
+  "text": "A court will look at that sequence and ask: if the deficiencies were so serious you won't cover them, why did you renew?",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:29:56Z"
+}

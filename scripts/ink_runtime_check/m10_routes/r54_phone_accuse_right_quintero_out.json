@@ -1,0 +1,42 @@
+{
+ "steps": [
+  {
+   "note": "HaX's line accusation names Kowalczyk while Quintero is off the raid: it is still right, but nobody can hold her (wren_held stays false) and Netherton says she will be at the core."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "door_log_given": true,
+    "officer_out": "quintero"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Kowalczyk",
+    "Yes. Them."
+   ]
+  },
+  {
+   "said": [
+    "Kowalczyk breaches for us.",
+    "Director Magnus Netherton: I have nobody to send. Quintero is off the raid.",
+    "You'll meet her there."
+   ],
+   "notSaid": [
+    "Detain Agent Kowalczyk, quietly.",
+    "Copy. Going."
+   ]
+  },
+  {
+   "expect": {
+    "accused": "kowalczyk",
+    "sleeper_caught": true,
+    "wren_held": false
+   }
+  }
+ ]
+}

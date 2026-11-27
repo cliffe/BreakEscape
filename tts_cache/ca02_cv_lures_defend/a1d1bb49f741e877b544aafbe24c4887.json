@@ -1,0 +1,13 @@
+{
+  "key": "a1d1bb49f741e877b544aafbe24c4887",
+  "npc": "kit_chidi_okeke",
+  "text": "Fair point, that. I'll have it down and ask Nilesh about a password manager.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout \u2014 do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:22:03Z"
+}

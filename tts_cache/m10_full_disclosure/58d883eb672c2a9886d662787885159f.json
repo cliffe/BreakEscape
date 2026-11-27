@@ -1,0 +1,13 @@
+{
+  "key": "58d883eb672c2a9886d662787885159f",
+  "npc": "nightshade_table",
+  "text": "Entry three, the inner door. He told me to call it original, plain steel, no interlock. That one's wrong.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:48:30Z"
+}

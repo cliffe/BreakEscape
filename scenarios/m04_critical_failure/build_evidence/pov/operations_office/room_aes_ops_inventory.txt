@@ -1,0 +1,82 @@
+Room room_aes_ops: 320x320 px (10x10 tiles; about 6 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+## back wall (hung on it)
+  notice_board1  x=104..146 y=19..50
+  notes4  x=112..139 y=30..44 (conditional; see EMPTY below)
+  year_planner1  x=204..248 y=21..52
+  wall_clock1  x=266..291 y=18..44
+
+## against the back wall (standing on the floor)
+  filing_cabinet  x=66..93 y=42..96
+  ?(collision; look at the render)  x=68..91 y=72..84
+  filing_cabinet  x=152..179 y=42..96
+  ?(collision; look at the render)  x=154..177 y=72..84
+  kitchen_counter_sink1  x=196..243 y=64..104
+    on kitchen_counter_sink1: kettle1  x=203..218
+  ?(collision; look at the render)  x=198..264 y=80..92
+  undercounter_fridge1  x=243..265 y=75..104
+    on undercounter_fridge1: aes_microwave1  x=244..264
+
+## floor, far right
+  ?(collision; look at the render)  x=264..281 y=130..140  [feet ~1.3 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid centre
+  bin8  x=114..135 y=151..176  [feet ~1.9 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=116..133 y=156..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid left
+  desk3  x=60..111 y=137..176  [feet ~1.9 m out from the back wall; a rough guide, confirm in the render]
+    on desk3: binders1  x=56..76
+    on desk3: notes3  x=78..92 (conditional; see EMPTY below)
+
+## floor, mid right
+  desk1  x=196..274 y=137..176  [feet ~1.9 m out from the back wall; a rough guide, confirm in the render]
+    on desk1: pc8  x=206..240
+    on desk1: office-misc-cup  x=239..250
+    on desk1: notes1  x=258..274 (conditional; see EMPTY below)
+  coat_stand1  x=262..283 y=105..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near right
+  ?(collision; look at the render)  x=212..270 y=228..240  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  chair-grey-1  x=226..250 y=162..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+
+## near edge (bottom of the frame, mostly cropped; include only if it matters)
+  uni_sofa2  x=210..272 y=214..252  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  none in the room (mission default)
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'north': 'main_entrance', 'east': 'scada_control_room', 'south': 'security_office'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  robert_vance: robert_vance  at (5, 7) tiles: 50% across, feet 80% of the way from the back wall. Back-wall items behind them: x~128..192
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       pc "Vance's BMS Monitoring Terminal" -> pc8 (table_items) at 206,153
+  ok       notes "Maintenance Work Orders" -> notes1 (conditional_table_items) at 258,155
+  ok       notes "Facility Layout Map" -> notes4 (conditional_table_items) at 112,44
+  ok       notes "Budget Cut Memo" -> notes3 (conditional_table_items) at 78,153
+
+## where this background will show
+  every conversation with this room's NPCs that has no background of its own

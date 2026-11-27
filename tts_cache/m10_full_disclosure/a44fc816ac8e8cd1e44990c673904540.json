@@ -1,0 +1,13 @@
+{
+  "key": "a44fc816ac8e8cd1e44990c673904540",
+  "npc": "quintero_post",
+  "text": "Somebody put me on the floor down there. I know who. I'd like to know why, one day.",
+  "voice": "Kore",
+  "style": "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:10:28Z"
+}

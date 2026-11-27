@@ -1,0 +1,13 @@
+{
+  "key": "41744ddc3057f787ad147deed2083d68",
+  "npc": "julian_sallow",
+  "text": "Thirty seconds at the cooler.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:49:33Z"
+}

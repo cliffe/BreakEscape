@@ -1,0 +1,13 @@
+{
+  "key": "b18e46beaa2127ee68ba74e536a4fb8c",
+  "npc": "narrator",
+  "text": "The disposition screen behind you takes one entry per detainee, and the Director countersigns whatever goes in. Nightshade is watching you.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:44:05Z"
+}

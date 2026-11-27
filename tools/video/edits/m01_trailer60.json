@@ -1,0 +1,1408 @@
+{
+ "mission": "m01",
+ "id": "m01_trailer60_v15",
+ "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v15 (2026-11-25): music swapped to SpyAgro Action Dub from 0.695 s (a downbeat; 119.99 BPM, grid 0.5 s, bar 2.0 s; owner decision) and cards and cuts re-fitted on its grid with no spoken line cut: Mission 1 card on the 10.0 lift, Real Hacking card on 16.0, People Keep Vanishing on 22.0, Before the Sunday Launch on the 42.0 lift, Derek close cut on the 50.0 hit, CTA 52.0. Cards 1.6->1.5 s. Shot changes in docs/video/logs/m01_VIDEO_LOG.md. Not rendered. v13 (2026-11-24): music swapped to SpyAction Emerald Trigger from 85.571 s (a downbeat; 150.01 BPM, grid 0.4 s) and the cards re-fitted to it, with no spoken line cut. Quiet breakdown bars under the title, lift at 4.8 as HaX's voice comes in, Mission 1 card on the 9.6 lift, the peak bar 16.0-17.6 under Real Hacking, build at 20.8, Uncover the Plan. / Stop It. on 22.4, Before the Sunday Launch on the 41.6 lift, the Derek close cut on the 50.0 hit (hits 50.4, 51.2, 52.0 under the CTA start). Changes: hax_hook in 16.8->16.2 (3.0->3.6 s, pre 1.3->0.7), cards 1.5->1.6 s, montage A trims (m_lockpick 0.2, m_phone 0.3, m_keypad 0.3, m_cyberchef 0.2 s), npc_3 out 19.95->19.85 and derek_close out 52.16->52.0 (silence only), mb_maya trim 0.2, cr_flag 4->3 frames, derek_wide on 45.6667. Old music: Midnight Cipher Chase from 109.023 s. Not rendered. v11 (2026-11-24): the generic cards are rewritten in m01's own words (owner, v10 review: retire them): Uncover the Mystery -> People Keep / Vanishing (before Kevin, Maya and Sarah), Choices with Consequences -> Stay in / Character (HaX's brief for the IT-contractor cover, before montage B), And Hold Back The Entropy! -> Before the / Sunday Launch (Operation Shatter launches Sunday; before the crescendo that ends on the launch device). Same ids, durations, joins and timings; Mission 1 / First Contact and Real / Hacking (house card) unchanged; alternatives in docs/video/logs/m01_VIDEO_LOG.md. Not rendered. v10 (2026-11-22): Derek ends on the user's chosen line, the whole \"Sixty deaths... That's not murder. That's optimisation.\" from the new take t09c, wide then a hard cut to the close-up on \"That's optimisation\". v9 (2026-11-20): re-recorded on build 1f651abce with the spy starter avatars (one avatar per take, none shared by adjacent visible shots, see docs/video/edits/M01_TRAILER60_AVATARS.md) and every window re-timed to the v3 takes (docs/video/takes_v2.md, v3 edit windows); m_lights is the new take t03b_lights_on in the NPC-free motion-sensor storage_closet (the main office starts lit now, so the strike no longer shows there); the NPC lines are 4.0 / 4.0 / 4.5 s on the grid with their real line ends; derek_wide is cropped (cx .5 cy .4 zoom 1.3) so the Derek Lawson name bar stays out, and Derek's J-cut still starts 2.43 s into his line. Keep out: the Anniversary post-it, the Kali launcher post-it, the Derek name bar. v8.5: the cards Uncover the Mystery (now 22.5 s, before the NPC lines) and Choices with Consequences (now 36.5 s) swap places (user: the NPC lines are not consequences of the player's actions). v8.4: the server-room shot at 16 s is gone; Real Hacking card at 16.0, walk up to the Kali station 2 s, then only this mission's Kali footage (Hydra and the SSH shell, slowed to 2 s; sqlmap and dirb are from other missions and are out). v8.3: Real Hacking section is now card, walk to the Kali station, hacking clip, CyberChef (the first CyberChef cut is gone from montage A); montage B drops its keypad, the chair walk is a walk to the north-west door that knocks a swivel chair (1.5 s); the crescendo's last cut is the launch device instead of the Kali launcher. v8.2: montage B's Kevin walk (the player bumped into him) replaced by a walk that pushes a swivel chair. v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card) v12 (2026-11-24): owner note via AC0, 'Stay in Character' card replaced by 'Uncover the Plan. / Stop It.'",
+ "music": {
+  "track": "SpyAgro/Action Dub.mp3",
+  "analysis": "action_dub_60.json",
+  "start": 0.695,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2.0,
+  "alternatives": [
+   "Action Dub window 0.0 (m09 v1's window: lift 10.696 is 0.696 s off the grid, so the Mission card would sit between beats)",
+   "SpyAction/Emerald Trigger.mp3 @85.571 (v13/v14 placeholder)",
+   "Noir/Midnight Cipher Chase.mp3 @109.023 (v12's track)",
+   "Action Dub window 54.702 (analysis best, flat energy)"
+  ],
+  "analysis_60": "action_dub_60.json"
+ },
+ "beat": {
+  "bpm": 119.99,
+  "period": 0.5001,
+  "offset": 0,
+  "note": "window start 0.695 s is a downbeat (bar 2.0 s, beat 0.5 s). Bar rms x100: bar 0.13 at 0-2, quiet 2-4 (1), 4-6 6, 6-8 12 (HaX's voice under the title), drop 8-10 (2), lift 10.0 (21, Mission 1 card), 12 11, 14 16, 16 9 (Real Hacking card), drop 18 (3), lift 20 (15), 22 12 (People Keep Vanishing card), hit 23.33, 24 23, 28 8, 32 7, 42.0 lift 21 (Before the Sunday Launch card), 46 9, quiet bar 48-50 (3, under Derek's wide line), 50.0 lift + hit 0.81 (Derek close cut), hits 51.99, 53.33, 54.0 (strongest, 1.0, CTA), 54.33, 56.0. Not judged by ear."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no full codes, PINs or passwords",
+  "no identity reveal",
+  "no ending or choice screens",
+  "keypad only partly entered"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "shots": [
+  {
+   "preset": "safetynet-open"
+  },
+  {
+   "id": "hax_hook",
+   "type": "gameplay",
+   "duration": 4.0,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10_hax_hook.trimmed.mkv",
+    "in": 16.2,
+    "out": 20.2
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent HaX",
+     "text": "Whatever they're building, it's targeted and sophisticated.",
+     "start": -0.6,
+     "end": 3.12
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.698,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.7
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "HaX hook: names no cell, culprit, code or ending"
+   },
+   "note": "v9 J-cut: HaX's line (take 15.60-19.32) starts 1.2 s before the cut, under the held title (audio from take 15.50 = 1.3 s pre-roll); picture cuts to her portrait at take 16.80 (mid-line, subtitle on screen) and ends 19.80; v13 music: in 16.8->16.2, pre 1.3->0.7 (audio still from 15.5), card on the 9.6 lift; HaX portrait and the same line, choices appear by 20.0"
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 1",
+    "First Contact"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "m_lights",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t03b_lights_on.trimmed.mkv",
+    "in": 3.0,
+    "out": 4.5
+   },
+   "note": "v9: t03b_lights_on (ngozi_adeyemi), the agent steps from the lit hallway_east into the dark NPC-free storage_closet; the lights strike on at 3.406 s in the take; the first v9 render showed it lit only at 11.95 (about 0.25 s later than the ffmpeg frames of the take), then the window moved to 2.9-4.4 because the strike flickers (lit 3.6, dark 3.7-3.9, steady from 4.0): dark start, flicker, 0.4 s steady before the cut at 12.0 s; v13 music: out 4.4->4.5 (lit at 4.5)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.58,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lit hallway and storage closet, no text, no code"
+   }
+  },
+  {
+   "id": "m_lockpick",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_lockpick.trimmed.mkv",
+    "in": 6.4,
+    "out": 6.9
+   },
+   "note": "minigame fills the screen: 1x shows the whole panel; v13 music: out 7.4->7.2 (trim 0.2)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.492,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lockpick minigame, pins setting"
+   }
+  },
+  {
+   "id": "m_phone",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 7.2,
+    "out": 8.2
+   },
+   "note": "phone panel x .40-.61, y .02-.67 of the frame: 1.3x keeps it whole. 7.4-8.9: HaX reply on screen, then the reply choices appear at 7.83 (the later Maya reply starts at 9.4, not shown); v13 music: out 8.7->8.4 (trim 0.3, choices on screen, no Maya reply)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.35,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "phone chat: HaX general-advice reply and the next reply choices; no Maya reply visible"
+   }
+  },
+  {
+   "id": "m_keypad",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad_v3.trimmed.mkv",
+    "in": 5.3,
+    "out": 6.8
+   },
+   "note": "v3: 5.3-6.8 shows digit 2 (5.27) and digit 3 (5.92) land and hold; whole panel at 1x; v13 music: out 6.8->6.5 (trim 0.3, shows 193_)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "v3 take: three digits typed (1, 9, 3), ENTER never pressed; keypad shows three of four"
+   }
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "kali_walk",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t23_walk_kali.trimmed.mkv",
+    "in": 0.95,
+    "out": 2.45
+   },
+   "note": "the player walks up to the IT Audit Station (Kali) and stands at it; ends before the VM launcher opens at 3.00 s (its screen shows the kali login post-it)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "walking shot, no text"
+   }
+  },
+  {
+   "id": "real_hydra",
+   "type": "gameplay",
+   "duration": 2.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "placeholder": false,
+   "placeholder_note": "old-trailer Kali footage from this mission only: Hydra brute-forcing SSH, then the shell (original 19.533-20.800 s, 60 fps, slowed to 2.0 s; password mosaicked) until in-game VM capture exists",
+   "source": {
+    "type": "clip",
+    "file": "real_hacking_hydra_slow.mp4",
+    "in": 0,
+    "out": 2.0
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.1265,
+     "cy": 0.42,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.225,
+     "cy": 0.42,
+     "zoom": 1.25
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "m01 Hydra/SSH terminal; cracked password mosaicked; login name and lab IP visible by earlier decision"
+   },
+   "note": "v9: 16:9 crop zoom 1.25 cy .48 cuts the Kali post-it (bottom left, y .89 to 1.0) out of frame; check the frame. Owner 24 Nov: keep Hydra as final (not a stand-in)."
+  },
+  {
+   "id": "m_cyberchef",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_cyberchef.trimmed.mkv",
+    "in": 6.57,
+    "out": 7.57
+   },
+   "note": "moved after the real-hacking clip (user, v8.2 review: Real Hacking card, walk to Kali, hacking clip, CyberChef). CyberChef workstation, 2x crop on the input/output panes (x .475-.975, rows y .135-.635): input pasted at 6.63, decode 'Meet at the server room' visible from 6.77 (take's marks lag by 0.5 s; cut on frames); v13 music: out 7.57->7.37 (trim 0.2, output visible)",
+   "framing": {
+    "16:9": {
+     "cx": 0.725,
+     "cy": 0.385,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.56,
+     "cy": 0.4,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.56,
+     "cy": 0.36,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "CyberChef decoding the briefcase notes' own worked example (base64 to 'Meet at the server room'); no mission answer"
+   }
+  },
+  {
+   "id": "card_uncover",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "People Keep",
+    "Vanishing"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "npc_1",
+   "type": "gameplay",
+   "duration": 4.0,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t11b_kevin_line.trimmed.mkv",
+    "in": 10.31,
+    "out": 14.31
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Kevin Park",
+     "text": "I flagged it to management three times. Nothing happened.",
+     "start": 0.06,
+     "end": 3.54
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Kevin line: a wronged insider, no code, culprit or ending"
+   },
+   "note": "t11b (24 Nov re-take, visemes with teeth) 10.31-14.31: line 10.370-13.838; previous (skipped) line ended 10.266"
+  },
+  {
+   "id": "npc_2",
+   "type": "gameplay",
+   "duration": 4.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_maya_line.trimmed.mkv",
+    "in": 27.5,
+    "out": 31.5
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Maya Chen",
+     "text": "Anyone who gets too close gets removed.",
+     "start": 0.0,
+     "end": 3.39
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.71,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Maya line: menace, names no one, no code or ending"
+   },
+   "note": "t12 34.2-38.2: line 34.318-37.845; previous (skipped) line, which names Derek, ended 33.983"
+  },
+  {
+   "id": "npc_3",
+   "type": "gameplay",
+   "duration": 4.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_sarah_line.trimmed.mkv",
+    "in": 15.45,
+    "out": 19.95
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Sarah O'Brien",
+     "text": "Next thing you know, HR calls her in and she's gone.",
+     "start": 0.0,
+     "end": 4.09
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.69,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Sarah line: sets up the vanished manager, no code, culprit or ending"
+   },
+   "note": "t13 17.6-22.1: line 17.695-21.926; previous line ended 17.265, next starts 22.894; influence toast fades in the first 0.5 s; v13 music: out 19.95->19.85 (silence after the line, which ends 19.54; next line 20.06)"
+  },
+  {
+   "id": "card_choices",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "dissolve",
+    "pin": true
+   },
+   "text": [
+    "Uncover the Plan.",
+    "Stop It."
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "mb_sarah",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "dissolve",
+    "pin": true
+   },
+   "source": {
+    "file": "t16_walk_sarah.trimmed.mkv",
+    "in": 2.0,
+    "out": 3.5
+   },
+   "note": "walk to Sarah's desk 2.3-3.3 (walk ends 3.25, bubble prompt, no dialogue); v13 music: out 3.3->3.5 (at the desk, bubble)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "player walks to the receptionist, no dialogue, no text"
+   }
+  },
+  {
+   "id": "mb_chair",
+   "type": "gameplay",
+   "duration": 2.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_walk_chair.trimmed.mkv",
+    "in": 1.2,
+    "out": 3.2
+   },
+   "note": "heading for the north-west door, the player knocks a swivel chair, which rolls aside, and turns up into the doorway (user, v8.2 review); v13 music: out 3.1->3.2",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "walking shot, no NPC, no text"
+   }
+  },
+  {
+   "id": "mb_maya",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_walk_maya.trimmed.mkv",
+    "in": 5.3,
+    "out": 6.3
+   },
+   "note": "walk beside Maya 5.3-6.3 (room-transition click marker at ~3.4 s is outside the window); v13 music: out 6.3->6.1 (trim 0.2)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "player walks to Maya in her office, no dialogue, no text"
+   }
+  },
+  {
+   "id": "card_entropy",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Before the",
+    "Sunday Launch"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "cr_lockpick",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t04_lockpick.trimmed.mkv",
+    "in": 6.85,
+    "out": 7.1833
+   },
+   "note": "minigame crescendo: lockpicking, 'Pin 2 set!'",
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.492,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lockpick minigame, no code"
+   }
+  },
+  {
+   "id": "cr_key",
+   "type": "gameplay",
+   "duration": 0.3667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_minigames.trimmed.mkv",
+    "in": 23.9,
+    "out": 24.2667
+   },
+   "note": "minigame crescendo: Derek's office key, the last half second of insertion: the pins ride the key and lift onto the shear line (t19 re-recorded after the key-insertion pin fix)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.64,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.64,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.64,
+     "zoom": 1.125
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "key minigame; door title 'Derek Lawson, Operations' cropped out at 2x"
+   }
+  },
+  {
+   "id": "cr_briefcase",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_minigames.trimmed.mkv",
+    "in": 2.9,
+    "out": 3.1667
+   },
+   "note": "minigame crescendo: Patricia's Briefcase opened, contents icons",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.40625
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "container view, item icons only, no text legible"
+   }
+  },
+  {
+   "id": "cr_pc",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_terminal.trimmed.mkv",
+    "in": 4.4,
+    "out": 4.6333
+   },
+   "note": "minigame crescendo: IT Monitoring Station desktop (before the log file opens)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "desktop only, cut before file-open (log names Derek)"
+   }
+  },
+  {
+   "id": "cr_keypad",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad_v3.trimmed.mkv",
+    "in": 4.25,
+    "out": 4.5167
+   },
+   "note": "minigame crescendo: PIN pad, first non-answer digit lands",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "one non-answer digit, ENTER never pressed"
+   }
+  },
+  {
+   "id": "cr_password",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_minigames.trimmed.mkv",
+    "in": 34.3,
+    "out": 34.5333
+   },
+   "note": "minigame crescendo: Derek's Computer password screen, letters typed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.465,
+     "cy": 0.47,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.465,
+     "cy": 0.49,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "3x crop on the monitor keeps the 'Anniversary' post-it out of frame; wrong letters only, never submitted; the same 3x crop in 9:16 and 1:1 (the first renders of those showed the post-it)"
+   }
+  },
+  {
+   "id": "cr_cyberchef",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_cyberchef.trimmed.mkv",
+    "in": 7.2,
+    "out": 7.3333
+   },
+   "note": "minigame crescendo: CyberChef decoding the worked example",
+   "framing": {
+    "16:9": {
+     "cx": 0.725,
+     "cy": 0.385,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.56,
+     "cy": 0.4,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.56,
+     "cy": 0.36,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "briefcase notes' worked example, no mission answer"
+   }
+  },
+  {
+   "id": "cr_phone",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 4.2,
+    "out": 4.3333
+   },
+   "note": "minigame crescendo: phone chat, reply choice",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "phone chat choice, no answer"
+   }
+  },
+  {
+   "id": "cr_flag",
+   "type": "gameplay",
+   "duration": 0.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_flag_station.trimmed.mkv",
+    "in": 6.45,
+    "out": 6.55
+   },
+   "note": "minigame crescendo: flag station, 'flag{' typed; v13 music: 4->3 frames (0.1 s), out 6.5833->6.55; crescendo 75->74 frames",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "only the prefix 'flag{', nothing submitted"
+   }
+  },
+  {
+   "id": "cr_launch",
+   "type": "gameplay",
+   "duration": 0.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_launch_device.trimmed.mkv",
+    "in": 2.5,
+    "out": 2.6
+   },
+   "note": "minigame crescendo: the ENTROPY Launch Device, 'OPERATION SHATTER: ENTER LAUNCH AUTHORISATION CODE' (user, v8.2 review: replaces the Kali launcher)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "launch device header and empty code field; no code, no launch/abort screen"
+   }
+  },
+  {
+   "id": "derek_wide",
+   "type": "gameplay",
+   "duration": 4.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09c_derek_optimisation.trimmed.mkv",
+    "in": 47.6167,
+    "out": 51.95
+   },
+   "dialogue": true,
+   "note": "v10: t09c, the user's chosen line (2026-11-22). Line 43.09-52.16 in the take; audio starts 2.57 s early under the crescendo, picture joins at 45.66, cut in the gap before \"That's optimisation\" (take gap 49.45-50.19, cut at 50.0). Cropped (cx .5 cy .4 zoom 1.3) to hide the name bar and Skip.; v13 music: in 45.66->45.6667, pre 2.57->2.5767 (audio from 43.09 as before), line end 49.45 unchanged; v14: t09c retaken with the darker re-voice (line 44.89-54.19 in the new take, \"That's optimisation\" 52.00-53.82 from the clean clip's pauses); picture 47.6167-51.95, audio from 44.891",
+   "lines": [
+    {
+     "speaker": "Derek Lawson",
+     "text": "Sixty deaths to save tens of thousands per year. That's not murder.",
+     "start": -2.7257,
+     "end": 3.644
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.71,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 1.5,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 2.7257
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "antagonist line; \"Sixty deaths\" is a casualty figure, kept because the user asked for the whole line (2026-11-22)"
+   },
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "id": "derek_close",
+   "type": "gameplay",
+   "duration": 2.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09c_derek_optimisation.trimmed.mkv",
+    "in": 51.95,
+    "out": 53.95
+   },
+   "dialogue": true,
+   "note": "hard cut to the close-up of the face on \"That's optimisation\" (as the old trailer), out 52.16 before the choice menu (52.2); v13 music: cut 49.84->50.0 on the 50.0 hit; out 52.16->52.0 trims 0.16 s of silence after the line (ends 51.85; frame 51.97 clean), no line cut; v14: new take, cut at 51.95 on the word onset (52.00), out 53.95 (word ends 53.82)",
+   "lines": [
+    {
+     "speaker": "Derek Lawson",
+     "text": "That's optimisation.",
+     "start": 0.05,
+     "end": 1.87
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.65,
+     "cy": 0.185,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.185,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.71,
+     "cy": 0.33,
+     "zoom": 1.6
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 5.5,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "antagonist line close-up; no UI, no text"
+   },
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close"
+  }
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ }
+}

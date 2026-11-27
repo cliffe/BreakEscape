@@ -1,0 +1,13 @@
+{
+  "key": "ceb5b7ce63002e33b416175c9e71b5b6",
+  "npc": "darren_price",
+  "text": "Check saved. Thanks for doing it.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_general_v2_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:48Z"
+}

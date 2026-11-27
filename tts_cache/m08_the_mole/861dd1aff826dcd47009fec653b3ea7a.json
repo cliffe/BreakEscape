@@ -1,0 +1,13 @@
+{
+  "key": "861dd1aff826dcd47009fec653b3ea7a",
+  "npc": "agent_vector",
+  "text": "If ENTROPY ever cracks our old crypto, what's on that box is what keeps them out of the next decade.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:31:42Z"
+}

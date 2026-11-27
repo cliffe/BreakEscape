@@ -1,0 +1,159 @@
+/* Cyber Aware loading screen (mission.json "title_style": "ca"; D350, "L1, bands plus seam bar").
+   Red attacker half left, blue defender half right, a stepped bar that fills outward from the seam.
+   Pixel-art UI: 2px square borders, hard-edged blocks, GNF / Press Start 2P / VT323 only, no radius,
+   no blur, no smooth gradients (the dither scrim is a 4px SVG checker). The SAFETYNET screen's CRT
+   exception (D220) does not apply here. Only linked for missions that ask for it. */
+
+.title-screen-container.ca-title {
+    --ca-ink: #1f2933;
+    --ca-paper: #f6f8f7;
+    --ca-amber: #e8a24a;
+    --ca-atk: #c24a38;
+    --ca-def: #3f86c4;
+    --ca-off: #2c3a40;
+    --ca-bar-bg: #10171a;
+    display: block;
+    background: #000;
+    animation: none;
+    font-family: 'Press Start 2P', monospace;
+}
+.title-screen-container.ca-title::before,
+.title-screen-container.ca-title::after { content: none; }
+
+.ca-ts { position: absolute; inset: 0; overflow: hidden; color: #fff; }
+.ca-ts > * { position: absolute; box-sizing: border-box; }
+
+.ca-ts-art {
+    inset: 0;
+    background-size: cover;
+    background-position: left top;
+    background-repeat: no-repeat;
+}
+
+/* 2px dither scrim over the right half: keeps the painting visible but quiet behind the text */
+.ca-ts-scrim {
+    left: 52.2%; top: 16px; right: 16px; bottom: 16px;
+    border-left: 2px solid var(--ca-ink);
+    background-color: rgba(8, 12, 14, 0.5);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23080c0e' fill-opacity='.32'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%23080c0e' fill-opacity='.32'/%3E%3C/svg%3E");
+    background-size: 4px 4px;
+}
+
+/* the 16px frame: red along the left half, blue along the right */
+.ca-ts-band-a { background: var(--ca-atk); }
+.ca-ts-band-d { background: var(--ca-def); }
+.ca-ts-edge-top.ca-ts-band-a { left: 0; top: 0; width: 50%; height: 16px; }
+.ca-ts-edge-top.ca-ts-band-d { left: 50%; top: 0; right: 0; height: 16px; }
+.ca-ts-edge-bottom.ca-ts-band-a { left: 0; bottom: 0; width: 50%; height: 16px; }
+.ca-ts-edge-bottom.ca-ts-band-d { left: 50%; bottom: 0; right: 0; height: 16px; }
+.ca-ts-edge-side-a { left: 0; top: 16px; bottom: 16px; width: 16px; }
+.ca-ts-edge-side-d { right: 0; top: 16px; bottom: 16px; width: 16px; }
+
+.ca-ts-seam {
+    background: var(--ca-paper);
+    border-left: 2px solid var(--ca-ink);
+    border-right: 2px solid var(--ca-ink);
+    width: 8px;
+    left: calc(50% - 4px);
+}
+.ca-ts-seam-top { top: 0; height: 16px; }
+.ca-ts-seam-bottom { bottom: 0; height: 16px; }
+
+.ca-ts-tab {
+    top: 32px;
+    z-index: 3;
+    padding: 10px 12px;
+    border: 2px solid var(--ca-ink);
+    font-size: 16px;
+    line-height: 1;
+    color: #fff;
+}
+.ca-ts-tab-a { left: 32px; background: var(--ca-atk); }
+.ca-ts-tab-d { right: 32px; background: var(--ca-def); }
+
+/* title block: right half, vertically centred */
+.ca-ts-text {
+    left: 56%; right: 3%; top: 50%;
+    transform: translateY(-64%);
+    max-width: 560px;
+    z-index: 2;
+}
+.ca-ts-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    border: 2px solid var(--ca-amber);
+    padding: 10px 16px;
+    background: rgba(10, 14, 16, 0.55);
+}
+.ca-ts-mark i { display: block; width: 16px; height: 16px; background: var(--ca-amber); }
+.ca-ts-mark-text { font-weight: 400; font-size: 16px; line-height: 1; color: var(--ca-amber); letter-spacing: 1px; }
+.ca-ts-title {
+    margin-top: 24px;
+    font-family: 'GNF', 'Press Start 2P', monospace;
+    font-size: 56px;
+    line-height: 1.1;
+    color: #fff;
+    text-shadow: 3px 3px 0 var(--ca-ink);
+    overflow-wrap: anywhere;
+}
+.ca-ts-company, .ca-ts-tag {
+    font-family: 'VT323', monospace;
+    color: #e6ebe9;
+    text-shadow: 2px 2px 0 var(--ca-ink);
+    overflow-wrap: anywhere;
+}
+.ca-ts-company {
+    --ca-accent: var(--ca-amber);
+    margin-top: 14px;
+    font-size: 40px;
+    line-height: 1.1;
+    border-left: 8px solid var(--ca-accent);
+    padding-left: 12px;
+}
+.ca-ts-tag { margin-top: 14px; font-size: 32px; line-height: 1.1; color: var(--ca-paper); }
+
+/* the stepped bar: two halves that fill outward from the seam, red left, blue right */
+.ca-ts-bar { left: 50%; bottom: 72px; width: min(800px, calc(100% - 64px)); height: 28px; transform: translateX(-50%); z-index: 2; }
+.ca-ts-sbar {
+    top: 0; height: 28px; width: 50%;
+    display: flex; gap: 4px; padding: 4px;
+    box-sizing: border-box;
+    background: var(--ca-bar-bg);
+    border: 2px solid var(--ca-paper);
+}
+.ca-ts-sbar { position: absolute; }
+.ca-ts-sbar s { flex: 1; display: block; text-decoration: none; background: var(--ca-off); }
+.ca-ts-sbar-l { left: 0; flex-direction: row-reverse; border-right: 0; }
+.ca-ts-sbar-r { right: 0; border-left: 0; }
+.ca-ts-sbar-l s.on { background: var(--ca-atk); }
+.ca-ts-sbar-r s.on { background: var(--ca-def); }
+.ca-ts-seam-bar { position: absolute; top: -8px; height: 44px; }
+
+.ca-ts-status, .ca-ts-hint {
+    left: 0; right: 0;
+    font-family: 'Press Start 2P', monospace;
+    text-align: center;
+    color: #fff;
+    text-shadow: 2px 2px 0 var(--ca-ink);
+    z-index: 2;
+}
+.ca-ts-status { bottom: 36px; font-size: 16px; line-height: 1; }
+.ca-ts-hint { bottom: 20px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 16px; letter-spacing: 1px; color: #e6ebe9; }
+
+/* Narrow screens: one calm panel over the whole picture, the title block centred, the bar full width */
+@media (max-width: 760px) {
+    .ca-ts-scrim { left: 16px; border-left: 0; }
+    .ca-ts-text { left: 32px; right: 32px; top: 112px; transform: none; max-width: none; }
+    .ca-ts-title { font-size: 32px; }
+    .ca-ts-company { font-size: 32px; }
+    .ca-ts-tag { font-size: 24px; }
+    .ca-ts-tag span { display: block; }
+    .ca-ts-tag-dot { display: none !important; }
+    .ca-ts-bar { bottom: 72px; }
+}
+@media (max-height: 520px) {
+    .ca-ts-title { font-size: 32px; margin-top: 12px; }
+    .ca-ts-company { font-size: 32px; }
+    .ca-ts-tag { font-size: 24px; }
+}

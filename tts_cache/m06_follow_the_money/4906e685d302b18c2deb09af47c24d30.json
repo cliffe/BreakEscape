@@ -1,0 +1,13 @@
+{
+  "key": "4906e685d302b18c2deb09af47c24d30",
+  "npc": "narrator",
+  "text": "You tell her what the round sums were: ENTROPY's money, washed through the mixer and out to their cells.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:44Z"
+}

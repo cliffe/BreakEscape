@@ -1,0 +1,13 @@
+{
+  "key": "56af30932f953048c074cd27399b4e2b",
+  "npc": "ama_owusu",
+  "text": "That's a user session, and the red frame and bolt on the file server mark it. The settings finding needs one before it will work.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:40Z"
+}

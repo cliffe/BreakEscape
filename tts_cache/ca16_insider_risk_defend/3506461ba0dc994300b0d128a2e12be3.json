@@ -1,0 +1,13 @@
+{
+  "key": "3506461ba0dc994300b0d128a2e12be3",
+  "npc": "anjali_rao",
+  "text": "Anjali Rao, information security. Insider risk is harm from people who already have access. Mostly by accident, sometimes on purpose.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk_defend",
+  "source": "generate",
+  "generated": "2026-11-27",
+  "recorded_at": "2026-11-27T03:16:23Z"
+}

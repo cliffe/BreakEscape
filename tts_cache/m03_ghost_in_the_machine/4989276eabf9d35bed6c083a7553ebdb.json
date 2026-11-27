@@ -1,0 +1,13 @@
+{
+  "key": "4989276eabf9d35bed6c083a7553ebdb",
+  "npc": "narrator",
+  "text": "You step back from the whiteboard, easing the distance open again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:20:40Z"
+}

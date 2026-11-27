@@ -1,0 +1,13 @@
+{
+  "key": "9d96900d2994baa2c2ca9169498ec82d",
+  "npc": "ray_hollis",
+  "text": "Walk away. Right now. I'm asking.",
+  "voice": "Puck",
+  "style": "A facility guard in his mid-thirties, six months into taking money he has stopped being able to explain. Consistent working-class American accent, Pacific Northwest, throughout -- do not shift to any other accent. Low, flat pitch; slow, too-casual pace. Talks like a man rehearsing an answer he has already given himself.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:41:23Z"
+}

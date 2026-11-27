@@ -1,0 +1,13 @@
+{
+  "key": "fa00732344ba00ed0cd1f86dfb5c96cd",
+  "npc": "niamh_doherty",
+  "text": "My PC's dead. Brilliant.",
+  "voice": "Kore",
+  "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, the office gossip. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:56:11Z"
+}

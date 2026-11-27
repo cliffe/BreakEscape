@@ -1,0 +1,13 @@
+{
+  "key": "a2b5e5a2eb8914732eb3fb60dcdc5fd5",
+  "npc": "narrator",
+  "text": "She goes back to her clipboard as if you've already left.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:53:07Z"
+}

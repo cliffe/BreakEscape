@@ -1,0 +1,13 @@
+{
+  "key": "afe6c30ccc3af475501eff409a3b01ad",
+  "npc": "eleanor_vance",
+  "text": "Albion's managed service provider, CastleTech Solutions, excluded OT systems from their SOC monitoring scope. So when the attack escalated from IT to OT, there was no external detection layer.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:24:17Z"
+}

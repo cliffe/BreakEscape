@@ -1,0 +1,22 @@
+{
+ "steps": [
+  {"note": "R28: Maya met by the audit route, never told who the player is. The hub keeps the tactical advice hidden and the operation question gone once heard; stepping out of her office hides the whole hub behind the not-here line until she is back."},
+  {"talk": "maya", "picks": ["That's right. I'm reviewing", "What message?", "Tell me more about this operation", "When does it launch", "I need to keep investigating"]},
+  {"said": ["Are you really here for a security audit", "Only if you're here to stop it. People are going to die", "Sunday. 6 AM", "[choice] What can you tell me about Derek", "[choice] What happened to Patricia", "Be careful. Derek's paranoid"],
+   "notSaid": ["Thank god. I was starting to think no one would come", "[choice] What should I do first"]},
+  {"expect": {"discussed_operation": true}},
+  {"enter": "main_office_area"},
+  {"expect": {"maya_away": true}},
+  {"talk": "maya", "reload": true, "picks": ["Not here. I'll come to your office"]},
+  {"said": ["Is it safe to talk?", "[choice] Not here. I'll come to your office"],
+   "notSaid": ["[choice] What can you tell me about Derek", "[choice] What happened to Patricia", "Be careful. Derek's paranoid"]},
+  {"enter": "maya_office"},
+  {"expect": {"maya_away": false}},
+  {"talk": "maya", "reload": true, "picks": ["What can you tell me about Derek", "What about the others here", "I need to keep investigating"]},
+  {"said": ["Part of a cell called \"Social Fabric", "Kevin's innocent", "[choice] What happened to Patricia", "Be careful. Derek's paranoid"],
+   "notSaid": ["[choice] Tell me about Operation Shatter", "[choice] What should I do first", "Not here. I'll come to your office"]},
+  {"talk": "maya", "reload": true, "picks": ["I need to keep investigating"]},
+  {"said": ["[choice] What happened to Patricia"],
+   "notSaid": ["[choice] What can you tell me about Derek", "[choice] Tell me about Operation Shatter", "[choice] What should I do first"]}
+ ]
+}

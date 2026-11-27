@@ -1,0 +1,555 @@
+{
+ "scenario": "test_needs_leash",
+ "gameId": 20,
+ "url": "http://127.0.0.1:3001/break_escape/games/20",
+ "seed": "test_needs_leash",
+ "capturedAt": "2026-11-09T21:34:35.337Z",
+ "gitRev": "dc0c4a52",
+ "jsDirty": true,
+ "spanSec": 180,
+ "paceMs": 250,
+ "visit": [
+  "maya_office",
+  "store",
+  "west_corridor",
+  "ravi_office"
+ ],
+ "knockOuts": [],
+ "probeEverySec": 15,
+ "disableAttacks": false,
+ "needsIds": [
+  "ravi"
+ ],
+ "endClockMs": 180000,
+ "endTick": 720,
+ "actions": [
+  {
+   "what": "bootstrap",
+   "ok": true,
+   "result": {
+    "settled": true,
+    "room": "ravi_office",
+    "player": {
+     "x": 128,
+     "y": 160,
+     "hp": 100
+    }
+   }
+  },
+  {
+   "what": "enter maya_office",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "ravi_office",
+    "to": "maya_office",
+    "wanted": "maya_office",
+    "doorway": {
+     "id": "door:ravi_office->maya_office",
+     "direction": "east",
+     "x": 304,
+     "y": 80,
+     "gap": {
+      "axis": "y",
+      "min": 68,
+      "max": 92,
+      "feetMin": 73,
+      "feetMax": 87
+     }
+    },
+    "opened": {
+     "ok": true,
+     "via": "direct"
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": 263,
+       "y": 84
+      },
+      "alignedFeet": {
+       "x": 263,
+       "y": 84
+      },
+      "alignedInGap": true,
+      "alignVia": "pointer",
+      "feetAfter": {
+       "x": 337,
+       "y": 80
+      },
+      "crossVia": "pointer",
+      "room": "maya_office",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": 337,
+     "y": 49
+    },
+    "feetAt": {
+     "x": 337,
+     "y": 80
+    }
+   }
+  },
+  {
+   "what": "enter store",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "maya_office",
+    "to": "store",
+    "wanted": "store",
+    "doorway": {
+     "id": "door:maya_office->store",
+     "direction": "south",
+     "x": 368,
+     "y": 288,
+     "gap": {
+      "axis": "x",
+      "min": 352,
+      "max": 384,
+      "feetMin": 361,
+      "feetMax": 375
+     }
+    },
+    "opened": {
+     "ok": true,
+     "via": "approached-then-interacted"
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": 369,
+       "y": 268
+      },
+      "alignedFeet": {
+       "x": 368,
+       "y": 253
+      },
+      "alignedInGap": true,
+      "alignVia": "pointer",
+      "feetAfter": {
+       "x": 368,
+       "y": 335
+      },
+      "crossVia": "pointer",
+      "room": "store",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": 368,
+     "y": 304
+    },
+    "feetAt": {
+     "x": 368,
+     "y": 335
+    }
+   }
+  },
+  {
+   "what": "enter west_corridor",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "store",
+    "to": "west_corridor",
+    "wanted": "west_corridor",
+    "doorway": {
+     "id": "door:store->west_corridor",
+     "direction": "west",
+     "x": 336,
+     "y": 336,
+     "gap": {
+      "axis": "y",
+      "min": 324,
+      "max": 348,
+      "feetMin": 329,
+      "feetMax": 343
+     }
+    },
+    "opened": {
+     "ok": true,
+     "via": "direct"
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": 368,
+       "y": 335
+      },
+      "alignedFeet": {
+       "x": 368,
+       "y": 335
+      },
+      "alignedInGap": true,
+      "alignVia": "pointer",
+      "feetAfter": {
+       "x": 303,
+       "y": 336
+      },
+      "crossVia": "pointer",
+      "room": "west_corridor",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": 303,
+     "y": 305
+    },
+    "feetAt": {
+     "x": 303,
+     "y": 336
+    }
+   }
+  },
+  {
+   "what": "enter ravi_office",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "west_corridor",
+    "to": "ravi_office",
+    "wanted": "ravi_office",
+    "doorway": {
+     "id": "door:west_corridor->ravi_office",
+     "direction": "north",
+     "x": 48,
+     "y": 288,
+     "gap": {
+      "axis": "x",
+      "min": 32,
+      "max": 64,
+      "feetMin": 41,
+      "feetMax": 55
+     }
+    },
+    "opened": {
+     "ok": true,
+     "via": "direct"
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": 65,
+       "y": 336
+      },
+      "alignedFeet": {
+       "x": 63,
+       "y": 336
+      },
+      "alignedInGap": false,
+      "alignVia": "keyboard(avoids-click-trigger)",
+      "feetAfter": {
+       "x": 48,
+       "y": 237
+      },
+      "crossVia": "pointer",
+      "room": "ravi_office",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": 48,
+     "y": 206
+    },
+    "feetAt": {
+     "x": 48,
+     "y": 237
+    }
+   }
+  },
+  {
+   "what": "reset needs to seed, manual clock",
+   "ok": true,
+   "result": {
+    "seed": {
+     "ok": true,
+     "seed": "test_needs_leash",
+     "npcs": [
+      "ravi"
+     ]
+    },
+    "manual": {
+     "ok": true,
+     "manualClock": true
+    }
+   }
+  }
+ ],
+ "probes": [],
+ "workstations": [],
+ "tasks": [
+  {
+   "clockMs": 104000,
+   "tick": 416,
+   "taskId": "see_long_way"
+  }
+ ],
+ "finalGlobals": {},
+ "events": [
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "event": "npc_need_urgent:ravi",
+   "data": {
+    "npcId": "ravi",
+    "need": "thirst",
+    "level": 40
+   }
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "event": "npc_left_post:ravi",
+   "data": {
+    "npcId": "ravi",
+    "need": "thirst",
+    "targetId": "far_cooler",
+    "expectedAwayMs": 15108,
+    "playerNearby": false,
+    "playerDistance": 188
+   }
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "ravi",
+    "objectId": "ravi_office_chair-white-2-rotate3_157"
+   }
+  },
+  {
+   "clockMs": 97500,
+   "tick": 390,
+   "event": "npc_arrived:ravi",
+   "data": {
+    "npcId": "ravi",
+    "x": 559.384023781217,
+    "y": 340.0000233476783,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 103750,
+   "tick": 415,
+   "event": "npc_used:far_cooler",
+   "data": {
+    "npcId": "ravi",
+    "objectId": "far_cooler",
+    "need": "thirst",
+    "itemId": null,
+    "tag": null,
+    "payload": null,
+    "playerNearby": false,
+    "playerDistance": 522
+   }
+  },
+  {
+   "clockMs": 103750,
+   "tick": 415,
+   "event": "objective_aim_completed",
+   "data": {
+    "aimId": "watch_the_leash",
+    "aim": {
+     "aimId": "watch_the_leash",
+     "order": 0,
+     "tasks": [
+      {
+       "type": "custom",
+       "title": "Ravi fetches water without crossing Maya's office",
+       "status": "completed",
+       "taskId": "see_long_way",
+       "aimId": "watch_the_leash",
+       "originalStatus": "active",
+       "_pendingPickups": null,
+       "completedAt": "2026-11-09T21:33:08.138Z"
+      }
+     ],
+     "title": "Watch the leash",
+     "status": "completed",
+     "description": "Nothing to solve.",
+     "completedAt": "2026-11-09T21:33:08.139Z"
+    }
+   }
+  },
+  {
+   "clockMs": 103750,
+   "tick": 415,
+   "event": "objective_aim_completed:watch_the_leash",
+   "data": {
+    "aimId": "watch_the_leash",
+    "aim": {
+     "aimId": "watch_the_leash",
+     "order": 0,
+     "tasks": [
+      {
+       "type": "custom",
+       "title": "Ravi fetches water without crossing Maya's office",
+       "status": "completed",
+       "taskId": "see_long_way",
+       "aimId": "watch_the_leash",
+       "originalStatus": "active",
+       "_pendingPickups": null,
+       "completedAt": "2026-11-09T21:33:08.138Z"
+      }
+     ],
+     "title": "Watch the leash",
+     "status": "completed",
+     "description": "Nothing to solve.",
+     "completedAt": "2026-11-09T21:33:08.139Z"
+    }
+   }
+  },
+  {
+   "clockMs": 103750,
+   "tick": 415,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_long_way",
+    "aimId": "watch_the_leash",
+    "task": {
+     "type": "custom",
+     "title": "Ravi fetches water without crossing Maya's office",
+     "status": "completed",
+     "taskId": "see_long_way",
+     "aimId": "watch_the_leash",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-09T21:33:08.138Z"
+    }
+   }
+  },
+  {
+   "clockMs": 103750,
+   "tick": 415,
+   "event": "objective_task_completed:see_long_way",
+   "data": {
+    "taskId": "see_long_way",
+    "aimId": "watch_the_leash",
+    "task": {
+     "type": "custom",
+     "title": "Ravi fetches water without crossing Maya's office",
+     "status": "completed",
+     "taskId": "see_long_way",
+     "aimId": "watch_the_leash",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-09T21:33:08.138Z"
+    }
+   }
+  },
+  {
+   "clockMs": 114500,
+   "tick": 458,
+   "event": "npc_arrived:ravi",
+   "data": {
+    "npcId": "ravi",
+    "x": 220.36215246548434,
+    "y": 123.63970822531687,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 114750,
+   "tick": 459,
+   "event": "npc_returned_post:ravi",
+   "data": {
+    "npcId": "ravi",
+    "playerNearby": false,
+    "playerDistance": 207
+   }
+  },
+  {
+   "clockMs": 114750,
+   "tick": 459,
+   "event": "npc_fetching_chair",
+   "data": {
+    "npcId": "ravi",
+    "objectId": "ravi_office_chair-white-1-rotate6_154"
+   }
+  },
+  {
+   "clockMs": 115000,
+   "tick": 460,
+   "event": "npc_arrived:ravi",
+   "data": {
+    "npcId": "ravi",
+    "x": 214.82471412865516,
+    "y": 118.58066685080598,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 115000,
+   "tick": 460,
+   "event": "npc_arrived:ravi",
+   "data": {
+    "npcId": "ravi",
+    "x": 214.8246557953218,
+    "y": 118.58060851747265,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 115000,
+   "tick": 460,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "ravi",
+    "objectId": "ravi_office_chair-white-1-rotate6_154",
+    "facing": "north-east"
+   }
+  }
+ ],
+ "needsLog": [
+  {
+   "t": 360,
+   "npc": "ravi",
+   "ev": "urgent",
+   "need": "thirst",
+   "level": 40
+  },
+  {
+   "t": 360,
+   "npc": "ravi",
+   "ev": "job_start",
+   "need": "thirst",
+   "target": "far_cooler"
+  },
+  {
+   "t": 391,
+   "npc": "ravi",
+   "ev": "using",
+   "need": "thirst",
+   "target": "far_cooler"
+  },
+  {
+   "t": 415,
+   "npc": "ravi",
+   "ev": "used",
+   "need": "thirst",
+   "target": "far_cooler",
+   "level": 100,
+   "payloadPresent": false
+  },
+  {
+   "t": 447,
+   "npc": "ravi",
+   "ev": "return_resumed",
+   "x": 59,
+   "y": 332
+  },
+  {
+   "t": 459,
+   "npc": "ravi",
+   "ev": "returned_post"
+  }
+ ]
+}

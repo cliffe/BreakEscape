@@ -1,0 +1,7 @@
+{
+  "display_name": "Multiple Connections Test",
+  "description": "Technical test for rooms with multiple door connections.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

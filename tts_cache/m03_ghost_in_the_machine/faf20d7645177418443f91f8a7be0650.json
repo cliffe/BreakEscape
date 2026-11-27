@@ -1,0 +1,13 @@
+{
+  "key": "faf20d7645177418443f91f8a7be0650",
+  "npc": "victoria_sterling",
+  "text": "Your Ghost liked to tell people they wrote that exploit themselves. They bought it from me, hospital premium and all.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:19:02Z"
+}

@@ -1,0 +1,21 @@
+{
+  "key": "122cda9df917b9959145f42546dc6a1c",
+  "npc": "ghost_phone",
+  "text": "It goes at four. Enjoy the view.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:07:11Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/122cda9df917b9959145f42546dc6a1c.mp3",
+    "clean_md5": "c48ccdd60effc74805116aaec747e91a",
+    "baked_md5": "988a99caf64135362471dd54ef42c07b",
+    "baked": "2026-11-24"
+  }
+}

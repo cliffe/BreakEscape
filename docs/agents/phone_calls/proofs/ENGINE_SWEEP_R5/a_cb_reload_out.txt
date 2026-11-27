@@ -1,0 +1,23 @@
+game 2385 (a_cb_reload)
+ringing: {"npc":"recruiter","state":"ringing","knot":"first_call"} rows=[]
+shot a_cb_reload_ringing
+declined: ringer=null rows=["Missed call"] callback={"knot":"first_call","callLabel":"TalentStack Executive Recruiting"} events={"ev":["phone_call_declined:recruiter"],"toasts":[]}
+slot before reload: {"forced":[],"live":{"knot":"first_call","state":"missed","onMissed":"callback","callLabel":"TalentStack Executive Recruiting"}}
+toasts on screen just after load: []
+  +2s toasts on screen: []
+  +4s toasts on screen: []
+  +6s toasts on screen: []
+after reload: ringer=null mg=null rows=["Missed call"] callback={"knot":"first_call","callLabel":"TalentStack Executive Recruiting"} slot={"forced":[],"live":{"knot":"first_call","state":"missed","onMissed":"callback","callLabel":"TalentStack Executive Recruiting"}}
+"opened recruiter"
+thread: {"header":"☎\nCall back","thread":"☎ | Missed call | Call back | TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R. | 19:52"}
+shot a_cb_reload_after_reload
+header button: "☎\nCall back"; inline buttons: ["Call back"]
+"Call pressed: ☎Call back"
+dialling: {"bar":"CALLING"}
+shot a_cb_reload_dialling
+call back connected: {"bar":"ON CALL | 0:04","subs":["The Recruiter: You rang back. Manners, or curiosity?","THE RECRUITER: Agent. Or whatever they're calling you this week.","THE RECRUITER: I run TalentStack. You've spent tonight putting a name to one of my placements. David Torres."],"choices":["1. You radicalised a man whose wife is dying.","2. How many more \"placements\" do you have?","3. Say nothing. Let her fill the silence."]}
+shot a_cb_reload_callback_call
+events: {"ev":["phone_call_answered:recruiter callback"],"toasts":[]}
+callback after connect: null
+rows at the end: ["Missed call"]
+/tts requests: ["narrator","A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open."] ["director_netherton","Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels."] ["director_netherton","I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground."] ["director_netherton","Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how."] ["director_netherton","That is what you are going to tell me."] ["agent_nightshade","Insiders are hard to catch because they never have to break 

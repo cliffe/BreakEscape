@@ -1,0 +1,14 @@
+PASS L1 'pebble'
+PASS L2 '1860'
+PASS L3 'lantana'
+PASS L4 'cupola'
+PASS L5 '6191'
+PASS L6 'primer'
+PASS L7 'sorting-33'
+PASS L8 'padlock-92'
+PASS L10 '8841f594'
+PASS scoreboard token 'merlin-2685'
+PASS signature Verified OK
+PASS L9 key
+PASS EBCDIC
+ALL PASS

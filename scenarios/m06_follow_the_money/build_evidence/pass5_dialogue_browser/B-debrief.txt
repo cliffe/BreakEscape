@@ -1,0 +1,58 @@
+Agent HaX: We've been chasing cells one at a time. Now we can see who pays them all.
+  >>  2. What does it give us?
+demo_player: What does it give us?
+Agent HaX: A lot. Every cell's money runs through one mixer, into one fund.
+Agent HaX: Advances first, then the balances, all on one clock. Seventy-two hours from when you found it.
+  >>  2. And the fund?
+demo_player: And the fund?
+Agent HaX: You traced the fund yourself. In through the mixer, out by amount and time.
+Agent HaX: $12.8 million, split across six cells. Every name's on that page.
+Agent HaX: Three hundred and fifty to six hundred projected dead across the operations it pays for. The cells' own estimates.
+Agent HaX: They wrote that number down and called it "The Architect's Masterpiece."
+  >>  1. How does anyone sign off on that?
+demo_player: How does anyone sign off on that?
+Agent HaX: They think the system's falling anyway, and pushing it saves lives later.
+Agent HaX: Greed I could bargain with. These people believe it.
+Agent HaX: The freeze doesn't stop the cells that were already paid.
+Agent HaX: And ENTROPY knows we were inside their bank. We won't get in again.
+Agent HaX: Volkova.
+Agent HaX: You turned her.
+Agent HaX: She gave us the mixer. Nobody alive knows ENTROPY's plumbing better.
+  >>  1. Was it the right call?
+demo_player: Was it the right call?
+Agent HaX: For tonight, yes. What's in her head beats anything on her servers.
+Agent HaX: Pool keys and the wallet map before midnight, and the account that paid her.
+Agent HaX: She came over because she believed you. Remember that when someone asks if she was worth it.
+Agent HaX: We detained "Satoshi Nakamoto II" in his own office and handed him to the police.
+Agent HaX: He talked about financial freedom all the way through his rights.
+  >>  1. He'll be making speeches at the trial.
+demo_player: He'll be making speeches at the trial.
+Agent HaX: Let him. The jury will have the allocation.
+Agent HaX: HashChain's finished and the mixer's dark. Every cell needs a new bank, and they won't trust the next one for months.
+Agent HaX: His minder took Volkova's word for you, on the phone, with his boss behind the door.
+Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.
+Agent HaX: All four flags in.
+  >>  1. Walk me through it.
+demo_player: Walk me through it.
+Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
+Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
+Agent HaX: That's the whole chain, from outside to the keys, and they'd left every link open.
+Agent HaX: One more thing. You were their regulator tonight, and the FCA wants its letter. Give me the three findings that go in it.
+  >>  1. Their door passphrases follow a house rule, and the rule is pinned to a noticeboard.
+demo_player: Their door passphrases follow a house rule, and the rule is pinned to a noticeboard.
+  >>  1. The "current year" in those passphrases was set once and never changed.
+demo_player: The "current year" in those passphrases was set once and never changed.
+  >>  1. Two service accounts share one password.
+demo_player: Two service accounts share one password.
+Agent HaX: Three for three. Any one of those would have cost them their licence. Together they explain how you walked in.
+Agent HaX: Priya's write-up and the fund allocation, both. Wallets, transactions and what they pay for.
+Agent HaX: That's evidence the police can use. Several cells will face financial charges.
+Agent HaX: You left Satoshi's safe shut. Whatever he kept in it, the police will open on their schedule, not ours.
+Agent HaX: A man like that keeps insurance. I'd have liked to read it first.
+Agent HaX: Here's what worries me.
+Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one schedule for all of them.
+  >>  1. What's next?
+demo_player: What's next?
+Agent HaX: We find out which of them moves first, and get there before it does.
+Agent HaX: Get some rest. Keep your phone on.
+[END] mg= None room= satoshi_office

@@ -1,0 +1,13 @@
+Make portrait for Mr Ahmed
+A British Pakistani man of about seventy with light-brown skin, an unwell cardiac patient lying propped up in an NHS hospital ward bed, weak, tired and short of breath but conscious. Grey hair and a short white beard against a pale green pillow, a lined face, heavy tired eyes. A thin clear nasal oxygen cannula under his nose and ECG monitoring leads on his chest, a pale hospital gown, a green hospital blanket drawn up over his chest. No text and no logos.
+Head resting on the pillow, face angled in a three-quarter view toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the patient lying propped up in a hospital bed, upper body and head on the pillow with a green hospital blanket drawn up over the chest, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism. Smooth vector linework, NOT pixel art.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: mirrored only (no crop): the bed fills the frame and a warm patch in the background made the auto-crop too tight.
+
+# Saved 2026-10-12 from tmp/pixellab/mr_ahmed/concept.png (the concept the pipeline used)

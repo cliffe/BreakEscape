@@ -1,0 +1,13 @@
+{
+  "key": "282a7ce4e47ba43d4fa7cc2c0be39a57",
+  "npc": "narrator",
+  "text": "The forward post at a quarter to two. Two vans, a folding table, a screen with two times on it. One place at the table is empty.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:05:47Z"
+}

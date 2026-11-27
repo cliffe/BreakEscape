@@ -1,0 +1,13 @@
+{
+  "key": "c505781695f589fb9af7f2ff7f1253ba",
+  "npc": "kit_darren_price",
+  "text": "Alright. Help yourself to the cooler if you're parched.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:15Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "aaee047095e158e3988889573ddd9ae4",
+  "npc": "narrator",
+  "text": "Amy is at Ms Okafor's side with an oxygen mask. The naloxone is in, and her breathing is picking up.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,564 @@
+{
+  "scenario": "test_ops_access",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_files01",
+      "label": "File server<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_vault01",
+      "label": "Vault server<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_desk01",
+      "label": "Desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_ian",
+      "label": "Ian Okafor sign-in<br/>(iokafor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox_2",
+      "label": "Spare drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_office_port",
+      "label": "Office wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_annex_port",
+      "label": "Annex wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "host_printer01",
+      "label": "Second floor printer<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "weak_desk01_remote_desk_shipped_login",
+      "label": "Desk PC<br/>remote_desk :3389<br/>default_creds / medium",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_files01_backup_backup_list",
+      "label": "File server<br/>backup :873<br/>cleartext / low<br/>fixed if share_locked<br/>(report only)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_files01_files_open_share",
+      "label": "File server<br/>files :445<br/>misconfig / medium<br/>fixed if share_locked",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_printer01_admin_page_factory_login",
+      "label": "Second floor printer<br/>Admin page :80<br/>default_creds / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_vault01_archive_old_release",
+      "label": "Vault server<br/>archive :445<br/>unpatched / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "weak_vault01_archive_old_release_admin",
+      "label": "Vault server<br/>archive :445<br/>unpatched / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_plant_lan",
+      "label": "Plant network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "host_pumpctl01",
+      "label": "Pump controller<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "implant_desk01",
+      "label": "Implant: desk01<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "back_office",
+      "label": "Back office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_desk_implant",
+      "label": "Keystroke injector<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "pivot_desk01",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_files01",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_vault01",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "comms_room",
+      "label": "Comms room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "supply_room",
+      "label": "Supply room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_access_audit",
+      "label": "Access audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "cred_print_admin",
+      "label": "Ian Okafor saved connection<br/>(iokafor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "tech_factory_accounts",
+      "label": "Factory accounts",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_factory",
+      "label": "Field note: factory accounts",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_release_notes",
+      "label": "Release notes: current build",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_release",
+      "label": "Field note: storage updates",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_older_release_notes",
+      "label": "Release notes: older build",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_older",
+      "label": "Field note: storage updates (earlier)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_config_review",
+      "label": "Configuration review",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_config",
+      "label": "Field note: reviewing settings",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "admin@vault01",
+      "label": "Vault server<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "back_office",
+      "to": "lock_desk01",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_ian",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_files01",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_vault01",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_desk01",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox_2",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox_2",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "jack_office_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_annex_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_annex_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox_2",
+      "to": "jack_annex_port",
+      "soft": false
+    },
+    {
+      "from": "jack_annex_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "host_printer01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_desk01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_files01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_vault01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_desk01_remote_desk_shipped_login",
+      "soft": false,
+      "label": "remote_desk"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_files01_backup_backup_list",
+      "soft": false,
+      "label": "backup"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_files01_files_open_share",
+      "soft": false,
+      "label": "files"
+    },
+    {
+      "from": "host_printer01",
+      "to": "weak_printer01_admin_page_factory_login",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_vault01_archive_old_release",
+      "soft": false,
+      "label": "archive"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_vault01_archive_old_release_admin",
+      "soft": false,
+      "label": "archive"
+    },
+    {
+      "from": "net_plant_lan",
+      "to": "host_pumpctl01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "net_plant_lan",
+      "soft": true,
+      "label": "link",
+      "undirected": true
+    },
+    {
+      "from": "back_office",
+      "to": "implant_desk01",
+      "soft": false,
+      "label": "at USB socket by the desk PC"
+    },
+    {
+      "from": "back_office",
+      "to": "device_desk_implant",
+      "soft": false
+    },
+    {
+      "from": "device_desk_implant",
+      "to": "implant_desk01",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_desk01",
+      "to": "implant_desk01",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_desk01",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_desk01",
+      "soft": false
+    },
+    {
+      "from": "lock_desk01",
+      "to": "pivot_desk01",
+      "soft": false
+    },
+    {
+      "from": "pivot_desk01",
+      "to": "net_plant_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_files01",
+      "soft": false
+    },
+    {
+      "from": "lock_files01",
+      "to": "pivot_files01",
+      "soft": false
+    },
+    {
+      "from": "pivot_files01",
+      "to": "net_plant_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_vault01",
+      "soft": false
+    },
+    {
+      "from": "lock_vault01",
+      "to": "pivot_vault01",
+      "soft": false
+    },
+    {
+      "from": "pivot_vault01",
+      "to": "net_plant_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lobby",
+      "to": "comms_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "back_office",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "supply_room",
+      "soft": false
+    },
+    {
+      "from": "cred_print_admin",
+      "to": "lock_files01",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_factory",
+      "to": "tech_factory_accounts",
+      "soft": false
+    },
+    {
+      "from": "tech_factory_accounts",
+      "to": "weak_desk01_remote_desk_shipped_login",
+      "soft": false
+    },
+    {
+      "from": "tech_factory_accounts",
+      "to": "weak_printer01_admin_page_factory_login",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_release",
+      "to": "tech_release_notes",
+      "soft": false
+    },
+    {
+      "from": "tech_release_notes",
+      "to": "weak_vault01_archive_old_release",
+      "soft": false
+    },
+    {
+      "from": "tech_release_notes",
+      "to": "weak_vault01_archive_old_release_admin",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_older",
+      "to": "tech_older_release_notes",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_config",
+      "to": "tech_config_review",
+      "soft": false
+    },
+    {
+      "from": "tech_config_review",
+      "to": "weak_files01_files_open_share",
+      "soft": false
+    },
+    {
+      "from": "weak_desk01_remote_desk_shipped_login",
+      "to": "lock_desk01",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_files01_files_open_share",
+      "to": "lock_files01",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_printer01_admin_page_factory_login",
+      "to": "cred_print_admin",
+      "soft": false
+    },
+    {
+      "from": "weak_vault01_archive_old_release",
+      "to": "lock_vault01",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_vault01_archive_old_release_admin",
+      "to": "lock_vault01",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "weak_vault01_archive_old_release_admin",
+      "to": "admin@vault01",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "lock_vault01",
+      "to": "weak_vault01_archive_old_release_admin",
+      "soft": false
+    }
+  ]
+}

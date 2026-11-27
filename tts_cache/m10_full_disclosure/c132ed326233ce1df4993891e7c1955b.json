@@ -1,0 +1,13 @@
+{
+  "key": "c132ed326233ce1df4993891e7c1955b",
+  "npc": "malhotra_post",
+  "text": "Relay's up. You're loud and clear.",
+  "voice": "Zubenelgenubi",
+  "style": "SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:51Z"
+}

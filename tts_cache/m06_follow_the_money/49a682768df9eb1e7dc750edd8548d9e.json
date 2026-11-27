@@ -1,0 +1,13 @@
+{
+  "key": "49a682768df9eb1e7dc750edd8548d9e",
+  "npc": "irina_volkova",
+  "text": "You've been in the ledger.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:07:24Z"
+}

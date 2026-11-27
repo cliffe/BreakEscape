@@ -1,0 +1,13 @@
+{
+  "key": "f8173568d59973313978ee13271232ad",
+  "npc": "narrator",
+  "text": "She stamps a box DESTROYED and slides it back toward the noise.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:56:35Z"
+}

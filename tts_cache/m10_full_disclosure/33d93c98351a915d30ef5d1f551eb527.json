@@ -1,0 +1,13 @@
+{
+  "key": "33d93c98351a915d30ef5d1f551eb527",
+  "npc": "mercer",
+  "text": "Right. Come on, then.",
+  "voice": "Iapetus",
+  "style": "An engineer in his late fifties who costed the deaths himself and signed the page. Consistent General American accent, Pacific Northwest, throughout -- do not shift to any other accent. Low-to-mid pitch; professorial and unhurried, a lecturer's cadence. Never defensive, because he does not think he is being accused of anything he has not already conceded.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:58:56Z"
+}

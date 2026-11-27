@@ -1,0 +1,738 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m07_architects_gambit",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "cascade_control_system",
+        "optional": false
+      },
+      {
+        "id": "contractor_badge_station",
+        "optional": true
+      },
+      {
+        "id": "door_cable_vault",
+        "optional": false
+      },
+      {
+        "id": "door_generator_room",
+        "optional": false
+      },
+      {
+        "id": "door_scada_control",
+        "optional": false
+      },
+      {
+        "id": "door_server_room",
+        "optional": false
+      },
+      {
+        "id": "lock_badge_printer",
+        "optional": false
+      },
+      {
+        "id": "lock_crisis_control_system",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "backup_power_transfer_switch",
+        "optional": false
+      },
+      {
+        "id": "facility_access_badge_server_zone",
+        "optional": false
+      },
+      {
+        "id": "npc_elena_rodriguez",
+        "optional": false
+      },
+      {
+        "id": "npc_ray_hollis",
+        "optional": false
+      },
+      {
+        "id": "plant_maintenance_key",
+        "optional": false
+      },
+      {
+        "id": "printed_contractor_badge",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "cable_vault",
+      "generator_room",
+      "operations_floor",
+      "scada_control",
+      "security_checkpoint",
+      "server_room"
+    ],
+    "edges": [
+      [
+        "andgate1",
+        "door_cable_vault",
+        false
+      ],
+      [
+        "backup_power_transfer_switch",
+        "andgate1",
+        false
+      ],
+      [
+        "cable_vault",
+        "intercepted_mail_deployment_confirmed",
+        false
+      ],
+      [
+        "cable_vault",
+        "recovered_site_reference_tomb_gamma",
+        false
+      ],
+      [
+        "contractor_badge_station",
+        "door_server_room",
+        true
+      ],
+      [
+        "door_cable_vault",
+        "cable_vault",
+        false
+      ],
+      [
+        "door_generator_room",
+        "generator_room",
+        false
+      ],
+      [
+        "door_scada_control",
+        "scada_control",
+        false
+      ],
+      [
+        "door_server_room",
+        "server_room",
+        false
+      ],
+      [
+        "facility_access_badge_server_zone",
+        "door_server_room",
+        false
+      ],
+      [
+        "field_console_kali",
+        "vmch_recover_coordination_traffic",
+        false
+      ],
+      [
+        "generator_room",
+        "backup_power_transfer_switch",
+        false
+      ],
+      [
+        "generator_room",
+        "plant_maintenance_log",
+        false
+      ],
+      [
+        "lock_badge_printer",
+        "printed_contractor_badge",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "door_generator_room",
+        true
+      ],
+      [
+        "npc_elena_rodriguez",
+        "action_question_elena",
+        false
+      ],
+      [
+        "npc_ray_hollis",
+        "facility_access_badge_server_zone",
+        false
+      ],
+      [
+        "operations_floor",
+        "plant_maintenance_key",
+        false
+      ],
+      [
+        "operations_floor",
+        "shift_handover_sheet",
+        false
+      ],
+      [
+        "plant_maintenance_key",
+        "door_generator_room",
+        false
+      ],
+      [
+        "printed_contractor_badge",
+        "door_server_room",
+        false
+      ],
+      [
+        "rfid_cloner",
+        "door_server_room",
+        true
+      ],
+      [
+        "safetynet_relay_terminal",
+        "andgate1",
+        true
+      ],
+      [
+        "safetynet_relay_terminal",
+        "door_scada_control",
+        false
+      ],
+      [
+        "scada_control",
+        "cascade_control_system",
+        false
+      ],
+      [
+        "scada_control",
+        "lock_crisis_control_system",
+        false
+      ],
+      [
+        "scada_control",
+        "signed_casualty_projection",
+        false
+      ],
+      [
+        "security_checkpoint",
+        "audited_visitor_log",
+        false
+      ],
+      [
+        "security_checkpoint",
+        "contractor_badge_station",
+        true
+      ],
+      [
+        "security_checkpoint",
+        "fingerprint_kit",
+        false
+      ],
+      [
+        "security_checkpoint",
+        "lock_badge_printer",
+        false
+      ],
+      [
+        "security_checkpoint",
+        "lock_pick_kit",
+        true
+      ],
+      [
+        "security_checkpoint",
+        "npc_ray_hollis",
+        false
+      ],
+      [
+        "security_checkpoint",
+        "operations_floor",
+        false
+      ],
+      [
+        "security_checkpoint",
+        "rfid_cloner",
+        true
+      ],
+      [
+        "security_checkpoint",
+        "threat_desk_summary_tasking_02_41_pt",
+        false
+      ],
+      [
+        "server_room",
+        "field_console_kali",
+        false
+      ],
+      [
+        "server_room",
+        "npc_elena_rodriguez",
+        false
+      ],
+      [
+        "server_room",
+        "safetynet_relay_terminal",
+        false
+      ],
+      [
+        "shift_handover_sheet",
+        "lock_badge_printer",
+        false
+      ],
+      [
+        "vmch_escalate_on_attack_host",
+        "vmfl_escalate_on_attack_host",
+        false
+      ],
+      [
+        "vmch_intercept_c2_channel",
+        "vmfl_intercept_c2_channel",
+        false
+      ],
+      [
+        "vmch_recover_coordination_traffic",
+        "vmfl_recover_coordination_traffic",
+        false
+      ],
+      [
+        "vmch_terminate_cascade_scripts",
+        "vmfl_terminate_cascade_scripts",
+        false
+      ],
+      [
+        "vmfl_escalate_on_attack_host",
+        "vmch_terminate_cascade_scripts",
+        true
+      ],
+      [
+        "vmfl_intercept_c2_channel",
+        "door_scada_control",
+        false
+      ],
+      [
+        "vmfl_intercept_c2_channel",
+        "vmch_escalate_on_attack_host",
+        true
+      ],
+      [
+        "vmfl_recover_coordination_traffic",
+        "vmch_intercept_c2_channel",
+        true
+      ],
+      [
+        "vmfl_terminate_cascade_scripts",
+        "lock_crisis_control_system",
+        false
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/cable_vault",
+      "id": null,
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "2aaa1116a37fbccb",
+      "requiresHash": "e55aca825281730d"
+    },
+    {
+      "path": "/rooms/generator_room",
+      "id": null,
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "327563a37b579378",
+      "requiresHash": "597e418ff4958985"
+    },
+    {
+      "path": "/rooms/scada_control",
+      "id": null,
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "721e775320493465",
+      "requiresHash": "6496052c7ecdd8be"
+    },
+    {
+      "path": "/rooms/scada_control/objects[crisis_control_system]",
+      "id": "crisis_control_system",
+      "lockType": "flag",
+      "locked": true,
+      "requirementHash": "12b7e73d44839ff4",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/security_checkpoint/objects[badge_printer]",
+      "id": "badge_printer",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "009445cfa32e23de",
+      "requiresHash": "331ccc70a090bb30"
+    },
+    {
+      "path": "/rooms/server_room",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "3cfb3a6bcaa12402",
+      "requiresHash": "18b31b5c74c24e5e"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "commit_the_team",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "assign_tactical_team",
+          "type": "custom"
+        },
+        {
+          "taskId": "clear_the_checkpoint",
+          "type": "npc_conversation",
+          "targetNPC": "ray_hollis",
+          "optional": true
+        },
+        {
+          "taskId": "reach_operations_floor",
+          "type": "enter_room",
+          "targetRoom": "operations_floor"
+        }
+      ]
+    },
+    {
+      "aimId": "reach_the_control_network",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "commit_the_team"
+      },
+      "tasks": [
+        {
+          "taskId": "breach_server_room",
+          "type": "unlock_room",
+          "targetRoom": "server_room"
+        },
+        {
+          "taskId": "question_elena",
+          "type": "npc_conversation",
+          "targetNPC": "elena_rodriguez",
+          "optional": true
+        },
+        {
+          "taskId": "recover_coordination_traffic",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_safetynet_relay:scada_attack_host-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "intercept_c2_channel",
+          "puzzle_graph_unlocks": "scada_control",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_safetynet_relay:scada_attack_host-flag2"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "trace_the_intrusion",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "server_hall_reached"
+      },
+      "tasks": [
+        {
+          "taskId": "secure_generator_room",
+          "type": "enter_room",
+          "targetRoom": "generator_room",
+          "optional": true
+        },
+        {
+          "taskId": "recover_vault_pin",
+          "type": "unlock_room",
+          "targetRoom": "cable_vault",
+          "optional": true
+        },
+        {
+          "taskId": "neutralise_park",
+          "type": "npc_conversation",
+          "targetNPC": "thomas_park",
+          "optional": true
+        },
+        {
+          "taskId": "search_cable_vault",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "recover_mole_evidence",
+          "type": "collect_items",
+          "targetItemIds": [
+            "mole_intercept_evidence",
+            "tomb_gamma_dossier"
+          ],
+          "targetCount": 2,
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "reach_the_control_room",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "server_hall_reached"
+      },
+      "tasks": [
+        {
+          "taskId": "reach_scada_control",
+          "type": "enter_room",
+          "targetRoom": "scada_control"
+        },
+        {
+          "taskId": "confront_mercer",
+          "type": "npc_conversation",
+          "targetNPC": "james_mercer"
+        }
+      ]
+    },
+    {
+      "aimId": "take_the_attack_host",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "reach_the_control_room"
+      },
+      "tasks": [
+        {
+          "taskId": "escalate_on_attack_host",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_safetynet_relay:scada_attack_host-flag3"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "terminate_cascade_scripts",
+          "puzzle_graph_unlocks": "crisis_control_system",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_safetynet_relay:scada_attack_host-flag4"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "end_the_sequence",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "take_the_attack_host"
+      },
+      "tasks": [
+        {
+          "taskId": "shut_down_the_cascade",
+          "type": "unlock_object",
+          "targetObject": "crisis_control_system",
+          "onComplete": {
+            "setGlobal": {
+              "grid_saved": true,
+              "mission_complete": true
+            }
+          }
+        },
+        {
+          "taskId": "take_the_debrief",
+          "type": "custom"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[end_the_sequence]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "recover_coordination_traffic",
+          "intercept_c2_channel",
+          "escalate_on_attack_host",
+          "terminate_cascade_scripts"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99": "security_checkpoint",
+    "backup_transfer_switch": "generator_room",
+    "badge_printer": "security_checkpoint",
+    "c2_capture": "server_room",
+    "cascade_countdown_display": "scada_control",
+    "casualty_projection": "scada_control",
+    "checkpoint_evacuation_board": "security_checkpoint",
+    "closing_debrief": "security_checkpoint",
+    "coordination_extract": "server_room",
+    "crisis_control_system": "scada_control",
+    "elena_rodriguez": "server_room",
+    "flag_station_safetynet_relay": "server_room",
+    "generator_maintenance_key": "operations_floor",
+    "genhall_first_aid_kit": "generator_room",
+    "genset_control_panel": "generator_room",
+    "hollis_server_badge": "security_checkpoint",
+    "james_mercer": "scada_control",
+    "m07_lockpicking_field_guide": "security_checkpoint",
+    "m07_nfs_field_guide": "security_checkpoint",
+    "m07_privesc_field_guide": "security_checkpoint",
+    "m07_recon_field_guide": "security_checkpoint",
+    "m07_rfid_field_guide": "security_checkpoint",
+    "m07_ssh_field_guide": "security_checkpoint",
+    "maintenance_log": "generator_room",
+    "mole_intercept_evidence": "cable_vault",
+    "opening_briefing_cutscene": "security_checkpoint",
+    "ops_floor_workstation": "operations_floor",
+    "printed_contractor_badge": "security_checkpoint",
+    "question_elena": "server_room",
+    "rack_cabling_note": "server_room",
+    "ray_hollis": "security_checkpoint",
+    "scada_backup_server": "server_room",
+    "shift_handover_sheet": "operations_floor",
+    "situation_board": "operations_floor",
+    "substation_map": "operations_floor",
+    "the_architect": "security_checkpoint",
+    "thomas_park": "cable_vault",
+    "tomb_gamma_dossier": "cable_vault",
+    "vault_trunk_runs": "cable_vault",
+    "visitor_log": "security_checkpoint",
+    "vm_launcher_attack_terminal": "server_room"
+  },
+  "layout": {
+    "start": "security_checkpoint",
+    "adj": {
+      "cable_vault": [
+        "generator_room"
+      ],
+      "generator_room": [
+        "cable_vault",
+        "server_room"
+      ],
+      "operations_floor": [
+        "security_checkpoint",
+        "server_room"
+      ],
+      "scada_control": [
+        "server_room"
+      ],
+      "security_checkpoint": [
+        "operations_floor"
+      ],
+      "server_room": [
+        "generator_room",
+        "operations_floor",
+        "scada_control"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "cable_vault",
+      "task take_the_debrief (mapping 'room_entered:cable_vault')",
+      null
+    ],
+    [
+      "generator_room",
+      "task take_the_debrief (mapping 'room_entered:generator_room')",
+      null
+    ],
+    [
+      "operations_floor",
+      "task reach_operations_floor",
+      null
+    ],
+    [
+      "operations_floor",
+      "task take_the_debrief (mapping 'room_entered:operations_floor')",
+      null
+    ],
+    [
+      "scada_control",
+      "task confront_mercer",
+      "james_mercer"
+    ],
+    [
+      "scada_control",
+      "task confront_mercer (ink of 'james_mercer')",
+      "james_mercer"
+    ],
+    [
+      "scada_control",
+      "task reach_scada_control",
+      null
+    ],
+    [
+      "scada_control",
+      "task shut_down_the_cascade",
+      "crisis_control_system"
+    ],
+    [
+      "scada_control",
+      "task take_the_debrief (mapping 'room_entered:scada_control')",
+      null
+    ],
+    [
+      "security_checkpoint",
+      "task assign_tactical_team (ink of 'agent_0x99')",
+      "agent_0x99"
+    ],
+    [
+      "security_checkpoint",
+      "task assign_tactical_team (ink of 'opening_briefing_cutscene')",
+      "opening_briefing_cutscene"
+    ],
+    [
+      "security_checkpoint",
+      "task take_the_debrief (ink of 'closing_debrief')",
+      "closing_debrief"
+    ],
+    [
+      "security_checkpoint",
+      "task take_the_debrief (mapping 'room_entered:security_checkpoint')",
+      null
+    ],
+    [
+      "server_room",
+      "VM launcher (flag tasks)",
+      "vm_launcher_attack_terminal"
+    ],
+    [
+      "server_room",
+      "task breach_server_room",
+      null
+    ],
+    [
+      "server_room",
+      "task escalate_on_attack_host (flag station)",
+      "flag_station_safetynet_relay"
+    ],
+    [
+      "server_room",
+      "task intercept_c2_channel (flag station)",
+      "flag_station_safetynet_relay"
+    ],
+    [
+      "server_room",
+      "task recover_coordination_traffic (flag station)",
+      "flag_station_safetynet_relay"
+    ],
+    [
+      "server_room",
+      "task take_the_debrief (mapping 'room_entered:server_room')",
+      null
+    ],
+    [
+      "server_room",
+      "task terminate_cascade_scripts (flag station)",
+      "flag_station_safetynet_relay"
+    ]
+  ]
+}

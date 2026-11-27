@@ -1,0 +1,13 @@
+{
+  "key": "e91cb9e8890f3a8ad7b04d99c4126717",
+  "npc": "sofia_marchetti",
+  "text": "Cold and tired, but fed. One out of three's not bad.",
+  "voice": "Despina",
+  "style": "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:12:18Z"
+}

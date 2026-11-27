@@ -1,0 +1,535 @@
+/* Notification System Styles */
+
+/* Starts below the music/VM buttons at the top right (music-widget.css: top 14px,
+   58px tall), so a toast never runs under them (m07 flag-lock toast) */
+#notification-container {
+    position: fixed;
+    top: 86px;
+    right: 20px;
+    width: 600px;
+    max-width: 90%;
+    /* Above the laptop, lab and VM popups (2000): a tie fell to DOM order and hid toasts behind the lab sheet */
+    z-index: 2001;
+    font-family: 'Press Start 2P';
+    pointer-events: none;
+}
+
+/* The phone (400px, centred) keeps warnings such as "You're being hit!" on top. Its width
+   is set inline by ui/hud-lanes.js (applyLanes keeps the lane right of the phone, m06 F3;
+   placeNotifyBlock moves the block off the phone's controls). */
+
+.notification {
+    background-color: #0a0a14;   /* opaque: a long reading toast (an examined monitor) must not show the room through */
+    color: white;
+    /* 48 px on the right: room for the close X (a 30 px button 8 px in) */
+    padding: 15px 48px 15px 20px;
+    margin-bottom: 10px;
+    box-shadow: none;
+    /* No fade and no vertical slide: a toast fading at half strength let the room show through
+       its text, and a toast that is opaque from its first frame but starts 20 px up would paint
+       over the toast above it (10 px gap) and the HUD buttons. It appears whole, in place
+       (transform: none also cannot overflow the container's right gutter on a phone). */
+    transition: none;
+    opacity: 0;
+    transform: none;
+    /* A toast is not modal and nothing happens when its body is clicked, so clicks pass
+       through to the game (and the pause menu's centre check, and the test bridge's
+       blocking-ui hit test, see the canvas). Only the close x takes clicks. At 900x700 a
+       stack of task and objective toasts covered the whole right two thirds of the screen
+       for their 5 s (R17 F5). */
+    pointer-events: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: none;
+}
+
+/* Stepped aside while a finished-task line needs the toast lane (ui/hud-lanes.js, review R2 M4);
+   its countdown waits and it comes back after. Important: utilities.css .show is display block
+   !important. */
+.notification.hud-lane-yield {
+    display: none !important;
+}
+
+/* Over a panel a toast waits here until ui/hud-lanes.js finds it a place (toast-pending,
+   notifications.js): no box, so it adds nothing to the lane sums. Important: utilities.css
+   .show is display block !important. */
+.notification.toast-pending {
+    display: none !important;
+}
+
+/* Unthemed frame: a 2 px border in the type's colour, the left side kept as a 4 px stripe */
+.notification.info {
+    border: 2px solid #3498db;
+    border-left-width: 4px;
+}
+
+.notification.success {
+    border: 2px solid #2ecc71;
+    border-left-width: 4px;
+}
+
+.notification.warning {
+    border: 2px solid #f39c12;
+    border-left-width: 4px;
+}
+
+.notification.error {
+    border: 2px solid #e74c3c;
+    border-left-width: 4px;
+}
+
+.notification-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 18px;
+}
+
+.notification-message {
+    font-size: 20px;
+    font-family: 'GNF', monospace;
+    line-height: 1.4;
+}
+
+.notification-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    background: #e74c3c;
+    color: white;
+    border: 4px solid #c0392b;
+    border-radius: 0;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+/* The close X looks like every other close X (.game-modal-close unthemed, the themed list in
+   ui-themes.css). The body of a toast lets clicks through; only the X takes them. */
+.notification-action {
+    display: block;
+    margin: 8px 0 0;
+    padding: 6px 10px;
+    background: #2c3e50;
+    color: white;
+    border: 2px solid #ecf0f1;
+    border-radius: 0;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    line-height: 1.3;
+    pointer-events: auto;
+}
+
+.notification-action:hover {
+    background: #34495e;
+}
+
+.notification-action:focus-visible,
+.notification-close:focus-visible {
+    outline: 3px solid #f1c40f;
+    outline-offset: 2px;
+}
+
+.notification-close:hover {
+    background: #c0392b;
+}
+
+.notification-close:active {
+    background: #a93226;
+}
+
+/* Touch: 14 px of invisible target round the X. With the themed 6 px border that is an 18 px
+   padding box plus 28, 46 px; unthemed (4 px border) 22 plus 28, 50 px. */
+@media (max-width: 600px), (pointer: coarse) {
+    .notification-close::after {
+        content: '';
+        position: absolute;
+        inset: -14px;
+        background: transparent;
+    }
+}
+
+/* No slide for players who ask for less motion */
+@media (prefers-reduced-motion: reduce) {
+    .notification,
+    .notification.show {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* Screen-reader regions for toasts (notifications.js): read, never seen */
+.toast-live-region {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.notification-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;   /* two UI pixels */
+    background-color: rgba(255, 255, 255, 0.5);
+    width: 100%;
+}
+
+/* Phones (UI decision H1 option A): the toast lane shows one toast at a time (notifications.js
+   maxShownToasts), two lines of message at most so it never covers the room. A warning or an
+   error explains a refusal and may take three; a verbatim toast (a password to copy) is never
+   cut. ui/hud-lanes.js sets body.hud-compact. */
+body.hud-compact .notification {
+    padding: 10px 48px 10px 14px;
+    margin-bottom: 8px;
+}
+body.hud-compact .notification-title {
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.hud-compact .notification:not(.verbatim) .notification-message {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+body.hud-compact .notification.warning:not(.verbatim) .notification-message,
+body.hud-compact .notification.error:not(.verbatim) .notification-message {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+
+/* A short line with no title: a finished task or aim on a phone (objectives-manager.js). The
+   whole text shows, wrapping (two lines for most task names), so it is never cut (R1 M2). */
+body.hud-compact .notification.brief {
+    padding: 8px 40px 8px 14px;
+}
+body.hud-compact .notification.brief .notification-message {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
+}
+
+/* A long sentence read whole (options.whole: a keyring find, a teaching line). Only the clamp
+   is lifted: no brief priority, so it queues and yields like any other toast. */
+body.hud-compact .notification.whole .notification-message,
+body.hud-compact .notification.warning.whole .notification-message,
+body.hud-compact .notification.error.whole .notification-message {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
+}
+
+/* Over an open panel (placed-over-panel, set by ui/hud-lanes.js) the toast is placed clear of
+   the panel's title and controls, so on a phone its title wraps and its message is never cut.
+   Selectors at least as specific as the clamp rules above, and after them. */
+body.hud-compact .notification.placed-over-panel .notification-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+body.hud-compact .notification.placed-over-panel:not(.verbatim) .notification-message,
+body.hud-compact .notification.warning.placed-over-panel:not(.verbatim) .notification-message,
+body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notification-message {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: none;
+    overflow: visible;
+}
+
+/* Confirmation dialog */
+.game-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.game-confirm-dialog {
+    background: #0a0a14;   /* opaque: the dim belongs on the overlay behind, not on the card */
+    border: 2px solid #3498db;
+    padding: 28px 32px;
+    max-width: 460px;
+    width: 90%;
+    box-shadow: none;   /* pixel-art UI: no soft shadows (the overlay already dims the room) */
+    position: relative;
+}
+
+/* Close X for overlay dialogs; matches .minigame-close-button */
+.game-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: #e74c3c;
+    color: white;
+    border: 4px solid #c0392b;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.game-modal-close:hover {
+    background: #c0392b;
+}
+
+.game-modal-close:active {
+    background: #a93226;
+}
+
+/* Room for the close X. A confirm has no X unless options.closeX (UX q99), so its message runs the full width. */
+.game-display-dialog .game-display-title {
+    padding-right: 40px;
+}
+
+.game-confirm-message {
+    font-family: 'GNF', monospace;
+    font-size: 22px;
+    color: #e0e0e0;
+    line-height: 1.5;
+    margin-bottom: 22px;
+}
+
+.game-confirm-buttons {
+    display: flex;
+    /* A named button keeps its label on one line ("Switch off", not "Switch / off" at
+       phone width, UX q99); two that cannot sit side by side take a row each */
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: flex-end;
+}
+
+.game-confirm-buttons .game-confirm-btn {
+    white-space: nowrap;
+    /* Backstop for a label too long for the dialog: it is cut at the frame, never drawn past
+       it (the validator warns at over 16 characters) */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+/* At phone width a wrapped pair is two full-width rows of the same size, confirm on top */
+@media (max-width: 480px) {
+    .game-confirm-buttons .game-confirm-btn {
+        flex: 1 1 100%;
+    }
+}
+
+.game-confirm-btn {
+    /* the dialog's own text font, so the buttons read as part of it (UX access R2) */
+    font-family: 'GNF', monospace;
+    font-size: 20px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border: 2px solid;
+    background: transparent;
+    transition: background 0.15s, color 0.15s;
+}
+
+/* The confirm focuses its safe button on open (UX slice 16 R1 m10): a square 2px ring, not the
+   browser's rounded one */
+.game-confirm-btn:focus {
+    outline: none;
+}
+.game-confirm-btn:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.game-confirm-ok {
+    color: #2ecc71;
+    border-color: #2ecc71;
+}
+
+.game-confirm-ok:hover {
+    background: #2ecc71;
+    color: #000;
+}
+
+.game-confirm-cancel {
+    /* a live choice, not a disabled one: full-strength text (UX access R2, finding 12) */
+    color: #e0e0e0;
+    border-color: #888;
+}
+
+.game-confirm-cancel:hover {
+    background: #555;
+    color: #fff;
+}
+
+/* A confirm with one named button and the corner X (options.closeX): the X sits inside the
+   frame and the message stops short of it. Its hit area is the shared one below. */
+.game-confirm-has-x {
+    position: relative;
+}
+
+.game-confirm-has-x .game-confirm-message {
+    padding-right: 40px;
+}
+
+/* One hit area for every themed dialog X: the drawn 30px box keeps its size and the target
+   reaches 44px (the same -14px reach as .minigame-close-button::after). Nothing is drawn. */
+.game-modal-close::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+}
+
+/* Display modal (gameDisplay) — extends confirm dialog styles */
+.game-display-dialog {
+    max-width: 700px; /* keep in step with --be-dialog-max in hud.css: 700 less padding and frame leaves a 586-600px text column */
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    /* border-box so max-height covers the padding and frame (the long form must clear the HUD).
+       Bottom inset 12px plus the body's own 16px pad: 28px under the text, matching the top,
+       so scrolled text never touches the frame */
+    box-sizing: border-box;
+    padding-bottom: 12px;
+}
+
+.game-display-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    line-height: 20px;
+    color: #3498db;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #2a4a6a;
+}
+
+.game-display-body {
+    font-family: 'GNF', monospace;
+    font-size: 22px;
+    color: #e0e0e0;
+    line-height: 1.5;
+    overflow-y: auto;
+    flex: 1;
+    /* No button row below: the dialog's own padding closes the frame */
+    margin-bottom: 0;
+    padding-right: 4px;
+    padding-bottom: 16px;
+    min-height: 0;
+    /* Scrolls inside the frame; gameDisplay adds the shared .pixel-scroll class for the bar */
+}
+
+/* With no title the body follows the close X directly: start it below the X's 44px target
+   (the X is 10px from the top, 30px tall; the ::after inset is from the padding box, inside the
+   skin's 6px border, with a 14px reach: 10 + 30 - 6 + 14 = 48px) and clear of it on the
+   right, so neither the text nor the scrollbar sits under the target */
+.game-display-dialog .game-modal-close + .game-display-body {
+    margin-top: 20px;
+    padding-right: 40px;
+}
+
+/* Ending warning (systems/ending-check.js): the confirm/display dialog frame, above the phone and
+   every minigame (1500) and the other dialogs (3000). Text sits on the opaque frame surface. */
+.game-confirm-overlay.ending-check-overlay {
+    z-index: 10001;
+    background: rgba(0, 0, 0, 0.88);
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.ending-check-dialog,
+[data-ui-theme] .game-confirm-dialog.ending-check-dialog {
+    max-width: 640px;
+    max-height: 100%;
+    background-color: #0a0a14;   /* opaque: the themed surface is under 100% alpha and the phone shows through */
+    background-clip: padding-box;
+}
+
+/* A choice clicked while the question is up (ending-check.js nudgeEndingCheck): two hard steps, no easing. */
+.ending-check-dialog.ending-check-nudge {
+    animation: ending-check-nudge 0.4s steps(2, jump-none) 2;
+}
+@keyframes ending-check-nudge {
+    0% { transform: translateX(-4px); }
+    100% { transform: translateX(4px); }
+}
+
+/* Each theme's own tint at full opacity (--ui-surface-opaque, ui-themes.css). */
+[data-ui-theme] .game-confirm-dialog.ending-check-dialog {
+    background-color: var(--ui-surface-opaque, #0a0a14);
+    background-clip: padding-box;
+}
+
+.ending-check-dialog .ending-check-heading {
+    font-size: 16px;
+    line-height: 24px;
+    margin: 0 0 16px;
+    font-weight: normal;
+}
+
+.ending-check-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.ending-check-dialog .game-confirm-message {
+    font-size: 24px;
+    margin: 0 0 12px;
+}
+
+.ending-check-list {
+    font-family: 'GNF', monospace;
+    font-size: 24px;
+    line-height: 1.5;
+    color: #ffffff;
+    margin: 0 0 12px;
+    padding-left: 28px;
+}
+
+.ending-check-dialog .game-confirm-btn {
+    font-size: 24px;
+}
+
+.ending-check-buttons {
+    flex: 0 0 auto;
+    margin-top: 8px;
+}
+
+@media (max-height: 450px), (max-width: 480px) {
+    .ending-check-dialog .game-confirm-message,
+    .ending-check-list,
+    .ending-check-dialog .game-confirm-btn {
+        font-size: 16px;
+    }
+    .game-confirm-overlay.ending-check-overlay .ending-check-dialog { padding: 16px 20px; }
+}

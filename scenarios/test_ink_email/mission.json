@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: ink-driven email",
+  "description": "Fixture for ink-driven plain email: suggested replies, attachments, forwarding, delayed replies, timed email, Compose via on_compose, composeTo from a phone chat, and a contact that is both an ink correspondent and a judged target. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

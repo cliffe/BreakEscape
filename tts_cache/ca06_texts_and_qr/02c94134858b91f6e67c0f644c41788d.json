@@ -1,0 +1,13 @@
+{
+  "key": "02c94134858b91f6e67c0f644c41788d",
+  "npc": "chidi_okeke",
+  "text": "You flagged that fake barrier code to me before anyone scanned it, so nothing of yours ever reached them.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:55Z"
+}

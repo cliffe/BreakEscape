@@ -1,0 +1,13 @@
+{
+  "key": "8aefc60a2e82d605fe5bb6a8dfa9effc",
+  "npc": "jordan_pike",
+  "text": "Any questions? I get a referral bonus, so ask away.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

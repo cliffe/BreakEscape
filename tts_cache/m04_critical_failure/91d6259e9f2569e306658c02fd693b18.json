@@ -1,0 +1,13 @@
+{
+  "key": "91d6259e9f2569e306658c02fd693b18",
+  "npc": "narrator",
+  "text": "The strobes are still going. She's standing in the middle of the aisle, watching the door, as if she's been waiting for it to open.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:07:23Z"
+}

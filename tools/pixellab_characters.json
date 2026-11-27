@@ -1,0 +1,1948 @@
+{
+  "abena_asante": {
+    "character_id": "45cf70d2-00e5-45ce-963e-8148a358a8ff",
+    "name": "Make portrait for Dr Abena Asante\nA tall Ghanaian-...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a0199c22-bf8b-4717-bbf1-64e70af5caab",
+    "poses": {
+      "drink": "cc98e3d3-9748-4527-af6e-299a4a914ef0",
+      "phone": "e6b2f6da-3272-4e67-874e-cad275f8e8b2",
+      "use": "f58e4444-5db2-47e3-9d17-78aab08e4071"
+    }
+  },
+  "adaeze_okafor": {
+    "character_id": "26b563cf-1945-4ac2-a59f-3d7f27bc40db",
+    "name": "Make portrait for Adaeze Okafor\nA Nigerian-British...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f46ac876-9e84-4df9-bcc0-3b74d3616e94",
+    "poses": {
+      "drink": "9435bcc8-777e-4f45-9593-63b3eb90eeb9",
+      "phone": "3864ad99-9f4e-46fe-93e4-d9473ec843ca",
+      "use": "ba641ed9-51d5-4017-9f05-4cec3b017fd4"
+    }
+  },
+  "adrian_tesseract": {
+    "character_id": "f23e1d84-4d61-498e-a4eb-e3a29155f5b1",
+    "name": "Make portrait for Dr Adrian Tesseract\nA lean, upri...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d0803916-151a-4832-b064-75861981536c",
+    "poses": {
+      "drink": "42b15148-5551-482f-9768-fadc6c99b85d",
+      "phone": "3620b4c9-3a60-4972-a651-834744a3e6e1",
+      "use": "8fa9384d-b37d-4c82-a1c7-2aadce308e3d"
+    }
+  },
+  "agent_hax": {
+    "character_id": "52c4d2cc-aca3-4ee0-bfa6-20b526b6db6f",
+    "name": "A woman spy with long dark brown hair under a brow...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a1284c15-5666-4c64-b026-c02a7a987c89",
+    "poses": {
+      "drink": "5b6972e5-684f-4a74-b5b1-0f5710624843",
+      "phone": "3308173f-b3fd-4a7a-9a36-7993701809f9",
+      "use": "50a009ab-e189-4955-9fd1-aee0b1b7a7d0"
+    }
+  },
+  "agent_phantom": {
+    "character_id": "35cd6b16-d62c-431d-81fe-4e0b2194fb1b",
+    "name": "Make portrait for Agent Phantom\nA tall, easy-going...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "5545854c-f1cf-4a7a-a12f-012b9573446e",
+    "poses": {
+      "drink": "08f8fab7-2a41-4d1f-bd6d-5dd03f19a447",
+      "phone": "29acea80-0c09-426b-b53a-5dabcd8d38b9",
+      "use": "cccbf3e2-048c-4b4e-bac3-a6527cea68b0"
+    }
+  },
+  "agent_vector": {
+    "character_id": "0daaefa6-72b4-4113-a736-248c00d8f44e",
+    "name": "Make portrait for Agent Vector\nA slim, slightly hu...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "474f5750-93bc-49d3-9e02-4102733e051e",
+    "poses": {
+      "drink": "31a8e81b-d5c8-47a3-b54d-9ace389c3395",
+      "phone": "6dc9e9da-4280-4006-a6a7-58ca450b4f92",
+      "use": "fa0662d4-2b12-4ac8-95ea-1effa7a94d97"
+    }
+  },
+  "agnieszka_duda": {
+    "character_id": "03ffaab8-7a0d-4ef0-8161-d5033f56b9f2",
+    "name": "Make portrait for Agnieszka Duda\nA Polish woman in...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "0933853d-f353-4242-b34d-4f3b4dd29582",
+    "poses": {
+      "drink": "94f66f50-b6ca-49dd-ad35-a2094b7c2137",
+      "phone": "2438bd18-ac34-4c59-be0e-2dad1d371791",
+      "use": "7fab1528-e5eb-43ae-ad5d-eefa676c0009"
+    }
+  },
+  "ama_owusu": {
+    "character_id": "c1eb7a48-8af5-4eac-8a00-bec01a6a06e0",
+    "name": "Make portrait for Ama Owusu\nA Black British woman ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f586042e-c3cb-41a3-a866-7377e11f8a55",
+    "poses": {
+      "drink": "9d9c82f0-a418-4be7-b47b-73a580dd1566",
+      "phone": "0f8c9f02-c828-44f2-a060-fd2d54092986",
+      "use": "05b11d34-942c-4572-a5ec-727c9321f637"
+    }
+  },
+  "amy_clarke": {
+    "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
+    "name": "Make portrait for Amy Clarke\nA white British woman...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "0da433ba-d559-4db5-8c63-453dd475219f",
+    "poses": {
+      "drink": "57f2f975-d1e7-4b41-a296-2c002aeaf50f",
+      "phone": "01951f5b-e49f-47d8-a68f-a4b3439d3b24",
+      "use": "1bd3cbd7-5cea-4c52-a428-bfc7140b1e67"
+    }
+  },
+  "anjali_rao": {
+    "character_id": "95175ffd-f491-4452-af90-1c11ec5de614",
+    "name": "Make portrait for Anjali Rao\nAn Indian woman of ab...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "bf61a42e-5cf9-46a1-b80e-2d1de6540bcc",
+    "poses": {
+      "drink": "263c789c-353e-4103-833f-93dc65c26bec",
+      "phone": "65f54660-4d08-4f02-81f0-3cfaf511cef4",
+      "use": "a4aac41e-81c2-477d-aa1c-e10b83d543da"
+    }
+  },
+  "athena": {
+    "character_id": "ddf2599c-c2e8-41f3-a023-18aa2e74561b",
+    "name": "Make portrait for ATHENA\nA holographic AI receptio...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "c97f2525-b3c3-4293-9f16-745ea7c6813c",
+    "poses": {
+      "drink": "989a8690-35c2-4d55-b2c8-22f642a7f910",
+      "phone": "fd881a9b-bc20-42ee-859a-d5b20986c54d",
+      "use": "e5703901-3749-4cc3-a242-63073412a660"
+    }
+  },
+  "bernadette_lyons": {
+    "character_id": "e48db9da-ad1c-4a04-a128-a527e1caf828",
+    "name": "Make portrait for Bernadette Lyons\nA British Greek...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-17",
+    "sit_from": "2030f54a-51e9-4253-84ed-529f4eb4b74f",
+    "white_bg": true
+  },
+  "bernie_nwosu": {
+    "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
+    "name": "A Black British woman of Nigerian heritage in her ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a9fc7010-419f-4ea5-9497-7bcc4beb892d",
+    "poses": {
+      "drink": "fa888bda-1236-4c27-afe4-c4525400d8f9",
+      "phone": "ebeb5c8e-c1ec-4a48-b011-2a786a88b119",
+      "use": "9870eb87-4f46-46a2-b8a3-d922bf9b60bc"
+    }
+  },
+  "camila_ospina": {
+    "character_id": "8aee1629-8246-478d-9543-22c29e2a649d",
+    "name": "Make portrait for Camila Ospina, a visitor to a de...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-20",
+    "sit_from": "8dacc26a-67a2-4111-8073-4b1aba7298bd"
+  },
+  "chidi_okeke": {
+    "character_id": "fc63077f-7737-4610-ae6a-3e9250ad8e24",
+    "name": "Make portrait for Chidi Okeke\nA Nigerian-British m...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f16329f9-b94e-4584-b4aa-e47de5090a3e",
+    "poses": {
+      "drink": "01809231-210a-47a2-add9-291050588d7e",
+      "phone": "a76c8013-b648-4176-8ced-ee25834ae587",
+      "use": "6978dd6d-cdd4-478a-8c2d-b3788cfbf186"
+    }
+  },
+  "cliffe_schreuders": {
+    "character_id": "6006155e-74f3-487c-847e-aec2dfa41512",
+    "name": "Man in his early forties, light skin tone, univers...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "42edf705-0761-44ea-a3a1-4946d88170e8",
+    "poses": {
+      "drink": "78990b03-9b35-4f2e-a5d4-68bfb918d5d6",
+      "phone": "7127c94e-2a7e-485c-937f-07952ff02f88",
+      "use": "70c13c57-3a07-4b74-a8b5-11317c39e2db"
+    }
+  },
+  "cody_old_coyote": {
+    "character_id": "30db8608-97e0-46fc-9bb2-1860721e6585",
+    "name": "Make portrait for Cody Old Coyote\nA young Aps\u00e1aloo...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "87f3c106-0d11-4b58-9c4f-a65c6a682b01",
+    "poses": {
+      "drink": "cd96a280-352a-4b62-a5c1-816622e0ab2e",
+      "phone": "94a43167-8d39-48a6-b75f-bb575d05a106",
+      "use": "639e4144-f00f-4ea8-b6e8-d378313eb3b2"
+    }
+  },
+  "courier_hivis": {
+    "character_id": "83b01ba9-5c0e-4135-89d8-8dffe6dcff75",
+    "name": "Make portrait for Courier (hi-vis delivery driver)...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "poses": {
+      "drink": "94456765-9322-483e-861a-696b4c9ac16c",
+      "phone": "203c0987-92de-483c-a765-60d4d6cda372",
+      "use": "42ee87f3-4209-48b2-ba59-a1d7911870d1"
+    }
+  },
+  "dani_okonkwo": {
+    "character_id": "767f499f-074f-4067-bdb4-6f2b84789e48",
+    "name": "Make portrait for Dani Okonkwo\nA lean British-Nige...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "851a721d-6de8-4271-9d57-6fb6137c5946",
+    "poses": {
+      "drink": "c7b819c1-d171-4b74-b836-94126431d0e2",
+      "phone": "31188b1a-24f2-4440-b1c3-f5465d5e2c72",
+      "use": "4e3f94d8-dcd0-468b-96c6-e3164b1217ea"
+    }
+  },
+  "daniel_seo": {
+    "character_id": "aacbac58-5df7-4e0b-9050-23e39d294283",
+    "name": "Make portrait for Daniel Seo\nA Korean-British man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6f2edec6-a625-4f44-ac06-0785c06360be",
+    "poses": {
+      "drink": "213cc877-3f47-4d1b-980d-7f6d077a0074",
+      "phone": "df8e0464-a9b9-4410-8f76-8fb75fbe4c6a",
+      "use": "1eb3e8ff-17bf-4d24-9ce9-77d8c8891a6d"
+    }
+  },
+  "danny_foster": {
+    "character_id": "c0b52964-6a42-4be3-b9b0-2bb2da39ab0d",
+    "name": "Make portrait for Danny Foster\nA British security ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "c59e5243-8d20-4857-b0a8-c60fa25fd41b",
+    "poses": {
+      "drink": "d035f177-920b-4f00-8f46-a883237226b1",
+      "phone": "9b0e3f9f-0b28-4f21-8f8e-c684f830b182",
+      "use": "81fe8234-b846-4d3a-940e-e32d77e0d23e"
+    }
+  },
+  "darren_price": {
+    "character_id": "65616a55-1dc3-4f5f-bf0e-4a4405c5e81f",
+    "name": "Make portrait for Darren Price\nA white British man...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f1d4cccb-cf0b-4ca1-9c1b-730b8bdb2600",
+    "poses": {
+      "drink": "176390b5-96ce-4848-b912-247bec2b15fe",
+      "phone": "36ef3fff-7faa-4499-b50b-99a42ce20361",
+      "use": "ddf01125-5a28-414d-804b-e9fab5a74b6e"
+    }
+  },
+  "david_osei": {
+    "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
+    "name": "Make portrait for Hospital Clinical Engineer\nA Bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "b320403b-1921-47af-88f4-6dc471a62ad3",
+    "poses": {
+      "drink": "b956096f-20e3-42da-bf02-9c9d7cb8963c",
+      "phone": "451b9c11-d4ba-4acc-bfa9-65e96887d56b",
+      "use": "307eface-0603-45fd-ac0f-c4fcb3aeec1e"
+    }
+  },
+  "david_torres": {
+    "character_id": "41eda13e-7ab3-4b81-9d8a-a698634b7698",
+    "name": "Make portrait for David Torres\nA Spanish man of ab...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "0de56971-33a1-4dad-9636-65ae53d0a4ce",
+    "poses": {
+      "drink": "39a46046-9051-4c01-9fdd-ea4a40664a2b",
+      "phone": "7531e01b-47fc-4d0a-8216-8810187710e1",
+      "use": "302bf1a8-f41c-4e82-aad1-ee3b87c6b9dd"
+    }
+  },
+  "delphine_arvanitis": {
+    "character_id": "50493701-fdae-49b5-9190-db9ffeaefd5c",
+    "name": "Make portrait for Delphine Arvanitis\nA Greek-Briti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "58458568-e335-4437-8edb-048817f7652c",
+    "poses": {
+      "drink": "0b70affc-ea1f-4250-b95d-d1133f2e69fc",
+      "phone": "0fc96e01-7992-48b0-bb0d-eba0e37a6678",
+      "use": "54e85642-fb85-413e-bde5-c60ef8261ccc"
+    }
+  },
+  "derek_lawson": {
+    "character_id": "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37",
+    "name": "A man office worker in his forties with short dark...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0",
+    "poses": {
+      "drink": "6bd09056-a3c8-43f9-a43c-50810915d719",
+      "phone": "7d83b546-ceb9-46b6-96b0-f858f294fc2e",
+      "use": "dc21f2ad-5208-470c-8247-bed67956c0f8"
+    },
+    "copied_from": "male_office_worker_v2"
+  },
+  "dev_malhotra": {
+    "character_id": "17bea81b-0912-4868-b9ac-3ed08f124c09",
+    "name": "Make portrait for Officer Dev Malhotra\nA slim Brit...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "3beb367a-376b-41ce-a5e5-de8d77991219",
+    "poses": {
+      "drink": "1f9eb57f-4f65-4701-848c-2bd959066fdd",
+      "phone": "a852cb2f-c221-4c79-9b78-b54274869757",
+      "use": "ccf5b490-0013-409a-8808-da9720001b65"
+    }
+  },
+  "elena_rodriguez": {
+    "character_id": "2f1f7a20-6606-4a07-b264-9330cbfdc312",
+    "name": "Make portrait for Elena Rodriguez\nA tall, athletic...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6da96f6a-0d21-4e31-9460-5255e778a47c",
+    "poses": {
+      "drink": "8f4666a3-56c9-43d0-936f-c837dcd53946",
+      "phone": "cd4f07d5-3db6-4dac-a38e-2e628e9724e2",
+      "use": "190b3bbd-42a7-4429-9047-fe85e8fcc98d"
+    }
+  },
+  "ernesto_bautista": {
+    "character_id": "530d9d22-1da3-4299-bdab-90db3c8fd025",
+    "name": "Make portrait for Ernesto Bautista\nA Filipino man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "89d8a68a-f140-4ed7-9ad9-6cd6b7a19739",
+    "poses": {
+      "drink": "3188a6ae-c885-4599-ac19-275246d3b9ae",
+      "phone": "368a7d20-b1de-41ec-9008-6d713109f789",
+      "use": "7a019825-9fb1-466e-a2bf-21aeea684ec0"
+    },
+    "white_bg": true
+  },
+  "farah_qureshi": {
+    "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
+    "name": "Make portrait for Farah Qureshi\nA Pakistani-Americ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "0751dc20-1bc5-40ae-91a9-2f470a02fd98",
+    "poses": {
+      "drink": "e64cc008-bbc5-4214-bb69-a4d803a829b8",
+      "phone": "19d62f01-8f6a-4e4f-9407-6e1e3c3d5165",
+      "use": "dfe7eb3b-c8f1-4450-82ca-ccaa27698f1b"
+    }
+  },
+  "fatima_begum": {
+    "character_id": "35f2172d-7b82-4971-a00c-416241791ffe",
+    "name": "Make portrait for Fatima Begum\nA British Banglades...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "1b4b8b58-21af-43e4-a019-c3fc6c106b9c",
+    "poses": {
+      "drink": "40738e45-3134-4dee-bafc-a3a03a25e88f",
+      "phone": "f33119be-cebc-4fb6-bdc5-2f29c3f91b89",
+      "use": "c4c5316c-a5a6-43d7-9de7-24e806a88bc5"
+    }
+  },
+  "female_blowse_v2": {
+    "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
+    "name": "A woman with long wavy black hair, light skin, a r...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "dac5beb6-07a8-401b-9112-93aca976e100",
+    "poses": {
+      "drink": "d327fe44-af63-4c95-a7f1-76575d80f4f8",
+      "phone": "cb0e803f-4281-4230-8560-bbf8d0a8ef97",
+      "use": "2e635530-dbc3-47b2-9970-574581eb45f9"
+    }
+  },
+  "female_hacker_hood_down_v2": {
+    "character_id": "41542288-ce3e-4823-8c10-51c1586622ed",
+    "name": "A young woman hacker with dark brown hair tied up ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "idle_from": "9b005e8f-8923-41eb-b2dd-c70f963f68e9",
+    "sit_from": "e6e37638-00d1-4829-8a9d-161fe740df6d",
+    "poses": {
+      "drink": "e9d8c44d-9e2f-4a6a-9153-a52ea75c5cac",
+      "phone": "1b19053c-2954-482b-aa2c-27942f32bb5c",
+      "use": "200eb1d1-1aaf-41cf-8d13-b243853dcbc5"
+    }
+  },
+  "female_hacker_hood_v2": {
+    "character_id": "c14d8060-5196-4812-adb8-5efff2d3b67b",
+    "name": "Woman, light skin tone, hacker. Wearing an all-bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "7a080ed0-9285-4f37-972e-00d6932d9fe4",
+    "poses": {
+      "drink": "d7ba9f63-33da-4f03-990d-be34bc5dde4b",
+      "phone": "c919fe65-6c89-4115-8003-4c05fd436cfc",
+      "use": "60cb932e-997e-4c01-9d2d-44abae48cbf8"
+    }
+  },
+  "female_nurse1_v2": {
+    "character_id": "ac1ee7cd-57c9-4780-bee1-c740f289a33a",
+    "name": "Female curves. Nurse RN. A professional and friend...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "1b5c6391-d285-4599-a7a7-c1c1cb592fd8",
+    "poses": {
+      "drink": "18ecd250-09b9-4032-b6f4-4b3690f98414",
+      "phone": "c2eda083-1919-4a01-8897-641b7143ff08",
+      "use": "0173598c-5c54-4a98-b4da-66bf0d848786"
+    }
+  },
+  "female_nurse2_v2": {
+    "character_id": "78997eba-8b6e-42bd-8502-35144cfac60f",
+    "name": "Nurse RN. A professional and friendly female healt...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "8d23f919-b227-437e-82b0-953be3040c3b",
+    "poses": {
+      "drink": "54ea1468-3e83-4e90-bef7-0c773abd9713",
+      "phone": "7053ce6a-c8f6-491f-955c-73c99379c33d",
+      "use": "8279e91e-15d4-4d5a-ac47-df8b796e5323"
+    }
+  },
+  "female_office_worker_v2": {
+    "character_id": "c7f54eae-f3cc-4358-980d-35d076247969",
+    "name": "A young woman office worker with shoulder-length w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6bdfe1f3-5b87-4120-940d-cfa8f580ec74",
+    "poses": {
+      "drink": "b3fa54b4-7e09-4d1b-9e93-1e0d40397cae",
+      "phone": "fc04d6a5-4b4e-4c8e-ac3e-0e2337b30060",
+      "use": "bc43446f-6144-4d57-a01d-72705eeeb291"
+    }
+  },
+  "female_scientist_v2": {
+    "character_id": "9179b19e-bd42-427d-b0ba-b27ea874ce16",
+    "name": "A young East Asian woman scientist with long strai...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "ace6ab66-8a37-4f8c-a3b2-78f1d94c62a1",
+    "poses": {
+      "drink": "4f6b842a-4968-4419-ae21-54225c9d4406",
+      "phone": "f2b7257e-08d5-43ed-8094-7142281e3e0c",
+      "use": "753a4eba-f587-4dff-b147-05e3725e644d"
+    }
+  },
+  "female_security_guard_v2": {
+    "character_id": "a394dbab-dc0e-4c6e-b74a-85a5e4c7b568",
+    "name": "Security Guard\nWoman, light skin tone, security gu...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "3ad98f35-6726-4599-a5b1-ae5622d8fee6",
+    "poses": {
+      "drink": "0c9bd426-b38b-4574-82c4-4ca21405bf39",
+      "phone": "d7e2fc5a-a972-4839-86e4-bbdb08116812",
+      "use": "61d4b99d-b501-4fb9-9d62-a81abf6e0698"
+    }
+  },
+  "female_telecom_v2": {
+    "character_id": "c9ae81c0-04c7-4d6f-af99-437fd3ecd4b0",
+    "name": "A young woman telecoms engineer with brown hair ti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6376b53b-db1b-4fcc-8c45-1b06509cd111",
+    "poses": {
+      "drink": "1b9ca796-0b7a-4e16-bd5b-824651d662d9",
+      "phone": "6a403009-e1a0-4e20-863b-5495ca45ac9d",
+      "use": "7c650e64-5dfd-4989-96a4-f19a7a3b7241"
+    }
+  },
+  "ffion_rees": {
+    "character_id": "19c3a98e-6cbc-429b-83d4-f6a517db285a",
+    "name": "Make portrait for Ffion Rees\nA Welsh woman recepti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "702d2782-e8ae-4a3c-9bd6-85f7966f266c",
+    "poses": {
+      "drink": "f9f1ca6b-62b1-4568-b9ac-5be672f96595",
+      "phone": "e8583a1d-43da-4a25-8562-16384b63421a",
+      "use": "6d272f9e-5d04-4b89-8d2e-9c6d59e4131a"
+    }
+  },
+  "fiona_hartley": {
+    "character_id": "21604761-bfe3-464c-b091-1deeb4842758",
+    "name": "Make portrait for Dr Fiona Hartley\nA white Scottis...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "cd207a44-062d-4e88-829a-80b560b8f98c",
+    "poses": {
+      "drink": "f007a432-ef18-49ce-8981-004941f15625",
+      "phone": "63045e51-cd25-4e2b-a6f2-b394e5ed883a",
+      "use": "5405d78b-4e02-46ad-b329-2707188179bb"
+    }
+  },
+  "frank_callahan": {
+    "character_id": "bd40558f-a851-40f0-bf32-52125dc7fd1f",
+    "name": "Make portrait for Frank Callahan\nA white Irish man...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "881cc210-800c-4791-b2c7-a24675666ece",
+    "poses": {
+      "drink": "85f890ac-e81c-407f-a62e-5702b65c711c",
+      "phone": "2f8cf306-8ef5-4814-90ad-bd01a17a04a7",
+      "use": "e0279d2f-e7d8-4a0c-8801-499f3b4d7bb3"
+    }
+  },
+  "gareth_fairbairn": {
+    "character_id": "46fc0e4f-fea2-45f4-841e-30f8e0c2af2c",
+    "name": "Make portrait for Gareth Fairbairn\nA white Scottis...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6ae441cc-52cd-4bd0-9167-3a73cf3b82bd",
+    "poses": {
+      "drink": "bb35127f-f40a-41a1-83a6-806d1adae813",
+      "phone": "f57d2ae5-bf95-4025-8aee-7b530cca08cf",
+      "use": "44a540c0-ce87-4085-a94d-31628d158e8c"
+    }
+  },
+  "gary_whitlock": {
+    "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
+    "name": "Gary Whitlock A white British man in his late thir...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "ce55b9a6-2d46-483d-a960-9417cabdc1e4",
+    "poses": {
+      "drink": "16af6a3c-a119-4829-a90b-508be8d3fe50",
+      "phone": "cb15ea1d-629f-4900-91ee-2559cbded515",
+      "use": "ba66a109-4c39-4c6a-a4ad-1f9dddbbdd59"
+    }
+  },
+  "graham_reeves": {
+    "character_id": "4909ebbd-79c1-47fb-99be-7889d50af44b",
+    "name": "A white British man in his early fifties, a plain-...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "af8bdb85-0c29-49a5-9a83-ca0973dfa632",
+    "poses": {
+      "drink": "73c8acb5-197c-4f5e-8ff2-610d11803a47",
+      "phone": "21ec835b-041e-4b44-80fa-f168287cfa65",
+      "use": "30a9bd8e-a9be-43f6-8174-204d76e160a9"
+    }
+  },
+  "graham_whitfield": {
+    "character_id": "1514a72f-c6a0-4054-9ce9-0fd7d6136341",
+    "name": "Make portrait for Graham Whitfield\nA white British...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "3197a8cb-b6e7-408d-923e-05c3419771f8",
+    "poses": {
+      "drink": "be2e4a20-bfda-4b2b-b646-a87a6c3ec959",
+      "phone": "3f50a8be-2377-4cbc-938f-8c5feb0354a5",
+      "use": "8f0a555a-2edf-4e7e-9068-c8a563f030e4"
+    }
+  },
+  "gwen_pritchard": {
+    "character_id": "cb0a2a4e-91cd-4b95-b259-ad2566b6dd10",
+    "name": "Make portrait for Gwen Pritchard\nA white Welsh wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "3f407731-f2c5-46e0-9386-cd74667e6cd9",
+    "poses": {
+      "drink": "9073125b-84a6-4a55-8406-8697d1c3646d",
+      "phone": "31c591ca-281c-4f32-98cb-3b943e118e09",
+      "use": "7a6fa4ce-8858-4d0b-8492-a968e74c77cf"
+    }
+  },
+  "halina_kowalczyk": {
+    "character_id": "a444c74f-b8ea-4d0a-b26e-c9e0eb98c29d",
+    "name": "Make portrait for Agent Halina Kowalczyk\nA sturdy,...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "20cf23d1-7590-4f70-a799-e011eb0a051e",
+    "poses": {
+      "drink": "56f145b3-6c66-4d73-9009-e9e30b49700d",
+      "phone": "9d0e1606-4fea-4810-adb7-6136bf91927c",
+      "use": "28c8cbad-88a0-491f-b14c-a3ec7793e350"
+    }
+  },
+  "hampshire": {
+    "character_id": "6807f395-a142-4b85-ae4a-dac6975aa967",
+    "name": "Make portrait for Chris Hampshire\nA British Asian ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "7e026f23-c8b4-4588-957d-5c1971e18221",
+    "poses": {
+      "drink": "773683d9-64fd-4cd1-acf9-facc7a43cc75",
+      "phone": "1ccc437b-611d-4576-b7c7-4815bfeed592",
+      "use": "665d4be1-4f15-4278-a74c-2624a938fe10"
+    }
+  },
+  "hamza_iqbal": {
+    "character_id": "2298578f-deaa-49d9-b40a-d7f8b4e31886",
+    "name": "Make portrait for Hamza Iqbal\nA British Pakistani ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "943b4412-4ab0-44b5-bcca-fc04008a45c0",
+    "poses": {
+      "drink": "5bf423a5-92f9-4ca5-aaa5-2f1a4bf1a99b",
+      "phone": "14d3fe93-678f-43ad-8dec-aba5029b68a5",
+      "use": "e2fa9375-68c4-408d-aaa3-8972cb7c1f37"
+    }
+  },
+  "harjit_singh": {
+    "character_id": "29def7b5-5aac-4f8b-96ff-b65337435667",
+    "name": "Make portrait for Harjit Singh\nA Sikh Punjabi-Brit...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "1198fb80-da48-4f86-a33f-3858bec7fdd2",
+    "poses": {
+      "drink": "957ed90c-5852-47f3-8756-a38b56402853",
+      "phone": "44ec1baf-276b-43c4-87df-d039fa9f2acb",
+      "use": "d2f9cf23-e106-4a12-b081-aa997d4cccfb"
+    }
+  },
+  "hashchain_guard": {
+    "character_id": "429ff98c-3927-4eb8-9d37-0b2abd2c30f5",
+    "name": "Make portrait for the Checkpoint Guard\nA stocky Br...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f32bf9d9-61bc-4582-ae6b-5662b19a6c40",
+    "poses": {
+      "drink": "58f1f4e7-5318-46c9-b93e-849d1efc1a4e",
+      "phone": "167f73b9-aa70-443d-8ca5-4d01404718ca",
+      "use": "6d33652e-eb4a-4fa3-b439-3c3751e74d34"
+    }
+  },
+  "helen_carver": {
+    "character_id": "588ca268-fa48-4c24-84a8-54772f85dc83",
+    "name": "Make portrait for Helen Carver\nA white British wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "b463fda0-bca7-4495-8bec-a78db86f7623",
+    "poses": {
+      "drink": "43823bfb-73ab-47b6-9383-ffe3e1b1edc0",
+      "phone": "3081d61c-8efe-4fd4-8342-7dde23d441e7",
+      "use": "c37df4d7-7c68-4aab-889c-00028b3b56c4"
+    }
+  },
+  "hodan_warsame": {
+    "character_id": "97dabcbd-5642-4c79-bec3-ed19692fd7ba",
+    "name": "Make portrait for Hodan Warsame\nA British-Somali w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f13c749b-24f8-4e80-9fa8-bbcbea32759b",
+    "poses": {
+      "drink": "b0d19808-f1c0-4460-b217-9b68339245a5",
+      "phone": "89513c03-3ca5-438d-b0ff-f4de5ac487cd",
+      "use": "45751e8e-a4e2-4e53-800a-3fa421f21c52"
+    },
+    "white_threshold": 185,
+    "white_bg": true
+  },
+  "ibrahim_diallo": {
+    "character_id": "2970778d-a8b5-424d-8966-3baabcfd5e76",
+    "name": "Make portrait for Ibrahim Diallo\nA French-Senegale...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "881db3d2-0117-4192-82bd-10ecc88489a7",
+    "poses": {
+      "drink": "54236c87-f0ab-496d-8a14-3c3a30f62ddd",
+      "phone": "3ccebcbe-014e-497f-84e3-5770ba55c8a1",
+      "use": "10fda282-8992-4851-9891-1e17199abae9"
+    }
+  },
+  "imran_siddiqui": {
+    "character_id": "0f14b104-c083-4b06-adf4-d28592be8965",
+    "name": "Make portrait for Imran Siddiqui\nA slim, boyish Br...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "75ff2471-880f-48f2-9433-f81e38c8aa17",
+    "poses": {
+      "drink": "0484762d-7dfe-409e-976a-c2ef0ba68bb3",
+      "phone": "ceabac3d-2cf4-496c-8d2b-a961e6b2068b",
+      "use": "7cfb4684-5a19-4884-9435-b0f06836455e"
+    }
+  },
+  "irina_volkova": {
+    "character_id": "95fc9762-3a9d-4bff-9892-b1876aa69c95",
+    "name": "Make portrait for Dr Irina Volkova\nA slender white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "193e71f5-5fbe-44aa-a43c-bda29474598e",
+    "poses": {
+      "drink": "f82f7867-8395-497c-a544-9d20d0fac5c1",
+      "phone": "4bba12ef-8270-40c3-92bf-92af6df1f20e",
+      "use": "714973bc-3931-4450-a528-934c51abede1"
+    }
+  },
+  "james_mercer": {
+    "character_id": "2e9acd6e-94b2-4dc0-bc42-c939d179fa7a",
+    "name": "Make portrait for Dr James Mercer\nA lean, tall whi...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "12311272-03bb-4a3d-8711-22b1668673b4",
+    "poses": {
+      "drink": "fab15070-9a82-4b3a-af8d-11a40c9cba8b",
+      "phone": "13f22b36-2379-44e4-9a17-1d7c3641b1bf",
+      "use": "b3e1e93f-cd06-4ed5-b828-32b57a2b6941"
+    }
+  },
+  "jesse_tran": {
+    "character_id": "0492a91f-7896-4b4c-8142-362161eebfd7",
+    "name": "Make portrait for Jesse Tran\nA lanky Vietnamese-Am...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "2bc80439-35e5-4ca1-b0ec-37fb2ee63d00",
+    "poses": {
+      "drink": "13729aae-4789-48b4-b1bc-f1f370986d11",
+      "phone": "2aba2537-bc18-4db1-a02a-4f2ee1cd9717",
+      "use": "05f364bd-6454-40c4-b7e4-8d0ba52a364d"
+    }
+  },
+  "joanne_pell": {
+    "character_id": "c2f1526f-636e-4e98-81da-bbdb6bb220d6",
+    "name": "Make portrait for Joanne Pell\nA white British woma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "4d857fed-e5ab-404a-bd00-d638ebe753bd",
+    "poses": {
+      "drink": "2fec1fb8-dedb-458c-a091-a6b2cbed81cc",
+      "phone": "4a946ee4-5e0f-4a99-b8fb-281e14671615",
+      "use": "54e00edf-e931-42c8-b5a8-d3d16fbad5d7"
+    }
+  },
+  "julian_sallow": {
+    "character_id": "8474d33e-e390-48aa-ba03-52f5ec5277e5",
+    "name": "Make portrait for Julian Sallow\nA Black British ma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "2438ab23-dcfa-4dd6-8432-a026b5d0cecc",
+    "poses": {
+      "drink": "9de1aa36-9310-4668-9888-1b41e051b5e5",
+      "phone": "b3ffd263-b0a6-4f35-8ba6-f2c2eea0166d",
+      "use": "0c01489f-bf57-4aa5-8d57-7b6448a86b3f"
+    }
+  },
+  "jun_watanabe": {
+    "character_id": "d9c29050-2563-4f12-bd44-9ad050d06fd3",
+    "name": "Make portrait for Jun Watanabe\nA Japanese-British ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "cb8723ec-ec3e-48d2-890f-da64e7b7add4",
+    "poses": {
+      "drink": "64dd41a0-2725-476c-9ebc-1b6fb60a85f7",
+      "phone": "44f31e40-cc57-487d-9cd1-5daa3a4a13ae",
+      "use": "7dbf4b29-b45a-4921-b4c6-5e5cee52dc14"
+    }
+  },
+  "junior_analyst": {
+    "character_id": "83c3edaa-ea1c-4130-a310-64adf6dd3713",
+    "name": "Make portrait for Junior Analyst\nA British-Indian ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "42bcce6b-fdd2-4b50-82dc-63d80ff54b85",
+    "poses": {
+      "drink": "fb2755ce-5aa4-4627-ad86-5a824be35aad",
+      "phone": "561035b0-b501-4567-a3aa-dce092c7f13b",
+      "use": "7b68175c-a55d-4386-979b-11acda1362b8"
+    }
+  },
+  "kemal_aydin": {
+    "character_id": "4a3ac519-2fe1-41b1-a8fd-ba5f0541a5ad",
+    "name": "Make portrait for Kemal Aydin\nA tall, lean but bro...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "161fe42b-b83a-43fe-98ee-91966bb40015",
+    "poses": {
+      "drink": "aceb8015-6d88-44c3-96dd-ccce20678249",
+      "phone": "faa0e41f-1ee2-4df9-a87c-16f7372f33ac",
+      "use": "edb59d33-b8b7-4286-b8fa-97b5fea5a201"
+    }
+  },
+  "kenji_arakawa": {
+    "character_id": "cbe8850d-35b7-4447-b707-3e4d30c222b6",
+    "name": "Make portrait for Officer Kenji Arakawa\nA fit, com...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d31ee10d-3c0d-4251-9d5b-b17a69a04f20",
+    "poses": {
+      "drink": "f62c8de6-78f9-4049-bad9-b2f933935539",
+      "phone": "eaaa4e1c-bf81-44f6-977a-55dd8b1bdbdd",
+      "use": "e3a3ae8b-a39c-4b23-aa44-fea8f4f0a4f6"
+    }
+  },
+  "kevin_park": {
+    "character_id": "ae175532-182f-435a-8f0a-d7408d88eb2f",
+    "name": "A young man with short dark hair, a full dark bear...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d2346e82-0a06-4440-9efc-3bce63aca588",
+    "poses": {
+      "drink": "b0727a5d-1ec4-48b5-99cf-ea23a977ec6e",
+      "phone": "f04b104c-ca28-4f49-b9fb-2e4e91d1f0fe",
+      "use": "69fb632f-20cd-461d-b8c7-75d1ef027d3c"
+    },
+    "copied_from": "male_nerd_v2"
+  },
+  "kieran_doyle": {
+    "character_id": "91ede002-4a15-4070-aeb1-39a6e241223a",
+    "name": "Make portrait for Kieran Doyle\nA mixed-race Irish ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "206ac8d3-fd5a-4f61-90e8-7e2fea5128b2",
+    "poses": {
+      "drink": "ff319137-64f4-4f13-aca1-9c722ba4dcba",
+      "phone": "ccb80ab3-cef5-49b3-ac39-99475bf44dc8",
+      "use": "4fcdd7be-5707-4a42-b824-c41bf7ca642e"
+    }
+  },
+  "len": {
+    "character_id": "d6814179-c356-43a2-87cb-204828ffa6c5",
+    "name": "Make portrait for Len Okafor\nA man in his fifties ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "aa51542b-72f6-4ce2-b529-07751bbf0487",
+    "poses": {
+      "drink": "c2319d38-6916-4df4-81b4-bb3651eec72b",
+      "phone": "46f8b997-fb0a-4b1d-9d74-e6590151eb80",
+      "use": "2cd925d1-d970-4a9c-9315-9d3d79e829d1"
+    }
+  },
+  "lerato_dlamini": {
+    "character_id": "cfc36f50-e24a-4f9f-b361-1b40de1c4e1b",
+    "name": "Make portrait for Lerato Dlamini\nA Black South Afr...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "b195e0fb-0f52-401b-84b8-6705679a9b24",
+    "poses": {
+      "drink": "870ed107-ec04-41e2-972b-2d2b289a677c",
+      "phone": "61d76fb5-8cb6-41ec-a03a-f2707c4c425e",
+      "use": "647d0445-6eb5-4c5c-896b-cfbc86d4bf97"
+    }
+  },
+  "lisa_park": {
+    "character_id": "d652c8a0-906c-4762-9679-b0ac0af08855",
+    "name": "Make portrait for Lisa Park\nA petite British-Korea...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "7506ca85-66ba-4c0d-a485-8ded202eb7fa",
+    "poses": {
+      "drink": "a2557d37-d92e-4083-9ae8-266aa6da376b",
+      "phone": "fd97ed9e-5a37-4194-a01f-a2670bcaee9e",
+      "use": "c2e79e37-2a53-40b4-969a-4cf3ab5c8e44"
+    }
+  },
+  "lord": {
+    "character_id": "1a269247-6c5d-4eb7-9d87-d5f2b5a5d169",
+    "name": "Make portrait for Sofia Lord\nA British Indian woma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f46aacae-8dfe-4e2d-98b4-1342963866f6",
+    "poses": {
+      "drink": "333865c5-c7c2-45da-9c7b-9c027e0a03ff",
+      "phone": "204040b7-1402-48e1-96f6-f70a0427e279",
+      "use": "378994da-435a-44ad-b165-d00097650e90"
+    }
+  },
+  "lorna_easton": {
+    "character_id": "ccf1e354-4b1a-4252-a41b-7341bf74e054",
+    "name": "Make portrait for Lorna Easton\nA white woman from ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a664de4d-399b-4515-bb9e-4d5a339d8f74",
+    "poses": {
+      "drink": "d764a1e9-9481-49d7-8b82-c389c10c3c6f",
+      "phone": "5aff7dd4-b310-4fcc-af49-4cdce9834e4c",
+      "use": "337b8e7a-ccd3-4d5d-90d3-acea7028cfa7"
+    }
+  },
+  "lucia_moreno": {
+    "character_id": "2f711784-4aa6-402f-a0c4-561babcee9dc",
+    "name": "Make portrait for Lucia Moreno\nA Mexican-American ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "170c26bd-8dca-4650-82f4-98dc661deb5c",
+    "poses": {
+      "drink": "5b1c6707-9c21-461c-90c6-c5b532114806",
+      "phone": "01853b16-ddaa-4f31-ade7-3316fc241110",
+      "use": "d2e03265-ce83-4567-b4f6-925ad72f7f19"
+    }
+  },
+  "lyle_dillard": {
+    "character_id": "274429e7-ac0b-476f-a1e9-973922a5cae9",
+    "name": "Make portrait for Lyle Dillard\nA big, heavy-set wh...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "b103624a-d1f0-4389-a8d5-c469f2ae69c1",
+    "poses": {
+      "drink": "d46d96c4-4a74-4a11-8e50-071491ba29d8",
+      "phone": "daed45a8-ab0f-48f4-88b3-b6a622e66f8a",
+      "use": "506bd106-8a0a-4dc5-94d4-f6659b162a87"
+    }
+  },
+  "male_hacker_hood_down_v2": {
+    "character_id": "fa5a8818-00da-475c-87fb-4b21d84e39b2",
+    "name": "Make portrait for Hacker\nMan, light skin tone, hac...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "77a0ef19-8fe8-4fe8-9c13-0447aa85b67f",
+    "poses": {
+      "drink": "eeedaf22-c3d5-443a-9c9e-8e9e05ac9e38",
+      "phone": "d0036473-d579-42c2-9d6f-a7afacd4d54f",
+      "use": "db8e5b99-e3d1-4faf-b856-28e423823e44"
+    }
+  },
+  "male_hacker_hood_v2": {
+    "character_id": "e50525a5-0139-439f-83a5-31461054c3ac",
+    "name": "Hacker in a hoodie. Hood up, black obscured face s...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "idle_from": "b57e62b8-2e5a-4eff-982b-303a4b7f576f",
+    "sit_from": "fb6e9642-1a85-4c10-8bfc-7c5064fffd1a",
+    "poses": {
+      "drink": "3e7f6b98-e121-49de-a38a-f1b2e0188fb9",
+      "phone": "73e1ace1-d905-491a-af31-0adf498a541e",
+      "use": "2d64e55e-3221-4d91-8c71-ad53c2b22d87"
+    }
+  },
+  "male_nerd_v2": {
+    "character_id": "ae175532-182f-435a-8f0a-d7408d88eb2f",
+    "name": "A young man with short dark hair, a full dark bear...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d2346e82-0a06-4440-9efc-3bce63aca588",
+    "poses": {
+      "drink": "b0727a5d-1ec4-48b5-99cf-ea23a977ec6e",
+      "phone": "f04b104c-ca28-4f49-b9fb-2e4e91d1f0fe",
+      "use": "69fb632f-20cd-461d-b8c7-75d1ef027d3c"
+    }
+  },
+  "male_office_worker_v2": {
+    "character_id": "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37",
+    "name": "A man office worker in his forties with short dark...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0",
+    "poses": {
+      "drink": "6bd09056-a3c8-43f9-a43c-50810915d719",
+      "phone": "7d83b546-ceb9-46b6-96b0-f858f294fc2e",
+      "use": "dc21f2ad-5208-470c-8247-bed67956c0f8"
+    }
+  },
+  "male_security_guard_v2": {
+    "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
+    "name": "Man, light skin tone, security guard. Wearing a da...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a6edc8b7-5486-45be-b33f-7a7e8490a38a",
+    "poses": {
+      "drink": "223aa375-36de-44e1-ac29-b7ad02758be9",
+      "phone": "76e0cd0d-89c8-4e9c-a943-a5d034520b84",
+      "use": "b961a09e-3538-45a8-a0f7-4f3cf67997f0"
+    }
+  },
+  "male_spy_v2": {
+    "character_id": "7f1e42c3-a32c-49b3-ba27-f9190b4c6a93",
+    "name": "A man spy with light skin, a brown fedora pulled l...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "adcbdf40-4e4c-420d-8446-4513565d65eb",
+    "poses": {
+      "drink": "8a52c793-904d-4005-b289-0c7bb64213d0",
+      "phone": "887e0918-170a-4864-b651-2d5bd570b41a",
+      "use": "eab768d6-24d1-4d1f-b6b7-46460c06b9f9"
+    }
+  },
+  "male_telecom_v2": {
+    "character_id": "7295d940-3676-431e-8a55-b3124508f56f",
+    "name": "A man telecoms engineer with short brown hair unde...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d8f040ad-0cb2-47a0-ad69-6a2ae51c5e1d",
+    "poses": {
+      "drink": "08fac113-7404-4f41-ac7a-7e060598e8ae",
+      "phone": "9ac4d6fc-b3d9-4f18-8ccd-edb7b7bd4b60",
+      "use": "4517ba41-a20e-48af-a161-28c6d6b6c673"
+    }
+  },
+  "marcus_hale": {
+    "character_id": "b66f2234-2f20-4cd9-b80b-e8dc80c1547d",
+    "name": "Make portrait for Marcus Hale\nA Black British man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d8f2c2ec-296d-476f-84ba-6bbedcc49632",
+    "poses": {
+      "drink": "d62f0ef4-5a53-46a7-a28c-c076c0c6ee47",
+      "phone": "48b34c64-1bbd-498f-bc07-0e388d6968e3",
+      "use": "6cedd8bc-0bec-4fb3-8351-1911d436e31a"
+    }
+  },
+  "margaret_sorensen": {
+    "character_id": "866ff41a-08ea-48a0-a07e-1ae403d904a8",
+    "name": "Make portrait for Margaret Sorensen\nA small, uprig...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "915cfb1b-c5e6-4ebd-80ba-c1c5fc5b4211",
+    "poses": {
+      "drink": "47b24857-be8d-40bb-bed7-1b9b6c4c68e4",
+      "phone": "39870a10-1d10-4d05-8050-746a9b0e6aa3",
+      "use": "ceae99c8-66c7-4f6b-bf72-688cd0c2f0f5"
+    }
+  },
+  "marisol_quintero": {
+    "character_id": "23f73103-d882-4376-9397-922e3c6c68d1",
+    "name": "Agent Marisol Quintero, a WOMAN of about 52, Mexic...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "8831fdcc-3c18-402a-aa5d-20754b076213",
+    "poses": {
+      "drink": "ac61afdb-cd4e-4246-a1a3-3c546c5fb795",
+      "phone": "397d53ee-2712-4743-b10d-b2e4a85113d1",
+      "use": "65fabe7d-0af4-4bfd-89e0-796efc7a36ac"
+    }
+  },
+  "mei_lin_chow": {
+    "character_id": "539e8526-a733-4519-adfd-95ba0b6257c5",
+    "name": "Make portrait for Mei Lin Chow\nA Chinese-British w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "8faf4ffa-e1ac-47fe-950e-835bd6ac4071",
+    "poses": {
+      "drink": "b47f67c8-9a90-41da-8cfe-fb85c6379741",
+      "phone": "5c27d5e7-2c79-4961-ae17-5aeea6fcff66",
+      "use": "d31a530d-07e1-44ae-b411-942ebb2a5cca"
+    }
+  },
+  "netherton": {
+    "character_id": "37ee8f05-6adf-4c4c-b780-810098d9f00b",
+    "name": "Make portrait for Director Magnus Netherton\nA Blac...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "28d186c9-2286-44f7-b386-4ae04d0afb83",
+    "poses": {
+      "drink": "29158f63-579b-43f9-882e-1d5d4b95b717",
+      "phone": "b115d7f5-1dc4-45fa-8d34-36f35f57af02",
+      "use": "50ff1dda-833f-447b-9c10-f15257ac9573"
+    }
+  },
+  "ngozi_adeyemi": {
+    "character_id": "edaf401f-151b-4b76-aae0-f7e67c20bf2c",
+    "name": "Make portrait for Ngozi Adeyemi\nA Nigerian-British...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "9262254a-68c7-4ff1-ad1e-4fbb8eaf6bff",
+    "poses": {
+      "drink": "673f934c-bb0e-4946-8a7c-9c73d453e90c",
+      "phone": "b307b006-5ccf-4d90-940a-463e0f9ce2c6",
+      "use": "26cf12dc-1b67-47bb-898d-7451e5737f1e"
+    }
+  },
+  "niamh_doherty": {
+    "character_id": "82795d92-3115-4309-9692-993ae4b6f77e",
+    "name": "Make portrait for Niamh Doherty\nA Northern Irish w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "5706d57f-40dc-4187-a0d4-434365c1b303",
+    "poses": {
+      "drink": "c770048a-f206-40a7-a731-69876c51fa3a",
+      "phone": "aaf08b09-fcf4-4959-816c-e7e9d0021f3a",
+      "use": "bfb435a1-3e5e-4ce8-9f7e-ce9f375263f1"
+    }
+  },
+  "nightshade": {
+    "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
+    "name": "An older man scientist with swept-back white hair,...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "b7458e5e-4dcd-4c64-9860-b78238708d86",
+    "poses": {
+      "drink": "046fb847-5275-45ab-acf0-7f9c4ac12520",
+      "phone": "503fd71e-327f-4570-9672-dfde036ea980",
+      "use": "96d5bb7f-ecba-424d-868e-d3a2753435bd"
+    }
+  },
+  "nilesh_solanki": {
+    "character_id": "f87617a7-5304-43fe-98c7-ffd23ce749fd",
+    "name": "Make portrait for Nilesh Solanki\nA British Gujarat...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "0f499265-a225-478a-a96b-10a1c490325c",
+    "poses": {
+      "drink": "ec448283-1524-44e4-b6a6-ededc07689ab",
+      "phone": "96736316-19d0-4276-88ac-0582eba32868",
+      "use": "f86927d4-1eee-4c8d-b74f-c1559b545555"
+    }
+  },
+  "noor_haddad": {
+    "character_id": "c27871de-0282-43d0-a8d4-932f659ae1f4",
+    "name": "Make portrait for Noor Haddad\nA slim Lebanese-Amer...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "c9298248-b838-4999-8202-376171df2d9b",
+    "poses": {
+      "drink": "e229093f-6ad4-40b1-a035-852bada20cbe",
+      "phone": "ef6466b5-f2e1-401c-83ad-a3121d28725e",
+      "use": "c5937dc9-b2fc-4401-839d-6be97cbc26b3"
+    }
+  },
+  "offduty_agent": {
+    "character_id": "fdc09fe1-86ce-4314-b660-884ac8216284",
+    "name": "Make portrait for Off-Duty Agent\nA lanky white Geo...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "8d0c22c8-1c17-4eef-b512-56e12f06a45d",
+    "poses": {
+      "drink": "51401e22-3a05-4fdd-b6d8-ca8f07eaa774",
+      "phone": "c52c6027-5256-44fc-b086-d41c1f864c78",
+      "use": "4a379458-361c-4a8c-b4ea-a9543c362599"
+    }
+  },
+  "oleg_illiashenko": {
+    "character_id": "6bddfcaa-7589-4411-88b1-b2aaee551c0c",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "3e90d88c-50dd-46f4-a375-9c491b756dd7",
+    "poses": {
+      "drink": "806d3fd9-5331-47fc-8790-7435acbd3e63",
+      "phone": "6989e72e-f1fa-4653-830b-626e78478abb",
+      "use": "4573ae81-dc29-4416-b127-0c29189f076b"
+    }
+  },
+  "operative_cipher": {
+    "character_id": "9b83fe5e-3f8c-4d5d-9593-ec0d73b33ac9",
+    "name": "Make portrait for ENTROPY Operative Cipher\nA young...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "5c4d6bdb-ede5-4dcd-8028-1167a081c44f",
+    "poses": {
+      "drink": "ad1bf89e-5811-43f0-84ac-1fe0114d48f4",
+      "phone": "7eb12a54-2257-40fe-806c-e486e0c19718",
+      "use": "3724c64a-f337-4781-bbad-4b84efbef309"
+    }
+  },
+  "operative_relay": {
+    "character_id": "4e1534f2-ffb3-452b-b3e3-699da4c2b5a1",
+    "name": "Make portrait for ENTROPY Operative Relay\nA Black ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "1a75ab99-9eb7-4b83-b9e7-ff0adccc0648",
+    "poses": {
+      "drink": "07392d09-7096-470c-b5c4-6e8f0e1bb6d7",
+      "phone": "a5b927aa-612a-4bed-84df-ef574c2f5452",
+      "use": "d369baf5-1e9e-4803-b589-a36d109f9da9"
+    }
+  },
+  "operative_static": {
+    "character_id": "54f2dfbd-fa2f-418e-9dec-5199fa24943e",
+    "name": "Make portrait for ENTROPY Operative Static\nA white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "7eeffe00-206a-40b2-8e93-2ad3b016848f",
+    "poses": {
+      "drink": "00f16707-546b-41dd-9712-593c79df2b74",
+      "phone": "d8f82e69-eef8-4c29-acc8-371d98bd86c2",
+      "use": "81822de1-58a0-487b-b27a-d49576df9520"
+    }
+  },
+  "owen_gallagher": {
+    "character_id": "cae53036-8a55-4ec4-9bbe-2a4123c78ed0",
+    "name": "Make portrait for Owen Gallagher\nA stocky mixed-ra...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f754a81b-80fc-4b4b-8d7c-8fd9d59e99e6",
+    "poses": {
+      "drink": "75225fda-e87a-4801-a45d-3d74444e9208",
+      "phone": "13c7ba03-0692-4cf8-9519-a25600ddc62b",
+      "use": "385b60ea-054c-4939-859c-7dc8c1333f78"
+    }
+  },
+  "patricia_morgan": {
+    "character_id": "40f5666b-9824-4288-893d-1f812ff34ace",
+    "name": "Make portrait for Patricia Morgan\nA solidly built ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "27af146f-ec8d-4a89-9ed7-581f4d254e21",
+    "poses": {
+      "drink": "62a0ac46-979c-4e9c-a88f-53dcead94801",
+      "phone": "3e90c2ac-9e80-4d23-a3b0-ad3175547d22",
+      "use": "320b3b08-3b48-46ed-912d-370c20fc1856"
+    }
+  },
+  "pierce": {
+    "character_id": "8a5a96c8-c7ec-46dc-a0e4-1bec1c3c89ea",
+    "name": "Melanie Pierce (eyes fixed)",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "0f4b1bc2-dca1-414f-8b48-a4a9310f7efb",
+    "poses": {
+      "drink": "f6965a46-4adc-4c93-88eb-4dc90e47cf45",
+      "phone": "37d9caee-2460-4305-8432-ecaf298af585",
+      "use": "763551a6-fcaf-4ac1-b294-0b1471b3b047"
+    }
+  },
+  "pieter_vos": {
+    "character_id": "cc1b5d89-ad2f-47c6-a775-2d6c382d3b85",
+    "name": "Make portrait for Pieter Vos\nA tall, lean Dutch ma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "667c78f2-fde6-4798-9189-5be0da5293b4",
+    "poses": {
+      "drink": "2f728e2e-c2c7-4c09-a28e-6b7feafe7357",
+      "phone": "0d3cb4ad-dc63-419b-aeaf-9db224722cdf",
+      "use": "eaca9619-faa1-4591-9e49-e9e3dea9ed8b"
+    }
+  },
+  "priya_raghavan": {
+    "character_id": "33cfa6c3-2dcf-448e-a7a0-7576078b32ce",
+    "name": "Make portrait for Priya Raghavan\nA British-Indian ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d6787f00-cf20-4729-a150-9c671b79bd52",
+    "poses": {
+      "drink": "371afca8-d0dc-4b09-8989-ad4445a9181c",
+      "phone": "e97adee7-472b-4f79-a7ee-1db1cdbe7221",
+      "use": "da0c7468-5f4b-4b63-a6e7-ac9d92857e68"
+    }
+  },
+  "priya_s": {
+    "character_id": "eb263472-5d6d-43c9-9aa3-bf613f2983b3",
+    "name": "Make portrait for Priya S.\nA British Indian woman ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "8b8f5e54-9a33-41ec-8298-71fb8cd135a5",
+    "poses": {
+      "drink": "9e58149c-e159-4900-a97e-41e1c156a1eb",
+      "phone": "9e04d6f5-d059-44d5-8084-1746d74292d4",
+      "use": "51b515da-4249-497b-a7db-073edbcf8a9c"
+    }
+  },
+  "ravi_anand": {
+    "character_id": "3b22a014-0abc-4519-9484-2364693cd02b",
+    "name": "Make portrait for Ravi Anand\nA British Indian man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "89b89fab-5b53-4842-8893-7a3f0eec4b34",
+    "poses": {
+      "drink": "321271c0-f710-4e00-a0b3-fa39152b39cb",
+      "phone": "9c1a433c-3ff6-49b2-912e-53e9adb9a196",
+      "use": "9fb5414d-c56c-4967-9b3e-e17b54d9a29f"
+    }
+  },
+  "ray_hollis": {
+    "character_id": "e2cc0216-9fcd-4d39-bc1f-6212b29c2f9b",
+    "name": "Make portrait for Ray Hollis\nA lean, tired-looking...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "ce9b2846-5e71-4ef0-aa02-552b176a741f",
+    "poses": {
+      "drink": "bb1dafc5-cf80-47fd-af2b-e63100a35b88",
+      "phone": "298c4d3f-1bcb-45d9-8aa9-8e2518cf0878",
+      "use": "b4744162-c29c-4dd7-9b91-c50b8e5c6098"
+    }
+  },
+  "robert_vance": {
+    "character_id": "6edbd770-785c-4f56-91ea-45953f7d1594",
+    "name": "Make portrait for Robert Vance\nA British Pakistani...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6a740a69-56d7-433a-bd21-047aff814271",
+    "poses": {
+      "drink": "5d5e8778-8773-4527-b384-2a4c11eeb0f6",
+      "phone": "5f4cbe99-f91a-4fe6-b049-0620bcc0d82a",
+      "use": "f841042f-1eca-46c0-b847-80f7ec49d08e"
+    }
+  },
+  "ruth_adeyemi": {
+    "character_id": "bf8ff217-fe3e-4479-a142-3a99655187da",
+    "name": "Make portrait for Ruth Adeyemi\nA Black British wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "356c8f00-a7ed-40b9-a646-21b1ef7f9070",
+    "poses": {
+      "drink": "1dc55320-837e-4e2f-918a-2109c949ddf2",
+      "phone": "4767dd93-0c37-428c-85c7-56667f49b512",
+      "use": "13c99a35-0f3e-4c18-8def-5c0c793314a2"
+    }
+  },
+  "ruth_halloran": {
+    "character_id": "95250c5f-3ff8-4987-9900-1367ad0c2a23",
+    "name": "Make portrait for Dr Ruth Halloran\nA white Irish w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a7a6c9f1-d097-4411-859a-0e53c8da3b4f",
+    "poses": {
+      "drink": "96ece4f5-743d-4311-9d2d-395372671f64",
+      "phone": "c2996eef-fb79-4d65-8dd8-f4379f12dbab",
+      "use": "68fee007-78ad-464c-9d15-0b5a012013b4"
+    }
+  },
+  "sarah_kim": {
+    "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",
+    "name": "An East Asian (Korean) woman in her forties, the C...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "edaf8f72-1be6-4ea3-97d2-74844852b609",
+    "poses": {
+      "drink": "05403905-8891-4542-8d6f-07186eab8196",
+      "phone": "17feeb97-aac4-4fe2-b3b0-edc864de51bf",
+      "use": "dd853421-dbe8-4212-968c-49cc09b8cf0d"
+    }
+  },
+  "sarah_mitchell": {
+    "character_id": "7bb85b6b-36bb-41be-a1f1-2974b37ffd15",
+    "name": "Make portrait for Sarah Mitchell\nA Black British w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "3b5704b9-a6d5-4d32-a549-e598774b01d1",
+    "poses": {
+      "drink": "61b333db-17ca-424c-845f-444ae0cca1c4",
+      "phone": "ea0f5000-7715-4d6f-9116-148b1c869a26",
+      "use": "b470c765-483b-469c-a0d0-082ee994cd6e"
+    }
+  },
+  "satoshi_nakamoto": {
+    "character_id": "9ea1972f-67d1-420e-b81e-138c247e58df",
+    "name": "Make portrait for Satoshi Nakamoto II\nA lean white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "7714bbf9-1e46-4e2b-8271-c5fefe131595",
+    "poses": {
+      "drink": "60ece8c7-0646-4b89-8117-19967548e65b",
+      "phone": "4be30324-240e-4212-bcf4-bc4373cdea9c",
+      "use": "d112c4d2-8c66-410e-9235-38fafb019ad4"
+    }
+  },
+  "security_guard": {
+    "character_id": "29efd3e6-40d7-4ca9-a30e-9d8a21bf2d3f",
+    "name": "Make portrait for Security Guard\nA white British s...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "38a9108b-0dea-4512-af82-7beb22c9a833",
+    "poses": {
+      "drink": "ff423496-d2db-4af5-aa46-08021ffa6be6",
+      "phone": "07c1a2aa-3175-4d56-8eb3-7b5e43f6d0bc",
+      "use": "f13ea27d-09b3-456b-a588-bc052399caaf"
+    }
+  },
+  "sidhu_selvarajan": {
+    "character_id": "683d2a03-378d-4e03-acf2-3f97b07741b5",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "4f9ccdf9-feba-4989-a4b5-ad42d379de8a",
+    "poses": {
+      "drink": "748cb363-71c2-44e6-8147-c20fd182a778",
+      "phone": "3ac1a113-0db4-4aa5-a36d-2882eaa41c65",
+      "use": "bbbfb102-b10c-4fab-9d69-ec041cadb826"
+    }
+  },
+  "sione_fonoti": {
+    "character_id": "ebde2b54-3007-40af-aee5-492ecd422626",
+    "name": "Make portrait for Sione Fonoti\nA very big, heavy, ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "1fd6723d-e667-4f71-a445-79d553146fe1",
+    "poses": {
+      "drink": "bec9704a-dfb7-4a50-ab0b-e643bbc99cd3",
+      "phone": "b221924f-8dfe-4d0d-882b-0d68fe41979d",
+      "use": "3d4a21db-0e4c-4e69-9d86-8fef4fddf0de"
+    }
+  },
+  "sofia_marchetti": {
+    "character_id": "ec8cba6e-c9ed-4139-b205-bcaaeff49339",
+    "name": "Make portrait for Sofia Marchetti\nAn Italian-Briti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "f4f14844-3eb4-49cd-8940-d89576c9a06b",
+    "poses": {
+      "drink": "63ada29a-efdc-4b89-b471-90ed5c839ac3",
+      "phone": "b2432ca8-b923-4fae-bdcf-e86af46835d5",
+      "use": "4471a1b1-1e21-4733-aecf-ccdb9a2f25e7"
+    }
+  },
+  "terry_mott": {
+    "character_id": "f00ed76b-8cfd-4591-9fc7-367dd354af70",
+    "name": "Make portrait for Terry Mott\nA Black British night...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "cfe3d48c-0002-470b-a485-2890144c0b45",
+    "poses": {
+      "drink": "9eb81558-a8fe-4e4e-a65b-8c26f65345e6",
+      "phone": "2d27a280-e4b5-4d1b-a153-bc4b5c53e974",
+      "use": "8565afc1-612f-4175-99ba-53f3e43a4292"
+    }
+  },
+  "thandiwe_moyo": {
+    "character_id": "dc685385-ce61-4852-9d8c-a4d2e93f223b",
+    "name": "Make portrait for Thandiwe Moyo\nA Zimbabwean-Briti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "10e5c38c-3fd9-45a4-85ea-14994467711c",
+    "poses": {
+      "drink": "2770a077-38f7-4541-a8e4-2f3f7c5d35d0",
+      "phone": "b8ea78e9-8982-4be2-a293-a06800c85c1f",
+      "use": "61a45ae3-8ec6-43a6-a2f1-b7f9ad906bce"
+    }
+  },
+  "the_architect": {
+    "character_id": "53bd1c77-eaad-4877-82fc-cd649cb0f0ef",
+    "name": "Make portrait for The Architect\nA man in his sixti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "poses": {
+      "drink": "7c03d28f-efdd-401e-9403-e74fe9a86e91",
+      "phone": "97c15b32-a694-4250-8d38-7b5876cd2c5d",
+      "use": "a6ca2819-5815-4f62-bfeb-57f1940e285f"
+    }
+  },
+  "the_recruiter": {
+    "character_id": "54df40d4-bb63-44af-bbc2-f854ba93aa8e",
+    "name": "Make portrait for The Recruiter\nA full-figured Afr...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "poses": {
+      "drink": "e942a526-159e-4953-842c-cdcdce24298c",
+      "phone": "07acb00b-d019-4ebe-a52c-e4f8a8bd072f",
+      "use": "9ce446ef-96c4-48b0-a772-05fbbc0a29dc"
+    },
+    "white_bg": true
+  },
+  "thomas_park": {
+    "character_id": "b5f70700-f3b0-4b11-b9fc-85f8b4319c02",
+    "name": "Make portrait for Thomas Park\nA lean Korean-Americ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a6790f4b-b1ba-4efd-9089-519cee6dc068",
+    "poses": {
+      "drink": "bb7671b7-0198-4b57-97ef-aa4f82f62ce5",
+      "phone": "24fc0691-1d80-4888-b4d1-0ae0c17f1a7e",
+      "use": "8d76e530-2273-46d3-8c28-b420905bb8b1"
+    }
+  },
+  "tom_shaw": {
+    "character_id": "e0906801-40c7-4260-a098-c95dac9cdddc",
+    "name": "Make portrait for Dr Tom Shaw\nMan in his late twen...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "d163edf3-a578-47f9-bb30-20cd525337ff",
+    "poses": {
+      "drink": "805fa7d4-2a74-4d44-a157-0bbe06598aaa",
+      "phone": "0cad90f9-6675-435d-a224-804d7733bb09",
+      "use": "f20caf8b-78e4-4292-9321-af255565b5c6"
+    }
+  },
+  "tomasz": {
+    "character_id": "81200bb1-30bf-4c86-886b-aee046bad9bb",
+    "name": "Make portrait for Tomasz\nA Polish British man of a...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "73e5f2a4-eb31-499d-849b-096aea8aa896",
+    "poses": {
+      "drink": "43e77716-d7cd-44cb-b655-9fec44a7ca0f",
+      "phone": "7e9177bb-298b-4148-ba8f-d0d42d5b1e1d",
+      "use": "06229ad3-cd09-4068-a77e-d25b24bca265"
+    }
+  },
+  "tomasz_wisniewski": {
+    "character_id": "dfd23c35-e54c-478e-b795-f49f469a44a4",
+    "name": "Make portrait for Tomasz Wisniewski\nA Polish man i...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "b8336854-efd0-4ab5-b3be-3e6aa63a7e52",
+    "poses": {
+      "drink": "1f312118-6146-40b6-8af1-bf3012d3b06c",
+      "phone": "b9de30f1-9c2b-44a1-a730-8c6ea68ae241",
+      "use": "60d78923-c6b7-419b-9801-6b81adc0245a"
+    }
+  },
+  "victoria_sterling": {
+    "character_id": "57297be2-3977-4a1d-a0cc-0a92240f9355",
+    "name": "Make portrait for Victoria Sterling\nA polished Bri...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "4ab6e3e0-24b4-4a57-9469-7ef8467e6fa4",
+    "poses": {
+      "drink": "f9ffdfd0-06e6-4770-9d70-d93885286231",
+      "phone": "8f52ec7e-f3ec-4d05-a1e7-8241763d5bfc",
+      "use": "ebf4d442-12d4-41e4-898c-09d74f2740a1"
+    }
+  },
+  "vivian_ashby": {
+    "character_id": "21ab834d-d557-4a84-864e-af2915a3acd6",
+    "name": "Make portrait for Vivian Ashby\nA white English wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6b4a1d75-4e3a-4cc8-9c79-3611a1965e34",
+    "poses": {
+      "drink": "ba5b47e6-c195-4555-94a5-06909db28c61",
+      "phone": "c94e8914-e4c5-44ce-ad45-9280d3f16a80",
+      "use": "1a1abb02-c20b-4152-b13e-c55b1688afd4"
+    }
+  },
+  "voltage": {
+    "character_id": "a51966d8-6ef5-4dec-8404-15e0799f18ae",
+    "name": "Make portrait for Voltage\nAn Indian South African ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "6ec122ba-e331-4ddd-83a1-9a8640a6128d",
+    "poses": {
+      "drink": "0693e0ac-c4bd-44f1-b1e7-1da5f889d3b9",
+      "phone": "f4f54763-2c80-4704-8629-300477c08f17",
+      "use": "77d2769e-25d3-4b09-b2f2-430e2db5a852"
+    }
+  },
+  "wendell_briggs": {
+    "character_id": "2975936c-1bfe-45b1-a29b-2a723ce432d4",
+    "name": "Make portrait for Wendell Briggs\nA wiry white man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "3021e9f5-bcdc-43d9-984b-c9cf68efd7df",
+    "poses": {
+      "drink": "b1c7cad7-cc32-4e8a-afa2-e6a4510f8ad1",
+      "phone": "03ae06c5-b1d7-4699-adf3-e238faa2077c",
+      "use": "1de50785-2ac6-4cd5-8d72-2a676afb1ffb"
+    }
+  },
+  "yasmin_chaudhry": {
+    "character_id": "e6f5446c-97c2-4f28-b33b-af3a6aa8ed2b",
+    "name": "Make portrait for Yasmin Chaudhry\nA British Pakist...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "a0dd966c-c910-4e01-89e6-a72c318d9bb6",
+    "poses": {
+      "drink": "848219e8-51b4-456f-a96d-6c672bd5ad6c",
+      "phone": "715c9bdc-a4d8-4ad2-aa04-43914bf35e1a",
+      "use": "06c84a25-dd7f-46eb-92c1-95e013dc7f5c"
+    }
+  },
+  "yusuf_demir": {
+    "character_id": "97cf73a0-aa09-479b-ab4d-57d3111381ae",
+    "name": "Make portrait for Yusuf Demir\nA British Turkish ma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "dd5c37d3-ec7c-4e99-8171-194c1bc6b7f1",
+    "poses": {
+      "drink": "f64216e0-2458-4a48-b985-bf98a87ebb09",
+      "phone": "94408858-65c2-43ad-a2e0-44adf36f6e76",
+      "use": "908ac5f0-bd03-4b92-87de-f3c8f27d716b"
+    }
+  },
+  "zainab_hussain": {
+    "character_id": "f38987a8-6de9-4e8b-b1f1-84a96ff5f5fd",
+    "name": "Make portrait for Zainab Hussain\nA British Banglad...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-16",
+    "sit_from": "0ba75387-3b46-48e6-b18c-e7bd54e6088d",
+    "poses": {
+      "drink": "d69dbb42-4dc7-43aa-9c50-a16242a52d79",
+      "phone": "5169c20f-9d56-43f2-9bb8-f559f27148b7",
+      "use": "b6e4f5e1-17d9-4b21-a957-a6d0ea92ac88"
+    }
+  }
+}

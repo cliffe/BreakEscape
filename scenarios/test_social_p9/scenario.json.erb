@@ -1,0 +1,224 @@
+{
+  "scenario_id": "test_social_p9",
+  "scenario_name": "Test: social P9 mail follow-ups",
+  "scenario_brief": "Fixture for the deferred mail packet P9. Read a highlighted message and save the evidence, read a colleague's found mailbox (inbox and Sent history), then write to Jordan Wexley, pick one of her reply options, and open the judged follow-up composer.",
+  "endGoal": "Exercise the P9 mail features: reply follow-ups, highlights, a found account and a deliverAt seed.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "p9_room",
+
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+
+  "objectives": [
+    {
+      "aimId": "p9_round",
+      "title": "Mail follow-ups",
+      "description": "Collect what the inbox gives away, then draw Jordan Wexley into a judged reply.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "found_password", "title": "Save the portal password from a message", "type": "custom", "status": "active" },
+        { "taskId": "wexley_replied", "title": "Get a reply from Jordan Wexley", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "globalVariables": {
+    "se_intel_wexley_role": true,
+    "se_intel_portal_password": false,
+    "se_intel_ledger_name": false,
+    "phish_wexley_landed": false,
+    "phish_wexley_attempts": 0,
+    "phish_wexley_followup_attempts": 0,
+    "wexley_influence": 0,
+    "wexley_latched": "",
+    "acct_jed_pc": true
+  },
+
+  "social": {
+    "people": [
+      { "id": "wexley", "kind": "cast", "address": "wex@corp.example",
+        "forms": { "first": "Jordan", "short": "Jo", "formal": "Ms Wexley", "full": "Jordan Wexley" } },
+      { "id": "shah", "kind": "cast", "address": "r.shah@corp.example",
+        "forms": { "first": "Ravi", "full": "Ravi Shah" } },
+      { "id": "baker", "kind": "cast", "address": "j.baker@corp.example",
+        "forms": { "first": "Jed", "full": "Jed Baker" } }
+    ],
+
+    "characters": {
+      "wexley": {
+        "displayName": "Jordan Wexley",
+        "channels": { "email": "wexley_mail" },
+        "emailRecord": { "storyPath": "scenarios/test_social_p9/ink/wexley_mail.json", "displayName": "Jordan Wexley" },
+        "emailReplyDelay": 1,
+        "influence": { "global": "wexley_influence", "min": -40, "max": 100, "start": 0 },
+        "syncedVars": ["wexley_influence"],
+        "thresholds": []
+      }
+    },
+
+    "intelFacts": {
+      "portal_password": {
+        "text": "A colleague left the staff-portal password in a welcome email.",
+        "subject": "baker",
+        "source": "h_pwd",
+        "provides": []
+      },
+      "ledger_name": {
+        "text": "Finance calls the quarterly accounts the Q3 ledger.",
+        "subject": "wexley",
+        "source": "jed_sent1",
+        "provides": [ { "type": "document", "value": "ledger", "label": "the Q3 ledger" } ]
+      }
+    },
+
+    "templates": {
+      "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+      "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+      "pretext_generic": { "part": "pretext", "text": "Please see attached.", "slots": [], "urgency": "low" },
+      "pretext_review": { "part": "pretext", "text": "Here is the Q3 ledger for your review.", "slots": [],
+        "implies": [ { "type": "document", "value": "ledger" } ], "urgency": "low" },
+      "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it, please?", "slots": [], "urgency": "low" }
+    },
+
+    "mailClient": {
+      "accounts": [
+        { "id": "guest", "address": "guest@workstation.example", "displayName": "Operator",
+          "kind": "given", "person": null, "mailbox": "guest", "spoofsFrom": true },
+        { "id": "jed_pc", "address": "j.baker@corp.example", "displayName": "Jed Baker",
+          "kind": "found", "person": "baker", "unlockedBy": "acct_jed_pc", "mailbox": "jed", "spoofsFrom": false }
+      ],
+      "mailboxes": [ { "id": "guest" }, { "id": "jed", "owner": "baker" } ],
+      "contacts": [
+        { "id": "wexley", "person": "wexley", "character": "wexley", "name": "Jordan Wexley",
+          "addresses": ["wex@corp.example"], "role": "Finance",
+          "revealedBy": "se_intel_wexley_role", "targetId": "wexley" }
+      ],
+      "seededMessages": [
+        { "id": "welcome", "mailbox": "guest",
+          "from": { "name": "IT", "address": "it@corp.example" },
+          "to": "guest@workstation.example", "subject": "Your new laptop",
+          "body": "Hello,\n\nYour workstation is ready. The staff-portal password is hunter2 for now; please change it on first sign-in.\n\nIT Service Desk",
+          "time": "08:05", "unread": true, "folder": "inbox",
+          "highlights": [ { "id": "h_pwd", "text": "hunter2", "grants": "portal_password" } ] },
+        { "id": "jed_in1", "mailbox": "jed",
+          "from": { "name": "Payroll", "address": "payroll@corp.example" },
+          "to": "j.baker@corp.example", "subject": "Your payslip is ready",
+          "body": "Hello Jed,\n\nYour payslip for this month is ready to view on the staff portal.\n\nPayroll",
+          "time": "07:40", "unread": false, "folder": "inbox" },
+        { "id": "jed_sent1", "mailbox": "jed", "folder": "sent", "fromAccount": "jed_pc",
+          "from": { "name": "Jed Baker", "address": "j.baker@corp.example" },
+          "to": "wex@corp.example", "subject": "Ledger handover",
+          "body": "Hi Jordan,\n\nHanding the Q3 ledger over to you while I'm away. Ravi has the export.\n\nJed",
+          "time": "07:55" },
+        { "id": "later_notice", "mailbox": "guest",
+          "from": { "name": "Facilities", "address": "facilities@corp.example" },
+          "to": "guest@workstation.example", "subject": "Fire drill at eleven",
+          "body": "Hello,\n\nThere is a fire drill at eleven. Please use the east stairwell.\n\nFacilities",
+          "time": "08:30", "unread": true, "folder": "inbox",
+          "deliverAt": { "afterSeconds": 2 } }
+      ],
+      "payloadKit": [
+        { "id": "kit_ledger", "label": "Q3-ledger.xlsx", "kind": "spreadsheet" }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": false
+    },
+
+    "phishTargets": [
+      {
+        "id": "wexley",
+        "character": "wexley",
+        "address": "wex@corp.example",
+        "displayName": "Jordan Wexley",
+        "subjects": [ { "id": "s_review", "text": "For your review", "topic": "finance" } ],
+        "interests": { "topics": ["finance"] },
+        "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
+                          "pretext": ["pretext_generic", "pretext_review"], "ask": ["ask_open_attached"] },
+        "primedFor": { "distinctiveValues": ["ledger"], "minDistinct": 1, "trusts": ["*"],
+                       "story": "a note from a colleague she already trusts" },
+        "requiredFactors": ["senderTrust"],
+        "advisoryFactors": ["senderAuth"],
+        "factorStrings": {
+          "senderTrust": { "pass": "✓ She recognises the sender", "fail": "I don't recognise who this is from.", "redFlag": null },
+          "senderAuth": { "pass": "✓ Sent as your own address, so there is nothing to spoof.", "redFlag": null }
+        }
+      },
+      {
+        "id": "wexley_followup",
+        "character": "wexley",
+        "address": "wex@corp.example",
+        "displayName": "Jordan Wexley",
+        "subjects": [ { "id": "s_record", "text": "In writing", "topic": "finance" } ],
+        "interests": { "topics": ["finance"] },
+        "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
+                          "pretext": ["pretext_generic", "pretext_review"], "ask": ["ask_open_attached"] },
+        "primedFor": { "distinctiveValues": ["ledger"], "minDistinct": 1, "trusts": ["*"],
+                       "story": "the written confirmation she asked for" },
+        "requiredFactors": ["senderTrust"],
+        "advisoryFactors": ["senderAuth"],
+        "factorStrings": {
+          "senderTrust": { "pass": "✓ She recognises the sender", "fail": "I don't recognise who this is from.", "redFlag": null },
+          "senderAuth": { "pass": "✓ Sent as your own address, so there is nothing to spoof.", "redFlag": null }
+        }
+      }
+    ]
+  },
+
+  "rooms": {
+    "p9_room": {
+      "type": "room_office",
+      "door_sign": "Engagement Office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "p9_host",
+          "displayName": "Host",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:se_intel_portal_password",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "found_password"
+            },
+            {
+              "eventPattern": "global_variable_changed:phish_wexley_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "wexley_replied"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "mail_terminal",
+          "id": "p9_mail_terminal",
+          "name": "Mail Terminal",
+          "position": { "x": 6, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A workstation signed in to the Operator mailbox, with a colleague's account also available.",
+          "minigameData": { "accountIds": ["guest", "jed_pc"], "defaultAccount": "guest" }
+        }
+      ]
+    }
+  }
+}

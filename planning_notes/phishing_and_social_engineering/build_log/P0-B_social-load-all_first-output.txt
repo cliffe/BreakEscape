@@ -1,0 +1,35 @@
+# social-load-all: ink fallbacks off vs on
+HEAD 5a4d0ae7; node v18.19.1; depth 3, nodes 120; 2026-10-21T10:51:15.139Z
+
+mission                    stories  runs  differ  wording-only  runs with an error (same outcome both ways)
+m01_first_contact                7    17       0             0  0
+m02_ransomed_trust              15    43       0             1  1
+m03_ghost_in_the_machine         8    22       0             1  1
+m04_critical_failure            10    28       0             0  0
+m05_insider_trading             10    29       0             0  0
+m06_follow_the_money             9    24       0             0  0
+m07_architects_gambit            8    22       0             0  0
+m08_the_mole                    12    29       0             0  0
+total: 79 stories, 214 runs, 3644 chat segments walked, 0 differ, 2 differ in error wording only
+
+## Runs that differ (flag off vs on)
+none
+
+## Same outcome, error wording differs (inkjs names the flag in its message)
+- m02_ransomed_trust agent_0x99 bark-probe@first_call (scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.json)
+    off: StoryException: Error: Missing function binding for external: 'player_name'  (ink fallbacks disabled)
+    on:  StoryException: Error: Missing function binding for external: 'player_name' , and no fallback ink function found.
+- m03_ghost_in_the_machine agent_0x99 bark-probe@start (scenarios/m03_ghost_in_the_machine/ink/m03_phone_agent0x99.json)
+    off: StoryException: Error: Missing function binding for external: 'player_name'  (ink fallbacks disabled)
+    on:  StoryException: Error: Missing function binding for external: 'player_name' , and no fallback ink function found.
+
+## Stories whose compiled JSON calls an EXTERNAL (an EXTERNAL declared but never called compiles away)
+- scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.json: player_name; ink fallback for: none
+- scenarios/m03_ghost_in_the_machine/ink/m03_phone_agent0x99.json: player_name; ink fallback for: none
+
+## Runs with an error, identical both ways (today's behaviour, not caused by the flag)
+- 2 run(s): StoryException: Error: Missing function binding for external: '…'  (ink fallbacks disabled)
+    m02_ransomed_trust agent_0x99 bark-probe@first_call
+    m03_ghost_in_the_machine agent_0x99 bark-probe@start
+
+Full records: (scratch, not kept) se-P0-B/f2/all.json

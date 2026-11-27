@@ -1,0 +1,21 @@
+{
+ "steps": [
+  {"note": "R27: Sarah's hub on the influence edge. Influence 2 (audit pitch and Kevin) hides the staff question; the manager's office on the dismissive answer takes it to exactly 3 and opens it; once asked it does not return. When the launch device is resolved the IT-room question is dropped and the others stay."},
+  {"talk": "sarah", "picks": ["Thanks. I'm here to audit", "Tell me about Kevin", "I'll talk to him"]},
+  {"said": ["Oh good! Kevin mentioned you'd be coming", "Here's your visitor badge and a key for the main office area", "[choice] Where exactly is the IT room", "[choice] I noticed the manager's office is vacant"],
+   "notSaid": ["[choice] Anyone else I should know about"] },
+  {"talk": "sarah", "reload": true, "picks": ["I noticed the manager's office", "These things happen", "Thanks, I'll get started"]},
+  {"said": ["Oh, that was Patricia's office", "Her office has been empty since. It's kind of creepy", "[choice] Anyone else I should know about"],
+   "notSaid": ["Between us? Patricia was asking questions about Derek's projects"]},
+  {"talk": "sarah", "reload": true, "picks": ["Anyone else I should know about", "Some people are just dedicated", "Thanks, I'll get started"]},
+  {"said": ["Derek Lawson, Senior Marketing Manager. He's... intense", "Maya Chen is nice. Content analyst"],
+   "notSaid": ["Yeah. He says it's for client calls in different time zones"]},
+  {"talk": "sarah", "reload": true, "picks": ["Thanks, I'll get started"]},
+  {"said": ["[choice] What's the office layout like", "[choice] Where exactly is the IT room"],
+   "notSaid": ["[choice] Anyone else I should know about", "[choice] I noticed the manager's office", "[choice] Tell me about Kevin"]},
+  {"set": {"ready_for_debrief": true}},
+  {"talk": "sarah", "reload": true, "picks": ["What's the office layout like", "Thanks, I'll get started"]},
+  {"said": ["Main office is through that door: open plan", "[choice] What's the office layout like"],
+   "notSaid": ["[choice] Where exactly is the IT room"]}
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "id": "cc_card",
+ "type": "card",
+ "style": "cc",
+ "duration": 1.6667,
+ "join": {
+  "type": "dissolve"
+ },
+ "spoiler": {
+  "reviewed": true,
+  "shows_code": false,
+  "shows_identity": false,
+  "shows_ending": false,
+  "keypad_partial": null,
+  "note": "Critical Cases text card on the case's panel; no footage"
+ }
+}

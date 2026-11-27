@@ -1,0 +1,13 @@
+{
+  "key": "893530a7b6babb10b461ae2956911ef8",
+  "npc": "chidi_okeke",
+  "text": "Go on, after you.",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:46:08Z"
+}

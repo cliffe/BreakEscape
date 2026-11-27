@@ -1,0 +1,13 @@
+{
+  "key": "67a59e175b8a895c0f7accb087cdf1f8",
+  "npc": "darren_price",
+  "text": "Your call to the service desk has gone through. Now take the other seat at the kiosk and cover the queue the way those calls land in real life.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:54Z"
+}

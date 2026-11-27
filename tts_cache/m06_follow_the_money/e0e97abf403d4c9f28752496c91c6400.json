@@ -1,0 +1,13 @@
+{
+  "key": "e0e97abf403d4c9f28752496c91c6400",
+  "npc": "irina_volkova",
+  "text": "The pool keys and the wallet map go to your handler tonight, and the name on the account that pays me.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:02:08Z"
+}

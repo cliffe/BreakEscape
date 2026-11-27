@@ -1,0 +1,13 @@
+{
+  "key": "dc682aa96e47b454c9f311ccbd445038",
+  "npc": "sarah_martinez",
+  "text": "The IT room has a keypad lock. Kevin's the one who knows the code.",
+  "voice": "Kore",
+  "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-08",
+  "recorded_at": "2026-10-09T12:09:57Z"
+}

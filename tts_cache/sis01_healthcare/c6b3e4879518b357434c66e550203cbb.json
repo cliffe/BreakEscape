@@ -1,0 +1,13 @@
+{
+  "key": "c6b3e4879518b357434c66e550203cbb",
+  "npc": "pharmacist_npc",
+  "text": "If you set her pump and it disagrees with the chart, call me.",
+  "voice": "Enceladus",
+  "style": "British Pakistani clinical pharmacist in his early thirties, professional and brisk. Speak with a consistent Bradford, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

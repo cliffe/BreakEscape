@@ -1,0 +1,10 @@
+{
+  "scenario": "test_notes_counter",
+  "start_room": "test_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "test_npc_thoughts_off",
+  "start_room": "office",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

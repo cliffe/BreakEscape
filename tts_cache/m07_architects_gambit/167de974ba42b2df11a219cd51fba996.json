@@ -1,0 +1,13 @@
+{
+  "key": "167de974ba42b2df11a219cd51fba996",
+  "npc": "opening_briefing_cutscene",
+  "text": "That is what the assessment says. An espionage platform. Ninety days of nothing, then a very expensive decade.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:34:58Z"
+}

@@ -1,0 +1,18 @@
+PASS L1 leaflet [foyer/jordan_pike] From Decimal: decoded "pebble" vs cryptosecure_lockbox.requires "pebble"
+PASS L2 card [foyer/cryptosecure_lockbox] pairs + From Decimal: decoded "1860" vs candidate_locker_4.requires "1860"
+PASS L3 card [common_room/candidate_locker_4] From Binary: decoded "lantana" vs keyholder_guest_terminal.requires "lantana"
+PASS L4 file [teaching_lab/keyholder_guest_terminal] From Hex, last word: decoded "cupola" vs corridor.requires "cupola"
+PASS L5 poster [corridor] From Base64, the 4 digits: decoded "6191" vs library.requires "6191"
+PASS L6 slip [library] From Base64 + ROT13(-6), last word: decoded "primer" vs special_collections_safe.requires "primer"
+PASS L7 Trial VII [library/special_collections_safe] Vigenère with whiteboard key "nonce" [sidhu_office]: decoded "sorting-33" vs pigeonholes.requires "sorting-33"
+INFO L8a pigeonhole_4 [corridor/pigeonholes] + private_key.pem [teaching_lab/lab_account_pc] -> AES key 5226742207398129f8d1ce8bbfaa5ccb
+PASS the other three pigeonholes fail with the player's key
+PASS L8b tag [corridor] AES Decrypt (key from L8a, IV from L7): decoded "padlock-92" vs cryptosecure_drop_box.requires "padlock-92"
+PASS L9 brass key [corridor/cryptosecure_drop_box] opens_lock/keyPins match the workshop door
+PASS L10 SHA2(256) under AES Decrypt, first 8: decoded "8841f594" vs relay_terminal.requires "8841f594"
+PASS Climax report.b64 [workshop/relay_terminal] From Base64, token from the pixel URL: decoded "merlin-2685" vs hacktivity_scoreboard.requires "merlin-2685"
+PASS report.sha256 matches SHA2(256) of report.b64
+PASS report.sig verifies with keyholder_public.pem: Verified OK
+PASS leaflet fingerprint d2c29b0ba4ed25a6 = SHA2 of keyholder_public.pem
+PASS optional job tape decodes: MISKATONIC UNIVERSITY COMPUTING SERVICE 1979. JOB 
+ALL PASS

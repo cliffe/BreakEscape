@@ -1,0 +1,13 @@
+{
+  "key": "6dc88e508dae492dfbfcbab1c88ee889",
+  "npc": "yusuf_demir",
+  "text": "Quiet one today, isn't it?",
+  "voice": "Iapetus",
+  "style": "Operations analyst at Merrin & Sallow, in his 30s, friendly and a little scatty. Speak with a consistent London accent with a light Turkish inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:06:49Z"
+}

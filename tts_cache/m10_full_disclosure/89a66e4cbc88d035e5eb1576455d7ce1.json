@@ -1,0 +1,13 @@
+{
+  "key": "89a66e4cbc88d035e5eb1576455d7ce1",
+  "npc": "vos",
+  "text": "Goodbye.",
+  "voice": "Schedar",
+  "style": "Zero Day's broker, fifties, from Rotterdam. Consistent Dutch-accented English throughout -- do not shift to any other accent. Flat, courteous, unhurried; everything is a delivery date.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:36:54Z"
+}

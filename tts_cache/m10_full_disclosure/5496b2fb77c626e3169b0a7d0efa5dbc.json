@@ -1,0 +1,13 @@
+{
+  "key": "5496b2fb77c626e3169b0a7d0efa5dbc",
+  "npc": "narrator",
+  "text": "Quintero looks at you a moment, then back at the map.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:43:27Z"
+}

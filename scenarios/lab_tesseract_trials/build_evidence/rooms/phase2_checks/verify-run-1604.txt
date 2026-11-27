@@ -1,0 +1,14 @@
+game            1604  (mission 79)
+created         2026-10-06 09:07:09 UTC
+last write      2026-10-06 09:18:13 UTC
+played for      664s of wall clock
+current room    "foyer"
+unlocked rooms  10: foyer, common_room, lecture_theatre, corridor, library, workshop, teaching_lab, special_collections, sidhu_office, seminar_room
+unlocked objs   0: 
+inventory       8: Your Phone, Notepad, Comms Discipline, Lab Laptop (CyberChef), Field Note 1: Bits, Bytes, Bases, CyberChef, Field Note 2: Characters Are Numbers, Field Note 3: Hex and Binary, Handout: Hashes
+NPCs met        10: briefing_cutscene, agent_0x99, ghost, closing_debrief_person, jordan_pike, megan_oyelaran, cliffe_schreuders, tom_shaw, sidhu_selvarajan, cliffe_workshop
+flags submitted 0: 
+globals set     13: briefing_played, comms_had, corridor_open, ending, engine_tutorial_declined, fn04_offered, fn05_offered, fn07_had, library_open, megan_choice, player_name, report_read_claimed, workshop_open
+
+VERDICT: progress recorded — 9 rooms beyond the first, 0 objects unlocked, 0 flags submitted.
+Cross-check the specifics above against the report.

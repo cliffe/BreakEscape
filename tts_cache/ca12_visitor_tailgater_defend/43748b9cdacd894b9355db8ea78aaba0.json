@@ -1,0 +1,13 @@
+{
+  "key": "43748b9cdacd894b9355db8ea78aaba0",
+  "npc": "lorna_easton",
+  "text": "Slipping in behind a badge, a stranger gets the run of the studio floor, with client plans and screens open. A busy morning helps.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:47:51Z"
+}

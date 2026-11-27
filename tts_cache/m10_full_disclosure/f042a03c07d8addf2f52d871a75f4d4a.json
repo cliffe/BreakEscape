@@ -1,0 +1,13 @@
+{
+  "key": "f042a03c07d8addf2f52d871a75f4d4a",
+  "npc": "farah_guard",
+  "text": "Suit yourself. Shut the door behind you.",
+  "voice": "Zephyr",
+  "style": "Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:37:56Z"
+}

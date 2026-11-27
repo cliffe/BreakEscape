@@ -1,0 +1,13 @@
+{
+  "key": "b806b48c885e712f9565eaa0864cadbe",
+  "npc": "jesse_tran",
+  "text": "What. I'm working.",
+  "voice": "Puck",
+  "style": "IT contractor in his late twenties from Seattle. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Fast, ironic, contemptuous, very online; talks to everyone as a tourist.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:29:57Z"
+}

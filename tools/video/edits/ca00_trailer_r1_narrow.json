@@ -1,0 +1,847 @@
+{
+ "mission": "ca00",
+ "id": "ca00_trailer_r1_narrow",
+ "theme": "ca",
+ "title": "Cyber Aware ca00 trailer, round 1, narrow-panel brief cards (render 9:16 and 1:1 from this file)",
+ "script": {
+  "heading": "ca00 trailer script (How it works, onboarding)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca00_trailer_script.md (round 2). Hook and montage reused from ca12 takes. Music chosen in this edit (D331 landed): PeaceFolk Quietly Cinematic, window from 16.636 s."
+ },
+ "fps": 30,
+ "length": 65.7,
+ "music": {
+  "track": "PeaceFolk/Quietly Cinematic.mp3",
+  "analysis": "quietly_cinematic_75.json",
+  "start": 16.636,
+  "length": 65.7,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Quietly Cinematic.mp3 @27.183",
+   "PeaceFolk/Gently Decaying Again.mp3 @25.061"
+  ]
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 2.1,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_the_call.trimmed.mkv",
+    "in": 15.0,
+    "out": 17.1
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Delphine, first sentence only (cached, ca12 t06 line-start 15.013, speech 15.14-16.85 by silencedetect, next sentence 17.34): out 17.1 lands in the gap; framing crops the game bar, which would print the unspoken second sentence; burned caption instead | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW EPISODE"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.6,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.64,
+     "cy": 0.4,
+     "zoom": 1.3
+    }
+   },
+   "lines": [
+    {
+     "start": 0.14,
+     "end": 1.85,
+     "speaker": "Delphine",
+     "text": "Go on then, I'll buzz you through."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "How it works",
+    "company": "Quayholt Insurance",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.4
+  },
+  {
+   "id": "welcome",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_brief_cards_narrow.trimmed.mkv",
+    "in": 3.09,
+    "out": 8.09
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Card 1 'Welcome' (t03 card1 mark 2.89 + 0.2; card 2 at 10.24): practice at a made-up company; includes the scope note line; no answers | CA: spoilers not an issue (owner), no masks | narrow take t03b (marks within 0.2 s of t03: card1 3.04, card2 10.29, card3 19.55, card4 26.84, card6 36.37, card7 43.66)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE BRIEF"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    }
+   }
+  },
+  {
+   "id": "how",
+   "type": "gameplay",
+   "duration": 8.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_brief_cards_narrow.trimmed.mkv",
+    "in": 10.44,
+    "out": 18.44
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Card 2 'How it works' (card2 mark 10.24 + 0.2; card 3 at 19.49): held 8 s, readable; no answers | CA: spoilers not an issue (owner), no masks | narrow take t03b (marks within 0.2 s of t03: card1 3.04, card2 10.29, card3 19.55, card4 26.84, card6 36.37, card7 43.66)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE BRIEF"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    }
+   }
+  },
+  {
+   "id": "m_research",
+   "type": "gameplay",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_osint_note.trimmed.mkv",
+    "in": 4.9,
+    "out": 8.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ca12 t04: merrin-link click 4.883, merrin page 6.683, pin 6.762, 'noted' frame 7.962 (out 8.4 keeps the noted detail, ca12's own window); public profile, no code | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW EPISODE"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.39,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "m_pretext",
+   "type": "gameplay",
+   "duration": 2.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_pretext_card.trimmed.mkv",
+    "in": 5.3,
+    "out": 7.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ca12 t05: recipient picked 5.885, card-filled 7.386; card filling from found facts | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW EPISODE"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.42,
+     "cy": 0.3,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1.6
+    }
+   }
+  },
+  {
+   "id": "m_call",
+   "type": "gameplay",
+   "duration": 2.3,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_the_call.trimmed.mkv",
+    "in": 12.2,
+    "out": 14.5
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ca12 t06: choice menu on the call; out 14.5 stops 0.04 s before the player line at 14.54 (test player name), as ca12 r3 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW EPISODE"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "insets": [
+    {
+     "src": {
+      "x": 355,
+      "y": 695,
+      "w": 350,
+      "h": 166
+     },
+     "label": "INFLUENCE",
+     "at": {
+      "16:9": {
+       "x": 140,
+       "y": 150,
+       "scale": 2.4
+      },
+      "9:16": {
+       "x": 60,
+       "y": 260,
+       "scale": 2.6
+      },
+      "1:1": {
+       "x": 60,
+       "y": 60,
+       "scale": 2.4
+      }
+     }
+    }
+   ],
+   "voPos": {
+    "16:9": "top",
+    "9:16": "top"
+   }
+  },
+  {
+   "id": "m_flip",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_flip.trimmed.mkv",
+    "in": 21.9,
+    "out": 23.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ca12 t07: kiosk flips to Defend (tick 21.812, strip-defend 22.167); no verdicts; seat tab off (seat 'full'), cut join; CHECK the kiosk's own seat wording in the frame on render | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW EPISODE"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
+   "id": "m_sort",
+   "type": "gameplay",
+   "duration": 2.7,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_defend_queue.trimmed.mkv",
+    "in": 5.1,
+    "out": 7.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ca12 t11: list 4.726, clipboard click 4.735, card1 5.635, courier click 7.448; queue before any verdict, nothing pressed | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW EPISODE"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.33,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "voPos": {
+    "16:9": "top"
+   }
+  },
+  {
+   "id": "room",
+   "type": "gameplay",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_room_wide.trimmed.mkv",
+    "in": 0.5,
+    "out": 4.0
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t01: hold-start 0.43; room x 385-1343, no text; the '...' bubble is at 6.0-6.5 s, outside the window | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.417,
+     "zoom": 1.2
+    },
+    "9:16": {
+     "cx": 0.45,
+     "cy": 0.417,
+     "zoom": 0.6
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.417,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "record",
+   "type": "gameplay",
+   "duration": 5.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_brief_cards_narrow.trimmed.mkv",
+    "in": 26.97,
+    "out": 32.57
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Card 4 'What we record, and who sees it' (card4 mark 26.77 + 0.2; card 5 at 34.01): 5.6 s so v11 (5.088 s) fits with 0.2 lead and 0.15 tail; 1.44 s of card 4 spare | CA: spoilers not an issue (owner), no masks | narrow take t03b (marks within 0.2 s of t03: card1 3.04, card2 10.29, card3 19.55, card4 26.84, card6 36.37, card7 43.66)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE BRIEF"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    }
+   }
+  },
+  {
+   "id": "habit",
+   "type": "gameplay",
+   "duration": 5.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_brief_cards_narrow.trimmed.mkv",
+    "in": 36.4,
+    "out": 41.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Card 6 'The habit to keep' (card6 mark 36.20 + 0.2; card 7 at 43.44); no answers | CA: spoilers not an issue (owner), no masks | narrow take t03b (marks within 0.2 s of t03: card1 3.04, card2 10.29, card3 19.55, card4 26.84, card6 36.37, card7 43.66)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE BRIEF"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    }
+   }
+  },
+  {
+   "id": "report",
+   "type": "gameplay",
+   "duration": 5.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_brief_cards_narrow.trimmed.mkv",
+    "in": 43.64,
+    "out": 49.14
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Card 7 'Report, and no blame' (card7 mark 43.44 + 0.2; take end 50.59); stops before 'Got it' | CA: spoilers not an issue (owner), no masks | narrow take t03b (marks within 0.2 s of t03: card1 3.04, card2 10.29, card3 19.55, card4 26.84, card6 36.37, card7 43.66)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE BRIEF"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    }
+   }
+  },
+  {
+   "id": "anjali_end",
+   "type": "gameplay",
+   "duration": 6.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_anjali_end.trimmed.mkv",
+    "in": 3.513,
+    "out": 10.113
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Anjali L4 (cached): portrait up 8.78, speech 9.11-15.11 by silencedetect, l4_end 15.41, chat closed 15.72; in 8.9 is after the portrait swap, out 15.5 before the chat closes; no reply menu | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TEAM"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.6,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.21,
+     "end": 3.63,
+     "speaker": "Anjali",
+     "text": "That's you set. Start your first episode whenever you're ready,"
+    },
+    {
+     "start": 4.0,
+     "end": 6.21,
+     "speaker": "Anjali",
+     "text": "and report anything that doesn't sit right."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true,
+    "16:9": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "How it works",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 2.22,
+   "end": 7.332,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 7.7,
+   "end": 10.532,
+   "text": "Before episode one, a five-minute welcome.",
+   "caption": "Before episode one,\na five-minute welcome.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 12.7,
+   "end": 15.772,
+   "text": "Most episodes start with you playing the attacker.",
+   "caption": "Most episodes start with\nyou playing the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 16.022,
+   "end": 18.926,
+   "text": "Then you take the other seat and defend.",
+   "caption": "Then you take the other seat\nand defend.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 20.7,
+   "end": 23.244,
+   "text": "Research the company and its people.",
+   "caption": "Research the company\nand its people.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 24.2,
+   "end": 25.736,
+   "text": "Write the cover story.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 26.7,
+   "end": 27.564,
+   "text": "Make the call.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v7",
+   "start": 29.0,
+   "end": 29.984,
+   "text": "Swap seats.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v7.mp3"
+  },
+  {
+   "id": "v8",
+   "start": 31.0,
+   "end": 32.944,
+   "text": "Then run the front desk.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v8.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 33.7,
+   "end": 36.388,
+   "text": "Every episode is set in a working office.",
+   "caption": "Every episode is set\nin a working office.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 37.2,
+   "end": 42.288,
+   "text": "It records your choices and timings, never anything you type.",
+   "caption": "It records your choices\nand timings, never\nanything you type.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v11.mp3"
+  },
+  {
+   "id": "v12",
+   "start": 42.8,
+   "end": 46.664,
+   "text": "One habit: check it yourself, by a route you trust.",
+   "caption": "One habit: check it yourself,\nby a route you trust.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v12.mp3"
+  },
+  {
+   "id": "v13",
+   "start": 48.3,
+   "end": 52.308,
+   "text": "Report when unsure. A quick report is never blamed.",
+   "caption": "Report when unsure.\nA quick report is never blamed.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v13.mp3"
+  },
+  {
+   "id": "v14",
+   "start": 60.4,
+   "end": 65.368,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v14.mp3"
+  }
+ ]
+}

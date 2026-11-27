@@ -1,0 +1,10 @@
+Make portrait for the Checkpoint Guard
+A stocky British-Colombian man of about 45 with light brown skin, a clean-shaven head, a short neat goatee shot through with grey, heavy-lidded patient brown eyes and a thin gold chain with a small gold cross at the open collar, a contract security guard who goes by his list. He wears a zipped-open black security bomber jacket with a plain grey patch on the upper sleeve, a white shirt with the collar open, a black two-way radio clipped high on his chest, black trousers and a black belt, and holds a clipboard flat against his side. Weary, flat and unimpressed. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py, not flipped (the render already faced right); original is hashchain_guard_concept_2_raw.png.

@@ -1,0 +1,13 @@
+{
+  "key": "266d4c1b8eb98e5c072058c238a97e44",
+  "npc": "adaeze_okafor",
+  "text": "And the coffee machine is still broken.",
+  "voice": "Gacrux",
+  "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent General American accent with a light Nigerian inflection throughout, do not shift to any other accent.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:51:15Z"
+}

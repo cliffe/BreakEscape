@@ -1,0 +1,25 @@
+{
+  "scenario": "test_simple_vm_flag",
+  "start_room": "test_room",
+  "nodes": [
+    {
+      "id": "vmch_submit_desktop_flag",
+      "label": "Submit flag from desktop VM",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_desktop_flag",
+      "label": "Desktop Flag",
+      "kind": "flag",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "vmch_submit_desktop_flag",
+      "to": "vmfl_submit_desktop_flag",
+      "soft": false
+    }
+  ]
+}

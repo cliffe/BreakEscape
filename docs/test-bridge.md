@@ -1,0 +1,1443 @@
+# The Test Bridge (`window.__test`)
+
+A development-only surface that lets an automated client (Playwright, an AI agent)
+play Break Escape end to end — walking to things, opening doors, picking up items,
+talking to NPCs, driving minigames — without reading screenshots or guessing pixel
+coordinates.
+
+**Source:** `public/break_escape/js/systems/test-bridge/`
+**Loaded from:** `public/break_escape/js/main.js`, gated on `breakEscapeConfig.testBridge`
+
+```erb
+<%# app/views/break_escape/games/show.html.erb %>
+testBridge: <%= Rails.env.production? ? 'false' : 'true' %>
+```
+
+```js
+// main.js — dynamic import, so production never fetches or parses the bridge
+if (window.breakEscapeConfig?.testBridge) {
+    import('./systems/test-bridge/index.js').then(({ installTestBridge }) => installTestBridge());
+}
+```
+
+Everything crossing the boundary is plain JSON. No Phaser object, DOM node or
+function is ever returned, so results survive Playwright's structured clone.
+
+---
+
+## The two rules
+
+### 1. Actions simulate real input
+
+Every action ends in a synthetic DOM event dispatched at the exact place a human's
+event lands. The bridge never calls game logic directly — no `handleObjectInteraction(obj)`,
+no `player.setPosition()`, no `dialogueManager.open(npc)`, no `objectivesManager.completeTask()`.
+
+Shortcutting the input path would mean the range checks, collision, interaction-mode
+switching and state transitions under test never run, and a passing test would prove
+nothing about the game.
+
+| Input | Where the game listens | What the bridge dispatches |
+|---|---|---|
+| Movement / interaction clicks | `scene.input.on('pointerdown')` in `core/game.js` | `mousedown`/`mouseup` (+ pointer events) on the game canvas |
+| Interact key, WASD, arrows, shift, space | `document.addEventListener('keydown')` in `core/player.js` | `KeyboardEvent` on `document` |
+| Dialogue continue / choose | `window` keydown in `person-chat-minigame.js` (space, `1`–`9`) | `KeyboardEvent` on `document` (bubbles to `window`) |
+| Minigame overlays (DOM) | element listeners in each minigame | full `pointerdown`/`mousedown`/`mouseup`/`click` sequence on the real element |
+
+Two engine details the bridge has to respect, both of which silently swallow input
+if you get them wrong:
+
+- **Phaser 3.60 binds `mousedown`, not `pointerdown`.** Dispatching only
+  `PointerEvent`s fires the DOM event and is then ignored by the engine — the
+  scene handler never runs and the player just doesn't move.
+- **Phaser 3.60's `Pointer` reads `pageX`/`pageY`**, not `clientX`/`clientY`.
+  Omit them and the click resolves to the wrong world position.
+
+> A previous `walkthrough-automation.js` did the opposite of all this — it set globals
+> and called `completeTask()` directly, bypassing the systems under test. It has been
+> removed in favour of this bridge. If you find yourself adding a "just set the flag"
+> helper here, that is the thing that was deleted.
+
+### 2. `moveTo()` is the one documented exception
+
+Pathfinding is a feature under test, not a shortcut around one, so `moveTo` is
+allowed to reach past raw input. In practice it usually doesn't need to:
+
+- **On-screen destination** — issues a real canvas click. The game's own
+  `pointerdown` handler runs EasyStar, smooths the path and drives the player,
+  including the on-screen click indicator. Click-to-move is this game's primary
+  movement method, so this is both the realistic path and what makes an automated
+  run watchable.
+- **Off-screen destination** — a pointer event cannot express a point that isn't on
+  screen, so the bridge calls `movePlayerToPoint(x, y)`: the exact function the
+  `pointerdown` handler itself calls, one layer in.
+- **`pointer:false`** (what `moveToNear` uses): the same `movePlayerToPoint` call
+  for an on-screen point, with no click, so positioning cannot act on anything it
+  passes or stops beside. It keeps the guards a click passes through first: an open
+  interaction menu refuses the move (`blocking-ui`; a click would only close the
+  menu), `preventPlayerMovement` refuses it (`movement-prevented`; only if a script
+  sets it, since nothing in the game does today), and the pending
+  far-tap use and gate walk a click would drop are dropped. The off-screen case
+  above keeps the same guards.
+
+**In every case the player is moved by the normal per-tick physics/movement step in
+`updatePlayerMovement()`. It is never a teleport.** Do not "simplify" this into
+`player.setPosition(x, y)` or `player.body.reset(x, y)` — that removes the only thing
+the function proves.
+
+### 3. `minigame.completeLockpick()` is the second exception
+
+Picking a lock is a pure dexterity mechanic: whether a pin has set is conveyed by
+pixels and feel, so an agent cannot perceive it, never mind perform it. It is the one
+place where "can a machine do this" and "does the game work" come apart completely —
+the manual skill *is* the content, and it is not what a scenario playtest tests.
+
+So, in pick mode only, the bridge may complete the lock without performing the pick.
+It skips the input that cannot be expressed and keeps every consequence — the same
+shape of exception as `moveTo`.
+
+What it does **not** skip:
+
+| Guard | Why |
+|---|---|
+| The lockpicking minigame must already be open in pick mode | The game itself has already decided this lock is pickable, here, now |
+| The player must be carrying a lockpick kit | Checked against inventory with the same test as `unlock-system.js` — not assumed from the overlay being open |
+| `keyMode` is refused outright | A key lock is one `clickCanvas(keyTarget)`; it must be driven properly |
+| Completion runs the minigame's own `complete(true)` | Exactly what a successful pick calls, so the unlock, server notification, rewards, objectives and any watching NPC all run identically |
+
+It returns `assisted: true`. **Report such a step as PASS (assisted), never a plain
+PASS** — it verifies the unlock's consequences and nothing about the pick.
+
+Do not widen this into a generic `forceComplete()` for other minigames. Every other
+minigame here is drivable through real input, and a general escape hatch would quietly
+stop testing them.
+
+### 4. `debugKO(npcId)` is the third exception
+
+Beating a hostile NPC is a dexterity mechanic for the same reason picking a lock is:
+landing hits depends on timing and positioning that synthetic input cannot reliably
+perform. The practical effect is worse than a failed step — the NPC wins, the player
+is knocked out, and everything gated behind that NPC becomes untestable. In m01 the
+ENTROPY Launch Device sits in Derek Lawson's `itemsHeld` and is released only by
+beating him, so the launch-code path could not be reached by any automated run.
+
+`{"cmd":"debugKO","id":"derek_lawson"}` KOs an NPC without fighting it.
+
+**A peaceful NPC is a valid target.** The player can attack anyone: when a punch
+lands on a non-hostile NPC, `player-combat.js` converts it to hostile and then
+damages it, so a KO needs no `#hostile:` ink tag and no `behavior.hostile` config.
+`debugKO` does the same conversion rather than refusing, and marks the result
+`convertedFromPeaceful: true` with a `via` string saying so — report those as PASS
+(assisted) like any other, and never as an NPC that was already hostile.
+
+This used to refuse with `not-hostile`, and that refusal was misread as proof that
+the `taskOnKO` fallbacks on m02's receptionist and ward nurses were dead code. They
+are not: KO'ing the receptionist sets `receptionist_ko` and completes
+`sign_in_at_reception`, both persisted. If a KO declaration looks unreachable, check
+the engine before concluding it is dead.
+
+What it does **not** skip:
+
+| Guard | Why |
+|---|---|
+| The NPC must exist in the scene | Returns `unknown-npc` — it will not register combat state for a typo |
+| An already-downed NPC is refused | Returns `already-ko` rather than re-running the consequences |
+| Damage goes through the real `damageNPC` | So `globalVarOnKO`, `taskOnKO`, item drops, the death animation and the `NPC_KO` events all fire exactly as a fought KO does |
+
+It returns `via: "debug-shortcut (combat not played)"` and logs as `debugKO`, distinct
+from any combat action. **Report such a step as PASS (assisted), never a plain PASS.**
+It verifies everything downstream of a KO and nothing about the fight. If a report
+claims a hostile NPC was defeated, the log must show which way.
+
+Note this only removes combat as a *barrier*. It does not make combat itself testable,
+and a scenario whose only route past an NPC is a fight is still untested on that route
+by an automated run.
+
+### Waits are deterministic
+
+Every wait resolves off `requestAnimationFrame` (in lockstep with Phaser's update
+loop) or off an event the game emits on `window.eventDispatcher`. Timeouts exist only
+as failure bounds, never as the mechanism. Waits resolve to a JSON verdict
+(`{ ok: false, reason: 'timeout' }`) rather than throwing, so a client always gets an
+answer across the boundary.
+
+---
+
+## State
+
+### `getState(opts?) → object`
+
+The one call an agent needs before deciding its next move.
+`opts`: `{ radius, limit }` for the nearby scan (defaults: 6 tiles, 25 entries).
+
+```
+{
+  ready              boolean   scene, player and rooms all loaded
+  scenario           number    mission id
+  activeMinigame     object|null   BRANCH ON THIS FIRST — see below
+  blockingUi         object|null   DOM modal covering the canvas — see below
+  missionEnd         object|null   end-of-mission credits are up — see below
+  interactionMenu    object|null   tap-disambiguation menu — see below
+  player             object    x, y, room, direction, isMoving, velocity,
+                               hp, maxHp, isKO, interactionMode
+  room               string    current room id
+  nearby             array     interactables, nearest first ([] while a minigame is open)
+  dialogue           object|null   lifted from the person-chat minigame
+  inventory          array     { id, name, type }
+  objectives         object    { aims[], activeTasks[], completedTasks[] }
+  globals            object    story variables (what TESTING_WALKTHROUGH.md asserts on)
+}
+```
+
+**`nearby` entries** share one shape across all three interactable kinds:
+
+```
+{ kind: 'npc'|'object'|'door', id, name, type, room, x, y,
+  distance, inRange, onScreen, state: { …kind-specific } }
+```
+
+- `inRange` mirrors the game's own verdict. `INTERACTION_RANGE`,
+  `DOOR_INTERACTION_RANGE` and `TILE_SIZE` are **imported from
+  `utils/constants.js`, never copied** — an `inRange` that disagrees with the
+  game's threshold makes the bridge claim an interaction will work when the
+  click will actually just walk the player closer. Doors use the more generous
+  click-path range and E/W doors measure from a half-tile-lower anchor; a KO'd
+  NPC is never in range.
+- `state` carries `locked`/`lockType`/`requires`/`collected` for objects,
+  `locked`/`open`/`direction`/`connectedRoom` for doors, and
+  `hostile`/`ko`/`hasTalked`/`influence`/`currentKnot` for NPCs.
+
+There is no shared interactable base class in this codebase. The scan deliberately
+mirrors the enumeration the game itself uses in `systems/interactions.js`
+`tryInteractWithNearest()` — `room.objects`, `room.doorSprites`, `room.npcSprites`,
+with the same `active`/`visible`/`interactable` filters. **If a new interactable
+family is added to the game, add it in both places.**
+
+### Other readers
+
+| Method | Returns |
+|---|---|
+| `scan(radius?, limit?)` | just the nearby array |
+| `isReady()` | boolean |
+| `waitUntilReady(opts?)` | resolves when the scene, player and rooms exist |
+
+### Needs state for judged uses (slice 9.2)
+
+`window.__test.needs.state(npcId)` returns the needs
+system's `getState`, which adds `frustration` (the server's level, 0 to 100), `tell` (0, 1 or 2),
+`settled`, `failed` (`{ need, missing: [{ id, why }] }` for 4 s of the needs clock after a counted
+failure, else null), `visits` (queued `{ kind, at }`), `visiting` (the running visit or null) and
+`judged` (`{ work, social_media }`, whether each need's uses are judged), and `distracted` (true
+while a phone use, a `self` job, runs: a `los.challengeOnSight` NPC does not challenge then).
+
+---
+
+## Two things that block the main world
+
+Main-world actions refuse to run — returning `{ ok: false, reason }` rather than
+silently doing nothing — in two situations.
+
+### `activeMinigame`
+
+```json
+{ "id": "notes", "type": "NotesMinigame", "title": "Hospital Founding Plaque", "isActive": true }
+```
+
+`MinigameFramework.startMinigame()` sets `scene.input.keyboard.enabled = false` and
+`scene.input.mouse.enabled = false`, so the engine itself has disabled main-world
+input. While this is non-null, `moveTo` / `interact` / `pressKey` return
+`reason: 'minigame-active'` and `nearby` is `[]` — the agent should drive
+`__test.minigame` instead.
+
+### `blockingUi`
+
+DOM modals are *not* minigames but block pointer input just as effectively, and far
+less obviously. The tutorial prompt and the session-resume prompt both sit on top of
+the canvas at startup. Rather than hard-coding known modal classes, the bridge
+hit-tests the centre of the canvas and reports whatever is actually on top:
+
+```json
+{
+  "blocking": true, "tag": "DIV", "id": null, "classes": "tutorial-prompt-modal",
+  "text": "Welcome to Hacktivity Games!\n\nWould you like to go through a quick tutorial…",
+  "buttons": [ { "index": 0, "id": "tutorial-yes",  "label": "YES, SHOW ME" },
+               { "index": 1, "id": "tutorial-no",   "label": "NO, I'LL FIGURE IT OUT" } ],
+  "hint": "Main-world clicks land on this element, not the canvas. …"
+}
+```
+
+`dismissBlockingUi(labelMatch?)` clicks one of its **real buttons**. It refuses to
+guess when there is more than one button and no `labelMatch` is given, returning
+`reason: 'ambiguous-blocking-ui'` with the choices — because some of these are
+destructive (the session-resume overlay offers Resume / Restart / **New Session**,
+and picking wrong discards a save or reloads the page mid-run).
+
+When the click lands but the page is still blocked (the overlay did not close, or it
+revealed another, the tutorial prompt over the session-resume overlay at startup), it
+returns `ok: false, reason: 'still-blocked-after-dismiss'` with the remaining `blocker`,
+so a caller that trusts `ok` stops and dismisses the new blocker instead of carrying on
+against a blocked UI. It answers `ok: true, stillBlocked: false` only once the page is clear.
+
+### `missionEnd`
+
+Non-null once the end-of-mission credits overlay is showing (a scenario whose
+`conclusionScreen` is `bond_visualiser`). **This means stop playing.** It is a
+terminal state, not an obstacle:
+
+```json
+{
+  "creditsShowing": true,
+  "closable": false,
+  "creditsText": "MISSION COMPLETE\nRANSOMED TRUST\n…",
+  "note": "End-of-mission credits, and the scenario disabled closing. Nothing will dismiss this and no event is coming. The run is over.",
+  "hint": "Client-side end of the mission. Whether it CONCLUDED is a server fact: …"
+}
+```
+
+Scenarios open it with `autoStop` (music stops, overlay stays up) and usually
+`disableClose` (no × button, Esc ignored). When `closable` is false, nothing
+dismisses it and no further event is coming — waiting cannot terminate. Two
+playtests were lost waiting for it to clear, one of them concluding the game had
+hung on blocked audio.
+
+It also appears in `blockingUi`, whose `hint` changes to say so rather than
+telling you to dismiss it.
+
+`kind` says which ending is up: `"credits"` (above) or `"success"`, the simple
+success screen of a scenario whose `conclusionScreen` is `success` (short
+training episodes). The success screen reports `creditsShowing: false`,
+`successScreen: true`, `closable: true`, its `title`, and its text in
+`creditsText`. It always has a working "Close"; its other button, "Return to
+missions", leaves the game. It shows once per page load, so a reload of a
+concluded game shows it again. The playtest harness's `bootstrap` stops on
+either kind (`ended: true`) without clicking anything.
+
+**It does not mean the mission concluded.** That is a server fact, decided by
+`check_mission_conclusion` from persisted `concludeRequires` tasks. The two can
+disagree — a game can reach the credits with a task whose write was lost, and
+then never conclude. When they disagree the server is right, so always confirm:
+
+```bash
+BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id>
+```
+
+### `interactionMenu`
+
+When a tap lands on the pixels of several in-reach things (a printout on a copier,
+a memo drawn over an NPC), the game shows a pick-one menu, topmost first, and
+**consumes the next click** to dismiss it. An agent that ignores this appears to lose
+an action for no reason. Each item carries the entity `id` it acts on (object id, NPC
+id, or `door:<room>-><room>`) and its `kind` (`object`, `npc`, `door`, or `action` for
+the tray and action menus, whose entries have no id).
+
+```json
+{ "open": true,
+  "items": [ { "index": 0, "id": "bernie", "kind": "npc", "label": "Bernie Nwosu", "detail": "…", "disabled": false },
+             { "index": 1, "id": "visitor_log", "kind": "object", "label": "Reception Desk Visitor Log", "detail": "…", "disabled": false } ],
+  "hint": "Choose with __test.chooseInteractionMenu(index | label | { id }); close with __test.closeInteractionMenu()." }
+```
+
+`interact(id)` handles this for you: it detects the menu and picks the entry by id
+(by name only when the entries carry no ids), reporting `mode: 'via-interaction-menu'`.
+Use `chooseInteractionMenu` directly only when driving raw `clickAt`. It takes a
+0-based index, `{ id }`, or a label: the label matches exactly first (ignoring case),
+then as a substring that only one entry holds; a label more than one entry holds fails
+with `ambiguous-menu-item` and lists them in `matches`. `closeInteractionMenu()` clicks
+the menu's X.
+
+How a click picks (`core/game.js`, overlap menu plan):
+- Things count as under the click by their opaque pixels, not their frames.
+- Several things under the click, none in reach: the player walks to a point where all
+  of them are in reach and stops; nothing is used. The next click on the same point
+  opens the menu. `interact(id)` does this itself (`mode: 'overlap-walk-then-menu'`); if
+  on arrival only one thing is in reach and it acts and is not the target, the reply is
+  `ok:false, reason:"wrong-target"` naming what acted. `clickAt` reports
+  `walked: true` when its click started a walk and `menu` when it opened the menu.
+- An in-reach thing under the click acts at once even when a far one is under it too.
+- Hostile NPCs never join a menu. An in-reach hostile whose frame holds the click is
+  struck; a far hostile takes the click (the player walks to her) only when her figure
+  is under it and nothing in reach is; a hostile in another room never.
+- Every door click reaches `window.handleDoorInteraction` through the scene's pointer
+  handler (the door's own zone only sets the cursor), so the door a click acted on is
+  recorded in `picked` like an object or NPC.
+
+---
+
+## Main-world actions
+
+| Method | Notes |
+|---|---|
+| `moveTo(x, y, { timeoutMs?, wait?, pointer? })` | Walk to a world point. See the exception above. `pointer:false` uses the pathfinder call on screen too, with no click (what `moveToNear` does; see section 2 for its guards). A move during which the engine acted on something returns `ok:false` with one of two reasons. **`move-triggered-interaction`** (`triggered`, with `byClick`): a click the bridge sent to walk acted on an object, NPC or door, including a far-tap use that click armed and that fired on arrival. It is put down to a click only when the thing acted on claims the click point by the aim rules (its bounds, or the tap slop while in reach) and the call came within 250 ms of the click, or when it is the very object the click armed; a door lock counts when a click landed on that door. That is a harness fault, not a game finding: close what opened and position with `moveToNear`. **`move-interrupted-by-game-event`** (`interrupted`): something opened or a handler ran with no bridge click behind it: a room-entry or proximity conversation, a timed call, a sight challenge, a delayed open from an earlier step. Any player walking that way gets the same, so it is neither a walking fault nor, by itself, a failed step: handle it (it may be the mission's next step), then repeat the move if you still need to be there. A reason the move had already reached (`arrived-but-outside-plain-range`, a contest hint) is kept in `arrival: {reason, hint}`. The click-trigger test that sends a move to the keyboard now counts a 2 px margin round each sprite, since the engine maps the click back to the world from the pointer pixel. **(x, y) is where the feet go**: the engine steers the feet collider (body centre, 31px below the sprite centre) to a click. Returns `{ ok, via, target, arrivedAt, feetAt, distanceToTarget, reachedTarget, elapsedMs }`; `arrivedAt` is the sprite centre, `feetAt` and `distanceToTarget` are the feet. `ok` means the move completed; `reachedTarget` says whether it actually got there (pathfinding legitimately stops short when the exact point is unwalkable). `reason: "stuck"` (with `blocked` sides) means the player walked into a collider and stopped making progress. |
+| `moveToNear(id, { timeoutMs? })` | Walk to a spot the engine will accept an interaction with `id` from. The standing point is solved in sprite-centre terms (the engine measures range from `player.x/y`), then the player walks to the feet position that puts the sprite centre there (`clickedFeetTarget`, name kept). The walk sends no click: it takes the pathfinder call a plain-move click makes (`moveVia: "pathfinder-direct(no-click)"`), so it cannot open anything it passes or stops beside (sis01: a staging click for Ravi landed on the trolley PC and opened it). As it sends no click, anything that happens during the walk comes back as `move-interrupted-by-game-event` (see `moveTo`); a menu or overlay that is open returns `blocking-ui` (`blockingUi.kind` names it), and movement switched off returns `movement-prevented` (only if a script sets `preventPlayerMovement`; nothing in the game does today), both without moving. An interruption keeps the move's own range or contest warning in `arrival`. |
+| `doorways(roomId?)` | Every doorway out of a room from the engine's own door placement (`calculateDoorPositionsForRoom`), whether or not the door sprite still exists (opening a door removes it on both sides). Each has `gap` (where the feet must pass) and `sprite` (`present`, `open`, `locked`). |
+| `enterRoom(roomId, { timeoutMs?, maxAttempts? })` | Walk through the doorway into an adjacent room: opens a shut door, clicks a point square in front of the opening, then one past it. Works in both directions without a prior `room` call. Returns `trace[]` with the feet position after aligning and after crossing for each attempt; `door-locked` means solve the lock first; `wrong-door-opened` (with `engineTarget`) means the door click acted on a different door, so the lock now open is not this door's. The session's `enter` command calls this. The stand-point click is checked against neighbouring *doors* as well as objects and NPCs (`interactableNear`): in m02's office corridor the staff-room door's stand point is 32 px from the security-office door, and the engine gathers a shut door within 64 px of the player for any tap within a tile of it, so the click used to open the security door's lockpick instead and `enter` came back `did-not-cross` (October 2026). Such a stand point is now walked on the keyboard (`alignVia:"keyboard(avoids-click-trigger)"`). |
+| `interact(id, { approach?, timeoutMs? })` | Real click landing in the game's own pointerdown router, aimed at a point inside the target's own bounds (on its pixels where possible) that no other interactable claims: not inside another object's, NPC's or door's bounds, and not within the 32 px tap slop of anything in reach (`test-bridge/aim.js`, mirroring `gatherInteractablesNearClick`). It no longer clicks `entity.x/y`, which for objects is the top-left corner and can sit inside a neighbour (sis02: HMI-OPS-01's corner is inside the Facility Status Board). Every reply carries `aim` (`{x, y, clean, onPixels}`, plus `sharedWith` and a hint when no free point exists: the engine may then raise the menu, which `interact` answers by name, or act on the target directly. With no live sprite bounds or no point on screen it falls back to `{x, y, clean:null, fallback:"no-sprite-bounds"|"no-point-on-screen"}`, the entity position). Every claim counts a 2 px margin, and the aim stays 2 px inside the target's own edges. Every reply also carries `picked`: the object, NPC or door the engine's handler was actually given (`matches` is true or false, or null when the handler got a sprite with no id; `via:"lock-minigame"` for a door known only from its lock), or null. If the walk into view for an off-screen target is interrupted or triggers something, `interact` returns that walk's reply with `phase:"pre-walk"` and does not click. If out of range the game walks the player over (stopping ¾ tile short) and the bridge then clicks again. `mode` is `direct`, `approached-then-interacted` (or `...-then-menu` when the disambiguation menu was used), or `approach-click-acted` when the first (walking) click had already acted on something: that reply is the usual result, with `wrong-target-opened` and `engineTarget` if it was not the target. A minigame that opened during the walk with no recorded engine target is checked against the target: a door lock that names the target door counts as the click's own doing (the lock opened with no handler record, as from an older engine or a timer), otherwise it is `ok:false, reason:"unrelated-minigame"` (a timed or forced call, or an earlier interaction's delayed open). A door's `inRange` and `distance` use the click-path measure (from the door's centre, range 64); `keyDistance` is the E-key measure from the half-tile-lower anchor on east/west doors. `still-out-of-range` reports the door range (64) for doors. Same-room rule: the game refuses any object or NPC that belongs to a different room from the one the player's feet are in (doors excepted, they join two rooms). A room's top two wall rows overlap the bottom of the room to the north and the player can walk there; `currentPlayerRoom` is then the north room, so the south room's objects underneath cannot be used from there. Entities report `otherRoom:true` (and `inRange:false`, `wallBetween:false`) when only the room rule stops them, and `interact` returns `ok:false, reason:"different-room"` instead of clicking; `moveToNear`, `solveStandingPoint` and the nudge step refuse stand points whose feet are in the wrong room.  The reply is `ok:false, mismatch:true, reason:"wrong-target-opened"` when the engine's own handler (object, NPC or door) was given a different target than the one asked for (`engineTarget` says which), on every confirmation path. A minigame whose title differs from the object's name is normal and stays `ok:true`. Whenever no handler record and no door lock proves the target (minigame, overlay or event), the reply carries `targetUnverified:true`. A DOM overlay counts as an effect (`via:"overlay"`) only for the workstation popups, or a `gameDisplay`/`gameConfirm` (notes, boards; the `game-confirm-overlay` backdrop or dialog) that the target's own handler raised: the bridge records those calls and accepts one made during the handler, or within 150 ms after it returns (a handler that returns a promise has its window end when the promise settles; door interactions show `gameAlert`, which is not covered, so a door click is never confirmed by an overlay). A message the game shows on a timer, and any other overlay, is `ok:false, reason:"unrelated-overlay"`. |
+| `openInventoryItem(item)` (alias `interactInventory`) | Click an item in the inventory tray (`<img class="inventory-item">`, whose handler routes to `handleObjectInteraction`), as a player's click does. `item` is matched by tier: 0-based tray index, item id (from `getState().inventory`), exact name, type (`"phone"`, `"workstation"`), then name substring. A tier with several hits fails `ambiguous-item` with the candidates; The slot is scrolled into view first; `item-off-screen` if it is still outside the viewport, `item-obscured` if another element covers the slot at its centre. Returns `matched`, `matchedBy`, `via` (`minigame`, `overlay` or `event`), `opened:{id,title}`, and the same target check as `interact` (the engine's recorded target must be this item). Notes are not tray items (Notepad); keys on a key ring are not separate items (open the ring). `blocking-ui` / `minigame-active` if something already owns the screen. An item with more than one action (a `droppable` one) opens its click menu instead, as a player's click does (`systems/inventory-menu.js`): the reply is `{ ok: true, menu: { title, items } }` with no `via`, and the menu stays open. Session commands: `openInventoryItem` and `inventory`. |
+| `inventoryAct(item, entry)` | Pick one entry of a tray item's menu: clicks the item, then the entry (`"Drop here"`, `"Examine"`, `"Use"`, exact label then substring, or a 0-based index). Confirms like `interact`: "Drop here" fires `item_dropped:<id>`, "Examine" opens `examine`. Fails `no-menu` for an item with one action (`openInventoryItem` has then already run it), `no-menu-entry:<entry>` with the menu, and `menu-entry-disabled` with its `reason` for a greyed "Drop here" (the player is in a doorway or between rooms). An open menu is closed first. Session command: `inventoryAct` (`{"cmd":"inventoryAct","item":"kit_usb","entry":"Drop here"}`). |
+| `setCyberChefInput(text, { recipe?, timeoutMs? })` | Set the in-game CyberChef's Input pane and return its Output (`{ ok, via, playerPath, input, output, outputChanged, recipe }`). The laptop must be open (`laptop-not-open` otherwise). Sends a real paste event to the editor (`playerPath:true`), reads the document back through the app (not the visible lines, so long input compares correctly), and falls back to a correctly encoded `#input=` hash and then `app.setInput` (both `playerPath:false`). `recipe` is CyberChef's pretty recipe (`"ROT13(true,true,false,13)"`); an unknown or unloaded recipe fails `recipe-not-applied`. The output is only read once it has changed from before the input. Why not a raw hash: CyberChef splits the fragment on `=` and reads `+` as a space, so a raw `#input=<base64>` loses its padding and mangles `+`; the decode fails and the input stays unchanged without an error. Pass the base64 through `encodeURIComponent`. CyberChef v10.19.4 is unmodified; this is not a game regression. Session commands: `cyberchef` and `cyberchefOutput` (`readCyberChefOutput()`). |
+| `interactNearest()` | Presses **E**; the game picks the target itself, weighted by facing direction. |
+| `walk(direction, ms?, { run? })` | Raw arrow-key movement. Secondary to click-to-move — use only when a scenario needs directional input (nudging out of a corner, testing collision). |
+| `pressKey(key, { holdMs? })` | Any key, held for at least one frame so `update()` observes it. With the overlap menu the only thing open (no modal, minigame or session overlay under or over it) the call is not refused: keys go to the menu and the result carries `toMenu: true` and `menu: { open, items }`. |
+| `clickAt(x, y)` | Raw world-coordinate click. Escape hatch. The reply adds `menu` (as `interactionMenu`) when the click opened the pick-one menu and `walked: true` when it started a walk. |
+| `closeInteractionMenu()` | Close the pick-one menu by clicking its X. |
+| `dismissBlockingUi(labelMatch?)` | See above. |
+| `chooseInteractionMenu(indexOrLabel)` | Pick from the pick-one menu by index, `{ id }` or label (exact, then unique substring; `ambiguous-menu-item` otherwise). |
+
+---
+
+## Waits
+
+| Method | Resolves when |
+|---|---|
+| `waitUntil(predicate, { timeoutMs?, label? })` | predicate returns truthy, re-checked once per frame. Accepts a function or, for Playwright, a **source string** (functions can't cross the boundary). |
+| `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected` exactly, `false` included). The reply's `value` is the global's own value when the wait ended, and `expected` is echoed. `alreadyMet: true` (with `elapsedMs: 0`) means the condition held when you asked, so no change was observed: to catch the next change ("start from a shut gate"), wait for the opposite value first, then for the one you want. A JSON command cannot send `undefined`: leave `expected` out to wait for "set". |
+| `waitForTask(taskId, opts?)` | an objectives task reaches `completed` |
+| `waitForEvent(name, opts?)` | the game emits that event on its dispatcher |
+| `waitForMovementEnd(opts?)` | the player's body is still for several consecutive frames, or (`ok:false, reason:"stuck"`) it has been "moving" for 800 ms without changing position, i.e. walking into a collider |
+| `waitForMinigame(id?, opts?)` / `waitForMinigameClosed(opts?)` | an overlay opens / closes |
+| `waitForDialogue(opts?)` | the dialogue is actionable again — awaiting a choice, continuable, or closed. **Use this between dialogue advances**: person-chat types text out a character at a time, and during that gap the dialogue is neither awaiting a choice nor continuable, which a naive loop misreads as "conversation over" and stops halfway through. |
+| `waitFrames(n)` | n rendered frames have passed (for settling animation) |
+
+---
+
+## Diagnostics
+
+`drainLog()` returns the buffered entries **and clears them**; `peekLog(n)` reads
+without clearing; `clearLog()` empties it; `note(msg, detail)` adds a marker.
+
+The log interleaves two sources into one ordered ring buffer (500 entries):
+`kind: 'action'` for what the bridge attempted and what came back, and
+`kind: 'event'` for state-transition events emitted by the game. Events are captured
+by wrapping `eventDispatcher.emit` transparently — it calls through to the original
+and never alters arguments or return value, so instrumenting cannot change behaviour
+under test. High-frequency chatter is filtered out; objectives, tasks, aims,
+minigames, conversations, NPCs, items, doors, rooms, `global_variable_changed:*`,
+player, game and mission events are kept, and the access model's sign-in (`pc_*`) and
+workstation (`workstation_*`) events.
+
+Drain this after a failure — it usually explains it where a state snapshot alone
+won't.
+
+Access slice 9.2 B: the workaround events are `npc_*` and `door_*` events, so the log keeps
+them: `npc_workaround_due:<npcId>`, `npc_workaround:<npcId>` (each `phase`), `npc_mutter:<npcId>`
+(a start line, heard or not; `npc_overheard` fires only within earshot) and
+`door_propped:<roomId>`. A `drain` reply is written to the session log, so
+`verify-run.rb <game_id> --access --log <session.jsonl>` lists them per NPC (topics only)
+beside the server's record.
+
+---
+
+## Access model state (`window.__test.access`)
+
+Read-only, for the access model's scripted runs
+(`docs/achitechture/ACCESS_MODEL_PLAN.md`, "How the slice is tested"). Nothing here acts
+on the game; compare it with the server's record from
+`tools/playtest/verify-run.rb <game_id> --access`. Source: `systems/test-bridge/access.js`.
+
+| Call | Returns |
+|---|---|
+| `sessions()` | The sign-in sessions the client holds, `[{ pcId, npcId, username, displayName, via }]`, read from `window.pcSessions` (`systems/pc-sessions.js`, its `list()`). Password sessions are restored from the server on a reload. |
+| `workstation(pcId)` | `{ ok, id, workstation, owner, present, away, screenLocked, lockAt }` from `workstation-state.js`. `present` is the owner's presence (the env's `ownerPresent` once step 9 adds it, else "not away"); `away` is the owner's away record or null; `workstation` is false for an object the module does not treat as a workstation. `{ ok: false, reason }` when the module or object is missing. |
+| `savedCards()` | The card copier's `saved_cards` as card ids. This list is client-written and never decides identity: the server's copies are `serverClones` in `verify-run.rb --access`. |
+| `footholds()` | Networks (`docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md`): the footholds the client holds, `[{ id, via, name, itemId, sourceId, network }]`, read from `window.networkLinks` (`systems/network-links.js`, its `list()`, else its `footholds`). Empty while the module does not exist. The server's record is `footholds` and `gainedFootholds` in `verify-run.rb --access`. |
+| `networkView(footholdId)` | The last `GET /network` entry the client fetched for that foothold, `{ id, via, name, network, hosts, networks, techniques }`, or null (from `networkLinks.lastView(id)`, else its `views`). `networks` is the blocks, each with its `hosts` rows and, on a network with discovery or services, `swept` and `ops`; a host row carries `scanned` and `services` once scanned, and `findings` (each `{ id, alias, hostId, service, class, severity, summary, status }`, a confirmed one with `needs[]` and maybe `fixed`, a false one with its reason) once a service has been checked. `techniques` is the held cards' map and is sent from the technique stage on. The entry comes back whole, so a playtest can read `swept` and the rows with the view closed. |
+| `compromiseMarks()` | Ops core S3 (`docs/achitechture/OPS_CORE_PLAN.md` 5.4): the compromise marks applied in the world, `[{ objectId, sources: [{ kind, footholdId }], tint }]` (`kind` is `technique`, `implant` or `jack`), read from `window.compromiseMarks` (`systems/compromise-marks.js`, its `list()`). `tint` is the sprite's live `tintTopLeft` read now, null for a sprite that keeps an authored look: read it with the player out of range, since in range the live tint is the proximity highlight's blue. Empty before the module is installed. `interactLoginPc` answers `'remote_view'` when the click opened a held technique session's remote view. |
+| `work(npcId)` | Access slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): `{ plan, frustration, tell, settled, failed, parked, lockedOut, lockCheck }`. `lockedOut` lists the stations the server's check found the NPC locked out at, `lockCheck` the checks in flight (sub-slice L). `plan` is the server's read-only `work` plan on the NPC record (`{ breakDrain, needs: [{ id, kind, admitted, offWhen?, object?, routes? }] }`, null with none); the rest is from the needs system's `getState`. The server's record is `npcFrustration` in `verify-run.rb --access`. |
+| `guest(pcId)` | Slice 9.2 H (plan 6.4): `{ ok, pcId, guest, userId, session }`. `guest` is the workstation layer's guest record at that PC (`{ npcId, lockAt }`, `lockAt` in needs-clock ms or null), set when a borrower left the hot desk signed in and the server agreed; `userId` is the NPC using the PC now (a borrower at the hot desk); `session` is the player's session there (`{ npcId, via, guest }`, `guest: true` for a guest claim) or null. The server's record is `guestSessions` in `verify-run.rb --access`. |
+| `feed()` | Slice 9.2 C (plan 8.3): `{ revealed, done, requests }` from `systems/social-feed.js`: the revealed feed post ids by NPC (oldest first), the NPCs whose feed the server said is done, and how many `POST /feed_post` requests were sent. Ids only, never a post's text. The server's record is `feedRevealed` in `verify-run.rb --access`. |
+| `reports()` | Slice 9.2: `{ requests, reports, pending, settled, checks, lockoutSeen, borrowLockoutSeen, borrowCleared }` from `systems/npc-reports.js`: how many `POST /npc_frustration` requests and how many reports in them were sent, how many wait in the queue, the NPC ids the client holds as settled, how many lockout `check` reports were queued, and the PCs where a sign-in answered locked_out in this page (sub-slice L: only these can bring a check). `borrowLockoutSeen` is the same set for borrowers sitting down at a hot desk; an owner's station "no" removes a PC from `lockoutSeen` but not from it, so a borrower there still checks. `borrowCleared` lists `pcId|npcId` for each borrower whose own "no" cleared the mark for that borrower only. Compare `requests` with a beat's request budget. |
+
+```json
+{"cmd":"eval","fn":"() => window.__test.access.workstation('jake_pc')"}
+```
+
+**Driving the network screens.** While the network view is the active minigame, act on a
+row's control by its stable attributes: `data-host-id` on a host row, `data-resource-id` on
+a resource row, `data-network-id` on a network block, and `data-action` (`sign-in`, `open`,
+`observe`, and on a discovery or services network `sweep` and `scan`) on the control, for
+example `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'`. A block's
+Sweep control is `[data-network-id="<id>"] [data-action="sweep"]`; a host or device row's Scan
+control is `[data-host-id="<id>"] [data-action="scan"]`. A jack's
+prompt ("Unplug it", "Leave it", or the plant confirm) is a `gameConfirm`, not a minigame,
+and `mg clickSelector` looks only inside a minigame, so answer it with the session's
+`dismiss` command on the button text: `{"cmd":"dismiss","label":"Unplug it"}`
+(`dismissBlockingUi`, which clicks the overlay button whose text contains the label).
+
+**Network view state (ops, S1).** `mg state` (the view's `getTestState`,
+`minigames/network-view/network-view-minigame.js`) sends the ops keys only when there is
+something to say, so a view with no discovery and no services answers the keys it always did:
+
+- `pending`: the keys of the sweep or scan requests still out (absent when none).
+- `ownNetwork`: `{ id, swept?, ops?, sweep? }` for the own network's block, when it carries an ops key.
+- `rows[]` (the own network's rows) and `networks[].rows[]`: a `pc` or `device` row in an ops block, or one that is scanned, adds `scanned` (boolean), `services` (the listed services) and `scan` (the Scan control's selector, present only while Scan is offered). A device row's `action` is `none`, or `not_responding` when it is powered down.
+- The same rows add, from S2: `checks` (service name to the selector of its Check control, only while Check is offered: the host is scanned and responding) and `findings` (only when the player holds any, in alias order). Each finding is `{ alias, id, service, class, severity, summary, status, fixed, needs, reason, confirm? }`: `summary` is the server's line as sent (the server always fills it: the authored text, else its own class line; the client has no table of its own); `status` is `unconfirmed`, `confirmed` or `false`; `fixed` is true only on a confirmed finding that carries it; `needs` is `[{ kind, label, met }]` for a confirmed finding and `[]` otherwise; `reason` is a false finding's reason, read from the key `falseBecause` and no other, else null; `confirm` is the Confirm selector, only while the finding is unconfirmed on a responding host. Hooks in the page: `[data-host-id] [data-service="<name>"] [data-action="check"]`, `[data-finding="<alias>"]` (with `data-status`), `[data-finding="<alias>"] [data-action="confirm"]`, a need line `.network-need[data-met="true|false"]`, the false reason `.network-finding-reason`. Events: `network_service_checked` (`{ hostId, service }`, also `:<hostId>.<service>`), `network_finding_confirmed` (`{ findingId, status }`, also `:<findingId>`).
+- From S3, each finding also carries `select` (the selector of its select control; the control is drawn, as a button, only while the player holds a card, and the key is absent otherwise: the alias is then a plain chip) and `selected` (it is the picked finding). A host row holding a technique session adds `bolt: true` (the compromise bolt is drawn beside its icon), and `access: "admin"` when the session's `access` is admin (the key is absent for user).
+- From S3, top level, only when the view holds a card or something is picked: `techniques` (each `{ id, name, summary, worksOn (the works-on line), itemId, selected, select }`: a card's face, the id `POST /network/technique` takes, and the selector of its select control), `selectedFinding` (the picked finding's alias or null), `selectedTechnique` (the picked card's id or null), `use` (the Use selector, `[data-techniques] [data-action="use"]`), `canUse` (a finding and a card are picked and that pair is not pending) and `grant` (`{ hostId, who, access? }`, the last session a card granted, cleared by the next use). Nothing here, or in the page, says which card fits which finding. Page hooks: the panel `[data-techniques]`, a card `[data-technique="<techniqueId>"]` (with `data-selected`, `draggable`), `[data-action="select-technique"]`, `[data-finding="<alias>"] [data-action="select-finding"]`, `[data-action="use"]`, the grant line `.network-technique-grant`, the tag `.network-access-tag`, the row bolt `.network-row-bolt`. A use is `perform({ action: "use", target: { card: "<techniqueId>", finding: "<finding id>" } })`, pending key `use:<card>|<finding>`. Events: `network_technique_used` (`{ findingId, techniqueId, grant }`, also `:<findingId>`) and `network_technique_refused` (`{ findingId, reason }`, also `:<findingId>`).
+- `networks[]`: `{ id, name, route, via, rows }` plus, on an ops block that is not `route: "down"`, `swept` (a discovery network only), `ops: true` (the server has a host to scan there) and `sweep` (the Sweep control's selector, present only while Sweep is offered).
+
+`window.__test.throttleFps(fps = 20, opts)` caps the headless game's frame rate (`systems/test-bridge/throttle.js`,
+which sets Phaser's `_limitRate` and checks the real step rate over `opts.windowMs`, default 600) and
+`window.__test.unthrottleFps(opts)` undoes it. The `test_ops_scan` playtest calls it with 20 before driving. It refuses when physics fixed steps are off.
+
+---
+
+## Network view (`window.__test.network`)
+
+The network view has two skins, Panels (`gui`) and Terminal (`cli`). `systems/test-bridge/network.js`
+drives either one the way a player does: a click, a typed line plus Enter, or a press of the header
+switch. It never calls the server, the core's `perform` or a renderer to make a move, and it works the
+same in both skins. Address network-view controls by selector, label or `network.run`, never by number
+(a number would change with the skin).
+
+| Call | Does |
+|---|---|
+| `state()` | `{ skin, hasSwitch, footholdId, status, offers }`. Equal in both skins apart from `skin`. Each offer is `{ action, target, ids, label, title, command, pending }`. |
+| `run(offer, { path, timeoutMs })` | Performs one of `state().offers` with real input and resolves `{ ok, path, sent, answer }` (the server's answer). Paths: Panels `button` (the control) or `select` (a use: pick the card, pick the finding, press Use); Terminal `typed` (the offer's `command`) or `button` (the quick command, unfolding the strip first; a use takes the two presses). With no path: `select` for a use and `button` for the rest in Panels, `typed` in the Terminal. Rejects, clicking and sending nothing, when the path does not belong to the active skin, the offer is not in the list, or the offer is pending. Sign-in, open and look send no request of their own: `sent` is false and `answer` null. |
+| `skin()` | `'gui'`, `'cli'`, or null with no view open. |
+| `setSkin(name)` | Presses the header switch (`[data-skin-switch]`); sends nothing. Rejects on a view with no switch. |
+| `storePick(name)` | Writes the stored pick (`writePick`) and presses nothing; works with or without a view open. |
+| `log()` | The Terminal's log as lines; empty in Panels. |
+| `type(line)` | Types a line into the Terminal prompt and presses Enter (the key, then the form's submit, since a synthetic key does not submit a form). |
+
+**Choosing a skin for a run.** `tools/playtest/session-start.sh` opens the view in Panels unless told otherwise: with no `--net-skin` it adds `net_skin=gui` to the game URL (unless the URL already has a `net_skin=` value). `--net-skin gui|cli` adds that value instead, and `--net-skin default` adds nothing, so the run follows the stored pick and then the scenario's `networkView.defaultSkin`. A view with no switch stays Panels. The server never sees it. `tools/playtest/network-skin-parity.mjs` (new) is a runner that plays one sequence in three fresh games of `test_ops_skin` (one in Panels, one in the Terminal, one pressing the switch after every step) with `network.run`, and fails if the requests, the normalised answers or the saved game records differ. It needs a keyless server.
+
+## Minigames
+
+All 43 minigames subclass `MinigameScene` (`minigames/framework/base-minigame.js`)
+and are **DOM overlays**, not Phaser scenes. So "real input" for a minigame means
+dispatching real clicks and keys at the actual elements.
+
+### The contract
+
+Every minigame inherits `getTestState()` from the base class, which reflects the
+overlay's DOM: its visible text, its clickable controls and its text fields. That
+means a newly added minigame works with the bridge with no extra effort, and the
+shared minimum is always available:
+
+```
+{ available, isActive, isComplete, result, title, text, controls[], fields[] }
+```
+
+Minigames whose meaningful state isn't expressible as raw DOM override it and spread
+the base result. Currently overridden: **person-chat** (dialogue), **phone-chat**
+(dialogue), **pin** (entered digits, attempts, lockout), **password**, **container**
+(contents), **notes** (note text, pagination), **flag-station** (submitted flags,
+`requiresExternalVm: true`), **lockpicking** (see below), **examine** (`examine`:
+item name, type, id, observations, text, the shown image size, the pixel `scale`
+and the `roomDisplayScale` it was worked out from).
+
+### Containers nest
+
+Clicking an item in a container either pockets it (`kind: "take"`) or pockets it **and**
+opens a viewer on top (`kind: "view"` — notes, text files). Closing that viewer re-opens
+the container rather than returning to the overworld, via `window.pendingContainerReturn`.
+
+Every minigame's state therefore carries `returnsToContainer`, and `close()` reports
+`returnedToContainer`. Without those, a client reads the reappearing container as a
+stray minigame and can loop closing the same pair forever.
+
+`minigame.take(nameOrIndex)` handles the markup difference (`.container-content-item`
+for bins and safes, `.desktop-icon` for PCs) and reports which case occurred.
+
+### Lockpicking, and key-type locks generally
+
+Lockpicking renders into its **own nested Phaser canvas**, so it has no DOM controls.
+It is still drivable, and its `getTestState()` says how.
+
+A key-type lock routes through this same minigame *even when the player is carrying
+the correct key* (`unlock-system.js` → `startKeySelectionMinigame` → the lockpicking
+scene with `keyMode: true`). So "the player has the key" is not a way to avoid it —
+it is a `clickCanvas` step, not a skip.
+
+- **Key route** (`keyMode: true`): a **single** click on the reported `keyTarget`
+  runs the insertion animation, checks the key cuts, and completes the minigame by
+  itself. No dragging, no precision.
+  ```js
+  const st = __test.minigame.getState();      // { keyMode: true, keyTarget: {x, y}, … }
+  await __test.minigame.clickCanvas(st.keyTarget.x, st.keyTarget.y);
+  await __test.waitForMinigameClosed();
+  ```
+- **Pick route** (no key): `pin-management.js` binds digits `1`-`8` to select a pin
+  and space to toggle tension, so `minigame.pressKey` works — but whether a pin has
+  *set* is conveyed visually only, so picking blind is impractical. Prefer a key or
+  code route where the scenario offers one. Where it does not, use
+  `minigame.completeLockpick()` (see "the second exception" above) and report the
+  step as **PASS (assisted)**. `BLOCKED` is now only correct when the player has no
+  lockpick kit, i.e. when a real player could not pick it either.
+
+A locked door approached with **neither key nor lockpick** opens no minigame at all —
+`waitForMinigame` will simply time out. That is the game refusing the interaction, not
+a bridge failure; check `inventory` before concluding the lock is broken.
+
+To add state for a new minigame, override in the subclass — this is the discoverable
+hook, so future minigames follow it rather than needing a change to the bridge:
+
+```js
+getTestState() {
+    return { ...super.getTestState(), attemptsLeft: this.attempts };
+}
+```
+
+Rules for overrides: return plain JSON only, and never mutate game state — it is
+read-only.
+
+### Actions
+
+`window.__test.minigame.*` acts on whichever overlay is open;
+`window.__test.minigames['<id>'].*` is the same set but asserts *which* minigame it
+is first, returning `{ ok: false, reason: 'not-active', expected, active }` if not.
+Ids are the `MinigameFramework.registeredScenes` keys (`person-chat`, `notes`, `pin`,
+`container`, `flag-station`, `lockpicking`, `title-screen`, `examine`, …). A
+text-only object, or an inventory item with no other action, opens `examine` rather
+than a toast, so close it before the next main-world command.
+
+| Method | Notes |
+|---|---|
+| `getState()` | one call, shape above |
+| `isActive()` / `which()` | |
+| `clickControl(index)` | by index into `controls` |
+| `clickText(text, { exact? })` | first visible control whose label contains `text` |
+| `clickSelector(sel)` | scoped to the overlay |
+| `type(index, text, { submit?, clear? })` | per-character keydown/input/keyup, optional Enter |
+| `pressKey(key, { holdMs? })` | |
+| `continue()` | dialogue: spacebar |
+| `choose(n \| pattern, opts?)` | dialogue: by number, or by regex — see below |
+| `chooseIndex(n)` | explicitly by 1-based on-screen number |
+| `chooseMatching(pattern, { flags?, allowMultiple? })` | explicitly by regex |
+| `matchDialogue(pattern, { flags? })` | assert the current speaker line, without acting |
+| `completeLockpick({ reason? })` | **Documented exception** — completes a pick-mode lock without picking it. See above. |
+| `drag(selector, points, { stepMs?, pointerType? })` | Real pointer events along a path: `pointerdown`, one `pointermove` per point, `pointerup`. Points are `[{x,y}]` or `[x,y]`, in the canvas's own pixels for a `<canvas>`, else CSS px from the element's top-left. `mg drag` takes `args: [selector, points, opts]`. |
+| `take(nameOrIndex)` | Take an item from a container by name or index; clicks the real element whichever markup the container uses. Reports `openedViewer` and `returnsToContainer`. |
+| `close()` | clicks the real × or presses Escape — deliberately *not* `complete()`, so a `disableClose` cutscene correctly stays open |
+
+### Fingerprint dusting
+
+The dusting overlay (`minigames/dusting/dusting-game.js`, registered as `dusting`) is one
+128x128 `<canvas class="dusting-canvas">` plus real `<button>`s, so it is drivable by clicks,
+keys and `drag`. `getState()` adds `{ step, coverage, clarity, tapeCoverage, qualityEstimate,
+reticle, powder, tool, candidates: [{index, label}], debug: { pattern, correctCandidate, printCentre } }`.
+`step` is one of `examine`, `find`, `powder`, `dust`, `lift`, `compare`, `done`. `coverage`, `clarity`, `tapeCoverage` and `qualityEstimate` are fractions (0..1); `candidates` is empty until the pattern is classified; `debug.correctCandidate` is null until then too.
+`debug.printCentre` is in canvas pixels, so it can be passed straight to `drag`.
+
+```js
+const st = __test.minigame.getState();               // step: 'dust'
+const c = st.debug.printCentre;                      // { x, y } in canvas px
+// serpentine strokes over the print; repeat until coverage passes the threshold
+await __test.minigame.drag('.dusting-canvas', [[c.x-30,c.y-30],[c.x+30,c.y-30],[c.x+30,c.y-20],[c.x-30,c.y-20]]);
+```
+
+Keyboard route: arrow keys move the reticle (Shift for big steps), Space or Enter acts, `1`/`2`/`3`
+pick powders, `F`/`B` pick brushes, `L` lifts, `P` peels. Pick the powder that suits the surface or
+the lift is capped lower.
+
+### Selecting dialogue choices by pattern
+
+`choose(2)` picks the second option on screen. That is fine interactively and wrong in
+a recorded trace: Ink options are conditional, so an index quietly selects a *different*
+line as soon as a gated option appears above it or the writing is reordered — and the
+run carries on down the wrong branch, usually still passing.
+
+Pass a regular expression instead and the same edit becomes a loud, specific failure:
+
+```js
+__test.minigame.choose("^I'm the security consultant")
+// → { ok: true, matchedPattern: "/^I'm the security consultant/i",
+//     chose: "I'm the security consultant Dr. Kim called in…", number: 1 }
+```
+
+Matching is **strict in both directions**, and the failure carries the diagnosis:
+
+```json
+{ "ok": false, "reason": "choice-no-match",
+  "pattern": "/^Nobody says this any more/i",
+  "choices": [ "1. I'm the security consultant Dr. Kim called in. I'm here for the ransomware.",
+               "2. I need Dr. Kim. Where is she?",
+               "3. You've been on this desk since it started, haven't you." ],
+  "hint": "The dialogue may have been rewritten. Update the pattern, or fix the Ink if the option should still exist." }
+```
+
+```json
+{ "ok": false, "reason": "choice-ambiguous",
+  "pattern": "/Kim/i",
+  "matched": [ "1. I'm the security consultant Dr. Kim called in…", "2. I need Dr. Kim. Where is she?" ],
+  "hint": "Tighten the pattern (anchor it with ^), or pass { allowMultiple: true } if taking the first is intended." }
+```
+
+Ambiguity is rejected for the same reason a miss is: after a rewrite, a pattern that
+starts matching two options would otherwise pick one silently, which is precisely the
+wrong-path bug the pattern form exists to prevent.
+
+Choice text is normalised before matching — the leading `1.` label stripped, whitespace
+collapsed, and curly quotes, en/em dashes and ellipses folded to ASCII. That absorbs
+cosmetic churn from editors without hiding a real rewrite, which still fails.
+
+`matchDialogue(pattern)` asserts on the NPC's line without acting, catching a rewrite
+that changes what a character says while leaving the choice list intact.
+
+**Choice tags.** `dialogue.choices[].tags` carries the Ink tags on each option. Where an
+author has tagged a choice, that is the one handle that survives any rewording — but
+tags are currently rare (1 of 167 choices in m02), so patterns are the practical default.
+
+---
+
+## Driving the social overlays
+
+The social-engineering overlays all extend `SocialOverlayScene`, so each is a normal minigame: `waitFor {kind:"minigame", id:"<scene>"}`, then read `window.MinigameFramework.currentMinigame.getTestState()` (the same object `mg getState` returns) with an `eval`. Besides the generic `controls` list, each adds one block of its own, and every one adds `overlay: { sceneType, layers, closeMode, suspended, returnsTo }`. `returnsTo` is the scene a child overlay will go back to (the board opened from the OSINT browser reports `osint-browser`). The overlays own the keyboard: Space, E, WASD and arrows do nothing while one is open, and Escape closes the innermost layer first (properties panel, chip sheet, header panel) before the overlay itself.
+
+Drive them with `mg clickText` (case-insensitive substring of the control's label), `mg clickSelector` for anything without a stable label, and `mg type` for text fields. Assert with `eval` lines that return a boolean. `tools/playtest/se/check-bridge.mjs` fails on any eval that is not exactly `true`. Worked scripts are in `tools/playtest/se/` (`bridge-p9.jsonl` for mail, `bridge-3*.jsonl` and `bridge-board-indicators.jsonl` for the board, `bridge-m5-*.jsonl` and `bridge-p7-channels.jsonl` for channels). Toast text, such as "Locked" or a landed-phish notice, is read with the session's `toasts` command.
+
+| Scene id | Block | What it exposes | Useful controls |
+|---|---|---|---|
+| `mail-client` | `mail` | `account` (id, address, mailbox), `accounts`, `switcher` (options, value), `unreadByAccount`, `burned`, `creatable`, `createOpen`/`createMenu`/`createChoice`, `folder`, `selectedId`, `detailsOpen`, `linkNote`, `messages`, `highlights` (ids of saved evidence spans), `followup` (the open reply's one expectation), `contacts`/`contactsOpen`, `sentThisSession`, `notice`, `narrow` | Click a subject line with `clickText` to open it. Click a highlightable span's text to save it as evidence (`highlights` gains its id and the intel global flips). `Message details`, `Compose`, `Contacts`, `Close`. The account switcher is a `<select>`: use `eval` to set its value and dispatch `change`. `window.mailState.mailboxes.<box>.messages` shows timed (`deliverAt`) arrivals. |
+| `intel-board` | `board` | `mode` (`recon`, `engagement` or `defender`), `title`, `osintDone`, `ready`/`newlyReady`, `targets` (id, `identified`, role, address, status, `facts`, `emptySlots`, `slots`, `fromCall`), `company` (`facts`, `stale`, `fromCall`), `contacts`, `influence` bars, `live` (the aria-live text), `scopeNote`. Engagement mode adds `engagement` (`complete`, `done`/`total`, `steps`, `items` with `placed`/`picked`/`options`). Defender mode adds `defender` (`facts`, `indicators` with `shown`/`marked`/`done`). | Cards and slots are buttons: `clickText` on the fact or target name, then on the slot. `.ob-case` is the Case file button inside the OSINT browser; closing the board returns there. |
+| `osint-browser` | `osint` | `profile`, `view`, `location`, `siteId`, `pageId`, `address`, `sites` (id, type, url), `pages` visible now, `visited`, `blocks` (id, kind, `fact`, `noted`), `collected`, `held` (facts held in globals), `propertiesOpen`, `openCards`, `tools` (`available`, `locked`, `picked`, `toolsOn`), `last`, `live`, `caseFile`, `typedInputs` | Type into the address bar with `mg type`, follow links with `clickText`. Click a block to note a fact (`noted`, then `collected`). Properties panel and tools view are separate `view` values. `typedInputs` of 0 means nothing needs typing. |
+| `inbox-triage` | `triage` | `step` (`brief`, the round, `result`), `setId`, `stage`, `scoringProfile`, `feedbackMode`, `verifyEnabled`, `total`/`answered`, `skipped`, `selectedId`, `headerState`, `surface`, `messages` (id, kind, action, who, address, subject, `unread`, `playerSent`, `verdict`), `verdictButtons`, `actionButtons`, `sheet` (open, messageId, `chips` with `checked`), `review.cards` (`caught`/`missed`/`falseClaims`), `result` (percent, pass, `phishCaught`/`phishTotal`, `falseAlarms`, `perFactor`), `comparison` | Select a message with `clickText` on its subject. Verdict buttons carry `data-verdict` and `data-action`: use `clickSelector` (`.tri-verdict[data-verdict="phish"]`). Flag chips are `.tri-chip` and are included in `controls`, so `clickText` works. `Confirm` locks the verdict, `Finish` ends the round. Escape closes the chip sheet before the overlay. A `playerSent` row is skipped until the player has sent something. |
+| `pretext-prep` | `pretext` | `callId`, `character`, `npcId`, `scene`, `startKnot`, `canCall`, `gate` (why the call is refused), `picker` (fact being filled), `held`, `blanks` (the payload sent to the call), `facts` (factId, `slot`, `options` as value/label/kind, `chosen`) | Pick a blank, then an option by label with `clickText`; `canCall` flips true once the gate passes. The Call control opens the `scene` (usually `person-chat`) at `startKnot` with `blanks` passed in. |
+| `landing-page-builder` | `builder` | `pageId`, `targetId`, `firstName`, `profile`, `step`, `editableRows`, `choices`, `scored` (credibility, `meetsThreshold`, `gatesPassed`, `verdict`, `tells`), `stale`, `attachAvailable`/`attachLabel`/`attached`, `canInspect`/`inspecting`/`inspectionComplete`, `inspect` (`found`, `presentIds`, `linkRevealed`, `blocked`), `recordBuilt`, `recordCredibility`, `recordTellsFound`, `builtGlobal`, `domainGlobal`, `previewForbidden`, `typedInputs` | Choose each option by label, then `Attach to email` (or `Attach anyway` under the threshold). `scored` is null until all rows are set, and `stale` goes true if a choice changes afterwards. `previewForbidden` must stay 0: the preview pane holds no links, forms or scripts. |
+| `engagement-report` | `report` | `title`, `complete`, `live`, `steps` (id, done), `results.mail` (target, `sent`, `failed`, `landed`, `firstTryLanded`), `results.pages` (`sent`, `visited`, `submitted`, `noticed`, `line`), `results.calls` (`done`, `reported`, `outcome`, `lowest`, `failedAttempts`), `items` (`confirmed`), `findings` (`cause`, `control`, `causeDone`, `controlDone`, and the `why`/`blame` text of each pick) | Confirm each item with `clickText`, then pick a cause and a control per finding. `complete` goes true when every step is done. |
+
+Notes that have cost runs:
+
+- Pretext calls hand over to `person-chat`. Once the call opens, drive it with the dialogue commands (`converse`, `mg choose`), and the report's `results.calls` fills in when it ends.
+- The overlay that opened a child is suspended, not closed (`overlay.suspended`). Close the child and `currentMinigame` is the parent again, with its `getTestState()` intact.
+- `getTestState()` is read-only and plain JSON. Do not call a scene's own methods from `eval` to move state along; click the control, so the checks cover the real path.
+- The tables above are read from the code in `public/break_escape/js/minigames/<scene>/`. If a field is missing from a live `getTestState()`, trust the live object and fix this table.
+
+---
+
+## VM-backed flags in testing
+
+Flag values are answers, so the client never receives them: the server strips each
+flag-station's `flags` array from room payloads and sends `flagCount` instead
+(`Game#filter_requires_and_contents_recursive`). Submission is validated server-side
+at `POST /games/:id/flags`. A regression test in
+`test/models/break_escape/filtered_scenario_test.rb` fails if any client-facing
+payload carries a `flag{...}` value again.
+
+That leaves automated playtests unable to clear VM-backed steps. **Outside production**
+the flag station also accepts positional stand-ins:
+
+| Submitted | Meaning |
+|---|---|
+| `test:flag:1` | this station's **first** expected flag |
+| `test:flag:2`, `test:flag:3`, … | its second, third, … |
+| any real flag value | works normally, in every environment |
+
+```json
+{"cmd":"mg","action":"type","args":[0,"test:flag:1",{"submit":true}]}
+```
+
+The token is deliberately **not** `flag{1}`. SecGen flag-hint XML routinely uses
+`flag{1}`, `flag{2}`, … as the *actual* flag values, so reading that form positionally
+would hijack real flags — and, because a station usually owns only a subset, would
+resolve `flag{1}` to a *different* real flag and submit it successfully. A passing
+test, silently checking the wrong thing. `test:flag:N` cannot collide with anything.
+
+### One trace, two environments
+
+This is the point of the positional form. The same trace runs unchanged in both places
+the game is developed:
+
+| Environment | Where flags come from | What `test:flag:1` resolves to |
+|---|---|---|
+| Standalone dev, no VMs | Flag-hint XML supplied at game creation | the XML value for that station's first flag |
+| Hacktivity dev, real VMs | The VM build, via `vm_context` | the real per-build flag |
+
+Numbering follows the station's own ordered flag list — `stationId` is already sent by
+the client, so `test:flag:1` means "the first flag *for the station in front of you*",
+not a global index. A trace that hardcoded `flag{1}` would break the moment it ran
+against a build with real opaque flags; this one does not.
+
+**It is an alias, not a bypass.** `test:flag:N` resolves to the real flag value and then
+every downstream check runs untouched — station ownership, already-submitted, scenario
+validation, Hacktivity scoring, rewards, task completion. What it saves is the tester
+holding the answers, not the game verifying them.
+
+Guardrails:
+
+- Gated solely on `!Rails.env.production?`, with no config override to get wrong.
+- An out-of-range index (`test:flag:99`) is passed through unchanged and rejected as
+  invalid — it never falls back to "some other flag".
+- Anything not matching exactly `test:flag:<digits>` is untouched.
+- Every alias use logs a warning, and the response carries `testFlagAlias: true` so a
+  playtest report cannot silently claim a VM step passed on a real flag.
+
+### Pre-flight: does this game have flags at all?
+
+A VM-backed mission with no flags configured returns `422 Invalid flag` for *everything*,
+real or aliased, and every downstream step is unreachable. Check before playing — the
+same command works in both environments:
+
+```ruby
+g.send(:extract_valid_flags_from_scenario)   # must be non-empty
+```
+
+---
+
+## Session harness commands that commit nothing by default
+
+The `playtest-session.js` harness (`.claude/skills/playtest-scenario/`) wraps the bridge. Three of its commands used to make story choices for the tester; October 2026 changed that.
+
+- **`bootstrap`** clears the resume prompt, tutorial prompt, title screen and notes, then stops. If a dialogue is open it returns `briefingPending:true, settled:false` with the dialogue in `state` and does not choose (including in the typewriter gap between lines, where it never closes the dialogue). `{"cmd":"bootstrap","autoBrief":true}` opts in to the old auto-driving (choice 1 at each menu, hubs exit on a repeat). After driving the briefing yourself, call `bootstrap` again to clear what opens behind it (the tutorial prompt).
+- **`converse`** takes only the options named in `choices` (regexes). At a choice nobody named it stops with `ok:false, reason:"stopped-at-choice"`, the conversation still open, and `stoppedAtChoice.options`; continue with `{"cmd":"converse","choices":[...]}` (no `id`). `"explore":true` opts in to taking unvisited options (it commits real choices); `"close":true` closes at a stop.
+- **`eval`** takes `fn` as a function expression that runs in the page (`"() => ..."`, `"async () => { ... }"`). An async IIFE string would run in Node, so it is refused (`reason:"eval-not-a-function"`); an error thrown in the page or a syntax error is `reason:"eval-failed"`. Both come back as `{"ok":false,"cmd":"eval","error":...,"reason":...}` and the session carries on. `tools/playtest/se/check-bridge.mjs` scores an `ok:false` eval as a failure.
+- **`openInventoryItem`**, **`inventory`**, **`doorways`**, **`cyberchef`** and **`cyberchefOutput`** expose `openInventoryItem`, the tray listing, `doorways`, `setCyberChefInput` and `readCyberChefOutput` (table above).
+
+A subagent's Write of `REPORT.md` is refused by Claude Code ("Subagents should return findings as text"); it is not a permissions setting and `.claude/settings.json` allows `Write(*)`. Observed with four probes only (`REPORT.md` refused; `run-notes.txt`, `playtest-m02.md`, `m02-findings.txt` accepted), so avoid report/summary/findings/analysis in `.md` names. Have the tester return the report as its final message.
+
+---
+
+## Real captured output
+
+All of the following is genuine output from a live run against
+`m02_ransomed_trust`, captured with `tools/playtest/capture.js`.
+
+### `getState()` — overworld, reception lobby
+
+```json
+{
+  "ready": true,
+  "scenario": 46,
+  "activeMinigame": null,
+  "blockingUi": null,
+  "interactionMenu": null,
+  "player": {
+    "x": 160,
+    "y": 144,
+    "room": "reception_lobby",
+    "direction": "down",
+    "isMoving": false,
+    "velocity": {
+      "x": 0,
+      "y": 0
+    },
+    "hp": 100,
+    "maxHp": 100,
+    "isKO": false,
+    "interactionMode": "interact"
+  },
+  "room": "reception_lobby",
+  "nearby": [
+    {
+      "kind": "npc",
+      "id": "receptionist",
+      "name": "Bernie Nwosu",
+      "type": "npc",
+      "room": "reception_lobby",
+      "x": 192,
+      "y": 129,
+      "distance": 35.3,
+      "inRange": false,
+      "onScreen": true,
+      "state": {
+        "hostile": false,
+        "ko": false,
+        "hasTalked": false,
+        "influence": null,
+        "currentKnot": "start"
+      }
+    },
+    {
+      "kind": "object",
+      "id": "reception_lobby_notes_1",
+      "name": "Hospital Founding Plaque",
+      "type": "notes",
+      "room": "reception_lobby",
+      "x": 169,
+      "y": 74,
+      "distance": 70.6,
+      "inRange": false,
+      "onScreen": true,
+      "state": {
+        "locked": null,
+        "lockType": null,
+        "requires": null,
+        "minigame": null,
+        "collected": false,
+        "interactable": true
+      }
+    },
+    {
+      "kind": "object",
+      "id": "reception_visitor_log",
+      "name": "Reception Desk Visitor Log",
+      "type": "notes",
+      "room": "reception_lobby",
+      "x": 136,
+      "y": 73,
+      "distance": 74.9,
+      "inRange": false,
+      "onScreen": true,
+      "state": {
+        "locked": null,
+        "lockType": null,
+        "requires": null,
+        "minigame": null,
+        "collected": false,
+        "interactable": true
+      }
+    }
+  ],
+  "dialogue": null,
+  "inventory": [
+    {
+      "id": "inventory_inventory_phone_1788737291447",
+      "name": "Your Phone",
+      "type": "phone"
+    },
+    {
+      "id": "inventory_notepad_inventory",
+      "name": "Notepad",
+      "type": "notepad"
+    },
+    {
+      "id": "inventory_inventory_lockpick_1788737291448",
+      "name": "Lock Pick Kit",
+      "type": "lockpick"
+    }
+  ],
+  "objectives": {
+    "aims": [
+      {
+        "id": "infiltrate_hospital",
+        "title": "Talk Your Way In",
+        "status": "active",
+        "tasks": [
+          {
+            "id": "arrive_at_hospital",
+            "title": "Arrive at St. Catherine's reception",
+            "status": "completed",
+            "type": "enter_room",
+            "optional": false
+          },
+          {
+            "id": "sign_in_at_reception",
+            "title": "Get yourself signed in by Bernie on the night desk",
+            "status": "active",
+            "type": "npc_conversation",
+            "optional": false
+          },
+          {
+            "id": "meet_dr_kim",
+            "title": "Find Dr. Sarah Kim, the CTO who called you in",
+            "status": "active",
+            "type": "npc_conversation",
+            "optional": false
+          },
+          {
+            "\u2026": "(truncated)"
+          }
+        ]
+      },
+      {
+        "\u2026": "(6 more aims)"
+      }
+    ],
+    "activeTasks": [
+      "sign_in_at_reception",
+      "meet_dr_kim",
+      "assess_the_ward",
+      "talk_to_ward_nurse",
+      "open_it_department",
+      "\u2026"
+    ],
+    "completedTasks": [
+      "arrive_at_hospital"
+    ]
+  },
+  "globals": {
+    "player_name": "Agent 0x00",
+    "briefing_played": true,
+    "mission_started": false,
+    "ransomware_deployed": true,
+    "agent_0x99_contacted": false,
+    "dr_kim_met": false,
+    "paid_ransom": false,
+    "exposed_hospital": false,
+    "\u2026": "(truncated for the doc)"
+  }
+}
+```
+
+### `getState()` — while a minigame is active
+
+Note `activeMinigame` is populated, `nearby` is `[]`, and the player block still
+reports the last overworld position (the player is standing still behind the overlay).
+
+```json
+{
+  "ready": true,
+  "scenario": 46,
+  "activeMinigame": {
+    "id": "notes",
+    "type": "NotesMinigame",
+    "title": "Hospital Founding Plaque",
+    "isActive": true
+  },
+  "blockingUi": null,
+  "interactionMenu": null,
+  "player": {
+    "x": 179.2,
+    "y": 46.2,
+    "room": "reception_lobby",
+    "direction": "down",
+    "isMoving": false,
+    "velocity": {
+      "x": 0,
+      "y": 0
+    },
+    "hp": 100,
+    "maxHp": 100,
+    "isKO": false,
+    "interactionMode": "interact"
+  },
+  "room": "reception_lobby",
+  "nearby": [],
+  "dialogue": null,
+  "inventory": [
+    {
+      "id": "inventory_inventory_phone_1788737291447",
+      "name": "Your Phone",
+      "type": "phone"
+    },
+    {
+      "id": "inventory_notepad_inventory",
+      "name": "Notepad",
+      "type": "notepad"
+    },
+    {
+      "id": "inventory_inventory_lockpick_1788737291448",
+      "name": "Lock Pick Kit",
+      "type": "lockpick"
+    }
+  ],
+  "objectives": "\u2026(same shape as above)",
+  "globals": "\u2026(same shape as above)"
+}
+```
+
+### `__test.minigame.getState()` for that same overlay
+
+The `controls` and `fields` arrays come from the base class; `noteName`,
+`noteContent`, `observationText`, `noteIndex`, `noteCount` and `filed` come from the
+`NotesMinigame` override (`noteIndex` and `noteCount` read 0 on a filed page, where `filed` is true). The notes reader keeps its Continue button as `#minigame-cancel`;
+since UX slice 7 most other scenes draw no `#minigame-cancel` at all and close with the X
+(`#minigame-close`) or Esc. Only scenes with `static keepsCancelButton = true` (notes and
+the password screen) list one.
+
+`text` is the overlay's whole visible text, cut at 2000 characters. When it is cut the
+reply says so: `textTruncated: true` and `textLength` (the full length). For a note,
+read `noteContent` instead: it is the note's own text, kept whole up to 20,000
+characters (`noteContentTruncated` marks a cut there too). Check a long document's
+paragraphs against `noteContent`, never against `text`.
+
+The phone and person chat scenes cut the other end, because their newest lines come last: `text` then opens with `[... earlier text cut, newest lines below ...]`, ends with the latest line, and the reply adds `textKeeps: 'tail'` (absent for every other scene, which keeps the head).
+
+```json
+{
+  "id": "notes",
+  "type": "NotesMinigame",
+  "title": "Hospital Founding Plaque",
+  "isActive": true,
+  "available": true,
+  "isComplete": false,
+  "result": null,
+  "text": "\u00d7\nHospital Founding Plaque\nST. CATHERINE'S REGIONAL MEDICAL CENTRE\n\nFounded 1987\n\nServing this community for over thirty-five years\nBronze plaque by the doors. Founded 1987.\nContinue\n< Previous\nNext >\n2 / 2",
+  "controls": [
+    {
+      "index": 0,
+      "label": "\u00d7",
+      "id": "minigame-close",
+      "classes": "minigame-close-button",
+      "disabled": false
+    },
+    {
+      "index": 1,
+      "label": "",
+      "id": null,
+      "classes": "notes-minigame-edit-btn",
+      "disabled": false
+    },
+    {
+      "index": 2,
+      "label": "Continue",
+      "id": "minigame-cancel",
+      "classes": "minigame-button",
+      "disabled": false
+    },
+    {
+      "index": 3,
+      "label": "< Previous",
+      "id": null,
+      "classes": "minigame-button notes-minigame-nav-button",
+      "disabled": false
+    },
+    {
+      "index": 4,
+      "label": "Next >",
+      "id": null,
+      "classes": "minigame-button notes-minigame-nav-button",
+      "disabled": false
+    }
+  ],
+  "fields": [
+    {
+      "index": 0,
+      "id": null,
+      "name": null,
+      "type": "text",
+      "placeholder": "Search notes...",
+      "value": ""
+    }
+  ],
+  "noteName": "Hospital Founding Plaque",
+  "noteContent": "ST. CATHERINE'S REGIONAL MEDICAL CENTRE\n\nFounded 1987\n\nServing this community for over thirty-five years",
+  "observationText": "Bronze plaque by the doors. Founded 1987.",
+  "noteIndex": 1,
+  "noteCount": 2,
+  "filed": false
+}
+```
+
+### `getState()` — mid-dialogue with an NPC
+
+```json
+{
+  "activeMinigame": {
+    "id": "person-chat",
+    "type": "PersonChatMinigame",
+    "title": "Bernie Nwosu",
+    "isActive": true
+  },
+  "dialogue": {
+    "npcId": "receptionist",
+    "speaker": "Bernie Nwosu",
+    "text": "And if you're press, there's a car park you can stand in.",
+    "choices": [
+      {
+        "number": 1,
+        "index": 0,
+        "text": "I'm the security consultant Dr. Kim called in. I'm here for the ransomware."
+      },
+      {
+        "number": 2,
+        "index": 1,
+        "text": "I need Dr. Kim. Where is she?"
+      },
+      {
+        "number": 3,
+        "index": 2,
+        "text": "You've been on this desk since it started, haven't you."
+      }
+    ],
+    "canContinue": false,
+    "awaitingChoice": true,
+    "ended": false
+  },
+  "nearby": []
+}
+```
+
+### `drainLog()` — the opening of a run
+
+```json
+[
+  {
+    "seq": 79,
+    "t": 41717,
+    "kind": "event",
+    "event": "item_removed_from_scene",
+    "data": {
+      "sprite": {
+        "_gameObject": "initialize",
+        "objectId": "reception_lobby_notes_1",
+        "npcId": null,
+        "name": "Hospital Founding Plaque"
+      }
+    }
+  },
+  {
+    "seq": 80,
+    "t": 41877,
+    "kind": "action",
+    "action": "interact",
+    "detail": {
+      "id": "reception_lobby_notes_1"
+    },
+    "result": {
+      "ok": true,
+      "id": "reception_lobby_notes_1",
+      "mode": "approached-then-interacted",
+      "entity": {
+        "kind": "object",
+        "id": "reception_lobby_notes_1",
+        "name": "Hospital Founding Plaque",
+        "type": "notes",
+        "room": "reception_lobby",
+        "x": 169,
+        "y": 74,
+        "distance": 29.6,
+        "inRange": true,
+        "onScreen": true,
+        "state": {
+          "locked": null,
+          "lockType": null,
+          "requires": null,
+          "minigame": null,
+          "collected": false,
+          "interactable": true
+        }
+      }
+    }
+  },
+  {
+    "seq": 81,
+    "t": 41950,
+    "kind": "event",
+    "event": "minigame_failed",
+    "data": {
+      "minigameName": "NotesMinigame",
+      "success": false,
+      "result": null
+    }
+  },
+  {
+    "seq": 82,
+    "t": 41986,
+    "kind": "action",
+    "action": "minigame.close",
+    "detail": {},
+    "result": {
+      "ok": true,
+      "stillOpen": false
+    }
+  },
+  {
+    "seq": 83,
+    "t": 43198,
+    "kind": "event",
+    "event": "global_variable_changed:bernie_influence",
+    "data": {
+      "name": "bernie_influence",
+      "value": 0
+    }
+  },
+  {
+    "seq": 84,
+    "t": 43199,
+    "kind": "event",
+    "event": "global_variable_changed:bernie_trusts_player",
+    "data": {
+      "name": "bernie_trusts_player",
+      "value": false
+    }
+  },
+  {
+    "seq": 85,
+    "t": 43199,
+    "kind": "event",
+    "event": "global_variable_changed:seen_picking_by_bernie",
+    "data": {
+      "name": "seen_picking_by_bernie",
+      "value": false
+    }
+  },
+  {
+    "seq": 86,
+    "t": 43199,
+    "kind": "event",
+    "event": "global_variable_changed:noticed_struck_booking",
+    "data": {
+      "name": "noticed_struck_booking",
+      "value": false
+    }
+  },
+  {
+    "seq": 87,
+    "t": 43200,
+    "kind": "event",
+    "event": "global_variable_changed:cover_burned",
+    "data": {
+      "name": "cover_burned",
+      "value": false
+    }
+  },
+  {
+    "seq": 88,
+    "t": 43201,
+    "kind": "event",
+    "event": "global_variable_changed:cover_restored",
+    "data": {
+      "name": "cover_restored",
+      "value": false
+    }
+  },
+  {
+    "seq": 89,
+    "t": 43202,
+    "kind": "event",
+    "event": "global_variable_changed:insider_identified",
+    "data": {
+      "name": "insider_identified",
+      "value": false
+    }
+  },
+  {
+    "seq": 90,
+    "t": 43202,
+    "kind": "event",
+    "event": "global_variable_changed:bernie_influence",
+    "data": {
+      "name": "bernie_influence",
+      "value": 0
+    }
+  },
+  {
+    "seq": 91,
+    "t": 43202,
+    "kind": "event",
+    "event": "global_variable_changed:bernie_trusts_player",
+    "data": {
+      "name": "bernie_trusts_player",
+      "value": false
+    }
+  },
+  {
+    "seq": 92,
+    "t": 43202,
+    "kind": "event",
+    "event": "global_variable_changed:seen_picking_by_bernie",
+    "data": {
+      "name": "seen_picking_by_bernie",
+      "value": false
+    }
+  }
+]
+```
+
+---
+
+## Interaction range: how the engine really measures it
+
+This section exists because getting it wrong produced two false bug reports
+against a mission that works. If you change range handling in the bridge,
+read this first.
+
+### What the engine does
+
+`getInteractionDistance()` ([interactions.js:61]) does **not** measure player
+centre to object centre. It measures from a point offset in the direction the
+player is **facing**:
+
+| Facing | Offset | Magnitude |
+|---|---|---|
+| `up` | `(0, -32)` | 32 |
+| `down` | `(0, +16)` | 16 |
+| `left` / `right` | `(∓16, 0)` | 16 |
+| `up-left` / `up-right` | `(∓32, -32)` | **45.3** |
+| `down-left` / `down-right` | `(∓16, +16)` | 22.6 |
+
+Both endpoints are quirky, and both are deliberate:
+
+- The **player** sprite has the default centre origin (`add.sprite`, no
+  `setOrigin` — [player.js:237]), so `player.x/y` is its centre, not its feet.
+- **Object** sprites are created with `setOrigin(0, 0)` ([rooms.js:327]), so
+  `sprite.x/y` is the sprite's **top-left corner**, not its centre or its base.
+
+There is **no ground/feet offset and no elevation term in the range check at
+all**. `elevation` exists ([rooms.js:415]) but feeds `updateSpriteDepth()` for
+render sort order only; it never reaches `getInteractionDistance()`. Do not add
+one to the bridge — the bridge's job is to agree with the engine, not to be
+geometrically correct.
+
+### The two-stage gate
+
+Interaction is checked **twice**, by two different measures:
+
+1. **Selection** — `tryInteractWithNearest()` ([interactions.js:1560]) and
+   `gatherInteractablesNearClick()` score candidates on **plain** distance from
+   player centre.
+2. **Execution** — the chosen handler (`handleObjectInteraction()`, or
+   `tryInteractWithNPC()` at [interactions.js:1670]) re-checks with the
+   **facing-offset** distance and silently returns if it fails.
+
+NPCs go through this same two-stage gate — an earlier version of this file
+claimed they did not, and that was wrong.
+
+So an entity can be selected as nearest and then refused. That gap is why
+`getState()` reports **both** `distance` (plain) and `interactDistance`
+(offset). `inRange` follows `interactDistance`, because that is the one that
+decides.
+
+### The overshoot (fixed in the engine, 2026-09-07)
+
+For a target only a few pixels away the offset sails **past** it, so the
+measured distance *grows* as the player approaches. Verified numerically:
+
+```
+standing  8px away -> refused: up-left(38.0px), up-right(38.0px), ...
+standing 16px away -> refused: none
+standing 24px away -> refused: none
+```
+
+Only the up-diagonals (45.3px offset) at very close range. A human rarely hits
+it — they stop further out, and if refused they take a step and it works. An
+automated player that walks as close as pathfinding allows hits it constantly,
+from below, and it looks exactly like "the object is broken".
+
+`getInteractionDistance()` now returns the **smaller** of the offset and plain
+centre distances. The offset still extends reach in the facing direction; it can
+no longer reduce it. Verified over 207,368 position/facing combinations:
+**0 previously-accepted interactions now refused**, and **0 newly accepted
+beyond what candidate selection already offers** — every gain is inside the
+existing 32px plain radius, so nothing became reachable that wasn't already a
+candidate. On the keyboard `i` path, the 150 positions that were selected and
+then silently refused are now 0.
+
+`moveToNear()` remains the right way to approach a target: the offset still
+governs the extended-reach case, and pathfinding can still leave the player
+short or behind a collider.
+
+**Use `moveToNear(id)`, not `moveTo(entity.x, entity.y)`.** It searches
+positions around the target, runs each through the engine's own formula, and
+walks to one that passes with margin (`solveStandingPoint()` in `state.js`,
+verified against 144 approach positions). `interact()` now uses it internally
+instead of the old "walk 60% of the remaining gap" nudge, which made the
+overshoot worse.
+
+### Why the fix is safe
+
+Every entry point gates candidates on the **plain** centre distance before the
+offset check ever runs — `tryInteractWithNearest()` scores on plain distance,
+and the click paths call `isObjectInInteractionRange()`
+([interactions.js:1696]), which is plain distance too. Taking the minimum makes
+the second check a superset of the first, so the two can no longer contradict
+each other. Same candidate set, minus the silent refusals.
+
+---
+
+## Three things that read as bridge bugs and are not
+
+**An unlocked door's object can vanish from `scanNearby()` entirely.** It does
+not merely flip to `locked: false` — once a door is unlocked there may be
+nothing left to interact with, so it stops being reported at any radius. If a
+door you just unlocked has disappeared, that is success. Walk through where it
+was.
+
+**The flag station needs a real click on `SUBMIT`.** `type()` populates the
+field but does not submit, even with `{submit: true}` — `submittedFlags` stays
+empty until `clickControl` fires on the button:
+
+```json
+{"cmd":"mg","action":"type","args":["test:flag:1"]}
+{"cmd":"mg","action":"clickControl","args":["SUBMIT"]}
+```
+
+**A key-type lock reports `keySelection: null` for a beat.** The minigame opens
+with `keyMode: true` before the key-selection screen has rendered. Wait for it
+rather than reading it immediately, and never reach into the Phaser scene tree
+to work around it:
+
+```json
+{"cmd":"waitFor","for":"condition","fn":"() => window.__test.minigame.getState()?.keySelection != null"}
+```

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: NPC thoughts off",
+  "description": "Test of the npcThoughts scenario flag (D77): one needs NPC who would show a coffee action icon and a hunger pressing-need bubble, with npcThoughts false so neither draws. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "npc_needs",
+  "test_objective": "Prove no NPC action icon or thought bubble is created while npcThoughts is false, and that deleting the flag brings both back"
+}

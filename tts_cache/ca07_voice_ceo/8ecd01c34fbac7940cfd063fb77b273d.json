@@ -1,0 +1,13 @@
+{
+  "key": "8ecd01c34fbac7940cfd063fb77b273d",
+  "npc": "agnieszka_duda",
+  "text": "When a payment goes out on a voice alone, the run freezes while the team re-check every recent one, and that is a long, quiet afternoon.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:03Z"
+}

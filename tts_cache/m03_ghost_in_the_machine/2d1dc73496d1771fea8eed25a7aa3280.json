@@ -1,0 +1,13 @@
+{
+  "key": "2d1dc73496d1771fea8eed25a7aa3280",
+  "npc": "narrator",
+  "text": "The cloner didn't keep the read. You'll have to lean in again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:01:31Z"
+}

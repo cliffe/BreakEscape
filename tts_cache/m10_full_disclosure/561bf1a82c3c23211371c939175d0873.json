@@ -1,0 +1,13 @@
+{
+  "key": "561bf1a82c3c23211371c939175d0873",
+  "npc": "tunnel_guard",
+  "text": "Last chance. Step away from the row.",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:25:46Z"
+}

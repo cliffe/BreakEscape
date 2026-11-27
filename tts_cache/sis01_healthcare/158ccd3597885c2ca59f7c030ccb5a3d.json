@@ -1,0 +1,13 @@
+{
+  "key": "158ccd3597885c2ca59f7c030ccb5a3d",
+  "npc": "dr_sharma",
+  "text": "That was the last check left. It worked because someone was looking.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "592e0a2ab11ed0b19ae7828ab38f6f0c",
+  "npc": "leila_servicedesk",
+  "text": "No problem. We're on the desk until six.",
+  "voice": "Laomedeia",
+  "style": "Quayholt's IT service desk agent, late 20s, British Arab. Speak with a consistent London (South-East English) accent throughout — do not shift to any other accent. Mid pitch, warm and efficient; brisk but friendly, a little busy mid-morning yet polite and helpful, never short with the caller.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T10:08:45Z"
+}

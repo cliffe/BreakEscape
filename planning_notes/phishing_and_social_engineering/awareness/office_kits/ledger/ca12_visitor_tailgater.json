@@ -1,0 +1,68 @@
+{
+ "scenario": "ca12_visitor_tailgater",
+ "lists": {
+  "host": [
+   {"k": null, "h": "501cdd17"},
+   {"k": null, "h": "ff4e056e"},
+   {"k": "quiet_on", "h": "ee9704ff"},
+   {"k": "attack_done", "h": "3a1ca384"},
+   {"k": "defend_done", "h": "dc17d87d"},
+   {"k": "caught", "h": "49f17eee"},
+   {"k": "quiet_off_debrief", "h": "dce8b7f9"},
+   {"k": "quiet_off_debrief_seen", "h": "e6614f4a"},
+   {"k": "step_away", "h": "132986f2"},
+   {"k": "chg_ca12_door_choice", "h": "40ac52f4"},
+   {"k": "npc_arrived_lorna_easton_sets_ca12_host_there", "h": "dc2e04e9"},
+   {"k": "chg_ca12_host_there", "h": "a59f7343"},
+   {"k": "chg_ca12_at_desks", "h": "417af8f9"},
+   {"k": "chg_ca12_done", "h": "17aa96ae"},
+   {"k": "object_interacted_sets_ca12_screen_seen", "h": "1cd509a3"},
+   {"k": null, "h": "e7364e5d"},
+   {"k": null, "h": "58897b3c"},
+   {"k": null, "h": "923471a2"},
+   {"k": null, "h": "e80d6a28"},
+   {"k": null, "h": "32b93e1f"},
+   {"k": null, "h": "596a9a6a"},
+   {"k": null, "h": "2f8aa1c9"},
+   {"k": null, "h": "67644ee3"},
+   {"k": null, "h": "9ecc9104"},
+   {"k": null, "h": "f086672f"},
+   {"k": null, "h": "872d10b9"},
+   {"k": null, "h": "478d8f11"}
+  ],
+  "npc:kit_camila_ospina": [
+   {"k": "chg_ca12_out", "h": "94a8fe0b"},
+   {"k": "chg_ca12_visitor_go", "h": "85f04777"},
+   {"k": "chg_ca12_visitor_go_2", "h": "b116974c"},
+   {"k": "npc_arrived_camila_ospina_sets_ca12_visitor_there", "h": "84b2ac79"},
+   {"k": "chg_ca12_visitor_there_knot_ca12_door", "h": "d861c5f9"},
+   {"k": "conversation_closed_camila_ospina_sets_ca12_door_choice", "h": "fcaf8b19"},
+   {"k": "chg_ca12_door_choice", "h": "dda5938b"},
+   {"k": "npc_arrived_camila_ospina_sets_ca12_done", "h": "92c57d6a"},
+   {"k": "chg_ca12_door_choice_2", "h": "172c5801"},
+   {"k": "npc_arrived_camila_ospina_sets_ca12_at_desks", "h": "e7bfc235"},
+   {"k": "chg_ca12_host_there_sets_ca12_visitor_leaving", "h": "d4229a3f"},
+   {"k": "chg_ca12_at_desks_sets_ca12_visitor_leaving", "h": "bdac8141"},
+   {"k": "npc_arrived_camila_ospina_sets_ca12_done_2", "h": "8dd3f328"},
+   {"k": "npc_arrived_camila_ospina", "h": "403242c5"},
+   {"k": "chg_ca12_door_choice_3", "h": "a425555a"},
+   {"k": "npc_arrived_camila_ospina_sets_ca12_done_3", "h": "462b692a"},
+   {"k": "chg_ca12_done", "h": "2c1a62d0"},
+   {"k": "chg_ca12_done_2", "h": "5bd5a85c"}
+  ],
+  "npc:kit_julian_sallow": [
+   {"k": "chg_ca12_out", "h": "94a8fe0b"},
+   {"k": "chg_ca12_out_2", "h": "42dfcd05"},
+   {"k": "chg_ca12_done", "h": "60197ce9"}
+  ],
+  "npc:kit_thandiwe_moyo": [
+   {"k": "chg_ca12_out", "h": "fd8dedd5"},
+   {"k": "workstation_owner_returned_ca12_pc_sets_ca12_sat", "h": "1c090a70"},
+   {"k": "chg_ca12_sat_sets_ca12_screen_asked", "h": "dbdce6c9"},
+   {"k": "chg_ca12_sat_knot_ca12_screen", "h": "291ae3c4"},
+   {"k": "conversation_closed_thandiwe_moyo_sets_ca12_screen_done", "h": "557c84f7"},
+   {"k": "chg_ca12_screen_done_sets_ca12_visitor_go", "h": "6a289353"},
+   {"k": "chg_ca12_out_2", "h": "6b62f9ac"}
+  ]
+ }
+}

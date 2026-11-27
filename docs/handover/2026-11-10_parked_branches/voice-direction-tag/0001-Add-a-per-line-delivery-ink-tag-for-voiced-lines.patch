@@ -1,0 +1,1596 @@
+From 5ab20335db308c7f0ef3e5fcec0cb4443f59cf6b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:27:17 +0000
+Subject: [PATCH 1/3] Add a per-line #delivery: ink tag for voiced lines
+
+Voiced lines now hold only spoken words; how a line is spoken goes in a
+#delivery: tag on that line. The note joins the voice style in the TTS
+prompt for that line only, is never shown, and enters the cache key only
+when present, so every untagged line keeps its existing key and clip.
+
+Person-chat sends the note with the line; the endpoint accepts only a
+note the scenario's ink gives that line. The walker, extractor, batch,
+sidecars, tts:wasted and the pruner key it the same way. Voiced phone
+calls do not send a note yet. dialoguelint warns on inline asterisk
+cues in voiced person-chat lines (inline-direction). tts-audio rule 7
+and the ink guide describe the new rule.
+---
+ .claude/skills/npc-dialog-review/SKILL.md     |   4 +-
+ .../skills/scenario-design-review/SKILL.md    |   2 +-
+ .claude/skills/tts-audio/SKILL.md             |  17 +-
+ README_ink_best_practices.md                  |  59 ++--
+ .../break_escape/games_controller.rb          |  45 ++-
+ app/services/break_escape/ink_line_walker.rb  |   8 +-
+ .../break_escape/tts_batch_processor.rb       |  11 +-
+ app/services/break_escape/tts_cache_pruner.rb |   2 +-
+ .../break_escape/tts_expected_lines.rb        |  27 ++
+ .../break_escape/tts_line_extractor.rb        |  46 ++-
+ app/services/break_escape/tts_service.rb      |  93 ++++--
+ app/services/break_escape/tts_wasted_clips.rb |   4 +-
+ .../VOICE_DELIVERY_TAG_BUILD_LOG.md           |  19 ++
+ public/break_escape/js/api-client.js          |   8 +-
+ .../js/minigames/helpers/chat-helpers.js      |   2 +
+ .../person-chat/person-chat-minigame.js       |   8 +-
+ .../break_escape/js/systems/tts-delivery.js   |  39 +++
+ public/break_escape/js/systems/tts-manager.js |  20 +-
+ scripts/ink_runtime_check/dialoguelint.mjs    |  25 +-
+ .../break_escape/tts_controller_test.rb       |  97 +++++++
+ .../ink_line_walker/delivery_fixture.ink      |  11 +
+ .../ink_line_walker/delivery_fixture.json     |   1 +
+ test/js/dialoguelint.test.mjs                 |  20 ++
+ test/js/finale-voiced-calls.test.mjs          |   6 +-
+ test/js/tts-delivery.test.mjs                 |  77 +++++
+ test/unit/break_escape/tts_delivery_test.rb   | 272 ++++++++++++++++++
+ 26 files changed, 830 insertions(+), 93 deletions(-)
+ create mode 100644 docs/achitechture/physical_pentest_followup/VOICE_DELIVERY_TAG_BUILD_LOG.md
+ create mode 100644 public/break_escape/js/systems/tts-delivery.js
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_fixture.ink
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_fixture.json
+ create mode 100644 test/js/tts-delivery.test.mjs
+ create mode 100644 test/unit/break_escape/tts_delivery_test.rb
+
+diff --git a/.claude/skills/npc-dialog-review/SKILL.md b/.claude/skills/npc-dialog-review/SKILL.md
+index 68bfea095..60f5875eb 100644
+--- a/.claude/skills/npc-dialog-review/SKILL.md
++++ b/.claude/skills/npc-dialog-review/SKILL.md
+@@ -63,7 +63,7 @@ Read every `.ink` file in `scenarios/<name>/ink/`. Report each finding as **CONC
+ ### 2a. Attribution & narration
+ 
+ - **Every `Character Name:` prefix resolves to an NPC `id` or `displayName`, exactly.** This is the highest-value check in this skill. `normalizeSpeakerId()` matches only against id / displayName plus the specials `player`, `npc`, `you`, `Narrator`. A shortened name (`Marcus:` for `Marcus Webb`) or a role word (`Guard:`, `Nurse:`, `Dr. Kim:`) does **not** resolve — ink still compiles, and the engine renders the literal text `Marcus: ...` inside whichever character spoke last. Phase 1 flags this automatically; confirm each ❌ INVALID is a real speaker rather than a prose label, and check the fix used the NPC's exact `displayName` instead of shortening it further.
+-- **Emotes split by category, not wholesale.** Delivery cues the TTS can act on (`*quietly*`, `*sighs*`, `*pause*`, `*not looking up*`) stay inline; events in the scene (handing something over, crossing the room, looking up for the first time) become `Narrator:` beats. Flag a file that has promoted *every* gesture — each Narrator line is an extra click-through and conversations start to wade.
++- **Emotes split by category, not wholesale.** Voiced lines hold only spoken words (user, 2026-11-10): delivery cues (`quietly`, `with a sigh`, `after a pause`, `not looking up`) go in a `#delivery:` tag on the line, never inline as `*...*`; events in the scene (handing something over, crossing the room, looking up for the first time) become `Narrator:` beats (`README_ink_best_practices.md` "Voiced lines hold only spoken words"; dialoguelint's `inline-direction`). Flag a file that has promoted *every* gesture — each Narrator line is an extra click-through and conversations start to wade.
+ 
+ ### 2a-bis. Is the dialogue supported by the scenario?
+ 
+@@ -84,7 +84,7 @@ Off-map events and post-mission debriefs are legitimate exceptions.
+ - No `voice.name` is reused by two characters who appear together — reuse is correct only for the *same* character across multiple NPC entries.
+ - Each `style` names its accent explicitly and says "consistent ... throughout"; the cast is not uniformly RP.
+ - Dialogue uses inline `Character Name:` prefixes (primary method); `#speaker:` tags only as a fallback for tag-less lines. (The `Name:` prefix is what picks the speaker. `#speaker:` tags are not matched by prefix: `determineSpeaker` in person-chat-minigame.js honours only `#speaker:player`, `#speaker:npc`, and the three-part `#speaker:npc:<exact_id>` (which must exactly match a character id). Any other two-part tag, such as `#speaker:dr_kim` or m01's `#speaker:derek`, is ignored and the line falls back to the conversation's own NPC, which is why m01's works: Derek is the NPC in his own conversation. So a `#speaker:<name>` tag only matters when it names someone other than the conversation's NPC and has no `Name:` prefix; then it's a real bug, and the fix is a `Name:` prefix or the exact `#speaker:npc:<id>` form.)
+-- Standalone scene-setting / third-person action beats are spoken as `Narrator:` lines, and a top-level `narrator` voice block exists. Inline emotes inside a character's own line (`Nurse: *sighs* Right.`) are fine.
++- Standalone scene-setting / third-person action beats are spoken as `Narrator:` lines, and a top-level `narrator` voice block exists. A cue inside a character's own line goes in a `#delivery:` tag (`Nurse: Right. #delivery: with a sigh`), not inline.
+ 
+ ### 2b. Player choices are spoken dialogue
+ 
+diff --git a/.claude/skills/scenario-design-review/SKILL.md b/.claude/skills/scenario-design-review/SKILL.md
+index 52ab7d10f..f71359b87 100644
+--- a/.claude/skills/scenario-design-review/SKILL.md
++++ b/.claude/skills/scenario-design-review/SKILL.md
+@@ -95,7 +95,7 @@ Based on `README_scenario_design.md §Designing Solvable Scenarios` points 8 and
+ 
+ Ink files are for **characters talking / messaging** — nothing else. Read the scenario's `.ink` files and check:
+ 
+-- **Narration uses the Narrator voice.** Standalone scene-setting or third-person action beats (e.g. `*She gestures at the beds.*`, `[Location: …]`, `*A pause.*`) must be spoken lines prefixed `Narrator:` under a `#speaker:narrator` tag, and the scenario must define a top-level `narrator` voice block (`{ "id": "narrator", "skipTextValidation": true, "voice": {…} }`, pattern in `m01_first_contact`). Inline emotes *inside* a character's own line (`Nurse: *sighs* Right.`) are fine and stay with that character. The validator warns if `#speaker:narrator` is used with no narrator voice defined, but it can't tell whether *all* narration was converted — that's the reviewer's job.
++- **Narration uses the Narrator voice.** Standalone scene-setting or third-person action beats (e.g. `*She gestures at the beds.*`, `[Location: …]`, `*A pause.*`) must be spoken lines prefixed `Narrator:` under a `#speaker:narrator` tag, and the scenario must define a top-level `narrator` voice block (`{ "id": "narrator", "skipTextValidation": true, "voice": {…} }`, pattern in `m01_first_contact`). A cue about how a character's own line is spoken goes in a `#delivery:` tag on that line (`Nurse: Right. #delivery: with a sigh`), not inline: voiced lines hold only spoken words. The validator warns if `#speaker:narrator` is used with no narrator voice defined, but it can't tell whether *all* narration was converted — that's the reviewer's job.
+ - **No choose-your-own-adventure combat, terminals, or minigames in ink.** Fights must not be resolved with in-ink branches (`fight_punch` / `fight_wrestle`, `#take_damage`, `#mission_failed`). Instead the dialogue ends by switching the NPC hostile (`#hostile:<npc_id>` + `#exit_conversation`) and the engine's combat system takes over. The clean reference is `scenarios/ink/security-guard.ink`. Likewise, complex terminal/decision logic belongs in a minigame or is driven by tags that set global state — not elaborate ink menus. The validator flags `#take_damage` / `#mission_failed` as a suggestion; also eyeball choice text for scripted fighting.
+ - **Player choices are spoken dialogue, not menu labels.** Every `*`/`+` choice bracket must read as the player's actual words in first person, not a third-person stage direction summarising intent (`README_scenario_design.md` / `README_ink_best_practices.md §Player Choice Formatting`). Scan choice brackets for the tell-tale patterns: a short verb-phrase label (`[Ask about X]`, `[Sympathize with Marcus]`, `[Express readiness]`, `[Offer to protect Marcus]`) immediately followed by a `You: <the actual line>` echo on the next line — that's the bracket doing the job of a menu item while the real dialogue hides below it. Fix: fold the `You:` line's content into the bracket and delete the echo (m01's convention: no NPC ink file there ever follows a choice with a `You:` line). The one legitimate exception is a genuinely non-verbal choice (`[Stay silent]`, `[Say nothing, let her process]`), which may be followed by `You: ...` to represent the silence itself. This applies equally to `#speaker:computer` decision-terminal choices — phrase them as the player's decision (`[Confirmed. Send it all.]`), not a UI action label (`[Confirm — upload everything]`).
+ 
+diff --git a/.claude/skills/tts-audio/SKILL.md b/.claude/skills/tts-audio/SKILL.md
+index 91ec0d1f6..2d872dbb9 100644
+--- a/.claude/skills/tts-audio/SKILL.md
++++ b/.claude/skills/tts-audio/SKILL.md
+@@ -13,8 +13,9 @@ History and the reasoning behind each rule: `docs/agents/TTS_38_MIGRATION.md` (d
+ 
+ - **Model:** `gemini-3.8-flash-tts` via the Interactions API (`POST /v1beta/interactions`). The voice's `style` goes in a `speech_metadata` annotation, never in front of the text: 3.8 speaks its input word for word. PCM (`audio/l16`, 24 kHz) is requested and converted to MP3 with ffmpeg. `TtsService::GEMINI_TTS_MODEL` is the one place the model is named.
+ - **Voice config** lives in `scenario.json.erb`: `"voice": { "name": "Aoede", "style": "…", "language": "en-GB" }` on an NPC (or `ttsVoice` on an object with a fixed `voice` string, like a desk-phone voicemail). The top-level `narrator` has its own voice.
+-- **Cache key:** MD5 of `normalised text | voice | style | language | model`, in `tts_cache/<scenario>/<key>.mp3`. Normalising lower-cases and strips punctuation, so "Hi!" and "Hi." share a clip. **Any change to text, voice name, style wording, language or model is a new key and a new paid clip.**
+-- **Sidecar:** each clip has `<key>.json` beside it recording `npc, text, voice, style, language, model, scenario, source, generated`. It is the only provenance record (per-clip, so branches that both generate audio don't conflict). Older 2.5 clips often have none.
++- **Cache key:** MD5 of `normalised text | voice | style | language | model`, in `tts_cache/<scenario>/<key>.mp3`. A line with a `#delivery:` note (rule 7) adds `|delivery:<normalised note>`; an untagged line's key is unchanged. Normalising lower-cases and strips punctuation, so "Hi!" and "Hi." share a clip. **Any change to text, voice name, style wording, language, delivery note or model is a new key and a new paid clip.**
++- **Delivery note:** `#delivery: quietly, almost to herself` on an ink line goes to the voice as "For this line only: …" after the style in the `speech_metadata` annotation, never in the text, and is never shown. person-chat sends it as `delivery` with the line (`tts-delivery.js`, the result's tags); the endpoint accepts only a note the scenario's ink gives that line for that speaker (`TtsLineExtractor#delivered_by?`), else 403. The extractor, batch, `tts:wasted` (from the sidecar's `delivery`) and the pruner's expected set key it the same way. Voiced phone calls don't send a note yet, so the extractor gives their lines none. On a keyless server a tagged line with no clip of its own plays its untagged clip, if there is one.
++- **Sidecar:** each clip has `<key>.json` beside it recording `npc, text, voice, style, language, model, scenario, source, generated`, plus `delivery` when the line has a note. It is the only provenance record (per-clip, so branches that both generate audio don't conflict). Older 2.5 clips often have none.
+ - **Which voice is used:** the endpoint takes the speaker's voice from the scenario file *as it is now* (`Mission#current_voice_configs`), not from the game's saved copy, so games started before a restyle still find the regenerated clips. The saved copy is the fallback.
+ - **Serving order:** current-model clip → previous-model (2.5) clip under the current voice, then under the saved voice → live generation. A mission not yet regenerated plays its 2.5 clips with no delay.
+ - **Which lines exist:** `InkLineWalker` reads compiled ink the way the client shows it (fragments joined, choice labels and tags skipped, string variables filled in, every branch of `{&a|b}` sequences and inline conditionals expanded, capped at 16 variants). `TtsLineExtractor` resolves each line's speaker like the client (`Narrator:` → narrator, a prefix or displayName → that NPC, no prefix → the conversation's NPC) and voices it with that speaker's voice. `InkTextValidator` uses the same walker. Phone chats are not voiced (no ink has `voice:` lines), except a contact with a voiced call (`voiced: true` on a phone-chat mapping or its `timedConversation`, F17): only the call's own start knots (`targetKnot`) and everything they reach are extracted, never the contact's home knot or hub (F20, "voice only the calls"), minus narration; barks are not extracted. A co-speaker's line inside another NPC's story (Vance in m04's HaX debrief, HaX in m07's Netherton debrief) is listed and voiced under the co-speaker's own voice, and the endpoint accepts it only for that speaker (`spoken_as_npc_in_scenario?`, 3df75d93). When two entries share a displayName (m08's phone `agent_0x99` and `agent_0x99_person`), the prefix resolves to the first registered (start room first): use a `#speaker:<id>` tag where the other voice is wanted.
+@@ -28,7 +29,11 @@ History and the reasoning behind each rule: `docs/agents/TTS_38_MIGRATION.md` (d
+ 4. **Commit the audio.** `tts_cache/` is tracked (only temp files and the `quota_test`, `test_debug`, `test_event_cascade` folders are ignored). Generation isn't deterministic, so committing ships the takes that were reviewed; production doesn't generate its own.
+ 5. **A mission's voice changes and its clips go in one commit.** If a style change ships without its clips, new games request keys that don't exist and generate live. Engine changes are committed separately, first.
+ 6. **In-progress games must notice nothing.** Keep 2.5 clips until every mission is on 3.8 and games saved before the switch are unlikely to be running; the pruner's dry run lists them as orphans, which is expected.
+-7. **Stage directions are fine inline.** `*after a while*`, `*quietly*` are acted, not spoken (checked on 3.8).
++7. **Voiced lines hold only spoken words** (user, 2026-11-10). No inline stage directions (`*quietly*`, `*after a while*`): the voice gets exactly the text, and the player sees it. A performance note for one line goes in a tag on that line, at the end or on the line above:
++   ```ink
++   Maya Chen: I suppose it doesn't matter now. #delivery: quietly, almost to herself
++   ```
++   The note is part of that line's key, so adding, changing or removing one means a new clip; untagged lines keep theirs. Actions go on a `Narrator:` line or are cut. `dialoguelint.mjs` warns (`inline-direction`) on a cue left in a voiced person-chat line. Voiced phone calls ignore the tag for now.
+ 8. **Cost is small but real:** about $9 per million audio tokens at 25 tokens/s, so roughly $0.80 per hour of audio until 31 Dec 2026, double from 1 Jan 2027. A whole mission is $0.20–$1.50. Confirm before voicing several missions; the user approves the cost.
+ 9. **Draft playtests run on the keyless server on :3001** so they never pay for lines that will change (see playtest-scenario).
+ 
+@@ -36,7 +41,7 @@ History and the reasoning behind each rule: `docs/agents/TTS_38_MIGRATION.md` (d
+ 
+ Prereqs: dialogue signed off (rule 1); `GEMINI_API_KEY` set; ink compiled (`bin/inklecate -o x.json x.ink`, or `scripts/compile-ink.sh <scenario>`); no other agent editing the mission's ink.
+ 
+-1. **Prep the text.** Search the mission's voiced ink for `{player_name`, `{` interpolations and `player_name()`: rewrite them (rule 2). For HaX, apply the rule 3 ending if it isn't there. These are writing changes: show the user the before/after lines.
++1. **Prep the text.** Search the mission's voiced ink for `{player_name`, `{` interpolations and `player_name()`: rewrite them (rule 2). For HaX, apply the rule 3 ending if it isn't there. Move any inline `*stage direction*` into a `#delivery:` tag or cut it (rule 7; `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<scenario>/` lists them as `inline-direction`). These are writing changes: show the user the before/after lines.
+ 2. **Generate.** From the engine root:
+    ```bash
+    bin/rails "app:break_escape:tts:batch_generate[<scenario>]" > tmp/tts-<scenario>.log 2>&1
+@@ -89,5 +94,5 @@ Change `GEMINI_TTS_MODEL`; the model is in the key, so old clips become the fall
+ - `app/services/break_escape/tts_wasted_clips.rb`, `tts_cache_pruner.rb`, `tts_expected_lines.rb` — checking and pruning
+ - `app/controllers/break_escape/games_controller.rb` (`tts`, `legacy_tts_clip`), `app/models/break_escape/mission.rb` (`current_voice_configs`)
+ - `lib/tasks/break_escape_tasks.rake` — `batch_generate`, `wasted`, `prune_cache`, `cache_stats`
+-- Client: `public/break_escape/js/systems/tts-manager.js`, `minigames/person-chat/person-chat-minigame.js` (`determineSpeaker`, the `ttsManager.play` call)
+-- Tests: `test/controllers/break_escape/tts_controller_test.rb`, `test/unit/break_escape/ink_line_walker_test.rb`, `ink_text_validator_test.rb`, `tts_cache_pruner_test.rb`, `tts_wasted_clips_test.rb`
++- Client: `public/break_escape/js/systems/tts-manager.js`, `systems/tts-delivery.js` (the `#delivery:` tag), `api-client.js` (`getTTS`), `minigames/person-chat/person-chat-minigame.js` (`determineSpeaker`, the `ttsManager.play` call)
++- Tests: `test/controllers/break_escape/tts_controller_test.rb`, `test/unit/break_escape/ink_line_walker_test.rb`, `ink_text_validator_test.rb`, `tts_cache_pruner_test.rb`, `tts_wasted_clips_test.rb`, `tts_delivery_test.rb`; `test/js/tts-delivery.test.mjs`
+diff --git a/README_ink_best_practices.md b/README_ink_best_practices.md
+index 1b85edb0b..e7796d8b8 100644
+--- a/README_ink_best_practices.md
++++ b/README_ink_best_practices.md
+@@ -60,7 +60,7 @@ Use the `Narrator:` inline prefix for stage directions. These display as italici
+ ```ink
+ === derek_office ===
+ Narrator: The room is dark. Files are scattered across the desk.
+-Maya Chen: *glances at door* Is it safe to talk?
++Maya Chen: Is it safe to talk? #delivery: glancing at the door, low
+ ```
+ 
+ For narration associated with a specific character portrait, use `Narrator[character_id]:`:
+@@ -80,50 +80,53 @@ Narrator[player]: You join them. Nobody looks at you twice.
+ 
+ **Making a background.** Backgrounds are 400×400 pixel art (older ones are 320×320). Paint a 1024×1024 concept (Gemini), keep it as `assets/backgrounds/<name>_nonpixelart.png`, then convert it with `python3 tools/pixelate_background.py <concept> <out_dir> "pixel art, <scene>"` (PixelLab pixflux, init strength 500 by default; try 600 if signs or labels must stay legible). The person-chat canvas is 16:9: with nobody in frame it shows almost the full width but only the middle ~55% of the height (the top and bottom ~22% are always cut off), and with a portrait on screen it draws at the portrait's pixel scale, showing only about the central 57% × 32%. Keep anything the scene needs (signs, a door, a key object) in the middle band.
+ 
+-### Emotes vs. Narration: describe actions with the Narrator, keep flavour on dialogue
++### Voiced lines hold only spoken words: delivery goes in a `#delivery:` tag
+ 
+-Two related rules — a real bug in the m01 Derek confrontation taught us why they matter (emote lines that began with `*` compiled into phantom player-choice buttons and dead-ended the surrender branch):
++Every NPC line is voiced by text-to-speech, and the voice gets exactly the words on the line. An inline stage direction such as `*quietly*` or `*after a while*` is not speech, and the voice may act it, read it or do something odd with it; it also shows on screen. So (user decision, 2026-11-10):
+ 
+-**1. A line that describes what is *happening* is a `Narrator:` line.** Physical actions, scene changes, and plot beats ("Derek sets down the launch device", "SAFETYNET backup arrives and restrains him") are narration — not a character's dialogue. Prefix them `Narrator:`.
++**1. A line that describes what is *happening* is a `Narrator:` line.** Physical actions, scene changes and plot beats ("Derek sets down the launch device", "SAFETYNET backup arrives and restrains him") are narration, not a character's dialogue.
+ 
+-**2. Inter-line flavour must be an emote *attached to a spoken line* — never standalone.** Small vocal / emotional / gesture cues (`*sighs*`, `*laughs*`, `*quietly*`, `*glances at the door*`) are delivery signals to the Gemini TTS for how the line is spoken. They must ride along with actual dialogue on the same character-prefixed line. **An emote with no dialogue is wrong** — for example, `Derek: *smiles*` on its own is not OK.
++**2. How a line is spoken goes in a `#delivery:` tag on that line.** The note is sent to the voice as a performance note for that line only, and the player never sees it.
+ 
+-❌ **WRONG** — standalone emote, and (worse) it starts the line with `*`, so the compiler parses it as a player choice:
+ ```ink
+-Derek Lawson: *smiles*
+-*laughs*
++Derek Lawson: You really don't understand what we're building. #delivery: smiling, patient
++# delivery: after a long pause, quietly
++Maya Chen: I suppose it doesn't matter now.
+ ```
+ 
+-✅ **RIGHT** — emote fused with the character's spoken line:
++- Write it at the end of the line, or on its own line directly above (ink attaches a tag line to the line after it). If a line has two, the last wins.
++- Keep it short and about the voice: pace, volume, mood, a laugh or sigh in the voice (`quietly, almost to herself`, `flatly`, `with a tired laugh`, `slowly, choosing each word`). Things the character *does* are narration, or cut.
++- A note changes that line's audio, so adding, changing or removing one regenerates the clip. Untagged lines keep their existing clips.
++- Person-chat lines only, for now: a voiced phone call (`voiced: true`) doesn't send the note yet, so put nothing there you rely on.
++- No `{variables}` in a note, for the same reason as in voiced lines.
++
++❌ **WRONG**: an inline cue, and a line starting with `*`, which the compiler parses as a player choice:
+ ```ink
+ Derek Lawson: *smiles* You really don't understand what we're building.
+-Derek Lawson: *laughs* You think I'd sell out the only people who understand the truth?
++*laughs*
+ ```
+ 
+-✅ **RIGHT** — a described action becomes a Narrator beat, with the dialogue on its own line:
++✅ **RIGHT**:
+ ```ink
++Derek Lawson: You really don't understand what we're building. #delivery: smiling
+ Narrator: Derek sets down the launch device.
+ Derek Lawson: Take it. Stop the launch. I won't resist.
+ ```
+ 
+-**Why this matters mechanically:** any line beginning with `*` is parsed as a `*` choice. A prefix-less emote line (`*laughs*`) therefore becomes a phantom choice button and can silently dead-end the branch — often surfacing only as an "apparent loose end" compiler warning. **Always lead the line with the speaker prefix (`Derek Lawson: *laughs* …`) or `Narrator:`** so the `*` sits *inside* the line, never at its start.
++`scripts/ink_runtime_check/dialoguelint.mjs` warns (`inline-direction`) on an asterisk cue in a voiced person-chat line. It skips emphasis between two words (`I *never* said that`), choices, the player's lines and narration.
+ 
+-Rule of thumb: if it describes *what happens*, it's `Narrator:`; if it colours *how a line is spoken*, it's an inline `*emote*` on that character's dialogue — and it always carries dialogue with it.
++#### Don't turn every cue into narration: each `Narrator:` line costs the player a click
+ 
+-#### Don't convert every emote — each `Narrator:` line costs the player a click
++Every `Narrator:` beat becomes its own dialogue block the player must advance past, so converting every gaze and gesture makes conversations feel like wading.
+ 
+-The split above is about *category*, not volume. Every `Narrator:` beat becomes its own dialogue block the player must advance past, so mechanically converting every gaze and gesture makes conversations feel like wading.
+-
+-Apply the rule with judgement:
+-
+-| Keep inline (delivery cues the TTS can act on) | Promote to `Narrator:` (events in the scene) |
++| `#delivery:` note (how the voice says it) | `Narrator:` line (an event in the scene) |
+ |---|---|
+-| `*quietly*`, `*flatly*`, `*sharply*`, `*very evenly*` | Handing something over, reaching for a radio |
+-| `*sighs*`, `*snorts*`, `*tired laugh*`, `*almost laughs*` | Crossing the room, stepping between the player and a door |
+-| `*pause*`, `*slowly*`, `*breath*` (pacing for the TTS) | Looking up for the first time — where it marks the scene turning |
+-| `*not looking up*`, `*without turning round*` (manner of delivery) | Having to look away because they're overcome |
++| `quietly`, `flatly`, `sharply`, `very evenly` | Handing something over, reaching for a radio |
++| `with a sigh`, `with a tired laugh`, `almost laughing` | Crossing the room, stepping between the player and a door |
++| `after a pause`, `slowly` (pacing) | Looking up for the first time, where it marks the scene turning |
++| `not looking up`, `without turning round` (manner of delivery) | Having to look away because they're overcome |
+ 
+-The test: **would losing this line cost the scene a beat, or just a bit of colour?** Beats get their own Narrator line. Colour rides along with the dialogue, where it also does useful work steering the voice.
++The test: **would losing this line cost the scene a beat, or just a bit of colour?** Beats get their own Narrator line. Colour goes in the `#delivery:` note, or is cut if the words already carry it.
+ 
+ ### Dialogue must be supported by the scenario
+ 
+@@ -163,6 +166,8 @@ No `# speaker:` tags required.
+ | `# speaker:player` | Attribute the following tag-less line to the player |
+ | `# speaker:npc:character_id` | Attribute to a specific character by ID |
+ 
++For how a line is *spoken* (not who speaks it), use `# delivery:` (see "Voiced lines hold only spoken words" above).
++
+ **When you might use them:**
+ 
+ - A line of dialogue with no natural character prefix (e.g., atmospheric one-liners)
+@@ -900,7 +905,7 @@ VAR talked_before = false
+ 
+ These came up in more than one mission during the pass-4 dialogue reviews and playtests (October 2026). Most are caught by `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` (rule name in brackets); the rest are for the reviewer. `README_scenario_design.md` ("Common bugs and how to avoid them") has the scenario-file side.
+ 
+-**0. A line that starts with a stage cue becomes a choice** (`emote-as-choice`, error). In ink a line beginning `*` is a choice, so `*leans in* Fine.` on its own line is not an emote. It hides behind a speaker prefix (`Ghost: *leans in* Fine.` is safe) and appears when the prefix is stripped, as happened in m02's phone ink. Put the cue mid-line (`Fine. *leans in*`) or cut it.
++**0. A line that starts with a stage cue becomes a choice** (`emote-as-choice`, error). In ink a line beginning `*` is a choice, so `*leans in* Fine.` on its own line is not an emote. It hides behind a speaker prefix (`Ghost: *leans in* Fine.` is safe) and appears when the prefix is stripped, as happened in m02's phone ink. Move it to a `#delivery:` tag if it says how the line is spoken, make it a `Narrator:` line if it is an action, or cut it (see "Voiced lines hold only spoken words").
+ 
+ **0b. Reopened chats resume at the hub, not at `start`.** The engine reopens a person-chat at the knot the player left (usually the hub). Lines placed in `start` only play on a first meeting or after a page reload. Put "something changed since last time" reactions in the hub's re-entry line, keyed on a variable. Ink variables survive a page reload (the engine saves `npcInkVariables`); visit counts and the story position don't.
+ 
+@@ -1325,7 +1330,7 @@ Navigation in normal mode:
+ 
+ If you need section headers, use plain text without asterisks.
+ 
+-**This is the most common cause of the emote bug** (see *§Emotes vs. Narration*): a flavour cue written as `*laughs*` on its own line is parsed as a choice. Lead every emote line with a speaker or `Narrator:` prefix so the `*` never sits at the start of the line.
++**This is the most common cause of the emote bug**: a flavour cue written as `*laughs*` on its own line is parsed as a choice. Voiced lines carry no inline cues now; put the note in a `#delivery:` tag (see *§Voiced lines hold only spoken words*).
+ 
+ ### Characters that change what ink compiles
+ 
+@@ -1334,7 +1339,7 @@ Ink treats several characters as syntax. Inside dialogue they either vanish or r
+ | In dialogue | What ink does with it | Fix |
+ |---|---|---|
+ | `//` | Starts a comment. **Everything after it on the line is silently discarded.** Bites hardest on URLs and file paths. | Rephrase, or split the URL |
+-| `*` at line start | Parses as a choice. A standalone `*sighs*` becomes a phantom choice button that can dead-end the branch | Attach the emote to a spoken line, or use `Narrator:` |
++| `*` at line start | Parses as a choice. A standalone `*sighs*` becomes a phantom choice button that can dead-end the branch | A `#delivery:` tag on the spoken line, or `Narrator:` |
+ | Unpaired `*` | Renders the asterisk to the player | Close the emote |
+ | `**bold**` | Not supported; renders literally | Capitals or plain wording |
+ | `->` | Reads as a divert | Use an en dash or "to" |
+diff --git a/app/controllers/break_escape/games_controller.rb b/app/controllers/break_escape/games_controller.rb
+index 1718f688e..f51748438 100644
+--- a/app/controllers/break_escape/games_controller.rb
++++ b/app/controllers/break_escape/games_controller.rb
+@@ -632,6 +632,17 @@ module BreakEscape
+       return render_error('Missing npc_id or text', :bad_request) unless npc_id.present? && text.present?
+       return render_error('Text too long', :bad_request) if text.length > 1000
+ 
++      # The line's #delivery: note, if it has one (person-chat sends it). It goes
++      # into the voice prompt, so it must be a note the scenario's ink gives this line.
++      delivery = TtsService.clean_delivery(params[:delivery])
++      if delivery
++        return render_error('Delivery note too long', :bad_request) if delivery.length > TtsService::MAX_DELIVERY_LENGTH
++        unless delivered_in_scenario?(npc_id, text, delivery)
++          Rails.logger.warn "[TTS] Delivery note not found for #{npc_id}: #{text.truncate(60)} [#{delivery.truncate(40)}]"
++          return render_error('Delivery note not found for this line', :forbidden)
++        end
++      end
++
+       # Find NPC in scenario
+       npc = find_npc_in_scenario(npc_id)
+       return render_error("NPC not found: #{npc_id}", :not_found) unless npc
+@@ -698,23 +709,31 @@ module BreakEscape
+       # A clip on the current model, else one from the previous model (missions
+       # not yet regenerated), else generate. Old clips are served before
+       # generating so an un-migrated mission plays as it did, with no delay.
++      # A line with a delivery note has its own clip (the note is in its key).
++      # Previous-model clips never had notes, so for a tagged line they, and the
++      # untagged clip, are only a stand-in on a server that can't generate.
+       tts_service = TtsService.new
+-      current_clip = tts_service.cache_path(
+-        tts_service.cache_key_for(text, voice_config['name'], voice_config['style'], voice_config['language']),
+-        scenario_name
+-      )
++      key_args = [text, voice_config['name'], voice_config['style'], voice_config['language']]
++      current_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args, *[delivery].compact), scenario_name)
+       mp3_path = current_clip if File.exist?(current_clip)
+-      mp3_path ||= legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
++      if delivery && !mp3_path && !tts_service.enabled?
++        plain_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args), scenario_name)
++        mp3_path = plain_clip if File.exist?(plain_clip)
++      end
++      unless mp3_path || (delivery && tts_service.enabled?)
++        mp3_path = legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
++      end
+       return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
+ 
+       begin
++        generate_options = { scenario_name: scenario_name, npc_id: npc_id }
++        generate_options[:delivery] = delivery if delivery
+         mp3_path = tts_service.generate(
+           text,
+           voice_config['name'],
+           voice_config['style'],
+           voice_config['language'],
+-          scenario_name: scenario_name,
+-          npc_id: npc_id
++          **generate_options
+         )
+       rescue TtsService::QuotaExhaustedError => e
+         # Out of quota is a temporary condition, not a server fault. 429 tells the
+@@ -2558,6 +2577,18 @@ module BreakEscape
+       false
+     end
+ 
++    # True when some voiced line in this scenario's ink is spoken as npc_id with
++    # this text and this #delivery: note (TtsLineExtractor#delivered_by?).
++    def delivered_in_scenario?(npc_id, text, delivery)
++      scenario_name = @game.mission&.name
++      return false unless scenario_name
++
++      TtsLineExtractor.cached(scenario_name, @game.scenario_data).delivered_by?(npc_id, text, delivery)
++    rescue StandardError => e
++      Rails.logger.warn "[TTS] Delivery check failed for #{npc_id}: #{e.class}: #{e.message}"
++      false
++    end
++
+     # Resolve ink path and compile if necessary
+     def resolve_and_compile_ink(story_path)
+       # Use Engine root for Rails Engine context
+diff --git a/app/services/break_escape/ink_line_walker.rb b/app/services/break_escape/ink_line_walker.rb
+index 8b3e7210a..fa721e768 100644
+--- a/app/services/break_escape/ink_line_walker.rb
++++ b/app/services/break_escape/ink_line_walker.rb
+@@ -302,7 +302,13 @@ module BreakEscape
+       state[:partial] = nil
+       state[:tags] = []
+       state[:last_lines] = nil
+-      return if raw.empty?
++      if raw.empty?
++        # The client (InkEngine#continue) keeps an empty line's tags for the
++        # next line it shows. Only a #delivery: note is carried here, so the
++        # speaker of every existing line is read exactly as before.
++        state[:tags] = tags.select { |t| TtsService.delivery_tag?(t) }
++        return
++      end
+ 
+       if state.delete(:glue_next)
+         # Glue at the end of this line pulls the next line onto it.
+diff --git a/app/services/break_escape/tts_batch_processor.rb b/app/services/break_escape/tts_batch_processor.rb
+index 22510223a..ceb779993 100644
+--- a/app/services/break_escape/tts_batch_processor.rb
++++ b/app/services/break_escape/tts_batch_processor.rb
+@@ -180,7 +180,7 @@ module BreakEscape
+         end
+ 
+         entries.each do |entry|
+-          generate_audio_for_line(entry.text, entry.voice, scenario_name, entry.npc_id)
++          generate_audio_for_line(entry.text, entry.voice, scenario_name, entry.npc_id, entry.delivery)
+         end
+ 
+         log_info ""
+@@ -190,21 +190,21 @@ module BreakEscape
+       end
+     end
+ 
+-    def generate_audio_for_line(text, voice_config, scenario_name, npc_id)
++    def generate_audio_for_line(text, voice_config, scenario_name, npc_id, delivery = nil)
+       voice_name = voice_config['name']
+       style_prompt = voice_config['style']
+       language_code = voice_config['language']
+ 
+       # Check if already cached — no API call needed.
+       # Use the service's own cache_path so the path logic is defined in one place.
+-      cache_key = @tts_service.cache_key_for(text, voice_name, style_prompt, language_code)
++      cache_key = @tts_service.cache_key_for(text, voice_name, style_prompt, language_code, delivery)
+       mp3_path = @tts_service.cache_path(cache_key, scenario_name)
+ 
+       if File.exist?(mp3_path)
+         # Backfill provenance for audio cached before sidecars existed
+         unless File.exist?(@tts_service.sidecar_path(mp3_path))
+           @tts_service.write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+-                                     source: "batch", npc_id: npc_id)
++                                     source: "batch", npc_id: npc_id, delivery: delivery)
+         end
+         @stats[:cache_hits] += 1
+         @consecutive_failures = 0  # Reset on cache hit
+@@ -222,7 +222,8 @@ module BreakEscape
+       begin
+         attempt += 1
+         @stats[:requests_made] += 1
+-        result = @tts_service.generate(text, voice_name, style_prompt, language_code, scenario_name: scenario_name, npc_id: npc_id)
++        result = @tts_service.generate(text, voice_name, style_prompt, language_code, scenario_name: scenario_name,
++                                                                                      npc_id: npc_id, delivery: delivery)
+ 
+         if result
+           @stats[:audio_generated] += 1
+diff --git a/app/services/break_escape/tts_cache_pruner.rb b/app/services/break_escape/tts_cache_pruner.rb
+index a5b05aa89..b23336889 100644
+--- a/app/services/break_escape/tts_cache_pruner.rb
++++ b/app/services/break_escape/tts_cache_pruner.rb
+@@ -168,7 +168,7 @@ module BreakEscape
+         entry.note = expected.source_of(expected.keys[key][0])
+       elsif sidecar
+         sidecar_args = sidecar.values_at("text", "voice", "style", "language")
+-        sidecar_keys = [TtsService.cache_key(*sidecar_args), TtsService.legacy_cache_key(*sidecar_args)]
++        sidecar_keys = [TtsService.sidecar_cache_key(sidecar), TtsService.legacy_cache_key(*sidecar_args)]
+         voice_ok = expected.voice_configured?(sidecar["voice"], sidecar["style"], sidecar["language"])
+         if !sidecar_keys.include?(key)
+           # Sidecar doesn't describe this file: fall back to the key alone
+diff --git a/app/services/break_escape/tts_expected_lines.rb b/app/services/break_escape/tts_expected_lines.rb
+index 387ef5a97..edd0ca437 100644
+--- a/app/services/break_escape/tts_expected_lines.rb
++++ b/app/services/break_escape/tts_expected_lines.rb
+@@ -58,6 +58,7 @@ module BreakEscape
+       @ink_json_files = []
+       @ink_source_files = []
+       @variable_lines = 0
++      @delivered = Set.new      # [normalised text, normalised delivery note]
+       @walk_status = runtime_walk ? :pending : :skipped
+       @keys = nil
+     end
+@@ -70,6 +71,7 @@ module BreakEscape
+       @known_values = known_variable_values(@scenario_data)
+       @ink_source_files.each { |f| add_ink_source(f) }
+       @ink_json_files.each { |f| add_compiled_fragments(f) }
++      @ink_json_files.each { |f| add_delivery_notes(f) }
+       run_runtime_walk if @runtime_walk
+       self
+     end
+@@ -85,6 +87,12 @@ module BreakEscape
+             h[TtsService.legacy_cache_key_for_normalized(norm, v.name, v.style, v.language)] ||= [norm, v]
+           end
+         end
++        # A line with a #delivery: note is keyed with it too (current model only)
++        @delivered.each do |norm, note|
++          @voices.each do |v|
++            h[TtsService.cache_key_for_normalized(norm, v.name, v.style, v.language, note)] ||= [norm, v]
++          end
++        end
+         h
+       end
+     end
+@@ -292,6 +300,25 @@ module BreakEscape
+       end
+     end
+ 
++    # Lines carrying a #delivery: note (InkLineWalker reads the tags as the
++    # client does), so their keyed-with-the-note clips count as expected.
++    def add_delivery_notes(file)
++      InkLineWalker.from_file(file.to_s).lines.each do |line|
++        note = TtsService.delivery_from_tags(line.tags)
++        next unless note
++
++        self.class.text_variants(line.raw).each do |variant|
++          norm = TtsService.normalize_text(variant)
++          next if norm.empty?
++
++          @delivered << [norm, TtsService.normalize_text(note)]
++          @keys = nil
++        end
++      end
++    rescue StandardError => e
++      @warnings << "could not read delivery notes in #{relative(file)}: #{e.message}"
++    end
++
+     def run_runtime_walk
+       node = ENV["NODE"].presence || "node"
+       walker = @engine_root.join(WALKER)
+diff --git a/app/services/break_escape/tts_line_extractor.rb b/app/services/break_escape/tts_line_extractor.rb
+index 878dc12bf..62f9d71c9 100644
+--- a/app/services/break_escape/tts_line_extractor.rb
++++ b/app/services/break_escape/tts_line_extractor.rb
+@@ -23,7 +23,8 @@ module BreakEscape
+   # can request, read by tts:wasted) always includes them, so their clips are
+   # never reported as unrequested.
+   class TtsLineExtractor
+-    Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, keyword_init: true)
++    # delivery: the line's `#delivery:` note (person-chat lines only), or nil.
++    Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, :delivery, keyword_init: true)
+     Note = Struct.new(:source, :path, :text, :reason, keyword_init: true)
+ 
+     BACKGROUND_LINE = /\ABackground\s*\[\s*([^\]]+)\s*\]\s*(?::\s*(.*))?\z/im
+@@ -254,6 +255,38 @@ module BreakEscape
+       end
+     end
+ 
++    # True when some host story has a line the client voices as npc_id with this
++    # text and this `#delivery:` note: how the endpoint accepts a note the client
++    # sends (the note becomes part of the voice prompt, so only notes written in
++    # the scenario's ink are accepted). Voiced phone calls carry no note.
++    def delivered_by?(npc_id, text, delivery)
++      wanted = self.class.normalize(text)
++      note = self.class.normalize(delivery)
++      return false if wanted.empty? || note.empty?
++
++      delivered_lines.include?("#{npc_id}|#{wanted}|#{note}")
++    end
++
++    # "npc_id|normalised text|normalised note" for every line with a delivery note.
++    def delivered_lines
++      @delivered_lines ||= begin
++        set = Set.new
++        each_host_line do |host, _path, line, npc_id, text|
++          note = line_delivery(host, line)
++          set << "#{npc_id}|#{self.class.normalize(text)}|#{self.class.normalize(note)}" if note
++        end
++        set
++      end
++    end
++
++    # The `#delivery:` note person-chat sends for a line (TtsService.delivery_from_tags).
++    # Voiced phone calls don't send one (phone-call-voice.js), so their lines have none.
++    def line_delivery(host_id, line)
++      return nil if characters.dig(host_id, 'npcType') == 'phone'
++
++      TtsService.delivery_from_tags(line.tags)
++    end
++
+     # True when some host story has a line the client voices as npc_id with
+     # this text: how the endpoint accepts a co-speaker's line from another
+     # NPC's story (Vance in HaX's debrief, HaX in Netherton's). Matching is on
+@@ -286,6 +319,7 @@ module BreakEscape
+       return cached[:extractor] if cached && cached[:stamp] == stamp
+ 
+       extractor.spoken_lines
++      extractor.delivered_lines
+       endpoint_cache[scenario_name] = { stamp: stamp, extractor: extractor }
+       extractor
+     end
+@@ -315,7 +349,8 @@ module BreakEscape
+       seen = {}
+ 
+       each_host_line do |host_id, ink_path, line, npc_id, text|
+-        add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}")
++        add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}",
++                  line_delivery(host_id, line))
+       end
+ 
+       each_pretext_outcome_line do |npc_id, text, path|
+@@ -407,18 +442,19 @@ module BreakEscape
+       end
+     end
+ 
+-    def add_entry(seen, npc_id, text, source, path)
++    def add_entry(seen, npc_id, text, source, path, delivery = nil)
+       voice = voices[npc_id]
+       unless voice
+         @notes << Note.new(source: source, path: path, text: text, reason: "no voice config for #{npc_id}; the endpoint can't voice it")
+         return
+       end
+ 
+-      key = @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language'])
++      key = @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language'], delivery)
+       return if seen[key]
+ 
+       seen[key] = true
+-      @entries << Entry.new(npc_id: npc_id, text: text, voice: voice, source: source, path: path, key: key)
++      @entries << Entry.new(npc_id: npc_id, text: text, voice: voice, source: source, path: path, key: key,
++                            delivery: delivery)
+     end
+ 
+     def speaker_id_for(prefix, host_id)
+diff --git a/app/services/break_escape/tts_service.rb b/app/services/break_escape/tts_service.rb
+index 4483a6431..4f043c9dd 100644
+--- a/app/services/break_escape/tts_service.rb
++++ b/app/services/break_escape/tts_service.rb
+@@ -63,14 +63,54 @@ module BreakEscape
+       text.to_s.gsub(/(?<=\p{L})-(?=\p{L})/, " ")
+     end
+ 
++    # A per-line performance note in ink: `#delivery: quietly, almost to herself`.
++    # It goes to the voice as a note for that line only and is never shown.
++    DELIVERY_TAG = /\A\s*delivery\s*:\s*(.*)\z/im
++    MAX_DELIVERY_LENGTH = 200
++
++    # The delivery note in a line's tags (the last one wins), or nil.
++    def self.delivery_from_tags(tags)
++      Array(tags).reverse_each do |tag|
++        m = tag.to_s.match(DELIVERY_TAG)
++        next unless m
++
++        note = clean_delivery(m[1])
++        return note if note
++      end
++      nil
++    end
++
++    def self.delivery_tag?(tag)
++      tag.to_s.match?(DELIVERY_TAG)
++    end
++
++    # Whitespace collapsed and trimmed; nil when empty.
++    def self.clean_delivery(note)
++      note.to_s.gsub(/\s+/, " ").strip.presence
++    end
++
+     # Cache key for already-normalised text (see normalize_text). The model is
+-    # part of the key, so a model change regenerates every line.
+-    def self.cache_key_for_normalized(normalized, voice_name, style_prompt = nil, language_code = nil)
+-      Digest::MD5.hexdigest("#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}|#{GEMINI_TTS_MODEL}")
++    # part of the key, so a model change regenerates every line. A delivery note
++    # is added only when there is one, so an untagged line keeps the key it has
++    # always had; it is normalised like the text ("Quietly." and "quietly" share).
++    def self.cache_key_for_normalized(normalized, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
++      base = "#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}|#{GEMINI_TTS_MODEL}"
++      note = normalize_text(delivery)
++      base += "|delivery:#{note}" unless note.empty?
++      Digest::MD5.hexdigest(base)
++    end
++
++    def self.cache_key(text, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
++      cache_key_for_normalized(normalize_text(text), voice_name, style_prompt, language_code, delivery)
+     end
+ 
+-    def self.cache_key(text, voice_name, style_prompt = nil, language_code = nil)
+-      cache_key_for_normalized(normalize_text(text), voice_name, style_prompt, language_code)
++    # The style annotation sent with a line: the voice's style, then the line's
++    # delivery note when it has one.
++    def self.speech_style(style_prompt, delivery = nil)
++      note = clean_delivery(delivery)
++      return style_prompt.presence unless note
++
++      ["#{style_prompt}".strip.presence, "For this line only: #{note.sub(/[.!?]*\z/, '')}."].compact.join(" ")
+     end
+ 
+     # Key of a clip made with gemini-2.5-flash-preview-tts, which was keyed
+@@ -113,10 +153,11 @@ module BreakEscape
+     # @param scenario_name [String, nil] Scenario directory name (e.g., "m01_first_contact")
+     # @param npc_id [String, nil] Speaker, recorded in the sidecar only (not part of the key)
+     # @return [Pathname, nil] Path to cached MP3 file, or nil on failure
+-    def generate(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil, npc_id: nil)
++    def generate(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil, npc_id: nil, delivery: nil)
+       return nil if text.blank?
+ 
+-      cache_key = compute_cache_key(text, voice_name, style_prompt, language_code)
++      delivery = self.class.clean_delivery(delivery)
++      cache_key = compute_cache_key(text, voice_name, style_prompt, language_code, delivery)
+       mp3_path  = cache_path(cache_key, scenario_name)
+ 
+       # Migrate a flat (legacy) file into the scenario subdir if needed
+@@ -128,7 +169,7 @@ module BreakEscape
+         Rails.logger.debug "[TTS] Cache hit: #{scenario_name}/#{cache_key}"
+         unless File.exist?(sidecar_path(mp3_path))
+           write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+-                        source: "cache_hit", npc_id: npc_id)
++                        source: "cache_hit", npc_id: npc_id, delivery: delivery)
+         end
+         return mp3_path
+       end
+@@ -136,7 +177,8 @@ module BreakEscape
+       # Cache miss — generate via API (requires API key)
+       return nil unless enabled?
+       Rails.logger.info "[TTS] Cache miss, generating: #{text.truncate(60)} (voice: #{voice_name})"
+-      pcm_data = call_gemini_tts(self.class.spoken_text(text), voice_name, style_prompt, language_code)
++      pcm_data = call_gemini_tts(self.class.spoken_text(text), voice_name,
++                                 self.class.speech_style(style_prompt, delivery), language_code)
+       return nil unless pcm_data
+ 
+       FileUtils.mkdir_p(mp3_path.dirname)
+@@ -161,7 +203,7 @@ module BreakEscape
+       if success
+         Rails.logger.info "[TTS] Generated: #{scenario_name}/#{cache_key}.mp3 (#{(File.size(mp3_path) / 1024.0).round(1)} KB)"
+         write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+-                      source: "generate", npc_id: npc_id, generated: Date.today.iso8601)
++                      source: "generate", npc_id: npc_id, generated: Date.today.iso8601, delivery: delivery)
+         mp3_path
+       else
+         nil
+@@ -187,8 +229,8 @@ module BreakEscape
+ 
+     # Compute the cache key for a set of TTS parameters.
+     # Public so callers can check cache state without a generate call.
+-    def cache_key_for(text, voice_name, style_prompt = nil, language_code = nil)
+-      compute_cache_key(text, voice_name, style_prompt, language_code)
++    def cache_key_for(text, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
++      compute_cache_key(text, voice_name, style_prompt, language_code, delivery)
+     end
+ 
+     # A clip from the previous model for this line, if one is still on disk.
+@@ -222,24 +264,27 @@ module BreakEscape
+     # generated: the date the audio was made; known only for "generate" (and
+     # converted manifest entries), so backfills omit it.
+     def write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+-                      source: "generate", npc_id: nil, generated: nil)
++                      source: "generate", npc_id: nil, generated: nil, delivery: nil)
+       key = File.basename(mp3_path.to_s, ".mp3")
++      delivery = self.class.clean_delivery(delivery)
+       data = {
+         "key"          => key,
+         "npc"          => npc_id,
+         "text"         => text.to_s,
++        "delivery"     => delivery,
+         "voice"        => voice_name,
+         "style"        => style_prompt,
+         "language"     => language_code,
+-        "model"        => self.class.model_for_key(key, text, voice_name, style_prompt, language_code),
++        "model"        => self.class.model_for_key(key, text, voice_name, style_prompt, language_code, delivery),
+         "scenario"     => scenario_name,
+         "source"       => source,
+         "generated"    => generated,
+         "recorded_at"  => Time.now.utc.iso8601
+       }
+-      # npc, model and generated are left out when unknown; style and language
++      # npc, model, generated and delivery are left out when unknown or absent
++      # (an untagged line's sidecar is as it always was); style and language
+       # stay (null is a real value there, and part of the key).
+-      data.delete_if { |k, v| v.nil? && %w[npc model generated].include?(k) }
++      data.delete_if { |k, v| v.nil? && %w[npc model generated delivery].include?(k) }
+       self.class.write_sidecar_file(sidecar_path(mp3_path), data)
+     rescue => e
+       Rails.logger.warn "[TTS] Could not write sidecar for #{mp3_path}: #{e.message}"
+@@ -247,10 +292,11 @@ module BreakEscape
+     end
+ 
+     # The model a clip on this key was made with, judged from the key alone.
+-    def self.model_for_key(key, text, voice_name, style_prompt, language_code)
+-      if key == cache_key(text, voice_name, style_prompt, language_code)
++    # Previous-model clips never had a delivery note.
++    def self.model_for_key(key, text, voice_name, style_prompt, language_code, delivery = nil)
++      if key == cache_key(text, voice_name, style_prompt, language_code, delivery)
+         GEMINI_TTS_MODEL
+-      elsif key == legacy_cache_key(text, voice_name, style_prompt, language_code)
++      elsif clean_delivery(delivery).nil? && key == legacy_cache_key(text, voice_name, style_prompt, language_code)
+         LEGACY_TTS_MODEL
+       end
+     end
+@@ -267,6 +313,11 @@ module BreakEscape
+       File.delete(tmp) if tmp && File.exist?(tmp)
+     end
+ 
++    # The current-model key a sidecar's fields make (its delivery note included).
++    def self.sidecar_cache_key(data)
++      cache_key(*data.values_at("text", "voice", "style", "language", "delivery"))
++    end
++
+     # Parsed sidecars in one cache directory, as { key => data }. Unreadable
+     # sidecars and temp files are skipped.
+     def self.read_sidecars(dir)
+@@ -363,8 +414,8 @@ module BreakEscape
+       Rails.logger.warn "[TTS] Migration failed for #{cache_key}: #{e.message}"
+     end
+ 
+-    def compute_cache_key(text, voice_name, style_prompt = nil, language_code = nil)
+-      self.class.cache_key(text, voice_name, style_prompt, language_code)
++    def compute_cache_key(text, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
++      self.class.cache_key(text, voice_name, style_prompt, language_code, delivery)
+     end
+ 
+     def call_gemini_tts(text, voice_name, style_prompt, language_code = nil)
+diff --git a/app/services/break_escape/tts_wasted_clips.rb b/app/services/break_escape/tts_wasted_clips.rb
+index 7665b60dc..9c3d4fc07 100644
+--- a/app/services/break_escape/tts_wasted_clips.rb
++++ b/app/services/break_escape/tts_wasted_clips.rb
+@@ -5,7 +5,7 @@ module BreakEscape
+   # sidecars (<key>.json). Used by `rake break_escape:tts:wasted` after a batch.
+   #
+   # A clip counts as current-model when its key is the current-model key for
+-  # its sidecar's text, voice, style and language. It is wasted when that key is
++  # its sidecar's text, voice, style and language (and delivery note, if any). It is wasted when that key is
+   # not one the client can ask for now: TtsLineExtractor's lines, each voiced
+   # exactly as the endpoint voices it.
+   #
+@@ -25,7 +25,7 @@ module BreakEscape
+       dir = Pathname.new(cache_dir.to_s).join(scenario)
+       sidecars = TtsService.read_sidecars(dir)
+       current = sidecars.select do |key, data|
+-        key == TtsService.cache_key(*data.values_at("text", "voice", "style", "language"))
++        key == TtsService.sidecar_cache_key(data)
+       end
+       wasted = current.reject { |key, _| expected_keys.include?(key) }.map do |key, data|
+         Clip.new(key: key, sidecar: data, mp3_exists: File.exist?(dir.join("#{key}.mp3")))
+diff --git a/docs/achitechture/physical_pentest_followup/VOICE_DELIVERY_TAG_BUILD_LOG.md b/docs/achitechture/physical_pentest_followup/VOICE_DELIVERY_TAG_BUILD_LOG.md
+new file mode 100644
+index 000000000..8a99b38ca
+--- /dev/null
++++ b/docs/achitechture/physical_pentest_followup/VOICE_DELIVERY_TAG_BUILD_LOG.md
+@@ -0,0 +1,19 @@
++# Build log: per-line voice delivery tag (B10, C4)
++
++Branch `build/voice-direction-tag`, 2026-11-10. User decision (C4): voiced lines hold only spoken words; a per-line performance note goes in an ink tag. No scenario ink was changed and no audio was generated.
++
++## What was built
++
++- **Tag:** `#delivery: quietly, almost to herself`, at the end of the line or on the line above. Named `delivery` rather than `direction` (which in this game already means a door side or a facing) or the plan's `perform:`; it is the voice term for how a line is said. The last non-empty `delivery:` tag on a line wins; whitespace is collapsed.
++- **Prompt:** `TtsService.speech_style` appends "For this line only: <note>." to the voice style in the `speech_metadata` annotation. The spoken text is unchanged and the note is never shown.
++- **Key:** `cache_key_for_normalized` adds `|delivery:<normalised note>` only when there is a note, so every untagged key is byte-for-byte what it was. Checked three ways: a literal committed m01 key, a sweep of every committed current-model sidecar, and the extractor's keys for every scenario before and after the change (8,475 keys, identical).
++- **Client:** `systems/tts-delivery.js` reads the tag; person-chat sends it as `delivery` with the line (`TTSManager.play/preload`, `ApiClient.getTTS`, which adds the field only when there is a note). `chat-helpers.js` never runs it as a game action.
++- **Server:** the endpoint accepts a note only when the scenario's ink gives that line that note for that speaker (`TtsLineExtractor#delivered_by?`, else 403; over 200 characters, 400). A tagged line has its own clip; on a keyless server with no tagged clip it plays the untagged clip or the previous-model clip rather than nothing.
++- **Agreement:** `InkLineWalker` keeps a line's tags (and now carries only a `delivery:` tag over an empty line, as `InkEngine#continue` does); `TtsLineExtractor` entries carry `delivery`; the batch, sidecars (`delivery` field, only when present), `tts:wasted` and the pruner's expected set all key it the same way.
++- **Phone calls:** voiced phone calls do not send a note yet; the extractor gives their lines none, so client and batch agree. Supporting them needs the note carried from `phoneStepLines` to `_speakCallLine`, including the preloaded opening.
++- **Lint:** `dialoguelint.mjs` rule `inline-direction` (warn): an asterisk cue in a voiced person-chat line. Skips choices, the player's lines, narration, phone inks and emphasis between two words (`I *never* said`). 401 hits across `scenarios/` today (m01: 17).
++- **Docs:** `tts-audio` rule 7 rewritten; `README_ink_best_practices.md` section "Voiced lines hold only spoken words"; the two review skills that called inline emotes fine now point to the tag. `docs/agents/PASS4_BRIEF.md` line 30 still describes inline cues and is left for the orchestrator.
++
++## Tests
++
++`test/unit/break_escape/tts_delivery_test.rb` (14), seven new cases in `test/controllers/break_escape/tts_controller_test.rb`, `test/js/tts-delivery.test.mjs`, one new case in `test/js/dialoguelint.test.mjs`; `finale-voiced-calls.test.mjs` updated for the new `getTTS` call.
+diff --git a/public/break_escape/js/api-client.js b/public/break_escape/js/api-client.js
+index d13e118d8..4534c7176 100644
+--- a/public/break_escape/js/api-client.js
++++ b/public/break_escape/js/api-client.js
+@@ -190,8 +190,12 @@ export class ApiClient {
+    * @param {string} text - Dialogue text to synthesize
+    * @returns {Promise<Blob|null>} Audio blob or null on failure
+    */
+-  static async getTTS(npcId, text) {
++  static async getTTS(npcId, text, delivery = null) {
+     try {
++      // delivery: the line's #delivery: note (tts-delivery.js), sent only when there is one,
++      // so an untagged line's request is unchanged
++      const body = { npc_id: npcId, text: text };
++      if (delivery) body.delivery = delivery;
+       const response = await fetch(`${getApiBase()}/tts`, {
+         method: 'POST',
+         credentials: 'same-origin',
+@@ -199,7 +203,7 @@ export class ApiClient {
+           'Content-Type': 'application/json',
+           'X-CSRF-Token': getCsrfToken()
+         },
+-        body: JSON.stringify({ npc_id: npcId, text: text })
++        body: JSON.stringify(body)
+       });
+ 
+       if (!response.ok) {
+diff --git a/public/break_escape/js/minigames/helpers/chat-helpers.js b/public/break_escape/js/minigames/helpers/chat-helpers.js
+index 51e69cf3d..e5d1e5ef9 100644
+--- a/public/break_escape/js/minigames/helpers/chat-helpers.js
++++ b/public/break_escape/js/minigames/helpers/chat-helpers.js
+@@ -64,6 +64,7 @@ export async function processGameActionTags(tags, ui, options = {}) {
+         return action !== 'player' && 
+                action !== 'npc' && 
+                action !== 'speaker' &&
++               action !== 'delivery' && // a voice note for the line (tts-delivery.js)
+                !tag.includes('speaker:');
+     });
+     
+@@ -800,6 +801,7 @@ export function getActionTags(tags) {
+         return action !== 'player' && 
+                action !== 'npc' && 
+                action !== 'speaker' &&
++               action !== 'delivery' &&
+                !action.startsWith('speaker:');
+     });
+ }
+diff --git a/public/break_escape/js/minigames/person-chat/person-chat-minigame.js b/public/break_escape/js/minigames/person-chat/person-chat-minigame.js
+index 7e2c72185..e22ae7679 100644
+--- a/public/break_escape/js/minigames/person-chat/person-chat-minigame.js
++++ b/public/break_escape/js/minigames/person-chat/person-chat-minigame.js
+@@ -21,6 +21,7 @@ import { processGameActionTags, determineSpeaker as determineSpeakerFromTags, ch
+ import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.js';
+ import npcConversationStateManager from '../../systems/npc-conversation-state.js';
+ import TTSManager from '../../systems/tts-manager.js';
++import { deliveryFromTags } from '../../systems/tts-delivery.js';
+ import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen } from './person-chat-reopen.js';
+ import { startEventConversation } from './person-chat-event-start.js';
+ import { personChatBackgroundFor } from './person-chat-background.js';
+@@ -1705,10 +1706,13 @@ export class PersonChatMinigame extends MinigameScene {
+                 : (block.speaker && block.speaker !== 'player' && !isOwnNpcByName && parsedSpeaker?.voice
+                     ? block.speaker
+                     : this.npcId);
++            // The line's #delivery: note goes to the voice, never on screen. One ink line
++            // per continue(), so the result's tags are this line's (TtsLineExtractor agrees).
++            const delivery = deliveryFromTags(originalResult?.tags);
+             // Voice starts when the session-resume overlay closes, not under it
+             await whenSessionOverlayClosed();
+             if (!this.ttsManager) return;
+-            const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText);
++            const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText, { delivery });
+             // Audio length + buffer; null (no key, fetch or load failure) uses the estimate
+             advanceDelay = advanceDelayMs(line, audioDuration);
+ 
+@@ -1724,7 +1728,7 @@ export class PersonChatMinigame extends MinigameScene {
+                     && this.characters[nextParsed.speaker].displayName !== this.npc?.displayName
+                     ? nextParsed.speaker
+                     : this.npcId;
+-                this.ttsManager.preload(nextSpeakerId, nextTtsText);
++                this.ttsManager.preload(nextSpeakerId, nextTtsText, { delivery });
+             }
+         }
+ 
+diff --git a/public/break_escape/js/systems/tts-delivery.js b/public/break_escape/js/systems/tts-delivery.js
+new file mode 100644
+index 000000000..5636a10f6
+--- /dev/null
++++ b/public/break_escape/js/systems/tts-delivery.js
+@@ -0,0 +1,39 @@
++/**
++ * Per-line delivery notes for voiced lines.
++ *
++ * A voiced line holds only spoken words. How it should be performed goes in an ink tag
++ * on that line:
++ *
++ *     I suppose it doesn't matter now. #delivery: quietly, almost to herself
++ *
++ * The note is sent with the line's TTS request (POST /tts `delivery`) and goes into the
++ * voice prompt for that line only. It is never shown to the player. The server reads the
++ * same tag the same way (TtsService.delivery_from_tags) to key, validate and pre-generate
++ * the clip, so the rules here and there must match: the last `delivery:` tag on the line
++ * wins, whitespace is collapsed, and an empty note counts as none.
++ *
++ * No imports, so node tests can load it directly.
++ */
++
++const DELIVERY_TAG = /^\s*delivery\s*:\s*([\s\S]*)$/i;
++
++/** True for a `#delivery:` tag. */
++export function isDeliveryTag(tag) {
++    return typeof tag === 'string' && DELIVERY_TAG.test(tag);
++}
++
++/**
++ * The delivery note in a line's tags, or null.
++ * @param {string[]|null|undefined} tags - the line's ink tags
++ * @returns {string|null}
++ */
++export function deliveryFromTags(tags) {
++    if (!Array.isArray(tags)) return null;
++    for (let i = tags.length - 1; i >= 0; i--) {
++        const m = typeof tags[i] === 'string' ? tags[i].match(DELIVERY_TAG) : null;
++        if (!m) continue;
++        const note = m[1].replace(/\s+/g, ' ').trim();
++        if (note) return note;
++    }
++    return null;
++}
+diff --git a/public/break_escape/js/systems/tts-manager.js b/public/break_escape/js/systems/tts-manager.js
+index ef305d262..4027bae62 100644
+--- a/public/break_escape/js/systems/tts-manager.js
++++ b/public/break_escape/js/systems/tts-manager.js
+@@ -55,9 +55,11 @@ class TTSManager {
+      * Play TTS audio for a dialogue line
+      * @param {string} npcId - NPC identifier
+      * @param {string} text - Clean dialogue text (no "Speaker: " prefix)
++     * @param {Object} [options]
++     * @param {string|null} [options.delivery] - the line's #delivery: note (tts-delivery.js), never shown
+      * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable
+      */
+-    async play(npcId, text) {
++    async play(npcId, text, { delivery = null } = {}) {
+         if (!this.enabled || !text || !text.trim()) return null;
+ 
+         // Stop any current playback
+@@ -71,7 +73,7 @@ class TTSManager {
+         this._ensureAudioContext();
+ 
+         try {
+-            const key = this._cacheKey(npcId, text);
++            const key = this._cacheKey(npcId, text, delivery);
+ 
+             // Check preload cache first
+             let audioUrl, blob;
+@@ -83,7 +85,7 @@ class TTSManager {
+                 ({ url: audioUrl, blob } = cached);
+             } else {
+                 // Fetch from server
+-                blob = await ApiClient.getTTS(npcId, text);
++                blob = await ApiClient.getTTS(npcId, text, delivery);
+                 if (!blob) return null;
+                 audioUrl = URL.createObjectURL(blob);
+             }
+@@ -140,15 +142,17 @@ class TTSManager {
+      * Preload audio for an upcoming line (fetch but don't play)
+      * @param {string} npcId - NPC identifier
+      * @param {string} text - Dialogue text
++     * @param {Object} [options]
++     * @param {string|null} [options.delivery] - the line's #delivery: note
+      */
+-    async preload(npcId, text) {
++    async preload(npcId, text, { delivery = null } = {}) {
+         if (!this.enabled || !text || !text.trim()) return;
+ 
+-        const key = this._cacheKey(npcId, text);
++        const key = this._cacheKey(npcId, text, delivery);
+         if (this.preloadCache.has(key)) return;
+ 
+         try {
+-            const blob = await ApiClient.getTTS(npcId, text);
++            const blob = await ApiClient.getTTS(npcId, text, delivery);
+             if (blob) {
+                 this.preloadCache.set(key, { url: URL.createObjectURL(blob), blob });
+                 console.log(`[TTS] Preloaded: "${text.substring(0, 40)}..."`);
+@@ -462,8 +466,8 @@ class TTSManager {
+     }
+ 
+     /** @private */
+-    _cacheKey(npcId, text) {
+-        return `${npcId}|${text}`;
++    _cacheKey(npcId, text, delivery = null) {
++        return delivery ? `${npcId}|${text}|${delivery}` : `${npcId}|${text}`;
+     }
+ }
+ 
+diff --git a/scripts/ink_runtime_check/dialoguelint.mjs b/scripts/ink_runtime_check/dialoguelint.mjs
+index faea1dc4e..19fa001a3 100644
+--- a/scripts/ink_runtime_check/dialoguelint.mjs
++++ b/scripts/ink_runtime_check/dialoguelint.mjs
+@@ -219,6 +219,11 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
+ //                       Agent and Netherton).
+ //   stage-cue-in-info   (check) an *asterisk cue* on a line that carries a number (m07 Park, Mercer).
+ //   stage-cue-density   (warn) more asterisk cues per spoken line than m01 uses (about 1 in 37).
++//   inline-direction    (warn, person-chat) an *asterisk cue* in a voiced line. Voiced lines hold only
++//                       spoken words (user, 2026-11-10): a performance note goes in the line's
++//                       #delivery: tag, which the voice reads and the player never sees. Skips the
++//                       player's lines, narration, choices, and emphasis between two words ("I *never*
++//                       said"). Voiced phone calls don't send #delivery: yet, so phone inks are not checked.
+ //   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
+ //                       once-only and conditional all count). Passes when every conditional choice is
+ //                       retired by a "not ..." guard and the unconditional ones sit last, which is how
+@@ -230,6 +235,15 @@ const NUMBER_WORD = /\b(?:\d[\d,.:]*|one|two|three|four|five|six|seven|eight|nin
+ const ACTION_CHOICE = /^(?:\(|\s*(?:attack|tackle|brace|continue|back off|move on|run|fight|punch|grab|hit|knock|close|hang up|listen|end|go\b|get out|slip|sneak|walk away|\.\.\.))/i;
+ const HUB_MAX = 10;
+ const CUE_RE = /\*[^*\s][^*]{0,60}\*/g;
++// "I *never* said": a cue with a word (or comma) just before it and a lowercase word just after
++// is emphasis, not a stage direction.
++function isEmphasis(line, index, cue) {
++  const before = line.slice(0, index).replace(/ $/, '').slice(-1);
++  const after = line.slice(index + cue.length).replace(/^ /, '').slice(0, 1);
++  return /[A-Za-z0-9,]/.test(before) && /[a-z0-9]/.test(after);
++}
++const PLAYER_LINE = /^(?:You|Player)$/i;
++const PLAYER_TAG = /#\s*(?:speaker\s*:\s*player|player)\b/i;
+ 
+ function braceDelta(s) {
+   const t = s.replace(/(^|\s)\/\/.*$/, '');
+@@ -564,9 +578,18 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
+     if (L.kind !== 'text' || !L.printable) continue;
+     if (L.speaker === 'Narrator') continue;
+     spoken++;
+-    const found = L.t.replace(/(^|\s)\/\/.*$/, '').match(CUE_RE) || [];
++    const code = L.t.replace(/(^|\s)\/\/.*$/, '');
++    const found = code.match(CUE_RE) || [];
+     if (!found.length) continue;
+     cues += found.length;
++    if (channel !== 'phone' && !PLAYER_LINE.test(L.speaker || '') && !PLAYER_TAG.test(code)) {
++      const said = code.replace(/(?<!\\)#.*$/, '');
++      const direction = [...said.matchAll(CUE_RE)].find(m => !isEmphasis(said, m.index, m[0]));
++      if (direction) {
++        F.push({ level: 'warn', rule: 'inline-direction', line: L.n, text: L.body,
++          note: `voiced lines hold only spoken words: move ${direction[0]} to a tag on the line (#delivery: ${direction[0].slice(1, -1).trim()}) if it tells the voice how to speak, else cut it` });
++      }
++    }
+     // The speaker prefix ("Agent 0x47 'Nightshade':") and agent handles in the text ("Agent 0x00") are names,
+     // not figures. The prefix regex above misses a quoted codename, so strip it here too.
+     const rest = L.body.replace(CUE_RE, ' ')
+diff --git a/test/controllers/break_escape/tts_controller_test.rb b/test/controllers/break_escape/tts_controller_test.rb
+index 5706a7ba7..0317ba36e 100644
+--- a/test/controllers/break_escape/tts_controller_test.rb
++++ b/test/controllers/break_escape/tts_controller_test.rb
+@@ -907,8 +907,105 @@ module BreakEscape
+       FileUtils.rm_rf(tmp_dir) if tmp_dir
+     end
+ 
++    # ─── Delivery notes (#delivery: on an ink line) ───────────────────────────
++
++    DELIVERY_STORY = "test/fixtures/files/ink_line_walker/delivery_fixture.json".freeze
++    KEVIN_VOICE = { "name" => "Puck", "style" => "Nervous IT admin.", "language" => "en-GB" }.freeze
++    QUIET_LINE = "I suppose it doesn't matter now.".freeze
++    QUIET_NOTE = "quietly, almost to herself".freeze
++
++    def use_delivery_scenario
++      @game.scenario_data["rooms"]["lobby"]["npcs"] = [
++        { "id" => "kevin_park", "displayName" => "Kevin Park", "npcType" => "person",
++          "voice" => KEVIN_VOICE, "storyPath" => DELIVERY_STORY }
++      ]
++      @game.save!
++    end
++
++    def post_line(params, calls)
++      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
++        stub_generate_returning(nil, calls) { post tts_game_url(@game), params: params }
++      end
++    end
++
++    test "tts generates a tagged line with its delivery note" do
++      use_delivery_scenario
++      calls = []
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
++
++      assert_response :internal_server_error # the stub returns no clip
++      assert_equal 1, calls.size
++      assert_equal QUIET_NOTE, calls.first[:kwargs][:delivery]
++      assert_equal [QUIET_LINE, "Puck", "Nervous IT admin.", "en-GB"], calls.first[:args]
++    end
++
++    test "tts requests without a note are unchanged: no delivery reaches generate" do
++      use_delivery_scenario
++      calls = []
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE }, calls)
++      assert_equal 1, calls.size
++      refute calls.first[:kwargs].key?(:delivery)
++    end
++
++    test "tts refuses a note the ink doesn't give that line" do
++      use_delivery_scenario
++      calls = []
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "shouting with rage" }, calls)
++      assert_response :forbidden
++      assert_match(/delivery note/i, json_body["error"])
++      post_line({ npc_id: "kevin_park", text: "An untagged line.", delivery: QUIET_NOTE }, calls)
++      assert_response :forbidden
++      assert_empty calls
++    end
++
++    test "tts refuses an over-long note" do
++      use_delivery_scenario
++      calls = []
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "x" * 201 }, calls)
++      assert_response :bad_request
++      assert_empty calls
++    end
++
++    test "tts serves a tagged line's own clip, not the untagged one" do
++      use_delivery_scenario
++      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values, QUIET_NOTE))
++
++      service = TtsService.new
++      service.define_singleton_method(:generate) { |*_a, **_k| flunk "generated a line that already had a clip" }
++      TtsService.stub(:new, service) do
++        post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }
++      end
++      assert_response :success
++    end
++
++    test "tts generates a tagged line rather than serve its untagged clip when it can" do
++      use_delivery_scenario
++      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
++      calls = []
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
++      assert_equal 1, calls.size
++    end
++
++    test "tts on a keyless server falls back to the untagged clip for a tagged line" do
++      use_delivery_scenario
++      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
++      with_env("GEMINI_API_KEY" => nil) do
++        post_with_generate_forbidden_params(npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE)
++      end
++      assert_response :success
++    end
++
+     private
+ 
++    def post_with_generate_forbidden_params(params)
++      service = TtsService.new
++      service.define_singleton_method(:enabled?) { false }
++      service.define_singleton_method(:generate) { |*_args, **_kw| flunk "generated without a key" }
++      TtsService.stub(:new, service) do
++        post tts_game_url(@game), params: params
++      end
++    end
++
+     FAKE_MP3 = ("\xFF\xFB\x90\x00" + ("\x00" * 128)).b.freeze
+ 
+     # Put a fake clip where the controller looks: <cache>/<mission name>/<key>.mp3
+diff --git a/test/fixtures/files/ink_line_walker/delivery_fixture.ink b/test/fixtures/files/ink_line_walker/delivery_fixture.ink
+new file mode 100644
+index 000000000..5e8475ef1
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_fixture.ink
+@@ -0,0 +1,11 @@
++// Delivery notes (#delivery:) for TtsDeliveryTest. Recompile with:
++//   bin/inklecate -o test/fixtures/files/ink_line_walker/delivery_fixture.json test/fixtures/files/ink_line_walker/delivery_fixture.ink
++=== start ===
++Kevin Park: I suppose it doesn't matter now. #delivery: quietly, almost to herself
++# delivery: after a long pause
++Kevin Park: Fine.
++Kevin Park: An untagged line.
++Narrator: The lights hum. #delivery: hushed
++You: I'll take it from here. #delivery: firmly
++Kevin Park: Two notes, the last wins. #delivery: warm #delivery: dry
++-> END
+diff --git a/test/fixtures/files/ink_line_walker/delivery_fixture.json b/test/fixtures/files/ink_line_walker/delivery_fixture.json
+new file mode 100644
+index 000000000..fef9c3412
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_fixture.json
+@@ -0,0 +1 @@
++{"inkVersion":21,"root":[[["done",{"#n":"g-0"}],null],"done",{"start":["^Kevin Park: I suppose it doesn't matter now. ","#","^delivery: quietly, almost to herself","/#","\n","#","^delivery: after a long pause","/#","^Kevin Park: Fine.","\n","^Kevin Park: An untagged line.","\n","^Narrator: The lights hum. ","#","^delivery: hushed","/#","\n","^You: I'll take it from here. ","#","^delivery: firmly","/#","\n","^Kevin Park: Two notes, the last wins. ","#","^delivery: warm ","/#","#","^delivery: dry","/#","\n","end",null]}],"listDefs":{}}
+\ No newline at end of file
+diff --git a/test/js/dialoguelint.test.mjs b/test/js/dialoguelint.test.mjs
+index 0cba4232d..88439ee2e 100644
+--- a/test/js/dialoguelint.test.mjs
++++ b/test/js/dialoguelint.test.mjs
+@@ -263,3 +263,23 @@ test('crowded-hub: m01 handler hub (support_hub in m01_phone_agent0x99.ink) is t
+   assert.ok((hub.match(/^\+ /gm) || []).length > 10, 'support_hub still declares more than 10 choices');
+   assert.equal(only(lintInk(src, { channel: 'phone' }), 'crowded-hub').length, 0);
+ });
++
++test('inline-direction: a stage cue in a voiced line warns; emphasis, choices, the player, narration and phone inks do not', () => {
++  const ink = [
++    '=== s ===',
++    'Gary: *sighs* Fine.',                       // 2: warns
++    'Gary: I *never* said that.',                // 3: emphasis between two words
++    'You: *shrugs* Whatever.',                   // 4: the player is not voiced
++    'Narrator: *a door slams*',                  // 5: narration
++    '* [*quietly* ask about the badge]',         // 6: a choice
++    '+ [Ask] -> s',                              // 7
++    'Unprefixed host line. *pause*',             // 8: warns (the host speaks it)
++    'Gary: Said as the player. #speaker:player *x*', // 9: a tag, and the player's line
++    'Gary: Fine. #delivery: quietly',            // 10: the note is in its tag
++    'Gary: Fine *laughs*.',                      // 11: warns (no word after it, so not emphasis)
++  ].join('\n') + '\n';
++  const f = only(lintInk(ink), 'inline-direction');
++  assert.deepEqual(f.map(x => x.line), [2, 8, 11]);
++  assert.match(f[0].note, /#delivery: sighs/);
++  assert.equal(only(lintInk(ink, { channel: 'phone' }), 'inline-direction').length, 0);
++});
+diff --git a/test/js/finale-voiced-calls.test.mjs b/test/js/finale-voiced-calls.test.mjs
+index b777d25b6..d995f383a 100644
+--- a/test/js/finale-voiced-calls.test.mjs
++++ b/test/js/finale-voiced-calls.test.mjs
+@@ -255,8 +255,10 @@ test('wiring: lines redrawn on a reopen are not voiced; close stops and teardown
+     assert.equal((mgSrc.match(/_speakCallLine\(/g) || []).length, 3, 'one definition, the typeout call and the preloaded opening');
+     // The one redraw that is voiced: a voiced contact's first call, whose opening the phone preloaded
+     assert.match(mgSrc, /if \(onlyPreloaded && npc\.voiced === true && isVoicedCall\(this\.params\) && !this\._pretext\?\.resuming\) \{\n\s+this\._speakPreloadedOpening\(conversationHistory\);/);
+-    // Same request as person-chat: TTSManager.play → ApiClient.getTTS(npc_id, text) → POST /tts
+-    assert.match(read('systems/tts-manager.js'), /blob = await ApiClient\.getTTS\(npcId, text\);/);
++    // Same request as person-chat: TTSManager.play → ApiClient.getTTS(npc_id, text) → POST /tts.
++    // A call sends no #delivery: note (delivery stays null), as TtsLineExtractor expects.
++    assert.match(read('systems/tts-manager.js'), /blob = await ApiClient\.getTTS\(npcId, text, delivery\);/);
++    assert.match(read('minigames/phone-chat/phone-call-voice.js'), /duration = await this\.tts\.play\(speakerId, text\);/);
+ });
+ 
+ // ---- F20: a voiced call voices only its own knots, up to the contact's home knot ----
+diff --git a/test/js/tts-delivery.test.mjs b/test/js/tts-delivery.test.mjs
+new file mode 100644
+index 000000000..67a8e9e30
+--- /dev/null
++++ b/test/js/tts-delivery.test.mjs
+@@ -0,0 +1,77 @@
++// Per-line delivery notes (#delivery: quietly, almost to herself) for voiced lines.
++// - tts-delivery.js reads the tag the way the server does (TtsService.delivery_from_tags):
++//   the last non-empty delivery tag wins, whitespace collapsed;
++// - ApiClient.getTTS sends `delivery` only when there is a note, so an untagged line's
++//   request body is exactly what it was;
++// - person-chat passes the line's note to TTSManager.play/preload, the manager keeps tagged
++//   and untagged preloads apart, and the tag is never processed as a game action.
++// Run with: node test/js/tts-delivery.test.mjs
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
++import { fileURLToPath, pathToFileURL } from 'node:url';
++import { dirname, join } from 'node:path';
++import { tmpdir } from 'node:os';
++
++for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {};
++
++const here = dirname(fileURLToPath(import.meta.url));
++const js = join(here, '../../public/break_escape/js');
++const read = rel => readFileSync(join(js, rel), 'utf8');
++
++const { deliveryFromTags, isDeliveryTag } = await import(pathToFileURL(join(js, 'systems/tts-delivery.js')).href);
++
++const dir = mkdtempSync(join(tmpdir(), 'tts-delivery-'));
++writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
++writeFileSync(join(dir, 'config-stub.mjs'), "export function getApiBase() { return '/break_escape/games/9'; } export function getCsrfToken() { return 'csrf'; }");
++writeFileSync(join(dir, 'api-client.mjs'), read('api-client.js').split("'./config.js'").join("'./config-stub.mjs'"));
++globalThis.window = {};
++const { ApiClient } = await import(pathToFileURL(join(dir, 'api-client.mjs')).href);
++
++test('deliveryFromTags matches the server (TtsService.delivery_from_tags)', () => {
++    assert.equal(deliveryFromTags(undefined), null);
++    assert.equal(deliveryFromTags(['speaker:npc:kevin', 'exit_conversation']), null);
++    assert.equal(deliveryFromTags(['delivery: quietly']), 'quietly');
++    assert.equal(deliveryFromTags([' Delivery:quietly,   almost to herself ']), 'quietly, almost to herself');
++    assert.equal(deliveryFromTags(['delivery: warm', 'delivery: dry']), 'dry');
++    assert.equal(deliveryFromTags(['delivery: warm', 'delivery:   ']), 'warm');
++    assert.equal(isDeliveryTag('delivery: x'), true);
++    assert.equal(isDeliveryTag('deliverynote: x'), false);
++});
++
++test('getTTS sends delivery only when the line has a note', async () => {
++    const bodies = [];
++    globalThis.fetch = async (url, init) => {
++        bodies.push({ url, body: JSON.parse(init.body) });
++        return { ok: true, status: 200, blob: async () => 'blob' };
++    };
++    await ApiClient.getTTS('kevin_park', 'Fine.');
++    await ApiClient.getTTS('kevin_park', 'Fine.', null);
++    await ApiClient.getTTS('kevin_park', 'Fine.', 'after a long pause');
++    assert.deepEqual(bodies.map(b => b.body), [
++        { npc_id: 'kevin_park', text: 'Fine.' },
++        { npc_id: 'kevin_park', text: 'Fine.' },
++        { npc_id: 'kevin_park', text: 'Fine.', delivery: 'after a long pause' }
++    ]);
++    assert.equal(bodies[0].url, '/break_escape/games/9/tts');
++});
++
++test('person-chat sends the line\'s note; the manager keys tagged preloads apart', () => {
++    const chat = read('minigames/person-chat/person-chat-minigame.js');
++    assert.match(chat, /import \{ deliveryFromTags \} from '\.\.\/\.\.\/systems\/tts-delivery\.js';/);
++    assert.match(chat, /const delivery = deliveryFromTags\(originalResult\?\.tags\);/);
++    assert.match(chat, /this\.ttsManager\.play\(ttsSpeakerId, ttsText, \{ delivery \}\)/);
++    assert.match(chat, /this\.ttsManager\.preload\(nextSpeakerId, nextTtsText, \{ delivery \}\)/);
++
++    const mgr = read('systems/tts-manager.js');
++    assert.match(mgr, /async play\(npcId, text, \{ delivery = null \} = \{\}\)/);
++    assert.match(mgr, /blob = await ApiClient\.getTTS\(npcId, text, delivery\);/);
++    assert.match(mgr, /const blob = await ApiClient\.getTTS\(npcId, text, delivery\);/);
++    assert.match(mgr, /return delivery \? `\$\{npcId\}\|\$\{text\}\|\$\{delivery\}` : `\$\{npcId\}\|\$\{text\}`;/);
++});
++
++test('a #delivery: tag is never run as a game action', () => {
++    const helpers = read('minigames/helpers/chat-helpers.js');
++    // both filters (processGameActionTags and getActionTags) drop it
++    assert.equal(helpers.match(/action !== 'delivery'/g)?.length, 2);
++});
+diff --git a/test/unit/break_escape/tts_delivery_test.rb b/test/unit/break_escape/tts_delivery_test.rb
+new file mode 100644
+index 000000000..1ef60541f
+--- /dev/null
++++ b/test/unit/break_escape/tts_delivery_test.rb
+@@ -0,0 +1,272 @@
++require 'test_helper'
++require 'fileutils'
++require 'tmpdir'
++require 'json'
++require 'base64'
++require 'minitest/mock'
++
++module BreakEscape
++  # Per-line delivery notes (`#delivery: quietly, almost to herself`): the note
++  # goes into the voice prompt for that line and into its cache key only when
++  # there is one, so every untagged line keeps the key (and clip) it has always had.
++  class TtsDeliveryTest < ActiveSupport::TestCase
++    FIXTURE = 'test/fixtures/files/ink_line_walker/delivery_fixture.json'.freeze
++    KEVIN_VOICE = { 'name' => 'Puck', 'style' => 'Nervous IT admin.', 'language' => 'en-GB' }.freeze
++    NARRATOR_VOICE = { 'name' => 'Algenib', 'style' => 'Noir.', 'language' => 'en-GB' }.freeze
++
++    # A committed m01 clip (tts_cache/m01_first_contact/456b6920a02816aa3e2184bddb10eb3b.mp3)
++    SAMPLE_KEY = '456b6920a02816aa3e2184bddb10eb3b'.freeze
++    SAMPLE = [
++      'She started investigating. Kept notes in her office.',
++      'Leda',
++      'Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent ' \
++      'throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.',
++      'en-US'
++    ].freeze
++
++    # ─── Keys ──────────────────────────────────────────────────────────────
++
++    test "an untagged line keeps its exact existing key" do
++      assert_equal SAMPLE_KEY, TtsService.cache_key(*SAMPLE)
++      assert_equal SAMPLE_KEY, TtsService.cache_key(*SAMPLE, nil)
++      assert_equal SAMPLE_KEY, TtsService.cache_key(*SAMPLE, '')
++      assert_equal SAMPLE_KEY, TtsService.cache_key(*SAMPLE, '   ')
++      assert_equal SAMPLE_KEY, TtsService.new.cache_key_for(*SAMPLE)
++      assert_equal SAMPLE_KEY, TtsService.cache_key_for_normalized(TtsService.normalize_text(SAMPLE[0]), *SAMPLE[1..])
++    end
++
++    test "every committed current-model clip is still found under its sidecar's key" do
++      checked = 0
++      Dir.glob(TtsService::CACHE_DIR.join('*', '*.json').to_s).each do |path|
++        data = JSON.parse(File.read(path)) rescue next
++        next unless data.is_a?(Hash) && data['text'].is_a?(String) && data['model'] == TtsService::GEMINI_TTS_MODEL
++        next if data.key?('delivery')
++
++        key = File.basename(path, '.json')
++        old_formula = Digest::MD5.hexdigest(
++          "#{TtsService.normalize_text(data['text'])}|#{data['voice']}|#{data['style']}|#{data['language']}|#{TtsService::GEMINI_TTS_MODEL}"
++        )
++        next unless old_formula == key
++
++        assert_equal key, TtsService.sidecar_cache_key(data), path
++        checked += 1
++      end
++      assert_operator checked, :>, 100
++    end
++
++    test "a tagged line has its own key, and the note is normalised like the text" do
++      tagged = TtsService.cache_key(*SAMPLE, 'quietly, almost to herself')
++      refute_equal SAMPLE_KEY, tagged
++      assert_equal tagged, TtsService.cache_key(*SAMPLE, '  Quietly   almost to herself. ')
++      refute_equal tagged, TtsService.cache_key(*SAMPLE, 'loudly')
++      assert_equal tagged, TtsService.new.cache_key_for(*SAMPLE, 'quietly, almost to herself')
++      expected = Digest::MD5.hexdigest(
++        "#{TtsService.normalize_text(SAMPLE[0])}|#{SAMPLE[1..].join('|')}|#{TtsService::GEMINI_TTS_MODEL}|delivery:quietly almost to herself"
++      )
++      assert_equal expected, tagged
++    end
++
++    test "a sidecar records the note only when there is one, and the model check uses it" do
++      Dir.mktmpdir('tts_delivery') do |dir|
++        service = TtsService.new
++        plain = Pathname.new(dir).join("#{TtsService.cache_key(*SAMPLE)}.mp3")
++        service.write_sidecar(plain, *SAMPLE, 'm01')
++        data = JSON.parse(File.read(plain.sub_ext('.json')))
++        refute data.key?('delivery')
++        assert_equal TtsService::GEMINI_TTS_MODEL, data['model']
++
++        tagged = Pathname.new(dir).join("#{TtsService.cache_key(*SAMPLE, 'quietly')}.mp3")
++        service.write_sidecar(tagged, *SAMPLE, 'm01', delivery: 'quietly')
++        data = JSON.parse(File.read(tagged.sub_ext('.json')))
++        assert_equal 'quietly', data['delivery']
++        assert_equal TtsService::GEMINI_TTS_MODEL, data['model']
++        assert_equal File.basename(tagged, '.mp3'), TtsService.sidecar_cache_key(data)
++      end
++    end
++
++    # ─── Tags ──────────────────────────────────────────────────────────────
++
++    test "delivery_from_tags reads the last non-empty delivery tag" do
++      assert_nil TtsService.delivery_from_tags(nil)
++      assert_nil TtsService.delivery_from_tags(['speaker:npc:kevin', 'exit_conversation'])
++      assert_equal 'quietly', TtsService.delivery_from_tags(['delivery: quietly'])
++      assert_equal 'quietly, almost to herself', TtsService.delivery_from_tags([' Delivery:quietly,   almost to herself '])
++      assert_equal 'dry', TtsService.delivery_from_tags(['delivery: warm', 'delivery: dry'])
++      assert_equal 'warm', TtsService.delivery_from_tags(['delivery: warm', 'delivery:   '])
++      refute TtsService.delivery_tag?('deliverynote: x')
++    end
++
++    # ─── Prompt ────────────────────────────────────────────────────────────
++
++    test "the note joins the style for that line only, and the text is unchanged" do
++      assert_equal 'Calm.', TtsService.speech_style('Calm.')
++      assert_nil TtsService.speech_style(nil)
++      assert_equal 'Calm. For this line only: quietly, almost to herself.',
++                   TtsService.speech_style('Calm.', 'quietly, almost to herself')
++      assert_equal 'For this line only: after a long pause.', TtsService.speech_style(nil, 'after a long pause.')
++    end
++
++    test "generate sends the note in the style annotation, keys and records it, and never speaks it" do
++      Dir.mktmpdir('tts_delivery_gen') do |dir|
++        real_cache = TtsService::CACHE_DIR
++        TtsService.send(:remove_const, :CACHE_DIR)
++        TtsService.const_set(:CACHE_DIR, Pathname.new(dir))
++        captured = nil
++        begin
++          with_gemini_key do
++            service = TtsService.new
++            service.stub(:call_gemini_tts, ->(*args) { captured = args; "\x00\x00" * 50 }) do
++              service.stub(:convert_pcm_to_mp3, ->(_pcm, mp3) { File.binwrite(mp3, 'mp3'); true }) do
++                path = service.generate('Fine.', 'Puck', 'Nervous IT admin.', 'en-GB',
++                                        scenario_name: 'walker_test', npc_id: 'kevin_park', delivery: 'after a long pause')
++                assert_equal TtsService.cache_key('Fine.', 'Puck', 'Nervous IT admin.', 'en-GB', 'after a long pause'),
++                             File.basename(path, '.mp3')
++                assert_equal 'after a long pause', JSON.parse(File.read(path.sub_ext('.json')))['delivery']
++              end
++            end
++          end
++        ensure
++          TtsService.send(:remove_const, :CACHE_DIR)
++          TtsService.const_set(:CACHE_DIR, real_cache)
++        end
++        text, voice, style, language = captured
++        assert_equal 'Fine.', text
++        assert_equal 'Puck', voice
++        assert_equal 'en-GB', language
++        assert_equal 'Nervous IT admin. For this line only: after a long pause.', style
++      end
++    end
++
++    test "call_gemini_tts puts the combined style in speech_metadata, not in the text" do
++      captured = nil
++      response = Net::HTTPOK.new('1.1', '200', 'OK')
++      body = { 'steps' => [{ 'content' => [{ 'type' => 'audio', 'data' => Base64.strict_encode64("\x00\x00") }] }] }.to_json
++      response.instance_variable_set(:@read, true)
++      response.instance_variable_set(:@body, body)
++      http = Object.new
++      http.define_singleton_method(:use_ssl=) { |_| }
++      http.define_singleton_method(:open_timeout=) { |_| }
++      http.define_singleton_method(:read_timeout=) { |_| }
++      http.define_singleton_method(:request) { |req| captured = req; response }
++
++      with_gemini_key do
++        Net::HTTP.stub(:new, http) do
++          TtsService.new.send(:call_gemini_tts, 'Fine.', 'Puck', TtsService.speech_style('Calm.', 'quietly'), 'en-GB')
++        end
++      end
++      content = JSON.parse(captured.body).dig('input', 0, 'content', 0)
++      assert_equal 'Fine.', content['text']
++      assert_equal [{ 'type' => 'speech_metadata', 'style' => 'Calm. For this line only: quietly.' }], content['annotations']
++    end
++
++    # ─── Which lines carry a note ──────────────────────────────────────────
++
++    test "the walker keeps a delivery tag with its line, whether written after it or on the line above" do
++      lines = InkLineWalker.from_file(BreakEscape::Engine.root.join(FIXTURE).to_s).lines
++      by_text = lines.to_h { |l| [l.text, TtsService.delivery_from_tags(l.tags)] }
++      assert_equal 'quietly, almost to herself', by_text["I suppose it doesn't matter now."]
++      assert_equal 'after a long pause', by_text['Fine.']
++      assert_nil by_text['An untagged line.']
++      assert_equal 'dry', by_text['Two notes, the last wins.']
++    end
++
++    test "the walker carries a delivery tag over an empty line, as the client does, and nothing else" do
++      ink = { 'inkVersion' => 21, 'root' => [
++        '#', '^delivery: softly', '/#', '#', '^speaker:player', '/#', "\n",
++        '^Hello.', "\n", 'done'
++      ] }
++      line = InkLineWalker.new(ink).lines.first
++      assert_equal 'Hello.', line.text
++      assert_equal ['delivery: softly'], line.tags
++    end
++
++    def scenario
++      {
++        'player' => { 'displayName' => 'Agent Zero' },
++        'narrator' => { 'id' => 'narrator', 'voice' => NARRATOR_VOICE },
++        'rooms' => {
++          'office' => {
++            'npcs' => [
++              { 'id' => 'kevin_park', 'displayName' => 'Kevin Park', 'npcType' => 'person',
++                'voice' => KEVIN_VOICE, 'storyPath' => FIXTURE }
++            ]
++          }
++        }
++      }
++    end
++
++    test "the extractor lists each tagged line with its note and keys it as the client will request it" do
++      extractor = TtsLineExtractor.new('walker_test', scenario)
++      by_text = extractor.entries.to_h { |e| [e.text, e] }
++      quiet = by_text["I suppose it doesn't matter now."]
++      assert_equal 'quietly, almost to herself', quiet.delivery
++      assert_equal TtsService.cache_key(quiet.text, 'Puck', 'Nervous IT admin.', 'en-GB', 'quietly, almost to herself'), quiet.key
++
++      plain = by_text['An untagged line.']
++      assert_nil plain.delivery
++      assert_equal TtsService.cache_key(plain.text, 'Puck', 'Nervous IT admin.', 'en-GB'), plain.key
++
++      narr = by_text['The lights hum.']
++      assert_equal 'narrator', narr.npc_id
++      assert_equal 'hushed', narr.delivery
++      refute by_text.key?("I'll take it from here.")
++
++      assert_includes extractor.keys, quiet.key
++      assert extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'Quietly, almost to herself.')
++      refute extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'shouting')
++      refute extractor.delivered_by?('kevin_park', 'An untagged line.', 'quietly')
++      refute extractor.delivered_by?('narrator', "I suppose it doesn't matter now.", 'quietly, almost to herself')
++    end
++
++    test "a voiced phone call's lines carry no note (phone-call-voice.js doesn't send one)" do
++      data = scenario
++      kevin = data['rooms']['office']['npcs'].first
++      kevin['npcType'] = 'phone'
++      kevin['voiced'] = true
++      extractor = TtsLineExtractor.new('walker_test', data)
++      assert(extractor.entries.all? { |e| e.delivery.nil? })
++      refute extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'quietly, almost to herself')
++    end
++
++    test "expected lines (the pruner's set) include the tagged key" do
++      Dir.mktmpdir('tts_delivery_expected') do |dir|
++        root = Pathname.new(dir)
++        FileUtils.mkdir_p(root.join('delivery_fixture', 'ink'))
++        FileUtils.cp(BreakEscape::Engine.root.join(FIXTURE), root.join('delivery_fixture', 'ink', 'kevin.json'))
++        data = scenario
++        data['rooms']['office']['npcs'].first['storyPath'] = 'scenarios/delivery_fixture/ink/kevin.json'
++        File.write(root.join('delivery_fixture', 'scenario.json.erb'), JSON.generate(data))
++
++        expected = TtsExpectedLines.new('delivery_fixture', scenarios_dir: root, runtime_walk: false).build!
++        text = "I suppose it doesn't matter now."
++        assert expected.include_key?(TtsService.cache_key(text, 'Puck', 'Nervous IT admin.', 'en-GB', 'quietly, almost to herself'))
++        assert expected.include_key?(TtsService.cache_key(text, 'Puck', 'Nervous IT admin.', 'en-GB'))
++        refute expected.include_key?(TtsService.cache_key(text, 'Puck', 'Nervous IT admin.', 'en-GB', 'shouting'))
++      end
++    end
++
++    test "tts:wasted counts a tagged clip as current-model by its sidecar's note" do
++      Dir.mktmpdir('tts_delivery_wasted') do |dir|
++        scen = Pathname.new(dir).join('walker_test')
++        FileUtils.mkdir_p(scen)
++        key = TtsService.cache_key('Fine.', 'Puck', 'Nervous IT admin.', 'en-GB', 'after a long pause')
++        File.binwrite(scen.join("#{key}.mp3"), 'mp3')
++        TtsService.new.write_sidecar(scen.join("#{key}.mp3"), 'Fine.', 'Puck', 'Nervous IT admin.', 'en-GB', 'walker_test',
++                                     delivery: 'after a long pause')
++        result = TtsWastedClips.scan('walker_test', expected_keys: Set[key], cache_dir: dir)
++        assert_equal 1, result.current
++        assert_empty result.wasted
++      end
++    end
++
++    private
++
++    def with_gemini_key
++      old = ENV['GEMINI_API_KEY']
++      ENV['GEMINI_API_KEY'] = 'dummy_key_for_test'
++      yield
++    ensure
++      ENV['GEMINI_API_KEY'] = old
++    end
++  end
++end
+-- 
+2.43.0
+

@@ -1,0 +1,13 @@
+{
+  "key": "f2b95cff8209879ac1c6e30877d48c81",
+  "npc": "zainab_hussain",
+  "text": "Is there any milk left?",
+  "voice": "Achernar",
+  "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:54:45Z"
+}

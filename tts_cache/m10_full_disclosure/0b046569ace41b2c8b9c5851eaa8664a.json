@@ -1,0 +1,21 @@
+{
+  "key": "0b046569ace41b2c8b9c5851eaa8664a",
+  "npc": "ghost_phone",
+  "text": "Four digits. The rota inside names the man with the card.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:06:00Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/0b046569ace41b2c8b9c5851eaa8664a.mp3",
+    "clean_md5": "785f492321d5e6d84bf5a6909735ad89",
+    "baked_md5": "666c59fb33ae3000383e8c40c3b12b5b",
+    "baked": "2026-11-24"
+  }
+}

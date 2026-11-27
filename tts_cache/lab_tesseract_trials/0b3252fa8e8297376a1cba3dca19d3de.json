@@ -1,0 +1,13 @@
+{
+  "key": "0b3252fa8e8297376a1cba3dca19d3de",
+  "npc": "closing_debrief_person",
+  "text": "Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have warned her.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

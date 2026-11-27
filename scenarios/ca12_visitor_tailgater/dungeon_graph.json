@@ -1,0 +1,47 @@
+{
+  "scenario": "ca12_visitor_tailgater",
+  "start_room": "training_room",
+  "nodes": [
+    {
+      "id": "door_training_room",
+      "label": "Studio<br/>Key lock<br/>gate: live while ca12_world_on && !ca12_world_done<br/>gated: server pass",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "training_room",
+      "label": "Studio",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "grant_ca12_auth_letter",
+      "label": "Authorisation letter<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "grant_ca12_hivis",
+      "label": "Courier hi-vis<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_training_room",
+      "to": "training_room",
+      "soft": false
+    },
+    {
+      "from": "training_room",
+      "to": "grant_ca12_auth_letter",
+      "soft": true
+    },
+    {
+      "from": "training_room",
+      "to": "grant_ca12_hivis",
+      "soft": true
+    }
+  ]
+}

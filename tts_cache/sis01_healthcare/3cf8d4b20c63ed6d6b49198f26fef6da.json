@@ -1,0 +1,13 @@
+{
+  "key": "3cf8d4b20c63ed6d6b49198f26fef6da",
+  "npc": "patrol_nurse",
+  "text": "Outreach aren't here yet. What is it?",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,269 @@
+{
+  "scenario_name": "test_author_notes",
+  "scenario_brief": "Author notes are not live: a step 2b fixture. Sentinels seeded in every note-capable block a player route can ship.",
+  "startRoom": "lobby",
+  "globalVariables": {
+    "_secretglobal": true,
+    "se_intel_jake_office": false,
+    "se_intel_jake_secret": false,
+    "se_osint_state": {},
+    "board_state": {
+      "_inner": "FREE-GLOBAL-VALUE-555"
+    }
+  },
+  "policies": {
+    "no_social": {
+      "social": "blocked",
+      "_sentinelPolicy": "SENTINEL-POLICY"
+    }
+  },
+  "resources": {
+    "finance_share": {
+      "kind": "file_share",
+      "name": "Finance share",
+      "_sentinelRes": "SENTINEL-RES"
+    }
+  },
+  "networks": {
+    "office_net": {
+      "name": "Office network",
+      "wifi": {
+        "ssid": "OfficeWifi",
+        "_sentinelWifi": "SENTINEL-WIFI"
+      },
+      "_sentinelNet": "SENTINEL-NET"
+    }
+  },
+  "social": {
+    "_sentinelSocial": "SENTINEL-SOCIAL",
+    "intelFacts": {
+      "jake_office": {
+        "label": "Office",
+        "subject": "jake",
+        "source": "jake_authored",
+        "text": "Jake works in the finance office."
+      },
+      "jake_secret": {
+        "label": "Pet",
+        "subject": "jake",
+        "source": "jake_post_1",
+        "text": "Jake has a dog called Biscuit.",
+        "_sentinelFact": "SENTINEL-FACT"
+      }
+    },
+    "osint": {
+      "sites": [
+        {
+          "id": "friendface",
+          "type": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "profiles": [
+            {
+              "person": "jake",
+              "name": "Jake Brooks",
+              "posts": [
+                {
+                  "id": "jake_authored",
+                  "text": "Finance office, third floor.",
+                  "fact": "jake_office",
+                  "_sentinelPost": "SENTINEL-POST"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "mailClient": {
+      "_sentinelMail": "SENTINEL-MAIL"
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "aim_1",
+      "title": "Get in",
+      "status": "active",
+      "order": 1,
+      "_sentinelAim": "SENTINEL-AIM",
+      "tasks": [
+        {
+          "taskId": "task_1",
+          "title": "Open the safe",
+          "type": "custom",
+          "status": "active",
+          "_sentinelTask": "SENTINEL-TASK"
+        }
+      ]
+    }
+  ],
+  "startItemsInInventory": [
+    {
+      "id": "start_note",
+      "type": "notes",
+      "name": "Sticky note",
+      "_sentinelStart": "SENTINEL-START"
+    },
+    {
+      "id": "own_phone",
+      "type": "phone_friendface",
+      "name": "My phone",
+      "site": "friendface",
+      "_sentinelPhone": "SENTINEL-PHONE"
+    }
+  ],
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "_sentinelRoom": "SENTINEL-ROOM",
+      "connections": {
+        "north": "vault",
+        "east": "_annex"
+      },
+      "npcs": [
+        {
+          "id": "guard",
+          "npcType": "person",
+          "displayName": "Guard",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "creds": {
+            "username": "g.uard",
+            "password": "realpw"
+          },
+          "_sentinelNpc": {
+            "password": "SENTINEL-NPC"
+          }
+        },
+        {
+          "id": "jake",
+          "npcType": "person",
+          "displayName": "Jake",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "jake",
+            "posts": [
+              {
+                "id": "jake_post_1",
+                "text": "Biscuit turns 5 today!",
+                "fact": "jake_secret",
+                "date": "Monday",
+                "_sentinelFeedPost": "SENTINEL-FEEDPOST"
+              }
+            ]
+          },
+          "itemsHeld": [
+            {
+              "id": "jake_badge",
+              "type": "notes",
+              "name": "Badge",
+              "_sentinelHeld": "SENTINEL-HELD"
+            },
+            {
+              "id": "jake_phone",
+              "type": "phone_friendface",
+              "name": "Jake's phone",
+              "phoneOf": "jake",
+              "takeable": true
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "safe",
+          "type": "safe",
+          "name": "Safe",
+          "locked": true,
+          "lockType": "pin",
+          "requires": "9999",
+          "_sentinelObj": {
+            "pin": "SENTINEL-OBJECT"
+          },
+          "observations": "A plain prop."
+        },
+        {
+          "id": "crate",
+          "type": "notes",
+          "name": "Crate",
+          "contents": [
+            {
+              "id": "folder",
+              "type": "notes",
+              "name": "Folder",
+              "_sentinelContents": {
+                "password": "SENTINEL-CONTENTS"
+              }
+            }
+          ],
+          "observations": "A plain prop."
+        },
+        {
+          "id": "board",
+          "type": "command_board",
+          "name": "Board",
+          "commandBoard": {
+            "title": "Ops",
+            "_sentinelBoard": "SENTINEL-BOARD"
+          },
+          "observations": "A plain prop."
+        },
+        {
+          "id": "note_pc",
+          "type": "pc",
+          "name": "Reception PC",
+          "_sentinelDraft": {
+            "triggerOnInteract": [
+              {
+                "type": "grant_foothold",
+                "pc": "note_pc",
+                "needsSession": true,
+                "name": "SENTINEL-FOOTHOLD-DEAD"
+              }
+            ]
+          },
+          "observations": "A plain prop."
+        }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "connections": {
+        "south": "lobby"
+      },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9999"
+    },
+    "_annex": {
+      "type": "room_office",
+      "connections": {
+        "west": "lobby"
+      },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9999",
+      "objects": [
+        {
+          "id": "annex_desk",
+          "type": "notes",
+          "name": "Annex desk",
+          "observations": "A desk in the annex."
+        }
+      ]
+    }
+  }
+}

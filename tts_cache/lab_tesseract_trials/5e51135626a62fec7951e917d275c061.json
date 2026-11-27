@@ -1,0 +1,13 @@
+{
+  "key": "5e51135626a62fec7951e917d275c061",
+  "npc": "tom_shaw",
+  "text": "There's a button called Magic. It'll do the first few for you. It'll do nowt once there's a key. That's the bit they're paying for.",
+  "voice": "Fenrir",
+  "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

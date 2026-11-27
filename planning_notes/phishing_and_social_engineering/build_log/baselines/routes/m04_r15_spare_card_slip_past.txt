@@ -1,0 +1,69 @@
+
+## R15 (puzzle chains R3-1, R3-2 and the round-3 sweep): the hub must read whether each step is done, not how. Part 1: slipped past the guard (checkpoint_passed, no guard_admitted), met Vance on the cover, took the locker spare (level1_card_held, no vance_provided_keycard). 'Where do I stand?' names the dial; no gate or card line; neither the gate nor the card-reader hint is on offer.
+   {set {"briefing_played":true,"checkpoint_passed":true,"vance_met":true,"level1_card_held":true,"vance_spoken":true}}
+
+--- phone ---
+  Agent, status check. Are you inside the facility?
+     (3 options)
+ > Inside the facility. Beginning investigation now.
+  Copy. Find how they're driving the attack, then kill it. Take Voltage alive if you can.
+  First, prove the screens are lying. Something in Battery Hall 1 that isn't on their feed.
+  Then the engineering workshop, off the same hall. That's how they got onto the SCADA network.
+ > On it.
+  Call me when you've got a real reading.
+  [chat closes]
+
+--- phone ---
+     (3 options)
+ > Where do I stand?
+  Prove the screens are lying. The dial on the Rack Bank C wall in Hall 1 isn't on their network.
+     (3 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+     (3 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "dial on the Rack Bank C wall"
+   [PASS] not said: "Regulator badge"
+   [PASS] not said: "Vance's door card"
+   [PASS] not said: "How do I get past the gate"
+   [PASS] not said: "How do I get through the card readers"
+
+## Part 2 (page reload, ink locals kept as the engine saves them, so the greeted flag survives and the phone opens on the hub, not the status check): slipped past the guard, never met Vance, the locker spare. The hub skips the Vance step too.
+   {set {"vance_met":false,"vance_spoken":false}}
+
+--- phone ---
+   (after a reload: variables kept, visit counts and position reset)
+     (3 options)
+ > Where do I stand?
+  Prove the screens are lying. The dial on the Rack Bank C wall in Hall 1 isn't on their network.
+     (3 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+     (3 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "dial on the Rack Bank C wall"
+   [PASS] not said: "Find Robert Vance"
+   [PASS] not said: "Vance's door card"
+   [PASS] not said: "Regulator badge"
+
+## Part 3: no card yet, past the gate by slipping by: the card-reader hint is on offer, the gate hint isn't.
+   {set {"level1_card_held":false,"vance_met":true,"vance_spoken":true}}
+
+--- phone ---
+     (4 options)
+ > How do I get through the card readers?
+  Vance's door card is old prox. Stand close while he talks and the cloner reads it off his lanyard.
+  If that goes wrong, there's a spare Level 1 in the security office locker. It's a pin tumbler.
+     (3 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "old prox"
+   [PASS] not said: "How do I get past the gate"
+
+[stats] spoken/narrated lines 14, choices 10, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

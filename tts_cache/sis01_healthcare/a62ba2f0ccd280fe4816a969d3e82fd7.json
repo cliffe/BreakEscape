@@ -1,0 +1,13 @@
+{
+  "key": "a62ba2f0ccd280fe4816a969d3e82fd7",
+  "npc": "sarah_mitchell",
+  "text": "Probably. But nobody asked the wards before it happened. Next time, ask.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

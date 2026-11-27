@@ -1,0 +1,13 @@
+{
+  "key": "f72f62120bc5ce6f6ad645ded08812e6",
+  "npc": "yasmin",
+  "text": "Who's the cake from?",
+  "voice": "Laomedeia",
+  "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:50:47Z"
+}

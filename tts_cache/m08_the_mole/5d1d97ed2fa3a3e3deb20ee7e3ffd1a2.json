@@ -1,0 +1,13 @@
+{
+  "key": "5d1d97ed2fa3a3e3deb20ee7e3ffd1a2",
+  "npc": "agent_nightshade",
+  "text": "Finish putting it through the relay. When it's all in, the Director will want this conversation in a room with a recorder.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is the mole, not yet unmasked, being interviewed by an agent he once taught: warm, unhurried, helpful to a fault. The only tell is that nothing rattles him -- in a building full of frightened people, he is serene.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:38:24Z"
+}

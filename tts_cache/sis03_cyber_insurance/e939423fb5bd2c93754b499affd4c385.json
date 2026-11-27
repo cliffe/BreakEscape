@@ -1,0 +1,13 @@
+{
+  "key": "e939423fb5bd2c93754b499affd4c385",
+  "npc": "eleanor_vance",
+  "text": "One: the act-of-war section is deliberately vague. That's not Meridian's fault — it's Lloyd's Market standard. You'll see why it matters when the NCSC attribution brief comes out.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:19:16Z"
+}

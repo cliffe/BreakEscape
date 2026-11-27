@@ -1,0 +1,938 @@
+{
+  "scenario_id": "test_ca_office_kit",
+  "scenario_name": "Test: CA office kit (Brightwell)",
+  "scenario_brief": "Gate A fixture for the awareness living-office kit: the awareness episode shell (full variant) in the Brightwell training room, with two ambient staff (needs + coffee/cooler sources), a kiosk-quiet-gated chatter pool, and the five kit_ globals + host mappings. Stub content, not a mission.",
+  "endGoal": "None. Fixture only.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "npcThoughts": false,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "finish_episode_aim",
+      "title": "Finish the episode",
+      "description": "Run the episode at the kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e1_stub_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Test kit: finished",
+        "body": "Test episode finished. Plain test text, not final copy."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_episode",
+          "title": "Finish the episode",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e1_stub_state": {},
+    "se_awareness_records": [],
+    "episode_e1_stub_defend_percent": 0,
+    "episode_e1_stub_defend_reportRate": 0,
+    "episode_e1_stub_defend_complete": false,
+    "se_osint_state": {},
+    "se_intel_supplier_contact": false,
+    "phish_supplier_contact_landed": false,
+    "phish_supplier_contact_attempts": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_key_caught": false,
+    "kit_ep": "ca01",
+    "kit_e1_out": false,
+    "kit_e1_walk": false,
+    "kit_e1_agn_there": false,
+    "kit_e1_gwen_back": false,
+    "kit_e1_note_up": false,
+    "kit_e1_note_choice": "",
+    "kit_e1_closed": false,
+    "kit_e1_t_report": false,
+    "kit_e1_t_other": false,
+    "kit_e1_timer_seen": false,
+    "kit_e1_combo": false,
+    "kit_e1_combo_arrived": false,
+    "kit_e1_combo_end": false,
+    "kit_e1_done": false,
+    "kit_e1_screen_choice": ""
+  },
+  "resources": {
+    "kit_e1_system": {
+      "name": "Supplier portal",
+      "kind": "intranet",
+      "offWhen": "kit_e1_out"
+    }
+  },
+  "timers": [
+    { "id": "kit_e1_t_walk", "startOnGlobal": "kit_e1_out", "delayMs": 1000, "setGlobal": { "kit_e1_walk": true } },
+    { "id": "kit_e1_t_event", "startOnGlobal": "kit_e1_out", "delayMs": 2000, "actions": [ { "type": "emit_event", "event_name": "kit_e1_timer_event" } ] },
+    { "id": "kit_e1_t_note", "startOnGlobal": "kit_e1_out", "delayMs": 6000, "condition": "!globalVars.kit_e1_note_up", "setGlobal": { "kit_e1_note_up": true } },
+    { "id": "kit_e1_t_combo", "startOnGlobal": "kit_e1_out", "delayMs": 25000, "setGlobal": { "kit_e1_combo": true } },
+    { "id": "kit_e1_t_combo_end", "startOnGlobal": "kit_e1_out", "delayMs": 40000, "setGlobal": { "kit_e1_combo_end": true } },
+    { "id": "kit_e1_t_done", "startOnGlobal": "kit_e1_out", "delayMs": 12000, "condition": "!globalVars.kit_e1_done", "setGlobal": { "kit_e1_done": true } },
+    { "id": "kit_e1_t_report", "startOnGlobal": "kit_e1_closed", "delayMs": 3000, "condition": "globalVars.kit_e1_note_choice === 'report'", "setGlobal": { "kit_e1_t_report": true } },
+    { "id": "kit_e1_t_other", "startOnGlobal": "kit_e1_closed", "delayMs": 3000, "condition": "globalVars.kit_e1_note_choice !== 'report' && globalVars.kit_e1_note_choice !== ''", "setGlobal": { "kit_e1_t_other": true } }
+  ],
+  "chatter": {
+    "kit_brightwell": {
+      "lines": ["Busy inbox today.", "Kettle's on in a sec.", "Audit week again."],
+      "requireGlobal": { "kit_quiet": false }
+    }
+  },
+  "social": {
+    "people": [
+      {
+        "id": "supplier_contact",
+        "kind": "cast",
+        "address": "pat@halden-supply.example",
+        "forms": {
+          "full": "Pat Halden"
+        }
+      }
+    ],
+    "intelFacts": {
+      "supplier_contact": {
+        "text": "Pat Halden handles Halden Supply's accounts.",
+        "subject": "supplier_contact",
+        "source": "ep_staff",
+        "provides": [
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "pat",
+            "label": "Pat",
+            "kind": "generic"
+          }
+        ]
+      }
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "supplier_site",
+          "url": "halden-supply.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "team",
+              "title": "Our team",
+              "url": "halden-supply.example/team",
+              "blocks": [
+                {
+                  "id": "ep_staff",
+                  "kind": "staff",
+                  "person": "supplier_contact",
+                  "name": "Pat Halden",
+                  "address": "pat@halden-supply.example",
+                  "fact": "supplier_contact"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "pretext_invoice": {
+        "part": "pretext",
+        "text": "I'm checking the status of an invoice.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "pretext_account": {
+        "part": "pretext",
+        "text": "I'm updating our account records.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_confirm": {
+        "part": "ask",
+        "text": "Could you confirm it is due this week?",
+        "slots": []
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "analyst",
+          "address": "analyst@brightwell.example",
+          "displayName": "Analyst",
+          "kind": "given",
+          "person": null,
+          "mailbox": "analyst",
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "analyst"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "supplier_contact",
+          "person": "supplier_contact",
+          "name": "Pat Halden",
+          "addresses": [
+            "pat@halden-supply.example"
+          ],
+          "role": "Accounts",
+          "revealedBy": "se_intel_supplier_contact",
+          "targetId": "supplier_contact"
+        }
+      ],
+      "seededMessages": [],
+      "checklistTiming": "onSend",
+      "showRedFlagMeter": true
+    },
+    "phishTargets": [
+      {
+        "id": "supplier_contact",
+        "address": "pat@halden-supply.example",
+        "displayName": "Pat Halden",
+        "subjects": [
+          {
+            "id": "s_invoice",
+            "text": "Invoice query",
+            "topic": "finance"
+          },
+          {
+            "id": "s_canteen",
+            "text": "Canteen menu",
+            "topic": "catering"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_invoice",
+            "pretext_account"
+          ],
+          "ask": [
+            "ask_confirm"
+          ]
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "senderAuth"
+        ],
+        "replies": {
+          "landed": "Thanks, I'll check that invoice."
+        },
+        "factorStrings": {
+          "senderTrust": {
+            "pass": "The request comes from a known contact",
+            "redFlag": null
+          }
+        },
+        "outcome": {
+          "setGlobal": {
+            "phish_supplier_contact_landed": true
+          }
+        }
+      }
+    ],
+    "triageSets": [
+      {
+        "id": "e1_stub_inbox",
+        "title": "Payments inbox",
+        "brief": "Decide what each message is.",
+        "scoringProfile": "awareness",
+        "feedbackMode": "immediate",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "changed_bank_details"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e1_stub_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "ep_bank",
+            "from": {
+              "name": "Supplier Accounts",
+              "address": "accounts@halden-supply.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "New bank details",
+            "time": "09:10",
+            "body": "Please pay invoice 4471 to our new account. Details attached.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "fail",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "changed_bank_details": "New bank details by email, with a payment due."
+              },
+              "ifTrusted": "The payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "ep_laptop",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Your new laptop",
+            "time": "08:30",
+            "body": "Your laptop is ready to collect from the IT desk.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The address is IT's real one and you were expecting a laptop."
+              }
+            }
+          },
+          {
+            "id": "ep_lookalike",
+            "from": {
+              "name": "Supplier Accounts",
+              "address": "billing@haldn-supply.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Invoice reminder",
+            "time": "09:10",
+            "body": "Invoice 4472 is overdue. Pay today.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "fail",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The domain is one letter off the supplier's real one."
+              },
+              "ifTrusted": "The payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "ep_rota",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Rota for next week",
+            "time": "08:30",
+            "body": "Next week's rota is on the shared drive.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "It comes from the usual sender and asks for nothing unusual."
+              }
+            }
+          },
+          {
+            "id": "ep_phone",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Supplier call back",
+            "time": "08:30",
+            "body": "Halden rang about invoice 4470. I called them back on the number we hold and it is fine.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The call was checked on the number already on file."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e1_stub",
+      "role": "finance",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "full",
+      "durationTargetMin": 13,
+      "scopeNote": "Authorised exercise at fictional Brightwell Foods. In scope: this inbox.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "finish_episode",
+      "attack": {
+        "target": "supplier_contact",
+        "siteIds": [
+          "supplier_site"
+        ],
+        "accountIds": [
+          "analyst"
+        ],
+        "defaultAccount": "analyst",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false
+      },
+      "defend": {
+        "setId": "e1_stub_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "Stub brief.",
+        "flipHeading": "Now you are the target",
+        "flipIntro": "This is the message you sent.",
+        "flipDefenderLine": "Here is what a careful reader would notice.",
+        "flipNoSend": "You did not send a message this time.",
+        "noBlameLine": "Anyone can miss one of these.",
+        "mondayCard": "Next time, check bank changes by phone.",
+        "defendOnly": "This version skips the attack."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      },
+      "stepAway": true
+    }
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_brightwell",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_brightwell_blended.png",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ep_host",
+          "displayName": "Host",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/ep_host_ambient.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_episode"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_state",
+              "onceOnly": true,
+              "setGlobal": { "kit_quiet": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": { "kit_attack_done": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_defend_done": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_defend_complete",
+              "condition": "value === true && globalVars.episode_e1_stub_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": { "kit_caught": true }
+            }, {
+              "eventPattern": "global_variable_changed:episode_e1_stub_defend_complete",
+              "condition": "value === true && globalVars.episode_e1_stub_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": { "kit_key_caught": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": { "kit_quiet": false }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_quiet": false }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_out": true },
+              "bark": "Have you got a minute? Someone in finance just took a call like that one."
+            },
+            {
+              "eventPattern": "kit_e1_timer_event",
+              "condition": "globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_timer_seen": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_closed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "bark": "Quick word about that portal note.",
+              "targetKnot": "kit_e1_host_note"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_agn_there",
+              "condition": "value === true && globalVars.kit_e1_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": { "kit_e1_done": true },
+              "bark": "That is the poster sorted, then."
+            }
+          ]
+        },
+        {
+          "id": "kit_gwen_pritchard",
+          "displayName": "Gwen Pritchard",
+          "person": "gwen_pritchard",
+          "npcType": "person",
+          "position": { "x": 3, "y": 4 },
+          "spriteSheet": "gwen_pritchard",
+          "spriteTalk": "assets/characters/gwen_pritchard_talk.png",
+          "spriteVisemes": "assets/characters/gwen_pritchard_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/gwen_pritchard_ambient.json",
+          "currentKnot": "start",
+          "needsHome": { "room": "training_room", "x": 3, "y": 3, "facing": "south" },
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": { "caffeine": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "chatter": { "kit_brightwell": { "lines": ["Morning, all.", "Tea round shortly?"], "requireGlobal": { "kit_quiet": false } } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": { "set": { "caffeine": 10 } }
+            },
+            {
+              "eventPattern": "npc_use_started:kit_coffee",
+              "condition": "data.npcId === 'kit_gwen_pritchard' && globalVars.kit_e1_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "bark": "Coffee first, then I'll look at that invoice query."
+            },
+            {
+              "eventPattern": "npc_returned_post:kit_gwen_pritchard",
+              "condition": "globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_gwen_back": true }
+            }
+          ]
+        },
+        {
+          "id": "kit_agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "person": "agnieszka_duda",
+          "npcType": "person",
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/agnieszka_duda_ambient.json",
+          "currentKnot": "start",
+          "needsHome": { "room": "training_room", "x": 6, "y": 3, "facing": "south" },
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": { "caffeine": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 }, "thirst": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "chatter": { "kit_brightwell": { "lines": ["Long week.", "Any biscuits left?"], "requireGlobal": { "kit_quiet": false } } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_walk",
+              "condition": "value === true",
+              "onceOnly": true,
+              "patrolOverride": { "targetTile": { "x": 4, "y": 3 }, "speed": 90 }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_agnieszka_duda",
+              "condition": "data.owner !== 'needs' && globalVars.kit_e1_combo !== true && globalVars.kit_e1_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_agn_there": true },
+              "bark": "The reporting poster has gone up by the board."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_agn_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_combo",
+              "condition": "value === true",
+              "onceOnly": true,
+              "patrolOverride": { "targetTile": { "x": 5, "y": 5 }, "speed": 90 },
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "npc_arrived:kit_agnieszka_duda",
+              "condition": "data.owner !== 'needs' && globalVars.kit_e1_combo === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_combo_arrived": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_combo_arrived",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_combo_end",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        {
+          "id": "kit_priya_nair",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": { "x": 5, "y": 6 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/priya_nair_ambient.json",
+          "currentKnot": "start",
+          "needsHome": "kit_e1_pc2",
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "needs": { "work": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "workNeeds": ["kit_e1_system"],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": { "set": { "work": 10 } }
+            },
+            {
+              "eventPattern": "npc_use_failed:kit_priya_nair",
+              "condition": "data.objectId === 'kit_e1_pc2' && globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_note_up": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_note_up",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "The portal is refusing me, and there's a note on my screen.",
+              "targetKnot": "kit_e1_request"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_priya_nair",
+              "condition": "globalVars.kit_e1_note_up === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_closed": true }
+            }
+          ]
+        },
+        {
+          "id": "kit_sam_okoro",
+          "displayName": "Sam Okoro",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 6 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/sam_okoro_ambient.json",
+          "currentKnot": "start",
+          "needsHome": "kit_e1_pc",
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "needs": { "rest": { "decayPerMin": 0.01, "urgentAt": 40, "initial": 90 } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": { "set": { "rest": 10 } }
+            },
+            {
+              "eventPattern": "workstation_owner_returned:kit_e1_pc",
+              "condition": "globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "bark": "Right, back at my desk.",
+              "targetKnot": "kit_e1_screen"
+            }
+          ]
+        },
+        {
+          "id": "kit_e1_partner",
+          "displayName": "Partner",
+          "npcType": "person",
+          "position": { "x": 7.5, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/ep_host_ambient.json",
+          "currentKnot": "start",
+          "needsHome": { "room": "training_room", "x": 7.5, "y": 5, "facing": "south" },
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "needs": { "thirst": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "ep_kiosk",
+          "name": "Training Kiosk",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A training kiosk. It runs the episode.",
+          "minigameData": {
+            "episodeId": "e1_stub"
+          },
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
+              "value": "A training kiosk. Episode finished."
+            }
+          ]
+        },
+        {
+          "type": "coffee_station",
+          "id": "kit_coffee",
+          "name": "Coffee station",
+          "sprite": "coffee_station1",
+          "position": { "x": 1, "y": 4 },
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office coffee station. Staff drift over for a top-up.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 8, "useFrom": { "dx": 0, "dy": -1 }, "capacity": 2, "chatter": "kit_brightwell" }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "position": { "x": 7, "y": 7 },
+          "takeable": false,
+          "interactable": false,
+          "observations": "A water cooler by the far wall.",
+          "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 6, "useFrom": { "dx": 0, "dy": -1 } }
+        },
+        {
+          "type": "notes1",
+          "id": "kit_e1_poster",
+          "name": "Reporting poster",
+          "sprite": "aw_poster_report_brightwell1",
+          "position": { "x": 4.5, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_e1_out",
+          "observations": "A poster about reporting a suspicious call or email."
+        },
+        {
+          "type": "notes1",
+          "id": "kit_e1_note",
+          "name": "Note on Priya's screen",
+          "sprite": "notes4",
+          "position": { "x": 6.5, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_e1_note_up",
+          "observations": "A note stuck to the screen: the supplier portal is not letting anyone in."
+        },
+        {
+          "type": "leather_sofa1",
+          "id": "kit_e1_sofa",
+          "name": "Sofa",
+          "position": { "x": 5.5, "y": 7.5 },
+          "takeable": false,
+          "affordance": { "satisfies": "rest", "restores": 70, "useSeconds": 6 },
+          "observations": "A sofa for a short break."
+        },
+        {
+          "type": "pc",
+          "id": "kit_e1_pc",
+          "name": "Sam's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 3.5, "y": 5.5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "workstation": true,
+          "owner": "kit_sam_okoro",
+          "lockChance": 0,
+          "affordance": false,
+          "observations": "Sam's PC, signed in.",
+          "spriteVariants": [{ "condition": "globalVars.kit_e1_out === true", "value": "pc12" }],
+          "requiresItem": "kit_e1_gate_item",
+          "requiresItemHint": "Sam's session is open. It is his to lock when he is back.",
+          "triggerOnInteract": []
+        },
+        {
+          "type": "pc",
+          "id": "kit_e1_pc2",
+          "name": "Priya's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 6.5, "y": 5.5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "workstation": true,
+          "owner": "kit_priya_nair",
+          "lockChance": 0,
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 3, "useFrom": { "dx": 0, "dy": 1 } },
+          "observations": "Priya's PC, open on the supplier portal.",
+          "requiresItem": "kit_e1_gate_item",
+          "requiresItemHint": "Priya's PC. It is hers.",
+          "triggerOnInteract": []
+        },
+        {
+          "type": "m09_folder",
+          "id": "kit_e1_folder",
+          "name": "Folder",
+          "sprite": "m09_folder1",
+          "takeable": false,
+          "interactable": false,
+          "position": { "x": 1.25, "y": 6.75 },
+          "observations": "A folder, moved over to make room."
+        },
+        {
+          "type": "pc",
+          "id": "kit_e1_spare",
+          "name": "Spare workstation",
+          "sprite": "pc4",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A spare workstation at the head of the table.",
+          "position": { "x": 4.1875, "y": 7.09375, "elevation": 24.2 },
+          "spriteVariants": [{ "condition": "globalVars.kit_e1_out === true", "value": "pc4_locked" }]
+        }
+      ]
+    }
+  }
+}

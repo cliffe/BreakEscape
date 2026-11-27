@@ -1,0 +1,13 @@
+{
+  "key": "a4e586222dda23af0fdde54d2be4945d",
+  "npc": "patricia_morgan",
+  "text": "Owen Gallagher in IT holds the spare cards. Dr Halloran's badge opens the server side. I can lean on either of them if you need me to.",
+  "voice": "Kore",
+  "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:51Z"
+}

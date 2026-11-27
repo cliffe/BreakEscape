@@ -1,0 +1,13 @@
+{
+  "key": "64ae3e0b56d78a8d14f52631ccd56bd3",
+  "npc": "eleanor_vance",
+  "text": "We knew. We set a warranty. And we renewed anyway, knowing the deadline was difficult.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:32Z"
+}

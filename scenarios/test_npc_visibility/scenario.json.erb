@@ -1,0 +1,120 @@
+{
+  "scenario_id": "test_npc_visibility",
+  "scenario_name": "Test: NPC Visibility Toggle (Hidden NPC Reveal)",
+  "scenario_brief": "NPC VISIBILITY TEST (Phase 3)\n\nThis scenario tests the setVisible action for delayed NPC appearance.\n\nTEST PROCEDURE:\n1. Game starts — observe room\n2. Pharmacist NPC is NOT visible initially (initiallyHidden=true)\n3. Interact with DISPATCH BUTTON\n4. This triggers 'pharmacist_dispatch' global = true\n5. OBSERVE: Pharmacist NPC suddenly appears in the room\n6. Pharmacist begins patrol cycle (Station → Location1 → Location2)\n7. Pharmacist says: 'Pharmacist on call, reviewing dispensary status'\n\nEXPECTED BEHAVIOR:\n- Pharmacist starts completely hidden (alpha=0, no collision)\n- When global is set, NPC becomes visible (alpha=1) and interactive\n- Physics body and interaction system activate\n- NPC begins normal patrol behavior\n\nTEST DURATION: 1 minute\n\nKEY VALIDATION:\n✓ NPC hidden at start (not visible, not interactable)\n✓ setVisible action triggers reveal\n✓ Transition is immediate (not faded in)\n✓ NPC becomes fully interactive after reveal\n✓ Patrol behavior starts correctly\n\nNOTE: This tests the setNPCVisible() handler in npc-manager.js\nand the initiallyHidden property in npc-behavior.js",
+  "endGoal": "Verify pharmacist NPC appears when visibility is triggered.",
+  "startRoom": "test_room_visibility",
+  "globalVariables": {
+    "pharmacist_dispatch": false,
+    "pharmacist_available": false
+  },
+  "rooms": {
+    "test_room_visibility": {
+      "type": "room_hospital_ward",
+      "door_sign": "Visibility Test Chamber",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "hidden_pharmacist",
+          "displayName": "On-Call Pharmacist",
+          "npcType": "person",
+          "position": { "x": 4, "y": 4 },
+          "spriteSheet": "male_nerd_v2",
+          "storyPath": "scenarios/test_npc_visibility/ink/test_pharmacist.ink.json",
+          "currentKnot": "start",
+          "behavior": {
+            "initiallyHidden": true,
+            "patrol": {
+              "waypoints": [
+                { "x": 4, "y": 4, "dwellTime": 2000 },
+                { "x": 2, "y": 3, "dwellTime": 3000 },
+                { "x": 7, "y": 6, "dwellTime": 3000 }
+              ],
+              "waypointMode": "sequential",
+              "loop": true,
+              "speed": 80
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:pharmacist_dispatch",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "arrival",
+              "bark": "Pharmacist on call, reviewing dispensary status"
+            }
+          ]
+        },
+        {
+          "id": "control_npc",
+          "displayName": "Dispatch Controller",
+          "npcType": "person",
+          "position": { "x": 14, "y": 6 },
+          "spriteSheet": "female_scientist_v2",
+          "storyPath": "scenarios/test_npc_visibility/ink/test_dispatcher.ink.json",
+          "currentKnot": "idle"
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Test Instructions",
+          "takeable": false,
+          "readable": true,
+          "text": "VISIBILITY TOGGLE TEST\n\n1. INITIAL STATE:\n   • Look around the room\n   • Pharmacist should NOT be visible anywhere\n   • No NPC at position (4,4)\n\n2. TRIGGER VISIBILITY:\n   • Press \"DISPATCH PHARMACIST\" button\n   • Sets global: pharmacist_dispatch = true\n\n3. OBSERVE REVEAL:\n   • Pharmacist APPEARS instantly at (4,4)\n   • No fade-in animation (immediate toggle)\n   • NPC becomes interactable\n   • Begins patrol pattern immediately\n   • Patrol: (4,4) → (2,3) → (7,6) → loop\n\n4. VALIDATION:\n   ✓ Pharmacist hidden at start\n   ✓ Appears when setVisible triggers\n   ✓ Interaction becomes available\n   ✓ Patrol starts normally\n\nTEST COMPLETE when pharmacist completes one patrol cycle."
+        },
+        {
+          "type": "pc",
+          "id": "dispatch_button",
+          "name": "DISPATCH PHARMACIST",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A yellow button to dispatch the on-call pharmacist.",
+          "locked": false,
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "pharmacist_dispatch", "value": true }
+          ]
+        }
+      ]
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "obj_visibility_toggle",
+      "title": "Test NPC Visibility Toggle",
+      "description": "Verify hidden NPC becomes visible when triggered.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "task_confirm_hidden",
+          "title": "Pharmacist hidden",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_dispatch",
+          "title": "Dispatch pharmacist",
+          "type": "unlock_object",
+          "targetObject": "dispatch_button",
+          "status": "active"
+        },
+        {
+          "taskId": "task_confirm_visible",
+          "title": "Pharmacist appears",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_confirm_patrol",
+          "title": "Patrol starts",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

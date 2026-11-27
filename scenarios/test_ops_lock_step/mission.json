@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops second step on a lock",
+  "description": "Test of the second step on any lock (S8c, feature A25): a PC and a locker that send a request to a pestered owner, an archive that needs a number matched on a held phone, a safe that wants a code from a borrowed device, a card door and an NPC-opened door that ask Moira, a cabinet whose owner never passes, and a briefcase Gordon hands over. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 40,
+  "test_type": "ops_lock_step",
+  "test_objective": "Prove a right first factor alone opens no gated lock, a push opens it for a pestered owner, a number must be matched on a held phone, a code is read from a held device, a door and a carried item ask the step too, and no answer shows a code, a number or the contents early"
+}

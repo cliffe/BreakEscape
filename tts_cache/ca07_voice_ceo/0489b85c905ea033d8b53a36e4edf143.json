@@ -1,0 +1,14 @@
+{
+  "key": "0489b85c905ea033d8b53a36e4edf143",
+  "npc": "kit_graham_whitfield",
+  "text": "A document can hide an instruction telling the assistant to send things out, and it just obeys. Best to read it yourself.",
+  "delivery": "kind, matter-of-fact",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:45:04Z"
+}

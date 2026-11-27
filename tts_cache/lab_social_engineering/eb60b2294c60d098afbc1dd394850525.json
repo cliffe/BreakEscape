@@ -1,0 +1,13 @@
+{
+  "key": "eb60b2294c60d098afbc1dd394850525",
+  "npc": "tomasz",
+  "text": "Here's what it showed. An open inbox trusts anyone, a From line is just a label, and a padlock only tells you nobody's listening in.",
+  "voice": "Alnilam",
+  "style": "In-house security lead at a small British firm, mid thirties, Polish-born, fifteen years in the UK. Speak with a consistent light Polish-accented English throughout — do not shift to any other accent. Mid-range pitch; quick pace. Dry, deadpan and practical, a man who has seen a lot of phishing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:40:48Z"
+}

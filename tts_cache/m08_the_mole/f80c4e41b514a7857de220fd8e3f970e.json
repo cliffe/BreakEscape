@@ -1,0 +1,13 @@
+{
+  "key": "f80c4e41b514a7857de220fd8e3f970e",
+  "npc": "agent_vector",
+  "text": "You've already decided I did it. I'm not handing you another row to hang me with.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:32:34Z"
+}

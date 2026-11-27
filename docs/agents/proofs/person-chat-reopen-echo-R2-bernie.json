@@ -1,0 +1,433 @@
+{
+  "gid": "8892",
+  "rec": [
+    {
+      "name": "first open",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.",
+        "1. I'm the security consultant Dr. Kim called in. It's about the ransomware.",
+        "2. I need Dr. Kim. Where is she?",
+        "3. You've been on this desk since it started, haven't you?"
+      ],
+      "tts": [
+        "{\"npc_id\":\"narrator\",\"text\":\"Ten past four in the morning. Every screen behind the desk is black, and the lights run amber off the generator",
+        "{\"npc_id\":\"narrator\",\"text\":\"Bernie Nwosu is holding the front of this hospital together with a clipboard, a landline and a dying biro.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the computers, I know. If it's your appointment, it's cancelled.\",\"delivery\":\"rattling it off\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the vending machine, that's been broken since March. And if you're press, there's a car park you ca"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "route_demand choices",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "So \"I need Dr. Kim\" isn't a sentence. It's the start of one.",
+        "1. Emergency security consultant. She called me in at one this morning.",
+        "2. Every minute you spend on this, those generators are burning."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"And you are?\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Forty-seven people upstairs on generators, and I've no way of checking who anybody is tonight.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"So \\\"I need Dr. Kim\\\" isn't a sentence. It's the start of one.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 2 choices"
+      ]
+    },
+    {
+      "name": "REOPEN route_demand (expect echo)",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "So \"I need Dr. Kim\" isn't a sentence. It's the start of one.",
+        "1. Emergency security consultant. She called me in at one this morning.",
+        "2. Every minute you spend on this, those generators are burning."
+      ],
+      "tts": [],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"route_demand\" to re-evaluate choices with updated globals",
+        "🔇 receptionist: reopen would replay lines already shown - showing choices with a recap",
+        "📋 2 choices available",
+        "📋 Reopened at a choice point - re-showing last line from receptionist"
+      ]
+    },
+    {
+      "name": "the_struck_entry choices",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Nobody amends this book but me. That's the whole point of the book.",
+        "1. Who's been behind this desk tonight?",
+        "2. Does it matter? You know I'm expected.",
+        "3. Leave it exactly as it is. Don't tidy it up."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Right. That I can work with.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She turns the paper log round so you can both read it. Halfway down, in the small hours: EXTERNAL SECURITY CONS",
+        "{\"npc_id\":\"narrator\",\"text\":\"A line has been ruled through it. Different biro. No initials.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"That's my log. And that's somebody else's crossing-out.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Nobody amends this book but me. That's the whole point of the book.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "🌐 Global variable changed: bernie_influence = 2 (from receptionist)",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "offer_key -> hub choices",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Anything goes sideways for you tonight, you come back to this desk. Yeah?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"You want me to preserve it.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"You're not really a consultant, are you.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She lets the question sit, then visibly decides not to ask it again.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Right. It stays as it is.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She writes you into the log by hand, pressing hard.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"You're in the book. And no, I can't give you a badge that does anything.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"The readers are down, and the permissions system's behind that ransom screen with everything else.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"So Estates dumped every mechanical override on my hook and made it my problem.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She unhooks a worn brass key and holds it a moment before she lets go.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"IT's off the handover room. Through Ward Three, along the link and up the main corridor. In the handover ro",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Gary's in there. He's not come out since half ten, so knock properly.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"And listen. You told me the truth when you could've fed me something easier. I've clocked that.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Anything goes sideways for you tonight, you come back to this desk. Yeah?\"}"
+      ],
+      "posts": [
+        "POST /break_escape/games/8892/objectives/tasks/sign_in_at_reception ",
+        "POST /break_escape/games/8892/objectives/unlock {\"kind\":\"aim\",\"objective_id\":\"access_it_systems\"}",
+        "POST /break_escape/games/8892/inventory {\"action_type\":\"add\",\"item\":{\"id\":\"receptionist_held_0\",\"name\":\"IT Department Override Key\",\"type\":\"key\",\"keyPins\":[35,45,25,55],\"takeable\":true,\"opens_lock\":\"i"
+      ],
+      "logs": [
+        "🌐 Global variable changed: bernie_influence = 4 (from receptionist)",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Task completion tag: sign_in_at_reception",
+        "📋 Aim unlock tag: access_it_systems",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "🌐 Global variable changed: bernie_influence = 6 (from receptionist)",
+        "🌐 Global variable changed: bernie_trusts_player = true (from receptionist)",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "REOPEN at hub after offer_key (hub_quiet)",
+      "active": false,
+      "lines": [],
+      "tts": [],
+      "posts": [],
+      "logs": []
+    },
+    {
+      "name": "exit #1",
+      "active": false,
+      "lines": [],
+      "tts": [],
+      "posts": [],
+      "logs": []
+    },
+    {
+      "name": "REOPEN after exit #1",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Back already. What's broken now?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Back already. What's broken now?\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"hub\" to re-evaluate choices with updated globals",
+        "📋 3 choices available",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "exit #2",
+      "active": false,
+      "lines": [],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Go on. And come back if you need me.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: receptionist"
+      ]
+    },
+    {
+      "name": "REOPEN after exit #2",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Go on, then.",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Go on, then.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"hub\" to re-evaluate choices with updated globals",
+        "📋 3 choices available",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "exit #3",
+      "active": false,
+      "lines": [],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Go on. And come back if you need me.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: receptionist"
+      ]
+    },
+    {
+      "name": "REOPEN after exit #3",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "What do you need?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"What do you need?\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"hub\" to re-evaluate choices with updated globals",
+        "📋 3 choices available",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "exit #4",
+      "active": false,
+      "lines": [],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Go on. And come back if you need me.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: receptionist"
+      ]
+    },
+    {
+      "name": "REOPEN after exit #4",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Back already. What's broken now?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Back already. What's broken now?\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"hub\" to re-evaluate choices with updated globals",
+        "📋 3 choices available",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "exit #5",
+      "active": false,
+      "lines": [],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Go on. And come back if you need me.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: receptionist"
+      ]
+    },
+    {
+      "name": "REOPEN after exit #5",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Go on, then.",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Go on, then.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"hub\" to re-evaluate choices with updated globals",
+        "📋 3 choices available",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "ask_situation",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Forget the money. This place has forgotten everybody in it.",
+        "1. How are you still standing?",
+        "2. Then let's give it its memory back."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Honestly? Nobody knows anything about anybody.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"We can't tell you what you're allergic to, or what you were given at eight, or whether your mum's been move",
+        "{\"npc_id\":\"receptionist\",\"text\":\"A man came in at four looking for his wife. I walked him round three wards reading names off the ends of be",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Forget the money. This place has forgotten everybody in it.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 2 choices"
+      ]
+    },
+    {
+      "name": "REOPEN mid ask_situation",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Forget the money. This place has forgotten everybody in it.",
+        "1. How are you still standing?",
+        "2. Then let's give it its memory back."
+      ],
+      "tts": [],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"ask_situation\" to re-evaluate choices with updated globals",
+        "🔇 receptionist: reopen would replay lines already shown - showing choices with a recap",
+        "📋 2 choices available",
+        "📋 Reopened at a choice point - re-showing last line from receptionist"
+      ]
+    },
+    {
+      "name": "REOPEN after reload",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Back already. Go on, what's broken now?",
+        "1. Has anyone come through tonight who doesn't belong?",
+        "2. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Back already. Go on, what's broken now?\"}"
+      ],
+      "posts": [
+        "POST /break_escape/games/8892/inventory {\"action_type\":\"add\",\"item\":{\"type\":\"notepad\",\"name\":\"Notepad\",\"sprite\":\"notes5\",\"takeable\":true,\"readable\":true,\"text\":\"Use this notepad to review your collect"
+      ],
+      "logs": [
+        "📋 Initializing objectives manager...",
+        "📋 ObjectivesManager event listeners registered",
+        "📋 Restored 2 fired onceOnly/maxTriggers handler(s)",
+        "📋 Restored objectives state from server",
+        "📋 Initializing objectives from scenario...",
+        "📋 Initialized submit_flags task submit_database_flag: status=active, targetFlags=none, targetCount=1",
+        "📋 Initialized submit_flags task submit_ssh_flag: status=active, targetFlags=none, targetCount=1",
+        "📋 Initialized submit_flags task submit_proftpd_flag: status=locked, targetFlags=none, targetCount=1",
+        "📋 Initialized submit_flags task submit_ghost_log_flag: status=locked, targetFlags=none, targetCount=1",
+        "📋 Restored objectives state from server",
+        "📋 Reconciling objectives with current game state...",
+        "📋 Objectives initialized: 8 aims, 30 tasks",
+        "📋 Setting up event mappings for opening_briefing_cutscene: {}",
+        "📋 Setting up event mappings for director_netherton: {}",
+        "📋 Setting up event mappings for agent_nightshade: {}",
+        "📋 Setting up event mappings for receptionist: {}",
+        "📋 Setting up event mappings for agent_0x99: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Ob",
+        "📋 Setting up event mappings for ghost: [Object, Object, Object, Object, Object, Object, Object, Object]",
+        "📋 Setting up event mappings for closing_debrief_trigger: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Objec",
+        "📋 Mission Brief already shown in this game; it is in the Notepad",
+        "✅ Restored NPC-specific variables for NPC: receptionist {savedAt: 1:00:00 AM, reason: Story ended - restarting fresh with saved variables}",
+        "🔁 Previous conversation had ended - restarting receptionist at knot: start",
+        "📋 2 choices available",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 2 choices"
+      ]
+    },
+    {
+      "name": "REOPEN again after reload",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Back already. What's broken now?",
+        "1. Has anyone come through tonight who doesn't belong?",
+        "2. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"Back already. What's broken now?\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with receptionist",
+        "🔄 Re-navigating to current knot \"hub\" to re-evaluate choices with updated globals",
+        "📋 2 choices available",
+        "📋 Displaying line 1/1 from block 1/1: receptionist",
+        "📋 All dialogue blocks done, showing 2 choices"
+      ]
+    }
+  ],
+  "errors": []
+}

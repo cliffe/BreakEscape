@@ -1,0 +1,13 @@
+{
+  "key": "3eea862a87e7094b3596e2d4726cf33d",
+  "npc": "narrator",
+  "text": "You drop the cover and tell him who you work for. ENTROPY operatives are inside his facility, and his battery storage is the target.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:04:55Z"
+}

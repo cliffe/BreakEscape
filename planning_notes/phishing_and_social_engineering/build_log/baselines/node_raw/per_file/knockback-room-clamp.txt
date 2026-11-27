@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the safe rectangle is the floor less walls and an 8 px margin
+ok 1 - the safe rectangle is the floor less walls and an 8 px margin
+  ---
+  duration_ms: 1.611859
+  ...
+# Subtest: a push in the middle of the room keeps its full distance
+ok 2 - a push in the middle of the room keeps its full distance
+  ---
+  duration_ms: 0.130219
+  ...
+# Subtest: a push towards the west wall stops at the margin
+ok 3 - a push towards the west wall stops at the margin
+  ---
+  duration_ms: 0.07978
+  ...
+# Subtest: a diagonal push is cut by the nearer edge
+ok 4 - a diagonal push is cut by the nearer edge
+  ---
+  duration_ms: 0.122736
+  ...
+# Subtest: a body already in a doorway (outside the rectangle) is not pushed
+ok 5 - a body already in a doorway (outside the rectangle) is not pushed
+  ---
+  duration_ms: 0.166407
+  ...
+# Subtest: with no room known the push is unchanged
+ok 6 - with no room known the push is unchanged
+  ---
+  duration_ms: 0.059665
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.838341

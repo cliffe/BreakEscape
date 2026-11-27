@@ -1,0 +1,13 @@
+{
+  "key": "94a29debcbb658b3913aad3a54abe44b",
+  "npc": "dr_halloran",
+  "text": "Security have given me my access back. I'll want an apology from you. Not tonight.",
+  "voice": "Erinome",
+  "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:14:01Z"
+}

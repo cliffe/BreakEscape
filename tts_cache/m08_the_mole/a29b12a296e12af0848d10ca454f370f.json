@@ -1,0 +1,13 @@
+{
+  "key": "a29b12a296e12af0848d10ca454f370f",
+  "npc": "director_netherton",
+  "text": "You've been in the logs. I can see it on you. A terminal and a time is not a man. Read me the door.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:24:16Z"
+}

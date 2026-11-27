@@ -1,0 +1,13 @@
+{
+  "key": "7ce64e4c77708cd10b6d5ff524836baa",
+  "npc": "vos",
+  "text": "His name is Fonoti, the big one at the lock end. This is my own copy. We never met.",
+  "voice": "Schedar",
+  "style": "Zero Day's broker, fifties, from Rotterdam. Consistent Dutch-accented English throughout -- do not shift to any other accent. Flat, courteous, unhurried; everything is a delivery date.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:36:17Z"
+}

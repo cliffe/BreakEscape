@@ -1,0 +1,13 @@
+{
+  "key": "33f44f4e709fddd284ff8348cbceed74",
+  "npc": "eleanor_vance",
+  "text": "So is W-03 a separate ground for reduction, or W-07 by another name? That's your call. I'd record it as arguable and write down why.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:23Z"
+}

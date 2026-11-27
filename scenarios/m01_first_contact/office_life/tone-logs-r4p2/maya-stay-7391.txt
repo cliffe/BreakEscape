@@ -1,0 +1,35 @@
+start {"m":{"mode":"idle","atPost":true,"job":null,"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"g":{"away":false,"settled":false,"disc":false,"ko":false}}
+talk1 true
+opener {"closed":false,"seen":["Oh! You startled me. You're the... IT contractor, right? The security auditor?","2. You seem nervous"],"choices":["×","1. That's right. I'm reviewing security systems","2. You seem nervous"]}
+after opener {"closed":false,"seen":["That's right. I'm reviewing security systems","Are you really here for a security audit? Or are you here because of my message?","2. SAFETYNET sent me"],"choices":["×","1. What message?","2. SAFETYNET sent me"]}
+reveal {"closed":false,"seen":["What message?","The tip. To SAFETYNET. About Operation Shatter.","If you don't know what I'm talking about, forget I said anything.","2. Tell me more about this operation"],"choices":["×","1. I'm from SAFETYNET","2. Tell me more about this operation"]}
+first op line {"text":"×\nMaya Chen\n\nOnly if you're here to stop it. People are going to die.\n\nSkip [SPACE]","g":{"away":false,"settled":false,"disc":false,"ko":false}}
+esc closed true
+5s after Esc (expect at post, no trip) {"m":{"mode":"idle","atPost":true,"job":null,"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"g":{"away":false,"settled":false,"disc":false,"ko":false}}
+talk2 true
+resume {"closed":false,"seen":["From what I've gathered, Operation Shatter is a coordinated disinformation attack.","They've profiled millions of people—demographic cohorts they're betting will panic first—cross-referenced with who reacts fastest to an alert, who forwards without checking, who trusts which channels.","The plan is to send fake emergency messages—hospital closures, bank failures, government alerts—tuned per segment where they think it'll spread fastest.","The panic will sw
+back at hub choices {"seen":["And they're okay with that?","Derek—he's the one running it—I've overhead him call it \"education.\"","Says the deaths will teach people not to trust digital communications. He's insane. But he believes every word.","3. I need to keep investigating"],"choices":["×","1. What can you tell me about Derek?","2. What happened to Patricia?","3. I need to keep investigating"],"g":{"away":false,"settled":true,"disc":true,"ko":false}}
+trip started after close at hub {"m":{"mode":"job","atPost":true,"job":{"phase":"goto_target"},"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"g":{"away":false,"settled":true,"disc":true,"ko":false},"ms":1218}
+extras [["fatima_begum","job","using","fatima_pc"],["graham_whitfield","job","using","graham_pc"]]
+player {"room":"maya_office","x":209,"y":-149}
+t=0 {"m":{"mode":"job","atPost":true,"job":{"phase":"goto_target"},"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"pos":[224,-159],"room":"maya_office"}
+t=1 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"pos":[224,-159],"room":"maya_office"}
+t=2 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":7.3,"y":-3.4,"room_p":"maya_office"},"pos":[229,-132],"room":"maya_office"}
+t=3 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":6.6,"y":-1.1,"room_p":"maya_office"},"pos":[212,-67],"room":"maya_office"}
+t=4 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":7.7,"y":0.7,"room_p":"maya_office"},"pos":[245,-10],"room":"maya_office"}
+t=5 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":8.1,"y":2.6,"room_p":"maya_office"},"pos":[260,52],"room":"maya_office"}
+t=6 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":6.6,"y":4.2,"room_p":"maya_office"},"pos":[211,102],"room":"maya_office"}
+t=7 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":5.9,"y":6.1,"room_p":"maya_office"},"pos":[188,163],"room":"maya_office"}
+t=8 {"m":{"mode":"job","atPost":false,"job":{"phase":"using"},"room":"maya_office","x":5.9,"y":7.7,"room_p":"maya_office"},"pos":[188,215],"room":"maya_office"}
+t=23 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":6.3,"y":7.2,"room_p":"maya_office"},"pos":[202,199],"room":"maya_office"}
+t=24 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":6.4,"y":5,"room_p":"maya_office"},"pos":[204,130],"room":"maya_office"}
+t=25 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":7.5,"y":3.3,"room_p":"maya_office"},"pos":[240,73],"room":"maya_office"}
+t=26 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":8.4,"y":1.4,"room_p":"maya_office"},"pos":[266,12],"room":"maya_office"}
+t=27 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":7.1,"y":-0.5,"room_p":"maya_office"},"pos":[228,-47],"room":"maya_office"}
+t=28 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":7.1,"y":-0.8,"room_p":"maya_office"},"pos":[228,-57],"room":"maya_office"}
+t=32 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":6.6,"y":-2.2,"room_p":"maya_office"},"pos":[212,-101],"room":"maya_office"}
+t=33 {"m":{"mode":"idle","atPost":true,"job":null,"room":"maya_office","x":7,"y":-3,"room_p":"maya_office"},"pos":[225,-128],"room":"maya_office"}
+maya log [{"t":27,"npc":"maya_chen","ev":"registered"},{"t":42,"npc":"maya_chen","ev":"frozen"},{"t":83,"npc":"maya_chen","ev":"unfrozen"},{"t":107,"npc":"maya_chen","ev":"frozen"},{"t":147,"npc":"maya_chen","ev":"unfrozen"},{"t":154,"npc":"maya_chen","ev":"level_set","need":"thirst","level":20},{"t":155,"npc":"maya_chen","ev":"urgent","need":"thirst","level":20},{"t":155,"npc":"maya_chen","ev":"job_start","need":"thirst","target":"office_cooler"},{"t":155,"npc":"maya_chen","ev":"windup","target
+walk_stuck count 0
+diag {"lv":{"thirst":89.94},"nlog":[{"t":283,"npc":"maya_chen","ev":"arrival","pathLeft":3,"dist":31},{"t":284,"npc":"maya_chen","ev":"returned_post"},{"t":322,"npc":"fatima_begum","ev":"used","need":"thirst","target":"office_cooler","level":86.86,"payloadPresent":false},{"t":330,"npc":"fatima_begum","ev":"arrival","pathLeft":4,"dist":30},{"t":331,"npc":"fatima_begum","ev":"returned_post"},{"t":332,"npc":"graham_whitfield","ev":"used","need":"thirst","target":"office_cooler","level":89.86,"paylo
+errors []

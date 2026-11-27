@@ -1,0 +1,13 @@
+{
+  "key": "87c426a2fbbcbc32e9c77c702dc3843c",
+  "npc": "dr_sharma",
+  "text": "One more thing, and it's the one I'd like you to take away.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

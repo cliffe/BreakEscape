@@ -1,0 +1,14 @@
+{
+  "key": "839bd78768a860cee25e7996c51b5b59",
+  "npc": "kit_graham_whitfield",
+  "text": "A voice that sounds just like the boss is easy to fake now. Ring back on his saved number and it falls apart.",
+  "delivery": "kind, matter-of-fact",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:55Z"
+}

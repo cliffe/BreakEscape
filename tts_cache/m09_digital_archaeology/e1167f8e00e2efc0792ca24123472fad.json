@@ -1,0 +1,13 @@
+{
+  "key": "e1167f8e00e2efc0792ca24123472fad",
+  "npc": "narrator",
+  "text": "He lays the Montana order on a crate and uncaps a pen.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:24:50Z"
+}

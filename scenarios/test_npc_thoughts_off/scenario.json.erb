@@ -1,0 +1,111 @@
+{
+  "scenario_brief": "TEST: NPC thoughts off\n\nOne room. Ravi works at his desk and is low on caffeine and a little hungry; coffee comes first, so hunger is his pressing need on the way. With npcThoughts false he shows no action icon on the coffee trip and no hunger thought bubble. Delete the flag from a copy to see both.",
+  "endGoal": "Demo only: watch Ravi fetch a coffee with no icon over his head.",
+  "startRoom": "office",
+  "startPosition": { "x": 4, "y": 5 },
+  "npcNeedsSeed": "test_npc_thoughts_off",
+  "npcWindupMs": 0,
+  "npcThoughts": false,
+  "showPressingNeeds": true,
+  "chatter": { "coffee": ["Is it Friday yet?", "Lovely and hot, this."] },
+
+  "globalVariables": {},
+
+  "objectives": [
+    {
+      "aimId": "watch_no_thoughts",
+      "title": "Watch Ravi",
+      "description": "Nothing to solve.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_coffee", "title": "Ravi fetches a coffee with no icon over his head", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ravi_pc",
+          "name": "Ravi's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 7, "y": 3 },
+          "observations": "Ravi's desk PC.",
+          "affordance": { "useSeconds": 5 }
+        },
+        {
+          "type": "pc",
+          "id": "tess_pc",
+          "name": "Tess's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 4, "y": 3 },
+          "observations": "Tess's desk PC.",
+          "affordance": { "useSeconds": 5 }
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "observations": "The office coffee station.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 8, "capacity": 2, "chatter": "coffee" }
+        },
+        {
+          "type": "mini_fridge1",
+          "id": "office_fridge",
+          "name": "Office Fridge",
+          "position": { "x": 2, "y": 8 },
+          "takeable": false,
+          "observations": "The office fridge.",
+          "affordance": { "satisfies": "hunger", "restores": 60, "useSeconds": 8 }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ravi",
+          "displayName": "Ravi Mehta",
+          "npcType": "person",
+          "position": { "x": 7, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "ravi_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 25 },
+            "hunger": { "decayPerMin": 1, "urgentAt": 40, "initial": 35 }
+          },
+          "eventMappings": [
+            { "eventPattern": "npc_used:office_coffee", "completeTask": "see_coffee" }
+          ]
+        },
+        {
+          "id": "tess",
+          "displayName": "Tess Ng",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "female_office_worker",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "_comment": "R1 M1 proof partner: Tess and Ravi share the coffee station, so they chat there. Her coffee line is spoken; with the player out of earshot it would be picture chat, which npcThoughts false turns off.",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "tess_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 25 }
+          }
+        }
+      ]
+    }
+  }
+}

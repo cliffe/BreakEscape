@@ -1,0 +1,13 @@
+{
+  "key": "5392cad375efde4bb915ee8006e6ad2a",
+  "npc": "megan_oyelaran",
+  "text": "Student Services left me a voicemail. About my fees. Can't face it yet.",
+  "voice": "Leda",
+  "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

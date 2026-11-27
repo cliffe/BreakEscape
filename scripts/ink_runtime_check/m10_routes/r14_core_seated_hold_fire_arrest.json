@@ -1,0 +1,79 @@
+{
+ "steps": [
+  {
+   "note": "Core, seated: Hold fire turns the same moment into an arrest, and HaX's line marks fire_held."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Zero Day has it. You didn't stop that one",
+    "Still HaX."
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Your schedule puts the hospitals",
+    "Go on.",
+    "The pump flaw",
+    "And the last one",
+    "Your schedule sends the pumps",
+    "Stop it",
+    "Put him through",
+    "And if we keep them",
+    "And if ours go",
+    "There's a third way"
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Secure it",
+    "You're under arrest",
+    "Hold fire"
+   ]
+  },
+  {
+   "said": [
+    "Feed's dead. Hold. He's done.",
+    "Then he holds out his wrists."
+   ],
+   "notSaid": [
+    "You fire.",
+    "I'll sign under you."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "arrest",
+    "fire_held": true
+   }
+  }
+ ]
+}

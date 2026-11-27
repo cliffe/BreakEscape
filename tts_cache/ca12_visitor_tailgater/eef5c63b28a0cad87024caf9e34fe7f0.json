@@ -1,0 +1,13 @@
+{
+  "key": "eef5c63b28a0cad87024caf9e34fe7f0",
+  "npc": "lorna_easton",
+  "text": "You talked your way through that door just now. Here you're the one being asked, same visitors.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:52Z"
+}

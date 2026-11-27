@@ -1,0 +1,13 @@
+{
+  "key": "481a305fa1f7c2f0615726eb5822d783",
+  "npc": "narrator",
+  "text": "She says four sentences into the radio and listens to rather more than four coming back.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

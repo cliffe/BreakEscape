@@ -1,0 +1,13 @@
+{
+  "key": "9bd23b76f9dab6121334c61eea404d4d",
+  "npc": "kit_graham_whitfield",
+  "text": "That's my second cup.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:01:21Z"
+}

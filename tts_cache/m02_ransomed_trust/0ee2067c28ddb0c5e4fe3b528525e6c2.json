@@ -1,0 +1,14 @@
+{
+  "key": "0ee2067c28ddb0c5e4fe3b528525e6c2",
+  "npc": "dr_sarah_kim",
+  "text": "Rung security from where?",
+  "delivery": "sharply",
+  "voice": "Achernar",
+  "style": "Hospital chief technology officer in her early fifties, British-Korean, privately educated. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Controlled mid-range pitch that keeps catching; clipped, careful pace. Authoritative on the surface, guilty and frightened underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:46:04Z"
+}

@@ -1,0 +1,327 @@
+[
+ {
+  "id": "GAPSAB-1",
+  "severity": "blocker",
+  "priority": "must",
+  "category": "schema",
+  "sections": "\u00a75.10 (S16); \u00a711.5; \u00a79.1 Triggers and dhcp_printout row; \u00a79.2 Clue routes (a_camera, a_reading_desk); \u00a77.5 (verdict_close in confirm_action)",
+  "change": "In \u00a75.10, after \"top-level triggers (array of closed objects)\", add: \"and the per-object triggerOnInteract[].type enum in scripts/scenario-schema.json (~l.3390, the one ending \\\"lighting_dip\\\", \\\"grant_fact\\\") gains hint (with title and message string properties; already handled by systems/apply-actions.js:124) and the seven \u00a75.4 types (verdict, verdict_close, deduction_tamper, remove_item, fail_mission, reveal_hostiles, lose_ally), recursing into confirm_action.onConfirm. P10-C1 owns it.\" In \u00a711.5's validator-social-schema.test.mjs add: a triggerOnInteract hint passes; a verdict_close inside an object's confirm_action.onConfirm passes.",
+  "evidence": "A/PLAN_GAPS A-8; B/PLAN_GAPS PG-B1; A/CHECK_REPORT \u00a74 V1 and \u00a75 P2; B/CHECK_REPORT \u00a74 Run A and \u00a75 item 1: schema error triggerOnInteract[4].type \"hint\" stops the validator before any deduction lint. scripts/scenario-schema.json:3390 has no hint; apply-actions.js:124 handles it. \u00a75.10 (l.1403-1418) widens only triggers, while \u00a79.1 and \u00a79.2 put hint/grants in triggerOnInteract, and \u00a711.5 requires every fixture to pass --strict-social.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/B/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-2",
+  "severity": "blocker",
+  "priority": "must",
+  "category": "engine-wiring",
+  "sections": "\u00a77.8 (or new \u00a77.11 'Handler calls'); \u00a79.2 Unique item and Stakes (escalation at 3 wrong, l.~2352-2354, ~2371); \u00a79.3 Stakes (HaX's pull-out call on c_pull_out, l.~2572)",
+  "change": "Add to \u00a77.8 (or a new \u00a77 rule): a handler's call that opens on an event is an eventMappings entry with \"conversationMode\": \"phone-chat\", \"targetKnot\": \"<knot>\", \"onceOnly\": true and the case's condition (a targetKnot without it is only a bark, npc-manager.js:797-800, and validate_scenario.rb:2604-2605 marks it \u274c INVALID because targetKnot is ignored once a story state is saved). A mapping meant as a short message uses bark, and its delay is delayMs (npc-manager.js:581; barkDelay is ignored). The player can close the call before choosing, so the handler's hub offers the same choice again: + {se_intel_a_okafor_brass_key and deduction_verdict_ded_a_okafor == \"\" and a_key_choice == \"\"} [About Okafor's key] -> key_seen, and for every forced warned close + {a_thrown_out and not deduction_closed} [They're onto me. Get me out.] -> thrown_out (C: the same for c_pull_out). Or use resume: true on the mapping (README_scenario_design.md:1319-1329). In \u00a79.2 Unique item, \u00a79.2 Stakes and \u00a79.3 Stakes, add '(conversationMode: \"phone-chat\", \u00a77.8)' after each HaX eventMappings. (The opening-call half of GAPSCD-2 is in GAPSAB-13.)",
+  "evidence": "A/PLAN_GAPS A-2; A/CHECK_REPORT \u00a74 V2 (\u274c INVALID \u00d73) and \u00a75 P1 (also C's pull-out call). drafts/C/PLAN_GAPS G3; drafts/C/CHECK_REPORT D2, P3 (two \u274c for HaX's mappings). Code: validate_scenario.rb:2604-2605; npc-manager.js:797-800, :581; README_scenario_design.md:1216, :1306, :1319-1329. The plan never mentions conversationMode (grep 0), so the C-wrong bridge's step C2 ('HaX's pull-out call rings at once') cannot pass.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/C/PLAN_GAPS.md G3",
+   "sidecar/drafts/C/CHECK_REPORT.md",
+   "merged: GAPSCD-2"
+  ]
+ },
+ {
+  "id": "GAPSAB-3",
+  "severity": "blocker",
+  "priority": "must",
+  "category": "engine-wiring",
+  "sections": "\u00a79.2 Rooms (HaX record); \u00a79.3 Rooms (l.~2491 'Either contact can open the bedroom door'); \u00a78 Opening rooms (l.~2014-2018); \u00a78 DL14; \u00a710.1 P10-F4; \u00a711.5 DL8 cases",
+  "change": "Every NPC that uses #unlock_door lists the room in \"unlockable\" (the server's validate_npc_unlock, app/models/break_escape/game.rb:1289-1313, refuses an NPC's #unlock_door without it, or before the player has met that NPC). \u00a79.2 Rooms: HaX ded_a_handler gets \"unlockable\": [\"a_sanctum\"]; \u00a79.3: C's HaX as needed, and Ahmed and Baptiste each carry \"unlockable\": [\"c_bedroom\"]. \u00a78 Opening rooms: the door opened by an opening-room NPC's #unlock_door counts only when that NPC's record lists the room in unlockable; an #unlock_door to a room not listed is a \u26a0\ufe0f (\"NPC '<n>' unlocks '<r>' but its unlockable does not list it\"), and add that case to \u00a711.5's DL8 tests. DL14: every #unlock_door:<r> in an NPC's ink has <r> in that NPC's unlockable. Widen P10-F4: 'and an ink #unlock_door:<room> from the same phone NPC (with unlockable) for a room that has not loaded; reload.'",
+  "evidence": "A/PLAN_GAPS A-5; A/CHECK_REPORT \u00a75 P5 (game.rb:1305-1310; 'encountered' is met via games_controller.rb track_npc_encounters); A/INVENTED G3. drafts/C/PLAN_GAPS G2; drafts/C/CHECK_REPORT D4, P2. The plan never mentions unlockable (grep 0). Without it HaX's 'Go in' (#verdict_close #unlock_door:a_sanctum, l.2363) is refused and bridge A step A7 cannot run; after a wrong call C's bedroom needs a contact (l.2542), so the hand check counts a door the server will not open. P10-F4 (l.2893) tests only a mapping's unlockDoor.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/A/INVENTED.md",
+   "sidecar/drafts/C/PLAN_GAPS.md G2",
+   "sidecar/drafts/C/CHECK_REPORT.md",
+   "merged: GAPSCD-3"
+  ]
+ },
+ {
+  "id": "GAPSAB-4",
+  "severity": "major",
+  "priority": "must",
+  "category": "ink-sample",
+  "sections": "\u00a77.8 sample (l.1856-1871); \u00a75.3 timing note; \u00a77.4",
+  "change": "Replace the \u00a77.8 sample with one that: (1) has no HaX: prefix on the contact's own lines (dialoguelint phone-self-prefix); (2) sets ~ a_key_choice = \"confront\" on the confront option; (3) puts a one-choice + + [Go on] -> key_after after each verdict tag, so the reaction that reads deduction_outcome_ded_a_okafor is evaluated after the tag has run in phone chat; (4) returns to -> hub, never -> END (opening guard { deduction_verdict_ded_a_okafor != \"\": -> hub }). Use the replacement text in A/PLAN_GAPS A-3 (key_seen with confront/follow/seize, then === key_after === with { deduction_outcome_ded_a_okafor == \"right_guilty\": That's one key the ritual won't have. | That didn't land the way I hoped. } and -> hub). Add under it: \"Phone ink puts no prefix on the contact's own lines (Narrator: is fine). In phone chat a line that reads a verdict or outcome global goes after a player choice that follows the tag. Every knot returns to the hub. Every option sets the global the credits read.\"",
+  "evidence": "A/PLAN_GAPS A-3 (in the draft, a right call always got 'That didn't land the way I hoped.' because phone chat runs the batch's tags after the reaction was evaluated); A/CHECK_REPORT \u00a75 P7; A/INVENTED G8, G9. drafts/C/PLAN_GAPS G16; drafts/C/CHECK_REPORT P10 (builders copy examples). The current sample still has HaX: prefixes, -> END on every branch, no a_key_choice on confront and no 'Go on' beat, though \u00a75.3 (l.1019-1023) and \u00a77.4 (l.1769-1771) state the phone-chat rule.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/A/INVENTED.md",
+   "sidecar/drafts/C/PLAN_GAPS.md G16",
+   "sidecar/drafts/C/CHECK_REPORT.md",
+   "merged: GAPSCD-23"
+  ]
+ },
+ {
+  "id": "GAPSAB-5",
+  "severity": "major",
+  "priority": "must",
+  "category": "level-design",
+  "sections": "\u00a79.2 Rooms (sanctum door, l.2280); \u00a79.3 Rooms (comms door, l.2477-2479); \u00a78 beyond the close",
+  "change": "In \u00a79.2 Rooms replace \"locked door (no key; opened by HaX's warned call)\" with: \"(lockType: \\\"rfid\\\", requires: \\\"a_sanctum_seal\\\", and no card with that id anywhere in the scenario, so no player tool opens it; HaX's 'Go in' opens it with #unlock_door:a_sanctum. The validator's 'no item opens' warning is expected; say so in an ERB comment. lockedHint shows only for key locks, so the door sign carries the hint.)\" Apply the same rule to C's comms door (now lockType: \"key\" with no key, while C's start inventory has a lockpick): no door that only an NPC may open is a key lock in a fixture whose player carries a lockpick (see GAPSCD-9 for D's carriage doors).",
+  "evidence": "A/PLAN_GAPS A-4; A/CHECK_REPORT \u00a74 V3, V4 and \u00a75 P4; A/INVENTED G2: a lockpick opens any key lock, so the player can pick the sanctum, skip the warned close, and DL8's 'beyond the close' set (l.2006-2009) is wrong. \u00a79.3 gives the comms door lockType key with the lockpick in the start inventory (l.2495).",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-6",
+  "severity": "major",
+  "priority": "must",
+  "category": "validator-rule",
+  "sections": "\u00a74.2 (favour route bullet); \u00a78 DL18",
+  "change": "Add to \u00a74.2 after the favour bullet: \"A cell whose only route is its suspect's favour authors \\\"routes\\\": []. The schema allows an empty array, and DL18's 'at least one route' counts routes of a fact (\u00a78), favour included.\" In DL18 change \"Every cell has at least one route\" to \"Every cell has at least one route in routes of a fact (an empty authored list is fine when the suspect has a favour)\".",
+  "evidence": "A/PLAN_GAPS A-11; A/INVENTED G7: Marsh's burner_sim comes only from the favour. \u00a74.2 (l.519-521) says the favour route is 'implicit \u2026 never authored'; DL18 (l.2063) says 'Every cell has at least one route'; \u00a79.2 Clue routes (l.2301) has 'Marsh's favour only'. A literal DL18 would fail fixture A.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-7",
+  "severity": "major",
+  "priority": "must",
+  "category": "fixture-content",
+  "sections": "\u00a79.2 Rooms (coats); \u00a77.6 last paragraph",
+  "change": "Add to \u00a79.2 Rooms after the coats: \"Each coat's text names what it holds, and a textVariants entry on globalVars.a_lodge_suspicious replaces it ('The lining has been slit and the pockets turned out. Someone got here before you.'), so after a wrong call the coat shows nothing it does not grant.\" Add to \u00a77.6's last paragraph: \"The same holds for any route gated on a cost: true global.\"",
+  "evidence": "A/PLAN_GAPS A-9; A/CHECK_REPORT \u00a75 P10; A/INVENTED G6: a notes item shows its text whatever its trigger does, so after a wrong call the player reads 'a ward charm in the lining' and gets no fact. \u00a77.6 (l.1835-1840) covers fades only; \u00a79.2 (l.2272-2273) has no text rule.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-8",
+  "severity": "major",
+  "priority": "must",
+  "category": "engine-gap",
+  "sections": "\u00a79.2 Rooms (archive log filter, l.2276); \u00a79.3 Rooms (c_garage door log, l.2488); \u00a75 engine items or \u00a710 packet owning the log filter",
+  "change": "Either add a small engine item (owner: the packet that owns the log filter, or a new P10-L) and point \u00a79.2 and \u00a79.3 at it: \"log_filter_terminal gains logType: \\\"badge\\\": fields time, door, badge, event (BADGE_IN, BADGE_OUT, HELD_OPEN, FORCED, RESET); filters DOOR =, EVENT =, NAME =, TIME =; LOG_FIELDS.badge and FILTER_CATEGORIES.badge beside the other two; minigame-data-schemas.json accepts it; a jsdom case filters a badge log by EVENT.\" Or state plainly in \u00a79.2 and \u00a79.3: \"Door logs use logType: \\\"vpn\\\"; its MFA/RESULT filter menus do not match door rows. Accepted for test fixtures only; must not ship in a mission.\" Also say that a log_filter_terminal's minigameData follows scenarios/sis02_energy field for field (anomaly, threat-intel and flag-label fields) and the K packet lists any field it leaves out.",
+  "evidence": "B/PLAN_GAPS PG-B2; B/CHECK_REPORT \u00a75 item 2 (log-filter-minigame.js:57-71, hard-coded menus for vpn and ics_rdp only); A/PLAN_GAPS A-14; A/INVENTED G11. The plan picked logType vpn for A's badge log and C's garage door log without noting the mismatched filters.",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/B/CHECK_REPORT.md",
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-9",
+  "severity": "major",
+  "priority": "must",
+  "category": "fixture-content",
+  "sections": "\u00a79.2 Rooms (brass key)",
+  "change": "Add to \u00a79.2 Rooms after \"Okafor holds the brass key in itemsHeld (type key; only a KO drops it)\": \"The brass key opens no lock in A (its keyPins match no door or container). It is evidence only.\"",
+  "evidence": "A/PLAN_GAPS A-12; A/INVENTED G10: a key item needs keyPins; a builder who pairs it with the sanctum lets the KO route get past the warned close. Plan l.2285-2286 does not say what it opens.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-10",
+  "severity": "major",
+  "priority": "should",
+  "category": "fixture-content",
+  "sections": "\u00a79.2 Clue routes (Marsh sigil_ring); \u00a77.7",
+  "change": "Add to \u00a79.2's Marsh sigil_ring row: \"The glass has hasFingerprint: true, fingerprintOwner: \\\"ded_a_marsh\\\", fingerprintDifficulty: \\\"easy\\\". P10-K-A confirms from scenarios/biometric_breach that identification needs nothing more (no reference sample), and that a glass logged as unidentified can be dusted again. If it cannot, the hand check is re-run without the ring (Marsh is still decided by count once the archive is done).\" (Interacts with SIDECAR-9: if the favour unlocks on the ring, dusting must work.)",
+  "evidence": "A/PLAN_GAPS A-13; A/CHECK_REPORT \u00a75 P11 (dusting-game.js:557: 'Log as unidentified' fires nothing; systems/biometrics.js:90-97 fires only on new identification); A/INVENTED G13. \u00a77.7 (l.1842-1849) covers once-per-owner firing only; \u00a79.2 l.2300 gives no glass fields.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-11",
+  "severity": "major",
+  "priority": "should",
+  "category": "credits",
+  "sections": "\u00a79.2 Stakes (credits lines); \u00a77.8 last bullet",
+  "change": "Add to \u00a79.2 Stakes the key lines: \"You faced Okafor down in the hall, key and all.\" (a_key_choice === 'confront'); \"The key was taken off Okafor at the door.\" ('seize'); \"You watched Okafor first, then named her.\" ('follow' && deduction_outcome_ded_a_okafor === 'right_guilty'); \"You watched Okafor, and she walked out with the key.\" ('follow' && \u2026 === 'missed_guilty'); \"The key came off Okafor in the hall.\" (a_key_choice === '' && deduction_verdict_ded_a_okafor === 'ko', since a KO leaves the choice empty). Drop any separate 'Okafor walked free with the key' line. P10-K-A checks the stored value of a KO verdict.",
+  "evidence": "A/PLAN_GAPS A-15: the draft's follow line still shows after the player names Okafor later and conflicts with the missed line. \u00a79.2 l.2385 says only 'and a_key_choice'; \u00a77.10 l.1913 shows the 'Okafor walked free.' pattern.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-12",
+  "severity": "major",
+  "priority": "should",
+  "category": "wording",
+  "sections": "\u00a77.9; \u00a78 DL10",
+  "change": "Add to \u00a77.9: \"Write about the opposition without number: 'someone here works for the lodge, maybe more than one', 'anyone here who serves the lodge'. No plural or singular for the guilty in any line a player can see before the debrief, nor in reactions to a stake that can fire for several suspects (a missed-guilty foe says 'You let them walk', not 'one of us'). DL10 catches only its listed patterns, so the dialogue review checks this by reading.\" Make \u00a77.9's list quote DL10's actual patterns (\"exactly/only <n> of them/you/these/the suspects\", \"<n> people/suspects/<noun>s\", \"one of them is\", \"the one who\") instead of the bare \"only one of\", which DL10's regex does not match (so the plan's own 'Only one of those keys exists' passes).",
+  "evidence": "A/PLAN_GAPS A-16 (draft lines pass DL10 but imply a count: 'the lodge has people in the room', 'Find your cultists without me', 'You let one of us walk') and A-21 (\u00a77.9 l.1884 lists 'only one of'; DL10 regex at l.2055 needs 'of (them|you|these|the suspects)').",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-13",
+  "severity": "major",
+  "priority": "should",
+  "category": "engine-wiring",
+  "sections": "\u00a79.2 Favour (HaX's opening call); \u00a79.1 Rooms and Other content (Nair's opening call); \u00a79.3 (HaX opening call, Stakes); \u00a77 handler-call rule",
+  "change": "Specify the opening call. GAPSAB-13 proposed: HaX's currentKnot: \"start\", run once (a_briefed, declared false), followed by the hub; on game_loaded with condition !globalVars.a_briefed, a bark or a timedMessages entry a few seconds in ('You're in. Call me when you can talk.') points the player at the phone; no forced call, since the favour rule is also in the brief (\u00a77.9). Same for \u00a79.1 Nair (a timedMessages prompt for the first call, which carries the HR code) and C's HaX. GAPSCD-2 proposed instead that the first call of a mission is a timedConversation ({ \"delay\": 1500, \"targetKnot\": \"start\" }, as m01 does), not a game_loaded mapping. The two conflict (prompt vs forced call); the plan owner picks one and states it in \u00a77 and \u00a79.1\u2013\u00a79.3. Either way, never a game_loaded phone mapping.",
+  "evidence": "A/PLAN_GAPS A-17: no mechanism given; the draft invented a game_loaded phone mapping that fails the phone-mapping check (A/CHECK_REPORT V2) and would force a call. B/PLAN_GAPS PG-B7 (timedMessages prompt for Nair). drafts/C/PLAN_GAPS G3 and CHECK_REPORT D2/P3 (timedConversation as m01). Plan l.2116, 2169, 2348 say 'opening call' only; no timedMessages, timedConversation, currentKnot or a_briefed anywhere.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/C/PLAN_GAPS.md G3",
+   "sidecar/drafts/C/CHECK_REPORT.md",
+   "merged: opening-call part of GAPSCD-2"
+  ]
+ },
+ {
+  "id": "GAPSAB-14",
+  "severity": "major",
+  "priority": "should",
+  "category": "ink-sample",
+  "sections": "\u00a77 intro; \u00a77.1, \u00a77.2 (example and prose l.1679, l.1688-1689), \u00a77.3, \u00a77.4, \u00a77.5 samples; \u00a79.1 Tom\u00e1s (l.2152) and Rooms (choice text)",
+  "change": "Add at the top of \u00a77: \"The samples show tags and structure only. When copying them, follow README_ink_best_practices.md: prefix person-NPC lines with the NPC's displayName, and give every fixture NPC a displayName equal to its social.people name; a phone ink has no self-prefix and no narration (every unprefixed line is the contact speaking); choices are what the player says; leave with a spoken line plus #exit_conversation back to the hub, never -> END.\" In the samples: Tom\u00e1s: \u2192 Tom\u00e1s Rivera:, Marsh: \u2192 Imogen Marsh: (or the chosen displayName); drop Nair: in \u00a77.5; change name_okoro to 'Ngozi Okoro. Noted. #verdict:report:ded_b_okoro'; \u00a77.4 accused and \u00a77.5 send end with #exit_conversation then -> hub. \u00a77.2: choices become spoken ([Who's been unhappy on nights?], [I'll let you get on.] with a reply and #exit_conversation); the kind word works once through a VAR guard, never a * choice (a * choice comes back after a reload and farms +20): VAR ded_b_tomas_kind_given = false / + {not ded_b_tomas_kind_given} [Thanks for the coffee, Tom\u00e1s. It's a long night.] -> kind_word, with kind_word beginning ~ ded_b_tomas_kind_given = true; change l.1679 'The kind word works once (* choice)' accordingly. Add a bullet: ded_<case>_<w>_questions and ded_<case>_<w>_kind_given are declared in globalVariables so they persist (DL13 checks they are declared). In \u00a79.1 make Lindqvist's choice \"Tom\u00e1s heard the server room alarm last night. What happened?\" and the kind word spoken.",
+  "evidence": "B/PLAN_GAPS PG-B5; B/CHECK_REPORT \u00a75 item 4; A/PLAN_GAPS A-19; A/CHECK_REPORT \u00a75 P7, P8 (README_ink_best_practices l.30-50, :201, :304, :486, :855-881; dialoguelint phone-self-prefix; compile-ink.sh warns on END). drafts/D/PLAN_GAPS G2, CHECK_REPORT P2, D2; drafts/C/PLAN_GAPS G16. Plan: Tom\u00e1s: l.1661/1693/1708, Marsh: l.1737, Okafor: l.1763, Nair: l.1784/1793, -> END l.1689/1764/1801, l.1688 * [Thank him for the coffee]; no displayName anywhere.",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/B/CHECK_REPORT.md",
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/D/PLAN_GAPS.md G2",
+   "sidecar/drafts/D/CHECK_REPORT.md",
+   "sidecar/drafts/C/PLAN_GAPS.md G16",
+   "merged: GAPSCD-4"
+  ]
+ },
+ {
+  "id": "GAPSAB-15",
+  "severity": "minor",
+  "priority": "should",
+  "category": "tooling",
+  "sections": "\u00a711.8 (or the packet owning scripts/ink_runtime_check/); \u00a79 intro (cast advice)",
+  "change": "Add to \u00a711.8: \"dialoguelint's speaker regex becomes Unicode-aware ([\\\\p{Lu}][\\\\p{L}\\\\p{M}.'\u2019()-]* with the u flag), with a test that 'Tom\u00e1s Rivera: Hola.' counts as one line. scenarioInfo (dialoguelint.mjs:688-703) reads the npcType of the object that holds the storyPath, not the nearest one by character distance. Until that lands, P10-K-B checks dialoguelint reports a non-zero line count for every story.\" Add to \u00a79 intro: \"A name with an accented letter resolves only through an exact displayName match (the person-chat fallback, person-chat-minigame.js:1605, is [A-Z][a-z]+); fixtures avoid accents in other names until the lint is fixed.\"",
+  "evidence": "B/PLAN_GAPS PG-B6 (dialoguelint.mjs:128 regex skips 'Tom\u00e1s', file lints as lines=0; scenarioInfo linted Haddad with phone rules); B/CHECK_REPORT \u00a72; A/PLAN_GAPS A-20; A/INVENTED G14 ('C\u00e9line' gave 0 lines, renamed).",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/B/CHECK_REPORT.md",
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-16",
+  "severity": "minor",
+  "priority": "should",
+  "category": "test-harness",
+  "sections": "\u00a79.2 Bridges; \u00a711.6",
+  "change": "Add to \u00a79.2 Bridges: \"Lockpicking, dusting and the log filter are driven as their existing bridges do (P10-T0-A finds the commands in docs/test-bridge.md and tools/playtest/se/). Where no command exists, the step sets the result from the console (a_badge_log_done; fingerprint_identified:ded_a_marsh emitted with objectId: \\\"a_wine_glass\\\"; the cloakroom unlocked), says so in a note, and the T packet's playtest does it by hand. The punch key is the one systems/player-combat.js binds (name it).\"",
+  "evidence": "A/PLAN_GAPS A-18; A/CHECK_REPORT \u00a75 P11; A/INVENTED G12 (the draft guessed pressKey q). \u00a79.2 l.2414-2418 says 'pressKey the punch key' without naming it.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/CHECK_REPORT.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-17",
+  "severity": "minor",
+  "priority": "should",
+  "category": "design-fun",
+  "sections": "\u00a77.1",
+  "change": "Add to \u00a77.1: \"A suspect's small-talk topic (every suspect has one, so talking is not itself a tell) gives character, not a lead. It must not point at an event, object or person that is not on the board. If it does, the case resolves it somewhere (a fact, an object text or the debrief).\"",
+  "evidence": "A/PLAN_GAPS A-22 and 'Three weakest moments' item 3: Ishikawa's 'Somebody wanted a page out, then wanted it back' and the reading desk's 'one page torn out' read as evidence but are on no cell, so a newcomer hunts for a missing page. \u00a77.1 (l.1656-1671) covers suspects' own words only.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-18",
+  "severity": "minor",
+  "priority": "could",
+  "category": "fixture-content",
+  "sections": "\u00a79.2 Rooms (a_reading_desk, a_camera, a_altar, a_marsh_phone)",
+  "change": "Add to \u00a79.2 Rooms: \"The desk, the monitor and the altar are non-takeable objects of an existing plain type with triggerOnInteract (P10-K-A names the type and checks it runs the actions). Marsh's phone is a takeable item with no phoneId, text or npcIds, so it cannot open phone chat (interactions.js:1529); P10-K-A confirms that picking it up fires onPickup.setVariable.\"",
+  "evidence": "A/PLAN_GAPS A-23; A/INVENTED 'Rooms and objects' (draft guessed security_monitor, notes with readable: false, and phone with no phoneId). \u00a79.2 l.2271-2281 names ids only.",
+  "sources": [
+   "sidecar/drafts/A/PLAN_GAPS.md",
+   "sidecar/drafts/A/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-20",
+  "severity": "minor",
+  "priority": "could",
+  "category": "test-coverage",
+  "sections": "\u00a79.1 Tom\u00e1s; \u00a79.1 bridge-deduction-b-wrong; \u00a79.5",
+  "change": "Add to \u00a79.1 Tom\u00e1s: \"His influence never goes below \u221245 in play, so reports (\u221260) is present for DL12 and cannot fire. bridge-deduction-b-wrong.jsonl covers it: set ded_b_tomas_influence to \u221265 from the console, then check ded_b_tomas_reported is true and a new conversation with Tom\u00e1s ends at once.\" Add a reports band row to \u00a79.5.",
+  "evidence": "B/PLAN_GAPS PG-B9; B/CHECK_REPORT \u00a75 item 8. No fixture or bridge drives the reports band (only threshold definitions at l.701, l.1677, l.2676).",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/B/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-21",
+  "severity": "minor",
+  "priority": "could",
+  "category": "data-contract",
+  "sections": "\u00a74.9 JSON block",
+  "change": "Put the place keys into the \u00a74.9 block's trigger and object routes and drop the 'left out for width' note; or add above the block: \"This block leaves out place on routes. Before use, add the places listed after it to every trigger and object route, or DL18 fails.\"",
+  "evidence": "B/PLAN_GAPS PG-B12; B/CHECK_REPORT \u00a73 'Drift since drafting' (the draft copied the block and has no place). The note comes after the block (l.789-792), and \u00a79.1 says 'Data: \u00a74.9 in full'.",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/B/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-22",
+  "severity": "minor",
+  "priority": "could",
+  "category": "validator-rule",
+  "sections": "\u00a78 derived sets, 'Freely'",
+  "change": "Add to the 'Freely' definition: \"A line that follows a conditional divert at knot level ({ x: -> elsewhere }) is still free: only a condition on the line's own choice, or a block that contains the line, makes it gated.\"",
+  "evidence": "B/PLAN_GAPS PG-B13: Nair's HR code line follows { briefed: -> hub } in start; a parser could read the divert as a gate, which would change B's opening facts and DL8's hand check. l.2025-2027 does not cover it.",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-23",
+  "severity": "minor",
+  "priority": "could",
+  "category": "teaching",
+  "sections": "\u00a79.1 Triggers and dhcp_printout row",
+  "change": "Add to \u00a79.1: \"The printout's text is shown once as a hint. The player rereads the four device facts in the notepad, where each grant writes them ('Evidence: <name>', social-intel.js:155-167). No notes item is added as a second source.\"",
+  "evidence": "B/PLAN_GAPS PG-B14; B/CHECK_REPORT \u00a75 item 11 (the hint toast fires with four 'Noted' toasts and is not saved). \u00a79.1 l.2140 and l.2166 say nothing about rereading it.",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md",
+   "sidecar/drafts/B/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSAB-24",
+  "severity": "minor",
+  "priority": "could",
+  "category": "design-fun",
+  "sections": "\u00a79.1 Other content (Tom\u00e1s, wary row); \u00a77.2",
+  "change": "Change Tom\u00e1s's wary line in \u00a79.1 to add a nudge toward recovery, e.g. \"I'd rather not talk about people behind their backs. Ask nicely and I might remember more.\" (first wary reply only), and say in \u00a77.2 that a witness's first wary reply hints that kindness helps.",
+  "evidence": "B/PLAN_GAPS 'Dialogue: fun and teaching', 'Also noted': the wary lines give no hint that kindness would help, so a player may never find the recovery. \u00a79.1 l.2170 and \u00a77.2 sample l.1693 have the bare line.",
+  "sources": [
+   "sidecar/drafts/B/PLAN_GAPS.md"
+  ]
+ }
+]

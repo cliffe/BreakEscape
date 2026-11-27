@@ -1,0 +1,13 @@
+{
+  "key": "b74c7689dfe9c90c84d5b89516a51632",
+  "npc": "imran",
+  "text": "I saw the scribble. I thought it was somebody being clever.",
+  "voice": "Puck",
+  "style": "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:27:33Z"
+}

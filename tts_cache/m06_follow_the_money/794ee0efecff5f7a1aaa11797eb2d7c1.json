@@ -1,0 +1,13 @@
+{
+  "key": "794ee0efecff5f7a1aaa11797eb2d7c1",
+  "npc": "irina_volkova",
+  "text": "The hospital money as well. All of it through my mixer, and all of it to that page.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:34Z"
+}

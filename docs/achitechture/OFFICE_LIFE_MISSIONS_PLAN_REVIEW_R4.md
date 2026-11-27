@@ -1,0 +1,61 @@
+# Office life missions plan: review round 4
+
+Reviewed: `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md` at fba94c084, checked against the code and docs in this worktree.
+
+## Verdict
+
+The plan holds up well. Its m06 survey matches the scenario and map, the field-rename table matches hardening steps 8b and 8c, the sync section respects the delta rule now that sync-deltas seeding is on main, and the tooling order in section 13 fits the stage dependencies. It is not ready to close. Four majors remain: the beat-protection rule misreads `deferrable` and `needs: suspend`; the playtest port cannot serve branch-only content; one of the two pilot levers does nothing on m06's floor; and decision 3 is framed around a fallback that cannot work as written. None of them is a blocker. Each has a small, local fix.
+
+Verified and correct (no finding): the deployed list at SCENARIO_FORMAT_HARDENING_PLAN.md:27; `STEPS = [STEP_8A]` (format_upgrade.rb:59); the 8b and 8c renames (hardening plan 738-748, 772-776); m06's rooms, doors, NPC classes and `taskOnKO` fallbacks (scenario.json.erb:1825-1937, 2246-2273; TESTING_WALKTHROUGH.md:62); coffee_station1, photocopier1 and mini_fridge1 drawn as decor in room_hce_trading.json, and the POV mismatch (POV_BACKGROUNDS.md:11); the split `chatBackground` choosing by the NPC's live room and x (person-chat-background.js:13-24); hidden same-image twins (rooms.js:2186-2190); the extractor voicing shared pools for every voiced room NPC (tts_line_extractor.rb:112-121); person-host stories walked whole, so exchange knots are batched (tts_line_extractor.rb:550-573); dungeon_graph.json carrying `kind` and `optional` on lock and key nodes; player-combat.js:453; m06 validating with 0 errors and 26 warnings; the cached clip counts.
+
+## Blockers
+
+None.
+
+## Majors
+
+**M1. The beat-protection rule treats `deferrable: false` and `needs: suspend` as ways to keep an NPC reachable. Neither one does that.**
+Evidence: NPC_NEEDS_SYSTEM.md:100 says `deferrable: false` "marks a story need: it ignores the avoid and queue checks (5.8) and goes to the nearest source anyway". It makes an NPC leave more readily. It never keeps one at its post. NPC_NEEDS_SYSTEM.md:989 says `"suspend"` "stops it without moving", so an NPC suspended while standing at the coffee point stays at the coffee point. OFFICE_LIFE_PLAN.md:4399 uses `deferrable: false` for the opposite case, a beat the NPC must walk to. The plan relies on both readings in three places: the stage 2 people table column "beats protected by" (plan:174), V2's exemption ("without `deferrable: false` or a `needs: suspend` mapping before the beat", plan:280) and E5 (plan:402). A player-started conversation also has no "before the beat" event for a suspend mapping to fire on.
+Failure: V2 passes a story NPC that has `deferrable: false` on its need, although that NPC is the one most likely to be away when the player arrives. Under a "suspend before the beat" plan, an NPC can be frozen in another room.
+Fix: Allow three protections only: stationary (no `needs`), needs confined to the NPC's own room (`needsRooms: [own room]` with every need target in that room), or a `"needs": "resume"` mapping (which walks the NPC home, NPC_NEEDS_SYSTEM.md:989) followed by `"suspend"` on an event that precedes the beat and that the plan names, such as `room_entered:<room>`. Drop `deferrable: false` from V2's exemption and from the people table. Add one line saying what `deferrable: false` is for.
+
+**M2. The playtests are meant to run on :3001, but :3001 cannot serve a branch that stays off main until it is voiced.**
+Evidence: plan:408 ("all office-life playtests run on the keyless server on :3001") and plan:483 ("Playtests ... on :3001"). Plan:409 and plan:256 keep the work on `build/office-life-<m>` until it is voiced. AGENTS.md:224 forbids switching the shared tree to another branch. The :3001 server serves the main checkout; the project's own record of this (worktree live proof, on :3002) says a worktree "can't be bridged there before merge", and AGENTS.md:173 and AGENTS.md:221 cover the keyless server and the shared database.
+Failure: the stage 5 regression run, the persona run, the `__test.needs` checks and the E3 frame-time reading would all exercise main's m06, which has no office life. They would pass and prove nothing.
+Fix: Every stage 5 and stage 6 run goes on a keyless server started from the branch worktree on :3002, using `tools/playtest/new-game.rb` from that worktree. Repeat the database rule (seeding is allowed; no `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop` or `db:setup`). Note that `run-suite.sh` hard-codes port 3001. Only the batch-tip checks in section 10 run on :3001, after the merge.
+
+**M3. On m06, the desk-phone lever cannot move anyone.**
+Evidence: plan:304 offers "a declared desk phone with an extension on a note" as one of the two in-world sources for the pilot's single lever. The engine works like this. An owner at his desk answers without getting up (test_needs_sims scenario.json.erb:195). An owner who is away lets the phone ring out (OFFICE_LIFE_PLAN.md:3549-3551). Only a colleague with `answersPhones: true` who is "idle at its post in the phone's room" walks over (OFFICE_LIFE_PLAN.md:3553; HANDOVER_OFFICE_S19.md:23). In the pilot design, Dani is the only needs NPC posted on the floor. Irina stays stationary with no `needs`, so the needs system does not track her, and Priya's post is in the lab. The dialling side is also unspecified: a ring comes from an object's `emit_event` (test_needs_sims:205, apply-actions.js:181). A note cannot ring anything.
+Failure: if stage 2 picks the phone, the pilot's only lever rings and does nothing, and the "player directs events" aim goes unmet on the pilot.
+Fix: For m06, make the cake magnet the lever (cake1.png exists; give Dani and Priya a `hunger` need and NPC-own `cake` and announce pools, which `chatterPool` merges per NPC, npc-needs.js:242-251). Alternatively, keep the phone only with a second needs NPC posted on the floor with `answersPhones`, which is Tier 3. The phone1 and phone3 desk phones are already drawn on the trading desks (room_hce_trading.json table_items), so declaring one as a dialling phone with `triggerOnInteract` costs no art if the phone is kept.
+
+**M4. Decision 3 is framed around a cost that does not arise and a fallback that cannot be carried out.**
+Evidence: plan:388 says writing today's names "would quietly widen 8b's scope, add m06 to its proofs and give a freshly reviewed mission a second rename diff". It then falls back to asking "the hardening session to add the pilot to its scope first". The pilot sits on its own branch and reaches main only once voiced (plan:409). Step 8b's scope is fixed to the templates on main when it is built (plan:377; hardening plan:750). The hardening session therefore cannot take in a branch-only mission. The working route exists already: `tools/format/rewrite_templates.rb --step <version>` edits template text from the step's own transform (hardening plan:678), so it can run on the pilot branch when that branch is rebased over 8b or 8c. A rename diff is mechanical, re-keys no audio (the clip key holds text, voice, style, language, model and note: tts-audio SKILL.md:92) and needs no new dialogue review.
+Failure: the user is asked to choose between an open-ended wait (8c is "planned", not built: plan:364) and a fallback that cannot happen as written.
+Fix: Reframe decision 3. Option (a): wait for 8b and 8c. Option (b): implement now on `FormatUpgrade.current` names, and when the branch rebases over 8b or 8c, run `rewrite_templates.rb` on the branch, re-run V9 and the validator, and log the diff as mechanical. Either option is honest. Recommend whichever finishes sooner given 8b's state on the day. Remove the "add the pilot to the hardening scope" fallback.
+
+## Minors
+
+**m1. If V5 matches by broad prefix, it errors on every campaign mission at baseline.** m01 to m10 hold 46 `npc_ko`, 41 `npc_hostile_state_changed` and 5 `npc_attacked` mappings, and m06's `npc_ko:irina_volkova` mappings set `irina_fate_decided` (scenario.json.erb:1287-1299). `item_dropped:<id>` is the general player-drop event (item-drop.js:14, 515), and the lab's USB drop uses it. Fix: list exact prefixes in `OFFICE_LIFE_EVENT_PREFIXES` (`npc_left_post`, `npc_chatted`, `npc_exchange_heard`, `npc_call_heard`, `npc_print_`, `npc_announced`, `workstation_`, `desk_phone_`, `magnet_`, `object_revealed`, `door_propped`), drop `item_dropped` unless the item carries an `interests` tag, and add a fixture asserting 0 V5 errors on m01 to m10 as they stand.
+
+**m2. Section 7 says V8 prints the sync counts, and plan reviewers are to check sums against V8 (plan:341, 360). V8 is built only at section 13 step 5, after the pilot's stages 0 to 3.** Fix: stage 2 plan reviews check the section 7 table by hand; V8 confirms it at stage 4.
+
+**m3. Section 13 step 1 writes `references/patterns.md` from the showcases with file:line, which means today's names, before 8b and 8c merge.** Stage 4 then copies retired keys, such as `screenOwner` and `leftBehindBy`, which become validator errors (hardening plan:759). Fix: add to section 13 step 5 "regenerate patterns.md and field-map.md from the rewritten showcases".
+
+**m4. The sync table leaves out `triggeredEvents`, a keyed section (PLAYER_STATE_SYNC_AUDIT.md:24-25), which gains one key per new `onceOnly` mapping.** It also leaves out the whole-inventory echo on `POST /inventory` when a printout, left-behind item or the cake is picked up (audit P2, :270). Both are bounded. Fix: add a row for each, giving the cap or "not new to office life", so V8 counts mappings too.
+
+**m5. The V6 rake invocation `rails break_escape:tts:office_lines[...]` (plan:284) does not match how the existing tasks are run from the engine root, which is `bin/rails "app:break_escape:tts:wasted[...]"` (tts-audio SKILL.md:52).** Fix: use the same form.
+
+**m6. The plan does not say tts-audio SKILL.md needs editing.** Its office-chatter rule (SKILL.md:22) still says "Chatter is generated on first play and cached", which conflicts with voice-before-merge. Fix: in section 13 step 2, add a short tts-audio section on the office-life path (V6, `ttsPregenerateChatter: true`, voice before merge, a :3002 branch server for drafts).
+
+**m7. The playtests stop short of AGENTS.md phase 5.** That phase ends with a blind playtest (AGENTS.md:53), and its dialogue stage starts with a calibration sample shown to the user (AGENTS.md:91). The plan has neither. Fix: on the pilot only, show the user a short sample of chatter and one exchange before the dialogue cycles go on. State that the blind playtest waits for the lab-sheet update, which the user writes last.
+
+**m8. Slice 1 checks preset queue cells (plan:210) but not `useFrom`.** On m06 the coffee point, copier and fridge sit on the bottom row (y 240 to 244 in a 10x10 map, room_hce_trading.json). The presets' `useFrom {dx:0, dy:1}` (office-presets.json `coffee`, `copier`) may point into the south wall. Fix: check `useFrom` as well, and hand-write it where the approach cell is a wall.
+
+**m9. Hardening step 3 adds a clue marker to m06 on main (SCENARIO_FORMAT_HARDENING_PLAN.md:17, 822), and steps 6a and 6b mark NPC fields client-visible or server-only (hardening plan:823, 870), while the pilot branch is open.** Fix: in section 8, say the pilot branch rebases over each of these and re-runs V9 and the validator. Add NPC `needs`, `chatter` and `exchanges` to the client-visible fields 6a-1 must cover for campaign missions.
+
+**m10. Section 3's overview (plan:96) says stages 4 to 8 "build, review, dress, voice and close", but dressing happens in stage 4 slice 5 (plan:214) and stage 6 is art follow-ups.** Section 11's review row also omits the implementation-review rounds. Fix: reword the overview and add the row.
+
+**m11. "Screen habits on trading desks" (plan:304) is plural, but the pilot has only one moving desk owner, Dani.** Irina is stationary, so her PC is always "attended" or "signin" (workstation-state.js:53-60). Fix: say "Dani's desk and Priya's lab PC" and say which PC the existing `trading_workstation` becomes.
+
+Counts: B=0 M=4 m=11

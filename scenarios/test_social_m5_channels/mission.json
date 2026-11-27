@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: social M5 channels",
+  "description": "Fixture for the M5 browser proofs: a bar-less chat, person and mail channel lockouts, and a locked takeable mail terminal. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

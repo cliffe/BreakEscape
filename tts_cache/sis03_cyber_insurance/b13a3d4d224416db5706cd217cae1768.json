@@ -1,0 +1,13 @@
+{
+  "key": "b13a3d4d224416db5706cd217cae1768",
+  "npc": "eleanor_vance",
+  "text": "And it looks first to whether our own government has attributed the attack. It hasn't.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:32Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "752a5ec9ab958bbd5d4dc171aeb8e36f",
+  "npc": "gwen_pritchard",
+  "text": "When I'm away from my desk it sits on the charger by the east wall. Old habit.",
+  "voice": "Vindemiatrix",
+  "style": "Records manager at Merrin & Sallow, in her 50s, dry and exact, fond of a tidy filing system. Speak with a consistent Welsh-influenced British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:50:17Z"
+}

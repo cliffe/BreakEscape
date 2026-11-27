@@ -1,0 +1,13 @@
+{
+  "key": "9e52739cbbc30c7a6cf81887686cd7aa",
+  "npc": "ama_owusu",
+  "text": "It's off. Typical.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:39:42Z"
+}

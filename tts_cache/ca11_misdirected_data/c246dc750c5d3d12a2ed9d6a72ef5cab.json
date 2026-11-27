@@ -1,0 +1,13 @@
+{
+  "key": "c246dc750c5d3d12a2ed9d6a72ef5cab",
+  "npc": "kit_yusuf_demir",
+  "text": "This printout isn't ours. It's a care home's resident list, with health notes on it. Someone sent it here by mistake.",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:23:11Z"
+}

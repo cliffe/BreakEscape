@@ -1,0 +1,13 @@
+{
+  "key": "b0917609bcf2728f4fb5066e11fda852",
+  "npc": "eleanor_vance",
+  "text": "Section three: regulatory disclosure posture. Section four: Trent Water third-party scope. Those are narrower, but they still follow from the same evidence chain you've just assembled.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:27:30Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "60a7bfca07adbc1baef600b9cb5cb1c6",
+  "npc": "narrator",
+  "text": "At the van window, Kowalczyk turns her head.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:44:43Z"
+}

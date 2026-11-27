@@ -1,0 +1,13 @@
+{
+  "key": "af1b2c0ecb69a0dab6e029ca58593c29",
+  "npc": "ama_owusu",
+  "text": "It's in your keyring, the list of sign-ins you hold. The network view offers them when you connect.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:56:39Z"
+}

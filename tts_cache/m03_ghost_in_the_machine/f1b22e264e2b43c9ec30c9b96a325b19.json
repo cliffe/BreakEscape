@@ -1,0 +1,13 @@
+{
+  "key": "f1b22e264e2b43c9ec30c9b96a325b19",
+  "npc": "danny_foster",
+  "text": "Then I'll cooperate. For what it's worth. Just... in whatever you write, say I didn't know at the start. Please.",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:37:57Z"
+}

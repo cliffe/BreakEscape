@@ -1,0 +1,13 @@
+{
+  "key": "c497fd0033bcf0c21b703ce264497dec",
+  "npc": "duty_guard_b",
+  "text": "Alarm's up. Down on the grating, now!",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:26:44Z"
+}

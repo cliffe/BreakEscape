@@ -1,0 +1,13 @@
+{
+  "key": "10c2ecbaa96f753fe07b557291855f14",
+  "npc": "anjali_rao",
+  "text": "Lending a login feels kind, but it leaves you answerable for whatever is done with it.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:53:45Z"
+}

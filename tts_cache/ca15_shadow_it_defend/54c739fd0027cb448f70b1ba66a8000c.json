@@ -1,0 +1,13 @@
+{
+  "key": "54c739fd0027cb448f70b1ba66a8000c",
+  "npc": "kit_chidi_okeke",
+  "text": "Now then. Drinks machine's over there if you fancy one.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:16Z"
+}

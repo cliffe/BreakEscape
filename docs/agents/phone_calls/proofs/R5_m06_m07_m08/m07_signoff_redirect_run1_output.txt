@@ -1,0 +1,64 @@
+game 2371 (signoff_redirect)
+globals: team_assignment="trojan_horse" team_redirected=true
+ringer: {"cur":{"npc":"the_architect","state":"connected","knot":"sign_off","opened":true},"q":0,"banner":null,"bimg":null} mg="PhoneChatMinigame phone-chat"
+shot signoff_redirect_signoff_call
+{"t":469366,"last":"You saved eight poi","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":469990,"last":"You saved eight point four million peo","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":470416,"last":"You saved eight point four million people. I'm not","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":471049,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":471674,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":472302,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":472935,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":473567,"last":"And you mov","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":474189,"last":"And you moved them. Not everyo","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":474821,"last":"And you moved them. Not everyone does.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":475450,"last":"And you moved them. Not everyone does.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":475885,"last":"And you moved them. Not everyone does.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":476502,"last":"And you moved them. Not everyone does.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":476925,"last":"I'll have","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":477549,"last":"I'll have the figures from Wa","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":477982,"last":"I'll have the figures from Washington and","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":478608,"last":"I'll have the figures from Washington and San Francisco by m","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":479238,"last":"I'll have the figures from Washington and San Francisco by morning.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":479667,"last":"I'll have the figures from Washington and San Francisco by morning.","ch":["1. You lost tonight.","2. Say it."],"active":true,"mg":"PhoneChatMinigame"}
+CLICK "1. You lost tonight."
+{"t":482015,"last":"You lost tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":482648,"last":"I wasn'","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":483269,"last":"I wasn't playing for tonig","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":483903,"last":"I wasn't playing for tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":484536,"last":"I wasn't playing for tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":485169,"last":"I wasn't playing for tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":485792,"last":"You'll h","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":486218,"last":"You'll have the figur","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":486642,"last":"You'll have the figures too. Then","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":487269,"last":"You'll have the figures too. Then we'll both know th","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":487904,"last":"You'll have the figures too. Then we'll both know the same thing about","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":488532,"last":"You'll have the figures too. Then we'll both know the same thing about you.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":489167,"last":"You'll have the figures too. Then we'll both know the same thing about you.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":489800,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":490432,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":491066,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":491699,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":492332,"last":null,"ch":[],"active":false,"mg":null}
+{"t":492966,"last":null,"ch":[],"active":false,"mg":null}
+{"t":493599,"last":null,"ch":[],"active":false,"mg":null}
+{"t":494225,"last":null,"ch":[],"active":false,"mg":null}
+{"t":494858,"last":null,"ch":[],"active":false,"mg":null}
+{"t":495491,"last":null,"ch":[],"active":false,"mg":null}
+shot signoff_redirect_signoff_after_end
+architect_signoff_done=true mg=null
+rows: ["Call: No caller ID"]
+architect /tts: "You saved eight point four million people. I'm not being sarcastic." "And you moved them. Not everyone does." "I'll have the figures from Washington and San Francisco by morning." "I wasn't playing for tonight." "You'll have the figures too. Then we'll both know the same thing about you." 
+--- bring-in
+"opened agent_0x99"
+hub: {"choices":["1. Walk me through the layout.","2. What's the clock?","3. Understood. Let's go."],"header":null}
+shot signoff_redirect_hub
+dialling: {"bar":null}
+shot signoff_redirect_calling
+call: {"bar":null,"subs":[],"choices":["1. Walk me through the layout.","2. What's the clock?","3. Understood. Let's go."],"thread":" here, Agent. I've got your channel and the board. | The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal. | The team's logged for Trojan Horse, Austin. It's on the record. It'd take something new to move it. | You're past the checkpoint. Ask me where you stand and I'll give you the next step. | Grid's held. Netherton wants you. The plant's south of the server hall if you want anything bagged. Call me when ready. Nine minutes from the abort, he's on anyway."}
+shot signoff_redirect_bring_call
+after call: debrief_requested=false start_debrief=false mg="PhoneChatMinigame phone-chat"
+shot signoff_redirect_bring_after
+HaX rows: []
+HaX /tts: 
+armed ending: null

@@ -1,0 +1,452 @@
+#!/usr/bin/env python3
+"""Unit tests for tools/pixellab_pipeline.py (no network).
+
+Run: python3 -m unittest tools/test_pixellab_pipeline.py -v
+"""
+import argparse
+import sys
+import tempfile
+import types
+import unittest
+from unittest import mock
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pixellab_pipeline import (clear_edge_white, clear_white_backgrounds,  # noqa: E402
+                               parse_pose_from, take_pose_from_state,
+                               apply_stored_import_settings, clear_white_wanted)
+import pixellab_pipeline  # noqa: E402
+from convert_pixellab_to_spritesheet import normalize_anim_type  # noqa: E402
+
+WHITE = (254, 255, 254, 255)
+OFF_WHITE = (254, 252, 250, 255)
+OUTLINE = (20, 20, 30, 255)
+SKIN = (179, 119, 81, 255)
+HAIR = (204, 203, 203, 255)
+HALO = (220, 220, 221, 255)
+CLEAR = (0, 0, 0, 0)
+
+
+def figure_frame(background=WHITE, border=1):
+    """A 20x20 frame: a 1px transparent border (as PixelLab exports have), the given
+    background, and an outlined figure with an enclosed 2x2 white badge and a lone white
+    eye pixel inside it, a light grey hair row, and a diagonal-only gap in the outline."""
+    a = np.zeros((20, 20, 4), dtype=np.uint8)
+    a[:] = background
+    if border:
+        a[:border, :] = CLEAR
+        a[-border:, :] = CLEAR
+        a[:, :border] = CLEAR
+        a[:, -border:] = CLEAR
+    a[5:15, 5:15] = OUTLINE        # outline box
+    a[6:14, 6:14] = SKIN           # body
+    a[6, 6:14] = HAIR              # light grey but below the threshold
+    a[9:11, 9:11] = WHITE          # enclosed badge
+    a[7, 12] = WHITE               # enclosed eye white
+    # A white pixel inside the outline that touches the background only diagonally
+    # (outline corner at (5,5) cut away to background, (6,6) white): must survive.
+    a[5, 5] = background
+    a[6, 6] = WHITE
+    return a
+
+
+class ClearEdgeWhiteTest(unittest.TestCase):
+    def test_edge_connected_background_clears(self):
+        a = figure_frame()
+        out, n = clear_edge_white(Image.fromarray(a, "RGBA"))
+        b = np.asarray(out)
+        bg = np.ones((20, 20), bool)
+        bg[5:15, 5:15] = False
+        bg[5, 5] = True  # the cut corner is background too
+        opaque_bg = bg & (a[..., 3] > 0)
+        self.assertEqual(n, int(opaque_bg.sum()))
+        self.assertTrue((b[bg][:, 3] == 0).all(), "background left opaque")
+
+    def test_off_white_background_clears(self):
+        out, n = clear_edge_white(Image.fromarray(figure_frame(OFF_WHITE), "RGBA"))
+        b = np.asarray(out)
+        self.assertGreater(n, 0)
+        self.assertEqual(b[1, 1, 3], 0)
+
+    def test_enclosed_white_survives(self):
+        a = figure_frame()
+        b = np.asarray(clear_edge_white(Image.fromarray(a, "RGBA"))[0])
+        np.testing.assert_array_equal(b[9:11, 9:11], a[9:11, 9:11])   # badge
+        np.testing.assert_array_equal(b[7, 12], a[7, 12])             # eye white
+        np.testing.assert_array_equal(b[6, 6], a[6, 6])               # diagonal-only contact
+        np.testing.assert_array_equal(b[6, 7:14], a[6, 7:14])         # light grey hair
+        np.testing.assert_array_equal(b[6:14, 6:14], a[6:14, 6:14])   # whole interior
+
+    def test_transparent_frame_unchanged(self):
+        a = figure_frame(CLEAR, border=0)
+        out, n = clear_edge_white(Image.fromarray(a, "RGBA"))
+        self.assertEqual(n, 0)
+        np.testing.assert_array_equal(np.asarray(out), a)
+
+    def test_halo_and_speck_clear(self):
+        # Animation frames carry a 1px light halo (220) round the outline, and the odd speck.
+        a = figure_frame()
+        a[4, 5:15] = HALO
+        a[5:15, 4] = HALO
+        a[2, 17] = HALO  # a lone speck, joined to nothing
+        b = np.asarray(clear_edge_white(Image.fromarray(a, "RGBA"))[0])
+        self.assertTrue((b[4, 5:15, 3] == 0).all())
+        self.assertTrue((b[5:15, 4, 3] == 0).all())
+        self.assertEqual(b[2, 17, 3], 0)
+        np.testing.assert_array_equal(b[5:15, 5:15][1:, 1:], a[5:15, 5:15][1:, 1:])
+
+    def test_speck_pass_spares_enclosed_and_dark(self):
+        # A dark one-pixel spur on the outline stays; specks are only light pixels.
+        a = figure_frame()
+        a[15, 9] = OUTLINE
+        b = np.asarray(clear_edge_white(Image.fromarray(a, "RGBA"))[0])
+        np.testing.assert_array_equal(b[15, 9], a[15, 9])
+
+    def test_white_figure_touching_edge_without_outline_is_cleared(self):
+        # Documents the limit: near-white that reaches the edge is treated as background.
+        a = figure_frame()
+        a[10, 0:5] = WHITE
+        b = np.asarray(clear_edge_white(Image.fromarray(a, "RGBA"))[0])
+        self.assertEqual(b[10, 2, 3], 0)
+
+    def test_export_folder_pass(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "rotations").mkdir()
+            strip = root / "animations" / "walk" / "south"
+            strip.mkdir(parents=True)
+            Image.fromarray(figure_frame(), "RGBA").save(root / "rotations" / "south.png")
+            Image.fromarray(figure_frame(), "RGBA").save(strip / "frame_000.png")
+            clean = figure_frame(CLEAR, border=0)
+            Image.fromarray(clean, "RGBA").save(strip / "frame_001.png")
+            before = (strip / "frame_001.png").read_bytes()
+            frames, pixels = clear_white_backgrounds(root)
+            self.assertEqual(frames, 2)
+            self.assertGreater(pixels, 0)
+            self.assertEqual((strip / "frame_001.png").read_bytes(), before)
+            self.assertEqual(np.asarray(Image.open(strip / "frame_000.png"))[1, 1, 3], 0)
+            self.assertEqual(clear_white_backgrounds(root), (0, 0))  # idempotent
+
+
+COMPASS = ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"]
+
+
+class PoseFromTest(unittest.TestCase):
+    """--pose-from: a standing state's 8 rotations become pose_<name> frames."""
+
+    def state(self, tmp, n=8, background=WHITE):
+        rot = Path(tmp) / "state" / "rotations"
+        rot.mkdir(parents=True)
+        for d in COMPASS[:n]:
+            Image.fromarray(figure_frame(background), "RGBA").save(rot / f"{d}.png")
+        return rot.parent
+
+    def test_copies_eight_rotations_and_flood_fills_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.state(tmp)
+            root = Path(tmp) / "export"
+            (root / "rotations").mkdir(parents=True)
+            take_pose_from_state(root, src, {"id": "x" * 36}, "drink")
+            frames = sorted((root / "animations" / "pose_drink").rglob("*.png"))
+            self.assertEqual(len(frames), 8)
+            self.assertEqual({f.parent.name for f in frames}, set(COMPASS))
+            self.assertTrue(all(f.name == "frame_000.png" for f in frames))
+            # The import's white pass covers the pose frames like every animation frame
+            changed, _ = clear_white_backgrounds(root)
+            self.assertEqual(changed, 8)
+            self.assertEqual(Image.open(frames[0]).getpixel((2, 2))[3], 0)
+
+    def test_wrong_rotation_count_exits_and_leaves_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.state(tmp, n=4)
+            root = Path(tmp) / "export"
+            with self.assertRaises(SystemExit):
+                take_pose_from_state(root, src, {"id": "x" * 36}, "phone")
+            self.assertFalse((root / "animations" / "pose_phone").exists())
+
+    def test_unknown_name_exits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(SystemExit):
+                take_pose_from_state(Path(tmp), self.state(tmp), {"id": "x" * 36}, "dance")
+
+    def test_parse_merges_over_stored(self):
+        stored = {"drink": "a" * 36, "phone": "b" * 36}
+        got = parse_pose_from(["phone=" + "c" * 36, "use = " + "d" * 36], stored)
+        self.assertEqual(got, {"drink": "a" * 36, "phone": "c" * 36, "use": "d" * 36})
+        self.assertEqual(stored["phone"], "b" * 36)   # the stored dict is not changed
+        self.assertEqual(parse_pose_from(None, None), {})
+
+    def test_parse_rejects_bad_values(self):
+        for bad in (["drink"], ["wave=" + "a" * 36], ["wave="]):
+            with self.assertRaises(SystemExit):
+                parse_pose_from(bad)
+
+    def test_converter_keeps_pose_names(self):
+        self.assertEqual(normalize_anim_type("pose_drink"), "pose_drink")
+        self.assertEqual(normalize_anim_type("pose_use"), "pose_use")
+        self.assertEqual(normalize_anim_type("Breathing_Idle-9fa0f8f5"), "breathing-idle")
+        self.assertEqual(normalize_anim_type("sit"), "sit")
+
+
+class StoredImportSettingsTest(unittest.TestCase):
+    """A re-import keeps sit_from, poses and idle_from, by key or by id with --key."""
+
+    CID = "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37"
+    MANIFEST = {"mow": {"character_id": CID, "sit_from": "sit-id", "idle_from": "idle-id",
+                        "poses": {"drink": "d1", "phone": "p1", "use": "u1"}}}
+
+    def args(self, target, key=None, pose_from=None):
+        import argparse
+        return argparse.Namespace(target=target, key=key, pose_from=pose_from, idle_from=None,
+                                  sit_from=None, white_threshold=None)
+
+    def test_by_key(self):
+        a = self.args("mow", pose_from=["phone=p2"])
+        apply_stored_import_settings(a, self.MANIFEST)
+        self.assertEqual((a.target, a.key, a.sit_from, a.idle_from), (self.CID, "mow", "sit-id", "idle-id"))
+        self.assertEqual(a.poses, {"drink": "d1", "phone": "p2", "use": "u1"})
+
+    def test_by_id_or_url_with_key_of_the_same_character(self):
+        for target in (self.CID, f"https://www.pixellab.ai/characters/{self.CID}"):
+            a = self.args(target, key="mow", pose_from=["use=u2"])
+            apply_stored_import_settings(a, self.MANIFEST)
+            self.assertEqual(a.sit_from, "sit-id", target)
+            self.assertEqual(a.poses, {"drink": "d1", "phone": "p1", "use": "u2"})
+
+    def test_key_of_another_character_keeps_nothing(self):
+        a = self.args("0" * 36, key="mow", pose_from=["use=u2"])
+        apply_stored_import_settings(a, self.MANIFEST)
+        self.assertIsNone(a.sit_from)
+        self.assertEqual(a.poses, {"use": "u2"})
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+# ------------------------------------------------------------ poses: removal, feet line, drift audit
+
+import json  # noqa: E402
+import types  # noqa: E402
+from unittest import mock  # noqa: E402
+
+import pixellab_pipeline  # noqa: E402
+import pixellab_drift_audit  # noqa: E402
+import convert_pixellab_to_spritesheet as conv  # noqa: E402
+from pixellab_pipeline import drop_unlisted_poses, convert_and_record  # noqa: E402
+
+UUID_A = "a" * 8 + "-aaaa-aaaa-aaaa-" + "a" * 12
+UUID_B = "b" * 8 + "-bbbb-bbbb-bbbb-" + "b" * 12
+
+
+def figure(size=60, top=10, bottom=50, left=25, right=35):
+    """A transparent frame with an opaque block; bbox bottom == bottom."""
+    a = np.zeros((size, size, 4), dtype=np.uint8)
+    a[top:bottom, left:right] = OUTLINE
+    return Image.fromarray(a, "RGBA")
+
+
+class PoseRemovalTest(unittest.TestCase):
+    def test_empty_value_removes_a_stored_pose(self):
+        stored = {"drink": UUID_A, "use": UUID_B}
+        self.assertEqual(parse_pose_from(["drink="], stored), {"use": UUID_B})
+        self.assertEqual(parse_pose_from(["phone="], stored), stored, "removing an absent pose is a no-op")
+        with self.assertRaises(SystemExit):
+            parse_pose_from(["drink"], stored)
+
+    def test_drop_unlisted_pose_folders(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for n in ("drink", "use"):
+                (root / "animations" / f"pose_{n}" / "south").mkdir(parents=True)
+            (root / "animations" / "walk" / "south").mkdir(parents=True)
+            self.assertEqual(drop_unlisted_poses(root, {"use": UUID_B}), ["drink"])
+            self.assertFalse((root / "animations" / "pose_drink").exists())
+            self.assertTrue((root / "animations" / "pose_use").exists())
+            self.assertTrue((root / "animations" / "walk").exists())
+
+    def test_manifest_round_trip(self):
+        """convert_and_record writes poses; a re-import merges and can remove one."""
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = Path(tmp) / "chars.json"
+            args = types.SimpleNamespace(assets_dir=tmp, force=True, workdir=None, idle_from=None,
+                                         sit_from=None, white_threshold=None, register=False,
+                                         poses={"drink": UUID_A, "phone": UUID_B})
+            with mock.patch.object(pixellab_pipeline, "IMPORT_MANIFEST", manifest), \
+                    mock.patch.object(pixellab_pipeline, "REPO", Path(tmp)), \
+                    mock.patch.object(conv, "process_character", return_value=True):
+                convert_and_record(args, "k", UUID_A, {"name": "K"}, Path(tmp))
+                stored = json.loads(manifest.read_text())["k"]["poses"]
+                self.assertEqual(stored, {"drink": UUID_A, "phone": UUID_B})
+                args.poses = parse_pose_from(["phone="], stored)
+                convert_and_record(args, "k", UUID_A, {"name": "K"}, Path(tmp))
+                self.assertEqual(json.loads(manifest.read_text())["k"]["poses"], {"drink": UUID_A})
+
+
+class PoseFeetLineTest(unittest.TestCase):
+    def data(self, tmp, idle_bottom=48, pose_bottom=50, pose_size=60, walk=True):
+        root = Path(tmp)
+        anims = {}
+
+        def put(anim, direction, img):
+            p = root / anim / direction / "frame_000.png"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            img.save(p)
+            anims.setdefault(anim, {})[direction] = [p]
+        for d in ("south", "east"):
+            put("breathing-idle", d, figure(bottom=idle_bottom if d == "south" else 50))
+            if walk:
+                put("walk", d, figure(bottom=50))
+            put("pose_drink", d, figure(size=pose_size, bottom=pose_bottom))
+        return {"animations": anims}
+
+    def test_pose_frames_do_not_set_the_feet_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = conv.frame_offsets(self.data(tmp, pose_bottom=50), 80, 70)[0]
+        with tempfile.TemporaryDirectory() as tmp:
+            low = conv.frame_offsets(self.data(tmp, pose_bottom=58), 80, 70)[0]
+        self.assertEqual(base, low)
+
+    def test_odd_pose_canvas_uses_its_own_feet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            offsets = conv.frame_offsets(self.data(tmp, pose_size=76, pose_bottom=66), 80, 70)[0]
+        self.assertEqual(offsets[(76, 76)][1], 70 - 66, "feet on the line, not centred")
+
+    def test_pose_aligned_to_the_idle_per_direction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            shifts = conv.pose_feet_shifts(self.data(tmp, idle_bottom=48, pose_bottom=50))
+        self.assertEqual(shifts, {("pose_drink", "south"): -2})
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(conv.pose_feet_shifts(self.data(tmp, idle_bottom=40, pose_bottom=50)), {},
+                             "a large difference is left alone")
+
+
+class DriftAuditPoseNamesTest(unittest.TestCase):
+    def test_split_frame_name(self):
+        split = pixellab_drift_audit.split_frame_name
+        self.assertEqual(split("pose_drink_south_frame_000"), ("pose_drink", "south", "000"))
+        self.assertEqual(split("walk_south-east_frame_003"), ("walk", "south-east", "003"))
+        self.assertEqual(split("breathing-idle_north_frame_001"), ("breathing-idle", "north", "001"))
+
+    def test_adopt_a_pose_frame(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            assets, ov, root = tmp / "assets", tmp / "ov", tmp / "export"
+            assets.mkdir()
+            ex = figure(size=60, bottom=50)
+            (root / "animations" / "pose_drink" / "south").mkdir(parents=True)
+            ex.save(root / "animations" / "pose_drink" / "south" / "frame_000.png")
+            (root / "animations" / "breathing-idle" / "south").mkdir(parents=True)
+            ex.save(root / "animations" / "breathing-idle" / "south" / "frame_000.png")
+            cell = Image.new("RGBA", (80, 80))
+            cell.paste(ex, (10, 19))   # the converter's offset for this export
+            cell.putpixel((40, 40), (255, 0, 0, 255))   # the hand edit
+            cell.save(assets / "k.png")
+            (assets / "k.json").write_text(json.dumps({"frames": {"pose_drink_south_frame_000": {
+                "frame": {"x": 0, "y": 0, "w": 80, "h": 80}}}}))
+            with mock.patch.object(pixellab_drift_audit, "ASSETS", assets), \
+                    mock.patch.object(pixellab_drift_audit, "OVERRIDES", ov), \
+                    mock.patch.object(pixellab_drift_audit, "REPO", tmp):
+                pixellab_drift_audit.adopt("k", {"pose_drink_south_frame_000": 1}, root)
+            saved = ov / "k" / "pose_drink" / "south" / "frame_000.png"
+            self.assertTrue(saved.exists())
+            self.assertEqual(Image.open(saved).getpixel((30, 21)), (255, 0, 0, 255))
+
+    def test_adopted_hand_aligned_frame_rebuilds_where_it_was(self):
+        """A frame moved by hand inside its cell must come back at the same place after
+        the override is pasted at the converter's offset (it used to come back shifted by
+        the gap between the best-match origin and that offset)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            assets, ov, root = tmp / "assets", tmp / "ov", tmp / "export"
+            assets.mkdir()
+            ex = figure(size=60, bottom=50)
+            for anim in ("breathing-idle", "walk"):
+                (root / "animations" / anim / "south").mkdir(parents=True)
+                ex.save(root / "animations" / anim / "south" / "frame_000.png")
+            ox, oy = pixellab_drift_audit.converter_offset(root, ex.size, (80, 80))
+            self.assertEqual((ox, oy), (10, 19))
+            cell = Image.new("RGBA", (80, 80))
+            cell.paste(ex, (ox - 9, oy + 2))   # hand-aligned: nudged left and down
+            cell.save(assets / "k.png")
+            (assets / "k.json").write_text(json.dumps({"frames": {"walk_south_frame_000": {
+                "frame": {"x": 0, "y": 0, "w": 80, "h": 80}}}}))
+            with mock.patch.object(pixellab_drift_audit, "ASSETS", assets), \
+                    mock.patch.object(pixellab_drift_audit, "OVERRIDES", ov), \
+                    mock.patch.object(pixellab_drift_audit, "REPO", tmp):
+                pixellab_drift_audit.adopt("k", {"walk_south_frame_000": 1}, root)
+            saved = Image.open(ov / "k" / "walk" / "south" / "frame_000.png").convert("RGBA")
+            rebuilt = Image.new("RGBA", (80, 80))
+            rebuilt.paste(saved, (ox, oy))
+            self.assertEqual(rebuilt.tobytes(), cell.tobytes())
+
+
+class WhiteBackgroundOptInTest(unittest.TestCase):
+    """The white-background fill is off by default (it ate Sarah's white shirt) and runs only for
+    a key flagged white_bg in the manifest, or with --clear-white. --keep-white always wins."""
+
+    CID = "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37"
+
+    def run_offline_import(self, manifest_entry, **flags):
+        """Run cmd_import --offline on one white-background frame; return that frame afterwards."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            root = tmp / "export"
+            (root / "rotations").mkdir(parents=True)
+            Image.fromarray(figure_frame(), "RGBA").save(root / "rotations" / "south.png")
+            manifest = {"k": dict(character_id=self.CID, **manifest_entry)}
+            args = argparse.Namespace(target="k", key=None, pose_from=None, idle_from=None, sit_from=None,
+                                      white_threshold=None, keep_white=False, clear_white=False,
+                                      offline=True, ignore_drift=True, allow_incomplete=True,
+                                      assets_dir=str(tmp), workdir=None)
+            for name, value in flags.items():
+                setattr(args, name, value)
+            character = {"name": "K", "animations": []}
+            fake_api = mock.Mock()
+            fake_api.get.return_value = character
+            ov = tmp / "overrides"
+            ov.mkdir()
+            with mock.patch.object(pixellab_pipeline, "IMPORT_MANIFEST", tmp / "chars.json"), \
+                    mock.patch.object(Path, "read_text", lambda self, *a, **k: __import__("json").dumps(manifest)
+                                      if self.name == "chars.json" else Path.read_bytes(self).decode()), \
+                    mock.patch.object(Path, "exists", lambda self: True if self.name == "chars.json"
+                                      else __import__("os").path.exists(self)), \
+                    mock.patch.object(pixellab_pipeline, "PixelLab", return_value=fake_api), \
+                    mock.patch.object(pixellab_pipeline, "resolve_character", return_value=self.CID), \
+                    mock.patch.object(pixellab_pipeline, "missing_animations", return_value=([], None)), \
+                    mock.patch.object(pixellab_pipeline, "export_root_for", return_value=root), \
+                    mock.patch.object(pixellab_pipeline, "drop_unlisted_poses"), \
+                    mock.patch.object(pixellab_pipeline, "apply_overrides"), \
+                    mock.patch.object(pixellab_pipeline, "convert_and_record"):
+                pixellab_pipeline.cmd_import(args)
+            return np.asarray(Image.open(root / "rotations" / "south.png"))
+
+    def test_default_import_keeps_edge_connected_white(self):
+        b = self.run_offline_import({})
+        self.assertEqual(tuple(b[1, 1]), WHITE)
+
+    def test_flagged_character_clears_it(self):
+        b = self.run_offline_import({"white_bg": True})
+        self.assertEqual(b[1, 1, 3], 0)
+        self.assertEqual(tuple(b[9, 9]), WHITE, "enclosed badge must stay")
+
+    def test_clear_white_flag_clears_it(self):
+        b = self.run_offline_import({}, clear_white=True)
+        self.assertEqual(b[1, 1, 3], 0)
+
+    def test_keep_white_overrides_the_manifest(self):
+        b = self.run_offline_import({"white_bg": True}, keep_white=True)
+        self.assertEqual(tuple(b[1, 1]), WHITE)
+
+    def test_wanted_logic_and_stored_setting(self):
+        self.assertFalse(clear_white_wanted(argparse.Namespace()))
+        self.assertTrue(clear_white_wanted(argparse.Namespace(clear_white=True)))
+        self.assertTrue(clear_white_wanted(argparse.Namespace(), {"white_bg": True}))
+        self.assertFalse(clear_white_wanted(argparse.Namespace(keep_white=True, clear_white=True)))
+        a = argparse.Namespace(target="k", key=None, pose_from=None, idle_from=None, sit_from=None,
+                               white_threshold=None)
+        apply_stored_import_settings(a, {"k": {"character_id": self.CID, "white_bg": True}})
+        self.assertTrue(a.white_bg)

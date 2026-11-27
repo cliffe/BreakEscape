@@ -1,0 +1,13 @@
+{
+  "key": "0c82a47ea2a25e5f8601ad280b99c0d9",
+  "npc": "delphine_reception",
+  "text": "For Catherine? She's away this week, though her boxes do come here.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:36Z"
+}

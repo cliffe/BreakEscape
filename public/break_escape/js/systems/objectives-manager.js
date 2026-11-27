@@ -1,0 +1,1614 @@
+/**
+ * ObjectivesManager
+ * 
+ * Tracks mission objectives (aims) and their sub-tasks.
+ * Listens to game events and updates objective progress.
+ * Syncs state with server for validation.
+ * 
+ * @module objectives-manager
+ */
+
+/**
+ * Code review R5 M2: a targetItemIds entry may name an item by its id, its lock ref
+ * (opens_lock, or the older key_id) or its name. Items get ids at game creation
+ * (container contents, NPC held items), so a task authored against a name or a lock
+ * ref must still match once the item carries a stamped id. Mirrors the server's
+ * validate_collection.
+ */
+export function targetIdMatches(targetIds, ...candidates) {
+  if (!Array.isArray(targetIds) || targetIds.length === 0) return false;
+  return candidates.some(c => typeof c === 'string' && c !== '' && targetIds.includes(c));
+}
+
+function lockRefOf(data) {
+  return data ? (data.opens_lock ?? data.key_id) : undefined;
+}
+
+export class ObjectivesManager {
+  constructor(eventDispatcher) {
+    this.eventDispatcher = eventDispatcher;
+    this.aims = [];           // Array of aim objects
+    this.taskIndex = {};      // Quick lookup: taskId -> task object
+    this.aimIndex = {};       // Quick lookup: aimId -> aim object
+    this.listeners = [];      // UI update callbacks
+    this.syncTimeouts = {};   // Debounced sync timers
+    this.initialized = false;
+
+    // Bounded in-memory re-send queue of enter_room completions that failed for a
+    // transient or network reason (plan section 8.3). A Set keyed by task id, so
+    // re-queuing an id is a no-op and the queue holds at most one entry per
+    // enter_room task. Never part of any sync payload (SYNC SIZE RULE).
+    this.enterRoomQueue = new Set();
+    this._drainingEnterRoomQueue = false;
+
+    this.setupEventListeners();
+
+    // Teach the ending warning how to rebuild a held missionConclusion-aim ending after a reload
+    // (systems/ending-check.js): re-run the task completion that would conclude the mission.
+    if (typeof window !== 'undefined') {
+      window.endingCheck?.registerRebuilder?.('aim', (record) =>
+        (record?.taskId ? () => this.completeTask(record.taskId) : null));
+
+      // Reconnect drain: when the browser comes back online, re-post any queued
+      // enter_room completions (the load-bearing reconnect trigger, plan section 8.3).
+      if (typeof window.addEventListener === 'function') {
+        window.addEventListener('online', () => this.drainEnterRoomQueue());
+      }
+    }
+  }
+  
+  /**
+   * Initialize objectives from scenario data
+   * @param {Array} objectivesData - Array of aim objects from scenario
+   * @param {Object} [options]
+   * @param {boolean} [options.liveGlobalUnlock] - open a locked aim as soon as
+   *   its globalVariable unlockCondition becomes true (see watchGlobalUnlocks).
+   *   game.js passes true only for a scenario with a `social` block, so the
+   *   Licence to Hack missions keep checking the condition on load only.
+   */
+  initialize(objectivesData, options = {}) {
+    if (!objectivesData || !objectivesData.length) {
+      console.log('📋 No objectives defined in scenario');
+      return;
+    }
+    
+    // Deep clone to avoid mutating scenario
+    this.aims = JSON.parse(JSON.stringify(objectivesData));
+    
+    // Build indexes
+    this.aims.forEach(aim => {
+      this.aimIndex[aim.aimId] = aim;
+      aim.tasks.forEach(task => {
+        task.aimId = aim.aimId;
+        // Ensure task has a status, default to 'active' if not specified
+        if (!task.status) {
+          task.status = 'active';
+        }
+        task.originalStatus = task.status; // Store for reset
+        
+        // Initialize submit_flags task properties
+        if (task.type === 'submit_flags') {
+          if (!task.submittedFlags) {
+            task.submittedFlags = [];
+          }
+          if (task.targetCount === undefined && task.targetFlags) {
+            task.targetCount = task.targetFlags.length;
+          }
+          if (task.currentCount === undefined) {
+            task.currentCount = 0;
+          }
+          console.log(`📋 Initialized submit_flags task ${task.taskId}: status=${task.status}, targetFlags=${task.targetFlags?.join(', ') || 'none'}, targetCount=${task.targetCount}`);
+        }
+        
+        // collect_items defaults to 1 item (server does the same)
+        if (task.type === 'collect_items' && !task.targetCount) {
+          task.targetCount = 1;
+        }
+        
+        this.taskIndex[task.taskId] = task;
+      });
+    });
+    
+    // Sort by order
+    this.aims.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Restore state from server if available
+    this.restoreState();
+    
+    // Reconcile with current game state (handles items collected before objectives loaded)
+    this.reconcileWithGameState();
+
+    this.watchGlobalUnlocks(!!options.liveGlobalUnlock);
+
+    this.initialized = true;
+    console.log(`📋 Objectives initialized: ${this.aims.length} aims, ${Object.keys(this.taskIndex).length} tasks`);
+    this.notifyListeners();
+
+    // Init replay (plan section 8.3): if the avatar already stands in a room on a
+    // reload-in-place, the single post-reload room_entered auto-emit may have fired
+    // before this manager finished initialising (handleRoomEntered returns early
+    // while !this.initialized), dropping the only emit until the next crossing.
+    // Replay the current room once now that tasks are loaded. Idempotent:
+    // handleRoomEntered only completes an active enter_room task for that room,
+    // completeTask early-returns for a completed/completing task, and the server
+    // check is idempotent, so this can never double-complete or complete a task for
+    // a room the player has not reached. A no-op if no room is set yet (init ran
+    // before the first tick), in which case the tick's own emit is caught.
+    if (typeof window !== 'undefined' && typeof window.currentPlayerRoom === 'string'
+        && window.currentPlayerRoom !== '') {
+      this.handleRoomEntered(window.currentPlayerRoom);
+    }
+  }
+  
+  /**
+   * Restore objective state from player_state (passed from server via objectivesState)
+   */
+  restoreState() {
+    const savedState = window.gameState?.objectives;
+    if (!savedState) return;
+    
+    // Restore aim statuses
+    Object.entries(savedState.aims || {}).forEach(([aimId, state]) => {
+      if (this.aimIndex[aimId]) {
+        this.aimIndex[aimId].status = state.status;
+        this.aimIndex[aimId].completedAt = state.completedAt;
+        // Shown because one of its tasks moved before its unlockCondition was met
+        // (derived by the server, see Game#objectives_state_for_client)
+        this.aimIndex[aimId].revealedEarly = !!state.revealedEarly;
+      }
+    });
+    
+    // Restore task statuses and progress
+    Object.entries(savedState.tasks || {}).forEach(([taskId, state]) => {
+      if (this.taskIndex[taskId]) {
+        // Only restore status if it exists in saved state, otherwise keep original
+        if (state.status) {
+          this.taskIndex[taskId].status = state.status;
+        }
+        this.taskIndex[taskId].currentCount = state.progress || 0;
+        this.taskIndex[taskId].completedAt = state.completedAt;
+        if (state.skippedAt) this.taskIndex[taskId].skippedAt = state.skippedAt;
+        // Restore submittedFlags for submit_flags tasks
+        if (state.submittedFlags) {
+          this.taskIndex[taskId].submittedFlags = state.submittedFlags;
+          // Update currentCount based on submittedFlags length for submit_flags tasks
+          if (this.taskIndex[taskId].type === 'submit_flags') {
+            this.taskIndex[taskId].currentCount = state.submittedFlags.length;
+          }
+        }
+      }
+    });
+    
+    // Ensure all tasks have a valid status (use originalStatus if status is undefined)
+    Object.values(this.taskIndex).forEach(task => {
+      if (!task.status) {
+        task.status = task.originalStatus || 'active';
+        console.log(`📋 Restored task ${task.taskId} status to ${task.status} (was undefined)`);
+      }
+      // Also ensure submit_flags tasks have proper initialization
+      if (task.type === 'submit_flags') {
+        if (!task.submittedFlags) {
+          task.submittedFlags = [];
+        }
+        if (task.targetCount === undefined && task.targetFlags) {
+          task.targetCount = task.targetFlags.length;
+        }
+      }
+    });
+    
+    console.log('📋 Restored objectives state from server');
+  }
+  
+  /**
+   * Reconcile objectives with current game state
+   * Handles case where player collected items BEFORE objectives system initialized
+   */
+  reconcileWithGameState() {
+    console.log('📋 Reconciling objectives with current game state...');
+    
+    // Check inventory for items matching collect_items tasks
+    const inventoryItems = window.inventory?.items || [];
+    
+    Object.values(this.taskIndex).forEach(task => {
+      if (task.status !== 'active') return;
+      
+      switch (task.type) {
+        case 'collect_items':
+          const matchingItems = inventoryItems.filter(item => {
+            const itemType = item.scenarioData?.type || item.getAttribute?.('data-type');
+            const itemId = item.scenarioData?.id;
+            const itemName = item.scenarioData?.name;
+            const idMatch = () => targetIdMatches(task.targetItemIds, itemId, lockRefOf(item.scenarioData), itemName);
+            
+            let matches = false;
+            
+            // Type-based matching
+            if (task.targetItems && task.targetItems.length > 0) {
+              matches = task.targetItems.includes(itemType);
+            }
+            
+            // ID-based matching (more specific): id, lock ref or name (review R5 M2)
+            if (task.targetItemIds && task.targetItemIds.length > 0) {
+              matches = idMatch();
+            }
+            
+            // If both specified, match either
+            if (task.targetItems && task.targetItems.length > 0 && 
+                task.targetItemIds && task.targetItemIds.length > 0) {
+              matches = task.targetItems.includes(itemType) || idMatch();
+            }
+            
+            return matches;
+          });
+          
+          // Also count keys from keyRing
+          const keyRingItems = window.inventory?.keyRing?.keys || [];
+          const matchingKeys = keyRingItems.filter(key => {
+            const keyType = key.scenarioData?.type;
+            const keyName = key.scenarioData?.name;
+            const idMatch = () => targetIdMatches(task.targetItemIds, key.scenarioData?.id, lockRefOf(key.scenarioData), keyName);
+            
+            let matches = false;
+            
+            // Type-based matching
+            if (task.targetItems && task.targetItems.length > 0) {
+              matches = task.targetItems.includes(keyType) || task.targetItems.includes('key');
+            }
+            
+            // ID-based matching: id, lock ref or name (review R5 M2)
+            if (task.targetItemIds && task.targetItemIds.length > 0) {
+              matches = idMatch();
+            }
+            
+            // If both specified, match either
+            if (task.targetItems && task.targetItems.length > 0 && 
+                task.targetItemIds && task.targetItemIds.length > 0) {
+              const typeMatch = task.targetItems.includes(keyType) || task.targetItems.includes('key');
+              matches = typeMatch || idMatch();
+            }
+            
+            return matches;
+          });
+          
+          const totalCount = matchingItems.length + matchingKeys.length;
+          
+          if (totalCount > (task.currentCount || 0)) {
+            task.currentCount = totalCount;
+            console.log(`📋 Reconciled ${task.taskId}: ${totalCount}/${task.targetCount}`);
+            
+            if (totalCount >= task.targetCount) {
+              this.completeTask(task.taskId);
+            }
+          }
+          break;
+          
+        case 'unlock_object':
+          // Auto-complete if the target object was already unlocked in a prior session
+          // A sign-in PC is "unlocked" once the player has signed in there (access model
+          // 5.3): the server's signedInPcs, restored into pc-sessions.js on load.
+          // A jack is "unlocked" once a foothold has ever been gained there (slice 9.3a,
+          // 3.5): the server's gainedFootholds, restored into network-links.js on load.
+          // An access point is "unlocked" the same way once the player has joined there
+          // (slice 9.3b, 5.3). An implant's PC is not (it meets no task on its PC: a dropped
+          // stick must not satisfy a sign-in task), and implant footholds are never removed,
+          // so heldAt tells an implant PC apart from a jack or access point.
+          if (window.gameState?.unlockedObjects?.includes(task.targetObject) ||
+              window.pcSessions?.wasSignedIn?.(task.targetObject) ||
+              (window.networkLinks?.wasGained?.(task.targetObject) &&
+               window.networkLinks?.heldAt?.(task.targetObject)?.via !== 'implant')) {
+            console.log(`📋 Reconciled ${task.taskId}: object already unlocked`);
+            this.completeTask(task.taskId);
+          }
+          break;
+
+        case 'unlock_room':
+          // Check if room is already unlocked
+          const unlockedRooms = window.gameState?.unlockedRooms || [];
+          const isUnlocked = unlockedRooms.includes(task.targetRoom) || 
+                            window.discoveredRooms?.has(task.targetRoom);
+          if (isUnlocked) {
+            console.log(`📋 Reconciled ${task.taskId}: room already unlocked`);
+            this.completeTask(task.taskId);
+          }
+          break;
+          
+        case 'enter_room':
+          // Check if room was already visited
+          if (window.discoveredRooms?.has(task.targetRoom)) {
+            console.log(`📋 Reconciled ${task.taskId}: room already visited`);
+            this.completeTask(task.taskId);
+          }
+          break;
+      }
+    });
+  }
+  
+  /**
+   * Setup event listeners for automatic objective tracking
+   * NOTE: Event names match actual codebase implementation
+   */
+  setupEventListeners() {
+    if (!this.eventDispatcher) {
+      console.warn('📋 ObjectivesManager: No event dispatcher available');
+      return;
+    }
+    
+    // Item collection - wildcard pattern works with NPCEventDispatcher
+    this.eventDispatcher.on('item_picked_up:*', (data) => {
+      this.handleItemPickup(data);
+    });
+    
+    // Room/door unlocks
+    // NOTE: door_unlocked provides both 'roomId' and 'connectedRoom'
+    // Use 'connectedRoom' for unlock_room tasks (the room being unlocked)
+    this.eventDispatcher.on('door_unlocked', (data) => {
+      this.handleRoomUnlock(data.connectedRoom);
+    });
+    
+    this.eventDispatcher.on('door_unlocked_by_npc', (data) => {
+      this.handleRoomUnlock(data.roomId);
+    });
+    
+    // Object unlocks - NOTE: event is 'item_unlocked' (not 'object_unlocked')
+    this.eventDispatcher.on('item_unlocked', (data) => {
+      // data contains: { itemId, itemType, itemName, lockType }
+      this.handleObjectUnlock(data.itemName, data.itemType, data.itemId);
+    });
+    
+    // A sign-in on a sign-in PC meets an unlock_object task on that PC (access model 5.3).
+    // pc-sessions.js also emits pc_signed_in:<pcId>; listening to the bare name counts once.
+    // A relay sign-in (an assist invite, keyring K3c 8.3) is the holder's session, not the
+    // player's sign-in there: it meets no task, as the server's signedInPcs never counts it.
+    // A session token (K5) is no lasting sign-in either: the server never records it in signedInPcs.
+    this.eventDispatcher.on('pc_signed_in', (data) => {
+      if (data?.relay === true || data?.token === true) return;
+      if (data?.pcId) this.handleObjectUnlock(data.pcId, data.pcId, data.pcId);
+    });
+
+    // A foothold gained at a jack meets an unlock_object task on that jack (slice 9.3a, 3.5).
+    // network-links.js also emits it as network_foothold_gained:<jackId>; the bare name counts once.
+    // An implant meets no task on its PC (slice 9.3b): a dropped stick must not satisfy a
+    // sign-in task, and the server would refuse it ("Not signed in to this PC").
+    this.eventDispatcher.on('network_foothold_gained', (data) => {
+      if (data?.via === 'implant') return;
+      if (data?.sourceId) this.handleObjectUnlock(data.sourceId, data.sourceId, data.sourceId);
+    });
+
+    // A Wi-Fi join meets an unlock_object task on that access point (slice 9.3b, 5.3). It fires
+    // for a second access point of a joined network too (already: true), which gains no new
+    // foothold; the server has recorded that access point in gainedFootholds by then.
+    this.eventDispatcher.on('network_joined', (data) => {
+      if (data?.apId) this.handleObjectUnlock(data.apId, data.apId, data.apId);
+    });
+
+    // Room entry
+    this.eventDispatcher.on('room_entered', (data) => {
+      this.handleRoomEntered(data.roomId);
+    });
+    
+    // NPC conversation completion (via ink tag)
+    this.eventDispatcher.on('task_completed_by_npc', (data) => {
+      this.completeTask(data.taskId);
+    });
+    
+    // Flag submission — kept for other listeners (NPC eventMappings, music system, etc.)
+    // Task completion is handled by flag_tasks_updated below, not here.
+    this.eventDispatcher.on('flag_submitted', (data) => {
+      this.handleFlagSubmission(data);
+    });
+
+    // Server-confirmed flag task outcomes — drives task/aim completion
+    this.eventDispatcher.on('flag_tasks_updated', (data) => {
+      this.handleFlagTasksUpdated(data);
+    });
+
+    // Reconcile flag-task story wiring once every system is up (NPC
+    // eventMappings register before game_loaded, which initialize() does not).
+    // See reconcileCompletedFlagTasks.
+    this.eventDispatcher.on('game_loaded', () => {
+      this.reconcileCompletedFlagTasks();
+    });
+
+    console.log('📋 ObjectivesManager event listeners registered');
+  }
+
+  /**
+   * Re-emit objective_task_completed for submit_flags tasks that are already
+   * completed in the restored server state.
+   *
+   * A submit_flags task is completed server-side the instant its flag is
+   * accepted (Game#process_flag_task_completions!), and that completion is
+   * what the scenario's story wiring listens for to set the globals that open
+   * the next door (e.g. objective_task_completed:submit_flag_1 → flag1_submitted
+   * → the blast door). Those events fire exactly once, live, from
+   * handleFlagTasksUpdated. If the live event is ever missed — a reload between
+   * the submission and the global syncing, a second submission that the server
+   * treats as already-submitted (so it returns no completedTasks and
+   * handleFlagTasksUpdated early-returns), or a replay that inherits the
+   * completed task but not the global — the global is never set and nothing
+   * reconciles it, stranding the critical path permanently (the task shows
+   * done, but the door never opens).
+   *
+   * On game_loaded we re-announce every already-completed flag task so its
+   * story listeners catch up. This is idempotent: the setGlobal mappings guard
+   * on !globalVars.<g>, so once the global is set a re-announcement is a no-op,
+   * and onceOnly message handlers do not re-fire (their triggeredEvents are
+   * restored before game_loaded). It emits only the story events — it does NOT
+   * re-run processTaskCompletion (unlocks/notifications already ran when the
+   * task first completed).
+   */
+  reconcileCompletedFlagTasks() {
+    if (!this.initialized) return;
+
+    Object.values(this.taskIndex).forEach(task => {
+      if (task.type !== 'submit_flags') return;
+      if (task.status !== 'completed') return;
+
+      const payload = { taskId: task.taskId, aimId: task.aimId, task, _reconcile: true };
+      this.eventDispatcher.emit('objective_task_completed', payload);
+      this.eventDispatcher.emit(`objective_task_completed:${task.taskId}`, payload);
+    });
+  }
+  
+  /**
+   * Handle item pickup - check collect_items tasks
+   * Supports both type-based matching (targetItems) and ID-based matching (targetItemIds)
+   */
+  handleItemPickup(data) {
+    if (!this.initialized) return;
+    
+    const itemType = data.itemType;
+    const itemId = data.itemId;
+    const itemName = data.itemName;
+    
+    // Find all active collect_items tasks that target this item
+    Object.values(this.taskIndex).forEach(task => {
+      if (task.type !== 'collect_items') return;
+      if (task.status === 'completing') {
+        // A completion POST is in flight and may be rejected (it can beat the
+        // inventory/collect POST). Keep the pickup and replay it after a revert.
+        if (!task._pendingPickups) task._pendingPickups = [];
+        task._pendingPickups.push(data);
+        return;
+      }
+      if (task.status !== 'active') return;
+
+      // Check if item matches task criteria
+      let matches = false;
+
+      // Group-based matching (targetGroup) — takes priority when present
+      const collectionGroup = data.collectionGroup;
+      if (task.targetGroup) {
+        matches = !!(collectionGroup && task.targetGroup === collectionGroup);
+      } else {
+        // Type-based matching (targetItems array)
+        if (task.targetItems && task.targetItems.length > 0) {
+          matches = task.targetItems.includes(itemType);
+        }
+
+        // ID-based matching (targetItemIds array) - more specific, overrides type matching.
+        // Review R5 M2: the id, the lock ref (keyId / lockRef on the event) or the name
+        const idMatch = () => targetIdMatches(task.targetItemIds, itemId, data.lockRef, data.keyId, itemName);
+        if (task.targetItemIds && task.targetItemIds.length > 0) {
+          matches = idMatch();
+        }
+
+        // If both are specified, item must match at least one
+        if (task.targetItems && task.targetItems.length > 0 &&
+            task.targetItemIds && task.targetItemIds.length > 0) {
+          matches = task.targetItems.includes(itemType) || idMatch();
+        }
+      }
+
+      if (!matches) return;
+
+      // Don't count past the target (guard against server rejection + revert loops)
+      if ((task.currentCount || 0) >= task.targetCount) return;
+
+      // Dedup: track which specific items have already been counted for this task
+      if (!task._collectedItemKeys) task._collectedItemKeys = new Set();
+      const itemKey = itemId || itemName;
+      if (itemKey && task._collectedItemKeys.has(itemKey)) return;
+      if (itemKey) task._collectedItemKeys.add(itemKey);
+
+      // Increment progress
+      task.currentCount = (task.currentCount || 0) + 1;
+      
+      console.log(`📋 Task progress: ${task.title} (${task.currentCount}/${task.targetCount})`);
+      
+      // Check completion
+      if (task.currentCount >= task.targetCount) {
+        this.completeTask(task.taskId);
+      } else {
+        // Partial progress counts as progress: show the aim it belongs to
+        this.revealAimForTask(task);
+        // Sync progress to server
+        this.syncTaskProgress(task.taskId, task.currentCount);
+        this.notifyListeners();
+      }
+    });
+  }
+  
+  /**
+   * Handle flag submission event.
+   * Task completion is now server-authoritative and handled via handleFlagTasksUpdated.
+   * This handler is kept because other systems (NPC eventMappings, music) listen to flag_submitted.
+   * @param {Object} data - Event data containing flagId, flagKey, vmId, stationId
+   */
+  handleFlagSubmission(data) {
+    // Task completion is driven by the flag_tasks_updated event (server-confirmed outcomes).
+    // Nothing to do here for objectives tracking.
+    console.log(`📋 flag_submitted received (task completion handled server-side):`, data.flagId);
+  }
+
+  /**
+   * Handle server-confirmed flag task outcomes.
+   * Called after the server has validated the flag AND persisted task/aim state.
+   * Updates local UI state only — no serverCompleteTask round-trip needed.
+   * @param {Object} data - { flagId, completedTasks: [...taskIds], updatedTasks: [...taskIds] }
+   */
+  handleFlagTasksUpdated(data) {
+    if (!this.initialized) return;
+
+    // Mark tasks completed (server already persisted this)
+    (data.completedTasks || []).forEach(taskId => {
+      const task = this.taskIndex[taskId];
+      if (!task || task.status === 'completed') return;
+
+      task.status      = 'completed';
+      task.completedAt = new Date().toISOString();
+
+      this.showTaskCompleteNotification(task);
+      this.processTaskCompletion(task);   // handles onComplete.unlockTask / unlockAim
+
+      // Show the parent aim if it is still locked (see revealAimForTask)
+      this.revealAimForTask(task);
+
+      this.checkAimCompletion(task.aimId);
+
+      // Emit events for NPC eventMappings and other listeners
+      this.eventDispatcher.emit('objective_task_completed', { taskId, aimId: task.aimId, task });
+      this.eventDispatcher.emit(`objective_task_completed:${taskId}`, { taskId, aimId: task.aimId, task });
+
+      console.log(`✅ Flag task completed (server-confirmed): ${task.title}`);
+    });
+
+    // Update progress counter for partially-submitted tasks
+    (data.updatedTasks || []).forEach(taskId => {
+      const task = this.taskIndex[taskId];
+      if (!task || task.status !== 'active') return;
+      task.currentCount = (task.currentCount || 0) + 1;
+      this.revealAimForTask(task);
+      console.log(`📋 Flag task progress updated: ${task.title} (${task.currentCount}/${task.targetCount})`);
+    });
+
+    this.notifyListeners();
+  }
+
+  /**
+   * Handle room unlock - check unlock_room tasks
+   */
+  handleRoomUnlock(roomId) {
+    if (!this.initialized) return;
+    
+    Object.values(this.taskIndex).forEach(task => {
+      if (task.type !== 'unlock_room') return;
+      if (task.status !== 'active') return;
+      if (task.targetRoom !== roomId) return;
+      
+      this.completeTask(task.taskId);
+    });
+  }
+  
+  /**
+   * Handle object unlock - check unlock_object tasks
+   * Matches by object name or type (item_unlocked event provides itemName and itemType)
+   */
+  handleObjectUnlock(itemName, itemType, itemId) {
+    if (!this.initialized) return;
+
+    Object.values(this.taskIndex).forEach(task => {
+      if (task.type !== 'unlock_object') return;
+      if (task.status !== 'active') return;
+
+      // Match by object ID (preferred), display name, or type
+      const matches = (itemId && task.targetObject === itemId) ||
+                      task.targetObject === itemName ||
+                      task.targetObject === itemType;
+      if (!matches) return;
+
+      this.completeTask(task.taskId);
+    });
+  }
+  
+  /**
+   * Handle room entry - check enter_room tasks
+   */
+  handleRoomEntered(roomId) {
+    if (!this.initialized) return;
+    
+    Object.values(this.taskIndex).forEach(task => {
+      if (task.type !== 'enter_room') return;
+      if (task.status !== 'active') return;
+      if (task.targetRoom !== roomId) return;
+      
+      this.completeTask(task.taskId);
+    });
+  }
+  
+  /**
+   * Complete a task (called by event handlers or ink tags)
+   * @param {string} taskId - The task ID to complete
+   */
+  /**
+   * POST a completion, retrying while the failure looks transient.
+   *
+   * Write contention is bursty and short-lived -- several ink tags landing in
+   * the same tick -- so a few spaced retries clear it. A genuine refusal
+   * ("NPC not encountered") comes back with success:false and no transient
+   * flag, and is returned on the first attempt without retrying.
+   */
+  /**
+   * Flush pending client state (globals among it) to the server before a
+   * task-completion or skip POST. A global named in a mission's
+   * concludeRequires.globals, set on the same beat as the task, reaches the
+   * server only with the state sync; without this flush the completion POST can
+   * land first, and the server warns "Not Yet..." over an ending that concludes a
+   * moment later (the conclude race). Mirrors concludeMission() in
+   * music/scenario-music-events.js, which already does this before POST .../conclude.
+   *
+   * StateSync.sync() sends buildChanges() -- deltas only, and no request at all
+   * when nothing changed -- so this never grows the synced state (SYNC SIZE RULE).
+   * It never rejects. Called twice: the second is a no-op if the first saved, a
+   * resend if the first was answered stale.
+   */
+  async flushPendingGlobals() {
+    await window.stateSync?.sync?.();
+    await window.stateSync?.sync?.();
+  }
+
+  /**
+   * Does this scenario gate any mission conclusion on a global variable
+   * (`concludeRequires.globals`)? Only such scenarios can hit the conclude race,
+   * so only they pay for the pre-flush before the completion/skip POST; every
+   * other scenario keeps its original timing. Computed once and cached.
+   */
+  scenarioGatesOnGlobals() {
+    if (this._gatesOnGlobals === undefined) {
+      this._gatesOnGlobals = this.aims.some(aim =>
+        Array.isArray(aim.concludeRequires?.globals) && aim.concludeRequires.globals.length > 0);
+    }
+    return this._gatesOnGlobals;
+  }
+
+  async serverCompleteTaskWithRetry(taskId, attempts = 4) {
+    // Order the pending global sync before the completion POST (the conclude race).
+    // Only scenarios that gate a conclusion on a global need this, and one sync
+    // round-trip carries the global; scenarios with no global gate keep their
+    // original timing. The warning fallback below re-flushes and re-posts if a
+    // tight residual race still slips through.
+    if (this.scenarioGatesOnGlobals()) {
+      await window.stateSync?.sync?.();
+    }
+    let last = { success: false, error: 'No attempt made' };
+    for (let i = 0; i < attempts; i++) {
+      last = await this.serverCompleteTask(taskId);
+      if (last.success || !last.transient) return last;
+      const delay = 150 * Math.pow(2, i); // 150ms, 300, 600, 1200
+      console.warn(`⏳ Transient failure completing ${taskId} (${last.error}); retrying in ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    return last;
+  }
+
+  /**
+   * Await one state sync for ordering only, swallowing a rejection. The enter_room
+   * check passes on durable server state regardless of this sync, so a rejecting or
+   * absent sync must never block or fail the completion POST (plan section 8.3).
+   */
+  async safeSyncOnce() {
+    try {
+      await window.stateSync?.sync?.();
+    } catch (_e) {
+      // Awaited for ordering, never for success.
+    }
+  }
+
+  /**
+   * Add an enter_room completion that failed for a transient or network reason to
+   * the bounded re-send queue (plan section 8.3). Keyed by task id (a Set), so
+   * re-queuing is a no-op and the queue cannot grow per attempt. Only enter_room
+   * tasks enter it; every other task keeps its current behaviour.
+   */
+  enqueueEnterRoom(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.type !== 'enter_room') return;
+    this.enterRoomQueue.add(taskId);
+  }
+
+  /**
+   * Re-post queued enter_room completions. Fired from the browser `online` event
+   * (the reconnect trigger) and, opportunistically, after the syncs this manager
+   * itself awaits (the enter_room pre-flush and the inline retryable re-sync).
+   * Removes each entry, then re-runs the full this.completeTask(taskId) path, so a
+   * drained completion that ends a mission still fires the end-screen and
+   * conclude-race handling. A fresh transient, a still-`retryable` enter_room refusal
+   * (R1 minor 2) or a thrown failure re-adds the id (the feed rule in completeTask);
+   * a drained entry that comes back success or a genuinely non-retryable refusal is
+   * dropped. A re-added id cannot retry forever: each drain is one completeTask run
+   * and is triggered only by the `online` event or a manager sync, never by the drain
+   * itself (re-entry guarded, so a drain-triggered sync does not recurse), so a forge
+   * stays queued without spinning. The server's already-completed branch makes a
+   * duplicate a no-op.
+   */
+  async drainEnterRoomQueue() {
+    if (this._drainingEnterRoomQueue) return;
+    if (!this.enterRoomQueue || this.enterRoomQueue.size === 0) return;
+    this._drainingEnterRoomQueue = true;
+    try {
+      const ids = Array.from(this.enterRoomQueue);
+      for (const taskId of ids) {
+        this.enterRoomQueue.delete(taskId);
+        await this.completeTask(taskId);
+      }
+    } finally {
+      this._drainingEnterRoomQueue = false;
+    }
+  }
+
+  /**
+   * Re-run pickups that arrived while a collect task was 'completing' and the
+   * completion was then rejected/reverted. No-op if nothing was queued.
+   */
+  replayPendingPickups(task) {
+    const pending = task._pendingPickups;
+    task._pendingPickups = null;
+    if (pending && pending.length) {
+      pending.forEach(data => this.handleItemPickup(data));
+    }
+  }
+
+  /**
+   * Would completing this task conclude the mission? True for the last required task of a
+   * missionConclusion aim whose concludeRequires tasks are all done. Used by the ending
+   * warning (systems/ending-check.js); the server stays the authority on the conclusion.
+   */
+  wouldConcludeMission(task) {
+    const aim = this.aimIndex[task.aimId];
+    if (!aim?.missionConclusion || aim.status === 'completed') return false;
+    const hasRequired = aim.tasks.some(t => !t.optional);
+    const othersSettled = aim.tasks.every(t =>
+      t === task || (hasRequired && t.optional) || this.isTaskSettled(t));
+    if (!othersSettled) return false;
+    const required = aim.concludeRequires?.tasksCompleted || [];
+    return required.every(id => id === task.taskId || this.taskIndex[id]?.status === 'completed');
+  }
+
+  async completeTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.status === 'completed' || task.status === 'completing') return;
+
+    // The ending warning: the task that would end the mission waits while optional
+    // objectives are open and the player decides. "Keep going" leaves the task undone and the
+    // ending held (a button on the panel, or it ends by itself once nothing optional is open).
+    if (window.endingCheck?.needsAnswer?.() && this.wouldConcludeMission(task)) {
+      if (task._endingChecking) return;
+      task._endingChecking = true;
+      let endNow = true;
+      const persist = { reason: 'aim', taskId };
+      try {
+        endNow = await window.endingCheck.confirm({ reason: 'aim', persist });
+      } finally {
+        task._endingChecking = false;
+      }
+      if (!endNow) {
+        window.endingCheck.hold(() => this.completeTask(taskId), { reason: 'aim', persist });
+        return;
+      }
+      if (task.status === 'completed' || task.status === 'completing') return;
+    }
+
+    // Mark as completing immediately to block further event increments (race condition guard)
+    task.status = 'completing';
+
+    console.log(`✅ Completing task: ${task.title}`);
+
+    // Server validation
+    try {
+      // enter_room pre-flush (plan section 8.3): order the soft currentRoom signal
+      // before the completion POST so the server's player_reached_room? sees the
+      // latest synced room. Awaited for ordering only (safeSyncOnce swallows a
+      // rejection); the durable unlockedRooms/npcRouteRooms write carries the check,
+      // so a rejecting, aborted or absent sync never blocks the POST. Also drain any
+      // queued enter_room completions while we are flushing.
+      if (task.type === 'enter_room') {
+        await this.safeSyncOnce();
+        void this.drainEnterRoomQueue(); // fire-and-forget: drain swallows its own errors
+      }
+
+      let response = await this.serverCompleteTaskWithRetry(taskId);
+
+      // Inline retryable re-post (plan section 8.3): a `retryable` refusal
+      // ('Room not reached') means the durable membership may not have reached the
+      // completion yet (an honest ordering gap) or the room was never reached (a
+      // forge). Re-sync once (for ordering, never for success) and re-post once.
+      // An honest gap self-heals. A still-`retryable` result after the re-post is
+      // enqueued below (R1 minor 2): once Chunk A's npcRouteRooms lands, a separate
+      // method:npc route POST may still be in flight, so an honest player can briefly
+      // be refused while the membership is written; the queue carries it to the next
+      // drain rather than showing a hard block, and the honest player is never
+      // refused. A forge is refused there too, stays queued and never completes (the
+      // server keeps refusing; each drain is one completeTask run). A transient
+      // re-post result (a network blip during that single re-post) also falls to the
+      // transient path below (R9 minor 1). Scoped to enter_room (review R2 minor 1): the
+      // pre-flush and the enqueue are already enter_room-only, and only the enter_room branch
+      // of complete_task! returns `retryable`, so this matches the retry to its stated scope
+      // and keeps a future task type that gains a `retryable` refusal from a spurious re-post.
+      if (!response.success && response.retryable && task.type === 'enter_room') {
+        await this.safeSyncOnce();
+        void this.drainEnterRoomQueue(); // fire-and-forget: drain swallows its own errors
+        response = await this.serverCompleteTask(taskId);
+      }
+
+      if (!response.success && task._serverCompleted) {
+        // The server completed this task itself (a credit) while its own POST was in flight and
+        // refused the POST: the server's completion wins, so finish it here instead of reverting
+        this._completeTaskLocally(task, taskId);
+        return;
+      }
+
+      if (!response.success) {
+        task.status = 'active'; // Revert on server rejection
+        this.replayPendingPickups(task);
+        if (task.type === 'enter_room' && (response.transient || response.retryable)) {
+          // Offline, a 5xx, an exhausted retry, an inline retryable re-post that then
+          // dropped offline (R9 minor 1), or a still-`retryable` refusal after the one
+          // re-sync and re-post (R1 minor 2 -- an honest route-room race whose
+          // method:npc membership write is still in flight, or a forge). Queue it: the
+          // browser `online` event and the next awaited sync re-post it, and for an
+          // honest crossing the durable membership write persists across the gap, so
+          // the re-post passes once it lands. The honest player is never stranded, so
+          // no hard block here; a forge simply stays queued and never completes (the
+          // server keeps refusing, and each drain is one completeTask run triggered by
+          // `online` or a manager sync, so the queue cannot spin).
+          this.enqueueEnterRoom(taskId);
+          if (window.gameAlert) {
+            window.gameAlert('Could not save that objective yet. It will retry. Keep playing.',
+                             'warning', 'Sync Pending');
+          }
+        } else {
+          console.warn(`⚠️ Server rejected task completion: ${response.error}`);
+          if (window.gameAlert) {
+            window.gameAlert(response.error || 'Not yet…', 'warning', 'Objective Blocked');
+          }
+        }
+        return;
+      }
+
+      // Server confirmed conclusion — trigger end screen if configured
+      if (response.missionConcluded) {
+        const aim = this.aimIndex[task.aimId];
+        this.handleMissionConcluded(aim);
+      } else if (response.warning) {
+        // Conclude race fallback (second line of defence). The gate is blocked
+        // because a concludeRequires global had not reached the server when this
+        // completion landed. Flush the globals and re-post: the server's
+        // idempotent re-completion re-evaluates the gate and concludes if it is now
+        // met. Only a gate that is STILL unmet after that reaches the player, so the
+        // warning is never merely dropped.
+        await this.flushPendingGlobals();
+        const retry = await this.serverCompleteTask(taskId);
+        if (retry.missionConcluded) {
+          this.handleMissionConcluded(this.aimIndex[task.aimId]);
+        } else if (retry.warning) {
+          console.warn(`⚠️ Mission conclusion blocked: ${retry.warning}`);
+          if (window.gameAlert) {
+            window.gameAlert(retry.warning, 'warning', 'Not Yet…');
+          }
+        }
+      }
+    } catch (error) {
+      // Completing locally after a failed sync is what stranded game 1021: the
+      // player sees the task done, the server never records it, and any
+      // conclusion gated on it can no longer be met. Leave the task active so a
+      // later trigger can retry it, and say so plainly.
+      console.error('Failed to sync task completion with server:', error);
+      if (task._serverCompleted) {
+        this._completeTaskLocally(task, taskId);
+        return;
+      }
+      task.status = 'active';
+      this.replayPendingPickups(task);
+      // An enter_room completion that threw (the second failure feed, plan
+      // section 8.3) also enters the re-send queue, so it re-posts on reconnect or
+      // the next awaited sync rather than waiting for the next boundary crossing.
+      if (task.type === 'enter_room') {
+        this.enqueueEnterRoom(taskId);
+      }
+      if (window.gameAlert) {
+        window.gameAlert('Could not save that objective. It will retry. Keep playing.',
+                         'error', 'Sync Error');
+      }
+      return;
+    }
+
+    this._completeTaskLocally(task, taskId);
+  }
+
+  /**
+   * A task the server completed on its own (a creditOnPass credit during a sync or door unlock,
+   * reported in serverCompletedTasks). The server already holds it, so this runs only the local
+   * completion (toast, onComplete, aim reveal and check, events) with no POST. A task already
+   * completed here, or unknown to this page, is left alone, and so is one whose own POST is in
+   * flight ('completing'): the server answers that POST "Already completed" and it finishes there.
+   * @param {string} taskId
+   * @returns {boolean} true when the task was completed here
+   */
+  applyServerCompletedTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.status === 'completed') return false;
+    if (task.status === 'completing') {
+      // Its own POST is in flight. If the POST succeeds it finishes there; if the server refuses
+      // it, the server's completion still wins (completeTask checks this flag)
+      task._serverCompleted = true;
+      return false;
+    }
+    this._completeTaskLocally(task, taskId);
+    return true;
+  }
+
+  /**
+   * The server concluded the mission as the result of its own credit (serverMissionConcluded on a
+   * sync or unlock answer): show the ending as a client completion would.
+   * @param {string} taskId the credited task that concluded the mission
+   */
+  applyServerMissionConcluded(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task) return;
+    // The credited task's own aim concluded the mission when it is the missionConclusion aim.
+    // Otherwise (the server's recheck_pending_mission_conclusions! path, where a credit met a
+    // concludeRequires gate held by another aim) fall back to the missionConclusion aim, as
+    // main.js does on reload and as the POST path's server answer implies.
+    const own = this.aimIndex[task.aimId];
+    const aim = own?.missionConclusion
+      ? own
+      : (Object.values(this.aimIndex).find(a => a?.missionConclusion) || own);
+    this.handleMissionConcluded(aim);
+  }
+
+  /** The local tail of a completion, after the server has recorded it. */
+  _completeTaskLocally(task, taskId) {
+    // Update local state
+    task._pendingPickups = null;
+    delete task._serverCompleted;
+    task.status = 'completed';
+    task.completedAt = new Date().toISOString();
+    
+    // Show notification
+    this.showTaskCompleteNotification(task);
+
+    // Process onComplete actions
+    this.processTaskCompletion(task);
+
+    // If the parent aim is locked, make it visible so the completed task shows up
+    // (story-gated aims excepted, see revealAimForTask)
+    this.revealAimForTask(task);
+
+    // Check aim completion
+    this.checkAimCompletion(task.aimId);
+    
+    // Emit both generic and specific events for NPC eventMappings
+    // Generic event for wildcard listeners (objective_task_completed:*)
+    this.eventDispatcher.emit('objective_task_completed', {
+      taskId,
+      aimId: task.aimId,
+      task
+    });
+    
+    // Specific event for NPC eventMappings (objective_task_completed:talk_to_alice)
+    this.eventDispatcher.emit(`objective_task_completed:${taskId}`, {
+      taskId,
+      aimId: task.aimId,
+      task
+    });
+    
+    this.notifyListeners();
+  }
+  
+  /**
+   * Is this task out of the way for its aim? Completed, or skipped: the
+   * story closed it off (sis01: a SEVER without sign-offs leaves both sign-off
+   * tasks undoable). A skipped task never counts as completed for the score;
+   * it only stops blocking the aim, which then completes with a gap.
+   */
+  isTaskSettled(task) {
+    return task.status === 'completed' || task.status === 'skipped';
+  }
+
+  /**
+   * Mark a task skipped: it can no longer be done, so it shows struck through
+   * with a "skipped" label instead of staying open forever. Called by the
+   * `skipTask` eventMapping field and the `#skip_task:<id>` ink tag. Does
+   * nothing to a completed or already skipped task. The server records it
+   * (POST .../objectives/tasks/:id/skip) so it survives a reload, and it is
+   * left out of tasks_completed. A skipped task can still be completed later.
+   * @param {string} taskId
+   */
+  async skipTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || this.isTaskSettled(task) || task.status === 'completing') return;
+
+    const previous = task.status;
+    task.status = 'skipped';
+    task.skippedAt = new Date().toISOString();
+    console.log(`⏭️ Task skipped: ${task.title}`);
+
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (gameId) {
+      // Order the pending global sync before the skip POST: skip_task! also
+      // re-checks mission conclusions server-side (the conclude race). Only
+      // scenarios that gate a conclusion on a global pay for it; one sync
+      // round-trip carries the global.
+      if (this.scenarioGatesOnGlobals()) {
+        await window.stateSync?.sync?.();
+      }
+      try {
+        const response = await fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}/skip`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+          }
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) throw new Error(result.error || `HTTP ${response.status}`);
+        if (result.missionConcluded) this.handleMissionConcluded(this.aimIndex[task.aimId]);
+      } catch (error) {
+        console.warn(`📋 Could not record skipped task ${taskId}:`, error);
+        // Leave it open rather than show a state the server doesn't have.
+        // A completion that landed meanwhile stays completed.
+        if (task.status === 'skipped') task.status = previous;
+        this.notifyListeners();
+        return;
+      }
+    }
+
+    this.checkAimCompletion(task.aimId);
+    this.eventDispatcher.emit('objective_task_skipped', { taskId, aimId: task.aimId, task });
+    this.notifyListeners();
+  }
+
+  /**
+   * Is an aim's unlockCondition satisfied right now?
+   * Aims without a recognised condition return true.
+   */
+  isUnlockConditionMet(aim) {
+    const cond = aim && aim.unlockCondition;
+    if (!cond) return true;
+    if (cond.aimCompleted) return this.aimIndex[cond.aimCompleted]?.status === 'completed';
+    if (Array.isArray(cond.aimsCompleted)) {
+      return cond.aimsCompleted.every(id => this.aimIndex[id]?.status === 'completed');
+    }
+    if (cond.globalVariable) {
+      const expected = cond.equals === undefined ? true : cond.equals;
+      const actual = window.gameState?.globalVariables?.[cond.globalVariable];
+      return expected === true ? !!actual : actual === expected;
+    }
+    return true;
+  }
+
+  /**
+   * Is this aim held back by a story gate? A globalVariable unlockCondition
+   * keeps an aim hidden until the player has worked something out (m05's
+   * "Find Out Why" opens on torres_suspected, so the list never names the
+   * suspect early). aimCompleted / aimsCompleted conditions only order the
+   * aims, and give way to visible progress (see revealAimForTask).
+   * Mirrors Game#story_gated? on the server.
+   */
+  isStoryGated(aim) {
+    const cond = aim && aim.unlockCondition;
+    if (!cond || !cond.globalVariable) return false;
+    return !this.isUnlockConditionMet(aim);
+  }
+
+  /**
+   * Live globalVariable unlocks (DOCS_GAPS gap 20). Without this, a
+   * globalVariable unlockCondition is checked only when the game loads (the
+   * server derives it, Game#objectives_state_for_client), so the aim opens in
+   * play only if something also calls unlockAim (an eventMapping or an
+   * #unlock_aim tag), which is how m03, m05 and m07 do it. With live set, the
+   * manager listens on global_variable_changed:<name> for every such aim and
+   * unlocks it when the condition holds; it also checks once now, for a global
+   * already set before the objectives loaded. unlockAim is idempotent, so a
+   * scenario that also calls it gets one unlock and one notification.
+   */
+  watchGlobalUnlocks(live) {
+    (this._globalUnlockSubs || []).forEach(([name, fn]) => this.eventDispatcher?.off?.(name, fn));
+    this._globalUnlockSubs = [];
+    if (!live || !this.eventDispatcher) return;
+
+    const check = () => {
+      this.aims.forEach(aim => {
+        if (aim.status !== 'locked' && !(aim.status === 'active' && aim.revealedEarly)) return;
+        if (!aim.unlockCondition?.globalVariable) return;
+        if (this.isUnlockConditionMet(aim)) this.unlockAim(aim.aimId);
+      });
+    };
+    const names = new Set(this.aims.map(a => a.unlockCondition?.globalVariable).filter(Boolean));
+    names.forEach(name => {
+      const event = `global_variable_changed:${name}`;
+      this.eventDispatcher.on(event, check);
+      this._globalUnlockSubs.push([event, check]);
+    });
+    if (names.size) check();
+  }
+
+  /**
+   * A task in a locked aim completed, made progress or was unlocked: show the
+   * aim, so the player sees the progress they are making, even though its
+   * unlockCondition may not be met yet (an optional-looking earlier task left
+   * undone kept every later aim hidden in sis01 game 1529). Its locked tasks
+   * stay hidden. Story-gated aims stay hidden; the task is recorded and shows
+   * once the aim is unlocked. Mirrors Game#objectives_state_for_client.
+   */
+  revealAimForTask(task) {
+    const parentAim = task && this.aimIndex[task.aimId];
+    if (!parentAim || parentAim.status !== 'locked') return false;
+    if (this.isStoryGated(parentAim)) {
+      console.log(`🔒 Task moved early; story-gated aim stays hidden until unlocked: ${parentAim.title}`);
+      return false;
+    }
+    parentAim.status = 'active';
+    // unlockAim still has work to do when the condition is met (first task)
+    parentAim.revealedEarly = true;
+    console.log(`🔓 Aim revealed by task progress: ${parentAim.title}`);
+    this.showAimUnlockedNotification(parentAim);
+    return true;
+  }
+
+  /**
+   * Process task.onComplete actions (unlock next task/aim)
+   */
+  processTaskCompletion(task) {
+    if (!task.onComplete) return;
+
+    if (task.onComplete.unlockTask) {
+      this.unlockTask(task.onComplete.unlockTask);
+    }
+
+    if (task.onComplete.unlockAim) {
+      this.unlockAim(task.onComplete.unlockAim);
+    }
+
+    if (task.onComplete.setGlobal && window.gameState?.globalVariables) {
+      Object.entries(task.onComplete.setGlobal).forEach(([varName, value]) => {
+        const oldValue = window.gameState.globalVariables[varName];
+        window.gameState.globalVariables[varName] = value;
+        if (window.npcConversationStateManager) {
+          window.npcConversationStateManager.broadcastGlobalVariableChange(varName, value, null);
+        }
+        // An unchanged value was already announced (a server credit wrote it through the shared
+        // writer first), so listeners do not hear it a second time
+        if (window.eventDispatcher && oldValue !== value) {
+          window.eventDispatcher.emit(`global_variable_changed:${varName}`, { name: varName, value, oldValue });
+        }
+      });
+    }
+  }
+  
+  /**
+   * Unlock a task (make it active)
+   * @param {string} taskId - The task ID to unlock
+   */
+  unlockTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.status !== 'locked') return;
+    
+    task.status = 'active';
+    console.log(`🔓 Task unlocked: ${task.title}`);
+    this.persistUnlock('task', taskId);
+    this.revealAimForTask(task);
+    
+    this.showTaskUnlockedNotification(task);
+    this.notifyListeners();
+  }
+  
+  /**
+   * Unlock an aim (make it active)
+   * @param {string} aimId - The aim ID to unlock
+   */
+  unlockAim(aimId) {
+    const aim = this.aimIndex[aimId];
+    if (!aim) return;
+    // An aim already on show because a task moved early still gets its proper
+    // unlock (first task, server record), without a second "New Objective"
+    const shownEarly = aim.status === 'active' && aim.revealedEarly;
+    if (aim.status !== 'locked' && !shownEarly) return;
+    
+    aim.status = 'active';
+    aim.revealedEarly = false;
+    this.persistUnlock('aim', aimId);
+    
+    // Also activate first task
+    const firstTask = aim.tasks[0];
+    if (firstTask && firstTask.status === 'locked') {
+      firstTask.status = 'active';
+      this.persistUnlock('task', firstTask.taskId);
+    }
+    
+    console.log(`🔓 Aim unlocked: ${aim.title}`);
+    if (!shownEarly) this.showAimUnlockedNotification(aim);
+    this.notifyListeners();
+
+    // Tasks may have been completed while the aim was hidden
+    if (aim.tasks.some(t => this.isTaskSettled(t))) this.checkAimCompletion(aimId);
+  }
+  
+  /**
+   * Record an unlock on the server so it survives a reload. The server already
+   * records onComplete unlocks and derives unlockCondition ones on load; this
+   * covers #unlock_aim / #unlock_task ink tags and eventMapping unlocks, which
+   * were client-only. Fire-and-forget: the unlock already applies this session.
+   */
+  persistUnlock(kind, objectiveId) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) return;
+    fetch(`/break_escape/games/${gameId}/objectives/unlock`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+      },
+      body: JSON.stringify({ kind, objective_id: objectiveId })
+    }).catch(error => console.warn(`📋 Could not record ${kind} unlock ${objectiveId}:`, error));
+  }
+
+  /**
+   * Check if all tasks in an aim are complete
+   */
+  checkAimCompletion(aimId) {
+    const aim = this.aimIndex[aimId];
+    if (!aim) return;
+
+    // Story-gated aim still hidden: defer completion until it is unlocked
+    // (any other locked aim was revealed by its task before this runs)
+    if (aim.status === 'locked' && this.isStoryGated(aim)) return;
+    
+    // Skipped tasks don't block the aim (it completes with a gap; see skipTask).
+    // Optional tasks don't block it either, unless every task is optional: then
+    // the aim completes only once each one is settled, not on the first (m07 U5).
+    // Mirrors Game#check_aim_completion on the server.
+    const hasRequired = aim.tasks.some(task => !task.optional);
+    const allComplete = aim.tasks.every(task => (hasRequired && task.optional) || this.isTaskSettled(task));
+    
+    if (allComplete && aim.status !== 'completed') {
+      aim.status = 'completed';
+      aim.completedAt = new Date().toISOString();
+      
+      console.log(`🏆 Aim completed: ${aim.title}`);
+      this.showAimCompleteNotification(aim);
+      
+      // Check if aim completion unlocks another aim
+      this.aims.forEach(otherAim => {
+        const cond = otherAim.unlockCondition;
+        if (!cond) return;
+        if (cond.aimCompleted === aimId) {
+          this.unlockAim(otherAim.aimId);
+        } else if (Array.isArray(cond.aimsCompleted) && cond.aimsCompleted.includes(aimId)) {
+          // All listed aims must be completed before unlocking
+          const allDone = cond.aimsCompleted.every(id => this.aimIndex[id]?.status === 'completed');
+          if (allDone) this.unlockAim(otherAim.aimId);
+        }
+      });
+      
+      // Emit both generic and specific events for NPC eventMappings
+      // Generic event for wildcard listeners (objective_aim_completed:*)
+      this.eventDispatcher.emit('objective_aim_completed', {
+        aimId,
+        aim
+      });
+      
+      // Specific event for NPC eventMappings (objective_aim_completed:secret_mission)
+      this.eventDispatcher.emit(`objective_aim_completed:${aimId}`, {
+        aimId,
+        aim
+      });
+    }
+  }
+  
+  /**
+   * Get active aims for UI display
+   * @returns {Array} Array of active/completed aims
+   */
+  getActiveAims() {
+    return this.aims.filter(aim => aim.status === 'active' || aim.status === 'completed');
+  }
+  
+  /**
+   * Get all aims (for debug/admin)
+   * @returns {Array} All aims
+   */
+  getAllAims() {
+    return this.aims;
+  }
+  
+  /**
+   * Get a specific task by ID
+   * @param {string} taskId - The task ID
+   * @returns {Object|null} The task or null
+   */
+  getTask(taskId) {
+    return this.taskIndex[taskId] || null;
+  }
+  
+  /**
+   * Get a specific aim by ID
+   * @param {string} aimId - The aim ID
+   * @returns {Object|null} The aim or null
+   */
+  getAim(aimId) {
+    return this.aimIndex[aimId] || null;
+  }
+  
+  // === Server Communication ===
+  
+  async serverCompleteTask(taskId) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) return { success: true }; // Offline mode
+    
+    const task = this.taskIndex[taskId];
+    const body = {};
+    
+    // For submit_flags tasks, include submittedFlags in the completion request
+    // so server can validate against latest data
+    if (task && task.type === 'submit_flags' && task.submittedFlags) {
+      body.submittedFlags = task.submittedFlags;
+      console.log(`📋 Including submittedFlags in completion request:`, task.submittedFlags);
+    }
+
+    // For collect_items tasks, send currentCount so server can trust it
+    // (avoids async race where inventory POSTs haven't landed yet)
+    if (task && task.type === 'collect_items' && task.currentCount !== undefined) {
+      body.currentCount = task.currentCount;
+    }
+    
+    try {
+      // RESTful route: POST /break_escape/games/:id/objectives/tasks/:task_id
+      const response = await fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined
+      });
+      
+      // A 5xx is the server failing to record a completion it did not refuse --
+      // most often SQLite write contention when an ink line fires several tags
+      // at once. That is transient and must be retried, not treated as a
+      // refusal: game 1021 lost talk_to_gary to a 500 and could never conclude.
+      if (response.status >= 500) {
+        return { success: false, transient: true, error: `Server error ${response.status}` };
+      }
+
+      return response.json();
+    } catch (error) {
+      // fetch() rejects only on network failure, and a malformed body means we
+      // cannot tell what the server did. Both are retryable.
+      console.error('Server task completion error:', error);
+      return { success: false, transient: true, error: error.message };
+    }
+  }
+  
+  syncTaskProgress(taskId, progress) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) return;
+    
+    // Debounce sync by 1 second
+    if (this.syncTimeouts[taskId]) {
+      clearTimeout(this.syncTimeouts[taskId]);
+    }
+    
+    this.syncTimeouts[taskId] = setTimeout(() => {
+      // RESTful route: PUT /break_escape/games/:id/objectives/tasks/:task_id
+      fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify({ progress })
+      }).catch(err => console.warn('Failed to sync progress:', err));
+    }, 1000);
+  }
+  
+  // === UI Notifications ===
+
+  /**
+   * Handle mission conclusion: emit event and trigger end screen if configured on the aim.
+   * Called when the server confirms missionConcluded:true in a complete_task response,
+   * and also from main.js on reload when breakEscapeConfig.missionConcludedAt is set.
+   * @param {Object} aim - The aim object with missionConclusion:true
+   */
+  handleMissionConcluded(aim, { replay = false } = {}) {
+    if (!aim) return;
+
+    console.log(`🏁 Mission concluded via aim: ${aim.aimId}`);
+
+    // Phone calls plan 2.3 row 28: the server has agreed (or this is a reload of a concluded game), so
+    // nothing rings over the credits. The ending check does not close the ringer: a conclude can be refused.
+    try { window.phoneRinger?.close?.(); } catch (e) { console.warn('[ObjectivesManager] phoneRinger.close failed:', e); }
+
+    // Emit event for any listeners (music system, analytics, etc.)
+    this.eventDispatcher.emit('mission_concluded', { aimId: aim.aimId, aim });
+
+    const screen = aim.conclusionScreen;
+    if (!screen) return;
+
+    if (screen.type === 'end_screen') {
+      // Trigger the generic end-screen overlay
+      if (window.showEndScreen) {
+        window.showEndScreen(screen);
+      } else {
+        console.warn('[ObjectivesManager] window.showEndScreen is not defined');
+      }
+    } else if (screen.type === 'bond_visualiser') {
+      // Open the fullscreen bond visualiser (used for mission credits / victory sequence)
+      if (window.BondVisualiser) {
+        // The mission has concluded: the visualiser offers EXIT MISSION, never a way back in.
+        const opts = { ...(screen.bondVisualiserOpts || {}), missionOver: true };
+        // On reload nothing re-fires the music event that carried the credits, so
+        // rebuild them from the saved globals (F22) unless the aim brings its own.
+        if (replay && !opts.credits?.length) {
+          Object.assign(opts, window.endingReplayOptions?.(window.gameScenario) || {});
+          // ...and play the ending's own track with them. The credits wait for it
+          // (creditsAfter), since a fresh page may hold audio until the first click.
+          if (opts.credits?.length) {
+            Object.assign(opts, window.startEndingReplayMusic?.(window.gameScenario) || {});
+          }
+        }
+        window.BondVisualiser.open(opts);
+      } else {
+        console.warn('[ObjectivesManager] window.BondVisualiser is not defined');
+      }
+    } else if (screen.type === 'success') {
+      // The simple success screen for short training episodes (ui/success-screen.js):
+      // waits until no minigame is open, shows once per page load, and can be closed.
+      if (window.showSuccessScreen) {
+        window.showSuccessScreen(screen);
+      } else {
+        console.warn('[ObjectivesManager] window.showSuccessScreen is not defined');
+      }
+    }
+  }
+
+  showTaskCompleteNotification(task) {
+    if (window.playUISound) {
+      window.playUISound('objective_complete');
+    }
+    // A phone: the pill blinks and the task's full text shows as a short line in the notify lane,
+    // wrapping as it needs, with no title over it (review R1 M2)
+    if (window.objectivesPanel?.foldToast?.('Done', task.title)) {
+      window.gameAlert?.(`✓ ${task.title}`, 'success', '', 5000, { brief: true });
+      return;
+    }
+    if (window.gameAlert) {
+      window.gameAlert(`✓ ${task.title}`, 'success', 'Task Complete');
+    }
+  }
+  
+  showTaskUnlockedNotification(task) {
+    // A phone: the pill blinks and its count and sheet show the new task (H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New task', task.title)) return;
+    if (window.gameAlert) {
+      window.gameAlert(`New Task: ${task.title}`, 'info', 'Objective Updated');
+    }
+  }
+  
+  showAimCompleteNotification(aim) {
+    if (window.playUISound) {
+      window.playUISound('objective_complete');
+    }
+    // A phone: as for a task, a short line (the pill moves on to the next aim)
+    if (window.objectivesPanel?.foldToast?.('Aim complete', aim.title)) {
+      window.gameAlert?.(`🏆 ${aim.title}`, 'success', '', 5000, { brief: true });
+      return;
+    }
+    if (window.gameAlert) {
+      window.gameAlert(`🏆 ${aim.title}`, 'success', 'Objective Complete!');
+    }
+  }
+  
+  showAimUnlockedNotification(aim) {
+    // A phone: the pill blinks and its line shows the new aim (H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New aim', aim.title)) return;
+    if (window.gameAlert) {
+      window.gameAlert(`New Objective: ${aim.title}`, 'info', 'Mission Updated');
+    }
+  }
+  
+  // === Listener Pattern for UI Updates ===
+  
+  addListener(callback) {
+    this.listeners.push(callback);
+  }
+  
+  removeListener(callback) {
+    this.listeners = this.listeners.filter(l => l !== callback);
+  }
+  
+  notifyListeners() {
+    this.listeners.forEach(callback => callback(this.getActiveAims()));
+  }
+  
+  // === Debug Utilities ===
+  
+  /**
+   * Get debug info for all objectives
+   */
+  getDebugInfo() {
+    return {
+      aims: this.aims.map(aim => ({
+        aimId: aim.aimId,
+        title: aim.title,
+        status: aim.status,
+        tasks: aim.tasks.map(task => ({
+          taskId: task.taskId,
+          title: task.title,
+          status: task.status,
+          type: task.type,
+          progress: task.currentCount || 0,
+          target: task.targetCount || 1
+        }))
+      }))
+    };
+  }
+  
+  /**
+   * Reset all objectives to initial state
+   */
+  reset() {
+    this.aims.forEach(aim => {
+      aim.status = aim.originalStatus || 'active';
+      aim.completedAt = null;
+      aim.tasks.forEach(task => {
+        task.status = task.originalStatus || 'active';
+        task.currentCount = 0;
+        task.completedAt = null;
+      });
+    });
+    this.notifyListeners();
+    console.log('📋 Objectives reset to initial state');
+  }
+}
+
+// Export singleton accessor
+let instance = null;
+export function getObjectivesManager(eventDispatcher) {
+  if (!instance && eventDispatcher) {
+    instance = new ObjectivesManager(eventDispatcher);
+  }
+  return instance;
+}
+
+// Export for global debug access
+window.debugObjectives = {
+  showAll: () => {
+    if (instance) {
+      console.table(instance.getDebugInfo().aims);
+      instance.aims.forEach(aim => {
+        console.log(`\n📋 ${aim.title}:`);
+        console.table(aim.tasks.map(t => ({
+          taskId: t.taskId,
+          title: t.title,
+          status: t.status,
+          type: t.type
+        })));
+      });
+    }
+  },
+  reset: () => instance?.reset(),
+  getManager: () => instance
+};
+
+export default ObjectivesManager;

@@ -1,0 +1,68 @@
+[
+  {
+    "scenario": "scenarios/biometric_breach/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 5,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: biometric_breach keyPins",
+    "note": "Add the same keyPins array to each key lock and its key."
+  },
+  {
+    "scenario": "scenarios/crypto1_captain_meow/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 1,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: crypto1_captain_meow keyPins",
+    "note": "Add the same keyPins array to the key lock and its key."
+  },
+  {
+    "scenario": "scenarios/crypto2_rsa_asymmetric/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 2,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: crypto2_rsa_asymmetric keyPins",
+    "note": "Add the same keyPins array to each key lock and its key."
+  },
+  {
+    "scenario": "scenarios/crypto3_aes_symmetric/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 2,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: crypto3_aes_symmetric keyPins",
+    "note": "Add the same keyPins array to each key lock and its key."
+  },
+  {
+    "scenario": "scenarios/ceo_exfil/scenario.json.erb",
+    "stage": "ink",
+    "match": "in itemsHeld. Add {",
+    "count": 1,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: ceo_exfil helper-npc give_item",
+    "note": "Left: #give_item:keycard in helper-npc.ink. The validator now skips the other three, which sit in a {has_<type>: branch only itemsHeld can set. has_keycard is also set from the player holding any item (syncInventoryVariablesToStory), so the keycard choice can render for an NPC that holds none. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario."
+  },
+  {
+    "scenario": "scenarios/ceo_exfil/scenario.json.erb",
+    "stage": "common",
+    "match": "is a phone NPC event mapping with 'targetKnot'",
+    "count": 10,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: ceo_exfil phone targetKnot",
+    "note": "Design edit: each mapping sets a global and the ink hub gets a conditional option for it."
+  }
+]

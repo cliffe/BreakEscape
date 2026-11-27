@@ -1,0 +1,13 @@
+{
+  "key": "c5ddda91ab9daaaaba908d40090259c7",
+  "npc": "eleanor_vance",
+  "text": "The Albion incident — a single battery storage facility — doesn't meet that threshold. It's a targeted industrial espionage and infrastructure attack. It's serious. But it's not an act of war in the legal sense.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:39Z"
+}

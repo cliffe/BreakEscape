@@ -1,0 +1,13 @@
+{
+  "key": "99e1c5118806a11f89abc8c623018101",
+  "npc": "priya_nair",
+  "text": "Ring it and we'll move an account's approvals, once we've rung the number we hold to check it's really them.",
+  "voice": "Leda",
+  "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:52:36Z"
+}

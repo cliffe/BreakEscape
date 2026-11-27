@@ -1,0 +1,23 @@
+UNEXPECTED m03_ghost_in_the_machine: 0 removed, 22 added (allowed 0/0)
+    + 027a17cd0ba8f6ff09467c8908758f45  agent_0x99|Target line: St. Catherine's Regional. Sable's sign-off on the approval.
+    + 055a58ce9b7632f282e2f8340aa2f90e  agent_0x99|Leave her to us.
+    + 0df0b20c75d0b2ca764c13ce177485cf  agent_0x99|Knew you'd get back to me. Open your copy and read along.
+    + 11f5fd136bedbb1fc0d5d31813c7b7e5  agent_0x99|And the logs point at a Phase 2. That drive from her desk is the directive. Decode it and tell me.
+    + 14d46560aa18a6a712930147875b6f98  agent_0x99|And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
+    + 1b34e1559a779ae55ec9539c202d37a5  agent_0x99|Still in there. That search team's getting restless.
+    + 209d233baf8b949c3f47b62732d52600  agent_0x99|The server room safe's still shut, for one.
+    + 3867dacd247b997360a608c2ef13de1d  agent_0x99|Logs are up on my side. Open your copy and read along.
+    + 49db08a5a672b23bf25a707b636ff663  agent_0x99|Thought I'd lost you. Open your copy and read along.
+    + 70464a6cdfb8232f1e9497ca88a26b9b  agent_0x99|Which is the whole reason you're in there. Finish it.
+    + 7d69f62fbcdb3f76db38371f98d7dfed  agent_0x99|It does. One ENTROPY cell invoicing another. I may have it framed.
+    + 8eb11e2770fdf3514506ca0bdc854df3  agent_0x99|And it lines up with the directive you read me. Phase 2 has a supplier, and now a ledger.
+    + 924bbe0683539d5590f185a896aa016a  agent_0x99|Finish up, then Sterling. And be careful. Reasonable as she sounds, she signed that invoice.
+    + aba2ab1e9b81521f4ae4a2ceac118e4d  agent_0x99|Last look. Once you're out, the search team has that building.
+    + ac5538de6735cbcccc756f07b57b8db3  agent_0x99|That's the line a jury remembers. Keep it.
+    + ac9aaf0323c06012f4f3b3da0046b58d  agent_0x99|There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
+    + ad677f7fe82f5293d4484c5c16742722  agent_0x99|Pull the rest while you're standing in it. The catalogue, the roster, the drive in her desk.
+    + bd132f5fdc8c877c5e7bacff8fb6cbe0  agent_0x99|Go on, then. She's not leaving her desk tonight.
+    + c7e09f54a1cef08f1924e94c55c49ebf  agent_0x99|One page at a time. Starting tonight.
+    + ddb39adf8ef8e5d51818e021d9f2bcd9  agent_0x99|And listen -- the logs point at a Phase 2. Find the directive and we get ahead of it for once.
+    + ed82a09b7ebdee0f33d47d2f2106abc9  agent_0x99|Side door, two minutes. Don't use the lobby.
+    + f6bc587d1e585ae8f1856563b0de4e67  agent_0x99|St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name.

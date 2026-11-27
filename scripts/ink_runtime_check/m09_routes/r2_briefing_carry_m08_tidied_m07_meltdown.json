@@ -1,0 +1,10 @@
+{
+"steps": [
+{ "note": "R2: an earlier run finished. Nightshade tidied his locker and gave the coordinate, HaX was put on the floor, Victoria turned, Torres works for us, the team went to the hospitals. Each wall card and the opening lines take their carried branch." },
+{ "talk": "briefing", "picks": ["Who are the last two", "Let's go", "Thank you. For the cracker"] },
+{ "said": ["Nightshade cleared his locker before we reached it. The airline kept his booking", "Nightshade gave us a coordinate", "You put me on the floor at the Citadel", "Victoria Sterling turned", "David Torres works for us now", "You sent the team to the hospitals", "Thank me when you're back"],
+  "notSaid": ["Your card from Albion", "Your tags lit up", "We have Helena. Not the bunker", "Sorry about the leave", "The traitor we took two days ago", "Keep not asking"] },
+{ "expect": { "raid_team_answer": "kowalczyk" } }
+],
+"imports": { "m08_completed": true, "m08_nightshade_tidied": true, "m08_tomb_gamma_location_known": true, "m08_hax_ko": true, "m03_completed": true, "m03_victoria_fate": "recruited", "m05_completed": true, "m05_final_choice": "turn_double_agent", "m07_completed": true, "m07_team_assignment": "meltdown" }
+}

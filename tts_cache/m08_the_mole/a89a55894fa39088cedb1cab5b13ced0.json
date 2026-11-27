@@ -1,0 +1,13 @@
+{
+  "key": "a89a55894fa39088cedb1cab5b13ced0",
+  "npc": "agent_vector",
+  "text": "You actually checked. Thank you. The screen. Fine. It's a mailbox and a key schedule for the new exchange.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:31:37Z"
+}

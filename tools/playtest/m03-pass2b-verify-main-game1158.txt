@@ -1,0 +1,13 @@
+created         2026-09-30 16:04:44 UTC
+last write      2026-09-30 16:24:54 UTC
+played for      1211s of wall clock
+current room    "reception_lobby"
+unlocked rooms  7: reception_lobby, main_hallway, conference_room_01, server_room, executive_wing_hallway, executive_office, james_office
+unlocked objs   5: victoria_computer, executive_office_suitcase_2, exec_filing_cabinet, james_office_pc_2, wall_safe_server
+inventory       14: Your Phone, RFID Cloner, Lock Pick Kit, Notepad, Visitor Badge, CyberChef Workstation, Unsent draft (raw message source), Client Roster, Hidden USB Drive, Zero Day: A Brief History, Folder: GHOST -- Hospital Infrastructure Assessment, Personal notes (unsent), Exploit Catalogue, Zero Day Transaction Log
+NPCs met        9: briefing_cutscene, director_netherton, agent_nightshade, receptionist_npc, agent_0x99, closing_debrief, victoria_sterling, night_guard, danny_foster
+flags submitted 4: flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_1_453545}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_2_1f1997}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_3_694ee7}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_4_208a05}
+globals set     24: briefing_played, danny_evidence_seen, draft_seen, flag_distcc_submitted, flag_ftp_submitted, flag_http_submitted, flag_scan_submitted, james_fate, knows_m2_connection, lockpicking_guide_offered, lore_catalogue_found, lore_directive_found, lore_history_found, mission_phase, netexploit_guide_offered, night_confrontation_ready, player_approach, roster_seen, time_of_day, usb_seen, victoria_choice_made, victoria_fate, victoria_recruited, whiteboard_seen
+
+VERDICT: progress recorded — 6 rooms beyond the first, 5 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

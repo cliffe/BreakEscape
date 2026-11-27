@@ -1,0 +1,13 @@
+{
+  "key": "1e9f0dfe28c8943160348f638da8dc00",
+  "npc": "eleanor_vance",
+  "text": "But if we don't hold them accountable — if we say \"the compensating controls didn't work out, but that's okay\" — we've signalled that warranties are optional when execution gets hard.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:30:52Z"
+}

@@ -1,0 +1,36 @@
+{
+  "frameSize": 128,
+  "visemes": [
+    "rest",
+    "teeth",
+    "round",
+    "small_open",
+    "medium_open",
+    "wide_open",
+    "blink"
+  ],
+  "source": "PixelLab /inpaint-image (mcp inpaint_image, 128x128, rectangular mask) on the rest frame, 10 generations per call. Each mouth frame is the rest frame with only the mask area replaced, clipped to rest's opaque pixels, so every pixel outside the mask is identical to rest and the silhouette never changes. blink is the previous sheet's blink frame, unchanged. Rebuild with tools/pixellab_overrides/ray_hollis/visemes/build_sheet.py (see the README there). Replaces the talk-run composite whose upper face shifted between frames.",
+  "mask": {
+    "x": 64,
+    "y": 24,
+    "width": 11,
+    "height": 8,
+    "bbox": [64, 24, 74, 31]
+  },
+  "picks": {
+    "teeth": "teeth_s21",
+    "round": "round_s32",
+    "small_open": "small_open_s42",
+    "medium_open": "medium_open_s52",
+    "wide_open": "wide_open_s13"
+  },
+  "candidates": "tools/pixellab_overrides/ray_hollis/visemes/cands/<shape>_s<seed>.png",
+  "changedVsRest": {
+    "teeth": {"pixels": 51, "bbox": [65, 24, 74, 31]},
+    "round": {"pixels": 49, "bbox": [64, 24, 74, 31]},
+    "small_open": {"pixels": 44, "bbox": [65, 24, 74, 31]},
+    "medium_open": {"pixels": 47, "bbox": [64, 24, 74, 30]},
+    "wide_open": {"pixels": 71, "bbox": [64, 24, 74, 31]},
+    "blink": {"pixels": 61, "bbox": [57, 14, 75, 18], "note": "eyes only, unchanged from the previous sheet"}
+  }
+}

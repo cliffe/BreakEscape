@@ -1,0 +1,14 @@
+{
+  "key": "910c520bab6ea36a27e7f6047ebf7405",
+  "npc": "sorensen",
+  "text": "Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.",
+  "delivery": "gentle, almost kind, without looking up",
+  "voice": "Vindemiatrix",
+  "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T00:35:31Z"
+}

@@ -1,0 +1,868 @@
+{
+ "mission": "ca06",
+ "id": "ca06_trailer_r1",
+ "theme": "ca",
+ "title": "Cyber Aware ca06 trailer, round 1 (16:9; 9:16 and 1:1 render from ca06_trailer_r1_narrow.json)",
+ "script": {
+  "heading": "ca06 trailer script (Texts and QR codes)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca06_trailer_script.md and docs/video/takes_ca06.md (recorded 25 Nov). Model ca02/ca05 (attack-first). Sulafat_v2 VO, no trims; PeaceFolk Gently Decaying from 28.151 s (r1.2; one track per trailer). DEFAULTS FOR THE OWNER TO CHANGE: (1) music is Gently Decaying at 28.151 s (alternatives in music.alternatives); (2) PROPOSAL office_life slot (t10_fatima_drinks, 2.4 s, silent, between phone_card and office, not in the script; drop it for -2.4 s); (3) the office shot uses t07_notice_beat, not t08, because t08's camera pans back to the player from 14.49 inside Z2's last sentence; (4) hook is t08_zainab_to_notice; (5) notices window 3.5 s (script 3.6), research and notices are two cut shots; (6) chidi_flip 9.0-17.4 (portrait first shows at 9.0). Lands stays on the result panel (Fatima-reply variant off). Shot chips: THE TRAINING ROOM, THE WORK PHONE, OPEN-SOURCE RESEARCH, WRITE THE MESSAGE (placeholder), THE SEND, YOUR TURN."
+ },
+ "fps": 30,
+ "length": 73.0,
+ "music": {
+  "track": "PeaceFolk/Gently Decaying.mp3",
+  "analysis": "gently_decaying_75.json",
+  "start": 28.151,
+  "length": 73.0,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Gently Decaying.mp3 @17.247",
+   "PeaceFolk/Gently Decaying Again.mp3 @66.975"
+  ]
+ },
+ "beat": {
+  "bpm": 88.04,
+  "period": 0.6815,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 3.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_zainab_to_notice.trimmed.mkv",
+    "in": 6.465,
+    "out": 10.365
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t08_zainab_to_notice 25 Nov: Z1 speech 6.615-10.049, gap 7.355-7.975; in 6.465 = speech - 0.15, out 10.365; camera glides about 0.06 of frame width in the first 1 s while Zainab stays at x 0.50 (only the background drifts); notice cones and small poster on the left wall; bubble inside the game bar, y from 0.79 cropped; framing from frame checks, crop simulation still to do for 9:16 and 1:1 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48148,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.48148,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.48148,
+     "zoom": 2.0
+    }
+   },
+   "lines": [
+    {
+     "start": 0.15,
+     "end": 0.89,
+     "speaker": "Zainab",
+     "text": "Is that new?"
+    },
+    {
+     "start": 1.51,
+     "end": 3.584,
+     "speaker": "Zainab",
+     "text": "I've not seen a parking notice up in here before."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Texts and QR codes",
+    "company": "Tarrowby Logistics",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.1
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 6.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_work_phone_runA.trimmed.mkv",
+    "in": 8.0,
+    "out": 14.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05 run A: list on screen from 8.0, held to 15.74, no card; panel small (x 0.256-0.754, y 0.03-0.86, list x 0.27-0.43, y 0.14-0.43); six rows, nothing opened; the 9:16 and 1:1 renders use this same wide run, zoomed out as in ca02 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE WORK PHONE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.41667,
+     "cy": 0.30556,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 4.2,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 6.35,
+    "out": 10.55
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02 window 1: browser open, Kaylee and Dev noted by the end; both OSINT notes in, notices page not yet; public facts only | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.44271,
+     "cy": 0.39815,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "notices",
+   "type": "gameplay",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 11.17,
+    "out": 14.67
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02 window 2 (3.5 s, owner): Depot notices page up from 11.14, browser closes between 14.70 and 14.73 so out is clear of the close; permit scheme noted | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.44271,
+     "cy": 0.39815,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "write",
+   "type": "gameplay",
+   "duration": 5.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 29.4,
+    "out": 35.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: validation line and scheme dropdown open, scheme set, ask set at about 3.0-3.6 s in (the mark runs 0.6 s late, confirmed on frames); red-flag meter and factor rows hidden; writer panel tall and narrow | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "WRITE THE MESSAGE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.37037,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.50104,
+     "cy": 0.44444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.50104,
+     "cy": 0.38889,
+     "zoom": 2.0
+    }
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 36.4,
+    "out": 39.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: Send highlighted, result panel up by 37.0 (wide) with ticks, 'It landed. They acted on it.', button Done, no red-flag lines; flip panel from 39.95, not in | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE SEND",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.25926,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.50104,
+     "cy": 0.44444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.50104,
+     "cy": 0.25926,
+     "zoom": 2.0
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 40.0,
+    "out": 42.0
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: panel 'Now it lands on you' with tab strip, no body, stable for the whole window; take ends later | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "chidi_flip",
+   "type": "gameplay",
+   "duration": 8.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_chidi_flip.trimmed.mkv",
+    "in": 9.0,
+    "out": 17.4
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04_chidi_flip: portrait not up at 8.93 (black), first shows at 9.0 so a fresh cut at 9.0; speech about 9.45-17.2, sentence gap 11.16-11.89, comma pause 15.48-15.71, c1_end 17.63, chat closed 18.12, choice menu never shown; game bar (y from 0.79) cropped out; framing copied from ca02 fatima_flip, crop simulation still to do | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.72917,
+     "cy": 0.25,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.72917,
+     "cy": 0.44444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.72917,
+     "cy": 0.25,
+     "zoom": 2.0
+    }
+   },
+   "lines": [
+    {
+     "start": 0.45,
+     "end": 2.16,
+     "speaker": "Chidi",
+     "text": "Your message has gone over to Kaylee."
+    },
+    {
+     "start": 2.89,
+     "end": 6.48,
+     "speaker": "Chidi",
+     "text": "Now take the other seat and go through a Tarrowby work phone,"
+    },
+    {
+     "start": 6.71,
+     "end": 8.2,
+     "speaker": "Chidi",
+     "text": "the way it would land on your break."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "masks": [
+    {
+     "x": 0,
+     "y": 850,
+     "w": 1920,
+     "h": 230,
+     "color": "#14161c"
+    }
+   ]
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.0,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You check the work phone"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "phone_list",
+   "type": "gameplay",
+   "duration": 6.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_work_phone_runB.trimmed.mkv",
+    "in": 8.0,
+    "out": 14.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05 run B: list then cursor sweep down the six rows, nothing opened or pressed; card up from about 15.3 so the out is clear | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE WORK PHONE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.41667,
+     "cy": 0.30556,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "phone_card",
+   "type": "gameplay",
+   "duration": 5.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_work_phone_runB.trimmed.mkv",
+    "in": 16.0,
+    "out": 21.6
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05 run B: canteen notice 'How was lunch? Rate this week's menu' with QR and 'Put up by Eilidh Strachan, Facilities'; no verdict row, no 'Where does this code go?', no 'Seen:' label; parking notice never opened | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE WORK PHONE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.55417,
+     "cy": 0.30556,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.55417,
+     "cy": 0.44444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.55417,
+     "cy": 0.30556,
+     "zoom": 2.0
+    }
+   }
+  },
+  {
+   "id": "office_life",
+   "type": "gameplay",
+   "duration": 2.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_fatima_drinks.trimmed.mkv",
+    "in": 24.5,
+    "out": 26.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "PROPOSAL (not in the script): t10_fatima_drinks, Fatima walks to the drinks machine (walk starts 24.68), camera follows her, silent; the arrival check can pause mid-route; owner may drop this slot (-2.4 s) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.64583,
+     "cy": 0.63889,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.64583,
+     "cy": 0.55556,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.64583,
+     "cy": 0.63889,
+     "zoom": 2.0
+    }
+   }
+  },
+  {
+   "id": "office",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_notice_beat.trimmed.mkv",
+    "in": 10.59,
+    "out": 15.59
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t07_notice_beat (NOT t08: t08's camera pans back to the player from 14.49, which would put a fixed crop half off the room); fixed camera, room x 0.155-0.65, Zainab x 0.27, bubble 0.16-0.39; Z2 speech 10.938-15.187 with a pause 11.678-11.779; Z1 bubble gone before 10.45; cut before the choice menu | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.27083,
+     "cy": 0.44444,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.27083,
+     "cy": 0.44444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.27083,
+     "cy": 0.44444,
+     "zoom": 2.0
+    }
+   },
+   "lines": [
+    {
+     "start": 0.348,
+     "end": 3.48,
+     "speaker": "Zainab",
+     "text": "This one says my parking permit needs renewing."
+    },
+    {
+     "start": 3.676,
+     "end": 4.597,
+     "speaker": "Zainab",
+     "text": "Is it one of ours?"
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Texts and QR codes",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.1,
+   "end": 8.804,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 9.2,
+   "end": 12.176,
+   "text": "Some texts and printed codes are fakes.",
+   "caption": "Some texts and printed\ncodes are fakes.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 12.426,
+   "end": 15.498,
+   "text": "This episode: texts and QR codes.",
+   "caption": "This episode:\ntexts and QR codes.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 16.0,
+   "end": 18.4,
+   "text": "First, you play the attacker.",
+   "caption": "First, you play the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 19.0,
+   "end": 22.432,
+   "text": "The depot's page names Kaylee, a warehouse operative.",
+   "caption": "The depot's page names\nKaylee, a warehouse operative.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v3b",
+   "start": 23.2,
+   "end": 26.08,
+   "text": "Its notices name the new permit scheme.",
+   "caption": "Its notices name\nthe new permit scheme.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v3b.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 26.7,
+   "end": 28.572,
+   "text": "Pretend to be Facilities.",
+   "caption": "Pretend to be Facilities.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v4b",
+   "start": 28.822,
+   "end": 31.27,
+   "text": "Ask her to scan the parking code.",
+   "caption": "Ask her to scan\nthe parking code.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v4b.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 32.5,
+   "end": 33.82,
+   "text": "Send it to Kaylee.",
+   "caption": "Send it to Kaylee.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v8a",
+   "start": 47.9,
+   "end": 50.66,
+   "text": "Six messages are waiting on a work phone.",
+   "caption": "Six messages are\nwaiting on a work phone.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v8a.mp3"
+  },
+  {
+   "id": "v8b",
+   "start": 50.91,
+   "end": 53.502,
+   "text": "Texts, notices and an email.",
+   "caption": "Texts, notices and an email.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v8b.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 54.7,
+   "end": 56.908,
+   "text": "You decide what to do with each.",
+   "caption": "You decide what to do with each.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v10b",
+   "start": 57.9,
+   "end": 59.58,
+   "text": "Then a colleague asks.",
+   "caption": "Then a colleague asks.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v10b.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 67.7,
+   "end": 72.668,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack, learn to\nstop it, on Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca06/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Simple Success",
+  "description": "Minimal 1-room scenario: interact with the terminal to trigger the success screen. Used for testing basic objective completion and end-screen display.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 1,
+  "test_type": "simple_success",
+  "test_objective": "Verify that a triggerOnInteract complete_task + show_end_screen (success) works correctly in a minimal 1-room scenario"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e9361bbdad4dbd26a70926dc1e0c2d07",
+  "npc": "jun_watanabe",
+  "text": "Is it raining again?",
+  "voice": "Puck",
+  "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:42:29Z"
+}

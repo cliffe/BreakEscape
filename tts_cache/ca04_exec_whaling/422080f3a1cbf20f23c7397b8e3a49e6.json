@@ -1,0 +1,13 @@
+{
+  "key": "422080f3a1cbf20f23c7397b8e3a49e6",
+  "npc": "thandiwe_moyo",
+  "text": "You held the payment that mattered, so nothing left. A couple of the others are worth a second look in the debrief.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:08:53Z"
+}

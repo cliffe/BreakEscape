@@ -1,0 +1,16 @@
+{
+ "steps": [
+  {"note": "R10: the phone hub. The debrief choice is hidden until Operation Shatter has been reported and resolved; the report chain runs, then the hub offers the debrief and the call rings the closing knot; 'On my way' starts the debrief cutscene."},
+  {"set": {"entropy_reveal_read": true}},
+  {"talk": "phone", "picks": ["I discovered what ENTROPY is planning", "They're planning mass casualties", "Their own projections", "What do I need to do", "What about those 42 to 85 people", "Understood. I'll stop it."]},
+  {"said": ["[choice] I discovered what ENTROPY is planning", "Say that again", "mass murderers with spreadsheets", "Stop Operation Shatter before deployment", "People in the segments ENTROPY treated as statistics", "Good work discovering this"],
+   "notSaid": ["[choice] Operation Shatter resolved, I'm ready for debrief"]},
+  {"expect": {"operation_shatter_reported": true}},
+  {"tasks": {"inform_safetynet_operation_shatter": "completed"}},
+  {"set": {"player_aborted_attack": true}},
+  {"talk": "phone", "reload": true, "picks": ["Operation Shatter resolved, I'm ready for debrief", "On my way"]},
+  {"said": ["[choice] Operation Shatter resolved, I'm ready for debrief", "Shatter's dead in the water", "Walk out the way you came in"],
+   "notSaid": ["[choice] I discovered what ENTROPY is planning", "It went through. Not on an open line"]},
+  {"expect": {"start_debrief_cutscene": true, "m01_debrief_offered": true}}
+ ]
+}

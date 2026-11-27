@@ -1,0 +1,90 @@
+Room room_aes_plant: 320x320 px (10x10 tiles; about 6 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+## back wall (hung on it)
+  exit_sign1  x=66..92 y=13..28
+  aes_hv_danger1  x=106..132 y=17..44
+  aes_esd_sign1  x=148..191 y=13..30
+  aes_esd_station1  x=160..180 y=33..58
+  aes_breaker_panel1  x=266..286 y=22..54
+
+## against the back wall (standing on the floor)
+  ?(collision; look at the render)  x=102..129 y=92..104
+  ?(collision; look at the render)  x=200..258 y=92..104
+
+## second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)
+  aes_inverter2  x=100..131 y=58..116  [feet ~0.8 m out from the back wall; a rough guide, confirm in the render]
+  aes_switchgear1  x=198..260 y=57..116  [feet ~0.8 m out from the back wall; a rough guide, confirm in the render]
+
+## left wall
+  fire_extinguisher1  x=14..30 y=112..140
+
+## behind the camera (leave out)
+  aes_transformer1  x=34..87 y=240..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=36..85 y=272..286  [feet ~4.0 m out from the back wall; a rough guide, confirm in the render]
+  aes_pcs_cabinet1  x=118..170 y=241..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=120..168 y=272..286  [feet ~4.0 m out from the back wall; a rough guide, confirm in the render]
+  aes_generator1  x=200..261 y=246..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=202..259 y=272..286  [feet ~4.0 m out from the back wall; a rough guide, confirm in the render]
+  aes_gas_cylinders1  x=266..286 y=275..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=268..284 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid left
+  zds_desk1  x=34..112 y=147..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+    on zds_desk1: notes1  x=43..59 (conditional; see EMPTY below)
+    on zds_desk1: aes_battery_module1  x=65..89
+    on zds_desk1: notes3  x=94..108 (conditional; see EMPTY below)
+
+## floor, mid right
+  aes_trestle1  x=196..248 y=135..178  [feet ~2.0 m out from the back wall; a rough guide, confirm in the render]
+    on aes_trestle1: laptop6  x=203..220 (conditional; see EMPTY below)
+  smalldesk2  x=250..282 y=137..178  [feet ~2.0 m out from the back wall; a rough guide, confirm in the render]
+    on smalldesk2: notes4  x=252..280 (conditional; see EMPTY below)
+
+## floor, near left
+  aes_toolbox1  x=40..63 y=193..214  [feet ~2.7 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=42..61 y=194..204  [feet ~2.5 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=94..108 y=232..242  [feet ~3.2 m out from the back wall; a rough guide, confirm in the render]
+
+## near edge (bottom of the frame, mostly cropped; include only if it matters)
+  aes_hv_sign1  x=92..110 y=227..252  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  { "ambient": "#b2b4be", "emitters": { "esd_pushbutton": [ { "condition": "globalVars.attack_prevented === true", "color": "#3dff7a", "radius": 40, "intensity": 0.5, "offsetY": 22, "floorTint": 0.5 }, { "condition": "globalVars.esd_authorized === true", "color": "#ff3b30", "radius": 52, "intensity": 1.0, "effect": "pulse", "offsetY": 20, "above": true, "floorTint": 0.7 }, { "color": "#ff3b30", "radius": 16, "intensity": 0.3, "above": true } ], "laptop": [ { "condition": "globalVars.voltage_fight_started === true && globalVars.voltage_neutralised !== true && globalVars.attack_prevented !== true"
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'north': 'battery_hall_2', 'east': 'loading_dock'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  voltage: voltage  at (7, 7) tiles: 70% across, feet 80% of the way from the back wall. Back-wall items behind them: x~192..256
+  operative_static: operative_static  at (4, 7) tiles: 40% across, feet 80% of the way from the back wall. Back-wall items behind them: x~96..160
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       emergency-button "Emergency Shutdown Pushbutton — Rack Banks A-C" -> aes_esd_station1 (items) at 160,58
+  ok       pc "ENTROPY Command Laptop" -> laptop6 (conditional_table_items) at 203,150
+  ok       notes "Facility Blueprints (Marked)" -> notes4 (conditional_table_items) at 252,155
+  ok       notes "Critical Mass Coordination Log" -> notes1 (conditional_table_items) at 43,163
+  ok       notes "Voltage's Operation Log" -> notes3 (conditional_table_items) at 94,163
+
+## where this background will show
+  !! conversations in this room set their own background, which wins over chatBackground:
+     assets/backgrounds/background1.png  (grep it in the scenario to see which scenes)

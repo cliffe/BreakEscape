@@ -1,0 +1,575 @@
+/* Notes Minigame Styles */
+
+/* Container styles */
+.notes-minigame-container {
+    width: 90%;
+    height: 85%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .notes-minigame-container {
+        width: 95%;
+        height: 90%;
+        padding: 10px;
+    }
+    
+    .notes-minigame-game-container {
+        max-width: 100%;
+        padding: 1% 10% 6% 15%; /* Reduce padding on smaller screens */
+    }
+    
+    .notes-minigame-text-box {
+        margin: 2% 4% 6% 8%;
+        padding: 30px;
+    }
+    
+    .notes-minigame-observation-container {
+        margin: 2% 4% 6% 8%;
+    }
+
+    /* The notepad fits the window (critique A03): no 450px floor and no shift left, which
+       ran the page and Next off a 390px screen */
+    .notes-minigame-notepad {
+        min-width: 0;
+    }
+}
+
+/* Game container: as tall as the notepad, so the navigation row and Continue sit under it in
+   the shell's column (critique A04). Where the framework's `height: 100%` wins (it is linked
+   after this file) the portrait rule below and the landscape rule further down set it with more weight. */
+.notes-minigame-game-container {
+    width: 100%;
+    height: auto;
+    flex: 0 1 auto;
+    position: relative;
+    margin: 8px auto;
+    overflow: visible;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* Notepad background container */
+.notes-minigame-notepad {
+    /* Allow shrinkage but set a reasonable minimum to prevent working area from being too small */
+    min-width: min(450px, 92vw);
+    /* Scaled by the smaller side; the height leaves room for the navigation row and
+       Continue under the page (critique A04) */
+    width: min(92vw, (100vh - 176px) * 165 / 205);
+    aspect-ratio: 165 / 205; /* Match notepad image dimensions */
+    background-image: url('../assets/mini-games/notepad.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: relative;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* Portrait phones: the page was sized from the width alone, and the game container filled the
+   shell (minigames-framework.css is linked again after this file, so its `height: 100%` beat
+   the `height: auto` above), so a 390x844 screen got a 358x445 notepad at the top, the
+   navigation row at the bottom and about 230px of dark band between. Here the container wraps
+   the notepad (a selector with more weight than the framework's), has no side padding (the
+   notepad sits centred) and no #1a1a1a fill, and the shell centres notepad and navigation row
+   together. The notepad keeps the image's true 165:205 shape: the art is rings and shaded
+   shadow rows that differ from ring to ring, so it cannot be stretched or sliced and
+   repeated without distorting it. The X sits inside the paper (.notes-minigame-page-edge, the
+   art's paper ends at column 154 of 165). A page longer than the notepad scrolls in its body,
+   with the scrollbar and a "MORE" cue under its last line (the body stops at 85% to leave
+   the cue the margin). */
+@media (orientation: portrait) and (max-width: 768px) {
+    .minigame-container .notes-minigame-game-container {
+        height: auto;
+        margin: 0 auto;
+        padding: 8px 0;
+        background: transparent;
+    }
+    .notes-minigame-notepad {
+        width: min(92vw, calc((100vh - 176px) * 165 / 205));
+        width: min(92vw, calc((100dvh - 176px) * 165 / 205));
+        aspect-ratio: 165 / 205;
+        flex: none;
+    }
+    .notes-minigame-notepad .notes-minigame-content-area { height: calc(85% - 48px); }
+}
+
+/* The paper's edge: an empty box over the paper only (the art's paper ends at column 154 of
+   165, the last 10 columns are shadow and transparent), the anchor of the X */
+.notes-minigame-page-edge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: calc(100% * 10 / 165);
+    pointer-events: none;
+}
+
+/* The "more below" cue, in the page's bottom margin (the paper ends at art row 190 of 205, so
+   its foot is 14/205 of the height up from the bottom of the box) */
+.notes-minigame-more {
+    position: absolute;
+    right: 12%;
+    bottom: calc(100% * 14 / 205);
+    z-index: 2;
+    padding: 0 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #fefefe;
+    background: #2c3e50;
+    border: 2px solid #5c5446;
+    pointer-events: none;
+}
+
+.notes-minigame-more[hidden] { display: none; }
+
+/* Content area */
+.notes-minigame-content-area {
+    position: absolute;
+    /* The scroll box starts below the X (38px box plus its 4px gap and the page border), so
+       its scrollbar never runs under the X (UI shell review M3) */
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 12% 8% 18%;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+    background: transparent;
+    margin: 0;
+    overflow: auto; /* Allow scrolling if content is too long */
+    box-sizing: border-box;
+    /* The page's scrollbar in paper colours (the shared .pixel-scroll rule, class added in
+       notes-minigame.js) */
+    --pixel-scroll-track: #e9e4d6;
+    --pixel-scroll-thumb: #b7ae98;
+    --pixel-scroll-edge: #5c5446;
+    --pixel-scroll-hover: #2c3e50;
+    height: calc(85% - 48px); /* so that it scrolls before the bottom of the image */
+}
+
+/* Text box container */
+.notes-minigame-text-box {
+    margin: 3% 6% 8% 10%;
+    padding: 15px;
+    background: #fefefe;
+    border: 4px solid #ddd;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.8);
+    position: relative;
+    min-height: fit-content;
+}
+
+/* Celotape effect: a short strip of yellowed tape across the top edge. It was a long white
+   box with a grey border that read as an empty title field (critique A06). */
+.notes-minigame-celotape {
+    position: absolute;
+    top: -10px;
+    left: 35%;
+    right: 35%;
+    height: 12px;
+    background: rgba(240, 226, 170, 0.75);
+    border-left: 2px solid rgba(190, 172, 110, 0.8);
+    border-right: 2px solid rgba(190, 172, 110, 0.8);
+    box-shadow: none;
+    z-index: 1;
+}
+
+/* Binder holes effect */
+.notes-minigame-binder-holes {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.notes-minigame-binder-hole {
+    width: 8px;
+    height: 8px;
+    background: #666;
+    border: 2px solid #333;
+}
+
+/* Note title */
+.notes-minigame-title {
+    margin: 0 6% 3% 10%;
+    font-family: 'Press Start 2P', monospace;
+    /* On its 8px grid at normal weight: Press Start 2P has one weight and one font pixel per
+       eighth of its size (slice 7 R5 M1, M2). The blue underline marks it as the title. */
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: normal;
+    color: #2c3e50;
+    text-decoration: underline;
+    text-decoration-color: #3498db;
+    text-underline-offset: 3px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Important note title styling */
+.notes-minigame-title.important {
+    text-decoration-color: #e74c3c;
+    text-decoration-thickness: 3px;
+}
+
+/* Star icon for important notes */
+.notes-minigame-star {
+    width: 32px;
+    height: 32px;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
+/* Note text content */
+.notes-minigame-text {
+    margin-left: 30px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #333;
+}
+
+/* Observation container */
+.notes-minigame-observation-container {
+    margin: 3% 6% 8% 10%;
+    position: relative;
+}
+
+/* Observation text */
+.notes-minigame-observation {
+    font-family: 'GNF', monospace;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
+    color: #666;
+    font-size: 16px;
+    line-height: 1.4;
+    text-align: left;
+    min-height: 30px;
+    padding: 10px;
+    /* room on the right for the edit pencil, which sits over the box's top-right corner */
+    padding-right: 28px;
+    border: 4px dashed #ccc;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+    transition: background-color 0.2s ease;
+}
+
+.notes-minigame-observation:hover {
+    background: rgba(255, 255, 255, 0.5);
+    border-color: #999;
+}
+
+.notes-minigame-observation.empty {
+    color: #999;
+}
+
+/* Edit button */
+.notes-minigame-edit-btn {
+    font-size: 16px;   /* whole-pixel size (the browser's button default is 13.33px) */
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #3498db;
+    color: white;
+    border: 4px solid #2980b9;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    transition: background-color 0.3s ease;
+    padding: 0;
+}
+
+.notes-minigame-edit-btn img {
+    width: 32px;
+    height: 32px;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.notes-minigame-edit-btn:hover {
+    background: #2980b9;
+}
+
+/* Navigation row: in the shell's column under the notepad, never drawn over the page
+   (critique A04); it wraps on a narrow window (A03) */
+.notes-minigame-nav-container:empty { display: none; }
+.notes-minigame-nav-container {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0 8px 12px;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.notes-minigame-nav-button { white-space: nowrap; }
+.notes-minigame-nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Search input */
+.notes-minigame-search {
+    padding: 8px 12px;
+    border: 4px solid #555;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 16px;
+    width: 200px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Navigation buttons */
+.minigame-button.notes-minigame-nav-button {
+    background: #95a5a6;
+    color: white;
+    border: 4px solid #7f8c8d;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.notes-minigame-nav-button:not(:disabled):hover {
+    background: #7f8c8d;
+}
+
+/* Note counter */
+.notes-minigame-counter {
+    color: white;
+    font-size: 16px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    background: rgba(0,0,0,0.5);
+    border: 4px solid rgba(255,255,255,0.3);
+}
+
+
+/* Edit interface styles */
+.notes-minigame-edit-textarea {
+    width: calc(100% - 20px); /* Account for padding */
+    min-height: 60px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    color: #666;
+    border: 4px solid #3498db;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.notes-minigame-edit-buttons {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    /* a narrow notebook page wraps Cancel below Save instead of breaking a label mid-word */
+    flex-wrap: wrap;
+}
+.notes-minigame-save-btn,
+.notes-minigame-cancel-btn {
+    white-space: nowrap;
+}
+
+.notes-minigame-save-btn {
+    background: #2ecc71;
+    color: white;
+    border: 4px solid #27ae60;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.notes-minigame-save-btn:hover {
+    background: #27ae60;
+}
+
+.notes-minigame-cancel-btn {
+    background: #95a5a6;
+    color: white;
+    border: 4px solid #7f8c8d;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.notes-minigame-cancel-btn:hover {
+    background: #7f8c8d;
+}
+
+/* Markdown in note text (utils/note-markdown.js) */
+.notes-minigame-text .note-md-h1,
+.notes-minigame-text .note-md-h2,
+.notes-minigame-text .note-md-h3 {
+    font-weight: bold;
+    white-space: normal;
+    margin: 0.6em 0 0.3em;
+}
+
+.notes-minigame-text .note-md-h1 { font-size: 24px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+.notes-minigame-text .note-md-h2 { font-size: 24px; }
+.notes-minigame-text .note-md-h3 { font-size: 16px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+
+/* Narrow window: 24px GNF headings wrap to three lines in the ~135px column, so h1 and h2 drop to 16px (both keep a 2px rule) */
+@media (max-width: 480px) {
+    .notes-minigame-text .note-md-h1,
+    .notes-minigame-text .note-md-h2 { font-size: 16px; text-transform: uppercase; }
+    .notes-minigame-text .note-md-h2 { padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+}
+
+.notes-minigame-text code,
+.notes-minigame-text .note-md-code {
+    font-family: 'VT323', monospace;
+    font-size: 1.1em;
+    background: #f0efe8;
+    padding: 0 3px;
+}
+
+.notes-minigame-text .note-md-code {
+    display: block;
+    margin: 0.4em 0;
+    padding: 4px 6px;
+    white-space: pre-wrap;
+}
+
+.notes-minigame-text .note-md-table {
+    border-collapse: collapse;
+    margin: 0.5em 0;
+    white-space: normal;
+    /* VT323 is narrower than the page font, so a 9-column chart fits the page,
+       and its * and ` are easier to tell apart. */
+    font-family: 'VT323', monospace;
+    font-size: 1.15em;
+    max-width: 100%;
+}
+
+.notes-minigame-text .note-md-table th,
+.notes-minigame-text .note-md-table td {
+    border: 2px solid #ccc;
+    padding: 0 4px;
+    text-align: left;
+}
+
+.notes-minigame-text .note-md-table th {
+    background: #eeeeea;
+    font-weight: bold;
+}
+
+/* Short landscape screens (a phone on its side, about 915x412, and the desktop app's 800x600): the notepad is sized by the screen
+   height, not held at 450px wide, so it fits whole; its text scrolls inside it; and the Continue
+   (and note-navigation) buttons sit beside it instead of over the text. */
+@media (orientation: landscape) and (max-height: 640px) {
+    .minigame-container .notes-minigame-game-container { margin: 0 auto; height: 100%; align-items: center; }
+    .notes-minigame-notepad {
+        min-width: 0;
+        height: calc(100vh - 12px);
+        width: calc((100vh - 12px) * 165 / 205);
+        aspect-ratio: auto;
+        background-size: 100% 100%;
+    }
+    .notes-minigame-content-area { padding: 0 9% 9% 17%; font-size: 14px; line-height: 1.3; height: calc(85% - 48px); }
+    .notes-minigame-text-box { margin: 2% 0 4% 4%; padding: 8px; }
+    .notes-minigame-text { margin-left: 0; }
+    /* 16px on short screens too, one line, cut with an ellipsis when long (S7-notes) */
+    .notes-minigame-title { font-size: 16px; line-height: 24px; margin: 0 0 2% 4%; }
+    .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
+    .notes-minigame-more { font-size: 16px; line-height: 16px; padding: 0 6px; }
+    .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px 28px 6px 6px; }
+    /* Continue stays beside the notepad here, out of the flow (the framework
+       otherwise puts the Cancel row under the game area, which would shorten the
+       notepad and cover its foot; minigame sweep, 2026-11-12) */
+    .minigame-container:has(.notes-minigame-notepad) .minigame-controls {
+        position: absolute; left: auto; right: 24px; bottom: 16px; transform: none; margin: 0;
+    }
+    .notes-minigame-nav-container { position: absolute; left: 24px; bottom: 16px; transform: none; flex-wrap: wrap; max-width: 28%; margin: 0; justify-content: flex-start; }
+}
+
+
+/* Short landscape phones up to 768px wide: the frame is 90% of the height with padding, so the
+   page is a little shorter than on wider short screens and its top stays inside the frame */
+@media (orientation: landscape) and (max-height: 640px) and (max-width: 768px) {
+    .notes-minigame-notepad {
+        height: calc(90vh - 12px);
+        width: calc((90vh - 12px) * 165 / 205);
+    }
+}
+
+/* ── The note slip, stuck on the page (S7-notes, user pick 2026-11-15: torn) ────────────
+   The text box is a slip of paper fixed to the notepad page: its bottom edge torn in square
+   steps, one strip of tape across the top centre. All flat colours and square steps: no
+   rotation, gradients or soft shadows. */
+
+/* On short screens the title is one line: a long one ends in an ellipsis. Elsewhere it wraps. */
+@media (orientation: landscape) and (max-height: 640px) {
+    .notes-minigame-title {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .notes-minigame-title .notes-minigame-star { vertical-align: middle; margin-right: 8px; }
+}
+
+.notes-minigame-text-box .notes-minigame-celotape { display: none; }
+/* One strip of yellowed tape at the top centre, ends cut in 2px teeth */
+.notes-minigame-text-box::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: calc(50% - 24px);
+    width: 48px;
+    height: 16px;
+    background: #e9d488;
+    opacity: 0.92;
+    pointer-events: none;
+    z-index: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 4px, calc(100% - 2px) 4px, calc(100% - 2px) 8px, 100% 8px, 100% 12px,
+        calc(100% - 2px) 12px, calc(100% - 2px) 100%, 2px 100%, 2px 12px, 0 12px, 0 8px, 2px 8px, 2px 4px, 0 4px);
+}
+
+/* The slip: bottom edge torn in uneven square steps */
+.notes-minigame-text-box {
+    background: #fff6d6;
+    border: 2px solid #d9c98e;
+    box-shadow: none;
+    border-bottom: 0;
+    padding-bottom: 20px;
+    clip-path: polygon(-20px -20px, calc(100% + 20px) -20px, calc(100% + 20px) calc(100% - 6px),
+        100% calc(100% - 6px), 93% calc(100% - 6px), 93% 100%, 86% 100%, 86% calc(100% - 4px), 77% calc(100% - 4px),
+        77% calc(100% - 8px), 68% calc(100% - 8px), 68% calc(100% - 2px), 58% calc(100% - 2px), 58% 100%,
+        49% 100%, 49% calc(100% - 6px), 41% calc(100% - 6px), 41% calc(100% - 2px), 30% calc(100% - 2px),
+        30% calc(100% - 8px), 21% calc(100% - 8px), 21% calc(100% - 4px), 12% calc(100% - 4px), 12% 100%,
+        5% 100%, 5% calc(100% - 6px), -20px calc(100% - 6px));
+}

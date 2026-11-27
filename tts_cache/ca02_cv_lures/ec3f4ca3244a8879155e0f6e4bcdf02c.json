@@ -1,0 +1,13 @@
+{
+  "key": "ec3f4ca3244a8879155e0f6e4bcdf02c",
+  "npc": "fatima_begum",
+  "text": "A CV that wants content switched on is after a foothold. If the file runs, the attacker is on an HR machine full of candidate records.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:48:53Z"
+}

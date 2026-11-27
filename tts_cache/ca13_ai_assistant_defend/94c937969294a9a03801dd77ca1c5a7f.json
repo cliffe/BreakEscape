@@ -1,0 +1,13 @@
+{
+  "key": "94c937969294a9a03801dd77ca1c5a7f",
+  "npc": "kit_graham_whitfield",
+  "text": "Nice. You checked it yourself instead of trusting that summary.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:42Z"
+}

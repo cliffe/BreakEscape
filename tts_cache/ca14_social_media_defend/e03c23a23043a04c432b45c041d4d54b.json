@@ -1,0 +1,13 @@
+{
+  "key": "e03c23a23043a04c432b45c041d4d54b",
+  "npc": "julian_sallow",
+  "text": "You checked that new contact by a known route, so the account wearing a partner's name got nothing out of the studio.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:53:04Z"
+}

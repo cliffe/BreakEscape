@@ -1,0 +1,13 @@
+{
+  "key": "ca562c98ed2d4697d6fd43ddebdff2d5",
+  "npc": "agnieszka_duda",
+  "text": "Busy morning?",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:45:18Z"
+}

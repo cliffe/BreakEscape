@@ -1,0 +1,21 @@
+{
+  "key": "8fdd92300c038d2daf1d8be7ab5fe373",
+  "npc": "ghost_phone",
+  "text": "You turned me down. Why?",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:06:09Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/8fdd92300c038d2daf1d8be7ab5fe373.mp3",
+    "clean_md5": "8a1ba0bce120f828f3242d0cb3bfd265",
+    "baked_md5": "5bb5917524e8ba9145e3316fe29fb7ac",
+    "baked": "2026-11-24"
+  }
+}

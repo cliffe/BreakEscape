@@ -1,0 +1,13 @@
+{
+  "key": "e4c7e1c26bb9665275a90ecc9e3e0501",
+  "npc": "voltage_van",
+  "text": "Let me do it. It's quicker. Or do it yourself, and I'll tell you which one's the gallery camera.",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:03:14Z"
+}

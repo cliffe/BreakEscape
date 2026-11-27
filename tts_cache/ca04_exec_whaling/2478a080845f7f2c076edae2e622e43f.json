@@ -1,0 +1,13 @@
+{
+  "key": "2478a080845f7f2c076edae2e622e43f",
+  "npc": "thandiwe_moyo",
+  "text": "A voice can be copied. Ring her back on a number you already hold before anything leaves the account.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:08:57Z"
+}

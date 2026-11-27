@@ -1,0 +1,70 @@
+{
+ "steps": [
+  {
+   "note": "Kowalczyk's security-office copy, the player holding both clues and the rack seen: the photo line, then the full face-to-face accusation, four cards in order, the crack, the answer to C18 and her last line. WREN is held and the copy goes quiet."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "cracker_rack_seen": true,
+    "security_office_entered": true
+   }
+  },
+  {
+   "talk": "kso",
+   "picks": [
+    "You're WREN",
+    "I'm sure",
+    "The service door opened",
+    "He was on with HaX",
+    "A cloner in our breaching case",
+    "At the gate, next to me",
+    "You said it never went through stores",
+    "When the cloner turned up"
+   ]
+  },
+  {
+   "said": [
+    "Nice photo. They've got your good side.",
+    "If that's wrong, Kowalczyk's off the raid till you can clear her. Sure?",
+    "Me? Go on, then. Show me.",
+    "Malhotra's badge, Malhotra's door. Ask him.",
+    "Then somebody did. Wasn't me.",
+    "I packed that case with Kenji.",
+    "For a moment she has nothing to say.",
+    "Well. It was a good cracker.",
+    "Arakawa looks away.",
+    "When did you know?",
+    "I liked you. I'd still have pressed it.",
+    "Hold her there. A minder is on the way down."
+   ],
+   "notSaid": [
+    "Then he can come down and ask me himself.",
+    "The long way is over.",
+    "I'll take the service side and meet you at the lock."
+   ]
+  },
+  {
+   "expect": {
+    "accused": "kowalczyk",
+    "sleeper_caught": true,
+    "wren_held": true,
+    "kowalczyk_answer": "bench"
+   }
+  },
+  {
+   "talk": "kso",
+   "picks": [
+    "Sit tight"
+   ]
+  },
+  {
+   "said": [
+    "I'm not going anywhere. Your minder's slow.",
+    "Like I've got a choice."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "6ca6b57dde2f871fff0e6c4182c9cffe",
+  "npc": "nightshade_table",
+  "text": "That's all I knew before Portland. The rest you'll find for yourself.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:52:04Z"
+}

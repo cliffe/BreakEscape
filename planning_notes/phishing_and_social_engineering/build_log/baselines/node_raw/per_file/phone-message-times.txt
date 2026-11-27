@@ -1,0 +1,52 @@
+TAP version 13
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 📱 Restored saved phone state for 1 contact(s)
+# 📱 Restored hax's phone thread (2 message(s))
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# Subtest: in-game clock: each message keeps the game time it arrived at
+ok 1 - in-game clock: each message keeps the game time it arrived at
+  ---
+  duration_ms: 5.846411
+  ...
+# Subtest: the times survive a save and reload (gameTime is saved with the thread)
+ok 2 - the times survive a save and reload (gameTime is saved with the thread)
+  ---
+  duration_ms: 0.880599
+  ...
+# Subtest: a preloaded thread backdated an hour shows an hour before the game started
+ok 3 - a preloaded thread backdated an hour shows an hour before the game started
+  ---
+  duration_ms: 0.318521
+  ...
+# Subtest: no in-game clock: the wall time each message arrived, in the phone's h:mm form
+ok 4 - no in-game clock: the wall time each message arrived, in the phone's h:mm form
+  ---
+  duration_ms: 0.375913
+  ...
+# Subtest: phone-chat UI renders history bubbles with the message, not the current time
+ok 5 - phone-chat UI renders history bubbles with the message, not the current time
+  ---
+  duration_ms: 0.261972
+  ...
+# Subtest: preloaded intros are stamped at or after the in-game start
+ok 6 - preloaded intros are stamped at or after the in-game start
+  ---
+  duration_ms: 0.262026
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 115.19382

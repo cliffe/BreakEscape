@@ -1,0 +1,13 @@
+{
+  "key": "7cfb7bff873f4b31117cfa1f9b36af53",
+  "npc": "duty_guard_b",
+  "text": "That's the one off the wall.",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:25:25Z"
+}

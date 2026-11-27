@@ -1,0 +1,91 @@
+{
+ "steps": [
+  {
+   "note": "Vector at the forward table with no m08 history: why he came, the plain exit, then at the security office his copy gives the cupboard code once and why he knows it. A face-to-face wrong accusation from the post copy takes the plain 'Check it properly' reply."
+  },
+  {
+   "talk": "vector",
+   "picks": [
+    "Why did you come"
+   ]
+  },
+  {
+   "said": [
+    "I've read the map three times.",
+    "Someone has to read the paper. I'm good at paper."
+   ],
+   "notSaid": [
+    "You said sorry properly.",
+    "That cupboard."
+   ]
+  },
+  {
+   "talk": "vector",
+   "picks": [
+    "Keep reading"
+   ]
+  },
+  {
+   "said": [
+    "I will. Carefully."
+   ],
+   "notSaid": [
+    "Someone has to read the paper."
+   ]
+  },
+  {
+   "set": {
+    "security_office_entered": true
+   }
+  },
+  {
+   "talk": "vso",
+   "picks": [
+    "How do you know their code"
+   ]
+  },
+  {
+   "said": [
+    "That cupboard. Annex standard. They copied our lock and kept our master code.",
+    "Write this down. I'd only worry otherwise.",
+    "Records cupboard: Vector's code",
+    "I audited the Citadel annex's locks for a year."
+   ],
+   "notSaid": [
+    "Still here. Still useful, I hope."
+   ]
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "security_office_entered": false
+   }
+  },
+  {
+   "talk": "vector",
+   "picks": [
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "If that's wrong, Netherton loses Vector till you can clear him. Sure?",
+    "Check it properly. Then say sorry properly.",
+    "Then I am a pair of hands short. Carry on."
+   ],
+   "notSaid": [
+    "You've done this to me once."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "vector",
+    "wrong_accusation": true,
+    "accused": ""
+   }
+  }
+ ]
+}

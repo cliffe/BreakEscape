@@ -1,0 +1,781 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m04_critical_failure",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "door_battery_hall_2",
+        "optional": false
+      },
+      {
+        "id": "door_engineering_workshop",
+        "optional": false
+      },
+      {
+        "id": "door_plant_room",
+        "optional": false
+      },
+      {
+        "id": "lock_esd_pushbutton",
+        "optional": false
+      },
+      {
+        "id": "lock_extraction_gobag",
+        "optional": false
+      },
+      {
+        "id": "lock_optigrid_tool_case",
+        "optional": false
+      },
+      {
+        "id": "lock_security_equipment_locker",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "facility_access_keycard_level_1",
+        "optional": true
+      },
+      {
+        "id": "npc_entropy_operative_relay",
+        "optional": false
+      },
+      {
+        "id": "npc_robert_vance",
+        "optional": false
+      },
+      {
+        "id": "npc_voltage_critical_mass",
+        "optional": false
+      },
+      {
+        "id": "spare_keycard_level_1",
+        "optional": true
+      },
+      {
+        "id": "workshop_keycard_level_2",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "battery_hall_1",
+      "battery_hall_2",
+      "engineering_workshop",
+      "loading_dock",
+      "main_entrance",
+      "operations_office",
+      "plant_room",
+      "scada_control_room",
+      "security_office"
+    ],
+    "edges": [
+      [
+        "action_deal_with_voltage",
+        "lock_esd_pushbutton",
+        false
+      ],
+      [
+        "analogue_thermometer_rack_bank_c_wall",
+        "lock_esd_pushbutton",
+        false
+      ],
+      [
+        "battery_hall_1",
+        "analogue_thermometer_rack_bank_c_wall",
+        false
+      ],
+      [
+        "battery_hall_1",
+        "duty_round_panel",
+        false
+      ],
+      [
+        "battery_hall_1",
+        "h_gas_detector_panel",
+        false
+      ],
+      [
+        "battery_hall_2",
+        "npc_entropy_operative_relay",
+        false
+      ],
+      [
+        "bms_jump_server_terminal",
+        "vmch_submit_network_scan_flag",
+        false
+      ],
+      [
+        "door_battery_hall_2",
+        "battery_hall_2",
+        false
+      ],
+      [
+        "door_engineering_workshop",
+        "engineering_workshop",
+        false
+      ],
+      [
+        "door_plant_room",
+        "plant_room",
+        false
+      ],
+      [
+        "duty_round_panel",
+        "door_plant_room",
+        false
+      ],
+      [
+        "engineering_workshop",
+        "bms_jump_server_terminal",
+        false
+      ],
+      [
+        "engineering_workshop",
+        "lock_optigrid_tool_case",
+        false
+      ],
+      [
+        "facility_access_keycard_level_1",
+        "door_battery_hall_2",
+        true
+      ],
+      [
+        "fingerprint_kit",
+        "door_plant_room",
+        false
+      ],
+      [
+        "loading_dock",
+        "lock_extraction_gobag",
+        false
+      ],
+      [
+        "lock_extraction_gobag",
+        "social_fabric_safehouse_card_encoded",
+        false
+      ],
+      [
+        "lock_optigrid_tool_case",
+        "fingerprint_kit",
+        false
+      ],
+      [
+        "lock_optigrid_tool_case",
+        "optigrid_job_card_4782_back_page",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_extraction_gobag",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_optigrid_tool_case",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_security_equipment_locker",
+        false
+      ],
+      [
+        "lock_security_equipment_locker",
+        "spare_keycard_level_1",
+        true
+      ],
+      [
+        "main_entrance",
+        "cyberchef_workstation",
+        false
+      ],
+      [
+        "main_entrance",
+        "lock_pick_kit",
+        false
+      ],
+      [
+        "main_entrance",
+        "operations_office",
+        false
+      ],
+      [
+        "main_entrance",
+        "rfid_cloner",
+        false
+      ],
+      [
+        "npc_entropy_operative_relay",
+        "workshop_keycard_level_2",
+        false
+      ],
+      [
+        "npc_robert_vance",
+        "action_meet_robert_vance",
+        false
+      ],
+      [
+        "npc_robert_vance",
+        "facility_access_keycard_level_1",
+        true
+      ],
+      [
+        "npc_voltage_critical_mass",
+        "action_deal_with_voltage",
+        false
+      ],
+      [
+        "operations_office",
+        "maintenance_work_orders",
+        false
+      ],
+      [
+        "operations_office",
+        "npc_robert_vance",
+        false
+      ],
+      [
+        "operations_office",
+        "scada_control_room",
+        false
+      ],
+      [
+        "operations_office",
+        "security_office",
+        false
+      ],
+      [
+        "plant_room",
+        "lock_esd_pushbutton",
+        false
+      ],
+      [
+        "plant_room",
+        "npc_voltage_critical_mass",
+        false
+      ],
+      [
+        "rfid_cloner",
+        "door_battery_hall_2",
+        false
+      ],
+      [
+        "rfid_cloner",
+        "door_engineering_workshop",
+        false
+      ],
+      [
+        "scada_control_room",
+        "battery_hall_1",
+        false
+      ],
+      [
+        "scada_control_room",
+        "scada_hmi_main_display",
+        false
+      ],
+      [
+        "security_office",
+        "access_control_export_hv_plant_room",
+        false
+      ],
+      [
+        "security_office",
+        "lock_security_equipment_locker",
+        false
+      ],
+      [
+        "spare_keycard_level_1",
+        "door_battery_hall_2",
+        true
+      ],
+      [
+        "vmch_submit_erlang_rce_flag",
+        "vmfl_submit_erlang_rce_flag",
+        false
+      ],
+      [
+        "vmch_submit_ftp_intel_flag",
+        "vmfl_submit_ftp_intel_flag",
+        false
+      ],
+      [
+        "vmch_submit_network_scan_flag",
+        "vmfl_submit_network_scan_flag",
+        false
+      ],
+      [
+        "vmch_submit_privesc_flag",
+        "vmfl_submit_privesc_flag",
+        false
+      ],
+      [
+        "vmfl_submit_erlang_rce_flag",
+        "lock_esd_pushbutton",
+        false
+      ],
+      [
+        "vmfl_submit_erlang_rce_flag",
+        "vmch_submit_privesc_flag",
+        true
+      ],
+      [
+        "vmfl_submit_ftp_intel_flag",
+        "lock_esd_pushbutton",
+        false
+      ],
+      [
+        "vmfl_submit_ftp_intel_flag",
+        "vmch_submit_erlang_rce_flag",
+        true
+      ],
+      [
+        "vmfl_submit_network_scan_flag",
+        "lock_esd_pushbutton",
+        false
+      ],
+      [
+        "vmfl_submit_network_scan_flag",
+        "vmch_submit_ftp_intel_flag",
+        true
+      ],
+      [
+        "vmfl_submit_privesc_flag",
+        "lock_esd_pushbutton",
+        false
+      ],
+      [
+        "workshop_keycard_level_2",
+        "door_engineering_workshop",
+        false
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/battery_hall_2",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "a794a99a0674bd14",
+      "requiresHash": "9919fe6142467086"
+    },
+    {
+      "path": "/rooms/engineering_workshop",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "1c845f8981c4ea81",
+      "requiresHash": "f4bdbe98c5e79ac2"
+    },
+    {
+      "path": "/rooms/engineering_workshop/objects[optigrid_tool_case]",
+      "id": "optigrid_tool_case",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "7bc68fd47bda67f6",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/loading_dock/objects[extraction_gobag]",
+      "id": "extraction_gobag",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "eee085f58b79a05d",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/plant_room",
+      "id": null,
+      "lockType": "biometric",
+      "locked": true,
+      "requirementHash": "95b65c76fe1fa082",
+      "requiresHash": "ce0b058c9a2de533"
+    },
+    {
+      "path": "/rooms/security_office/objects[security_equipment_locker]",
+      "id": "security_equipment_locker",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "da3775e6ea314842",
+      "requiresHash": "44136fa355b3678a"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "get_inside",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "enter_facility",
+          "type": "enter_room",
+          "targetRoom": "operations_office"
+        },
+        {
+          "taskId": "meet_robert_vance",
+          "type": "npc_conversation",
+          "targetNPC": "robert_vance",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "confirm_the_lie",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "get_inside"
+      },
+      "tasks": [
+        {
+          "taskId": "find_infiltration_evidence",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "identify_scada_anomalies",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "reach_the_workshop",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "confirm_the_lie"
+      },
+      "tasks": [
+        {
+          "taskId": "neutralize_operative_relay",
+          "type": "custom"
+        },
+        {
+          "taskId": "locate_compromised_systems",
+          "type": "enter_room",
+          "targetRoom": "engineering_workshop"
+        }
+      ]
+    },
+    {
+      "aimId": "map_the_attack",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "reach_the_workshop"
+      },
+      "tasks": [
+        {
+          "taskId": "scan_scada_network",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "submit_network_scan_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:bms_jump_server-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "investigate_compromised_services",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "submit_ftp_intel_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:bms_jump_server-flag2"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "exploit_erlang_ssh_vulnerability",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "submit_erlang_rce_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:bms_jump_server-flag4"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_privesc_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:bms_jump_server-flag3"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "take_back_the_plant",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "confirm_the_lie"
+      },
+      "tasks": [
+        {
+          "taskId": "neutralize_operative_cipher",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "get_past_plant_reader",
+          "type": "enter_room",
+          "targetRoom": "plant_room"
+        },
+        {
+          "taskId": "confront_voltage",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "stop_the_runaway",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "map_the_attack"
+      },
+      "tasks": [
+        {
+          "taskId": "disable_attack_vectors",
+          "type": "custom"
+        },
+        {
+          "taskId": "call_in_after_sweep",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "report_to_0x99",
+          "type": "npc_conversation",
+          "targetNPC": "agent_0x99_debrief"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[stop_the_runaway]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_network_scan_flag",
+          "submit_ftp_intel_flag",
+          "submit_privesc_flag",
+          "submit_erlang_rce_flag"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99": "main_entrance",
+    "agent_0x99_debrief": "main_entrance",
+    "agent_nightshade": "main_entrance",
+    "analog_thermometer": "battery_hall_1",
+    "bms_bypass_module": "battery_hall_2",
+    "deal_with_voltage": "plant_room",
+    "director_netherton": "main_entrance",
+    "esd_pushbutton": "plant_room",
+    "extraction_gobag": "loading_dock",
+    "flag_station_dropsite": "engineering_workshop",
+    "hall1_round_panel": "battery_hall_1",
+    "hydrogen_detector": "battery_hall_1",
+    "meet_robert_vance": "operations_office",
+    "opening_briefing_cutscene": "main_entrance",
+    "operative_cipher": "battery_hall_1",
+    "operative_relay": "battery_hall_2",
+    "operative_static": "plant_room",
+    "optigrid_tool_case": "engineering_workshop",
+    "rack_status_panel": "battery_hall_1",
+    "relayed_workshop_keycard": "main_entrance",
+    "robert_vance": "operations_office",
+    "robert_vance_phone": "main_entrance",
+    "safetynet_field_guide_cyberchef": "main_entrance",
+    "safetynet_field_guide_erlang_ssh": "main_entrance",
+    "safetynet_field_guide_lockpicking": "main_entrance",
+    "safetynet_field_guide_privesc": "main_entrance",
+    "safetynet_field_guide_proftpd": "main_entrance",
+    "safetynet_field_guide_recon_network_mapping": "main_entrance",
+    "safetynet_field_guide_rfid_cloning": "main_entrance",
+    "safetynet_field_guide_vuln_analysis": "main_entrance",
+    "scada_hmi_display": "scada_control_room",
+    "security_equipment_locker": "security_office",
+    "security_guard": "main_entrance",
+    "security_spare_keycard_l1": "security_office",
+    "vance_level1_keycard": "operations_office",
+    "vm_launcher_bms_jump_server": "engineering_workshop",
+    "voltage": "plant_room"
+  },
+  "layout": {
+    "start": "main_entrance",
+    "adj": {
+      "battery_hall_1": [
+        "battery_hall_2",
+        "engineering_workshop",
+        "scada_control_room"
+      ],
+      "battery_hall_2": [
+        "battery_hall_1",
+        "plant_room"
+      ],
+      "engineering_workshop": [
+        "battery_hall_1"
+      ],
+      "loading_dock": [
+        "plant_room"
+      ],
+      "main_entrance": [
+        "operations_office"
+      ],
+      "operations_office": [
+        "main_entrance",
+        "scada_control_room",
+        "security_office"
+      ],
+      "plant_room": [
+        "battery_hall_2",
+        "loading_dock"
+      ],
+      "scada_control_room": [
+        "battery_hall_1",
+        "operations_office"
+      ],
+      "security_office": [
+        "operations_office"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "battery_hall_1",
+      "task identify_scada_anomalies (action on 'analog_thermometer')",
+      "analog_thermometer"
+    ],
+    [
+      "battery_hall_1",
+      "task report_to_0x99 (mapping 'room_entered:battery_hall_1')",
+      null
+    ],
+    [
+      "battery_hall_2",
+      "task report_to_0x99 (mapping 'room_entered:battery_hall_2')",
+      null
+    ],
+    [
+      "engineering_workshop",
+      "VM launcher (flag tasks)",
+      "vm_launcher_bms_jump_server"
+    ],
+    [
+      "engineering_workshop",
+      "task locate_compromised_systems",
+      null
+    ],
+    [
+      "engineering_workshop",
+      "task report_to_0x99 (mapping 'room_entered:engineering_workshop')",
+      null
+    ],
+    [
+      "engineering_workshop",
+      "task submit_erlang_rce_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "engineering_workshop",
+      "task submit_ftp_intel_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "engineering_workshop",
+      "task submit_network_scan_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "engineering_workshop",
+      "task submit_privesc_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "loading_dock",
+      "task report_to_0x99 (mapping 'room_entered:loading_dock')",
+      null
+    ],
+    [
+      "main_entrance",
+      "task neutralize_operative_relay (mapping 'card_cloned')",
+      null
+    ],
+    [
+      "main_entrance",
+      "task report_to_0x99",
+      "agent_0x99_debrief"
+    ],
+    [
+      "main_entrance",
+      "task report_to_0x99 (ink of 'agent_0x99_debrief')",
+      "agent_0x99_debrief"
+    ],
+    [
+      "main_entrance",
+      "task report_to_0x99 (mapping 'room_entered:main_entrance')",
+      null
+    ],
+    [
+      "operations_office",
+      "task enter_facility",
+      null
+    ],
+    [
+      "operations_office",
+      "task report_to_0x99 (mapping 'room_entered:operations_office')",
+      null
+    ],
+    [
+      "plant_room",
+      "task confront_voltage (ink of 'voltage')",
+      "voltage"
+    ],
+    [
+      "plant_room",
+      "task disable_attack_vectors (action on 'esd_pushbutton')",
+      "esd_pushbutton"
+    ],
+    [
+      "plant_room",
+      "task get_past_plant_reader",
+      null
+    ],
+    [
+      "plant_room",
+      "task report_to_0x99 (mapping 'room_entered:plant_room')",
+      null
+    ],
+    [
+      "scada_control_room",
+      "task report_to_0x99 (mapping 'room_entered:scada_control_room')",
+      null
+    ],
+    [
+      "security_office",
+      "task report_to_0x99 (mapping 'room_entered:security_office')",
+      null
+    ]
+  ]
+}

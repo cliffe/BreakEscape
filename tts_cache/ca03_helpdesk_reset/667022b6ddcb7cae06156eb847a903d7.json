@@ -1,0 +1,13 @@
+{
+  "key": "667022b6ddcb7cae06156eb847a903d7",
+  "npc": "kit_niamh_doherty",
+  "text": "Good spot on that sign-in prompt nobody started. One tap and they'd have been in.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:25Z"
+}

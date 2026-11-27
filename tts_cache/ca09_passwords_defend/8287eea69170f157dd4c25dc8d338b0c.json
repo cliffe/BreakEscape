@@ -1,0 +1,14 @@
+{
+  "key": "8287eea69170f157dd4c25dc8d338b0c",
+  "npc": "kit_fatima_begum",
+  "text": "A meeting link that makes you install something is the lure. Our own tool's already on the machine, so leave new apps to the desk.",
+  "delivery": "friendly, matter-of-fact",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:46Z"
+}

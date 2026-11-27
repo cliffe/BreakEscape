@@ -1,0 +1,13 @@
+{
+  "key": "11443c4c5d937a297b8135b8325a18dc",
+  "npc": "quintero_post",
+  "text": "For the record, I'd go in at noon tomorrow with twice the people. You don't walk through a door a man's kept for you.",
+  "voice": "Kore",
+  "style": "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:43:10Z"
+}

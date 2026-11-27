@@ -1,0 +1,71 @@
+{
+ "steps": [
+  {
+   "note": "Kowalczyk's power-room copy gives her Bakelite line and lets the player move on. Her workshop copy, after the raid was warned, goes a room early: 'They knew we were coming' and the peel-off, where 'See you at the lock' sets kowalczyk_gone_ahead and she then only says 'Service side'."
+  },
+  {
+   "set": {
+    "power_room_entered": true
+   }
+  },
+  {
+   "talk": "kpr",
+   "picks": [
+    "Keep moving"
+   ]
+  },
+  {
+   "said": [
+    "Bakelite. Don't touch anything older than your nan.",
+    "Always."
+   ],
+   "notSaid": [
+    "They knew we were coming."
+   ]
+  },
+  {
+   "set": {
+    "power_room_entered": false,
+    "workshop_entered": true,
+    "wren_warned": true
+   }
+  },
+  {
+   "talk": "kws",
+   "picks": [
+    "See you at the lock"
+   ]
+  },
+  {
+   "said": [
+    "They knew we were coming. Saves us knocking.",
+    "I'll take the service side and meet you at the lock.",
+    "Don't be late."
+   ],
+   "notSaid": [
+    "Smells like the electronics lab at school.",
+    "Bakelite."
+   ]
+  },
+  {
+   "expect": {
+    "kowalczyk_gone_ahead": true
+   }
+  },
+  {
+   "talk": "kws",
+   "picks": [
+    "Go."
+   ]
+  },
+  {
+   "said": [
+    "Service side. Go on.",
+    "Going."
+   ],
+   "notSaid": [
+    "I'll take the service side and meet you at the lock."
+   ]
+  }
+ ]
+}

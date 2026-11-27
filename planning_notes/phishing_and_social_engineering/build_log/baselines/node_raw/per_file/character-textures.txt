@@ -1,0 +1,75 @@
+TAP version 13
+# Subtest: walks rooms for person and both NPCs, defaults to hacker, adds the player once
+ok 1 - walks rooms for person and both NPCs, defaults to hacker, adds the player once
+  ---
+  duration_ms: 1.093067
+  ...
+# Subtest: phone and untyped NPCs get no world sprite, so their sheets are left out
+ok 2 - phone and untyped NPCs get no world sprite, so their sheets are left out
+  ---
+  duration_ms: 0.116839
+  ...
+# Subtest: the player sheet is not duplicated when an NPC shares it
+ok 3 - the player sheet is not duplicated when an NPC shares it
+  ---
+  duration_ms: 0.088584
+  ...
+# Subtest: prefers the server's characterSprites list (the bootstrap payload has no NPCs)
+ok 4 - prefers the server's characterSprites list (the bootstrap payload has no NPCs)
+  ---
+  duration_ms: 0.079957
+  ...
+# Subtest: copes with no scenario, no rooms and no player
+ok 5 - copes with no scenario, no rooms and no player
+  ---
+  duration_ms: 0.053008
+  ...
+# Subtest: queueCharacterAtlases queues unloaded keys once, with ASSETS_VERSION, and does not start
+ok 6 - queueCharacterAtlases queues unloaded keys once, with ASSETS_VERSION, and does not start
+  ---
+  duration_ms: 0.170763
+  ...
+# Subtest: ensureCharacterTexture returns at once for a loaded texture, with no warning
+ok 7 - ensureCharacterTexture returns at once for a loaded texture, with no warning
+  ---
+  duration_ms: 0.106439
+  ...
+# Subtest: a missed key loads on demand, warns, and concurrent callers share one load
+ok 8 - a missed key loads on demand, warns, and concurrent callers share one load
+  ---
+  duration_ms: 3.215192
+  ...
+# Subtest: does not restart a loader that is already running
+ok 9 - does not restart a loader that is already running
+  ---
+  duration_ms: 0.177046
+  ...
+# Subtest: a failed load resolves false, ignoring other files' errors
+ok 10 - a failed load resolves false, ignoring other files' errors
+  ---
+  duration_ms: 0.170966
+  ...
+# Subtest: the player sprite switch is an expected load, not a missed preload
+ok 11 - the player sprite switch is an expected load, not a missed preload
+  ---
+  duration_ms: 0.098047
+  ...
+# Subtest: ensureCharacterTextures waits for every key
+ok 12 - ensureCharacterTextures waits for every key
+  ---
+  duration_ms: 0.142522
+  ...
+# Subtest: game.js preloads no character atlases but keeps the frame-based sheets
+ok 13 - game.js preloads no character atlases but keeps the frame-based sheets
+  ---
+  duration_ms: 0.493178
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 73.821548

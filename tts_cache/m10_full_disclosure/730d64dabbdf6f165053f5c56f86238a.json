@@ -1,0 +1,13 @@
+{
+  "key": "730d64dabbdf6f165053f5c56f86238a",
+  "npc": "static_power",
+  "text": "You again. He's not finished with you.",
+  "voice": "Umbriel",
+  "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:31:56Z"
+}

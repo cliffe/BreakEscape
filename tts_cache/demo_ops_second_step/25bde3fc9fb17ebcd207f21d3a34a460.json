@@ -1,0 +1,13 @@
+{
+  "key": "25bde3fc9fb17ebcd207f21d3a34a460",
+  "npc": "ama_owusu",
+  "text": "A password is easy to come by in a busy office. Notes, tempers and talk all leak them.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:47:05Z"
+}

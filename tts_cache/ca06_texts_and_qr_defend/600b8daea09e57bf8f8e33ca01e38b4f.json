@@ -1,0 +1,14 @@
+{
+  "key": "600b8daea09e57bf8f8e33ca01e38b4f",
+  "npc": "kit_zainab_hussain",
+  "text": "Nice. That code's just a sticker on an official notice, and it's your card details it's really after.",
+  "delivery": "steady, approving",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:13Z"
+}

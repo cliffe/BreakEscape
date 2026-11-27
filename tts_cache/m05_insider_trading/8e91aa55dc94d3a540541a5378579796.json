@@ -1,0 +1,13 @@
+{
+  "key": "8e91aa55dc94d3a540541a5378579796",
+  "npc": "lisa_park",
+  "text": "Wow. Okay. Right.",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:40Z"
+}

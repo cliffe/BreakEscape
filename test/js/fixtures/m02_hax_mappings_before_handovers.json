@@ -1,0 +1,374 @@
+{
+ "npc": "agent_0x99",
+ "note": "eventPattern and onceOnly of each Agent HaX mapping in m02 on main before the handovers build (1484cbc3d), by array index. Once-only records are keyed npc:pattern:index.",
+ "mappings": [
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "conversation_closed:opening_briefing_cutscene",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:noticed_struck_booking",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:sign_in_at_reception",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:decoded_ransomware_note",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:read_ransom_cto",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:reception_lobby",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:hospital_ward",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:it_department",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:server_room",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:emergency_equipment_storage",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:dr_kim_office",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:security_office",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:office_corridor",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:staff_room",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:ward_hall",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:ward_vestibule",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:ward_approach",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:reception_lobby",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:hospital_ward",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "player_ko",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "item_picked_up:keycard",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "conversation_closed:security_guard_patrol",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:ransom_decision_made",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:ransom_decision_made",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:open_it_department",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:meet_dr_kim",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:talk_to_gary",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:staff_room",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "item_picked_up:id_badge",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "item_picked_up:id_badge",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "item_picked_up:id_badge",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:read_handover_board",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:found_safe_pin_clue",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:crack_safe_pin",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:escrow_safe_known",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:read_operator_note",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:password_hints_found",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:cover_restored",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:val_opened_office",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:guard_knocked_out",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "npc_attacked:security_guard_patrol",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:ghost_keys_used",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "room_entered:security_office",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:access_server_room",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "object_interacted",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:submit_ssh_flag",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:submit_ghost_log_flag",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "item_picked_up:text_file",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "item_picked_up:text_file",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:gary_ko",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:insider_evidence_partial",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:insider_evidence_partial",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:submit_database_flag",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:submit_database_flag",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:submit_proftpd_flag",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:submit_ghost_log_flag",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:cover_restored",
+   "onceOnly": false
+  },
+  {
+   "eventPattern": "global_variable_changed:cover_restored",
+   "onceOnly": false
+  },
+  {
+   "eventPattern": "global_variable_changed:backdoor_fully_exploited",
+   "onceOnly": false
+  },
+  {
+   "eventPattern": "global_variable_changed:insider_identified",
+   "onceOnly": false
+  },
+  {
+   "eventPattern": "global_variable_changed:insider_identified",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "item_picked_up:notes",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:offline_keys_recovered",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:pin_cracker_found",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:board_coverup_email_found",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:backup_restore_initiated",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:backup_recovery_source",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:backup_recovery_source",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:backup_recovery_source",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:backup_recovery_source",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "objective_task_completed:make_ransom_decision",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:bed4_manually_stabilised",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:patient_bed4_deceased",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:slow_path_window_open",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:bed4_manually_stabilised",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:patient_bed4_deceased",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "npc_attacked:patient_bed2",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "npc_attacked:patient_bed4",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "npc_attacked:patient_bed5",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:patient_assaulted",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "npc_attacked:ernesto_bautista",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "npc_attacked:hodan_warsame",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:ernesto_bautista_ko",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:hodan_warsame_ko",
+   "onceOnly": true
+  },
+  {
+   "eventPattern": "global_variable_changed:night_staff_attacked",
+   "onceOnly": true
+  }
+ ]
+}

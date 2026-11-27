@@ -1,0 +1,13 @@
+{
+  "key": "4438dcf283bcf7d3c87bd65600a13166",
+  "npc": "director_netherton",
+  "text": "I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:34:59Z"
+}

@@ -1,0 +1,151 @@
+--- a/public/break_escape/js/systems/lighting.js
++++ b/public/break_escape/js/systems/lighting.js
+@@ -25,7 +25,13 @@
+  *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs), floorTint (0-1: tint
+  *                                          // a lit floor with the glow's colour), above (true: stays above the light
+  *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe
+- *     }
++ *     },
++ *     "variants": [                        // the room block changes with game state (e.g. day and night):
++ *       { "condition": "globalVars.night === true", "mode": "dark", "ambient": "#808aa0" }
++ *     ]                                    // first whose condition holds is merged over the block (emitters merge by
++ *                                          // key, the rest replaces); none: the block. Re-checked every RESOLVE_MS and at
++ *                                          // load, so a reload keeps it. A change applies at once, without a strike:
++ *                                          // on → lit, dark → off, motion → lit only if someone is in the room.
+  *   }
+  * Objects with lockType "ransomware_display" glow red while globalVars.ransomware_deployed holds
+  * (a room "emitters" variant on the object's id wins over that, e.g. a screen that has recovered).
+@@ -142,6 +148,28 @@
+   { re: /^emergency-button/, color: 0xff5050, radius: 18, intensity: 0.35, effect: null },
+ ];
+ 
++/**
++ * A room's lighting block with its first matching variant merged in. Variants are
++ * partial blocks with an optional condition (globalVars syntax); `emitters` merge by
++ * key, everything else replaces. Returns { cfg, index } (index -1: the block itself).
++ */
++export function resolveRoomLighting(block, globalVars = {}) {
++  const { variants, ...base } = block || {};
++  if (!Array.isArray(variants)) return { cfg: base, index: -1 };
++  for (let i = 0; i < variants.length; i++) {
++    const { condition, ...v } = variants[i] || {};
++    let holds = !condition;
++    if (!holds) {
++      try { holds = evaluateGlobalCondition(condition, globalVars) === true; } catch (err) { holds = false; }
++    }
++    if (!holds) continue;
++    const cfg = { ...base, ...v };
++    if (base.emitters || v.emitters) cfg.emitters = { ...(base.emitters || {}), ...(v.emitters || {}) };
++    return { cfg, index: i };
++  }
++  return { cfg: base, index: -1 };
++}
++
+ /** A scenario emitter variant with its colours parsed. */
+ function normaliseVariant(v) {
+   if (!v || typeof v !== 'object') return null;
+@@ -297,13 +325,30 @@
+   registerRoom(roomId, roomData) {
+     const room = window.rooms?.[roomId];
+     if (!room || this.rooms.has(roomId)) return;
+-    const cfg = roomData?.lighting || {};
+-    const mode = cfg.mode || this.defaultMode;
++    const block = roomData?.lighting || {};
++    const { cfg, index } = resolveRoomLighting(block, window.gameState?.globalVariables || {});
+     // Only people who are actually standing in the room: not phone contacts, not
+     // characters held back for a cutscene.
+     const hasNpcs = (roomData?.npcs || []).some(n => n.npcType !== 'phone' && !n.behavior?.initiallyHidden);
+-    const startsOn = mode === 'on' || (mode === 'motion' && hasNpcs && cfg.startOn !== false);
++    const state = {
++      roomId,
++      block,
++      variantIdx: index,
++      lastRoomResolve: 0,
++      emitters: [],
++      objectSig: '',
++      lastResolve: -Infinity,
++      offTimer: null,
++    };
++    this.configureRoom(state, room, cfg);
++    const startsOn = state.mode === 'on' || (state.mode === 'motion' && hasNpcs && cfg.startOn !== false);
++    state.on = startsOn;
++    state.panels.forEach(p => { p.level = startsOn ? 1 : 0; p.strikeAt = null; });
++    this.rooms.set(roomId, state);
++  }
+ 
++  /** Derive a room's lighting state from its (resolved) config. */
++  configureRoom(state, room, cfg) {
+     const litAmbient = parseColor(cfg.ambient, parseColor(this.config.ambient, DEFAULT_LIT_AMBIENT));
+     // Per-room emitter variants: { key: [variant, ...] }, key = object id or texture-key prefix.
+     const emitterCfg = {};
+@@ -311,11 +356,9 @@
+       const list = (Array.isArray(val) ? val : [val]).map(normaliseVariant).filter(Boolean);
+       if (list.length) emitterCfg[key] = list;
+     }
+-    const state = {
+-      roomId,
+-      mode,
++    Object.assign(state, {
++      mode: cfg.mode || this.defaultMode,
+       cfg,
+-      on: startsOn,
+       litAmbient,
+       darkAmbient: parseColor(cfg.darkAmbient, parseColor(this.config.darkAmbient, DEFAULT_DARK_AMBIENT)),
+       // Ceiling light and door spill take the lit ambient's hue (warm mood, warm tubes).
+@@ -328,8 +371,6 @@
+       // glow (1 at the default ambient or brighter, 0 at a very dark one).
+       glowLitFade: Phaser.Math.Clamp((luma(litAmbient) - 0.45) / (luma(DEFAULT_LIT_AMBIENT) - 0.45), 0, 1),
+       emitterCfg,
+-      objectSig: '',
+-      lastResolve: -Infinity,
+       panels: cfg.panels === false ? [] : this.layoutPanels(room),
+       extraLights: (cfg.lights || []).map(l => ({
+         x: room.position.x + l.x * TILE_SIZE,
+@@ -338,14 +379,34 @@
+         radius: l.radius || 80,
+         intensity: l.intensity ?? 0.8,
+       })),
+-      emitters: [],
+-      offTimer: null,
+-    };
+-    state.panels.forEach(p => { p.level = startsOn ? 1 : 0; p.strikeAt = null; });
++    });
+     if (cfg.flicker && state.panels.length) {
+       state.panels[Math.floor(Math.random() * state.panels.length)].faulty = true;
+     }
+-    this.rooms.set(roomId, state);
++  }
++
++  /**
++   * Re-check a room's `variants` (at most every RESOLVE_MS). On a change, rebuild the
++   * room's lighting and apply its mode at once, without a strike: the change stands
++   * for a time skip (a scene's fade), not a switch being thrown.
++   */
++  resolveRoomVariant(state, time) {
++    if (!Array.isArray(state.block?.variants) || time - state.lastRoomResolve < RESOLVE_MS) return;
++    state.lastRoomResolve = time;
++    const { cfg, index } = resolveRoomLighting(state.block, window.gameState?.globalVariables || {});
++    if (index === state.variantIdx) return;
++    const room = window.rooms?.[state.roomId];
++    if (!room?.map) return;
++    state.variantIdx = index;
++    if (state.offTimer) { clearTimeout(state.offTimer); state.offTimer = null; }
++    this.configureRoom(state, room, cfg);
++    // Emitter config may have changed: rebuild the glows on the next refresh.
++    state.objectSig = '';
++    state.lastResolve = -Infinity;
++    const on = state.mode === 'on'
++      || (state.mode === 'motion' && (window.currentPlayerRoom === state.roomId || this.npcInRoom(state)));
++    state.on = on;
++    state.panels.forEach(p => { p.level = on ? 1 : 0; p.strikeAt = null; });
+   }
+ 
+   /** Ceiling panels on a regular grid over the floor (the top two tile rows are wall). */
+@@ -784,6 +845,7 @@
+       if (!room?.map) continue;
+       const rx = room.position.x, ry = room.position.y;
+       const rw = room.map.widthInPixels, rh = room.map.heightInPixels;
++      this.resolveRoomVariant(state, time);
+       this.updatePanels(state, time);
+       this.refreshEmitters(state, time);
+       state.level = this.roomLevel(state);

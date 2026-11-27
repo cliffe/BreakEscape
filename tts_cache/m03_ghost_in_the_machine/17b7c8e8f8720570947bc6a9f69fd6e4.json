@@ -1,0 +1,13 @@
+{
+  "key": "17b7c8e8f8720570947bc6a9f69fd6e4",
+  "npc": "yusuf_demir",
+  "text": "Strong, no sugar. Like my passwords.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:46:15Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "43395f8d4bbd1cdff889b170798a898a",
+  "npc": "helen_carver",
+  "text": "NHS England's cyber team will pass our report on to the NCSC. Asking them directly gets us someone today.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

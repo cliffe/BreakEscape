@@ -1,0 +1,13 @@
+{
+  "key": "0dd93162c685d5af03bf7d7e1d85411a",
+  "npc": "graham_whitfield",
+  "text": "Morning. Before the training there's a short check on the kiosk: ten messages, the sort our payments inbox gets. Just do what you'd normally do.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_pre_finance_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:27Z"
+}

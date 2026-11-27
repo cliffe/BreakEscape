@@ -1,0 +1,13 @@
+{
+  "key": "3821269cb983130df506256e1da409d7",
+  "npc": "agnieszka_duda",
+  "text": "Train was late again.",
+  "voice": "Callirrhoe",
+  "style": "Merrin & Sallow's part-time bookkeeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:53:05Z"
+}

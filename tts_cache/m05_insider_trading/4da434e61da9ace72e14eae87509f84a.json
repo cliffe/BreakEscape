@@ -1,0 +1,13 @@
+{
+  "key": "4da434e61da9ace72e14eae87509f84a",
+  "npc": "patricia_phone",
+  "text": "And I'll have Ruth's access back on tonight. You can do your own apologising.",
+  "voice": "Kore",
+  "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice. On the phone.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:24:34Z"
+}

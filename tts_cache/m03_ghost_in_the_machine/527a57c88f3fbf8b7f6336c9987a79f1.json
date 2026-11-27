@@ -1,0 +1,13 @@
+{
+  "key": "527a57c88f3fbf8b7f6336c9987a79f1",
+  "npc": "zainab_hussain",
+  "text": "Since the spring. I came down from Leeds, and I'm still on the road most days.",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:41:56Z"
+}

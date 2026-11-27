@@ -1,0 +1,809 @@
+{
+ "mission": "ca12",
+ "id": "ca12_trailer_r3",
+ "theme": "ca",
+ "title": "Cyber Aware ca12 trailer, round 3, script R6 (narrator VO + Lorna lines; retime to the chosen voice pending D348)",
+ "fps": 30,
+ "length": 71.9567,
+ "music": {
+  "none": true,
+  "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 4.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09_step_away.trimmed.mkv",
+    "in": 46.7,
+    "out": 51.6
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Camila C1 at the studio: sets the scene (owner r3: open with it); no tells | CA: spoilers not an issue (owner r3), masks dropped"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.33,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.42,
+     "cy": 0.44,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 0.8,
+     "end": 4.9,
+     "speaker": "Camila",
+     "text": "Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Visitors and tailgating",
+    "company": "Merrin & Sallow Architects",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.3667
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 5.98,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t09_step_away.trimmed.mkv",
+    "in": 40.62,
+    "out": 46.6
+   },
+   "audio": {
+    "gain_db": -4
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Camila walks up to the studio door past the staff; nobody checks she is expected"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.33,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.42,
+     "cy": 0.44,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card: what the attack half covers, pattern level, no tell or answer | CA: spoilers not an issue (owner r3), masks dropped"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 3.5,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t04_osint_note.trimmed.mkv",
+    "in": 4.9,
+    "out": 8.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Public profile page and a noted detail; no code | CA: spoilers not an issue (owner r3), masks dropped"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.39,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_pretext_card.trimmed.mkv",
+    "in": 5.3,
+    "out": 8.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Pretext card filling from found facts | CA: spoilers not an issue (owner r3)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "COVER STORY",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.42,
+     "cy": 0.3,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1.6
+    }
+   }
+  },
+  {
+   "id": "talk",
+   "type": "gameplay",
+   "duration": 2.3,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_the_call.trimmed.mkv",
+    "in": 12.2,
+    "out": 14.5
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Choice menu on the call (owner: CA spoilers fine); ends before the player line at 14.54 (test player name)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "FRONT DESK",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "insets": [
+    {
+     "src": {
+      "x": 355,
+      "y": 695,
+      "w": 350,
+      "h": 166
+     },
+     "label": "INFLUENCE",
+     "at": {
+      "16:9": {
+       "x": 140,
+       "y": 150,
+       "scale": 2.4
+      },
+      "9:16": {
+       "x": 60,
+       "y": 260,
+       "scale": 2.6
+      },
+      "1:1": {
+       "x": 60,
+       "y": 60,
+       "scale": 2.4
+      }
+     }
+    }
+   ],
+   "voPos": {
+    "16:9": "top",
+    "9:16": "top"
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 4.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_the_call.trimmed.mkv",
+    "in": 16.6,
+    "out": 21.2
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "D1 line only; ends before the third reply menu at 21.0 | CA: spoilers not an issue (owner r3)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "FRONT DESK",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.14,
+     "end": 4.58,
+     "speaker": "Delphine",
+     "text": "Go on then, I'll buzz you through. Studio's up the stairs on your left."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t07_flip.trimmed.mkv",
+    "in": 21.9,
+    "out": 23.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Kiosk flips to Defend; no verdicts | CA: spoilers not an issue (owner r3), masks dropped"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
+   "id": "lorna_flip",
+   "type": "gameplay",
+   "duration": 6.1,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_lorna_flip.trimmed.mkv",
+    "in": 2.5,
+    "out": 8.6
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Lorna L1 after the call (cached voice); no menu, chat closes after the line | CA: spoilers not an issue (owner r3)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.21,
+     "end": 5.85,
+     "speaker": "Lorna",
+     "text": "You talked your way through that door just now. Here you're the one being asked, same visitors."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.5,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You run the front desk"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card: what the defend half is; no tell, verdict or answer | CA: spoilers not an issue (owner r3), masks dropped"
+   }
+  },
+  {
+   "id": "tailgater",
+   "type": "gameplay",
+   "duration": 7.45,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_tailgater_card.trimmed.mkv",
+    "in": 5.9,
+    "out": 13.35
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Unknown visitor 09:12 card, readable: slips in behind a badge-holder at the gate (the tailgate, as card text)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "VISITOR QUEUE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.33,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "voPos": {
+    "16:9": "top"
+   }
+  },
+  {
+   "id": "queue_slot",
+   "type": "gameplay",
+   "duration": 10.89,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_defend_queue.trimmed.mkv",
+    "in": 5.08,
+    "out": 15.97
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t11 real capture: courier then colleague back from leave, hover over the four buttons, nothing pressed | CA: spoilers not an issue (owner r3)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "VISITOR QUEUE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.33,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "voPos": {
+    "16:9": "top"
+   }
+  },
+  {
+   "id": "lorna_noblame",
+   "type": "gameplay",
+   "duration": 3.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_lorna_noblame.trimmed.mkv",
+    "in": 11.2,
+    "out": 15.1
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Lorna L5 after the defend set (cached voice); no verdicts, chat closes before the menu | CA: spoilers not an issue (owner r3)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE TEAM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.19,
+     "end": 3.52,
+     "speaker": "Lorna",
+     "text": "Nobody's in trouble for slowing a pushy visitor down."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Visitors and tailgating",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.47
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 5,
+   "end": 10.112,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v1.mp3",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play."
+  },
+  {
+   "id": "v1b",
+   "start": 10.467,
+   "end": 12.507,
+   "text": "Nobody checks she's expected.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 12.757,
+   "end": 15.947,
+   "text": "This episode: visitors and tailgating.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 16.647,
+   "end": 19.047,
+   "text": "First, you play the attacker.",
+   "onCard": "hide",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 19.947,
+   "end": 22.827,
+   "text": "Dig into what staff post in public.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 23.447,
+   "end": 25.867,
+   "text": "Build a cover story from what you found.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 26.947,
+   "end": 28.527,
+   "text": "Then talk your way in.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 33.847,
+   "end": 34.587,
+   "text": "You're in.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v8a",
+   "start": 44.547,
+   "end": 47.617,
+   "text": "Tailgating: slipping in behind a badge-holder.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v8a.mp3"
+  },
+  {
+   "id": "v8a2",
+   "start": 47.867,
+   "end": 51.397,
+   "text": "Inside: client plans on open screens.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v8a2.mp3"
+  },
+  {
+   "id": "v8b",
+   "start": 51.897,
+   "end": 55.187,
+   "text": "Decide who gets in, and who gets checked.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v8b.mp3"
+  },
+  {
+   "id": "v9",
+   "start": 55.437,
+   "end": 57.257,
+   "text": "You've used these tricks yourself.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v9.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 57.507,
+   "end": 62.287,
+   "text": "Check the list. Escort them. Badge in. Lock your screen.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 66.687,
+   "end": 71.657,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}

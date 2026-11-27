@@ -1,0 +1,13 @@
+{
+  "key": "3937b9a6146454263d37a416b3604f95",
+  "npc": "arakawa_post",
+  "text": "Solder. Smells like my dad's garage.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:58:17Z"
+}

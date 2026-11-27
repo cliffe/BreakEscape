@@ -1,0 +1,732 @@
+{
+ "mission": "ca01",
+ "id": "ca01_trailer_r1",
+ "theme": "ca",
+ "title": "Cyber Aware ca01 trailer, script R4 (narrator VO, not yet voiced)",
+ "script": {
+  "heading": "ca01 trailer script (Invoice fraud)",
+  "owner_card": "none yet (script R1)",
+  "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Gwen G2; E2 needs a 5.85 s shot, over the 5 s cold-open lint); open card with v1; name the topic in VO over footage that shows it; red chapter card, each attack step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; end on Adaeze's in-episode line (D336 default (a)+(c); R2: A3, caught branch, --set kit_key_caught=true); ca-close with \"Play the attack · Learn to stop it\" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. VO lengths budgeted at 2.3 words/s (Sulafat)."
+ },
+ "fps": 30,
+ "length": 74.3967,
+ "music": {
+  "track": "PeaceFolk/Guitar Motif.mp3",
+  "analysis": "guitar_motif_75.json",
+  "start": 19.758,
+  "length": 74.3967,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Quietly Cinematic.mp3 @27.183",
+   "PeaceFolk/Gently Decaying Again.mp3 @25.061"
+  ]
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 4.7,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_gwen_hook.trimmed.mkv",
+    "in": 9.6,
+    "out": 14.3
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Gwen G2 after the defend set (cached): mild, not a verdict; take t01 9.6-14.3, line 0.56-4.44 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.66,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.66,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.56,
+     "end": 4.44,
+     "speaker": "Gwen",
+     "text": "Heard you've been through the inbox. Some real traps in there lately."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Invoice fraud",
+    "company": "Brightwell Foods",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.3667
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 6.28,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_payments_inbox.trimmed.mkv",
+    "in": 9,
+    "out": 15.28
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Lure card 'Updated bank details, please action today', body readable: change the payee account on INV-2217; framed on subject and body; no verdict | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.575,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card: what the attack half covers, pattern level | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 4.2,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 8,
+    "out": 12.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Brightwell suppliers page: Harlow and Derek Mason noted, then the finance update with INV-2217 (public facts only) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.38,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "pushin": {
+    "start": 0.1,
+    "end": 0.6,
+    "ease": "inOut",
+    "from_zoom": 1,
+    "to_zoom": 1,
+    "focus_by_aspect": {
+     "9:16": {
+      "x": 0.4,
+      "y": 0.5
+     }
+    }
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 6.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 30,
+    "out": 36.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Mail template: pretext picked (closed drop-down), the three From/invoice slots filling, Red flags counter 2 to 1; framed to keep the Red flags box and counter in shot | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "SUPPLIER EMAIL BUILDER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.05
+    },
+    "9:16": {
+     "cx": 0.4,
+     "cy": 0.35,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "framing_note": "keep the Red flags box and its counter in frame (down to about y 725 of the source)",
+   "pushin": {
+    "start": 0.1,
+    "end": 0.9,
+    "ease": "inOut",
+    "from_zoom": 1,
+    "to_zoom": 1,
+    "focus_by_aspect": {
+     "9:16": {
+      "x": 0.52,
+      "y": 0.35
+     }
+    }
+   },
+   "voPos": {
+    "1:1": "top"
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 3.32,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 38.3,
+    "out": 41.62
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Send click (38.84), then the green 'It landed' panel; pattern level | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE SEND",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.36,
+     "cy": 0.4,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.42,
+     "cy": 0.3,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.35,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 46.3,
+    "out": 48.3
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Mail client closed onto the 'Now it lands on you' page: the sent email as the payments team sees it, with the two tells listed; framed on the heading and email | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.455,
+     "cy": 0.4,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "adaeze_flip",
+   "type": "gameplay",
+   "duration": 8.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_adaeze_flip.trimmed.mkv",
+    "in": 16.06,
+    "out": 24.26
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Adaeze A1 after the send (cached, 7.70 s); chat closes before the choice menu | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.32,
+     "end": 7.97,
+     "speaker": "Adaeze",
+     "text": "Your message has gone. Now take the other seat at the kiosk and read the payments inbox the way it would land on a busy afternoon."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You run the payments inbox"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card: what the defend half is; no tell, verdict or answer | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "triage",
+   "type": "gameplay",
+   "duration": 15.16,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_payments_inbox.trimmed.mkv",
+    "in": 3,
+    "out": 18.16
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "List '0 of 6 sorted', click the lure row; card opens, framed on the From line 'Brightwell Foods Accounts <accounts@brightwel1foods.example>' readable; hover Trust/Report/Delete/Verify, nothing pressed | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "PAYMENTS INBOX",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.33,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.37,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "voPos": {
+    "16:9": "top"
+   },
+   "framing_note": "16:9 and 1:1 show the list and the card's From line; 9:16 starts on the list and pans to the card text at card-open (take 5.5 s = shot 2.5 s); v8b starts at 3.4 s",
+   "pushin": {
+    "start": 0.1,
+    "end": 0.2,
+    "ease": "inOut",
+    "from_zoom": 1,
+    "to_zoom": 1,
+    "focus_by_aspect": {
+     "9:16": {
+      "x": 0.575,
+      "y": 0.5
+     }
+    }
+   }
+  },
+  {
+   "id": "adaeze_end",
+   "type": "gameplay",
+   "duration": 7.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_adaeze_end.trimmed.mkv",
+    "in": 15.22,
+    "out": 22.62
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Adaeze A3 after the defend set, caught branch (kit_key_caught=true; cached, 6.82 s); in = A3 audio start minus 0.25 s, after the A4 verdict line; chat closes before the menu"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE TEAM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.25,
+     "end": 7.14,
+     "speaker": "Adaeze",
+     "text": "Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Invoice fraud",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.47
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.8,
+   "end": 9.912,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 10.317,
+   "end": 13.389,
+   "text": "A real invoice, a new bank account.",
+   "caption": "A real invoice,\na new bank account.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 13.807,
+   "end": 16.303,
+   "text": "This episode: invoice fraud.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 16.947,
+   "end": 19.347,
+   "text": "First, you play the attacker.",
+   "onCard": "hide",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 20.047,
+   "end": 22.543,
+   "text": "Their own website names the supplier.",
+   "caption": "Their own website\nnames the supplier.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 24.247,
+   "end": 26.695,
+   "text": "Write the email as the supplier.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v4b",
+   "start": 27.307,
+   "end": 30.019,
+   "text": "Real details make it harder to spot.",
+   "caption": "Real details make it\nharder to spot.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v4b.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 31.047,
+   "end": 32.151,
+   "text": "Then send it.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 32.797,
+   "end": 34.213,
+   "text": "It landed.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v8a",
+   "start": 46.567,
+   "end": 49.519,
+   "text": "Six messages, one payment run due.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v8a.mp3"
+  },
+  {
+   "id": "v8b",
+   "start": 49.767,
+   "end": 52.071,
+   "text": "Spot the one where the L should be.",
+   "caption": "Spot the \"1\" where\nthe letter \"l\" should be.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v8b.mp3"
+  },
+  {
+   "id": "v9",
+   "start": 53.557,
+   "end": 56.461,
+   "text": "Yours used the supplier's real address.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v9.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 56.707,
+   "end": 61.435,
+   "text": "New bank details, and a rush? Stop and check.",
+   "caption": "New bank details, and a rush?\nStop and check.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 69.127,
+   "end": 74.095,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "file_note": "reuse ca12 vo/Sulafat/trim/v11.mp3 (same text, voice and style; 4.97 s)",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca01/vo_v2/trim/v11.mp3"
+  }
+ ]
+}

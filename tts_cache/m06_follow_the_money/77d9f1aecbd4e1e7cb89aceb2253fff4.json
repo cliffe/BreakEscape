@@ -1,0 +1,13 @@
+{
+  "key": "77d9f1aecbd4e1e7cb89aceb2253fff4",
+  "npc": "tomasz_wisniewski",
+  "text": "Yes? Quickly, I have a caller waiting.",
+  "voice": "Algieba",
+  "style": "Evening app-support lead at a cryptocurrency exchange, in his 50s, careful and reassuring. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:08:40Z"
+}

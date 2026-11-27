@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: the caption wraps and never truncates
+ok 1 - the caption wraps and never truncates
+  ---
+  duration_ms: 0.944957
+  ...
+# Subtest: the caption keeps a readable width instead of shrinking to half the screen
+ok 2 - the caption keeps a readable width instead of shrinking to half the screen
+  ---
+  duration_ms: 0.146265
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 194.290015

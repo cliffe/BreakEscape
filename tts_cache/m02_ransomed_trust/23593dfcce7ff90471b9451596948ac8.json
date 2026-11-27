@@ -1,0 +1,13 @@
+{
+  "key": "23593dfcce7ff90471b9451596948ac8",
+  "npc": "ward_nurse",
+  "text": "I can't leave Bed 2. Someone get to Bed 4, now!",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:57:01Z"
+}

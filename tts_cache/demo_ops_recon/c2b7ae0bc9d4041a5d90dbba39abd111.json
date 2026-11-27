@@ -1,0 +1,13 @@
+{
+  "key": "c2b7ae0bc9d4041a5d90dbba39abd111",
+  "npc": "ama_owusu",
+  "text": "You haven't used the card on the printer's real weakness.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:33:00Z"
+}

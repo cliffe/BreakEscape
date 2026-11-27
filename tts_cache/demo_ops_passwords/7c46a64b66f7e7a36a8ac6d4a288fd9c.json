@@ -1,0 +1,13 @@
+{
+  "key": "7c46a64b66f7e7a36a8ac6d4a288fd9c",
+  "npc": "ama_owusu",
+  "text": "His PC was down, so he borrowed the hot desk. That's a workaround, and it leaves something behind.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:44:53Z"
+}

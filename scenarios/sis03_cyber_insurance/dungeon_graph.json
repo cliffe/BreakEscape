@@ -1,0 +1,327 @@
+{
+  "scenario": "sis03_cyber_insurance",
+  "start_room": "meridian_claims_suite",
+  "nodes": [
+    {
+      "id": "door_meridian_evidence_archive",
+      "label": "Evidence Archive<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "meridian_evidence_archive",
+      "label": "Evidence Archive",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "meridian_claims_suite",
+      "label": "Meridian Claims Suite",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "claims_management_system_terminal",
+      "label": "Claims Management System Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_lock_underwriting_cabinet",
+      "label": "Lock Underwriting Cabinet",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "albion_policy_binder",
+      "label": "Albion Policy Binder",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "albion_incident_notification",
+      "label": "Albion Incident Notification",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "loss_adjustment_report_fairbridge_associates",
+      "label": "Loss Adjustment Report (Fairbridge Associates)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "warranty_compliance_checklist",
+      "label": "Warranty Compliance Checklist",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_lock_make_recommendation",
+      "label": "Lock Make Recommendation",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "forensic_data_platform_terminal",
+      "label": "Forensic Data Platform Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_eleanor_vance",
+      "label": "Eleanor Vance",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "coverage_recommendation_form",
+      "label": "Coverage Recommendation Form",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "action_receive_claim_briefing",
+      "label": "Receive claims briefing from Eleanor Vance",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_discuss_warranty_positions",
+      "label": "Discuss warranty positions with Eleanor Vance",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_closing_debrief_with_eleanor",
+      "label": "Closing debrief with Eleanor Vance",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "exhibit_a_it_forensics_summary",
+      "label": "Exhibit A — IT Forensics Summary",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "exhibit_b_ot_ics_forensics_summary",
+      "label": "Exhibit B — OT/ICS Forensics Summary",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "exhibit_c_warranty_compliance_evidence",
+      "label": "Exhibit C — Warranty Compliance Evidence",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_lock_warranty_assessment",
+      "label": "Lock Warranty Assessment",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "ncsc_attribution_brief_tlp_amber",
+      "label": "NCSC Attribution Brief (TLP:AMBER)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_lock_act_of_war_decision",
+      "label": "Lock Act Of War Decision",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_underwriting_cabinet",
+      "label": "Underwriting File Cabinet (UW-CAB)<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "meridian_underwriting_file_mc_2023_albe_007",
+      "label": "Meridian Underwriting File — MC-2023-ALBE-007",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_lock_coverage_decision",
+      "label": "Lock Coverage Decision",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "andgate2",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "andgate3",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "lock_lock_closing_debrief",
+      "label": "Lock Closing Debrief",
+      "kind": "lock",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_meridian_evidence_archive",
+      "to": "meridian_evidence_archive",
+      "soft": false
+    },
+    {
+      "from": "meridian_claims_suite",
+      "to": "claims_management_system_terminal",
+      "soft": false
+    },
+    {
+      "from": "claims_management_system_terminal",
+      "to": "lock_lock_underwriting_cabinet",
+      "soft": false
+    },
+    {
+      "from": "meridian_claims_suite",
+      "to": "albion_policy_binder",
+      "soft": false
+    },
+    {
+      "from": "meridian_claims_suite",
+      "to": "albion_incident_notification",
+      "soft": false
+    },
+    {
+      "from": "meridian_claims_suite",
+      "to": "loss_adjustment_report_fairbridge_associates",
+      "soft": false
+    },
+    {
+      "from": "meridian_claims_suite",
+      "to": "warranty_compliance_checklist",
+      "soft": false
+    },
+    {
+      "from": "warranty_compliance_checklist",
+      "to": "lock_lock_make_recommendation",
+      "soft": false
+    },
+    {
+      "from": "meridian_claims_suite",
+      "to": "forensic_data_platform_terminal",
+      "soft": false
+    },
+    {
+      "from": "meridian_claims_suite",
+      "to": "npc_eleanor_vance",
+      "soft": false
+    },
+    {
+      "from": "npc_eleanor_vance",
+      "to": "coverage_recommendation_form",
+      "soft": false
+    },
+    {
+      "from": "npc_eleanor_vance",
+      "to": "action_receive_claim_briefing",
+      "soft": false
+    },
+    {
+      "from": "npc_eleanor_vance",
+      "to": "action_discuss_warranty_positions",
+      "soft": false
+    },
+    {
+      "from": "npc_eleanor_vance",
+      "to": "action_closing_debrief_with_eleanor",
+      "soft": false
+    },
+    {
+      "from": "meridian_evidence_archive",
+      "to": "exhibit_a_it_forensics_summary",
+      "soft": false
+    },
+    {
+      "from": "meridian_evidence_archive",
+      "to": "exhibit_b_ot_ics_forensics_summary",
+      "soft": false
+    },
+    {
+      "from": "meridian_evidence_archive",
+      "to": "exhibit_c_warranty_compliance_evidence",
+      "soft": false
+    },
+    {
+      "from": "exhibit_c_warranty_compliance_evidence",
+      "to": "lock_lock_warranty_assessment",
+      "soft": false
+    },
+    {
+      "from": "meridian_evidence_archive",
+      "to": "ncsc_attribution_brief_tlp_amber",
+      "soft": false
+    },
+    {
+      "from": "ncsc_attribution_brief_tlp_amber",
+      "to": "lock_lock_act_of_war_decision",
+      "soft": false
+    },
+    {
+      "from": "meridian_evidence_archive",
+      "to": "lock_underwriting_cabinet",
+      "soft": false
+    },
+    {
+      "from": "lock_underwriting_cabinet",
+      "to": "meridian_underwriting_file_mc_2023_albe_007",
+      "soft": false
+    },
+    {
+      "from": "meridian_underwriting_file_mc_2023_albe_007",
+      "to": "lock_lock_coverage_decision",
+      "soft": false
+    },
+    {
+      "from": "andgate1",
+      "to": "door_meridian_evidence_archive",
+      "soft": false
+    },
+    {
+      "from": "albion_policy_binder",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "andgate2",
+      "to": "door_meridian_evidence_archive",
+      "soft": false
+    },
+    {
+      "from": "forensic_data_platform_terminal",
+      "to": "andgate2",
+      "soft": false
+    },
+    {
+      "from": "andgate3",
+      "to": "lock_lock_closing_debrief",
+      "soft": false
+    },
+    {
+      "from": "coverage_recommendation_form",
+      "to": "andgate3",
+      "soft": false
+    }
+  ]
+}

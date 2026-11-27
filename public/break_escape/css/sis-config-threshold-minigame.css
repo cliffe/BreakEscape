@@ -1,0 +1,376 @@
+/* SIS Config Threshold Minigame Styles */
+
+/* The shared console window (css/minigames-framework.css) is the frame and the title bar */
+.sis-threshold-minigame-game-container {
+    background: #111a28;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.sis-threshold {
+    font-family: 'GNF', 'VT323', monospace;
+    color: #e9edf5;
+    padding: 8px;
+    width: 100%;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex: 1 1 auto;
+}
+
+/* The table and buttons keep a readable width inside the wide window; the pop-up overlay
+   covers the whole body */
+.sis-threshold-main {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* Fixed layout with set value and status columns: the header and body cells share one column
+   grid whatever the row text. Auto layout let a long parameter row shrink "Current Value" and
+   "Status" to their narrowest and wrap the header. Long parameter names break at underscores
+   (and anywhere as a backstop) inside column 1 rather than spilling into the value column. */
+.sis-threshold-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 16px;
+}
+
+.sis-threshold-table th:nth-child(2),
+.sis-threshold-table td:nth-child(2) {
+    width: 136px;
+}
+
+.sis-threshold-table th:nth-child(3),
+.sis-threshold-table td:nth-child(3) {
+    width: 110px;
+}
+
+.sis-threshold-table td:first-child {
+    overflow-wrap: anywhere;
+}
+
+.sis-threshold-table th {
+    white-space: nowrap;
+}
+
+.sis-threshold-table th,
+.sis-threshold-table td {
+    border: 2px solid #2a2f3b;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.sis-threshold-table th {
+    background: #1f2b3f;
+    color: #e9edf5;
+}
+
+.sis-row {
+    background: #212733;
+    cursor: default;
+}
+
+.sis-row-clickable {
+    cursor: pointer;
+}
+
+.sis-row-clickable:hover {
+    background: #313744;
+}
+
+.sis-row-clickable:focus-visible {
+    outline: 2px solid #9ee6ff;
+    outline-offset: -2px;
+    background: #313744;
+}
+
+.sis-status-green {
+    color: #84d78a;
+}
+
+.sis-status-amber {
+    color: #ffd14b;
+}
+
+.sis-status-red {
+    color: #ff6a6a;
+}
+
+.sis-row-meta {
+    color: #9ea7b7;
+    font-size: 16px;
+    margin-top: 4px;
+}
+
+.sis-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.sis-btn {
+    border: 4px solid #2980b9;
+    border-radius: 0;
+    padding: 10px 20px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    background: #3498db;
+    color: #fff;
+    transition: background 0.3s, box-shadow 0.2s ease, transform 0.15s ease, filter 0.2s ease;
+}
+
+.sis-btn-compare {
+    background: #b88d21;
+    color: #fff;
+    border-color: #8d6f1c;
+}
+
+/* One look for a locked button, Compare or Confirm: grey fill, plain grey border */
+.sis-btn-compare[disabled],
+.sis-btn-compare[disabled]:hover,
+.sis-btn-compare[disabled]:active,
+.sis-btn-confirm[disabled],
+.sis-btn-confirm[disabled]:hover,
+.sis-btn-confirm[disabled]:active {
+    background: #5d5d5d;
+    color: #cfcfcf;
+    border-color: #444;
+    cursor: not-allowed;
+    filter: none;
+    transform: none;
+    box-shadow: none;
+}
+
+/* The words that say why Confirm is grey; the border and marker keep it from being colour only */
+.sis-confirm-reason {
+    color: #f0d9a0;
+    font-size: 16px;
+}
+
+.sis-confirm-reason:not(:empty) {
+    margin-top: 8px;
+}
+
+.sis-confirm-reason:not(:empty)::before {
+    content: '[!] ';
+}
+
+.sis-btn-confirm {
+    background: #b32424;
+    color: #fff;
+    border-color: #7e1a1a;
+}
+
+.sis-btn-compare:hover {
+    filter: brightness(1.08);
+}
+
+.sis-btn-confirm:hover {
+    background: #8f1f1f;
+    border-color: #6d1616;
+    box-shadow: none;
+    filter: none;
+    transform: none;
+}
+
+.sis-btn:active {
+    transform: translateY(0);
+    background: #21618c;
+}
+
+.sis-btn-confirm:active {
+    background: #731818;
+    border-color: #5d1212;
+}
+
+.sis-help {
+    margin-top: 8px;
+    color: #c9cfd9;
+    font-size: 16px;
+}
+
+/* Covers the whole shell (the overlay is a child of it), so a pop-up opened on a scrolled
+   form is always on screen and centred */
+.sis-overlay {
+    position: absolute;
+    inset: 0;
+    background: #0a0f18;   /* opaque: the panel's buttons are not drawn through the dialog */
+    font-family: 'GNF', 'VT323', monospace;   /* the overlay sits outside .sis-threshold, so it names its own pixel font */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    z-index: 5;
+    overflow: auto;
+    box-sizing: border-box;
+}
+
+/* A global `.show { display: block !important }` would otherwise win */
+.sis-overlay.show {
+    display: flex !important;
+}
+
+.sis-modal {
+    background: #161c26;
+    border: 2px solid #5b7399;
+    font-family: 'GNF', 'VT323', monospace;
+    max-width: 720px;
+    width: 100%;
+    padding: 14px;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+/* The detail and compare pop-ups are not confirms: they close with the shared X, inside the
+   pop-up's frame, and their title stops short of it */
+.sis-modal-with-x {
+    position: relative;
+}
+
+.sis-modal .sis-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+}
+
+.sis-modal-with-x h4 {
+    padding-right: 40px;
+}
+
+.sis-modal h4 {
+    overflow-wrap: anywhere;
+    margin: 0 0 8px 0;
+    color: #f4f7fb;
+    font-family: 'GNF', 'VT323', monospace;
+    font-size: 24px;
+    line-height: 32px;
+}
+
+.sis-modal p {
+    margin: 0;
+    color: #d3dae5;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.sis-modal-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* Match popup action buttons to framework minigame-button style exactly */
+.sis-modal-actions .sis-btn:not(.sis-btn-compare):not(.sis-btn-confirm) {
+    background: #3498db;
+    color: white;
+    border: 4px solid #2980b9;
+    padding: 10px 20px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+}
+
+.sis-modal-actions .sis-btn:not(.sis-btn-compare):not(.sis-btn-confirm):hover {
+    background: #2980b9;
+    box-shadow: none;
+    filter: none;
+    transform: none;
+}
+
+.sis-modal-actions .sis-btn:not(.sis-btn-compare):not(.sis-btn-confirm):active {
+    background: #21618c;
+    transform: none;
+}
+
+.sis-compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+    align-items: stretch;
+}
+
+.sis-compare-card {
+    border: 2px solid #2b3443;
+    font-family: 'GNF', 'VT323', monospace;
+    background: #202735;
+    padding: 10px;
+    min-height: 132px;
+    box-sizing: border-box;
+}
+
+.sis-compare-card h5 {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    color: #f4f7fb;
+}
+
+.sis-compare-item {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    line-height: 24px;
+    color: #eef3ff;
+    word-break: break-word;
+}
+
+.sis-compare-item-alert {
+    color: #ffd46b;
+}
+
+/* Phones: the three table columns become one card per row, the column names drawn in each
+   cell (critique B SIS1) */
+@media (max-width: 600px) {
+    .sis-threshold-minigame-game-container {
+        padding: 6px;
+    }
+
+    .sis-threshold-table thead {
+        display: none;
+    }
+
+    .sis-threshold-table {
+        min-width: 0;
+        table-layout: auto;
+    }
+
+    .sis-threshold-table th:nth-child(n),
+    .sis-threshold-table td:nth-child(n) {
+        width: 100%;
+    }
+
+    .sis-threshold-table,
+    .sis-threshold-table tbody,
+    .sis-threshold-table tr,
+    .sis-threshold-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sis-threshold-table tr {
+        margin-bottom: 8px;
+        border: 2px solid #2a2f3b;
+    }
+
+    .sis-threshold-table td {
+        border: 0;
+        padding: 4px 8px;
+    }
+
+    .sis-threshold-table td[data-label]::before {
+        content: attr(data-label) ': ';
+        color: #9ea7b7;
+    }
+
+    .sis-compare-grid {
+        grid-template-columns: 1fr;
+    }
+}

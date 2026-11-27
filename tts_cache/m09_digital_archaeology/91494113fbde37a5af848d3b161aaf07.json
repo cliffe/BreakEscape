@@ -1,0 +1,13 @@
+{
+  "key": "91494113fbde37a5af848d3b161aaf07",
+  "npc": "noor_haddad",
+  "text": "Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.",
+  "voice": "Despina",
+  "style": "Records clerk in her thirties from Dearborn, Michigan, on a night shift. Consistent Midwestern American accent throughout -- do not shift to any other accent. Mid pitch; quick, guarded, sardonic under pressure; answers a question with a question when scared.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:26:13Z"
+}

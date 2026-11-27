@@ -1,0 +1,13 @@
+{
+  "key": "6931f498e6ecbaaed3ccd8ce67e4ae16",
+  "npc": "ama_owusu",
+  "text": "Strong one today?",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:45:23Z"
+}

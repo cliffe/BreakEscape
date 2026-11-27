@@ -1,0 +1,123 @@
+
+## R40: m03 never finished (or finished with no call on either of them, which carries the same empty fates). No extra line in the briefing or the debrief; every original line plays as before.
+
+--- briefing ---
+  Narrator: A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk.
+  Director Magnus Netherton: Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without.
+  Director Magnus Netherton: I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest.
+  Agent 0x47 'Nightshade': The physics doesn't lie and neither do I. If they reach the safety interlocks, this stops being a hack and starts being a body count.
+  Agent 0x47 'Nightshade': Get me a real reading off that floor, and I'll tell you how much time we actually have.
+  Director Magnus Netherton: HaX. Go.
+  Agent HaX: A grid battery site, and ENTROPY are inside it.
+  Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
+     (3 options)
+ > Go ahead. I'm listening.
+  Agent HaX: Albion Energy Storage. Two hundred megawatt-hours of grid batteries.
+  Agent HaX: A cell called Critical Mass got in as maintenance contractors, under the name OptiGrid Solutions.
+  Agent HaX: They own the SCADA network now, the control system that runs the battery racks.
+  Agent HaX: Two hundred and forty thousand people get their power through that site.
+     (5 options)
+ > I've got what I need. What are my orders?
+  Agent HaX: The Zero Day job left us one line. "Zero Day supplies, Critical Mass executes. Grid storage, this winter."
+  Agent HaX: Well, it's winter, and this is the site.
+  Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across the region, all timed for eight o'clock.
+  Agent HaX: One mind behind it, the one the directive named: The Architect. Voltage answers up that chain. Take him, and we're closer to whoever's setting the clock on all of it.
+     (2 options)
+ > So this is the attack the directive warned us about.
+  Agent HaX: The same one. Stop it, take Voltage if you can, and bring out anything that names the next target.
+  Agent HaX: So. Get in on the regulator cover and find Vance.
+  Agent HaX: Then prove how they took the control network. Their jump server's in the engineering workshop. Whatever you pull off it goes into the drop-site terminal.
+  Agent HaX: The plant room has a hardwired Emergency Shutdown button, the ESD. No network path, so it's the one control they couldn't take.
+  Agent HaX: Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks.
+  Agent HaX: And the operatives. Voltage alive, if you can.
+  Agent HaX: Kit: your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
+     (3 options)
+ > Got it. I'm on my way.
+  Agent HaX: Go carefully. They've had three days to get ready for you.
+  Agent HaX: The site's twenty minutes out. The gate will want your credentials.
+  Agent HaX: Show them the regulator badge. You're a routine audit that came early.
+  Agent HaX: Stay alert. They're expecting somebody.
+  Agent HaX: Good luck. Find Vance first.
+  [end]
+   [PASS] said: "The Zero Day job left us one line"
+   [PASS] said: "Well, it's winter, and this is the site."
+   [PASS] not said: "You turned Victoria Sterling, and she gave us the window"
+   [PASS] not said: "You had Victoria Sterling taken into custody"
+   [PASS] not said: "You let Victoria Sterling walk out of WhiteHat"
+   [PASS] not said: "You put Victoria Sterling in a hospital bed"
+
+## Skip to the debrief: shutdown engaged, Voltage taken, Vance an ally (as r1, set directly).
+   {set {"briefing_played":true,"attack_prevented":true,"esd_authorized":true,"voltage_neutralised":true,"voltage_captured":true,"vance_spoken":true,"vance_is_ally":true,"vance_trust_level":80,"crew_warned":true,"mission_complete":true}}
+      [engine: alarm with Voltage down -> free, no clock]
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Shutdown engaged before the racks went. Banks isolated, hall intact.
+  Clean. Runaway aborted before a single cell vented. Banks isolated.
+  Vance says the grid held because of you. He wants that in writing.
+  And you've got Voltage.
+ > What did we get out of there?
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is in a room now. So far he's given us one thing: his casualty figure.
+  Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Their door cards are old prox. They hand their number to anything that asks. You could have had Vance's from across his desk.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > And the network?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > The Architect. He's running all of it.
+  The same name the Zero Day directive carried. The Architect.
+  We've just watched one of his strikes from the inside. Now we know how the cells fit together.
+  This site was a rehearsal.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > I'm in. When do we start?
+  He'll call when he's ready. Not tonight.
+  Agent HaX: Eleven people walked out of there tonight. Two hundred and forty thousand people kept their lights on and never knew why.
+  Agent HaX: And Vance's alarm had the night crew out before the button went in.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Full public disclosure. People have a right to know.
+  Full transparency. The attack, the holes it came through, ENTROPY. All of it.
+  Robert Vance: It'll hurt us. People should still know how close it came.
+  The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
+  Netherton will back that.
+  Done.
+  Statement goes out with the local authorities.
+  Robert Vance: Thank you.
+  Robert Vance: I don't know what you are. I know what you did.
+  Robert Vance: Nobody in that hall died, and two hundred and forty thousand never lost the lights.
+     (2 options)
+ > It was an honour working with you, Mr Vance.
+  Robert Vance: We've run this place on hope and gaffer tape for years.
+  Robert Vance: That stops on my shift.
+  Voltage will keep.
+  And not one of his operatives on the floor. Harder than it looks.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+   [PASS] said: "He's calling it Task Force Null. Your name's on his list."
+   [PASS] not said: "You knocked him out at WhiteHat. He talked once he came round"
+   [PASS] not said: "You gave him a way in at WhiteHat, and he hasn't stopped talking since"
+   [PASS] not said: "You named him in full at WhiteHat"
+   [PASS] not said: "The task force has a file open already. Danny Foster isn't in it"
+   [PASS] not said: "Danny Foster"
+   [PASS] not said: "The task force has a file open already"
+   [PASS] longest run 9 <= 9
+
+[stats] spoken/narrated lines 68, choices 13, longest run without a choice 9 (debrief); runs>=6: briefing:8, briefing:7, debrief:9
+[result] all expectations met

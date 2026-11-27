@@ -1,0 +1,13 @@
+{
+  "key": "5ed67b6cc5f35965c898633a2a42fb38",
+  "npc": "graham_whitfield",
+  "text": "Is there any milk left?",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:43:33Z"
+}

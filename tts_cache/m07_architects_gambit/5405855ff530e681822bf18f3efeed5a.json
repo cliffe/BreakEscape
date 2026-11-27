@@ -1,0 +1,21 @@
+{
+  "key": "5405855ff530e681822bf18f3efeed5a",
+  "npc": "the_architect",
+  "text": "The update pipeline. Interesting. Almost nobody picks the one with no bodies in the brief.",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:18:51Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/5405855ff530e681822bf18f3efeed5a.mp3",
+    "clean_md5": "a62c664e2e76edbfe49be6ef7ce99bb0",
+    "baked_md5": "5ab03721afb25b30f2c31a1605f5dd44",
+    "baked": "2026-11-24"
+  }
+}

@@ -1,0 +1,1002 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m05_insider_trading",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "door_data_center",
+        "optional": false
+      },
+      {
+        "id": "door_server_hallway",
+        "optional": false
+      },
+      {
+        "id": "door_server_room",
+        "optional": false
+      },
+      {
+        "id": "door_torres_office",
+        "optional": false
+      },
+      {
+        "id": "lock_it_oncall_lockbox",
+        "optional": false
+      },
+      {
+        "id": "lock_patricia_filing_cabinet",
+        "optional": false
+      },
+      {
+        "id": "lock_torres_briefcase",
+        "optional": false
+      },
+      {
+        "id": "lock_vm_launcher_bludit",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "it_spare_office_card",
+        "optional": false
+      },
+      {
+        "id": "npc_david_torres",
+        "optional": false
+      },
+      {
+        "id": "npc_dr_ruth_halloran",
+        "optional": false
+      },
+      {
+        "id": "npc_owen_gallagher",
+        "optional": false
+      },
+      {
+        "id": "research_portal_login_card",
+        "optional": false
+      },
+      {
+        "id": "visitor_spare_4471",
+        "optional": true
+      }
+    ],
+    "roomNodes": [
+      "break_room",
+      "data_center",
+      "main_corridor",
+      "open_office_area",
+      "patricia_office",
+      "reception_lobby",
+      "research_lab",
+      "server_hallway",
+      "server_room",
+      "torres_office"
+    ],
+    "edges": [
+      [
+        "bludit_cms_server_terminal",
+        "vmch_submit_flag1",
+        false
+      ],
+      [
+        "data_center",
+        "data_package_manifest",
+        false
+      ],
+      [
+        "data_center",
+        "npc_david_torres",
+        false
+      ],
+      [
+        "data_center",
+        "sealed_talentstack_envelope",
+        false
+      ],
+      [
+        "data_center",
+        "upload_schedule",
+        false
+      ],
+      [
+        "door_data_center",
+        "data_center",
+        false
+      ],
+      [
+        "door_server_hallway",
+        "server_hallway",
+        false
+      ],
+      [
+        "door_server_room",
+        "server_room",
+        false
+      ],
+      [
+        "door_torres_office",
+        "torres_office",
+        false
+      ],
+      [
+        "it_spare_office_card",
+        "door_torres_office",
+        false
+      ],
+      [
+        "lock_it_oncall_lockbox",
+        "research_portal_login_card",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_patricia_filing_cabinet",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_torres_briefcase",
+        false
+      ],
+      [
+        "lock_vm_launcher_bludit",
+        "bludit_cms_server_terminal",
+        false
+      ],
+      [
+        "main_corridor",
+        "break_room",
+        false
+      ],
+      [
+        "main_corridor",
+        "open_office_area",
+        false
+      ],
+      [
+        "mug",
+        "door_data_center",
+        false
+      ],
+      [
+        "npc_david_torres",
+        "action_confront_torres",
+        false
+      ],
+      [
+        "npc_dr_ruth_halloran",
+        "visitor_spare_4471",
+        true
+      ],
+      [
+        "npc_owen_gallagher",
+        "it_spare_office_card",
+        false
+      ],
+      [
+        "npc_owen_gallagher",
+        "server_hallway_badge_log",
+        false
+      ],
+      [
+        "npc_owen_gallagher",
+        "server_password_sticky_note",
+        false
+      ],
+      [
+        "open_office_area",
+        "npc_owen_gallagher",
+        false
+      ],
+      [
+        "open_office_area",
+        "research_lab",
+        false
+      ],
+      [
+        "patricia_office",
+        "lock_patricia_filing_cabinet",
+        false
+      ],
+      [
+        "reception_lobby",
+        "fingerprint_kit",
+        false
+      ],
+      [
+        "reception_lobby",
+        "lock_pick_kit",
+        false
+      ],
+      [
+        "reception_lobby",
+        "main_corridor",
+        false
+      ],
+      [
+        "reception_lobby",
+        "patricia_office",
+        false
+      ],
+      [
+        "reception_lobby",
+        "rfid_cloner",
+        false
+      ],
+      [
+        "research_lab",
+        "npc_dr_ruth_halloran",
+        false
+      ],
+      [
+        "research_portal_login_card",
+        "lock_vm_launcher_bludit",
+        false
+      ],
+      [
+        "rfid_cloner",
+        "door_server_hallway",
+        false
+      ],
+      [
+        "server_hallway_badge_log",
+        "lock_it_oncall_lockbox",
+        false
+      ],
+      [
+        "server_password_sticky_note",
+        "door_server_room",
+        false
+      ],
+      [
+        "server_room",
+        "bludit_cms_server_terminal",
+        false
+      ],
+      [
+        "server_room",
+        "lock_it_oncall_lockbox",
+        false
+      ],
+      [
+        "torres_office",
+        "lock_torres_briefcase",
+        false
+      ],
+      [
+        "torres_office",
+        "mug",
+        false
+      ],
+      [
+        "visitor_spare_4471",
+        "door_server_hallway",
+        true
+      ],
+      [
+        "vmch_submit_flag1",
+        "vmfl_submit_flag1",
+        false
+      ],
+      [
+        "vmch_submit_flag2",
+        "vmfl_submit_flag2",
+        false
+      ],
+      [
+        "vmch_submit_flag3",
+        "vmfl_submit_flag3",
+        false
+      ],
+      [
+        "vmch_submit_flag4",
+        "vmfl_submit_flag4",
+        false
+      ],
+      [
+        "vmfl_submit_flag1",
+        "vmch_submit_flag2",
+        true
+      ],
+      [
+        "vmfl_submit_flag2",
+        "vmch_submit_flag3",
+        true
+      ],
+      [
+        "vmfl_submit_flag3",
+        "vmch_submit_flag4",
+        true
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/data_center",
+      "id": null,
+      "lockType": "biometric",
+      "locked": true,
+      "requirementHash": "db578091ae292567",
+      "requiresHash": "2f93cb05b878445e"
+    },
+    {
+      "path": "/rooms/patricia_office/objects[patricia_filing_cabinet]",
+      "id": "patricia_filing_cabinet",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "1829c46d87031339",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/server_hallway",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "bc9cab4440a33b0e",
+      "requiresHash": "ebacd3bc487af554"
+    },
+    {
+      "path": "/rooms/server_room",
+      "id": null,
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "2f7769af4dad0590",
+      "requiresHash": "d69d2e1d13f9d74c"
+    },
+    {
+      "path": "/rooms/server_room/objects[it_oncall_lockbox]",
+      "id": "it_oncall_lockbox",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "89cd0d72d615303f",
+      "requiresHash": "6c0c7aba141bdc1d"
+    },
+    {
+      "path": "/rooms/torres_office",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "0bb0a4af1f15b5b5",
+      "requiresHash": "4e50043f15b91698"
+    },
+    {
+      "path": "/rooms/torres_office/objects[torres_briefcase]",
+      "id": "torres_briefcase",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "73b1d0502e789773",
+      "requiresHash": "44136fa355b3678a"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "establish_access",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "receive_mission_briefing",
+          "type": "custom"
+        },
+        {
+          "taskId": "meet_handler",
+          "type": "npc_conversation",
+          "targetNPC": "patricia_morgan"
+        },
+        {
+          "taskId": "obtain_security_badge",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItems": [
+            "id_badge"
+          ]
+        }
+      ]
+    },
+    {
+      "aimId": "investigate_employees",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "establish_access"
+      },
+      "tasks": [
+        {
+          "taskId": "talk_to_owen",
+          "type": "npc_conversation",
+          "targetNPC": "owen_gallagher"
+        },
+        {
+          "taskId": "talk_to_lisa",
+          "type": "npc_conversation",
+          "targetNPC": "lisa_park",
+          "optional": true
+        },
+        {
+          "taskId": "talk_to_dr_halloran",
+          "type": "npc_conversation",
+          "targetNPC": "dr_halloran",
+          "optional": true
+        },
+        {
+          "taskId": "obtain_server_badge",
+          "type": "enter_room",
+          "targetRoom": "server_hallway"
+        },
+        {
+          "taskId": "find_server_password",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "server_password_note",
+            "relayed_server_password_note"
+          ]
+        },
+        {
+          "taskId": "find_door_log",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "server_door_log",
+            "relayed_door_log"
+          ],
+          "optional": true
+        },
+        {
+          "taskId": "find_vetting_file",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "torres_vetting_file"
+          ],
+          "optional": true
+        },
+        {
+          "taskId": "find_entropy_pamphlet",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "entropy_pamphlet"
+          ],
+          "optional": true
+        },
+        {
+          "taskId": "name_a_suspect",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "gather_evidence",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "torres_suspected",
+        "equals": true
+      },
+      "tasks": [
+        {
+          "taskId": "obtain_torres_keycard",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "torres_office_keycard",
+            "relayed_torres_office_card"
+          ]
+        },
+        {
+          "taskId": "access_torres_office",
+          "type": "enter_room",
+          "targetRoom": "torres_office"
+        },
+        {
+          "taskId": "establish_motive",
+          "type": "custom"
+        },
+        {
+          "taskId": "find_journal",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "personal_journal"
+          ],
+          "optional": true
+        },
+        {
+          "taskId": "find_medical_bills",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "medical_bills"
+          ],
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "exploit_infrastructure",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "investigate_employees"
+      },
+      "tasks": [
+        {
+          "taskId": "access_server_room",
+          "type": "enter_room",
+          "targetRoom": "server_room"
+        },
+        {
+          "taskId": "access_bludit_vm",
+          "type": "custom"
+        },
+        {
+          "taskId": "submit_flag1",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence:qdc_research_server-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_flag2",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence:qdc_research_server-flag2"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_flag3",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence:qdc_research_server-flag3"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_flag4",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence:qdc_research_server-flag4"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "access_data_center",
+          "type": "enter_room",
+          "targetRoom": "data_center"
+        },
+        {
+          "taskId": "find_upload_schedule",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": [
+            "upload_schedule"
+          ]
+        }
+      ]
+    },
+    {
+      "aimId": "confront_insider",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "aimsCompleted": [
+          "gather_evidence",
+          "exploit_infrastructure"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "identify_torres",
+          "type": "custom"
+        },
+        {
+          "taskId": "confront_torres",
+          "type": "custom"
+        },
+        {
+          "taskId": "make_critical_choice",
+          "type": "custom"
+        },
+        {
+          "taskId": "call_in_after_sweep",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "hear_debrief",
+          "type": "custom"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[confront_insider]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_flag1",
+          "submit_flag2",
+          "submit_flag3",
+          "submit_flag4"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99_handler": "reception_lobby",
+    "agent_nightshade": "reception_lobby",
+    "ceo_stand_down_copy": "patricia_office",
+    "ceo_stand_down_email": "patricia_office",
+    "closing_debrief_trigger": "reception_lobby",
+    "collection_flyer": "main_corridor",
+    "confront_torres": "data_center",
+    "data_package_manifest": "data_center",
+    "david_torres": "data_center",
+    "director_netherton": "reception_lobby",
+    "dr_halloran": "research_lab",
+    "entropy_pamphlet": "break_room",
+    "flag_station_evidence": "server_room",
+    "halloran_vetting_file": "patricia_office",
+    "it_access_notice": "server_hallway",
+    "it_oncall_lockbox": "server_room",
+    "lab_rules_notice": "research_lab",
+    "lisa_park": "break_room",
+    "medical_bills": "torres_office",
+    "opening_briefing": "reception_lobby",
+    "owen_gallagher": "open_office_area",
+    "patricia_filing_cabinet": "patricia_office",
+    "patricia_morgan": "patricia_office",
+    "patricia_phone": "reception_lobby",
+    "personal_journal": "torres_office",
+    "portal_login_card": "server_room",
+    "recruiter": "reception_lobby",
+    "relayed_contractor_pass": "reception_lobby",
+    "relayed_door_log": "reception_lobby",
+    "relayed_server_badge": "reception_lobby",
+    "relayed_server_password_note": "reception_lobby",
+    "relayed_torres_office_card": "reception_lobby",
+    "research_lab_badge": "research_lab",
+    "safetynet_field_guide_bludit_cms": "reception_lobby",
+    "safetynet_field_guide_lockpicking": "reception_lobby",
+    "safetynet_field_guide_privilege_escalation": "reception_lobby",
+    "safetynet_field_guide_recon_network_mapping": "reception_lobby",
+    "safetynet_field_guide_rfid_cloning": "reception_lobby",
+    "security_incident_log": "patricia_office",
+    "server_door_log": "open_office_area",
+    "server_password_note": "open_office_area",
+    "talentstack_envelope": "data_center",
+    "torres_briefcase": "torres_office",
+    "torres_mug": "torres_office",
+    "torres_office_keycard": "open_office_area",
+    "torres_vetting_file": "patricia_office",
+    "upload_schedule": "data_center",
+    "visitor_badge": "patricia_office",
+    "vm_launcher_bludit": "server_room",
+    "zurich_lanyard": "research_lab"
+  },
+  "layout": {
+    "start": "reception_lobby",
+    "adj": {
+      "break_room": [
+        "main_corridor"
+      ],
+      "data_center": [
+        "server_room"
+      ],
+      "main_corridor": [
+        "break_room",
+        "open_office_area",
+        "reception_lobby",
+        "server_hallway"
+      ],
+      "open_office_area": [
+        "main_corridor",
+        "research_lab",
+        "torres_office"
+      ],
+      "patricia_office": [
+        "reception_lobby"
+      ],
+      "reception_lobby": [
+        "main_corridor",
+        "patricia_office"
+      ],
+      "research_lab": [
+        "open_office_area"
+      ],
+      "server_hallway": [
+        "main_corridor",
+        "server_room"
+      ],
+      "server_room": [
+        "data_center",
+        "server_hallway"
+      ],
+      "torres_office": [
+        "open_office_area"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "break_room",
+      "task hear_debrief (mapping 'room_entered:break_room')",
+      null
+    ],
+    [
+      "data_center",
+      "task access_data_center",
+      null
+    ],
+    [
+      "data_center",
+      "task confront_torres (ink of 'david_torres')",
+      "david_torres"
+    ],
+    [
+      "data_center",
+      "task find_upload_schedule",
+      "upload_schedule"
+    ],
+    [
+      "data_center",
+      "task hear_debrief (mapping 'room_entered:data_center')",
+      null
+    ],
+    [
+      "data_center",
+      "task make_critical_choice (ink of 'david_torres')",
+      "david_torres"
+    ],
+    [
+      "main_corridor",
+      "task hear_debrief (mapping 'room_entered:main_corridor')",
+      null
+    ],
+    [
+      "open_office_area",
+      "task find_server_password",
+      "server_password_note"
+    ],
+    [
+      "open_office_area",
+      "task hear_debrief (mapping 'room_entered:open_office_area')",
+      null
+    ],
+    [
+      "open_office_area",
+      "task obtain_torres_keycard",
+      "torres_office_keycard"
+    ],
+    [
+      "open_office_area",
+      "task talk_to_owen",
+      "owen_gallagher"
+    ],
+    [
+      "open_office_area",
+      "task talk_to_owen (ink of 'owen_gallagher')",
+      "owen_gallagher"
+    ],
+    [
+      "patricia_office",
+      "task establish_motive (mapping 'global_variable_changed:torres_suspected')",
+      null
+    ],
+    [
+      "patricia_office",
+      "task hear_debrief (mapping 'room_entered:patricia_office')",
+      null
+    ],
+    [
+      "patricia_office",
+      "task identify_torres (ink of 'patricia_morgan')",
+      "patricia_morgan"
+    ],
+    [
+      "patricia_office",
+      "task meet_handler",
+      "patricia_morgan"
+    ],
+    [
+      "patricia_office",
+      "task meet_handler (ink of 'patricia_morgan')",
+      "patricia_morgan"
+    ],
+    [
+      "patricia_office",
+      "task name_a_suspect (mapping 'global_variable_changed:torres_suspected')",
+      null
+    ],
+    [
+      "patricia_office",
+      "task obtain_security_badge",
+      "visitor_badge"
+    ],
+    [
+      "reception_lobby",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag1_submitted')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag2_submitted')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag3_submitted')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag4_submitted')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task confront_torres (ink of 'agent_0x99_handler')",
+      "agent_0x99_handler"
+    ],
+    [
+      "reception_lobby",
+      "task establish_motive (mapping 'global_variable_changed:case_motive')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task establish_motive (mapping 'global_variable_changed:torres_suspected')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task find_server_password",
+      "relayed_server_password_note"
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (ink of 'closing_debrief_trigger')",
+      "closing_debrief_trigger"
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (mapping 'room_entered:reception_lobby')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task identify_torres (ink of 'agent_0x99_handler')",
+      "agent_0x99_handler"
+    ],
+    [
+      "reception_lobby",
+      "task identify_torres (ink of 'patricia_phone')",
+      "patricia_phone"
+    ],
+    [
+      "reception_lobby",
+      "task make_critical_choice (ink of 'agent_0x99_handler')",
+      "agent_0x99_handler"
+    ],
+    [
+      "reception_lobby",
+      "task name_a_suspect (mapping 'global_variable_changed:torres_suspected')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task obtain_security_badge",
+      "relayed_contractor_pass"
+    ],
+    [
+      "reception_lobby",
+      "task obtain_torres_keycard",
+      "relayed_torres_office_card"
+    ],
+    [
+      "reception_lobby",
+      "task receive_mission_briefing (ink of 'opening_briefing')",
+      "opening_briefing"
+    ],
+    [
+      "reception_lobby",
+      "task receive_mission_briefing (mapping 'conversation_closed:opening_briefing')",
+      "opening_briefing"
+    ],
+    [
+      "reception_lobby",
+      "task receive_mission_briefing (mapping 'room_entered:reception_lobby')",
+      null
+    ],
+    [
+      "research_lab",
+      "task hear_debrief (mapping 'room_entered:research_lab')",
+      null
+    ],
+    [
+      "server_hallway",
+      "task hear_debrief (mapping 'room_entered:server_hallway')",
+      null
+    ],
+    [
+      "server_hallway",
+      "task obtain_server_badge",
+      null
+    ],
+    [
+      "server_room",
+      "VM launcher (flag tasks)",
+      "vm_launcher_bludit"
+    ],
+    [
+      "server_room",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag1_submitted')",
+      null
+    ],
+    [
+      "server_room",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag2_submitted')",
+      null
+    ],
+    [
+      "server_room",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag3_submitted')",
+      null
+    ],
+    [
+      "server_room",
+      "task access_bludit_vm (mapping 'global_variable_changed:flag4_submitted')",
+      null
+    ],
+    [
+      "server_room",
+      "task access_server_room",
+      null
+    ],
+    [
+      "server_room",
+      "task hear_debrief (mapping 'room_entered:server_room')",
+      null
+    ],
+    [
+      "server_room",
+      "task submit_flag1 (flag station)",
+      "flag_station_evidence"
+    ],
+    [
+      "server_room",
+      "task submit_flag2 (flag station)",
+      "flag_station_evidence"
+    ],
+    [
+      "server_room",
+      "task submit_flag3 (flag station)",
+      "flag_station_evidence"
+    ],
+    [
+      "server_room",
+      "task submit_flag4 (flag station)",
+      "flag_station_evidence"
+    ],
+    [
+      "torres_office",
+      "task access_torres_office",
+      null
+    ],
+    [
+      "torres_office",
+      "task hear_debrief (mapping 'room_entered:torres_office')",
+      null
+    ]
+  ]
+}

@@ -1,0 +1,135 @@
+TAP version 13
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# ✅ Completing task: meet_ravi
+# 🔓 Aim revealed by task progress: Investigate the Attack
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# ✅ Completing task: signoff
+# 🔓 Aim revealed by task progress: Authorise Network Isolation
+# 🏆 Aim completed: Authorise Network Isolation
+# 🔓 Aim unlocked: Debrief
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# 🔓 Task unlocked: both_task
+# 🔓 Aim revealed by task progress: Both
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# 📋 Task progress: collect_charts (1/2)
+# 🔓 Aim revealed by task progress: Charts
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# 🔓 Aim revealed by task progress: Authorise Network Isolation
+# 📋 Flag task progress updated: signoff (1/undefined)
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# ✅ Completing task: keycard
+# 🔒 Task moved early; story-gated aim stays hidden until unlocked: Find Out Why
+# ✅ Completing task: journal
+# 🔒 Task moved early; story-gated aim stays hidden until unlocked: Find Out Why
+# 🔓 Aim unlocked: Find Out Why
+# 🏆 Aim completed: Find Out Why
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# ✅ Completing task: keycard
+# 🔓 Aim revealed by task progress: Find Out Why
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# ✅ Completing task: both_task
+# 🔓 Aim revealed by task progress: Both
+# 🔓 Aim unlocked: Both
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# 📋 ObjectivesManager event listeners registered
+# 📋 Restored objectives state from server
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# ✅ Completing task: debrief
+# 🔓 Aim revealed by task progress: Debrief
+# 🏆 Aim completed: Debrief
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 7 aims, 12 tasks
+# ✅ Completing task: meet_ravi
+# 🔓 Aim revealed by task progress: Investigate the Attack
+# Subtest: completing a task in a later aim shows that aim while an earlier aim is unfinished
+ok 1 - completing a task in a later aim shows that aim while an earlier aim is unfinished
+  ---
+  duration_ms: 2.92915
+  ...
+# Subtest: an aim whose tasks all complete while revealed early completes and opens the next aim
+ok 2 - an aim whose tasks all complete while revealed early completes and opens the next aim
+  ---
+  duration_ms: 0.695301
+  ...
+# Subtest: a task unlocked by ink shows its aim
+ok 3 - a task unlocked by ink shows its aim
+  ---
+  duration_ms: 0.457508
+  ...
+# Subtest: partial collect_items progress shows the aim with its count
+ok 4 - partial collect_items progress shows the aim with its count
+  ---
+  duration_ms: 0.523108
+  ...
+# Subtest: partial flag progress shows the aim
+ok 5 - partial flag progress shows the aim
+  ---
+  duration_ms: 0.38418
+  ...
+# Subtest: a story gate (globalVariable) keeps the aim hidden until it is unlocked; the work shows then
+ok 6 - a story gate (globalVariable) keeps the aim hidden until it is unlocked; the work shows then
+  ---
+  duration_ms: 0.463361
+  ...
+# Subtest: a met story gate no longer holds the aim back
+ok 7 - a met story gate no longer holds the aim back
+  ---
+  duration_ms: 0.224766
+  ...
+# Subtest: unlockAim on an aim shown early opens its first task without a second notice
+ok 8 - unlockAim on an aim shown early opens its first task without a second notice
+  ---
+  duration_ms: 0.299367
+  ...
+# Subtest: unlockAim still ignores an aim that is already active in the normal way
+ok 9 - unlockAim still ignores an aim that is already active in the normal way
+  ---
+  duration_ms: 0.424194
+  ...
+# Subtest: reload: a revealedEarly aim from the server is restored with its marker
+ok 10 - reload: a revealedEarly aim from the server is restored with its marker
+  ---
+  duration_ms: 0.467963
+  ...
+# Subtest: a missionConclusion aim is concluded by the server response, not by the reveal
+ok 11 - a missionConclusion aim is concluded by the server response, not by the reveal
+  ---
+  duration_ms: 0.884232
+  ...
+# Subtest: panel: a revealed aim shows its done and active tasks, never its locked ones
+ok 12 - panel: a revealed aim shows its done and active tasks, never its locked ones
+  ---
+  duration_ms: 1.039636
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 148.13415

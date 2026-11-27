@@ -1,0 +1,13 @@
+{
+  "key": "cc2aa612284546ee38559670bb0ce373",
+  "npc": "opening_briefing_cutscene",
+  "text": "Portland happened. You moved the one team to Austin with the clock running, and it reached the dispatch keys first. Nine days on, dispatch in eleven counties is still answering.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI, running at a heightened security posture. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, faintly wrong -- a voice built to reassure, doing it in a building where nobody is reassured.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:05:51Z"
+}

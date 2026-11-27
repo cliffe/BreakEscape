@@ -1,0 +1,42 @@
+start {"m":{"mode":"idle","atPost":true,"job":null,"room":"maya_office","x":7,"y":-4.3,"room_p":"maya_office"},"g":{"away":false,"settled":false,"disc":false,"ko":false}}
+talk1 true
+opener {"closed":false,"seen":["Oh! You startled me. You're the... IT contractor, right? The security auditor?","2. You seem nervous"],"choices":["×","1. That's right. I'm reviewing security systems","2. You seem nervous"]}
+after opener {"closed":false,"seen":["That's right. I'm reviewing security systems","Are you really here for a security audit? Or are you here because of my message?","2. SAFETYNET sent me"],"choices":["×","1. What message?","2. SAFETYNET sent me"]}
+reveal {"closed":false,"seen":["What message?","The tip. To SAFETYNET. About Operation Shatter.","If you don't know what I'm talking about, forget I said anything.","2. Tell me more about this operation"],"choices":["×","1. I'm from SAFETYNET","2. Tell me more about this operation"]}
+first op line {"text":"×\nMaya Chen\n\nOnly if you're here to stop it. People are going to die.\n\nSkip [SPACE]","g":{"away":false,"settled":false,"disc":false,"ko":false}}
+esc closed true
+5s after Esc (expect at post, no trip) {"m":{"mode":"idle","atPost":true,"job":null,"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"g":{"away":false,"settled":false,"disc":false,"ko":false}}
+talk2 true
+resume {"closed":false,"seen":["From what I've gathered, Operation Shatter is a coordinated disinformation attack.","They've profiled millions of people—demographic cohorts they're betting will panic first—cross-referenced with who reacts fastest to an alert, who forwards without checking, who trusts which channels.","The plan is to send fake emergency messages—hospital closures, bank failures, government alerts—tuned per segment where they think it'll spread fastest.","The panic will sw
+back at hub choices {"seen":["And they're okay with that?","Derek—he's the one running it—I've overhead him call it \"education.\"","Says the deaths will teach people not to trust digital communications. He's insane. But he believes every word.","3. I need to keep investigating"],"choices":["×","1. What can you tell me about Derek?","2. What happened to Patricia?","3. I need to keep investigating"],"g":{"away":false,"settled":true,"disc":true,"ko":false}}
+trip started after close at hub {"m":{"mode":"job","atPost":true,"job":{"phase":"goto_target"},"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"g":{"away":false,"settled":true,"disc":true,"ko":false},"ms":1221}
+player {"room":"maya_office","x":201,"y":-173}
+t=0 {"m":{"mode":"job","atPost":true,"job":{"phase":"goto_target"},"room":"maya_office","x":7,"y":-4,"room_p":"maya_office"},"pos":[224,-159],"room":"maya_office"}
+t=1 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":6.5,"y":-3.8,"room_p":"maya_office"},"pos":[208,-153],"room":"maya_office"}
+t=2 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":6.6,"y":-1.7,"room_p":"maya_office"},"pos":[212,-84],"room":"maya_office"}
+t=3 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":7.3,"y":0.3,"room_p":"maya_office"},"pos":[232,-23],"room":"maya_office"}
+t=4 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":8.4,"y":2,"room_p":"maya_office"},"pos":[268,33],"room":"maya_office"}
+t=5 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":7,"y":3.7,"room_p":"maya_office"},"pos":[224,89],"room":"maya_office"}
+t=6 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":5.9,"y":5.5,"room_p":"maya_office"},"pos":[188,145],"room":"maya_office"}
+t=7 {"m":{"mode":"job","atPost":false,"job":{"phase":"goto_target"},"room":"maya_office","x":5.9,"y":7.7,"room_p":"maya_office"},"pos":[188,215],"room":"maya_office"}
+t=8 {"m":{"mode":"job","atPost":false,"job":{"phase":"using"},"room":"maya_office","x":5.9,"y":7.7,"room_p":"maya_office"},"pos":[188,215],"room":"maya_office"}
+t=22 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":5.9,"y":7.7,"room_p":"maya_office"},"pos":[188,215],"room":"maya_office"}
+t=23 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":6.4,"y":5.8,"room_p":"maya_office"},"pos":[204,154],"room":"maya_office"}
+t=24 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":6.9,"y":3.8,"room_p":"maya_office"},"pos":[222,91],"room":"maya_office"}
+t=25 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":8.4,"y":2.2,"room_p":"maya_office"},"pos":[268,39],"room":"maya_office"}
+t=26 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":7.4,"y":0.4,"room_p":"maya_office"},"pos":[234,-21],"room":"maya_office"}
+t=27 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":6.7,"y":-1.5,"room_p":"maya_office"},"pos":[215,-80],"room":"maya_office"}
+t=31 {"m":{"mode":"returning","atPost":false,"job":null,"room":"maya_office","x":7,"y":-3,"room_p":"maya_office"},"pos":[225,-128],"room":"maya_office"}
+t=32 {"m":{"mode":"idle","atPost":true,"job":null,"room":"maya_office","x":7,"y":-3,"room_p":"maya_office"},"pos":[225,-128],"room":"maya_office"}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.waitForTimeout: Target page, context or browser has been closed
+    at Object.t (/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-ol-m01/tools/playtest/m01-ol-lib.mjs:16:66)
+    at stayMonitor (/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/maya-stay.mjs:169:13)
+    at async file:///tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/maya-stay.mjs:214:27 {
+  log: []
+}
+
+Node.js v22.23.4

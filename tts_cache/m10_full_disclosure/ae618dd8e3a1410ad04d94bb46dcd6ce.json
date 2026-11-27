@@ -1,0 +1,13 @@
+{
+  "key": "ae618dd8e3a1410ad04d94bb46dcd6ce",
+  "npc": "voltage_van",
+  "text": "Grey panel by the door. A key switch, a row of breakers, GALLERY SHUTTER on the label.",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:03:53Z"
+}

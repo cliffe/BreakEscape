@@ -1,0 +1,44 @@
+{
+  "dana": {
+    "screenHabit": {
+      "lockChance": 0
+    },
+    "locksScreen": "never"
+  },
+  "ian": {
+    "screenHabit": {
+      "lockChance": 1
+    },
+    "locksScreen": "always"
+  },
+  "omar": {
+    "screenHabit": {
+      "lockChance": 1
+    },
+    "locksScreen": "always"
+  },
+  "kai": {
+    "screenHabit": {
+      "lockChance": 0
+    },
+    "locksScreen": "never"
+  },
+  "mei": {
+    "screenHabit": {
+      "lockChance": 1
+    },
+    "locksScreen": "always"
+  },
+  "lena": {
+    "screenHabit": {
+      "lockChance": 0.5
+    },
+    "locksScreen": "sometimes"
+  },
+  "tom": {
+    "screenHabit": {
+      "lockChance": 1
+    },
+    "locksScreen": "always"
+  }
+}

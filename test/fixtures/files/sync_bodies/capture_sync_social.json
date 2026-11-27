@@ -1,0 +1,10 @@
+{
+  "captures": [
+    {
+      "targetId": "lord",
+      "kind": "credential",
+      "address": "s.lord",
+      "roleLabel": "Payroll officer"
+    }
+  ]
+}

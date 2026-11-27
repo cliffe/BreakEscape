@@ -1,0 +1,13 @@
+{
+  "key": "03efad07dfcedf274d3281a192318e37",
+  "npc": "kit_julian_sallow",
+  "text": "Mind the model on the table.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:34Z"
+}

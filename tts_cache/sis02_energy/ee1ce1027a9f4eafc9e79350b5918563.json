@@ -1,0 +1,13 @@
+{
+  "key": "ee1ce1027a9f4eafc9e79350b5918563",
+  "npc": "priya_s",
+  "text": "Did Trent Water need telling under NIS?",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:23:48Z"
+}

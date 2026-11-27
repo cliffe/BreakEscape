@@ -1,0 +1,170 @@
+{
+  "scenario_brief": "Welcome to the Feeling Blu CTF Challenge! Your CTF Challenge Coordinator will guide you through a comprehensive Capture The Flag challenge. Exploit a web server, gain access, escalate privileges, and hunt for flags. Complete the instruction and then practice your skills in the VM lab environment.",
+  "endGoal": "Complete the lab instruction with the CTF Challenge Coordinator, launch the VMs, and capture all available flags from the web server to demonstrate your understanding of web exploitation, post-exploitation, and privilege escalation.",
+  "startRoom": "instruction_room",
+  "startItemsInInventory": [],
+  "globalVariables": {
+    "player_name": "Agent 0x00",
+    "lab_instruction_complete": false,
+    "vm_launched": false,
+    "ctf_flag_submitted": false,
+    "instructor_rapport": 0,
+    "ctf_mastery": 0
+  },
+  "objectives": [
+    {
+      "aimId": "complete_vm_lab",
+      "title": "Complete VM Lab Exercises",
+      "description": "Capture all flags from the web server",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "submit_all_flags",
+          "title": "Submit all required flags from web server",
+          "type": "submit_flags",
+          "targetFlags": ["web_server-flag1", "web_server-flag2", "web_server-flag3", "web_server-flag4", "web_server-flag5"],
+          "targetCount": 5,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  "rooms": {
+    "instruction_room": {
+      "type": "room_office",
+      "connections": {
+        "north": "vm_lab_room"
+      },
+      "locked": false,
+      "npcs": [
+        {
+          "id": "ctf_challenge_coordinator",
+          "displayName": "CTF Challenge Coordinator",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 3.5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/lab_feeling_blu/ink/instructor.json",
+          "currentKnot": "start",
+          "timedConversation": {
+            "delay": 5000,
+            "targetKnot": "intro_timed"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "objective_aim_completed:complete_vm_lab",
+              "targetKnot": "flags_completed_congrats",
+              "conversationMode": "person-chat",
+              "autoTrigger": true,
+              "cooldown": 0
+            }
+          ],
+          "itemsHeld": []
+        }
+      ],
+      "objects": [
+        {
+          "type": "lab-workstation",
+          "id": "lab_workstation",
+          "name": "Lab Sheet Workstation",
+          "takeable": true,
+          "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/9-feeling-blu/",
+          "observations": "A workstation for accessing the lab sheet with detailed instructions and exercises"
+        },
+        {
+          "type": "notes",
+          "name": "Lab Welcome Guide",
+          "takeable": true,
+          "readable": true,
+          "text": "Welcome to the Feeling Blu CTF Challenge!\n\nOBJECTIVES:\n1. Use the Lab Sheet Workstation to access detailed lab instructions\n2. Complete the lab sheet exercises\n3. Launch the VMs and practice CTF techniques\n4. Capture all flags from the web server\n\nThe CTF Challenge Coordinator is available if you need guidance.\n\nGood luck!",
+          "observations": "A guide to the lab structure and objectives"
+        },
+        {
+          "type": "notes",
+          "name": "VM Lab Instructions",
+          "takeable": true,
+          "readable": true,
+          "text": "VM Lab Practice Instructions:\n\n1. Launch the VMs in the VM Lab Room:\n   - Kali VM Terminal: Your attacker machine with Nmap, Dirb, Nikto, Metasploit, and OWASP ZAP\n   - Web Server Terminal: Target for exploitation\n\n2. Your objectives:\n   - Use Nmap, Dirb, and Nikto for reconnaissance\n   - Identify and exploit Bludit CMS vulnerabilities\n   - Use Metasploit to gain initial access\n   - Perform post-exploitation and hunt for flags\n   - Escalate privileges to root using sudo vulnerabilities\n   - Decrypt encrypted files to find additional flags\n\n3. Submit flags at the Flag Submission Terminal in the VM Lab Room\n\nFlags to capture from web_server:\n- flag1 - After initial exploitation\n- flag2 - In user home directory\n- flag3 - After privilege escalation\n- flag4 - Additional flag from privilege escalation\n- flag5 - From encrypted zip file in /root/\n\nRemember what the coordinator taught you about CTF techniques!",
+          "observations": "Instructions for the VM lab exercises"
+        }
+      ]
+    },
+    "vm_lab_room": {
+      "type": "room_office",
+      "connections": {
+        "south": "instruction_room"
+      },
+      "locked": false,
+      "objects": [
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_kali",
+          "name": "Kali VM Terminal",
+          "takeable": false,
+          "observations": "Terminal providing access to the Kali Linux attacker machine with Nmap, Dirb, Nikto, Metasploit, and OWASP ZAP",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('feeling_blu', {
+            "id": 1,
+            "title": "attack_vm",
+            "ip": "172.16.0.2",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_web_server",
+          "name": "Web Server Terminal",
+          "takeable": false,
+          "observations": "Terminal providing access to the web server for CTF exploitation practice",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('feeling_blu', {
+            "id": 2,
+            "title": "web_server",
+            "ip": "172.16.0.3",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_lab",
+          "name": "Lab Flag Submission Terminal",
+          "takeable": false,
+          "observations": "Submit flags captured from the web server here",
+          "acceptsVms": ["web_server"],
+          "flags": <%= flags_for_vm('web_server', [
+            'flag{feeling_blu_initial_exploit}',
+            'flag{feeling_blu_user_flag}',
+            'flag{feeling_blu_privilege_escalation}',
+            'flag{feeling_blu_root_flag}',
+            'flag{feeling_blu_encrypted_flag}'
+          ]) %>,
+          "flagRewards": [
+            {
+              "type": "emit_event",
+              "event_name": "ctf_flag_submitted",
+              "description": "CTF flag submitted - demonstrates CTF exploitation skills"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+

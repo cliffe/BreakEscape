@@ -1,0 +1,51 @@
+{
+ "steps": [
+  {
+   "note": "R32 (carry-over, 2026-10-17): m07 finished with the team never committed. ATHENA says the tasking order is blank."
+  },
+  {
+   "talk": "briefing"
+  },
+  {
+   "said": [
+    "Your tasking order for the one team is blank",
+    "dispatch in eleven counties has started dropping calls"
+   ],
+   "notSaid": [
+    "Your tasking order sent the one team to Washington",
+    "Your tasking order sent the one team to San Francisco",
+    "Your tasking order sent the one team to Austin",
+    "You moved the one team to Austin with the clock running",
+    "one team to send, and an enemy who had the deployment before we did.",
+    "so no backdoor went anywhere",
+    "Nine days on, dispatch in eleven counties is still answering"
+   ]
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "Tell me about Nightshade"
+   ]
+  },
+  {
+   "said": [
+    "noticed nothing"
+   ]
+  },
+  {
+   "expect": {
+    "m07_completed": true,
+    "m07_team_assignment": "",
+    "m07_team_redirected": false
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ],
+ "imports": {
+  "m07_completed": true,
+  "m07_team_assignment": "",
+  "m07_team_redirected": false
+ }
+}

@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: Seating",
+  "description": "Engine test for chairs (systems/seating.js): the player sits, rolls and stands on chairs; NPCs sit where placed, work seated at their PCs, fetch a chair when there is none, and get up for coffee.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

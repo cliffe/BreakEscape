@@ -1,0 +1,13 @@
+{
+  "key": "e29e523ba6211fdcaf40f1a6817a1f20",
+  "npc": "eleanor_vance",
+  "text": "If this claim goes to arbitration, that renewal memo is the first thing the arbitrators will read.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:37Z"
+}

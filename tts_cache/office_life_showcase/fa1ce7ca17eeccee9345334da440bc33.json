@@ -1,0 +1,13 @@
+{
+  "key": "fa1ce7ca17eeccee9345334da440bc33",
+  "npc": "graham_whitfield",
+  "text": "Go on, after you.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:43:29Z"
+}

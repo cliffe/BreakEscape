@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R11: the contingency file is found and the player weighs the four options, backing out of three before choosing to leave Kevin to it. kevin_choice ignore, kevin_protected false."},
+  {"set": {"contingency_file_read": true}},
+  {"talk": "phone", "knot": "event_contingency_found", "picks": ["That's monstrous", "Confront Kevin", "Maybe there's another option", "Warn Kevin directly", "Maybe there's a safer option", "Leave evidence clearing Kevin", "Maybe there's another option", "Focus on the mission", "The mission has to come first", "Acknowledged"]},
+  {"said": ["his kids watch him taken away in handcuffs", "present Derek's manufactured evidence to Kevin", "Direct warning. Risky", "Anonymous help. Leave the frame-up files", "...You're sure about that?", "Just know that choice has consequences", "And for you, when you think about it later"],
+   "notSaid": ["Understood. Find Kevin, tell him what's coming", "Kevin walks away clean without ever knowing"]},
+  {"expect": {"kevin_choice": "ignore", "kevin_protected": false}}
+ ]
+}

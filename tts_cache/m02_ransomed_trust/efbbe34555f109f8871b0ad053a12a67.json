@@ -1,0 +1,13 @@
+{
+  "key": "efbbe34555f109f8871b0ad053a12a67",
+  "npc": "narrator",
+  "text": "Behind you, a chair creaks round.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

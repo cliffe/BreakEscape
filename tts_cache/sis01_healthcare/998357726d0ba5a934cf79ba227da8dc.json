@@ -1,0 +1,13 @@
+{
+  "key": "998357726d0ba5a934cf79ba227da8dc",
+  "npc": "dr_sharma",
+  "text": "People knew, and the hospital kept running, because nothing had gone wrong yet. Every quiet month, the gaps looked a bit safer. Safety people call that normalisation of deviance.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

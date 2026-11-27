@@ -1,0 +1,13 @@
+{
+  "key": "49cf5b87d456ef6edad0201892456861",
+  "npc": "sidhu_selvarajan",
+  "text": "And yes, the data in block four is a word. Somebody has been reading my board very closely this week.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

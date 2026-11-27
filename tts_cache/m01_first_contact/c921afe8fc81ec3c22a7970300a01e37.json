@@ -1,0 +1,13 @@
+{
+  "key": "c921afe8fc81ec3c22a7970300a01e37",
+  "npc": "graham_whitfield",
+  "text": "Lost? This floor took me a month.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:52Z"
+}

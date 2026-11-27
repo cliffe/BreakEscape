@@ -1,0 +1,13 @@
+{
+  "key": "09e59a2c57db0a6a1061c692ba1b9f8c",
+  "npc": "narrator",
+  "text": "The office is small and lived-in. A framed photo faces the chair. On the screen, a folder is still open: \"GHOST -- Hospital Infrastructure Assessment\".",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:36:09Z"
+}

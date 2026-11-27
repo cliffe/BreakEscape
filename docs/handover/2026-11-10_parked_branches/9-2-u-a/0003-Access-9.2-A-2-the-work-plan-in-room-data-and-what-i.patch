@@ -1,0 +1,292 @@
+From 43a6bb90b3c5055a78dcb28a23c177413de57ca9 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:29:50 +0000
+Subject: [PATCH 3/9] Access 9.2 A-2: the work plan in room data, and what is
+ withheld
+
+compile_npc_plan! attaches each room NPC's resolved plan as work (ids, kinds,
+admitted, downIf, object, routes with networks, breakDrain) before the NPC's
+secrets are withheld; workNeeds, frustration and feed never ship; npcFrustration
+joins the access state defaults.
+---
+ app/models/break_escape/game.rb               |  24 +++-
+ .../break_escape/access_work_plan_test.rb     | 117 ++++++++++++++++++
+ test/support/access_work_scenario.rb          |  86 +++++++++++++
+ 3 files changed, 226 insertions(+), 1 deletion(-)
+ create mode 100644 test/models/break_escape/access_work_plan_test.rb
+ create mode 100644 test/support/access_work_scenario.rb
+
+diff --git a/app/models/break_escape/game.rb b/app/models/break_escape/game.rb
+index b1f7f8f7a..68e0ecdaa 100644
+--- a/app/models/break_escape/game.rb
++++ b/app/models/break_escape/game.rb
+@@ -1167,7 +1167,9 @@ module BreakEscape
+       'footholds' => {}, 'gainedFootholds' => [],
+       # Capture proofs (engine plan section 6): devices the server saw planted at a named
+       # object, and items it accepted as player drops. Grow-only.
+-      'plantedItems' => [], 'droppedItems' => []
++      'plantedItems' => [], 'droppedItems' => [],
++      # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.4): frustration per room NPC, held on the server
++      'npcFrustration' => {}
+     }.freeze
+ 
+     # loginFailures and loginLockouts keep at most this many entries for usernames that
+@@ -4080,6 +4082,7 @@ module BreakEscape
+         # (see find_flag_station_for_flag), so skipping it leaves a leak.
+         obj['objects']&.each { |o| filter_requires_and_contents_recursive(o) }
+         obj['npcs']&.each do |n|
++          compile_npc_plan!(n)
+           withhold_npc_secrets!(n)
+           filter_requires_and_contents_recursive(n)
+         end
+@@ -4101,6 +4104,24 @@ module BreakEscape
+     # clone_keycard and the RFID minigame keep working; an NPC with no creds.card
+     # keeps any rfidCard it already has.
+     WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds].freeze
++    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.2): work needs, frustration settings and the
++    # feed never ship; the NPC's resolved plan goes instead, as `work` (compile_npc_plan!).
++    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed].freeze
++
++    # Slice 9.2 (5.2): a room NPC with a `work` plan (a work need and a non-empty resolved work
++    # list) gains `work`: resource ids, kinds, `admitted`, `downIf` names, `object`, `routes`
++    # (with networks) and `breakDrain`, never a display name or a network. Runs before
++    # withhold_npc_secrets!, which deletes the role it reads.
++    def compile_npc_plan!(npc)
++      return unless npc.is_a?(Hash) && npc['id'].is_a?(String) && scenario_room_npc(npc['id'])
++
++      plan = BreakEscape::AccessWork.plan(scenario_data, npc)
++      if plan
++        npc['work'] = plan
++      else
++        npc.delete('work')
++      end
++    end
+ 
+     def withhold_npc_secrets!(npc)
+       return unless npc.is_a?(Hash)
+@@ -4108,6 +4129,7 @@ module BreakEscape
+       account = self.class.account_holder?(npc)
+       card = npc['creds'].is_a?(Hash) ? npc['creds']['card'] : nil
+       WITHHELD_NPC_KEYS.each { |key| npc.delete(key) }
++      WITHHELD_WORK_NPC_KEYS.each { |key| npc.delete(key) }
+       npc['rfidCard'] = card if card.is_a?(Hash)
+       return unless account
+ 
+diff --git a/test/models/break_escape/access_work_plan_test.rb b/test/models/break_escape/access_work_plan_test.rb
+new file mode 100644
+index 000000000..bf24b6e39
+--- /dev/null
++++ b/test/models/break_escape/access_work_plan_test.rb
+@@ -0,0 +1,117 @@
++require 'test_helper'
++require_relative '../../support/access_work_scenario'
++require_relative '../../support/network_model_scenario'
++
++module BreakEscape
++  # Access model slice 9.2 step A-2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 5.2 and 9.2): the plan the
++  # server attaches to a room NPC as `work`, and what room data and the bootstrap leave out.
++  class AccessWorkPlanTest < ActiveSupport::TestCase
++    def build(scenario: AccessWorkScenario.scenario, player_state: {})
++      create_access_game(
++        mission: break_escape_missions(:ceo_exfil),
++        player: break_escape_demo_users(:test_user),
++        scenario: scenario,
++        player_state: { 'unlockedRooms' => %w[lobby office] }.merge(player_state)
++      )
++    end
++
++    def npcs(game, room = 'office')
++      game.filtered_room_data(room)['npcs'].to_h { |n| [n['id'], n] }
++    end
++
++    def every_hash(node, &block)
++      case node
++      when Hash
++        yield node
++        node.each_value { |v| every_hash(v, &block) }
++      when Array
++        node.each { |v| every_hash(v, &block) }
++      end
++    end
++
++    test "a room NPC's work holds its resolved list with admitted right" do
++      list = npcs(build)
++      assert_equal({ 'breakDrain' => 10.0,
++                     'needs' => [{ 'id' => 'finance_share', 'kind' => 'file_share', 'admitted' => true, 'downIf' => 'finance_share_down' },
++                                 { 'id' => 'email', 'kind' => 'email', 'admitted' => true }] }, list['dana']['work'])
++      kai = list['kai']['work']['needs'].to_h { |n| [n['id'], n] }
++      assert_equal false, kai['finance_share']['admitted'], 'a refused one'
++      assert_equal true, kai['email']['admitted'], 'no access list: admitted'
++      omar = list['omar']['work']['needs'].find { |n| n['id'] == 'printer' }
++      assert_equal 'office_printer', omar['object']
++    end
++
++    test 'no name and no network key anywhere in a plan; no routes without networks' do
++      list = npcs(build)
++      list.each_value do |npc|
++        every_hash(npc['work']) do |h|
++          %w[name network host contents].each { |k| refute h.key?(k), "#{npc['id']}: #{k}" }
++          refute h.key?('routes'), "#{npc['id']}: routes without networks"
++        end
++      end
++      json = build.filtered_room_data('office').to_json
++      AccessWorkScenario::RESOURCE_NAMES.each { |name| refute_includes json, name }
++    end
++
++    test 'routes with networks: [[]] on the station network or none, [] on another' do
++      data = AccessWorkScenario.scenario
++      data['networks'] = { 'corp' => { 'name' => 'Corp LAN' }, 'fin' => { 'name' => 'Finance LAN' } }
++      data['rooms']['office']['network'] = 'corp'
++      data['resources']['email']['network'] = 'corp'
++      data['resources']['finance_share']['network'] = 'fin'
++      needs = npcs(build(scenario: data))['dana']['work']['needs'].to_h { |n| [n['id'], n['routes']] }
++      assert_equal [], needs['finance_share']
++      assert_equal [[]], needs['email']
++      data['resources']['email'].delete('network')
++      needs = npcs(build(scenario: data))['dana']['work']['needs'].to_h { |n| [n['id'], n['routes']] }
++      assert_equal [[]], needs['email'], 'a resource on no network'
++    end
++
++    test 'workNeeds, frustration, workarounds, feed and role are gone from room data' do
++      list = npcs(build)
++      list.each_value do |npc|
++        %w[workNeeds frustration workarounds feed role creds].each { |k| refute npc.key?(k), "#{npc['id']} ships #{k}" }
++      end
++      json = build.filtered_room_data('office').to_json
++      refute_includes json, AccessWorkScenario::POST_TEXT
++      refute_includes json, '"borrow_session"'
++      AccessWorkScenario::PASSWORDS.each { |pw| refute_includes json, pw }
++    end
++
++    test 'no plan for an account holder with no work need' do
++      temp = npcs(build, 'lobby')['temp_user']
++      refute temp.key?('work')
++    end
++
++    test 'an authored work key on an NPC with no plan is dropped' do
++      data = AccessWorkScenario.scenario
++      data['rooms']['lobby']['npcs'][0]['work'] = { 'needs' => [{ 'id' => 'fake' }] }
++      refute npcs(build(scenario: data), 'lobby')['temp_user'].key?('work')
++    end
++
++    test 'an NPC added to a room by update_room is treated the same' do
++      game = build
++      assert game.move_npc_to_room!('dana', 'office', 'lobby')
++      dana = npcs(game, 'lobby')['dana']
++      assert dana['work'], 'the moved NPC has its plan'
++      %w[workNeeds frustration workarounds feed role].each { |k| refute dana.key?(k), k }
++    end
++
++    test 'GET /scenario carries no resources or roles' do
++      filtered = build.filtered_scenario_for_bootstrap
++      refute filtered.key?('resources')
++      refute filtered.key?('roles')
++      json = filtered.to_json
++      AccessWorkScenario::RESOURCE_NAMES.each { |name| refute_includes json, name }
++    end
++
++    test 'npcFrustration is a player_state key, empty on a new game and dropped by a reset' do
++      game = build
++      assert_equal({}, game.player_state['npcFrustration'])
++      game.player_state['npcFrustration'] = { 'dana' => { 'level' => 20 } }
++      game.save!
++      game.reset_player_state!
++      assert_equal({}, game.reload.player_state['npcFrustration'])
++    end
++  end
++end
+diff --git a/test/support/access_work_scenario.rb b/test/support/access_work_scenario.rb
+new file mode 100644
+index 000000000..065bb5d83
+--- /dev/null
++++ b/test/support/access_work_scenario.rb
+@@ -0,0 +1,86 @@
++# A hand-written scenario for the access model slice 9.2 tests
++# (docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md, sub-slice A). Build games from it with
++# create_access_game (test_helper.rb).
++#
++# - dana: finance and staff, a work need, needs finance_share (downIf) and email; perFail 34;
++#   a workaround and a feed, so the withholding tests see them go;
++# - kai: staff, +finance_share, which he is not admitted to (a cause the server owns);
++# - ian: staff (email only), his own PC has an offWhen;
++# - amy: staff, email only, a live PC: she cannot fail;
++# - omar: staff, +printer (a resource tied to an object, with a downIf);
++# - temp_user: an account holder with the role and no needs (no plan);
++# Every PC's use time is 5 seconds (the hot desk's 7), so each NPC's shortest use time is 5.
++module AccessWorkScenario
++  PASSWORDS = %w[Ledger-Dana-31 Kai-Kestrel-88 Ian-Ibis-27 Amy-Aster-55 Omar-Oriole-64 Temp-Tern-12].freeze
++  RESOURCE_NAMES = ['Finance share', 'Second floor printer', 'Corporate email'].freeze
++  POST_TEXT = 'Biscuit turns 5 today! Best boy in the whole office.'.freeze
++
++  def self.pc(id, extra = {})
++    { 'type' => 'pc', 'id' => id, 'name' => id, 'locked' => true, 'lockType' => 'login',
++      'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5 } }.merge(extra)
++  end
++
++  def self.staff(id, username, password, extra = {})
++    { 'id' => id, 'displayName' => id.capitalize, 'npcType' => 'person', 'role' => 'staff',
++      'creds' => { 'username' => username, 'password' => password },
++      'needsHome' => "#{id}_pc", 'needsDeferMin' => 0.5,
++      'needs' => { 'work' => { 'decayPerMin' => 40, 'urgentAt' => 50, 'initial' => 60 } } }.merge(extra)
++  end
++
++  def self.scenario
++    {
++      'scenario_brief' => 'Slice 9.2 test scenario',
++      'startRoom' => 'lobby',
++      'officePresets' => true,
++      'policies' => { 'managed' => { 'autoLockMin' => 5, 'usb' => 'storage_blocked' } },
++      'defaultPolicy' => 'managed',
++      'globalVariables' => { 'finance_share_down' => false, 'printer_jammed' => false, 'ian_pc_unplugged' => false },
++      'resources' => {
++        'email' => { 'kind' => 'email', 'name' => 'Corporate email' },
++        'finance_share' => { 'kind' => 'file_share', 'name' => 'Finance share', 'access' => { 'roles' => ['finance'] },
++                             'downIf' => 'finance_share_down' },
++        'printer' => { 'kind' => 'printer', 'name' => 'Second floor printer', 'object' => 'office_printer', 'downIf' => 'printer_jammed' }
++      },
++      'roles' => {
++        'staff' => { 'workNeeds' => ['email'], 'frustration' => { 'perFail' => 20 } },
++        'finance' => { 'workNeeds' => ['finance_share'] }
++      },
++      'social' => {
++        'intelFacts' => { 'dana_pet_name' => { 'label' => 'Pet', 'text' => 'Her dog is called Biscuit, and he turned five.' } },
++        'osint' => { 'sites' => [{ 'id' => 'friendface', 'type' => 'social', 'profiles' => [{ 'person' => 'dana', 'name' => 'Dana', 'posts' => [] }] }] }
++      },
++      'rooms' => {
++        'lobby' => {
++          'type' => 'room_reception', 'connections' => { 'north' => 'office' },
++          'objects' => [
++            pc('temp_user_pc')
++          ],
++          'npcs' => [
++            { 'id' => 'temp_user', 'displayName' => 'Temp', 'npcType' => 'person', 'role' => 'staff',
++              'creds' => { 'username' => 'temp', 'password' => PASSWORDS[5] } }
++          ]
++        },
++        'office' => {
++          'type' => 'room_office', 'connections' => { 'south' => 'lobby' }, 'locked' => true, 'lockType' => 'key',
++          'objects' => [
++            pc('dana_pc'), pc('kai_pc'), pc('amy_pc'), pc('omar_pc'),
++            pc('ian_pc', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5, 'offWhen' => 'ian_pc_unplugged' }),
++            pc('hot_desk', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 7 }),
++            { 'type' => 'printer1', 'id' => 'office_printer', 'name' => 'Printer' },
++            { 'type' => 'coffee_station1', 'id' => 'coffee', 'name' => 'Coffee' }
++          ],
++          'npcs' => [
++            staff('dana', 'dreyes', PASSWORDS[0], 'role' => %w[finance staff], 'frustration' => { 'perFail' => 34 },
++                                                  'workarounds' => [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'hot_desk' }],
++                                                  'feed' => { 'site' => 'friendface', 'person' => 'dana',
++                                                              'posts' => [{ 'id' => 'dana_post_1', 'text' => POST_TEXT, 'fact' => 'dana_pet_name' }] }),
++            staff('kai', 'kbrennan', PASSWORDS[1], 'workNeeds' => ['+finance_share']),
++            staff('ian', 'ishaw', PASSWORDS[2]),
++            staff('amy', 'acole', PASSWORDS[3]),
++            staff('omar', 'ohaddad', PASSWORDS[4], 'workNeeds' => ['+printer'])
++          ]
++        }
++      }
++    }
++  end
++end
+-- 
+2.43.0
+

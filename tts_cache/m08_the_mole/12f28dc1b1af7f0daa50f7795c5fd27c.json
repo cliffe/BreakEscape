@@ -1,0 +1,13 @@
+{
+  "key": "12f28dc1b1af7f0daa50f7795c5fd27c",
+  "npc": "director_netherton",
+  "text": "Interview all three as if none of them is guilty. Get onto our own systems and bring me proof I can act on.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T19:21:28Z"
+}

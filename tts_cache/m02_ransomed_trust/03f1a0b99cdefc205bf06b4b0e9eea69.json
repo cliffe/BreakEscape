@@ -1,0 +1,13 @@
+{
+  "key": "03f1a0b99cdefc205bf06b4b0e9eea69",
+  "npc": "narrator",
+  "text": "He stands beside the comms relay, hands loosely clasped, like a man who has stood in exactly that spot for a very long time and doesn't mind.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

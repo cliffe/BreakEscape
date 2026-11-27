@@ -1,0 +1,13 @@
+{
+  "key": "3db12cd9b3de30d68e69e932b8740018",
+  "npc": "jodie",
+  "text": "Cake! It's somebody's birthday.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:17:56Z"
+}

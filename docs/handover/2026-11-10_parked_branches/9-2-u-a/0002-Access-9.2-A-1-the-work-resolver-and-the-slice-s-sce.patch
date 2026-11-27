@@ -1,0 +1,601 @@
+From 9605adb9ece5acfd52fd503452dd482e829e4b7c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:27:49 +0000
+Subject: [PATCH 2/9] Access 9.2 A-1: the work resolver and the slice's
+ scenario fields
+
+lib/break_escape/access_work.rb resolves an NPC's work list, frustration
+settings, workarounds, can-fail rule, use times, the desk rule, its places and
+shortest use time for a need, the causes the server owns and the pace floors.
+The schema and the validator's known-field lists accept every field of plan
+section 4.
+---
+ lib/break_escape/access_work.rb | 342 ++++++++++++++++++++++++++++++++
+ scripts/scenario-schema.json    |  11 +
+ scripts/validate_scenario.rb    |   1 +
+ test/unit/access_work_test.rb   | 176 ++++++++++++++++
+ 4 files changed, 530 insertions(+)
+ create mode 100644 lib/break_escape/access_work.rb
+ create mode 100644 test/unit/access_work_test.rb
+
+diff --git a/lib/break_escape/access_work.rb b/lib/break_escape/access_work.rb
+new file mode 100644
+index 000000000..5cf79b0a9
+--- /dev/null
++++ b/lib/break_escape/access_work.rb
+@@ -0,0 +1,342 @@
++# frozen_string_literal: true
++
++require 'json'
++require_relative 'access_identities' unless defined?(BreakEscape::AccessIdentities)
++require_relative 'network_model' unless defined?(BreakEscape::NetworkModel)
++
++module BreakEscape
++  # Access model slice 9.2 (docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md, section 10): one
++  # resolver for work, outages and frustration, called by the server (Game) and by the validator,
++  # so the two cannot drift apart. It resolves an NPC's work list (its roles in order, `staff`
++  # last, then its own `+` and `-`), its frustration settings (defaults, then role defaults, then
++  # its own, field by field), its workarounds, the "can fail" rule, use times, the desk rule, an
++  # NPC's places for a need and its shortest use time there, and the causes the server owns.
++  #
++  # Plain Ruby with no Rails methods, as AccessIdentities and NetworkModel are.
++  module AccessWork
++    module_function
++
++    FRUSTRATION_DEFAULTS = { 'perFail' => 25, 'easePerSuccess' => 10, 'breakDrain' => 10 }.freeze
++    FRUSTRATION_BOUNDS = { 'perFail' => [1, 100], 'easePerSuccess' => [0, 100], 'breakDrain' => [0, 50] }.freeze
++    NEEDS_DEFAULT_USE_SECONDS = 20   # npc-needs.js: clamp(useSeconds, 0, 600), else 20
++    NEEDS_DEFER_MIN = 4              # npc-needs.js NEEDS_DEFER_MIN
++    SOCIAL_USE_SECONDS = 20          # plan 8.1: socialUse.useSeconds default
++    JUDGED_NEEDS = %w[work social_media].freeze
++    WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
++    PRESETS_FILE = File.expand_path('../../public/break_escape/js/data/office-presets.json', __dir__)
++    FAIL_CAUSES = %w[down unreachable no_access off locked_out social_blocked].freeze
++    # The causes no event in play can clear (plan 9.1, gate 2)
++    OWNED_CAUSES = %w[no_access unreachable_never social_blocked locked_out].freeze
++
++    # ── scenario reads ──────────────────────────────────────────────────
++
++    def resources(data) = NetworkModel.resources(data)
++
++    def roles_block(data)
++      r = data.is_a?(Hash) ? data['roles'] : nil
++      r.is_a?(Hash) ? r : {}
++    end
++
++    # The NPC's roles in authored order with `staff` last (AccessIdentities.identity_roles adds
++    # the implicit staff of an NPC with creds or a card).
++    def npc_roles(npc)
++      roles = AccessIdentities.identity_roles(npc)
++      roles.include?('staff') ? (roles - ['staff']) + ['staff'] : roles
++    end
++
++    # Every room object (recursing into contents) by id: { obj, room_id, room }
++    def object_index(data)
++      NetworkModel.room_objects(data).each_with_object({}) do |e, h|
++        id = e[:object]['id']
++        h[id] ||= { obj: e[:object], room_id: e[:room_id], room: e[:room] } if id.is_a?(String) && !id.empty?
++      end
++    end
++
++    def object(data, id) = (id.is_a?(String) ? object_index(data)[id]&.dig(:obj) : nil)
++
++    # ── work list, frustration, workarounds ─────────────────────────────
++
++    # The NPC's resolved work list: the union of its roles' workNeeds (roles in order, staff
++    # last), then its own entries ("x" or "+x" adds, "-x" removes). Ids only, in order.
++    def work_list(data, npc)
++      return [] unless npc.is_a?(Hash)
++
++      out = []
++      roles = roles_block(data)
++      npc_roles(npc).each do |role|
++        Array(roles.dig(role, 'workNeeds')).each do |id|
++          next unless id.is_a?(String)
++
++          id = id.delete_prefix('+')
++          out << id unless id.empty? || id.start_with?('-') || out.include?(id)
++        end
++      end
++      Array(npc['workNeeds']).each do |entry|
++        next unless entry.is_a?(String) && !entry.empty?
++
++        if entry.start_with?('-')
++          out.delete(entry[1..])
++        else
++          id = entry.delete_prefix('+')
++          out << id unless id.empty? || out.include?(id)
++        end
++      end
++      out
++    end
++
++    # Defaults, then each field from the first of the NPC's roles that sets it, then its own
++    def frustration(data, npc)
++      out = FRUSTRATION_DEFAULTS.dup
++      roles = roles_block(data)
++      FRUSTRATION_DEFAULTS.each_key do |field|
++        role = npc_roles(npc).find { |r| roles.dig(r, 'frustration').is_a?(Hash) && roles.dig(r, 'frustration', field).is_a?(Numeric) }
++        out[field] = roles.dig(role, 'frustration', field) if role
++      end
++      own = npc.is_a?(Hash) && npc['frustration'].is_a?(Hash) ? npc['frustration'] : {}
++      FRUSTRATION_DEFAULTS.each_key { |f| out[f] = own[f] if own[f].is_a?(Numeric) }
++      FRUSTRATION_BOUNDS.each { |f, (lo, hi)| out[f] = out[f].to_f.clamp(lo, hi) }
++      out
++    end
++
++    # The NPC's own list, else the first of its roles that has one; never merged
++    def workarounds(data, npc)
++      return npc['workarounds'].select { |w| w.is_a?(Hash) } if npc.is_a?(Hash) && npc['workarounds'].is_a?(Array)
++
++      roles = roles_block(data)
++      role = npc_roles(npc).find { |r| roles.dig(r, 'workarounds').is_a?(Array) }
++      role ? roles.dig(role, 'workarounds').select { |w| w.is_a?(Hash) } : []
++    end
++
++    def need?(npc, name) = npc.is_a?(Hash) && npc['needs'].is_a?(Hash) && npc['needs'][name].is_a?(Hash)
++
++    # A `work` plan: a work need and a non-empty resolved list (plan 5.2, "judged")
++    def work_plan?(data, npc) = need?(npc, 'work') && !work_list(data, npc).empty?
++
++    def phone?(npc) = npc.is_a?(Hash) && npc['phone'] != false
++
++    # Judged: work with a plan, or social_media
++    def judged?(data, npc, need)
++      case need
++      when 'work' then work_plan?(data, npc)
++      when 'social_media' then need?(npc, 'social_media')
++      else false
++      end
++    end
++
++    def defer_min(npc)
++      v = npc.is_a?(Hash) ? npc['needsDeferMin'] : nil
++      v.is_a?(Numeric) && v.positive? ? v.to_f.clamp(0.1, 120) : NEEDS_DEFER_MIN
++    end
++
++    # ── objects: affordances, use times, desks ──────────────────────────
++
++    def preset_table
++      @preset_table ||= File.file?(PRESETS_FILE) ? (JSON.parse(File.read(PRESETS_FILE))['presets'] || {}) : {}
++    end
++
++    def presets_on?(data) = data.is_a?(Hash) && data['officePresets'] == true
++
++    # office-presets.js presetIdFor, ignoring the scenario switch
++    def preset_id(obj)
++      return nil unless obj.is_a?(Hash)
++      return nil if !obj['id'].is_a?(String) || obj['id'].empty? || obj['decor'] == true
++      return nil if obj['affordance'] == false || obj['takeable'] == true || obj['lockType']
++      return (preset_table.key?(obj['officeType']) ? obj['officeType'] : nil) if obj['officeType'].is_a?(String)
++
++      preset_table.find { |_id, p| Array(p['types']).include?(obj['type']) }&.first
++    end
++
++    # The object's affordance: its own fields over its preset (presets on); nil for none
++    def affordance(data, obj)
++      return nil if !obj.is_a?(Hash) || obj['affordance'] == false
++
++      own = obj['affordance'].is_a?(Hash) ? obj['affordance'] : nil
++      pid = presets_on?(data) ? preset_id(obj) : nil
++      return own unless pid
++
++      (preset_table.dig(pid, 'affordance') || {}).merge(own || {})
++    end
++
++    def satisfies?(data, obj, need) = Array(affordance(data, obj)&.dig('satisfies')).include?(need)
++
++    # The needs system's use time: authored, else the preset's, else 20 seconds
++    def use_seconds(data, obj)
++      v = affordance(data, obj)&.dig('useSeconds')
++      v.is_a?(Numeric) && v.finite? ? v.to_f.clamp(0, 600) : NEEDS_DEFAULT_USE_SECONDS
++    end
++
++    # A desk (plan 5.2): a workstation by isWorkstation's rule, or an object whose preset is desk_pc
++    def desk?(data, obj)
++      return false unless obj.is_a?(Hash)
++      return true if obj['id'].is_a?(String) && !obj['id'].empty? &&
++                     (obj['workstation'] == true || obj.key?('locksScreenOnLeave') || obj.key?('lockChance') || obj['lockType'] == 'login')
++
++      presets_on?(data) && preset_id(obj) == 'desk_pc'
++    end
++
++    def station(data, npc)
++      home = npc.is_a?(Hash) ? npc['needsHome'] : nil
++      home.is_a?(String) ? object(data, home) : nil
++    end
++
++    # PCs the NPC's borrow_session workarounds name
++    def borrow_pcs(data, npc)
++      workarounds(data, npc).filter_map { |w| w['pc'] if w['do'] == 'borrow_session' && w['pc'].is_a?(String) }.uniq
++    end
++
++    # The NPC's places for a judged need (plan 9.1): its own station, a PC a borrow_session names,
++    # or an object that satisfies the need and is not a desk. Ids, sorted.
++    def places(data, npc, need)
++      out = []
++      st = station(data, npc)
++      out << st['id'] if st && satisfies?(data, st, need)
++      borrow_pcs(data, npc).each { |pc| out << pc if object(data, pc) }
++      object_index(data).each_value do |e|
++        o = e[:obj]
++        out << o['id'] if satisfies?(data, o, need) && !desk?(data, o)
++      end
++      out.uniq.sort
++    end
++
++    # The NPC's shortest use time for a need over its places (and, for social_media with a
++    # phone, the phone use); 20 seconds when it has none
++    def shortest_use_seconds(data, npc, need)
++      times = places(data, npc, need).map { |id| use_seconds(data, object(data, id)) }
++      if need == 'social_media'
++        su = npc.is_a?(Hash) && npc['socialUse'].is_a?(Hash) ? npc['socialUse']['useSeconds'] : nil
++        social = su.is_a?(Numeric) ? su.to_f.clamp(0, 600) : SOCIAL_USE_SECONDS
++        st = station(data, npc)
++        times << social if phone?(npc) || (st && places(data, npc, need).include?(st['id']))
++      end
++      times.min || NEEDS_DEFAULT_USE_SECONDS
++    end
++
++    # ── resources, admission, reach ─────────────────────────────────────
++
++    def admitted?(resource, npc)
++      return true unless resource.is_a?(Hash) && !resource['access'].nil?
++
++      AccessIdentities.acl_admits?(resource['access'], npc)
++    end
++
++    def present_string?(v) = v.is_a?(String) && !v.strip.empty?
++
++    # Routes from the NPC's home station to a resource, or nil in a scenario with no networks
++    def routes(data, npc, resource)
++      return nil if NetworkModel.networks(data).empty?
++
++      st_id = npc.is_a?(Hash) ? npc['needsHome'] : nil
++      entry = st_id.is_a?(String) ? object_index(data)[st_id] : nil
++      net = entry ? NetworkModel.network_of(entry[:obj], entry[:room]) : nil
++      NetworkModel.reach_conditions(data, net, resource)
++    end
++
++    # The work plan the server attaches to a room NPC as `work` (plan 5.2): ids, kinds and
++    # global names, never a display name or a network. nil for an NPC with no plan.
++    def plan(data, npc)
++      return nil unless work_plan?(data, npc)
++
++      res = resources(data)
++      needs = work_list(data, npc).filter_map do |id|
++        r = res[id]
++        next nil unless r
++
++        entry = { 'id' => id, 'kind' => r['kind'].is_a?(String) ? r['kind'] : nil, 'admitted' => admitted?(r, npc) }
++        entry['downIf'] = r['downIf'] if present_string?(r['downIf'])
++        entry['object'] = r['object'] if present_string?(r['object'])
++        rt = routes(data, npc, r)
++        entry['routes'] = rt unless rt.nil?
++        entry
++      end
++      { 'breakDrain' => frustration(data, npc)['breakDrain'], 'needs' => needs }
++    end
++
++    # ── can fail, belongs to, owned causes ──────────────────────────────
++
++    def off_when?(data, obj) = !obj.nil? && !affordance(data, obj)&.dig('offWhen').nil? && affordance(data, obj)['offWhen'] != false && affordance(data, obj)['offWhen'] != ''
++
++    def policy_of(data, obj)
++      name = obj.is_a?(Hash) && present_string?(obj['policy']) ? obj['policy'] : data['defaultPolicy']
++      p = present_string?(name) && data['policies'].is_a?(Hash) ? data['policies'][name] : nil
++      p.is_a?(Hash) ? p : nil
++    end
++
++    def social_blocked?(data, npc)
++      policy_of(data, station(data, npc))&.dig('social') == 'blocked'
++    end
++
++    # "Can fail" (plan 9.1): the scenario makes a failure possible for this NPC and need
++    def can_fail?(data, npc, need)
++      case need
++      when 'work'
++        return false unless work_plan?(data, npc)
++
++        res = resources(data)
++        list = work_list(data, npc).filter_map { |id| res[id] }
++        return true if list.any? { |r| !admitted?(r, npc) || present_string?(r['downIf']) }
++        return true if list.any? { |r| (rt = routes(data, npc, r)) && (rt.empty? || rt.any? { |route| !route.empty? }) }
++
++        pcs = [station(data, npc)] + borrow_pcs(data, npc).map { |id| object(data, id) }
++        pcs.compact.any? { |pc| off_when?(data, pc) }
++      when 'social_media'
++        return false unless need?(npc, 'social_media') && !phone?(npc)
++
++        st = station(data, npc)
++        !st.nil? && (social_blocked?(data, npc) || off_when?(data, st))
++      else
++        false
++      end
++    end
++
++    # Whether a cause in a report names this NPC's own thing (plan 9.1, "Belongs to the NPC")
++    def cause_belongs?(data, npc, need, cause)
++      return false unless cause.is_a?(Hash) && FAIL_CAUSES.include?(cause['why'].to_s) && cause['id'].is_a?(String)
++
++      id = cause['id']
++      case cause['why']
++      when 'down', 'unreachable'
++        need == 'work' && work_list(data, npc).include?(id) && resources(data).key?(id)
++      when 'no_access'
++        need == 'work' && work_list(data, npc).include?(id) && !admitted?(resources(data)[id], npc)
++      else # off, locked_out, social_blocked
++        st = station(data, npc)
++        (st && st['id'] == id) || borrow_pcs(data, npc).include?(id)
++      end
++    end
++
++    # The causes the server owns that hold for an NPC and need (plan 9.1, gate 2): none can
++    # clear in play. `lockouts` is player_state.loginLockouts (sub-slice L reads it).
++    def owned_causes(data, npc, need, lockouts = nil)
++      out = []
++      if need == 'work' && work_plan?(data, npc)
++        res = resources(data)
++        work_list(data, npc).each do |id|
++          r = res[id]
++          next unless r
++
++          out << { 'id' => id, 'why' => 'no_access' } unless admitted?(r, npc)
++          rt = routes(data, npc, r)
++          out << { 'id' => id, 'why' => 'unreachable' } if rt && rt.empty?
++        end
++      end
++      st = station(data, npc)
++      out << { 'id' => st['id'], 'why' => 'social_blocked' } if need == 'social_media' && st && social_blocked?(data, npc)
++      out << { 'id' => st['id'], 'why' => 'locked_out' } if st && locked_out_at?(npc, st, lockouts)
++      out
++    end
++
++    # Sub-slice L: whether loginLockouts holds the NPC's username at its station
++    def locked_out_at?(npc, st, lockouts)
++      return false unless lockouts.is_a?(Hash) && AccessIdentities.account?(npc)
++
++      user = AccessIdentities.normalise_username(npc.dig('creds', 'username'))
++      entry = lockouts[st['id']]
++      list = entry.is_a?(Hash) ? entry.keys : Array(entry)
++      list.map { |u| AccessIdentities.normalise_username(u) }.include?(user)
++    end
++
++    # The pace floors (plan 9.1), in seconds of server time
++    def park_floor(npc) = (0.9 * defer_min(npc) * 60) - 3
++    def use_floor(data, npc, need) = [(0.9 * shortest_use_seconds(data, npc, need)) - 3, 0].max
++  end
++end
+diff --git a/scripts/scenario-schema.json b/scripts/scenario-schema.json
+index f9919a71e..5dfc23f84 100644
+--- a/scripts/scenario-schema.json
++++ b/scripts/scenario-schema.json
+@@ -235,6 +235,8 @@
+           "access": { "$ref": "#/definitions/accessList" },
+           "contents": { "type": "array", "items": { "$ref": "#/definitions/item" }, "description": "file_share only: items, as in an account profile. Ids are global." },
+           "observations": { "type": "string", "description": "For a resource with no contents: the text shown when the player clicks its row." },
++          "downIf": { "type": "string", "description": "Slice 9.2: a global name; the resource is down while it is truthy." },
++          "object": { "type": "string", "description": "Slice 9.2: a room object the resource is tied to (a check visit walks there)." },
+           "_comment": { "type": "string" }
+         }
+       }
+@@ -246,6 +248,9 @@
+         "type": "object",
+         "properties": {
+           "awareness": { "type": "string", "enum": ["low", "medium", "high"] },
++          "workNeeds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Slice 9.2: resource ids staff with this role need for their work." },
++          "frustration": { "type": "object", "additionalProperties": false, "properties": { "perFail": { "type": "number", "minimum": 1, "maximum": 100 }, "easePerSuccess": { "type": "number", "minimum": 0, "maximum": 100 }, "breakDrain": { "type": "number", "minimum": 0, "maximum": 50 }, "_comment": { "type": "string" } } },
++          "workarounds": { "type": "array", "items": { "type": "object", "required": ["at", "do"], "properties": { "at": { "type": "number", "minimum": 1, "maximum": 100 }, "do": { "type": "string", "enum": ["writes_down", "prop_door", "emit", "borrow_session", "share_login"] }, "pc": { "type": "string" }, "with": { "type": "string" }, "door": { "type": "string" }, "prop": { "type": "string" }, "event": { "type": "string" }, "setGlobal": { "type": "string" }, "noWarning": { "type": "boolean" }, "_comment": { "type": "string" } } } },
+           "_comment": { "type": "string" }
+         },
+         "additionalProperties": true
+@@ -4670,6 +4675,12 @@
+         "needsAvoidRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (deny list): rooms this NPC's needs never use objects in or walk through, even as a short cut; it goes the long way or waits. The home room may not be listed. Fixed per NPC. Scripts and route patrols ignore it." },
+         "maxQueue": { "type": "integer", "minimum": 0, "description": "NPC needs system, balking (OFFICE_LIFE_PLAN 10, slice 14): refuse to join a queue that already holds this many; the NPC tries another source, else parks the need (reason queue). 0 never queues. Unset: no limit." },
+         "needsDeferMin": { "type": "number", "exclusiveMinimum": 0, "description": "NPC needs system, parked needs (OFFICE_LIFE_PLAN 10, slice 14): minutes (needs clock) a need with no acceptable source stays parked, level held at urgentAt + 1 and decay paused, before it is retried. A room loading or a door opening retries it sooner. Default 4." },
++        "workNeeds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 4): changes to the role defaults' resources: \"x\" or \"+x\" adds, \"-x\" removes. Room NPCs only; never sent to the browser." },
++        "frustration": { "type": "object", "additionalProperties": false, "properties": { "perFail": { "type": "number", "minimum": 1, "maximum": 100 }, "easePerSuccess": { "type": "number", "minimum": 0, "maximum": 100 }, "breakDrain": { "type": "number", "minimum": 0, "maximum": 50 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: perFail (default 25), easePerSuccess (default 10), breakDrain (default 10); overrides the role defaults field by field. Room NPCs only; never sent to the browser." },
++        "workarounds": { "type": "array", "items": { "type": "object", "required": ["at", "do"], "properties": { "at": { "type": "number", "minimum": 1, "maximum": 100 }, "do": { "type": "string", "enum": ["writes_down", "prop_door", "emit", "borrow_session", "share_login"] }, "pc": { "type": "string" }, "with": { "type": "string" }, "door": { "type": "string" }, "prop": { "type": "string" }, "event": { "type": "string" }, "setGlobal": { "type": "string" }, "noWarning": { "type": "boolean" }, "_comment": { "type": "string" } } }, "description": "Slice 9.2 (section 6): what this person does as frustration rises. Replaces the role's list. Room NPCs only; never sent to the browser." },
++        "phone": { "type": "boolean", "description": "Slice 9.2 (section 8): false: the NPC has no phone. Default true for an NPC with a social_media need." },
++        "socialUse": { "type": "object", "properties": { "restores": { "type": "number" }, "useSeconds": { "type": "number", "minimum": 0 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: a social media use (defaults 60 and 20)." },
++        "feed": { "type": "object", "properties": { "site": { "type": "string" }, "person": { "type": "string" }, "posts": { "type": "array", "items": { "type": "object" } }, "_comment": { "type": "string" } }, "description": "Slice 9.2 (section 8): posts revealed one at a time into the social media browser. Room NPCs only; withheld until each is revealed." },
+         "needsCompany": {
+           "type": "object",
+           "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs. Slice 14: an NPC that declares avoids (or an avoidRadius) also turns away from a source someone avoided (either way) is using, is queued for, or stands within avoidRadius tiles of (npc_turned_back, npc_need_parked).",
+diff --git a/scripts/validate_scenario.rb b/scripts/validate_scenario.rb
+index bb4144428..8a420aa73 100755
+--- a/scripts/validate_scenario.rb
++++ b/scripts/validate_scenario.rb
+@@ -437,6 +437,7 @@ def check_unknown_fields(json_data)
+     answersPhones phoneCalls
+     role creds staff cloneable
+     awareness habits
++    workNeeds frustration workarounds phone socialUse feed
+     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
+   ]
+ 
+diff --git a/test/unit/access_work_test.rb b/test/unit/access_work_test.rb
+new file mode 100644
+index 000000000..e5f313e88
+--- /dev/null
++++ b/test/unit/access_work_test.rb
+@@ -0,0 +1,176 @@
++require 'test_helper'
++
++# Access model slice 9.2 step A-1 (ACCESS_MODEL_SLICE_9_2_PLAN.md, section 10): the resolver in
++# BreakEscape::AccessWork that the server and the validator share.
++class AccessWorkTest < ActiveSupport::TestCase
++  AW = BreakEscape::AccessWork
++
++  def scenario(extra = {})
++    {
++      'officePresets' => true,
++      'defaultPolicy' => 'managed',
++      'policies' => { 'managed' => { 'usb' => 'allowed' }, 'no_social' => { 'social' => 'blocked' } },
++      'resources' => {
++        'email' => { 'kind' => 'email' },
++        'finance_share' => { 'kind' => 'file_share', 'access' => { 'roles' => ['finance'] }, 'downIf' => 'finance_share_down' },
++        'printer' => { 'kind' => 'printer', 'object' => 'office_printer', 'downIf' => 'printer_jammed' }
++      },
++      'roles' => {
++        'staff' => { 'workNeeds' => ['email'], 'frustration' => { 'perFail' => 20 } },
++        'finance' => { 'workNeeds' => ['finance_share'], 'frustration' => { 'easePerSuccess' => 5 } }
++      },
++      'rooms' => {
++        'office' => {
++          'objects' => [
++            { 'id' => 'dana_pc', 'type' => 'pc', 'lockType' => 'login', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5 } },
++            { 'id' => 'plain_pc', 'type' => 'pc' },
++            { 'id' => 'tablet', 'type' => 'tablet1', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 3 } },
++            { 'id' => 'hot_desk', 'type' => 'pc', 'lockType' => 'login', 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 7 } },
++            { 'id' => 'dead_pc', 'type' => 'pc', 'lockType' => 'login', 'affordance' => { 'satisfies' => 'work', 'offWhen' => 'dead' } },
++            { 'id' => 'kiosk', 'type' => 'kiosk1', 'workstation' => true, 'affordance' => { 'satisfies' => 'work' } }
++          ],
++          'npcs' => []
++        }
++      }
++    }.merge(extra)
++  end
++
++  def npc(extra = {})
++    { 'id' => 'dana', 'role' => %w[finance], 'creds' => { 'username' => 'dreyes', 'password' => 'x' },
++      'needsHome' => 'dana_pc', 'needs' => { 'work' => { 'decayPerMin' => 6, 'urgentAt' => 50 } } }.merge(extra)
++  end
++
++  test 'role order with staff last; +, - and bare entries' do
++    d = scenario
++    assert_equal %w[finance staff], AW.npc_roles(npc)
++    assert_equal %w[finance staff], AW.npc_roles(npc('role' => %w[staff finance]))
++    assert_equal %w[finance_share email], AW.work_list(d, npc)
++    assert_equal %w[finance_share email printer], AW.work_list(d, npc('workNeeds' => ['+printer']))
++    assert_equal %w[finance_share printer], AW.work_list(d, npc('workNeeds' => ['printer', '-email']))
++    assert_equal %w[email], AW.work_list(d, npc('role' => nil, 'workNeeds' => nil))
++  end
++
++  test 'an NPC with no role and no account resolves nothing' do
++    bare = { 'id' => 'temp', 'needs' => { 'work' => {} } }
++    assert_equal [], AW.work_list(scenario, bare)
++    assert_not AW.work_plan?(scenario, bare)
++  end
++
++  test 'frustration merged field by field: defaults, roles in order, own' do
++    d = scenario
++    assert_equal({ 'perFail' => 20.0, 'easePerSuccess' => 5.0, 'breakDrain' => 10.0 }, AW.frustration(d, npc))
++    assert_equal 34.0, AW.frustration(d, npc('frustration' => { 'perFail' => 34 }))['perFail']
++    assert_equal 5.0, AW.frustration(d, npc('frustration' => { 'perFail' => 34 }))['easePerSuccess']
++    assert_equal 25.0, AW.frustration({}, npc)['perFail']
++  end
++
++  test 'no plan for an NPC with a resolved list and no work need' do
++    assert AW.work_plan?(scenario, npc)
++    assert_not AW.work_plan?(scenario, npc('needs' => { 'caffeine' => {} }))
++    assert_nil AW.plan(scenario, npc('needs' => {}))
++  end
++
++  test 'the plan holds ids, kinds, admitted and downIf, never a name or a network' do
++    d = scenario
++    d['resources']['email']['name'] = 'Email system'
++    plan = AW.plan(d, npc('workNeeds' => ['+printer']))
++    assert_equal 10.0, plan['breakDrain']
++    assert_equal [{ 'id' => 'finance_share', 'kind' => 'file_share', 'admitted' => true, 'downIf' => 'finance_share_down' },
++                  { 'id' => 'email', 'kind' => 'email', 'admitted' => true },
++                  { 'id' => 'printer', 'kind' => 'printer', 'admitted' => true, 'downIf' => 'printer_jammed', 'object' => 'office_printer' }],
++                 plan['needs']
++    kai = npc('id' => 'kai', 'role' => nil, 'workNeeds' => ['+finance_share'])
++    assert_equal false, AW.plan(d, kai)['needs'].find { |n| n['id'] == 'finance_share' }['admitted']
++    assert_not_includes JSON.generate(plan), 'Email system'
++  end
++
++  test 'routes only with networks: [[]] on the same network or none, [] on another' do
++    d = scenario('networks' => { 'corp' => { 'name' => 'Corp' }, 'fin' => { 'name' => 'Fin' } })
++    d['rooms']['office']['network'] = 'corp'
++    d['resources']['email']['network'] = 'corp'
++    d['resources']['finance_share']['network'] = 'fin'
++    needs = AW.plan(d, npc)['needs'].to_h { |n| [n['id'], n['routes']] }
++    assert_equal [], needs['finance_share']
++    assert_equal [[]], needs['email']
++    assert_nil AW.plan(scenario, npc)['needs'].first['routes']
++  end
++
++  test 'can fail: each cause, and none' do
++    d = scenario
++    assert AW.can_fail?(d, npc, 'work'), 'a downIf'
++    email_only = npc('role' => nil)
++    assert_not AW.can_fail?(d, email_only, 'work'), 'email only, no downIf, a live PC'
++    assert AW.can_fail?(d, email_only.merge('needsHome' => 'dead_pc'), 'work'), 'its station has an offWhen'
++    assert AW.can_fail?(d, npc('id' => 'kai', 'role' => nil, 'workNeeds' => ['+finance_share']), 'work'), 'not admitted'
++    borrow = email_only.merge('workarounds' => [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'dead_pc' }])
++    assert AW.can_fail?(d, borrow, 'work'), 'a borrow PC with an offWhen'
++    net = scenario('networks' => { 'a' => { 'name' => 'A' } })
++    net['resources']['email']['network'] = 'a'
++    assert AW.can_fail?(net, email_only, 'work'), 'a [] route'
++    assert_not AW.can_fail?(d, npc('needs' => {}), 'work'), 'no plan'
++    social = email_only.merge('needs' => { 'social_media' => {} }, 'phone' => false, 'needsHome' => 'dana_pc')
++    assert_not AW.can_fail?(d, social, 'social_media')
++    d['rooms']['office']['objects'][0]['policy'] = 'no_social'
++    assert AW.can_fail?(d, social, 'social_media')
++    assert_not AW.can_fail?(d, social.merge('phone' => true), 'social_media'), 'a phone never fails'
++  end
++
++  test 'a use time from an affordance, from a preset and from the 20 second default' do
++    d = scenario
++    assert_equal 5.0, AW.use_seconds(d, AW.object(d, 'dana_pc'))
++    assert_equal 10.0, AW.use_seconds(d, AW.object(d, 'plain_pc')), 'desk_pc preset'
++    assert_equal 20, AW.use_seconds(d, AW.object(d, 'dead_pc'))
++    assert_equal 20, AW.use_seconds(scenario('officePresets' => false), AW.object(d, 'plain_pc'))
++  end
++
++  test 'the desk rule: each workstation field, and a plain pc with presets on and off' do
++    d = scenario
++    { 'workstation' => true, 'locksScreenOnLeave' => true, 'lockChance' => 0, 'lockType' => 'login' }.each do |k, v|
++      assert AW.desk?(d, { 'id' => 'x', 'type' => 'tablet1', k => v }), k
++    end
++    assert AW.desk?(d, AW.object(d, 'plain_pc'))
++    assert_not AW.desk?(scenario('officePresets' => false), AW.object(d, 'plain_pc'))
++    assert_not AW.desk?(d, AW.object(d, 'tablet'))
++  end
++
++  test "an NPC's places for a need and its shortest use time, with a non-desk object shorter than its station" do
++    d = scenario
++    who = npc('workarounds' => [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'hot_desk' }])
++    assert_equal %w[dana_pc hot_desk tablet], AW.places(d, who, 'work')
++    assert_equal 3.0, AW.shortest_use_seconds(d, who, 'work')
++    d['rooms']['office']['objects'].delete_if { |o| o['id'] == 'tablet' }
++    assert_equal 5.0, AW.shortest_use_seconds(d, who, 'work')
++    assert_equal 20, AW.shortest_use_seconds(d, npc('needsHome' => nil), 'work')
++  end
++
++  test 'the causes the server owns, each alone and none' do
++    d = scenario
++    assert_equal [], AW.owned_causes(d, npc, 'work')
++    kai = npc('id' => 'kai', 'role' => nil, 'workNeeds' => ['+finance_share'])
++    assert_equal [{ 'id' => 'finance_share', 'why' => 'no_access' }], AW.owned_causes(d, kai, 'work')
++    net = scenario('networks' => { 'a' => { 'name' => 'A' } })
++    net['resources']['email']['network'] = 'a'
++    assert_equal [{ 'id' => 'email', 'why' => 'unreachable' }], AW.owned_causes(net, npc('role' => nil), 'work')
++    social = npc('needs' => { 'social_media' => {} }, 'phone' => false)
++    d['rooms']['office']['objects'][0]['policy'] = 'no_social'
++    assert_equal [{ 'id' => 'dana_pc', 'why' => 'social_blocked' }], AW.owned_causes(d, social, 'social_media')
++    assert_equal [{ 'id' => 'dana_pc', 'why' => 'locked_out' }],
++                 AW.owned_causes(scenario, npc, 'work', { 'dana_pc' => { 'dreyes' => true } })
++  end
++
++  test 'belongs to the NPC' do
++    d = scenario
++    assert AW.cause_belongs?(d, npc, 'work', { 'id' => 'finance_share', 'why' => 'down' })
++    assert_not AW.cause_belongs?(d, npc, 'work', { 'id' => 'printer', 'why' => 'down' }), 'not in its list'
++    assert_not AW.cause_belongs?(d, npc, 'work', { 'id' => 'finance_share', 'why' => 'no_access' }), 'admitted'
++    assert AW.cause_belongs?(d, npc, 'work', { 'id' => 'dana_pc', 'why' => 'off' })
++    assert_not AW.cause_belongs?(d, npc, 'work', { 'id' => 'hot_desk', 'why' => 'off' })
++    assert_not AW.cause_belongs?(d, npc, 'work', { 'id' => 'dana_pc', 'why' => 'bored' })
++  end
++
++  test 'the floors' do
++    assert_in_delta 0.9 * 4 * 60 - 3, AW.park_floor(npc), 0.001
++    assert_in_delta 0.9 * 0.5 * 60 - 3, AW.park_floor(npc('needsDeferMin' => 0.5)), 0.001
++    assert_in_delta 0.9 * 5 - 3, AW.use_floor(scenario('rooms' => { 'o' => { 'objects' => [scenario['rooms']['office']['objects'][0]] } }), npc, 'work'), 0.001
++  end
++end
+-- 
+2.43.0
+

@@ -1,0 +1,13 @@
+{
+  "key": "71b7a2d5ced5d3ea35194442a9c78b75",
+  "npc": "ama_owusu",
+  "text": "The printer account won't open any PC here. Try it if you like.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:34:08Z"
+}

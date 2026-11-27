@@ -1,0 +1,1 @@
+ℹ Desk boxes: legacy in 9 map(s) (room_aes_control, room_aes_dock, room_aes_hall1, room_aes_hall2, room_aes_ops, room_aes_plant, room_aes_reception, room_aes_security, room_aes_workshop); footprint in 0

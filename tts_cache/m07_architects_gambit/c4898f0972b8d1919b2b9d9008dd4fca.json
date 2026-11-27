@@ -1,0 +1,13 @@
+{
+  "key": "c4898f0972b8d1919b2b9d9008dd4fca",
+  "npc": "elena_rodriguez",
+  "text": "No. No, you don't get to do that. Not you as well.",
+  "voice": "Leda",
+  "style": "A grid engineer in her early thirties who helped build tonight's outage believing nobody would be hurt, and has just read otherwise. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Frightened and entirely competent at the same time: the technical sentences come out steady and fast, the ones about herself do not.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:16:03Z"
+}

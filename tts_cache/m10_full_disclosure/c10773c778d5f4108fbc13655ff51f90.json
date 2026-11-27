@@ -1,0 +1,13 @@
+{
+  "key": "c10773c778d5f4108fbc13655ff51f90",
+  "npc": "quintero_post",
+  "text": "I'm going. Read the sheet.",
+  "voice": "Kore",
+  "style": "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:56:31Z"
+}

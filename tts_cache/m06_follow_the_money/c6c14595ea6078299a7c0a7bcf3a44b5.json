@@ -1,0 +1,13 @@
+{
+  "key": "c6c14595ea6078299a7c0a7bcf3a44b5",
+  "npc": "narrator",
+  "text": "Across the room, the guard's head comes up. He has seen the picks.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:52:35Z"
+}

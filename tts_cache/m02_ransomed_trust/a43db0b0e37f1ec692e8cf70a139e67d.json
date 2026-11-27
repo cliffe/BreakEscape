@@ -1,0 +1,13 @@
+{
+  "key": "a43db0b0e37f1ec692e8cf70a139e67d",
+  "npc": "narrator",
+  "text": "Bernie is holding the handset away from her ear.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

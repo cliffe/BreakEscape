@@ -1,0 +1,13 @@
+{
+  "key": "416ed629be993ed51893da790f719da8",
+  "npc": "eleanor_vance",
+  "text": "Supplier compromise — network-connected printers on their estate. From there the attacker moved laterally into the operational technology network and manipulated the safety-critical control systems directly.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:18:11Z"
+}

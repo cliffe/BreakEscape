@@ -1,0 +1,42 @@
+{
+  "scenario": "lab_scanning",
+  "start_room": "instruction_room",
+  "nodes": [
+    {
+      "id": "vmch_submit_all_flags",
+      "label": "Submit all required flags from Linux victim server",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_all_flags",
+      "label": "All Flags Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "instruction_room",
+      "label": "Instruction Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "vm_lab_room",
+      "label": "Vm Lab Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "vmch_submit_all_flags",
+      "to": "vmfl_submit_all_flags",
+      "soft": false
+    },
+    {
+      "from": "instruction_room",
+      "to": "vm_lab_room",
+      "soft": false
+    }
+  ]
+}

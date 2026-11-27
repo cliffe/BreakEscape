@@ -1,0 +1,21 @@
+{
+  "key": "88335e1388ac5febacc51265455f164c",
+  "npc": "the_architect",
+  "text": "You covered San Francisco. Washington and the vendors stand open.",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:16:45Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/88335e1388ac5febacc51265455f164c.mp3",
+    "clean_md5": "653ab6adb2e3ea9ea8fe9968b7546b49",
+    "baked_md5": "6b7277039ad5463889961548e66f487d",
+    "baked": "2026-11-24"
+  }
+}

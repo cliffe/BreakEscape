@@ -1,0 +1,13 @@
+{
+  "key": "d036b0fb0250a0bdb561a0be7d945ed1",
+  "npc": "narrator",
+  "text": "She passes the file through the hatch and tips the other bin into the feed without looking at it.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:31:40Z"
+}

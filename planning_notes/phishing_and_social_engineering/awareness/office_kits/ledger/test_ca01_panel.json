@@ -1,0 +1,28 @@
+{
+ "scenario": "test_ca01_panel",
+ "lists": {
+  "host": [
+   {"k": null, "h": "07f8d965"},
+   {"k": null, "h": "da951785"},
+   {"k": "quiet_on", "h": "3b634b70"},
+   {"k": "attack_done", "h": "b2cc5f79"},
+   {"k": "defend_done", "h": "b4bf2bdc"},
+   {"k": "caught", "h": "5dcc3a48"},
+   {"k": "quiet_off_debrief", "h": "056f47fe"},
+   {"k": "quiet_off_debrief_seen", "h": "95409884"},
+   {"k": "step_away", "h": "26aa6db1"},
+   {"k": "chg_chain_agn_there_sets_chain_done", "h": "f966ae79"}
+  ],
+  "npc:kit_agnieszka_duda": [
+   {"k": "chg_out", "h": "8be6bae8"},
+   {"k": "chg_out_2", "h": "65aaa308"},
+   {"k": "npc_arrived_agnieszka_duda_sets_chain_agn_there", "h": "ba48ccba"},
+   {"k": "chg_chain_agn_there", "h": "35ceb06f"},
+   {"k": "chg_chain_done", "h": "30c42c70"}
+  ],
+  "npc:kit_gwen_pritchard": [
+   {"k": "chg_out", "h": "8be6bae8"},
+   {"k": "chg_chain_done", "h": "30c42c70"}
+  ]
+ }
+}

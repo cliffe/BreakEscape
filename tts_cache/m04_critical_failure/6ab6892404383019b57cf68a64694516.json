@@ -1,0 +1,13 @@
+{
+  "key": "6ab6892404383019b57cf68a64694516",
+  "npc": "narrator",
+  "text": "He moves for the bench and you move for him, and the plant room stops being a place where anyone is talking.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:14:57Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "74434fbd63f4c1bef542d7f663a416e2",
+  "npc": "bed5_patient",
+  "text": "Could you get someone? The lady in Bed 2. I don't think she looks right.",
+  "voice": "Aoede",
+  "style": "Polish-born woman in her early eighties, bed-bound, alert, anxious but trying to stay calm. Speak with a consistent northern English with a Polish lilt accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:52:50Z"
+}

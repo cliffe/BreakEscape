@@ -1,0 +1,23 @@
+
+## R19 (F1): chat closed at the post-clone beat by day, reopened at night. Only the night opener plays, not 'Sorry, I was miles away'.
+   {set {"briefing_played":true,"badge_received":true,"reception_badge_cloned":true}}
+
+--- ffion @clone_badge_debrief ---
+  Narrator: The badge is in the cloner.
+  Ffion Rees: Sorry, I was miles away. Where were we?
+     [0] What's Ms. Sterling like?
+     [1] Who else works here?
+     [2] How long has WhiteHat been going?
+     [3] Thanks. I'll head through.
+  [stopped: no pick]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true}}
+
+--- ffion @clone_badge_debrief ---
+  Ffion Rees: Oh! You made me jump. I only came back for my charger.
+  Ffion Rees: Is Ms. Sterling expecting you this late?
+     [0] She said to come back once the building was quiet.
+     [1] Left my notebook in the conference room. I'll be two minutes.
+     [2] Something like that. Night.
+  [stopped: no pick]
+
+[stats] spoken/narrated lines 4, choices 0, longest run without a choice 2 (ffion); runs>=6: 

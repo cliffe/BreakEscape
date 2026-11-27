@@ -1,0 +1,13 @@
+{
+  "key": "8fc1223d42cb4cd1305d04414c68af67",
+  "npc": "farah_guard",
+  "text": "Then you can let yourself down.",
+  "voice": "Zephyr",
+  "style": "Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:39:05Z"
+}

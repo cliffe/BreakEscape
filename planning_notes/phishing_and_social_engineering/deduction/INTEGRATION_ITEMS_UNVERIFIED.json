@@ -1,0 +1,1347 @@
+{
+ "items": [
+  {
+   "id": "SIDECAR-1",
+   "severity": "major",
+   "priority": "must",
+   "category": "decisions-record",
+   "sections": "\u00a713.1 (line ~3308), \u00a713.2 row 'deduction_reveal and the :clear tag cut' (~3362), \u00a75.3 'Cut (R1D-23)' sentence (line ~1013), \u00a713.5 closing paragraph and R4D-11 row, \u00a714, \u00a71 status",
+   "change": "Add rows Q5\u2013Q9 to the \u00a713.1 table (user, 2026-10-22, DECISIONS_PENDING.md round 2) with what each means in the plan: Q5 active clear verdict in Phase 10, kind `trust` (#verdict:trust[:<s>], verdict action value \"clear\"); Q6 one-way \"Let them go\" in fixture C; Q7 the nudge gets a reason line that says only how a suspect became decidable, never which way; Q8 \"Refer to HR\"/\"No further action\" verdict nouns for real Incident Simulations missions, fixture B keeps \"Insider\"/\"Not an insider\"; Q9 a deduction.voice key (\"plain\" | \"pulp\"), \"plain\" by default. Rewrite the \u00a713.2 R1D-23 row and the \u00a75.3 'Cut (R1D-23)' sentence to: \"deduction_reveal stays cut; the clear form returns as the trust kind (user Q5, reverses R1D-23 in part)\". Record as declined under Q7 DESIGN_FUN_FEEDBACK \u00a7B.3's reason check (\"That rules out Courier\u2026 Keyholder and Devotee are still open\") and \u00a7E.2's consistency hint (\"Check this against what you hold.\") so no builder adds them. Note in \u00a713.2/\u00a713.5/\u00a714 that Q6 partly reopens R4D-11 (the wait stays irreversible; a release is now possible).",
+   "evidence": "DECISIONS_PENDING.md 'Round 2 of questions': all five adopted 2026-10-22, 'To be recorded in the plan's \u00a713.1'. The plan's \u00a713.1 table ends at Q4; \u00a75.3 line 1013 and \u00a713.2 still say the ':clear' form was cut (R1D-23). DESIGN_FUN_FEEDBACK \u00a7B.3 and \u00a7E.2 are marked 'decision for the user' and Q7 adopted only the 'how' variant. PLAYER_TEST_C F4: 'It would reopen R4D-11'.",
+   "sources": [
+    "DECISIONS_PENDING.md Q5-Q9",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md 'Needs the user'",
+    "sidecar/STRESS_TEST.md Ranked recommendations #1",
+    "sidecar/DESIGN_FUN_FEEDBACK.md \u00a7B.3, \u00a7E.2, \u00a7J",
+    "sidecar/PLAYER_TEST_C.md F4",
+    "merged: DECISIONS-1"
+   ]
+  },
+  {
+   "id": "SIDECAR-2",
+   "severity": "major",
+   "priority": "must",
+   "category": "engine/contract (user decision Q5)",
+   "sections": "\u00a73.8, \u00a73.11, \u00a74.1, \u00a74.4 deduction_verdict_<s>, \u00a74.8, \u00a75.3, \u00a75.4 verdict action, \u00a75.5 recordVerdict, \u00a75.10, \u00a76.3 verdict-line kind words, \u00a77.4, \u00a78 DL12/DL14/DL19, \u00a79.5, \u00a710.1 P10-C1/P10-C2b/P10-E/P10-G/P10-U1/P10-X1/P10-X2, \u00a711.2, \u00a711.3, \u00a711.5",
+   "change": "Restore an active clear verdict as verdict kind `trust`, whose value is always `clear`. Data contract: \u00a73.8 table row `trust` | 'Vouches for or protects the suspect' | #verdict:trust in the suspect's own story, #verdict:trust:<suspect> from another conversation, or a verdict action with value \"clear\"; \u00a74.1 `allowed` comment becomes 'subset of accuse, report, ko, act, trust, final'; keep the rule that when: \"final\" allows only final, report and ko, so trust under final is a DL12 error; schema (P10-C1) and DL19 add trust to the enum; \u00a73.11 adds 'vouch'. Tags (\u00a75.3, P10-G): #verdict:trust calls recordVerdict(npcId, 'clear', 'trust', { source: 'ink' }), #verdict:trust:<s> for a named suspect; reword #verdict:<kind> rows to 'guilty, except kind trust, which records clear'; they never await and are flushed like other verdict tags. Action (\u00a75.4, P10-E): verdict params suspect, kind (default act, or trust when value is \"clear\"), value (\"guilty\" default | \"clear\"); DL14 errors on a value that is neither, on kind trust with value guilty, or on value clear with a kind other than trust. Runtime (\u00a75.5, P10-U1): recordVerdict takes clear only from kind trust and refuses it elsewhere; under when: \"final\" trust tags are ignored with a console warning; under anytime trust is graded at once: right_clear on an innocent (runs onRightClear plus the suspect's own list on the usual timing, so at: \"verdict\" fires at the verdict under reveal: \"end\"), missed_guilty on a guilty suspect (runs onMissedGuilty, no wrongCount increment); the mark is set to clear and locked, first verdict stands; reveal-now toasts reuse 'Rightly cleared'/'Missed'. Validator (DL12, P10-C2b): trust delivery routes as above, existing own-story/named-tag rules apply, Ruby known-kinds list in scripts/validate_social/deduction.rb gains trust. Board: \u00a76.3 verdict line gains a kind word for trust (SIDECAR-2 suggested 'cleared', DECISIONS-2 suggested 'vouched for'; plan owner picks one). Authoring: \u00a77.4 short trust example, a choice gated on deduction_verdict_<s> == \"\" that says it cannot be undone (e.g. \"[Tell HR she is protected. This can't be taken back.]\") with #verdict:trust:<s> on the content line; corporate cases read it as 'vouch for'; \u00a74.8, P10-X1 and P10-X2 list trust in the 00 \u00a713 settled values and README 'Deduction cases'. Tests: \u00a711.2 tag cases (both forms reach the stub with ('clear','trust'), flushed on chat close, no-runtime warning); \u00a711.3 action cases (value clear reaches ('clear','trust'), default stays ('guilty','act')) and runtime cases (trust on innocent right_clear with at: \"verdict\" global written and a timer cancelOnGlobal cancelled; trust on guilty missed_guilty with no escalation; trust then accuse leaves the second ignored; trust under final records nothing); \u00a711.5 validator bad case (trust allowed with no route; trust tag under final) and good case (anytime stub with one #verdict:trust:<s>). \u00a79.5 row 'S19 #verdict:trust / S20 verdict value clear: unit tests and validator fixtures only; no fixture opts in', so the 'every engine item exercised' claim stays true.",
+   "evidence": "STRESS_TEST table row 4.1 (major), \u00a76 gap 6.1 (blocker for the 'Speak up' premise: onRightClear runs only at close for kind none, too late to beat the framing timer), Ranked recommendations rank 1 ('small (S19, S20, DL12; the runtime already takes value)'). SIDECAR_RECOMMENDATIONS SC-33. Decided by the user as Q5. Plan \u00a74.1 lines 440/486 list no such kind; \u00a75.3 line 1000 always records 'guilty'; \u00a75.4 line 1049 hard-codes 'guilty'; \u00a75.5 line 1145 has no value check; \u00a76.3 line 1537 has no kind word; DL12 lists only accuse, report, act, final and ko; \u00a79.5 ends 'Every engine item S16 to S23 is exercised\u2026'.",
+   "sources": [
+    "sidecar/STRESS_TEST.md \u00a74 (4.1), \u00a76 (6.1), Cross-cutting 1, Ranked recommendations",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-33",
+    "DECISIONS_PENDING.md Q5",
+    "merged: DECISIONS-2, DECISIONS-3, DECISIONS-4, DECISIONS-5, DECISIONS-6, DECISIONS-7"
+   ]
+  },
+  {
+   "id": "SIDECAR-3",
+   "severity": "major",
+   "priority": "must",
+   "category": "fixture C (user decision Q6)",
+   "sections": "\u00a79.3 Verdicts (act choice l.2548-2549), \u00a79.3 hand check, Rooms, Bridges, Proves; \u00a79.5; \u00a713.5 (R4D-11 row); \u00a710.1 P10-K-C, P10-T0-C, P10-T-C",
+   "change": "Fixture C gains a one-way release. HaX's call (used because the waiting contact has left through #remove_npc) offers, for each contact with c_waiting_<id> true and c_comms_locked false, \"[Let <name> go. They leave the safe house, and you can't call this back.]\" with a \"Not yet\" beside it; the content line carries #set_global:c_waiting_<id>:false #set_global:c_released_<id>:true. Declare c_released_<id> (false) for all three contacts. With c_waiting_<id> false the existing lock triggers and exit-phone lock give that contact no act verdict, so they close as kind none, 'Not named' (right_clear for an innocent, missed_guilty if Novak is released); they stay removed and are lost as a resource. HaX's lock choice is still offered only while some contact waits. Reword the wait choice so it no longer contradicts the release (the send cannot be undone; the lock is still final) and is spoken by the player rather than a stage direction (GAPSCD-25 proposed \"[Go and wait in the comms room. I can't take this back.]\"); bridge C4 matches the final wording. Hand check: after a release the released contact's ink routes and door help (#unlock_door) are gone, and DL6 still passes (Baptiste via the travel log, Ahmed via the door log, Novak via her bag). Bridge (bridge-deduction-c / c-wrong, before C4): ask Ahmed to wait, HaX offers 'Let Ahmed go', choose it (c_released_ded_c_ahmed true, c_waiting false, no verdict), reload and the release holds and is no longer offered; then C4 as written (only Novak gets an act verdict); C5 debrief unchanged (Ahmed 'Not named (innocent)') plus whatever note DECISIONS-9 chooses. P10-T-C adds a newcomer persona who sends an innocent to wait then releases them. Add 'a one-way release of a waiting contact' to \u00a79.3 Proves and a \u00a79.5 row.",
+   "evidence": "PLAYER_TEST_C F4: the newcomer sent Ahmed to wait, then found the proof that cleared him and could not separate him from Novak. DECISIONS_PENDING Q6 ('the contact leaves \"not named\" and is lost as a resource, but isn't wrongly locked up'). Plan \u00a79.3 Verdicts (~2550-2560) has no release; bridge C4 covers only sending Novak and locking. GAPSCD-25: the current choice is a stage direction addressed to the contact and the bridge greps for one wording.",
+   "sources": [
+    "sidecar/PLAYER_TEST_C.md F4, \u00a73, \u00a75 rec 4",
+    "DECISIONS_PENDING.md Q6",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md 'Needs the user'",
+    "sidecar/drafts/C/PLAN_GAPS.md G20",
+    "merged: DECISIONS-8, DECISIONS-10, GAPSCD-25"
+   ]
+  },
+  {
+   "id": "DECISIONS-9",
+   "severity": "major",
+   "priority": "must",
+   "category": "debrief",
+   "sections": "\u00a79.3 Stakes, \u00a73.10, \u00a76.7 (and \u00a74.1, DL15 if option b)",
+   "change": "State where fixture C's debrief 'still notes the hasty call' for a released contact. The engine has no such line today: a released innocent's card reads 'Not named (innocent)', the same as a contact never suspected, and closingLine is fixed. Options: (a) authored story lines only, no engine change: HaX's reply on release ('Fine. They're out of it.') and a credits line conditioned on c_released_<id>; (b) the optional debrief.notes.<s>.<outcome> (SIDECAR-23), which is keyed by outcome and cannot tell a released contact from one never sent to wait without a further condition. The plan owner picks one and writes it into \u00a79.3 (plus \u00a74.1, DL15 and \u00a76.7 if b). If (a), the \u00a713.1 Q6 row says the note lives in the story and credits, not on the debrief card.",
+   "evidence": "DECISIONS_PENDING Q6: 'the debrief still notes the hasty call'. PLAYER_TEST_C F4: 'the debrief can still note the hasty send'. Plan \u00a73.10 and \u00a76.7 carry only engine lines plus closingLine, and the early-call line needs a verdict. STRESS_TEST 6.4 proposes debrief.notes keyed by outcome.",
+   "sources": [
+    "DECISIONS_PENDING.md Q6",
+    "sidecar/PLAYER_TEST_C.md F4, F6",
+    "sidecar/STRESS_TEST.md \u00a76 (6.4)"
+   ]
+  },
+  {
+   "id": "SIDECAR-4",
+   "severity": "major",
+   "priority": "must",
+   "category": "engine/nudge (user decision Q7)",
+   "sections": "\u00a73.7 item 4, \u00a75.1 (evaluator), \u00a75.5 'The nudge' (~1311), \u00a76.2, \u00a76.3 Nudge row, \u00a76.4, \u00a76.8, \u00a79.1/\u00a79.2/\u00a79.3 Bridges, \u00a710.1 P10-A, P10-B, P10-U2, P10-H1, P10-H2, P10-BL, \u00a711.1, \u00a711.3, \u00a711.4, \u00a711.6",
+   "change": "Add a pure nudgeReason(suspectId, heldIds, deduction, intelFacts) to systems/social-deduction.js (Ruby twin only if the validator needs it), computed from the mechanism only and never reading the status: 'count' when evaluateSuspect(...).byCount is non-empty (count, pigeonhole or markedForced); 'absence' when the deciding leaf is a not clause, or a has c failed because the slot is fully revealed or holds a different clue; 'found' otherwise (a held clue meets or breaks a clause directly). (SIDECAR-4 originally proposed hows 'count', 'pigeonhole', 'absence', 'direct'; DECISIONS-11 collapses them to three.) Every nudge carries a reason line, since a nudge with none in the direct case would read as 'guilty'. \u00a73.7 item 4: '\u2026once the held clues decide a suspect either way, with one line saying how (never which way)'. \u00a76.3 rows: count 'Check the counts.'; absence 'Check what they don't have.'; found a neutral line for the plan owner (e.g. 'Check what you've found.'); same in both voices. \u00a75.5: the toast carries the nudge line then the reason. \u00a76.2: each suspect gains nudgeHow ('count'|'absence'|'found'|null, null when nudge is false); \u00a76.4 renders it under the nudge line; \u00a76.8 test state includes it. Tests: \u00a711.1 conformance shows each of 'count' and 'absence' for both a guilty and a clear decision (add any found-only-guilty case to the risks table if fixtures cannot show both); \u00a711.3 toast text with reason and none with nudge: false; \u00a711.4 nudgeHow in the model and a check that no reason string contains a verdict noun, profile label or 'guilty'/'clear'. Bridges: B's Haddad and Morgan nudges and A3's Marsh and Okafor nudges carry 'Check the counts.'; A2 (Venn, Ishikawa) and A4 (Delacroix) assert whatever nudgeReason gives on the conformance state (recorded by P10-K-A); C has no reason lines (nudge off). P10-BL and \u00a711.6 record whether the tester read the reason line as a hint about which way.",
+   "evidence": "DESIGN_FUN_FEEDBACK \u00a7B.3, \u00a7E.1, \u00a7E.2 (a reason line under the nudge). SC-16 optional part. BOARD_MOCKUP_NOTES item 3 (the nudge for Okafor looks wrong next to '0 found'). DECISIONS_PENDING Q7 ('how' only; keep never-say-which-way). Plan \u00a75.1 already computes byCount with how and brokenClause/matchedClause leaves; \u00a76.3 line 1524 has the nudge alone; \u00a75.5 line 1311 toasts only 'You have enough to decide about <name>.' COPY_DRAFTS \u00a75 keeps the nudge identical in both voices. Plan line 2200 (B nudges), ~2402 (A3), P10-BL ~2952/~3267.",
+   "sources": [
+    "sidecar/DESIGN_FUN_FEEDBACK.md \u00a7B.3, \u00a7E.1, \u00a7E.2, \u00a7J",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-16",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/COPY_DRAFTS.md \u00a75",
+    "DECISIONS_PENDING.md Q7",
+    "merged: DECISIONS-11, DECISIONS-12, DECISIONS-13"
+   ]
+  },
+  {
+   "id": "SIDECAR-5",
+   "severity": "major",
+   "priority": "must",
+   "category": "authoring/vocabulary (user decision Q8)",
+   "sections": "\u00a73.10, \u00a73.11, \u00a74.1 verdictNoun, \u00a74.8, \u00a76.3 truth line, \u00a76.7, \u00a77 (authoring note), \u00a79.1, \u00a710.1 P10-X1, P10-X2, P10-H1, \u00a711.4",
+   "change": "Record that real Incident Simulations missions use verdictNoun { guilty: \"Refer to HR\", clear: \"No further action\" }: add to \u00a73.11's examples, a comment on \u00a74.1's verdictNoun line, \u00a77's authoring note, \u00a74.8's README_scenario_design 'Deduction cases' bullet (P10-X2) and the 00 \u00a713 settled values (P10-X1). \u00a79.1 states that fixture B's 'Insider'/'Not an insider' are test nouns kept on purpose and B is not the noun template for real missions. Check every \u00a76.3 template that interpolates the noun ('<name> marked <guilty noun>', the truth line, 'Verdict: <noun> (<kind word>)') against action nouns. The truth line '<guilty noun>: matched the <profile label> profile' would print 'Refer to HR: matched the Insider profile', presenting an action as what the person is: change it so the noun is not presented as identity (closest sourced form COPY_DRAFTS \u00a710's '<noun>. Matched <profile label>.', one-profile '<noun>. Matched the profile.'; plan owner may choose another wording that works for both styles) and make \u00a73.10 and \u00a76.7 agree. Add a P10-H1 board-model test with the action nouns covering mark buttons, mark confirmations, verdict line and truth line. Pair with LEARNING_DESIGN R1's rule (see SIDECAR-25): each IS case says once, in a character's voice, that a match justifies a referral and interview, not a finding.",
+   "evidence": "LEARNING_DESIGN \u00a78 R1, \u00a72 G1 ('Insider: matched the Insider profile' can teach 'three indicators = guilty'), \u00a76.4. DECISIONS_PENDING Q8 ('Yes for real Incident Simulations missions; fixture B keeps its test nouns'). Plan \u00a76.3 line 1530 and \u00a76.7 truth-line wording; the plan nowhere names these nouns. COPY_DRAFTS \u00a710 Truth line and \u00a713 item 4 (\u00a73.10 and \u00a76.7 disagree).",
+   "sources": [
+    "sidecar/LEARNING_DESIGN.md \u00a72 G1, \u00a76.4, \u00a78 R1",
+    "sidecar/COPY_DRAFTS.md \u00a710 Truth line, \u00a713 item 4",
+    "DECISIONS_PENDING.md Q8",
+    "merged: DECISIONS-14, DECISIONS-15"
+   ]
+  },
+  {
+   "id": "SIDECAR-6",
+   "severity": "major",
+   "priority": "must",
+   "category": "engine strings (user decision Q9)",
+   "sections": "\u00a74.1 social.deduction, \u00a74.9, \u00a75.5, \u00a75.10, \u00a76.2, \u00a76.3, \u00a78 DL10/DL19, \u00a79.2\u2013\u00a79.4 data, \u00a79.5, \u00a710.1 P10-C1, P10-H1, P10-U1, P10-U2, \u00a711.4, \u00a711.8",
+   "change": "Add \"voice\": \"plain\" | \"pulp\" to social.deduction, default \"plain\"; schema (P10-C1) and DL19 enforce the enum. \u00a76.3 gains a Pulp column filled only for the rows COPY_DRAFTS \u00a713.13 lists: the stakes lines (strict: plain + ' There is no second chance tonight.', and with stakes.retry: 1 the plain line is used; costly: + ' They notice who is asking.'; light: '\u2026how this story ends\u2026'; hidden: + ' Choose as if they matter.'), the KO suffix and 'verdict recorded' line (if adopted), the final-call confirm ('This closes the case. Once it's done, it stays done.'), the retry body ('Something in your reckoning is wrong. You can try once more, or see the debrief.'), the favour fallback ('You did <name> a favour before you knew what they were.'), the no-blame lines misread, notActed, missed and allRight (COPY_DRAFTS EH texts), and the default tamperText and closeHint ('Every suspect has a verdict. Close the case when you're ready.'). Cells, counts, marks, why, outcome words, nudge and reason, truth line, debrief labels and system errors stay shared. buildDeductionModel and buildDebriefModel read voice (\u00a76.2); the runtime's default tamper and close-hint toasts read it (\u00a75.5); authored fields always override. Tests: \u00a711.4 (P10-H1) with voice pulp each switched row returns pulp text, strict falls back to plain when retry is 1, every shared row byte-identical across voices; \u00a711.8 term grep and DL10's no-implied-count patterns run over the pulp column too. \u00a79.5 row 'voice plain / pulp'. One Eldritch Hacker fixture sets \"pulp\" (A suggested: its brief and briefText are the EH drafts and P10-BL plays it); B, C, D and \u00a74.9 stay on the default.",
+   "evidence": "COPY_DRAFTS \u00a713 item 13 (list of differing strings; 'Every cell, count, why, outcome and teaching string stays shared'), \u00a72 note ('with retry: 1 the EH line must be the plain one'), IS/EH drafts in \u00a72, \u00a76\u2013\u00a710; \u00a714 term check done by hand on drafts only. Plan \u00a74.1 and \u00a76.3 have one string set and no key; \u00a76.3 ends 'these engine strings are checked once by the board's own test (\u00a711.4)'. Decided by the user as Q9.",
+   "sources": [
+    "sidecar/COPY_DRAFTS.md \u00a72, \u00a76, \u00a77, \u00a78, \u00a79, \u00a710, \u00a713.13, \u00a714",
+    "DECISIONS_PENDING.md Q9",
+    "merged: DECISIONS-16, DECISIONS-17"
+   ]
+  },
+  {
+   "id": "SIDECAR-7",
+   "severity": "major",
+   "priority": "must",
+   "category": "correctness/spec-gap",
+   "sections": "\u00a73.4 Favours, \u00a75.5 doFavour, \u00a77.3, \u00a78 DL6, \u00a79.2 hand check 'After a wrong call', \u00a711.5",
+   "change": "Say in \u00a73.4 (and \u00a75.5 doFavour, \u00a77.3's ink pattern) whether a favour is still offered and still runs once its suspect has a verdict or is knocked out; if not, gate the ask and hand-over choices on deduction_verdict_<s> == \"\". Add a DL6 \u26a0\ufe0f: for every route whose key, card or favour belongs to a suspect, check that it survives act, ko and accuse on that suspect (optionally: one wrong call plus a right verdict on each favour holder). In fixture A's 'After a wrong call' hand check, add the state where Marsh is knocked out or accused before her favour plus one wrong call: terminal state Okafor G, Venn C, Marsh U, Ishikawa U, Delacroix C; Ishikawa still grades right_clear as 'Not named', so harmless to the grade but stated. Fixture C's badge cases are already handled.",
+   "evidence": "SIM_REPORT D7 and Recommended fixes 6: 'Ishikawa clears only through the favour \u2026 The favour stays reachable, so DL6 passes' holds for the single wrong call DL6 checks, not with a verdict on Marsh before the favour. PLAYER_TEST_C F2. Plan \u00a73.4 (lines ~219\u2013229) and \u00a75.5 doFavour say nothing about verdicts; \u00a79.2 'After a wrong call' (~2340) unchanged.",
+   "sources": [
+    "sidecar/SIM_REPORT.md D7, Recommended fixes 6",
+    "sidecar/PLAYER_TEST_C.md F2",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-2",
+    "merged: SIM-3"
+   ]
+  },
+  {
+   "id": "SIDECAR-8",
+   "severity": "major",
+   "priority": "must",
+   "category": "correctness/UX",
+   "sections": "\u00a73.8 Closing the case, \u00a74.1 closeHint (+ new closeRoute), \u00a76.3, \u00a76.4 footer, \u00a79.2 and \u00a79.3 closeHint and exit-phone copy, DL12, \u00a79.2 bridge A5",
+   "change": "Add an authored closeRoute line, shown in the board footer from the start (e.g. \"How this case closes: call HaX when you're ready for the sanctum. Anyone you haven't named stays free.\"), switching to closeHint only once every suspect has a verdict. Reword A's and C's closeHint so it does not invite dealing with everyone. Allow closeHint: null where every verdict kind accuses. Add a DL12 \u26a0\ufe0f when the only way to give every suspect a verdict is to accuse an innocent (no clear verdict kind and when: 'anytime'), taking SIDECAR-2's trust kind into account. C's exit phone: \"Call extraction and leave? Anyone in the comms room is locked in. Everyone else stays on as a trusted contact.\" Where every verdict kind accuses, show \"Leaving someone unnamed clears them.\" next to the marks. Update A5's assertion.",
+   "evidence": "PLAYER_TEST_A \u00a73.1 and R3 (the careful player stuck on 'dealt with'; bridge A5 asserts no closeHint). PLAYER_TEST_C F3 (a perfect player never sees it). BOARD_MOCKUP_NOTES item 2. The plan still has 'Everyone here has been dealt with' (\u00a79.2) and 'Everyone has been dealt with' (\u00a79.3), and no closeRoute.",
+   "sources": [
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/PLAYER_TEST_C.md F3",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-3"
+   ]
+  },
+  {
+   "id": "SIDECAR-9",
+   "severity": "major",
+   "priority": "must",
+   "category": "correctness/fixture coverage",
+   "sections": "\u00a73.4, \u00a77.3, \u00a79.2 Favour paragraph, Clue routes, hand check (H, H+F, H+F+A, after a wrong call) and Proves; \u00a79.3 clue routes table, hand check, DL8 single-room line, Proves; \u00a79.5 'Physical puzzles as sources', 'S18 triggers: fingerprint' and 'Witness with influence cost and thresholds' rows; \u00a710.1 P10-A conformance list",
+   "change": "A's wine glass (preferred): set favours.ded_a_marsh.unlockFact to a_marsh_sigil_ring (the dusting result) instead of a_marsh_wants_promotion, and gate her ask choice in \u00a77.3's ink on se_intel_a_marsh_sigil_ring; reword \u00a73.4 and \u00a77.3 so the ask may be gated on any cell of the suspect, not only the first 'want' clue (DL14 already allows any cell). Redo \u00a79.2's hand check with dusting as its own step (H without the ring; the favour not reachable until the glass is dusted); note that after a wrong call the favour is the only route to Marsh and Ishikawa, so dusting becomes required there; add the new states to P10-A. Alternative: remove 'dusting' from A's Proves and \u00a79.5 and rely on fixture D. C's gossip (preferred): Baptiste's paid gossip vouches for Ahmed's whereabouts on the night of the leak and grants Ahmed's verified_alibi, a second route that clears him without the garage; add it to the 'Ahmed, Baptiste verified_alibi' row, redo the hand check (O+office can then decide Ahmed through the gossip), the DL8 single-room line and conformance cases. Alternative: keep the trip gossip as flavour and take C out of the 'witness with influence cost' row (A, B and D cover it). Either way, Novak's 'show me your kit' never changes a status: give it a fact that can matter or describe it as flavour.",
+   "evidence": "SIM_REPORT D4 and Recommended fixes 3 (the glass changes no status in any of A's 21,760 reachable states, 43,520 with KO). D5 and Recommended fixes 4 (the gossip changes nothing in 0 of 648 states; the travel log gives the same fact and Ahmed is decided by his alibi; the player pays influence for nothing); Fixture C 'Never matters' (Novak's kit). PLAYER_TEST_C F9. Plan still unlocks Marsh's favour on a_marsh_wants_promotion (~2349), lists the glass route (2300), 'dusting' in A's Proves (2442) and \u00a79.5 (2828); \u00a79.3 line 2508 and \u00a79.5 line 2826 tick C.",
+   "sources": [
+    "sidecar/SIM_REPORT.md D4, D5, Recommended fixes 3 and 4, Fixture C 'Never matters'",
+    "sidecar/PLAYER_TEST_C.md F9",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-6",
+    "merged: SIM-1, SIM-2"
+   ]
+  },
+  {
+   "id": "SIDECAR-10",
+   "severity": "major",
+   "priority": "must",
+   "category": "correctness (debrief)",
+   "sections": "\u00a76.2 route place rule (~1489), \u00a73.10, \u00a76.3, \u00a711.4",
+   "change": "The debrief's place for a clue is the first route that was still open when the case closed: not closed by a faded global and not closed by a cost: true gate that is now set. Where that differs from the first-listed route, add the fixed line \"That route closed after your wrong call on <name>.\" Add the string to \u00a76.3 and a model test.",
+   "evidence": "BOARD_MOCKUP_NOTES item 4 (Ishikawa's card names the cloakroom coat, which a_lodge_suspicious had closed). \u00a76.2 today checks only faded globals.",
+   "sources": [
+    "sidecar/BOARD_MOCKUP_NOTES.md item 4",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-7"
+   ]
+  },
+  {
+   "id": "SIDECAR-11",
+   "severity": "major",
+   "priority": "must",
+   "category": "copy/UX",
+   "sections": "\u00a76.3 Count line, \u00a76.4 profile card, \u00a76.8 test state, \u00a78 DL10",
+   "change": "Default count line in 'Label: value' form under its own sub-heading \"Clues in this case (guilty or not)\", grouped by slot, saying where the found ones are: \"Ward charm: 2 in this case. Found: Venn.\" / \"Found: none yet.\" / \"(all found)\". Add a DL10 companion \u26a0\ufe0f when every positive count in a case is the same number above one. Fixture B trips it, so either change a count or accept it with _why.",
+   "evidence": "PLAYER_TEST_B \u00a72.1 (all three players read '2 in this case' as two insiders; two named an innocent partly because of it). A11Y_UX_REVIEW D1, D2. COPY_DRAFTS \u00a70.4 and \u00a713. BOARD_MOCKUP_NOTES item 9. The plan's count line is still '<label>: <n> in this case, <found> found'.",
+   "sources": [
+    "sidecar/PLAYER_TEST_B.md \u00a72.1",
+    "sidecar/A11Y_UX_REVIEW.md D1 D2",
+    "sidecar/COPY_DRAFTS.md",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-9"
+   ]
+  },
+  {
+   "id": "SIDECAR-12",
+   "severity": "major",
+   "priority": "must",
+   "category": "UX/copy",
+   "sections": "\u00a76.4 profile card, \u00a76.2 profiles (optional authored parts), \u00a73.7, \u00a76.3",
+   "change": "The renderer lays out an any as \"<Label> if either is true:\" with one branch per line joined by a bold 'or', and an all as a checklist joined by a bold 'and'. Above the profiles: \"Any one profile is enough. A profile may fit nobody, or more than one.\" (check it against DL10's patterns). The guilty-mark profile picker repeats the chosen profile's parts, unticked, as a reminder.",
+   "evidence": "PLAYER_TEST_C F1 (two of three acted on 'went to the quarry site' and missed 'and has no verified alibi'). PLAYER_TEST_D \u00a74 (the newcomer mixed up any and all). PLAYER_TEST_A \u00a73.6. A11Y_UX_REVIEW D5.",
+   "sources": [
+    "sidecar/PLAYER_TEST_C.md F1",
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/A11Y_UX_REVIEW.md D5",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-10"
+   ]
+  },
+  {
+   "id": "SIDECAR-13",
+   "severity": "major",
+   "priority": "must",
+   "category": "learning/copy (fixture B)",
+   "sections": "\u00a79.1 Tom\u00e1s, Lindqvist and Nair content; \u00a77.1",
+   "change": "Tom\u00e1s's alarm answer reports only what he could know: \"Alarm went off about two. Someone in a facilities jacket went in; I took it for Lindqvist.\" No grant change; b_heard_alarm is still set. Lindqvist checks with Nair before giving the server code (\"Nair said you'd be coming. Hang on\u2026 Right. It's 4417. I'm changing it in the morning.\") and, asked about the alarm, points at the log (\"I was in at twenty to twelve and gone by one. Check the log.\"). Nair's closing reply names the gap: \"Witnesses mix up who and when. Logs don't.\"",
+   "evidence": "PLAYER_TEST_B \u00a72.2 and \u00a72.3 (both players who named Lindqvist cited the alarm; all three read the hand-over as suspicious, and it shows an engineer reading a door code to a stranger). DESIGN_FUN_CHARACTERS \u00a76.2 and \u00a711.1. The plan's Tom\u00e1s line still says 'Lindqvist has the code for that door; ask him.'",
+   "sources": [
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/DESIGN_FUN_CHARACTERS.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-11"
+   ]
+  },
+  {
+   "id": "SIDECAR-14",
+   "severity": "major",
+   "priority": "must",
+   "category": "learning/fun (fixture A, plan owner)",
+   "sections": "\u00a79.2 favour, Rooms, hand check; \u00a73.4; \u00a77.3",
+   "change": "Put the lookout somewhere the player still has to go (the hall or the archive corridor) instead of the cloakroom they have finished with. Add an immediate HaX line at the hand-over (\"That phone just lit up. Who did she message?\"). Give the checker a way to verify before helping: \"Look inside the case\" grants burner_sim with no backfire, so HaX's warning maps onto an action. Re-run A's hand check, since 'the favour is the only way to her SIM' no longer holds. HaX and the debrief say 'cleared', not 'checked'. This changes a fixture design point, so it is the plan owner's call.",
+   "evidence": "PLAYER_TEST_A \u00a72.4, \u00a75.2, R1, R2, R11 (the players who broke HaX's rule had the easiest route to Marsh; the lookout appeared in a finished room). \u00a73.2 ('checked' read as 'looked into'). DESIGN_FUN_TENSION \u00a76.2.",
+   "sources": [
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/DESIGN_FUN_TENSION.md \u00a76.2",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-12"
+   ]
+  },
+  {
+   "id": "SIDECAR-15",
+   "severity": "major",
+   "priority": "must",
+   "category": "learning/UX",
+   "sections": "\u00a76.6 confirm panel, \u00a75.5 nudge, \u00a74.4 globals, \u00a77.4, \u00a77.5, \u00a76.3",
+   "change": "When nudge is on: (a) the final-call confirm lists \"You are guessing on: <names>.\" or \"Every mark rests on the evidence.\", repeats the stakes line, and says \"Anyone still Undecided is cleared.\"; (b) the runtime writes a deduction_decidable_<s> bool (declare it in \u00a74.4) so ink accusation and report choices can add \"You don't have enough to decide about <name> yet.\" before 'This can't be taken back' (Nair: \"You've still got blanks on <name>. Name them anyway?\"); (c) when a suspect becomes decidable after the player has marked them, the nudge adds \"Check your mark against the profiles.\". All three fire whichever way the truth falls, so they keep the Q7 rule. Note that voiced lines cannot interpolate names (tts-audio rules), so the ink versions are per-suspect fixed lines.",
+   "evidence": "PLAYER_TEST_A R4 (Ishikawa accused while undecided). PLAYER_TEST_B \u00a74 (Lindqvist named with his device cell hidden). PLAYER_TEST_D R1. DESIGN_FUN_TENSION \u00a78.1. LEARNING_DESIGN R7. COPY_DRAFTS \u00a713 item 1 ('Undecided counts as clear' is never shown).",
+   "sources": [
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/LEARNING_DESIGN.md R7",
+    "sidecar/COPY_DRAFTS.md \u00a713",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-13"
+   ]
+  },
+  {
+   "id": "SIDECAR-16",
+   "severity": "major",
+   "priority": "must",
+   "category": "accessibility",
+   "sections": "\u00a75.5 (runtime toasts), \u00a76.4 item 2 and Accessibility, \u00a76.3, \u00a711.4",
+   "change": "deduction-runtime.js owns a visually hidden announcer (role=\"status\", aria-live polite), plus a role=\"alert\" node for the first-punch warning and 'could not be closed yet'. Both are created on install and removed on uninstall, and the announcer follows the conversation hold for nudges. Every runtime toast also calls announce(). The board keeps one live region for the life of the overlay, outside the re-rendered subtree, and clears then sets its text so repeats are heard. The first-punch and close-failure toasts are type 'warning' at 10 s. When attacks are on and ko is allowed, the profile card says from the start: \"Knocking out a suspect counts as accusing them. It can't be undone.\". closeHint also shows in the footer.",
+   "evidence": "A11Y_UX_REVIEW A1 (systems/notifications.js:87-110 builds a plain div in #notification-container, app/views/break_escape/games/show.html.erb:105, with no role or aria-live). A2 (holds at notifications.js:14-25). A3 (the existing board recreates .ib-live pre-filled at intel-board-minigame.js:147-151, :189-190, :375-376, which most screen readers skip). A4. COPY_DRAFTS \u00a713 item 11.",
+   "sources": [
+    "sidecar/A11Y_UX_REVIEW.md A1\u2013A4",
+    "sidecar/COPY_DRAFTS.md \u00a713",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-14"
+   ]
+  },
+  {
+   "id": "SIDECAR-17",
+   "severity": "major",
+   "priority": "must",
+   "category": "accessibility",
+   "sections": "\u00a76.4, \u00a76.6, \u00a76.7, \u00a76.8, \u00a711.4",
+   "change": "Give every control stable data-suspect and data-control attributes and restore focus after every rebuild. Make marks and the profile picker radio groups with a roving tabindex (or role=\"group\" with a label if plain buttons stay). Make reasons native checkboxes in a fieldset. After a verdict, replace the mark control with text (\"Verdict given: Cultist (knocked out)\" or \"Locked: you knocked them out\") instead of disabled buttons. The confirm panel is a modal dialog that opens with focus on 'Go back', with Esc as 'Go back'. Esc does nothing on the retry panel.",
+   "evidence": "A11Y_UX_REVIEW B1\u2013B5 (30\u201350 Tab stops in A; disabled buttons drop out of the Tab order; the existing board focuses the root at intel-board-minigame.js:135 and rebuilds at :225-228). BOARD_MOCKUP_NOTES item 7. PLAYER_TEST_D \u00a74 ('Verdict given' unclear). Plan \u00a76.4 still disables the control with 'Verdict given'.",
+   "sources": [
+    "sidecar/A11Y_UX_REVIEW.md B1\u2013B5",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-15"
+   ]
+  },
+  {
+   "id": "SIDECAR-18",
+   "severity": "minor",
+   "priority": "should",
+   "category": "test coverage",
+   "sections": "\u00a711.1, \u00a710.1 P10-A",
+   "change": "Add two whole-fixture property tests to \u00a711.1 (P10-A), per fixture and mode (normal, with KO routes, after a wrong call): (1) no reachable acquisition state where the evaluator says U but full enumeration of the hidden cells from the unseen copies decides the suspect; (2) every terminal state decides every suspect. Treat witness topic orders as atoms so an order like Tom\u00e1s's alarm-fourth is covered. Note fixture D's size (about 2.6 million states, about 2 minutes with an 8 GB heap in the prototype) and allow it to run as a slow or sampled test. The throwaway prototype (eval.js, run.js) is in the session scratchpad under deduction-sidecar/sim/ as a reference.",
+   "evidence": "SIM_REPORT Recommended fixes 8 (it would have caught D1\u2013D7) and Headline results 1\u20133 (about 8 million states, evaluator never disagreed with the oracle; these checks catch the next fixture edit that silently breaks a hand check). Current \u00a711.1 (lines 3000\u20133036) has soundness over sampled subsets only.",
+   "sources": [
+    "sidecar/SIM_REPORT.md Recommended fixes 8, Headline results",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-8",
+    "merged: SIM-5"
+   ]
+  },
+  {
+   "id": "SIDECAR-19",
+   "severity": "minor",
+   "priority": "should",
+   "category": "learning/UX",
+   "sections": "\u00a76.2 counts, \u00a76.3 count-elimination strings, \u00a76.4, \u00a79.2 (HaX)",
+   "change": "Under each slot's counts, one engine line built from public data: \"Still hidden here: 2 clues, both Dr Okafor's. Not yet found: brass key, 1 notebook.\" Reword the pigeonhole line to \"Every other <slot> clue was already known, so the <label> had to be <name>'s.\" Fixture A's HaX says once, when both coats are held, \"Count what's left.\". The count-of-one line already exists, and the nudge 'how' part is SIDECAR-4.",
+   "evidence": "BOARD_MOCKUP_NOTES 1, 3. PLAYER_TEST_A \u00a74 and R5 (Marsh without the favour is decided only by counting, which nothing teaches). DESIGN_FUN_FEEDBACK \u00a7B. DESIGN_FUN_TENSION \u00a73. A11Y_UX_REVIEW E1. COPY_DRAFTS \u00a713 item 2.",
+   "sources": [
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/DESIGN_FUN_FEEDBACK.md",
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/A11Y_UX_REVIEW.md E1",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-16"
+   ]
+  },
+  {
+   "id": "SIDECAR-20",
+   "severity": "minor",
+   "priority": "should",
+   "category": "fun/UX",
+   "sections": "\u00a74.5 deduction_state, \u00a76.2, \u00a76.4, \u00a75.5 grantFact, \u00a711.4",
+   "change": "Add deduction_state.seen (fact ids), a 'New' tag on cells granted since the board was last open, a header line (\"14 of 20 clues found\") and a per-card line (\"2 of 4 clues found. 1 evidence destroyed.\"). One source that grants several clues (HR summary, favour, recovery, multi-fact trigger) shows one toast titled 'Case file': \"Noted: 4 clues from the HR summary\".",
+   "evidence": "DESIGN_FUN_FEEDBACK items 1 and 4 (board-model.js:62-67, newlyReady at :297; apply-actions.js:57). DESIGN_FUN_TENSION \u00a72. A11Y_UX_REVIEW D3. PLAYER_TEST_B \u00a76 (four 'Noted' pop-ups in a row).",
+   "sources": [
+    "sidecar/DESIGN_FUN_FEEDBACK.md",
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/A11Y_UX_REVIEW.md D3",
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-17"
+   ]
+  },
+  {
+   "id": "SIDECAR-21",
+   "severity": "minor",
+   "priority": "should",
+   "category": "fun/learning",
+   "sections": "\u00a74.1 tamperText, \u00a75.5 Tampering, \u00a76.2, \u00a76.3, \u00a76.7, \u00a79.4 stops",
+   "change": "The default tamper toast names the cell (\"Someone has been at the evidence: Chen, what she carries. There may be another copy.\") and uses type 'warning'. A recovered cell shows \"(recovered)\", and recovery toasts \"Recovered: <name>, <slot>\". A recovery source that repeats a held clue shows \"Confirmed by two sources\". D's door warning becomes \"The cult uses every stop to clear away evidence. Anything here you haven't picked up or asked about may be gone.\"",
+   "evidence": "PLAYER_TEST_D \u00a72, R2, R6 (the hasty player read the fade as just another Hidden). BOARD_MOCKUP_NOTES 6. DESIGN_FUN_TENSION \u00a75.2. DESIGN_FUN_FEEDBACK \u00a7D (warning toast, ui-themes.css:1203).",
+   "sources": [
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/DESIGN_FUN_FEEDBACK.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-18"
+   ]
+  },
+  {
+   "id": "SIDECAR-22",
+   "severity": "minor",
+   "priority": "should",
+   "category": "learning (debrief)",
+   "sections": "\u00a73.10, \u00a76.2 buildDebriefModel, \u00a76.3 no-blame order, \u00a711.4",
+   "change": "Extend the existing 'early' line: a right call with decidedAtVerdict false gets \"Right call, made before the evidence settled it. <label>, from <place>, would have.\" Add a no-blame line chosen when a wrong call was undecided at the verdict: \"You named <name> before their last clue was in. Waiting costs nothing. A wrong name costs someone else.\" (set its place in the \u00a76.3 order). Name the object as well as the room in 'from <place>'.",
+   "evidence": "LEARNING_DESIGN G4 and R4. PLAYER_TEST_B \u00a74 (the 'missed clue' line lets a hasty player off). The plan has only the generic 'You named them before the evidence decided it.'",
+   "sources": [
+    "sidecar/LEARNING_DESIGN.md",
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-19"
+   ]
+  },
+  {
+   "id": "SIDECAR-23",
+   "severity": "minor",
+   "priority": "should",
+   "category": "learning/flexibility",
+   "sections": "\u00a74.1 debrief, \u00a76.2, \u00a76.7, \u00a78 DL10, DL15",
+   "change": "Add debrief.notes: { \"<s>\": { \"<outcome>\": \"text\" } }, plain authored text shown on that card and scanned by DL10 and DL15. Fixtures use it for B's alarm gap, C's Ahmed (\"The profile needs both: the trip and no alibi. Being somewhere suspicious isn't enough.\"), D's Chen (the charm taken at stop 2; the shredded receipt had the same fact) and Novak's lie by omission.",
+   "evidence": "PLAYER_TEST_B \u00a72.2. PLAYER_TEST_C F6. PLAYER_TEST_D R4, R5. STRESS_TEST rank 7. DESIGN_FUN_CHARACTERS \u00a78.",
+   "sources": [
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/PLAYER_TEST_C.md F6",
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/STRESS_TEST.md",
+    "sidecar/DESIGN_FUN_CHARACTERS.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-20"
+   ]
+  },
+  {
+   "id": "SIDECAR-24",
+   "severity": "minor",
+   "priority": "should",
+   "category": "learning (debrief)",
+   "sections": "\u00a74.5 verdicts, \u00a75.5 recordVerdict, \u00a76.2 summary, \u00a76.3 Summary row, \u00a76.7",
+   "change": "Store the mark's profile with the verdict, and let the debrief say when the suspect was guilty under a different profile. Replace \"<right> of <total> calls right\" with \"Cultists named: 1 of 2. Innocents wrongly accused: 1. Innocents left alone: 2, 1 with a reason.\"",
+   "evidence": "STRESS_TEST rank 4 and cross-cutting 6. BOARD_MOCKUP_NOTES 5 (the summary flatters a run that missed a cultist). COPY_DRAFTS \u00a713 item 7.",
+   "sources": [
+    "sidecar/STRESS_TEST.md",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/COPY_DRAFTS.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-21"
+   ]
+  },
+  {
+   "id": "SIDECAR-25",
+   "severity": "minor",
+   "priority": "should",
+   "category": "learning/ethics",
+   "sections": "\u00a77 (new authoring note), \u00a77.9 briefs, \u00a79.1 Nair lines, \u00a79.1/\u00a79.2 casting",
+   "change": "Every Incident Simulations case says once, in a character's voice, that a match justifies a referral and an interview, not a finding (pairs with SIDECAR-5's noun rule). Where a suspect's only damaging clue is a grievance, the wrong-report reply says raising it was their right. B's brief states what the investigator may read. Add the authoring rule that profile clauses and clues describe access, actions and operational items, never personal traits (ethnicity, faith, age, health, union or political membership), and that Eldritch Hacker cult markers stay operational. Vary who is guilty by background in real missions: both Igbo-surnamed suspects (Okoro, Okafor) are guilty in the placeholder fixtures.",
+   "evidence": "LEARNING_DESIGN G1\u2013G3 and R1, R2, R3, R10, R11.",
+   "sources": [
+    "sidecar/LEARNING_DESIGN.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-22"
+   ]
+  },
+  {
+   "id": "SIDECAR-26",
+   "severity": "minor",
+   "priority": "should",
+   "category": "copy (fixture B)",
+   "sections": "\u00a74.1 example, \u00a74.9 block (briefText), \u00a79.1 stakes and briefText, \u00a77.5",
+   "change": "B's brief: \"Anyone you name is suspended while we look into it. Anyone you don't is cleared.\" If the existing briefText sentence is kept anywhere (\u00a74.1 example, \u00a74.9), change \"Name the wrong people, or miss someone, and the report will say so.\" to \"\u2026or miss anyone who fits\u2026\" so it does not imply at least one guilty person. Give Nair three replies by outcome (right, wrong, missed) in place of the placeholder b_wrong_name line. Scoring stays completion (Q3 unchanged).",
+   "evidence": "PLAYER_TEST_B \u00a75 (all three players felt nothing until 'Anyone you haven't named is cleared'). B/CHECK_REPORT \u00a75 item 12 ('miss someone' reads as if there is at least one person to miss; DL10's no-implied-count rule); plan l.451 and l.762 keep the old wording.",
+   "sources": [
+    "sidecar/PLAYER_TEST_B.md \u00a75",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-23",
+    "sidecar/drafts/B/CHECK_REPORT.md",
+    "merged: GAPSAB-25"
+   ]
+  },
+  {
+   "id": "SIDECAR-27",
+   "severity": "minor",
+   "priority": "should",
+   "category": "copy",
+   "sections": "\u00a76.3, \u00a76.6, \u00a76.7, \u00a73.10, \u00a77.5",
+   "change": "Put labels after a colon instead of inside sentences. Add singular and plural forms for '<names> still undecided' and '<n> marked clues'. Use \"This would have ruled them out: <label>, from <place>.\" for the 'had not ruled them out' line, \"Not a <Profile>: carries a ward charm\" in place of '<Profile>: no, \u2026', and \"Missed: guilty but not named\". Make the truth line the same in \u00a73.10 and \u00a76.7. Add a Narrator: prefix on \u00a77.5's narration. The retry panel warns that declining is final. Give feedback when a verdict is recorded but not graded (when: final / reveal: end). Reword 'Name as many as the evidence supports' and 'That's everyone' so they do not lean plural. Add a board intro line until the first mark: \"Check each suspect against what to look for. Your marks are notes; nothing counts until you act on it.\"",
+   "evidence": "COPY_DRAFTS \u00a713 items 1\u201312. A11Y_UX_REVIEW E1, E2. BOARD_MOCKUP_NOTES 9.",
+   "sources": [
+    "sidecar/COPY_DRAFTS.md \u00a713",
+    "sidecar/A11Y_UX_REVIEW.md E1 E2",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-24"
+   ]
+  },
+  {
+   "id": "SIDECAR-28",
+   "severity": "minor",
+   "priority": "should",
+   "category": "copy/teaching",
+   "sections": "\u00a73.11, \u00a76.3 Marked, \u00a74.1 (optional override), \u00a77.9 Briefs, \u00a79.2, \u00a79.4 brief; optionally DL9/DL10",
+   "change": "Let a mission rename the \u2726 concept (\"\u2726 cult sign\", \"telltale clue\") and explain it in the brief as well as on the board; keep 'mark' for the player's notes. Add to \u00a77.9: when a profile uses markedAtLeast, the brief says in one sentence, in the mission's fiction, what makes a clue marked and how the board shows it. For D: \"Some things carry the cult's sigil: wanting the Codex or a post in the Archive, a sigil ring, a burner SIM, the brass key. The case board shows them as \u2726 marked.\" Optionally a DL warning when such a brief lacks 'marked' outside the profile text. Gloss jargon in the clue text the first time it appears (Codex, sigil, burner, DHCP, RFID cloner, sleeper). Rename B's DHCP printout for players (\"Network device list\"). Skip 'Which profile?' when there is only one profile.",
+   "evidence": "PLAYER_TEST_A \u00a73.3 and R6. PLAYER_TEST_B \u00a74. PLAYER_TEST_C F7. PLAYER_TEST_D \u00a74 and R9. drafts/D/PLAN_GAPS G13: D reuses A's Devotee 'Has three or more marked clues.' and the draft brief never explains marking; plan \u00a77.9 (l.1879-1888) has no such rule.",
+   "sources": [
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/PLAYER_TEST_C.md F7",
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-25",
+    "sidecar/drafts/D/PLAN_GAPS.md G13",
+    "merged: GAPSCD-13"
+   ]
+  },
+  {
+   "id": "SIDECAR-29",
+   "severity": "minor",
+   "priority": "should",
+   "category": "copy (fixture A)",
+   "sections": "\u00a79.2",
+   "change": "Courier text: \"Was in the Archive, wants the Codex, and has no ward charm\". Coat text: \"her ward charm\", plus one line of fiction for why a charm clears. Make the clue label match the profile (\"In the Archive\"). The camera says it shows the lecture hall feed. A folded umbrella. Altar: \"Anyone you haven't named goes free\". Full names, roles and pronouns for every guest. Give Venn something only she offers, and make the kind word unlock a flavour hint (or drop the 'push too far' threat from A).",
+   "evidence": "PLAYER_TEST_A \u00a73.4\u2013\u00a73.8, R7, R9\u2013R11. DESIGN_FUN_CHARACTERS \u00a711.2.",
+   "sources": [
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/DESIGN_FUN_CHARACTERS.md \u00a711.2",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-26"
+   ]
+  },
+  {
+   "id": "SIDECAR-30",
+   "severity": "minor",
+   "priority": "should",
+   "category": "fun/learning (fixture B)",
+   "sections": "\u00a79.1 Other content, \u00a74.9 hand check",
+   "change": "Give each quiet suspect one topic with no clue: Okoro (a false \"I was on the console all night\" that the badge log contradicts), Haddad (her ticket and her laptop: a policy breach that is not the profile) and Morgan (what 'in role' means). Optionally, the HR summary holds only the two complaints on file, so Haddad and Morgan are cleared by count elimination. Re-run the hand check; DL8 still passes at 2 of 4.",
+   "evidence": "PLAYER_TEST_B \u00a72.4, \u00a72.6, \u00a73. DESIGN_FUN_CHARACTERS \u00a76.4\u2013\u00a76.6 (lie parity: an innocent lies too). The plan gives the three a two-line stub each.",
+   "sources": [
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/DESIGN_FUN_CHARACTERS.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-27"
+   ]
+  },
+  {
+   "id": "SIDECAR-31",
+   "severity": "minor",
+   "priority": "should",
+   "category": "copy/UX (fixture C)",
+   "sections": "\u00a79.3",
+   "change": "HaX's lock choice and the exit confirm name who is inside (\"Lock the comms room with Novak and Ahmed inside\", built from the c_waiting_<id> globals). Gate Ahmed's and Baptiste's door offers on c_keycard_revoked. Give each 'show me your kit' its own line (Novak: \"This is all I carry\"). The garage reader says \"Last used 03:40, the night of the leak\". Define 'sleeper' in the brief (see GAPSCD-27 for C's brief text). Fix the three contacts' genders.",
+   "evidence": "PLAYER_TEST_C F4, F7, F8, F9, \u00a74.8.",
+   "sources": [
+    "sidecar/PLAYER_TEST_C.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-28"
+   ]
+  },
+  {
+   "id": "SIDECAR-32",
+   "severity": "minor",
+   "priority": "should",
+   "category": "copy/fun (fixture D)",
+   "sections": "\u00a79.4 intro, 'Stops and tampering' table, hand check, route rows",
+   "change": "Sato's lost-property clue says it is the only bag Sato brought aboard (or relabel the slot \"What they brought\"). The conductor says Sato \"came from the Archive reading room\". Add one line of story for why ambition carries the cult's sign. Add a third route to Volkov's key with no skill check (the conductor's luggage master key after the kind word). Add a closing line on oversharing staff (\"Someone else could ask them the same about you.\"). On the fades, pick one: (a) note in \u00a79.4 that no single unrecovered fade strands the player (Sato's pass is deduced by the pigeonhole on the passes even with the rack and the conductor both gone; only losing both Chen's charm and de Vries's SIM, with both recoveries missed, leaves Chen and de Vries undetermined), so stop 1's 'Evidence destroyed' costs nothing; or (b) make stop 1 bite: give the passes a second unseen garden or lecture copy so Sato's pass cannot be deduced by elimination, or fade a fact elimination cannot recover, then redo the hand check.",
+   "evidence": "PLAYER_TEST_D \u00a74, \u00a75, R3, R7, R8, \u00a78. SIM_REPORT D8 and Recommended fixes 7: every fade is recoverable but no single fade ever matters even with its recovery route removed; the stop-1 tamper has no effect on decidability in any state; a random player loses each closed route about half the time (49.7\u201349.8 %). Current \u00a79.4 (lines 2620, 2690\u20132696, 2718) says nothing about elimination covering the fades.",
+   "sources": [
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/SIM_REPORT.md D8, Recommended fixes 7, Fixture D",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-29",
+    "merged: SIM-9"
+   ]
+  },
+  {
+   "id": "SIDECAR-33",
+   "severity": "minor",
+   "priority": "should",
+   "category": "fun/learning",
+   "sections": "\u00a77.2, \u00a79 witness descriptions",
+   "change": "Authoring rule: after the question that will tip a witness past wary, the ink gives a tell in the witness's voice (\"He glances at the clock\"; \"Ask me much more and I'll start to wonder why\"), and the wary line says so (\"He's stopped meeting your eye\"). No meter.",
+   "evidence": "DESIGN_FUN_CHARACTERS \u00a74.2. DESIGN_FUN_TENSION \u00a74.2. PLAYER_TEST_B \u00a74. PLAYER_TEST_D R10. PLAYER_TEST_C F7.",
+   "sources": [
+    "sidecar/DESIGN_FUN_CHARACTERS.md",
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/PLAYER_TEST_C.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-30"
+   ]
+  },
+  {
+   "id": "SIDECAR-34",
+   "severity": "minor",
+   "priority": "should",
+   "category": "validator flexibility",
+   "sections": "\u00a78 derived sets (Opening facts, After a wrong call), DL6, DL8, \u00a710.1 P10-C2b",
+   "change": "Apply the 'freely' rule to #grant_fact: a grant behind a choice condition or a conditional block is not an opening fact. Trace OSINT showIf/unlockedBy routes, with traced osint route ids instead of 'unknown'. Apply lose_ally in the 'after a wrong call' set alongside cost: true globals and remove_item.",
+   "evidence": "STRESS_TEST cross-cutting 2 and rank 2 (most one-room Incident Simulations cases would fail DL8 or need earlyCollapse switched off; osint-model.js:29-32, :60-65, :124-131). The plan's Opening facts and After a wrong call definitions (\u00a78) do not cover these.",
+   "sources": [
+    "sidecar/STRESS_TEST.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-31"
+   ]
+  },
+  {
+   "id": "SIDECAR-35",
+   "severity": "minor",
+   "priority": "should",
+   "category": "process (playtests)",
+   "sections": "\u00a710.1 P10-BL, \u00a711.6",
+   "change": "The blind playtest spec seals each source's result until the player uses it. It gives in-game lines instead of stated mechanics (budgets, KO drops, 'nothing is final'), includes the tamper toast, and runs the hasty and newcomer personas as well as the careful one, on B\u2013D as well as A, with a judge answering stakes, nudge and debrief.",
+   "evidence": "PLAYER_TEST_A \u00a76 and R12. PLAYER_TEST_B \u00a77. PLAYER_TEST_C \u00a74. PLAYER_TEST_D \u00a73 and R11 (every packet leaked answers; no judge answered). Plan \u00a711.6 still has one blind playtest of fixture A only.",
+   "sources": [
+    "sidecar/PLAYER_TEST_A.md",
+    "sidecar/PLAYER_TEST_B.md",
+    "sidecar/PLAYER_TEST_C.md",
+    "sidecar/PLAYER_TEST_D.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-34"
+   ]
+  },
+  {
+   "id": "SIDECAR-36",
+   "severity": "minor",
+   "priority": "could",
+   "category": "flexibility",
+   "sections": "\u00a74.1 favours, \u00a75.5 doFavour, DL8",
+   "change": "Add favours.<s>.grants: \"all\" | \"none\" | [facts], default \"all\". Add an optional onThanks for an innocent suspect, which may grant only things that have another route.",
+   "evidence": "STRESS_TEST cross-cutting 3 and rank 3 (corporate 'comply with a request' needs the backfire without the reveal). DESIGN_FUN_TENSION \u00a76.1.",
+   "sources": [
+    "sidecar/STRESS_TEST.md",
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-32"
+   ]
+  },
+  {
+   "id": "SIDECAR-37",
+   "severity": "minor",
+   "priority": "could",
+   "category": "UX/polish",
+   "sections": "\u00a76.4, \u00a76.6, \u00a74.1 finalCall, \u00a78 (DL23 new)",
+   "change": "Add finalCall.lockedText (\"You can make the call after the last stop.\") instead of a hidden button. Put the counts in a <details> that is closed below 700 px, with the 'still hidden' line outside it. Add a lint \u26a0\ufe0f for a suspect's own story granting their own cell without _why. Add a DL23 \u26a0\ufe0f that profile text names each rule clue by its exact label.",
+   "evidence": "DESIGN_FUN_TENSION \u00a78.3. BOARD_MOCKUP_NOTES 8. DESIGN_FUN_CHARACTERS \u00a711.4. A11Y_UX_REVIEW D4.",
+   "sources": [
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/BOARD_MOCKUP_NOTES.md",
+    "sidecar/DESIGN_FUN_CHARACTERS.md",
+    "sidecar/A11Y_UX_REVIEW.md D4",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-35"
+   ]
+  },
+  {
+   "id": "SIDECAR-38",
+   "severity": "minor",
+   "priority": "could",
+   "category": "scope (defer)",
+   "sections": "\u00a71 Out of scope",
+   "change": "Defer. Add to \u00a71 Out of scope: people-only suspects with no NPC, and OSINT hideIf (with the first online case); lying sources, relational rules and changing display names (alongside the already deferred groups, R1D-22).",
+   "evidence": "STRESS_TEST ranked recommendations, ranks 6, 7 and '\u2014'.",
+   "sources": [
+    "sidecar/STRESS_TEST.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md 'Defer to a later phase'"
+   ]
+  },
+  {
+   "id": "SIDECAR-39",
+   "severity": "minor",
+   "priority": "could",
+   "category": "scope (defer)",
+   "sections": "\u00a71 Out of scope",
+   "change": "Defer. Record as later options: 'at risk' threats shown on cells before a tamper; a deduction_stage global for call music; a staged card-by-card debrief reveal with revealLines; a symmetric 'naming always costs a witness' pattern and unique-item trades (for real missions); a validator decision curve per state; a sourceKind on facts to show corroboration across kinds.",
+   "evidence": "DESIGN_FUN_TENSION \u00a75.1, \u00a77, \u00a78.2, \u00a78.4, \u00a79, \u00a710. DESIGN_FUN_FEEDBACK \u00a7F. LEARNING_DESIGN R12.",
+   "sources": [
+    "sidecar/DESIGN_FUN_TENSION.md",
+    "sidecar/DESIGN_FUN_FEEDBACK.md",
+    "sidecar/LEARNING_DESIGN.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md 'Defer to a later phase'"
+   ]
+  },
+  {
+   "id": "SIDECAR-40",
+   "severity": "minor",
+   "priority": "could",
+   "category": "scope (defer)",
+   "sections": "\u00a71 Out of scope (or docs/IDEAS_BACKLOG.md)",
+   "change": "Defer. Note the engine-wide fixes outside Phase 10's file owners: an aria-live #notification-container, reduced motion on toasts, and a HUD badge for unread clues. SIDECAR-16 covers the Phase 10 side through the runtime's own announcer.",
+   "evidence": "A11Y_UX_REVIEW A1 and A5 (notifications.js:87-110, show.html.erb:105, notifications.css:30-40).",
+   "sources": [
+    "sidecar/A11Y_UX_REVIEW.md",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md 'Defer to a later phase'"
+   ]
+  },
+  {
+   "id": "SIM-4",
+   "severity": "minor",
+   "priority": "should",
+   "category": "validator",
+   "sections": "\u00a78 DL6 row (witness budget clause), \u00a77.2 progress-topic bullet, \u00a711.5",
+   "change": "Count progress topics in DL6's witness budget and lint them. In DL6's witness clause: every charged topic, including a progress topic (a choice whose body sets a global with a gate reader), counts toward the questions answered before wary, whether or not it holds a clue. Add a \u26a0\ufe0f: warn when a progress topic is a once-only * choice, or sits behind or contains a wary branch (ded_<n>_wary condition), or when the witness's clue topics plus progress topics exceed the questions answered before wary and the ink has no recovery choice. Add a one-change bad case on fixture B (make the alarm topic a * choice with a wary branch) to \u00a711.5.",
+   "evidence": "SIM_REPORT D6 and Recommended fixes 5 ('Extend DL6's witness-budget check to count progress topics'). B/PLAN_GAPS PG-B8: B's alarm topic is charged (\u00a79.1 l.2153-2158 'charged like any later question'), so asking it first or second leaves two clue answers before wary, not three; DL6 (line 2051) still counts 'clue topics' only and overstates the budget.",
+   "sources": [
+    "sidecar/SIM_REPORT.md D6, Recommended fixes 5",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-1",
+    "sidecar/drafts/B/PLAN_GAPS.md PG-B8",
+    "sidecar/drafts/B/CHECK_REPORT.md",
+    "merged: GAPSAB-19"
+   ]
+  },
+  {
+   "id": "SIM-6",
+   "severity": "minor",
+   "priority": "could",
+   "category": "validator",
+   "sections": "\u00a78 Derived sets ('Opening facts', 'One rule for locked containers'), \u00a78 DL8 row (l.2053)",
+   "change": "Say in DL8 that for the single-room warning a closed container in an opening room (C's lockpicked bedroom drawer with Baptiste's bag) counts as its own closed place (its facts added together), so 'opening facts plus any one closed place' covers it. As written its facts are neither opening facts nor in a closed room, so the warning never sees them.",
+   "evidence": "SIM_REPORT Recommended fixes 1 and D1 (main D1 fix already in plan \u00a79.3 l.2515/2521). drafts/C/PLAN_GAPS G8, CHECK_REPORT P6, INVENTED gap 1. The DL8 row (line 2053) still speaks only of rooms closed at the start.",
+   "sources": [
+    "sidecar/SIM_REPORT.md D1, Recommended fixes 1",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-4",
+    "sidecar/drafts/C/PLAN_GAPS.md G8",
+    "sidecar/drafts/C/CHECK_REPORT.md",
+    "sidecar/drafts/C/INVENTED.md",
+    "merged: GAPSCD-24"
+   ]
+  },
+  {
+   "id": "SIM-7",
+   "severity": "minor",
+   "priority": "could",
+   "category": "test",
+   "sections": "\u00a710.1 P10-A conformance list, \u00a79.3 hand check",
+   "change": "List C's single-room states explicitly in P10-A's conformance cases: O+garage (all three undetermined: Baptiste's burner is U, 1 unseen against 3 other hidden kit cells) and O+office (Ahmed open). The \u00a79.3 text already gives these results; this makes the conformance file carry them as data so no one rebuilds them from the old 'leave Ahmed and Novak open' figure.",
+   "evidence": "SIM_REPORT D2: with the \u00a78 opening set, the garage alone leaves all three open, and the conformance case built from the old line would encode the wrong set. \u00a79.3 lines 2538\u20132541 fixed, but P10-A (line 2899) names only 'C's three' room-by-room sets.",
+   "sources": [
+    "sidecar/SIM_REPORT.md D2, Recommended fixes 1",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-4"
+   ]
+  },
+  {
+   "id": "SIM-8",
+   "severity": "minor",
+   "priority": "could",
+   "category": "test",
+   "sections": "\u00a78 DL7 row, \u00a78 'Fixtures and tests' (conformance statuses), \u00a710.1 P10-A",
+   "change": "Add the DL7 bad-case mutation's expected statuses to conformance.json: after b_okoro_access fades, Okoro is still guilty by the pigeonhole step (one access_out_of_role copy unseen, Okoro's the only hidden access cell). The 'not DL6' claim is then checked by data. If a DL6 co-fire is ever wanted, the mutation must tamper both b_okoro_access and b_lindqvist_access.",
+   "evidence": "SIM_REPORT D3 and Recommended fixes 2. DL7 row (line 2052) says 'not DL6' but \u00a78 line 1969 puts only DL6 and DL8 mutations' statuses in conformance.json.",
+   "sources": [
+    "sidecar/SIM_REPORT.md D3, Recommended fixes 2",
+    "sidecar/SIDECAR_RECOMMENDATIONS.md SC-5"
+   ]
+  },
+  {
+   "id": "SIM-10",
+   "severity": "minor",
+   "priority": "could",
+   "category": "design/documentation",
+   "sections": "\u00a79.1, \u00a79.3, \u00a79.2 'Costs compared', \u00a73.9",
+   "change": "Record the strategy results where the fixtures make claims. \u00a79.1 and \u00a73.9: in B a player who names only the first suspect who shows as guilty always gets every call right, and accuse-all still scores 100 under completion, so B's teaching rests on the debrief and Nair's reply. \u00a79.3: C has one guilty suspect and 'Not named' grades right_clear, so stop-at-first-guilty is always right and the garage's RFID and log-filter puzzles never change the outcome; only not knowing the guilty count pushes the player there (keep the brief silent on the count, \u00a73.1). \u00a79.2 'Costs compared': stopping at the first guilty signal (93 % of random players) misses a cultist and meets the acolyte, costing about as much as accuse-all's doorman fight; both lose to deducing. Point the T-packet playtests at these orders.",
+   "evidence": "SIM_REPORT 'Strategies' table and 'What this shows' (20,000 random players per fixture). \u00a79.2 'Costs compared' (line 2390) says only 'Deducing wins clearly'.",
+   "sources": [
+    "sidecar/SIM_REPORT.md Strategies"
+   ]
+  },
+  {
+   "id": "SIM-11",
+   "severity": "minor",
+   "priority": "could",
+   "category": "spec-gap",
+   "sections": "\u00a74.1 (clues and cells), \u00a78 DL3 row, \u00a74.3",
+   "change": "State whether one suspect may hold two cells of the same clue (two copies of one clue in a oneOrMore slot). If not, add it to DL3 as an error; if yes, say so in \u00a74.1 and add a conformance case where the pigeonhole step and count elimination meet a suspect holding two copies.",
+   "evidence": "SIM_REPORT 'Modelling choices': 'The oracle lets a suspect hold two copies of one clue, because the plan never says they can't.' DL3 (line 2048) does not rule it out.",
+   "sources": [
+    "sidecar/SIM_REPORT.md Modelling choices"
+   ]
+  },
+  {
+   "id": "GAPSAB-1",
+   "severity": "blocker",
+   "priority": "must",
+   "category": "schema",
+   "sections": "\u00a75.10 (S16); \u00a711.5; \u00a79.1 Triggers and dhcp_printout row; \u00a79.2 Clue routes (a_camera, a_reading_desk); \u00a77.5 (verdict_close in confirm_action)",
+   "change": "In \u00a75.10, after \"top-level triggers (array of closed objects)\", add: \"and the per-object triggerOnInteract[].type enum in scripts/scenario-schema.json (~l.3390, the one ending \\\"lighting_dip\\\", \\\"grant_fact\\\") gains hint (with title and message string properties; already handled by systems/apply-actions.js:124) and the seven \u00a75.4 types (verdict, verdict_close, deduction_tamper, remove_item, fail_mission, reveal_hostiles, lose_ally), recursing into confirm_action.onConfirm. P10-C1 owns it.\" In \u00a711.5's validator-social-schema.test.mjs add: a triggerOnInteract hint passes; a verdict_close inside an object's confirm_action.onConfirm passes.",
+   "evidence": "A/PLAN_GAPS A-8; B/PLAN_GAPS PG-B1; A/CHECK_REPORT \u00a74 V1 and \u00a75 P2; B/CHECK_REPORT \u00a74 Run A and \u00a75 item 1: schema error triggerOnInteract[4].type \"hint\" stops the validator before any deduction lint. scripts/scenario-schema.json:3390 has no hint; apply-actions.js:124 handles it. \u00a75.10 (l.1403-1418) widens only triggers, while \u00a79.1 and \u00a79.2 put hint/grants in triggerOnInteract, and \u00a711.5 requires every fixture to pass --strict-social.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/B/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-2",
+   "severity": "blocker",
+   "priority": "must",
+   "category": "engine-wiring",
+   "sections": "\u00a77.8 (or new \u00a77.11 'Handler calls'); \u00a79.2 Unique item and Stakes (escalation at 3 wrong, l.~2352-2354, ~2371); \u00a79.3 Stakes (HaX's pull-out call on c_pull_out, l.~2572)",
+   "change": "Add to \u00a77.8 (or a new \u00a77 rule): a handler's call that opens on an event is an eventMappings entry with \"conversationMode\": \"phone-chat\", \"targetKnot\": \"<knot>\", \"onceOnly\": true and the case's condition (a targetKnot without it is only a bark, npc-manager.js:797-800, and validate_scenario.rb:2604-2605 marks it \u274c INVALID because targetKnot is ignored once a story state is saved). A mapping meant as a short message uses bark, and its delay is delayMs (npc-manager.js:581; barkDelay is ignored). The player can close the call before choosing, so the handler's hub offers the same choice again: + {se_intel_a_okafor_brass_key and deduction_verdict_ded_a_okafor == \"\" and a_key_choice == \"\"} [About Okafor's key] -> key_seen, and for every forced warned close + {a_thrown_out and not deduction_closed} [They're onto me. Get me out.] -> thrown_out (C: the same for c_pull_out). Or use resume: true on the mapping (README_scenario_design.md:1319-1329). In \u00a79.2 Unique item, \u00a79.2 Stakes and \u00a79.3 Stakes, add '(conversationMode: \"phone-chat\", \u00a77.8)' after each HaX eventMappings. (The opening-call half of GAPSCD-2 is in GAPSAB-13.)",
+   "evidence": "A/PLAN_GAPS A-2; A/CHECK_REPORT \u00a74 V2 (\u274c INVALID \u00d73) and \u00a75 P1 (also C's pull-out call). drafts/C/PLAN_GAPS G3; drafts/C/CHECK_REPORT D2, P3 (two \u274c for HaX's mappings). Code: validate_scenario.rb:2604-2605; npc-manager.js:797-800, :581; README_scenario_design.md:1216, :1306, :1319-1329. The plan never mentions conversationMode (grep 0), so the C-wrong bridge's step C2 ('HaX's pull-out call rings at once') cannot pass.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/C/PLAN_GAPS.md G3",
+    "sidecar/drafts/C/CHECK_REPORT.md",
+    "merged: GAPSCD-2"
+   ]
+  },
+  {
+   "id": "GAPSAB-3",
+   "severity": "blocker",
+   "priority": "must",
+   "category": "engine-wiring",
+   "sections": "\u00a79.2 Rooms (HaX record); \u00a79.3 Rooms (l.~2491 'Either contact can open the bedroom door'); \u00a78 Opening rooms (l.~2014-2018); \u00a78 DL14; \u00a710.1 P10-F4; \u00a711.5 DL8 cases",
+   "change": "Every NPC that uses #unlock_door lists the room in \"unlockable\" (the server's validate_npc_unlock, app/models/break_escape/game.rb:1289-1313, refuses an NPC's #unlock_door without it, or before the player has met that NPC). \u00a79.2 Rooms: HaX ded_a_handler gets \"unlockable\": [\"a_sanctum\"]; \u00a79.3: C's HaX as needed, and Ahmed and Baptiste each carry \"unlockable\": [\"c_bedroom\"]. \u00a78 Opening rooms: the door opened by an opening-room NPC's #unlock_door counts only when that NPC's record lists the room in unlockable; an #unlock_door to a room not listed is a \u26a0\ufe0f (\"NPC '<n>' unlocks '<r>' but its unlockable does not list it\"), and add that case to \u00a711.5's DL8 tests. DL14: every #unlock_door:<r> in an NPC's ink has <r> in that NPC's unlockable. Widen P10-F4: 'and an ink #unlock_door:<room> from the same phone NPC (with unlockable) for a room that has not loaded; reload.'",
+   "evidence": "A/PLAN_GAPS A-5; A/CHECK_REPORT \u00a75 P5 (game.rb:1305-1310; 'encountered' is met via games_controller.rb track_npc_encounters); A/INVENTED G3. drafts/C/PLAN_GAPS G2; drafts/C/CHECK_REPORT D4, P2. The plan never mentions unlockable (grep 0). Without it HaX's 'Go in' (#verdict_close #unlock_door:a_sanctum, l.2363) is refused and bridge A step A7 cannot run; after a wrong call C's bedroom needs a contact (l.2542), so the hand check counts a door the server will not open. P10-F4 (l.2893) tests only a mapping's unlockDoor.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/A/INVENTED.md",
+    "sidecar/drafts/C/PLAN_GAPS.md G2",
+    "sidecar/drafts/C/CHECK_REPORT.md",
+    "merged: GAPSCD-3"
+   ]
+  },
+  {
+   "id": "GAPSAB-4",
+   "severity": "major",
+   "priority": "must",
+   "category": "ink-sample",
+   "sections": "\u00a77.8 sample (l.1856-1871); \u00a75.3 timing note; \u00a77.4",
+   "change": "Replace the \u00a77.8 sample with one that: (1) has no HaX: prefix on the contact's own lines (dialoguelint phone-self-prefix); (2) sets ~ a_key_choice = \"confront\" on the confront option; (3) puts a one-choice + + [Go on] -> key_after after each verdict tag, so the reaction that reads deduction_outcome_ded_a_okafor is evaluated after the tag has run in phone chat; (4) returns to -> hub, never -> END (opening guard { deduction_verdict_ded_a_okafor != \"\": -> hub }). Use the replacement text in A/PLAN_GAPS A-3 (key_seen with confront/follow/seize, then === key_after === with { deduction_outcome_ded_a_okafor == \"right_guilty\": That's one key the ritual won't have. | That didn't land the way I hoped. } and -> hub). Add under it: \"Phone ink puts no prefix on the contact's own lines (Narrator: is fine). In phone chat a line that reads a verdict or outcome global goes after a player choice that follows the tag. Every knot returns to the hub. Every option sets the global the credits read.\"",
+   "evidence": "A/PLAN_GAPS A-3 (in the draft, a right call always got 'That didn't land the way I hoped.' because phone chat runs the batch's tags after the reaction was evaluated); A/CHECK_REPORT \u00a75 P7; A/INVENTED G8, G9. drafts/C/PLAN_GAPS G16; drafts/C/CHECK_REPORT P10 (builders copy examples). The current sample still has HaX: prefixes, -> END on every branch, no a_key_choice on confront and no 'Go on' beat, though \u00a75.3 (l.1019-1023) and \u00a77.4 (l.1769-1771) state the phone-chat rule.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/A/INVENTED.md",
+    "sidecar/drafts/C/PLAN_GAPS.md G16",
+    "sidecar/drafts/C/CHECK_REPORT.md",
+    "merged: GAPSCD-23"
+   ]
+  },
+  {
+   "id": "GAPSAB-5",
+   "severity": "major",
+   "priority": "must",
+   "category": "level-design",
+   "sections": "\u00a79.2 Rooms (sanctum door, l.2280); \u00a79.3 Rooms (comms door, l.2477-2479); \u00a78 beyond the close",
+   "change": "In \u00a79.2 Rooms replace \"locked door (no key; opened by HaX's warned call)\" with: \"(lockType: \\\"rfid\\\", requires: \\\"a_sanctum_seal\\\", and no card with that id anywhere in the scenario, so no player tool opens it; HaX's 'Go in' opens it with #unlock_door:a_sanctum. The validator's 'no item opens' warning is expected; say so in an ERB comment. lockedHint shows only for key locks, so the door sign carries the hint.)\" Apply the same rule to C's comms door (now lockType: \"key\" with no key, while C's start inventory has a lockpick): no door that only an NPC may open is a key lock in a fixture whose player carries a lockpick (see GAPSCD-9 for D's carriage doors).",
+   "evidence": "A/PLAN_GAPS A-4; A/CHECK_REPORT \u00a74 V3, V4 and \u00a75 P4; A/INVENTED G2: a lockpick opens any key lock, so the player can pick the sanctum, skip the warned close, and DL8's 'beyond the close' set (l.2006-2009) is wrong. \u00a79.3 gives the comms door lockType key with the lockpick in the start inventory (l.2495).",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-6",
+   "severity": "major",
+   "priority": "must",
+   "category": "validator-rule",
+   "sections": "\u00a74.2 (favour route bullet); \u00a78 DL18",
+   "change": "Add to \u00a74.2 after the favour bullet: \"A cell whose only route is its suspect's favour authors \\\"routes\\\": []. The schema allows an empty array, and DL18's 'at least one route' counts routes of a fact (\u00a78), favour included.\" In DL18 change \"Every cell has at least one route\" to \"Every cell has at least one route in routes of a fact (an empty authored list is fine when the suspect has a favour)\".",
+   "evidence": "A/PLAN_GAPS A-11; A/INVENTED G7: Marsh's burner_sim comes only from the favour. \u00a74.2 (l.519-521) says the favour route is 'implicit \u2026 never authored'; DL18 (l.2063) says 'Every cell has at least one route'; \u00a79.2 Clue routes (l.2301) has 'Marsh's favour only'. A literal DL18 would fail fixture A.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-7",
+   "severity": "major",
+   "priority": "must",
+   "category": "fixture-content",
+   "sections": "\u00a79.2 Rooms (coats); \u00a77.6 last paragraph",
+   "change": "Add to \u00a79.2 Rooms after the coats: \"Each coat's text names what it holds, and a textVariants entry on globalVars.a_lodge_suspicious replaces it ('The lining has been slit and the pockets turned out. Someone got here before you.'), so after a wrong call the coat shows nothing it does not grant.\" Add to \u00a77.6's last paragraph: \"The same holds for any route gated on a cost: true global.\"",
+   "evidence": "A/PLAN_GAPS A-9; A/CHECK_REPORT \u00a75 P10; A/INVENTED G6: a notes item shows its text whatever its trigger does, so after a wrong call the player reads 'a ward charm in the lining' and gets no fact. \u00a77.6 (l.1835-1840) covers fades only; \u00a79.2 (l.2272-2273) has no text rule.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-8",
+   "severity": "major",
+   "priority": "must",
+   "category": "engine-gap",
+   "sections": "\u00a79.2 Rooms (archive log filter, l.2276); \u00a79.3 Rooms (c_garage door log, l.2488); \u00a75 engine items or \u00a710 packet owning the log filter",
+   "change": "Either add a small engine item (owner: the packet that owns the log filter, or a new P10-L) and point \u00a79.2 and \u00a79.3 at it: \"log_filter_terminal gains logType: \\\"badge\\\": fields time, door, badge, event (BADGE_IN, BADGE_OUT, HELD_OPEN, FORCED, RESET); filters DOOR =, EVENT =, NAME =, TIME =; LOG_FIELDS.badge and FILTER_CATEGORIES.badge beside the other two; minigame-data-schemas.json accepts it; a jsdom case filters a badge log by EVENT.\" Or state plainly in \u00a79.2 and \u00a79.3: \"Door logs use logType: \\\"vpn\\\"; its MFA/RESULT filter menus do not match door rows. Accepted for test fixtures only; must not ship in a mission.\" Also say that a log_filter_terminal's minigameData follows scenarios/sis02_energy field for field (anomaly, threat-intel and flag-label fields) and the K packet lists any field it leaves out.",
+   "evidence": "B/PLAN_GAPS PG-B2; B/CHECK_REPORT \u00a75 item 2 (log-filter-minigame.js:57-71, hard-coded menus for vpn and ics_rdp only); A/PLAN_GAPS A-14; A/INVENTED G11. The plan picked logType vpn for A's badge log and C's garage door log without noting the mismatched filters.",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/B/CHECK_REPORT.md",
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-9",
+   "severity": "major",
+   "priority": "must",
+   "category": "fixture-content",
+   "sections": "\u00a79.2 Rooms (brass key)",
+   "change": "Add to \u00a79.2 Rooms after \"Okafor holds the brass key in itemsHeld (type key; only a KO drops it)\": \"The brass key opens no lock in A (its keyPins match no door or container). It is evidence only.\"",
+   "evidence": "A/PLAN_GAPS A-12; A/INVENTED G10: a key item needs keyPins; a builder who pairs it with the sanctum lets the KO route get past the warned close. Plan l.2285-2286 does not say what it opens.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-10",
+   "severity": "major",
+   "priority": "should",
+   "category": "fixture-content",
+   "sections": "\u00a79.2 Clue routes (Marsh sigil_ring); \u00a77.7",
+   "change": "Add to \u00a79.2's Marsh sigil_ring row: \"The glass has hasFingerprint: true, fingerprintOwner: \\\"ded_a_marsh\\\", fingerprintDifficulty: \\\"easy\\\". P10-K-A confirms from scenarios/biometric_breach that identification needs nothing more (no reference sample), and that a glass logged as unidentified can be dusted again. If it cannot, the hand check is re-run without the ring (Marsh is still decided by count once the archive is done).\" (Interacts with SIDECAR-9: if the favour unlocks on the ring, dusting must work.)",
+   "evidence": "A/PLAN_GAPS A-13; A/CHECK_REPORT \u00a75 P11 (dusting-game.js:557: 'Log as unidentified' fires nothing; systems/biometrics.js:90-97 fires only on new identification); A/INVENTED G13. \u00a77.7 (l.1842-1849) covers once-per-owner firing only; \u00a79.2 l.2300 gives no glass fields.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-11",
+   "severity": "major",
+   "priority": "should",
+   "category": "credits",
+   "sections": "\u00a79.2 Stakes (credits lines); \u00a77.8 last bullet",
+   "change": "Add to \u00a79.2 Stakes the key lines: \"You faced Okafor down in the hall, key and all.\" (a_key_choice === 'confront'); \"The key was taken off Okafor at the door.\" ('seize'); \"You watched Okafor first, then named her.\" ('follow' && deduction_outcome_ded_a_okafor === 'right_guilty'); \"You watched Okafor, and she walked out with the key.\" ('follow' && \u2026 === 'missed_guilty'); \"The key came off Okafor in the hall.\" (a_key_choice === '' && deduction_verdict_ded_a_okafor === 'ko', since a KO leaves the choice empty). Drop any separate 'Okafor walked free with the key' line. P10-K-A checks the stored value of a KO verdict.",
+   "evidence": "A/PLAN_GAPS A-15: the draft's follow line still shows after the player names Okafor later and conflicts with the missed line. \u00a79.2 l.2385 says only 'and a_key_choice'; \u00a77.10 l.1913 shows the 'Okafor walked free.' pattern.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-12",
+   "severity": "major",
+   "priority": "should",
+   "category": "wording",
+   "sections": "\u00a77.9; \u00a78 DL10",
+   "change": "Add to \u00a77.9: \"Write about the opposition without number: 'someone here works for the lodge, maybe more than one', 'anyone here who serves the lodge'. No plural or singular for the guilty in any line a player can see before the debrief, nor in reactions to a stake that can fire for several suspects (a missed-guilty foe says 'You let them walk', not 'one of us'). DL10 catches only its listed patterns, so the dialogue review checks this by reading.\" Make \u00a77.9's list quote DL10's actual patterns (\"exactly/only <n> of them/you/these/the suspects\", \"<n> people/suspects/<noun>s\", \"one of them is\", \"the one who\") instead of the bare \"only one of\", which DL10's regex does not match (so the plan's own 'Only one of those keys exists' passes).",
+   "evidence": "A/PLAN_GAPS A-16 (draft lines pass DL10 but imply a count: 'the lodge has people in the room', 'Find your cultists without me', 'You let one of us walk') and A-21 (\u00a77.9 l.1884 lists 'only one of'; DL10 regex at l.2055 needs 'of (them|you|these|the suspects)').",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-13",
+   "severity": "major",
+   "priority": "should",
+   "category": "engine-wiring",
+   "sections": "\u00a79.2 Favour (HaX's opening call); \u00a79.1 Rooms and Other content (Nair's opening call); \u00a79.3 (HaX opening call, Stakes); \u00a77 handler-call rule",
+   "change": "Specify the opening call. GAPSAB-13 proposed: HaX's currentKnot: \"start\", run once (a_briefed, declared false), followed by the hub; on game_loaded with condition !globalVars.a_briefed, a bark or a timedMessages entry a few seconds in ('You're in. Call me when you can talk.') points the player at the phone; no forced call, since the favour rule is also in the brief (\u00a77.9). Same for \u00a79.1 Nair (a timedMessages prompt for the first call, which carries the HR code) and C's HaX. GAPSCD-2 proposed instead that the first call of a mission is a timedConversation ({ \"delay\": 1500, \"targetKnot\": \"start\" }, as m01 does), not a game_loaded mapping. The two conflict (prompt vs forced call); the plan owner picks one and states it in \u00a77 and \u00a79.1\u2013\u00a79.3. Either way, never a game_loaded phone mapping.",
+   "evidence": "A/PLAN_GAPS A-17: no mechanism given; the draft invented a game_loaded phone mapping that fails the phone-mapping check (A/CHECK_REPORT V2) and would force a call. B/PLAN_GAPS PG-B7 (timedMessages prompt for Nair). drafts/C/PLAN_GAPS G3 and CHECK_REPORT D2/P3 (timedConversation as m01). Plan l.2116, 2169, 2348 say 'opening call' only; no timedMessages, timedConversation, currentKnot or a_briefed anywhere.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/C/PLAN_GAPS.md G3",
+    "sidecar/drafts/C/CHECK_REPORT.md",
+    "merged: opening-call part of GAPSCD-2"
+   ]
+  },
+  {
+   "id": "GAPSAB-14",
+   "severity": "major",
+   "priority": "should",
+   "category": "ink-sample",
+   "sections": "\u00a77 intro; \u00a77.1, \u00a77.2 (example and prose l.1679, l.1688-1689), \u00a77.3, \u00a77.4, \u00a77.5 samples; \u00a79.1 Tom\u00e1s (l.2152) and Rooms (choice text)",
+   "change": "Add at the top of \u00a77: \"The samples show tags and structure only. When copying them, follow README_ink_best_practices.md: prefix person-NPC lines with the NPC's displayName, and give every fixture NPC a displayName equal to its social.people name; a phone ink has no self-prefix and no narration (every unprefixed line is the contact speaking); choices are what the player says; leave with a spoken line plus #exit_conversation back to the hub, never -> END.\" In the samples: Tom\u00e1s: \u2192 Tom\u00e1s Rivera:, Marsh: \u2192 Imogen Marsh: (or the chosen displayName); drop Nair: in \u00a77.5; change name_okoro to 'Ngozi Okoro. Noted. #verdict:report:ded_b_okoro'; \u00a77.4 accused and \u00a77.5 send end with #exit_conversation then -> hub. \u00a77.2: choices become spoken ([Who's been unhappy on nights?], [I'll let you get on.] with a reply and #exit_conversation); the kind word works once through a VAR guard, never a * choice (a * choice comes back after a reload and farms +20): VAR ded_b_tomas_kind_given = false / + {not ded_b_tomas_kind_given} [Thanks for the coffee, Tom\u00e1s. It's a long night.] -> kind_word, with kind_word beginning ~ ded_b_tomas_kind_given = true; change l.1679 'The kind word works once (* choice)' accordingly. Add a bullet: ded_<case>_<w>_questions and ded_<case>_<w>_kind_given are declared in globalVariables so they persist (DL13 checks they are declared). In \u00a79.1 make Lindqvist's choice \"Tom\u00e1s heard the server room alarm last night. What happened?\" and the kind word spoken.",
+   "evidence": "B/PLAN_GAPS PG-B5; B/CHECK_REPORT \u00a75 item 4; A/PLAN_GAPS A-19; A/CHECK_REPORT \u00a75 P7, P8 (README_ink_best_practices l.30-50, :201, :304, :486, :855-881; dialoguelint phone-self-prefix; compile-ink.sh warns on END). drafts/D/PLAN_GAPS G2, CHECK_REPORT P2, D2; drafts/C/PLAN_GAPS G16. Plan: Tom\u00e1s: l.1661/1693/1708, Marsh: l.1737, Okafor: l.1763, Nair: l.1784/1793, -> END l.1689/1764/1801, l.1688 * [Thank him for the coffee]; no displayName anywhere.",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/B/CHECK_REPORT.md",
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/D/PLAN_GAPS.md G2",
+    "sidecar/drafts/D/CHECK_REPORT.md",
+    "sidecar/drafts/C/PLAN_GAPS.md G16",
+    "merged: GAPSCD-4"
+   ]
+  },
+  {
+   "id": "GAPSAB-15",
+   "severity": "minor",
+   "priority": "should",
+   "category": "tooling",
+   "sections": "\u00a711.8 (or the packet owning scripts/ink_runtime_check/); \u00a79 intro (cast advice)",
+   "change": "Add to \u00a711.8: \"dialoguelint's speaker regex becomes Unicode-aware ([\\\\p{Lu}][\\\\p{L}\\\\p{M}.'\u2019()-]* with the u flag), with a test that 'Tom\u00e1s Rivera: Hola.' counts as one line. scenarioInfo (dialoguelint.mjs:688-703) reads the npcType of the object that holds the storyPath, not the nearest one by character distance. Until that lands, P10-K-B checks dialoguelint reports a non-zero line count for every story.\" Add to \u00a79 intro: \"A name with an accented letter resolves only through an exact displayName match (the person-chat fallback, person-chat-minigame.js:1605, is [A-Z][a-z]+); fixtures avoid accents in other names until the lint is fixed.\"",
+   "evidence": "B/PLAN_GAPS PG-B6 (dialoguelint.mjs:128 regex skips 'Tom\u00e1s', file lints as lines=0; scenarioInfo linted Haddad with phone rules); B/CHECK_REPORT \u00a72; A/PLAN_GAPS A-20; A/INVENTED G14 ('C\u00e9line' gave 0 lines, renamed).",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/B/CHECK_REPORT.md",
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-16",
+   "severity": "minor",
+   "priority": "should",
+   "category": "test-harness",
+   "sections": "\u00a79.2 Bridges; \u00a711.6",
+   "change": "Add to \u00a79.2 Bridges: \"Lockpicking, dusting and the log filter are driven as their existing bridges do (P10-T0-A finds the commands in docs/test-bridge.md and tools/playtest/se/). Where no command exists, the step sets the result from the console (a_badge_log_done; fingerprint_identified:ded_a_marsh emitted with objectId: \\\"a_wine_glass\\\"; the cloakroom unlocked), says so in a note, and the T packet's playtest does it by hand. The punch key is the one systems/player-combat.js binds (name it).\"",
+   "evidence": "A/PLAN_GAPS A-18; A/CHECK_REPORT \u00a75 P11; A/INVENTED G12 (the draft guessed pressKey q). \u00a79.2 l.2414-2418 says 'pressKey the punch key' without naming it.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/CHECK_REPORT.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-17",
+   "severity": "minor",
+   "priority": "should",
+   "category": "design-fun",
+   "sections": "\u00a77.1",
+   "change": "Add to \u00a77.1: \"A suspect's small-talk topic (every suspect has one, so talking is not itself a tell) gives character, not a lead. It must not point at an event, object or person that is not on the board. If it does, the case resolves it somewhere (a fact, an object text or the debrief).\"",
+   "evidence": "A/PLAN_GAPS A-22 and 'Three weakest moments' item 3: Ishikawa's 'Somebody wanted a page out, then wanted it back' and the reading desk's 'one page torn out' read as evidence but are on no cell, so a newcomer hunts for a missing page. \u00a77.1 (l.1656-1671) covers suspects' own words only.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-18",
+   "severity": "minor",
+   "priority": "could",
+   "category": "fixture-content",
+   "sections": "\u00a79.2 Rooms (a_reading_desk, a_camera, a_altar, a_marsh_phone)",
+   "change": "Add to \u00a79.2 Rooms: \"The desk, the monitor and the altar are non-takeable objects of an existing plain type with triggerOnInteract (P10-K-A names the type and checks it runs the actions). Marsh's phone is a takeable item with no phoneId, text or npcIds, so it cannot open phone chat (interactions.js:1529); P10-K-A confirms that picking it up fires onPickup.setVariable.\"",
+   "evidence": "A/PLAN_GAPS A-23; A/INVENTED 'Rooms and objects' (draft guessed security_monitor, notes with readable: false, and phone with no phoneId). \u00a79.2 l.2271-2281 names ids only.",
+   "sources": [
+    "sidecar/drafts/A/PLAN_GAPS.md",
+    "sidecar/drafts/A/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-20",
+   "severity": "minor",
+   "priority": "could",
+   "category": "test-coverage",
+   "sections": "\u00a79.1 Tom\u00e1s; \u00a79.1 bridge-deduction-b-wrong; \u00a79.5",
+   "change": "Add to \u00a79.1 Tom\u00e1s: \"His influence never goes below \u221245 in play, so reports (\u221260) is present for DL12 and cannot fire. bridge-deduction-b-wrong.jsonl covers it: set ded_b_tomas_influence to \u221265 from the console, then check ded_b_tomas_reported is true and a new conversation with Tom\u00e1s ends at once.\" Add a reports band row to \u00a79.5.",
+   "evidence": "B/PLAN_GAPS PG-B9; B/CHECK_REPORT \u00a75 item 8. No fixture or bridge drives the reports band (only threshold definitions at l.701, l.1677, l.2676).",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/B/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-21",
+   "severity": "minor",
+   "priority": "could",
+   "category": "data-contract",
+   "sections": "\u00a74.9 JSON block",
+   "change": "Put the place keys into the \u00a74.9 block's trigger and object routes and drop the 'left out for width' note; or add above the block: \"This block leaves out place on routes. Before use, add the places listed after it to every trigger and object route, or DL18 fails.\"",
+   "evidence": "B/PLAN_GAPS PG-B12; B/CHECK_REPORT \u00a73 'Drift since drafting' (the draft copied the block and has no place). The note comes after the block (l.789-792), and \u00a79.1 says 'Data: \u00a74.9 in full'.",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/B/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-22",
+   "severity": "minor",
+   "priority": "could",
+   "category": "validator-rule",
+   "sections": "\u00a78 derived sets, 'Freely'",
+   "change": "Add to the 'Freely' definition: \"A line that follows a conditional divert at knot level ({ x: -> elsewhere }) is still free: only a condition on the line's own choice, or a block that contains the line, makes it gated.\"",
+   "evidence": "B/PLAN_GAPS PG-B13: Nair's HR code line follows { briefed: -> hub } in start; a parser could read the divert as a gate, which would change B's opening facts and DL8's hand check. l.2025-2027 does not cover it.",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-23",
+   "severity": "minor",
+   "priority": "could",
+   "category": "teaching",
+   "sections": "\u00a79.1 Triggers and dhcp_printout row",
+   "change": "Add to \u00a79.1: \"The printout's text is shown once as a hint. The player rereads the four device facts in the notepad, where each grant writes them ('Evidence: <name>', social-intel.js:155-167). No notes item is added as a second source.\"",
+   "evidence": "B/PLAN_GAPS PG-B14; B/CHECK_REPORT \u00a75 item 11 (the hint toast fires with four 'Noted' toasts and is not saved). \u00a79.1 l.2140 and l.2166 say nothing about rereading it.",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md",
+    "sidecar/drafts/B/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSAB-24",
+   "severity": "minor",
+   "priority": "could",
+   "category": "design-fun",
+   "sections": "\u00a79.1 Other content (Tom\u00e1s, wary row); \u00a77.2",
+   "change": "Change Tom\u00e1s's wary line in \u00a79.1 to add a nudge toward recovery, e.g. \"I'd rather not talk about people behind their backs. Ask nicely and I might remember more.\" (first wary reply only), and say in \u00a77.2 that a witness's first wary reply hints that kindness helps.",
+   "evidence": "B/PLAN_GAPS 'Dialogue: fun and teaching', 'Also noted': the wary lines give no hint that kindness would help, so a player may never find the recovery. \u00a79.1 l.2170 and \u00a77.2 sample l.1693 have the bare line.",
+   "sources": [
+    "sidecar/drafts/B/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-1",
+   "severity": "blocker",
+   "priority": "must",
+   "category": "engine-wiring",
+   "sections": "\u00a75.5 (or new \u00a75.12), \u00a77.2, \u00a710.1/\u00a710.3 packet table, \u00a711.3 tests, \u00a79.1 bridge B1, \u00a79.4 bridge D3",
+   "change": "Add a work item 'Influence externals in ordinary chats': _beginSocialRun in minigames/person-chat/person-chat-minigame.js and in minigames/phone-chat/phone-chat-minigame.js also calls influence.bindInfluenceExternals?.(this.inkEngine, { npcId, characterId, channel: 'person'|'phone', runId: this._socialRunId }) for a social character, idempotent with attachPretext's own bind (same engine, same run id). Own it in a new packet P10-I1 (each file's _beginSocialRun hunk only, wave 2) with a \u00a710.3 row. Tests: a social NPC's ~ se_influence(-15, \"pressed\") lowers <character>.influence.global by 15 in person chat and in phone chat; a reload replay does not charge twice. Bridge D3 also reads ded_d_conductor_influence as \u221215 after the second answer. Amend \u00a77.2's sentence 'goes through the external se_influence with its ink fallback' to say the external is bound in ordinary chats by P10-I1.",
+   "evidence": "drafts/D/PLAN_GAPS G1; drafts/D/CHECK_REPORT P1. bindInfluenceExternals is called only from person-chat-pretext.js:571 and mail-runner.js:418; person-chat-minigame.js:916-923 and phone-chat-minigame.js:1111-1117 bind nothing, so the ink fallback returns 0. B bridge B1 (l.2195-2197) expects \u221215, \u221230 and ded_b_tomas_wary true, which cannot happen as written; D's witness budget (l.2675-2678) rests on it too.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-5",
+   "severity": "major",
+   "priority": "should",
+   "category": "fairness-pacing",
+   "sections": "\u00a79.4 Stops (l.~2686), \u00a77.6 timer bullet, \u00a79.4 bridge D1, \u00a712/R2I-1",
+   "change": "Replace 'stop 1 runs 120 s after the start' with: \"stop 1 runs 180 s after the start (the brief is read on game time); stops 2 to 4 run 120 s after entering car 2, 3 and 4. Timers count wall time, including open conversations and minigames, so a stop can land mid-conversation; its toast and the guard's bark show when it lands, and the door opens behind the chat.\" In bridge D1 change the 'slowing' hint from 90 s to 150 s, and the D bridge's stated real wait from about 120 s to about 180 s (still inside 600 s); update \u00a712/R2I-1's '120 s' accordingly.",
+   "evidence": "drafts/D/PLAN_GAPS G5: systems/game-clock.js:4-9 ('Elapsed time is wall time since the game started'); no brief-closed event exists; a player who reads the once brief and asks the steward three questions can lose the rack label before moving. Conflicts with the 'not hard' aim and \u00a712 risk 7.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-6",
+   "severity": "minor",
+   "priority": "should",
+   "category": "design-consistency",
+   "sections": "\u00a79.3 Proves (l.2612), \u00a79.3 Stakes (l.~2572-2575)",
+   "change": "In Proves replace 'escalation with a forced warned close' with 'escalation that offers a warned close (declining it leaves the exit phone and a standing HaX choice)'. In Stakes after the 'Not yet' option add: \"After 'Not yet', HaX's hub keeps the choice 'About getting out.' (gated on c_pull_out and not c_leaving and not deduction_closed), which returns to the same warned knot. HaX's 'Not yet' reply promises no timer (e.g. 'Then I'll be here when you're ready to go.').\" A's forced close (\u00a79.2) is unchanged.",
+   "evidence": "drafts/C/PLAN_GAPS G6 and 'Weakest three' item 3; drafts/C/CHECK_REPORT P4; drafts/C/INVENTED gap 7. The mapping fires once, so after 'Not yet' nothing brings the call back; the plan has no return path while Proves still says 'forced'.",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md",
+    "sidecar/drafts/C/CHECK_REPORT.md",
+    "sidecar/drafts/C/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-7",
+   "severity": "minor",
+   "priority": "should",
+   "category": "engine-wiring",
+   "sections": "\u00a75.4 (S20), \u00a711.3, \u00a79.3 Verdicts (l.~2563 'cancel is \"not yet\"'), \u00a77.5, C bridge step C5",
+   "change": "Choose one and write it in: (recommended) S20 gains \"confirm_action takes optional confirmLabel and cancelLabel, passed to gameConfirm (systems/notifications.js:183 already takes labels)\" with a \u00a711.3 unit test, and C's exit phone sets cancelLabel: \"Not yet\"; or \u00a79.3/\u00a77.5 say 'cancel is the dialog's Cancel button' and bridge C5 clicks 'Cancel'.",
+   "evidence": "drafts/C/PLAN_GAPS G7; drafts/C/CHECK_REPORT P5. apply-actions.js:193 calls window.gameConfirm(text) with text only, so the button reads 'Cancel'; plan grep for confirmLabel/cancelLabel is 0.",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md",
+    "sidecar/drafts/C/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-8",
+   "severity": "minor",
+   "priority": "should",
+   "category": "player-voice",
+   "sections": "\u00a77.6 timer bullet, \u00a79.4 Stops (slowing hint), \u00a79.3 t_c_badge hint (l.2511), \u00a75.4 hint action guidance",
+   "change": "Add a rule: \"Always give a hint action a title in the mission's voice; the default 'Intelligence Received' is SAFETYNET's.\" In \u00a79.4 the slowing hint timer's action becomes { \"type\": \"hint\", \"title\": \"Night train\", \"message\": \"The train is slowing.\" }; give C's t_c_badge hint a title (e.g. \"Garage reader\").",
+   "evidence": "drafts/D/PLAN_GAPS G6; drafts/D/CHECK_REPORT P7; drafts/D/INVENTED A8. apply-actions.js:126 defaults the title to 'Intelligence Received'.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-9",
+   "severity": "minor",
+   "priority": "should",
+   "category": "engine-wiring",
+   "sections": "\u00a79.4 opening paragraph (l.~2624), \u00a79.4 guard (l.~2644-2646)",
+   "change": "Add after the guard sentence: \"Each carriage d_car2\u2013d_car5 is locked: true, lockType: \\\"rfid\\\", requires: \\\"d_door_release\\\", a card no item declares, so neither the lockpick nor a code opens it (the validator's 'no item declares rfid' warning is expected, as for m09's restricted_stacks). Per stop the guard has: global_variable_changed:d_stop_<n> (value === true, onceOnly, unlockDoor, a bark naming the opened carriage); door_unlock_attempt with data.connectedRoom === '<car>' && globalVars.d_stop_<n> (unlockDoor, cooldown: 0); game_loaded with globalVars.d_stop_<n> (unlockDoor), as m09 does; and door_unlock_attempt with data.connectedRoom === '<car>' && !globalVars.d_stop_<n> barking \\\"That door stays shut till the next stop. Wait by it if you're in a hurry.\\\" (cooldown 20000). Mapping conditions take && only: one mapping per alternative, never ||.\"",
+   "evidence": "drafts/D/PLAN_GAPS G7; drafts/D/INVENTED A4, A5; drafts/D/CHECK_REPORT P6, D3 (validator reports || as INVALID; safeEvaluateCondition handles && only). m09 pattern scenario.json.erb:170-171. Plan names no lock type (a key lock would fall to the starting lockpick) and bridge D1 expects the opened door to hold after reload with no stated mechanism.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/INVENTED.md",
+    "sidecar/drafts/D/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-10",
+   "severity": "minor",
+   "priority": "should",
+   "category": "engine-wiring",
+   "sections": "\u00a79.4 route table, d_devries_sim row (l.2667)",
+   "change": "Append to the t_d_backup cell: \"D declares network_isolated: true (with backup_restore_initiated false, backup_recovery_source \\\"\\\", recovery_eta_hours 0 and backup_reinfected false, as m02 does), so the restore schedules no reinfection. The object is the railway's lost-phone kiosk, with one ready source (needs: []) and no key slots.\"",
+   "evidence": "drafts/D/PLAN_GAPS G9; drafts/D/CHECK_REPORT P5; drafts/D/INVENTED B2. backup-recovery-minigame.js:330-345, :358 read network_isolated and otherwise schedule reinfection (sets backup_reinfected, ransomware toast).",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-11",
+   "severity": "minor",
+   "priority": "should",
+   "category": "data-completeness",
+   "sections": "\u00a79.4 guard paragraph (l.~2646-2647 'Start inventory')",
+   "change": "Extend D's start inventory: \"Start inventory: a phone (type: \\\"phone\\\", phoneId: \\\"player_phone\\\", npcIds: [\\\"ded_d_guard\\\"]; the guard's phoneId matches), a lockpick (the briefcase) and a fingerprint kit (the glass); no NPC gives either tool.\"",
+   "evidence": "drafts/D/PLAN_GAPS G11; drafts/D/INVENTED A6, A7. The guard is a phone NPC (l.2644) but D's start inventory lists no phone, unlike A (l.2285), B (l.2125) and C (l.2495).",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-12",
+   "severity": "minor",
+   "priority": "should",
+   "category": "clue-text",
+   "sections": "\u00a79.4 after the route table (rows d_chen_charm, d_sato_notebook); \u00a74.2 l.515 rule",
+   "change": "Add: \"In D the carry slot means 'has with them on the train'. The torn receipt reads 'Platform kiosk, tonight, 20:40. One ward charm on red cord. Sold to M. Chen.' (bought before the train left, so the charm is on board with her). d_chen_charm reads 'Mei Chen has a ward charm with her on the train.' d_sato_notebook reads 'Akiko Sato has a notebook with her on the train: it was handed in from seat 1A.'\" (Interacts with SIDECAR-32's Sato bag wording.)",
+   "evidence": "drafts/D/PLAN_GAPS G12; drafts/D/INVENTED B3, A14. \u00a74.2 l.515 requires the fact text to read true for every route; a receipt proves a purchase, a lost-property notebook is not carried.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-14",
+   "severity": "minor",
+   "priority": "should",
+   "category": "fairness-writing",
+   "sections": "\u00a77.1 bullets (l.~1669); K-packet review step",
+   "change": "Add to \u00a77.1: \"Tone parity: guilty and clear suspects get the same register. Every suspect has one odd or guarded line and one sympathetic one, and no line hints at tonight's plan, a payer or a threat. The board decides guilt; the voice never does. P10-K-* reviewers read each suspect's ink with the truth hidden and check that they cannot tell.\"",
+   "evidence": "drafts/D/PLAN_GAPS G15 and 'Weakest three' item 1: devries.ink 'After tonight, I don't think they'll pass me over again.', volkov.ink 'people who pay in other ways', sato.ink '*a thin smile*', against wholly warm chen.ink/mensah.ink; the case can be called on tone. C's review praises Novak's guarded voice.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/C/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-15",
+   "severity": "minor",
+   "priority": "should",
+   "category": "teaching-debrief",
+   "sections": "\u00a79.3 Verdicts/Stakes (debrief), \u00a79.4 Verdicts (debrief), C HaX hub",
+   "change": "Add debrief.closingLine to C: \"Novak's bag held the burner. The 03:40 swipe only showed her badge, and you had just copied that badge yourself; it counted because nothing put her anywhere else. The travel log and the door log cleared the others.\" plus one HaX hub status line once c_novak_badge_cloned (or the clone event) is set: \"Took you ten seconds to copy that badge. Remember that when you read the door log.\" Add to D: \"Evidence goes first from wherever it is easiest to take. What you reached before each stop was safe; what you didn't came back from a bin, a backup and a conductor's memory. And failing one profile never cleared anyone on its own: check them all.\" Both pass DL10's count patterns.",
+   "evidence": "drafts/C/PLAN_GAPS G17 (a credential used is not proof of who used it; never said); drafts/D/PLAN_GAPS G17; drafts/D/INVENTED A21 (draft line 'Every stop cost you something' untrue for a thorough player). Neither \u00a79.3 nor \u00a79.4 sets a closingLine.",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md",
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-16",
+   "severity": "minor",
+   "priority": "should",
+   "category": "credits",
+   "sections": "\u00a79.3 Stakes credits lines (l.~2577), C-wrong bridge last step",
+   "change": "Add to the credits lines: \"and one line per contact, \\\"<Full name> was taken down for nothing.\\\" with condition: \\\"globalVars.deduction_outcome_<id> === 'wrong_guilty'\\\" (Ahmed and Baptiste; Novak's missed_guilty is already the escape line)\". The C-wrong bridge's last step checks both lines.",
+   "evidence": "drafts/C/PLAN_GAPS G11; drafts/C/CHECK_REPORT P11. l.2583 says the KO-everyone run 'names two innocents taken down in the credits' but l.2577 lists only c_sleeper_escaped, c_hax_trust_down, c_network_scattered.",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md",
+    "sidecar/drafts/C/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-17",
+   "severity": "minor",
+   "priority": "should",
+   "category": "data-completeness",
+   "sections": "\u00a79.3 (new 'Names and ids' block), \u00a79.3 Verdicts c_waiting_<id>",
+   "change": "Add a 'Names and ids' block to \u00a79.3: NPC ids ded_c_ahmed (Tariq Ahmed), ded_c_novak (Irena Novak), ded_c_baptiste (Odile Baptiste), ded_c_handler (Agent HaX); <id> in c_waiting_<id> (and c_released_<id>) is the full suspect id (c_waiting_ded_c_ahmed etc., each declared false); fact ids c_<surname>_safenet, _field_kit, _burner, _travel, _alibi; clue labels 'cult-issued burner', 'SAFETYNET phone', 'field kit', 'verified alibi', 'no alibi'; office door PIN 5183 (scrap in Baptiste's kit); office safe PIN 1890 (note under the desk); notes item ids; route places (t_c_ahmed_locker 'Ahmed's locker in the office', etc.); Baptiste the one social.characters entry with default thresholds, her three topics and ded_c_baptiste_reported; HaX's bark on c_keycard_revoked (delayMs: 1500): 'Your keycard's dead. Call me if you need the office.'; objective aim c_safe_house, tasks c_case_solved 'Get every call right', c_extracted 'Leave the safe house'; credits playlist and statusText; stakes.scoreLine: false. Keycard c_keycard is type: \"keycard\" (not key, so remove_item can take it, DL14). (Genders here must match SIDECAR-31's fix.)",
+   "evidence": "drafts/C/PLAN_GAPS G12, G19, G13 (keycard type); drafts/C/INVENTED (40 invented rows). Values cross ink, triggers and bridges, so two builders would diverge. Plan grep ded_c_ 0; c_waiting_<id> (l.2550, 2558) never says which id.",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md",
+    "sidecar/drafts/C/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-18",
+   "severity": "minor",
+   "priority": "should",
+   "category": "lint-rules",
+   "sections": "\u00a78 After a wrong call (l.2010-2012)",
+   "change": "Add: \"Every global any wrong-guilty list sets (with or without cost) is set true. A door or container then counts as open when its key, card or code is given by a line or action gated only on globals set this way (HaX's code after c_keycard_revoked), or by an NPC's #unlock_door so gated, provided the NPC is not the one wrongly accused and lists the room in unlockable.\"",
+   "evidence": "drafts/C/PLAN_GAPS G9; drafts/C/CHECK_REPORT P7. Plan sets only cost: true globals; C's c_keycard_revoked (l.2569) has no cost, and the open-from-start rule treats gated lines as closed, so a lint built as written may disagree with \u00a79.3's after-wrong-call hand check (l.2542).",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md",
+    "sidecar/drafts/C/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-19",
+   "severity": "minor",
+   "priority": "should",
+   "category": "validator-schema",
+   "sections": "\u00a710.1 P10-C1 scope (l.2913)",
+   "change": "Add to P10-C1's scope: \"and a shredder / shredded_document entry in scripts/minigame-data-schemas.json (title, documentTitle, content, stripCount, strips, allowRotation, successMessage, stateWrites), so fixture D validates without that warning.\"",
+   "evidence": "drafts/D/PLAN_GAPS G20; drafts/D/CHECK_REPORT \u00a74 item 2, P10: the validator warns on any shredder object with minigameData because no schema exists. Plan grep 'shredder' 0.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-20",
+   "severity": "minor",
+   "priority": "could",
+   "category": "lint-rules",
+   "sections": "DL6 row (l.2051), \u00a79.4 witness paragraph (l.~2675-2678)",
+   "change": "In DL6's witness-budget clause, after 'against the wary threshold', add: \"and a recovery counts only if it lifts influence to at least wary.at + rearmMargin\"; also \"An npc route whose NPC has no social.characters entry (no influence) is not budgeted: it answers every topic.\" In \u00a79.4 add: \"(\u221210 is exactly wary plus the default rearmMargin of 10; do not raise the margin).\"",
+   "evidence": "drafts/D/PLAN_GAPS G18; drafts/D/CHECK_REPORT P11 (social-influence.js:207 default 10, :406); drafts/C/PLAN_GAPS G10; drafts/C/CHECK_REPORT P8 (Ahmed and Novak are npc routes with no influence). Plan grep rearmMargin 0.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md",
+    "sidecar/drafts/C/PLAN_GAPS.md",
+    "sidecar/drafts/C/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-21",
+   "severity": "minor",
+   "priority": "could",
+   "category": "tampering-feedback",
+   "sections": "\u00a79.4 Clue routes paragraph (l.~2649-2652), \u00a79.4 route cells for t_d_rack, t_d_coat, t_d_phone",
+   "change": "Say what a faded source looks like after its stop and stop the coat going into the inventory: make the three sources non-takeable objects whose triggerOnInteract sets d_rack_checked / d_coat_checked / d_phone_checked (declared false); t_d_rack etc. key on global_variable_changed:<g> (where: { value: true }, once, condition: \"!globalVars.deduction_faded_<f>\") and grant the fact; a twin trigger with the opposite condition runs a titled hint ('The label has been torn off the rack.' / 'The coat pocket has been turned out.' / 'The phone has gone from the seat.'); each object has observationVariants on deduction_faded_<f>.",
+   "evidence": "drafts/D/PLAN_GAPS G3 and 'Weakest three' item 3; drafts/D/CHECK_REPORT P3; drafts/D/INVENTED B4. interactions.js:775-778 runs triggerOnInteract directly. The plan (l.2649-2652) still makes them notes pickups (the player pockets Chen's whole coat) and nothing tells the player the cult took it.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-22",
+   "severity": "minor",
+   "priority": "could",
+   "category": "tampering-feedback",
+   "sections": "\u00a75.5 Tampering (l.~1291-1294), \u00a74.1, \u00a79.4 stop table, debrief destroyed-evidence block",
+   "change": "Add an optional emptyText to deduction_tamper, toasted when nothing is left to fade before close (default none); D's stops 1-3 set \"The train stops. Someone searches carriage <n> behind you and gets off empty-handed.\" The debrief's destroyed-evidence block adds \"Saved before the stop: <label>, from <place>.\" for each fact in a tamper list already held when the tamper ran (state.saved). Record as a user decision the alternative: every stop always costs something (two-fact lists, each needing a second closed and recovery route) (relates to SIDECAR-32 option b).",
+   "evidence": "drafts/D/PLAN_GAPS G16; drafts/D/INVENTED B7; drafts/D/CHECK_REPORT P12. A thorough player never sees a stop take anything and gets no feedback; plan grep emptyText 0.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/INVENTED.md",
+    "sidecar/drafts/D/CHECK_REPORT.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-26",
+   "severity": "minor",
+   "priority": "could",
+   "category": "data-completeness",
+   "sections": "\u00a79.3 start inventory (l.2495)",
+   "change": "Either drop the fingerprint kit from C's start inventory, or add: \"The fingerprint kit is carried but unused in C, on purpose: not every tool is needed.\"",
+   "evidence": "drafts/C/PLAN_GAPS G21: C has no dusting route (\u00a79.3 route table, \u00a79.5). PLAYER_TEST_C F9 also notes the unused kit.",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-27",
+   "severity": "minor",
+   "priority": "could",
+   "category": "brief-text",
+   "sections": "\u00a79.3 Kind/brief (l.2451-2452)",
+   "change": "Give C's brief text: \"scenario_brief (shown on_start): 'Safe house. Three field contacts share this house with you. On the night of the leak, our network was passed to the cult. What to look for: Sleeper: <profile text>. Check what they carry, where they have been and where they were that night. Trust no one.' HaX's opening call repeats the profile in the same words and says nothing about how many.\" (Also define 'sleeper' here, per SIDECAR-31.)",
+   "evidence": "drafts/C/PLAN_GAPS G18 and 'Weakest three' item 1: the draft's 'someone passed our network to the cult' implies one culprit and slips past DL10's patterns.",
+   "sources": [
+    "sidecar/drafts/C/PLAN_GAPS.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-28",
+   "severity": "minor",
+   "priority": "could",
+   "category": "lint-rules",
+   "sections": "\u00a73.11 warned words (l.403), DL15, \u00a79.4 brief",
+   "change": "Add miskatonic and innsmouth to \u00a73.11's warned words and DL15's warning list. In \u00a79.4: \"The brief names no real Lovecraft place: 'the last train out of the city' until the universe bible gives a station.\"",
+   "evidence": "drafts/D/PLAN_GAPS G14; drafts/D/CHECK_REPORT D6; drafts/D/INVENTED A30 (draft used 'Miskatonic Halt'; DL15 only warns on arkham).",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/CHECK_REPORT.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-29",
+   "severity": "minor",
+   "priority": "could",
+   "category": "data-completeness",
+   "sections": "\u00a79.4 witness paragraph (l.~2675)",
+   "change": "Add: \"D's reports threshold exists only to keep DL12 quiet; it cannot be reached (the lowest influence is \u221230) and nothing reads ded_d_<w>_reported. D has no witness-report tamper.\"",
+   "evidence": "drafts/D/PLAN_GAPS G19; drafts/D/INVENTED A23.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-30",
+   "severity": "minor",
+   "priority": "could",
+   "category": "data-completeness",
+   "sections": "\u00a79.4 Stakes loss music entry (l.~2731)",
+   "change": "Name the playlist: \"a non-victory playlist (threat, music-config.js:78)\".",
+   "evidence": "drafts/D/PLAN_GAPS G21; drafts/D/INVENTED A32. music/music-config.js:78 defines threat.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md",
+    "sidecar/drafts/D/INVENTED.md"
+   ]
+  },
+  {
+   "id": "GAPSCD-31",
+   "severity": "minor",
+   "priority": "could",
+   "category": "ink-pattern",
+   "sections": "\u00a79.4 after the route table (rows 'Chen's ink', 'Volkov's ink', 'Mensah's ink')",
+   "change": "Add: \"Chen's notebook, Volkov's charm and Mensah's umbrella are shown, not claimed: the #grant_fact sits on a Narrator: line describing what the player sees (\u00a77.1).\"",
+   "evidence": "drafts/D/PLAN_GAPS G22: \u00a77.1 allows a suspect to show what can be seen, but the route cells do not require the grant to rest on a shown object; the draft adds Narrator lines.",
+   "sources": [
+    "sidecar/drafts/D/PLAN_GAPS.md"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "8c9329847f025cdf51efd84740cb17e6",
+  "npc": "anjali_rao",
+  "text": "A sign-in stays yours alone, and a handover goes through the shared place. For a real lockout, send them to the service desk.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:11Z"
+}

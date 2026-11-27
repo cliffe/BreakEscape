@@ -1,0 +1,13 @@
+{
+  "key": "2270cc730e4e5678cf095fb4640199bd",
+  "npc": "ward_nurse",
+  "text": "Bed five's Ms Chen. Seventy-one, post-op, and she's been doing my obs for me with her eyes.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "cbe95b4c56f197f09a9ce61bad7b1a1a",
+  "npc": "darren_price",
+  "text": "You turned away the prompt that mattered, so the account held. One or two others slipped by, and the debrief walks you through them.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:32Z"
+}

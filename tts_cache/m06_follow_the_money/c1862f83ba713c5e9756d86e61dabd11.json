@@ -1,0 +1,13 @@
+{
+  "key": "c1862f83ba713c5e9756d86e61dabd11",
+  "npc": "irina_volkova",
+  "text": "Fine. You'd find it on the file server in ten minutes anyway. Here.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:55:40Z"
+}

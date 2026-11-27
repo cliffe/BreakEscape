@@ -1,0 +1,13 @@
+{
+  "key": "2dc8a1252639f4548d06b2c69249d85e",
+  "npc": "kit_thandiwe_moyo",
+  "text": "Printer's warm again.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:47:32Z"
+}

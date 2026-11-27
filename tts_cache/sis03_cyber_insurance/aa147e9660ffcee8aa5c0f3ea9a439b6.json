@@ -1,0 +1,13 @@
+{
+  "key": "aa147e9660ffcee8aa5c0f3ea9a439b6",
+  "npc": "eleanor_vance",
+  "text": "That renewal memo.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:31:48Z"
+}

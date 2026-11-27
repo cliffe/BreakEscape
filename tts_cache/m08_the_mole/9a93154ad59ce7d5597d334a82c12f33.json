@@ -1,0 +1,13 @@
+{
+  "key": "9a93154ad59ce7d5597d334a82c12f33",
+  "npc": "agnieszka_duda",
+  "text": "No name goes in till the Director says.",
+  "voice": "Callirrhoe",
+  "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:49:49Z"
+}

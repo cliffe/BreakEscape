@@ -1,0 +1,13 @@
+{
+  "key": "60039bdc07e5c5719e780251a6612d91",
+  "npc": "tomasz_wisniewski",
+  "text": "A misdirected item means a quiet word with me that day, never a quiet delete, and you came.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:04Z"
+}

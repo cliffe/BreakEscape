@@ -1,0 +1,13 @@
+{
+  "key": "e8666e4a8cacce7c5fec93d8f11463f8",
+  "npc": "ama_owusu",
+  "text": "Lorna, this morning's attackers have already guessed your new password. Turn down sign-in prompts you didn't start.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:10:25Z"
+}

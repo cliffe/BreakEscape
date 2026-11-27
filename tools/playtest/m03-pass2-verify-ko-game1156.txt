@@ -1,0 +1,14 @@
+game            1156  (mission 47)
+created         2026-09-30 15:35:55 UTC
+last write      2026-09-30 15:43:24 UTC
+played for      448s of wall clock
+current room    "reception_lobby"
+unlocked rooms  6: reception_lobby, main_hallway, executive_wing_hallway, james_office, conference_room_01, executive_office
+unlocked objs   1: victoria_computer
+inventory       5: Your Phone, RFID Cloner, Lock Pick Kit, Notepad, Staff Access Badge
+NPCs met        9: briefing_cutscene, director_netherton, agent_nightshade, receptionist_npc, agent_0x99, closing_debrief, night_guard, danny_foster, victoria_sterling
+flags submitted 0: 
+globals set     11: briefing_played, guard_knocked_out, james_fate, knows_m2_connection, lockpicking_guide_offered, mission_phase, player_approach, receptionist_ko, time_of_day, victoria_fate, victoria_ko
+
+VERDICT: progress recorded — 5 rooms beyond the first, 1 objects unlocked, 0 flags submitted.
+Cross-check the specifics above against the report.

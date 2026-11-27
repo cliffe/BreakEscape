@@ -1,0 +1,13 @@
+{
+  "key": "d6690f91d20f2f3498e8d36754e6e513",
+  "npc": "agnieszka_duda",
+  "text": "Because nobody else will.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:37:26Z"
+}

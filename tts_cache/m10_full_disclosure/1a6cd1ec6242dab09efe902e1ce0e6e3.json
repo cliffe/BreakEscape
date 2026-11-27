@@ -1,0 +1,13 @@
+{
+  "key": "1a6cd1ec6242dab09efe902e1ce0e6e3",
+  "npc": "narrator",
+  "text": "The Citadel, an hour later. Netherton reports to the Council on the wall screen from Montana. HaX's channel is open beside his. Nobody has spoken on it.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:21:56Z"
+}

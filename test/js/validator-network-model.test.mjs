@@ -1,0 +1,953 @@
+// scripts/validate_network.rb check_network_model (ACCESS_MODEL_SLICE_9_3_PLAN.md, section 7.2):
+// jacks, rogue devices, headless hosts, resources and shares, and the 9.3b fields refused.
+// One fixture per error and warning, a clean fixture that raises none, and the information lines.
+// Run with: node --test test/js/validator-network-model.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const ruby = spawnSync('ruby', ['--version']);
+const skip = ruby.status !== 0 && 'ruby not found';
+
+const PASSWORD = 'Biscuit2019';
+
+function issues(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_network.rb'))}
+      puts JSON.generate(check_network_model(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+const errors = list => list.filter(s => s.startsWith('❌'));
+const warnings = list => list.filter(s => s.startsWith('⚠️'));
+const infos = list => list.filter(s => s.startsWith('ℹ️'));
+const has = (list, frag) => list.some(s => s.includes(frag));
+const assertHas = (list, frag) => assert.ok(has(list, frag), `expected "${frag}" in:\n${list.join('\n')}`);
+const assertNot = (list, frag) => assert.ok(!has(list, frag), `did not expect "${frag}" in:\n${list.join('\n')}`);
+
+// Lena (finance, an account) owns lena_pc in the locked finance office; Ian (it) has an
+// account. The comms room has a jack; the lobby has the drop box. The store holds a
+// headless door controller. Both shares and the printer are on the office LAN.
+function clean() {
+    return {
+        startRoom: 'lobby',
+        policies: { open_remote: { remote: 'allowed' }, hardened: { remote: 'blocked' } },
+        networks: { office_lan: { name: 'Harbour office LAN' } },
+        resources: {
+            ledger_archive: {
+                kind: 'file_share', name: 'Ledger-Archive', host: 'HB-FS01', network: 'office_lan',
+                access: { roles: ['finance'] },
+                contents: [{ id: 'ledger_2024', type: 'text_file', name: 'ledger_2024.xlsx', takeable: true, text: 'x' }]
+            },
+            scanned_inbox: {
+                kind: 'file_share', name: 'Scanned-Inbox', host: 'HB-FS01', network: 'office_lan',
+                contents: [{ id: 'scan_0412', type: 'text_file', name: 'scan_0412.pdf', takeable: true, text: 'y' }]
+            },
+            print_queue: { kind: 'printer', name: 'Office print queue', host: 'HB-PRN-01', network: 'office_lan', observations: 'A queue.' }
+        },
+        rooms: {
+            lobby: {
+                type: 'room_office', connections: { north: 'comms_room', east: 'finance_office', west: 'store' },
+                objects: [
+                    { id: 'kit_dropbox', type: 'pc', name: 'Network drop box', takeable: true, rogueDevice: true }
+                ],
+                npcs: [
+                    { id: 'lena', displayName: 'Lena Hart', npcType: 'person', role: 'finance', needsHome: 'lena_pc',
+                      needs: { thirst: { decayPerMin: 10, urgentAt: 40 } },
+                      creds: { username: 'lhart', password: PASSWORD } },
+                    { id: 'ian', displayName: 'Ian Cole', npcType: 'person', role: 'it', creds: { username: 'icole', password: 'Tulip!88' } }
+                ]
+            },
+            comms_room: {
+                type: 'room_office', network: 'office_lan', connections: { south: 'lobby' },
+                objects: [{ id: 'comms_port', type: 'pc', name: 'Spare wall port', networkJack: true, plantedSprite: 'pi_cluster1' }]
+            },
+            finance_office: {
+                type: 'room_office', network: 'office_lan', connections: { west: 'lobby' },
+                locked: true, lockType: 'key', requires: 'fin_key',
+                objects: [
+                    { id: 'lena_pc', type: 'pc', name: "Lena's PC", host: 'HB-FIN-02', policy: 'open_remote',
+                      locked: true, lockType: 'login', owner: 'lena', access: { roles: ['finance'] } }
+                ]
+            },
+            store: {
+                type: 'room_office', connections: { east: 'lobby' },
+                objects: [
+                    { id: 'door_box', type: 'pc', name: 'Door controller', host: 'HB-DOOR-01', network: 'office_lan',
+                      locked: true, lockType: 'login', headless: true, access: { roles: ['it'] }, observations: 'No screen.' }
+                ]
+            }
+        }
+    };
+}
+const room = (sc, id) => sc.rooms[id];
+const obj = (sc, roomId, id) => room(sc, roomId).objects.find(o => o.id === id);
+
+test('the clean fixture raises no error or warning', { skip }, () => {
+    const out = issues(clean());
+    assert.deepEqual(errors(out).concat(warnings(out)), []);
+});
+
+test('a scenario without network fields gets nothing', { skip }, () => {
+    const out = issues({ startRoom: 'hall', rooms: { hall: { type: 'room_office', objects: [{ id: 'pc1', type: 'pc', locked: true, lockType: 'login' }] } } });
+    assert.deepEqual(out, []);
+});
+
+test('the information lines list reach, hosts then resources, each by id', { skip }, () => {
+    const out = infos(issues(clean()));
+    assert.deepEqual(out, [
+        "ℹ️ Network reach: jack 'comms_port' on 'office_lan' lists hosts 'door_box', 'lena_pc'; resources 'ledger_archive', 'print_queue', 'scanned_inbox'",
+        "ℹ️ Reachable without a foothold: share 'ledger_archive' maps on 'lena_pc' (lena)"
+    ]);
+});
+
+test('an open-room sign-in host and a network with no jack get information lines', { skip }, () => {
+    const sc = clean();
+    room(sc, 'finance_office').locked = false;
+    sc.networks.plant_net = { name: 'Plant network' };
+    sc.resources.plc = { kind: 'plc', name: 'Line PLC', network: 'plant_net' };
+    const out = infos(issues(sc));
+    assertHas(out, "ℹ️ Reachable without a foothold: sign-in host 'lena_pc' in open room 'finance_office'");
+    assertHas(out, "ℹ️ Network 'plant_net' has hosts or resources and no jack");
+});
+
+// ---- errors ----
+
+test('a network naming no entry is an error on a room, an object and a resource', { skip }, () => {
+    const sc = clean();
+    room(sc, 'comms_room').network = 'ghost_lan';
+    obj(sc, 'store', 'door_box').network = 'other_lan';
+    sc.resources.print_queue.network = 'nowhere';
+    const out = errors(issues(sc));
+    assertHas(out, "'rooms/comms_room' network 'ghost_lan' names no entry");
+    assertHas(out, "network 'other_lan' names no entry");
+    assertHas(out, "'resources/print_queue' network 'nowhere' names no entry");
+});
+
+test('a jack with no network is an error', { skip }, () => {
+    const sc = clean();
+    delete room(sc, 'comms_room').network;
+    assertHas(errors(issues(sc)), "jack 'comms_port' has no network");
+});
+
+test('a jack with a click of its own, a lock or a sign-in is an error', { skip }, () => {
+    for (const [field, value] of [['triggerOnInteract', []], ['requiresItem', 'kit_dropbox'], ['locked', true], ['lockType', 'key']]) {
+        const sc = clean();
+        obj(sc, 'comms_room', 'comms_port')[field] = value;
+        assertHas(errors(issues(sc)), `jack 'comms_port' has '${field}'`);
+    }
+    const sc = clean();
+    Object.assign(obj(sc, 'comms_room', 'comms_port'), { lockType: 'login' });
+    assertHas(errors(issues(sc)), "jack 'comms_port' is a sign-in object");
+});
+
+test('a jack inside a container or a profile, and a takeable jack, are errors', { skip }, () => {
+    let sc = clean();
+    room(sc, 'comms_room').objects.push({ id: 'rack', type: 'safe', locked: false, contents: [{ id: 'rack_port', type: 'pc', networkJack: true }] });
+    assertHas(errors(issues(sc)), "jack 'rack_port' at 'rooms/comms_room/objects[1]/contents[0]' is inside a container");
+    sc = clean();
+    sc.accountProfiles = { p: { for: { roles: ['staff'] }, contents: [{ id: 'prof_port', type: 'pc', networkJack: true }] } };
+    assertHas(errors(issues(sc)), "jack 'prof_port' at 'accountProfiles/p/contents[0]' is inside");
+    sc = clean();
+    obj(sc, 'comms_room', 'comms_port').takeable = true;
+    assertHas(errors(issues(sc)), "jack 'comms_port' is takeable");
+});
+
+test('a rogue device with no id, not takeable, or droppable is an error', { skip }, () => {
+    let sc = clean();
+    delete obj(sc, 'lobby', 'kit_dropbox').id;
+    assertHas(errors(issues(sc)), "rogue device at 'rooms/lobby/objects[0]' has no 'id'");
+    sc = clean();
+    obj(sc, 'lobby', 'kit_dropbox').takeable = false;
+    assertHas(errors(issues(sc)), 'is not takeable');
+    sc = clean();
+    obj(sc, 'lobby', 'kit_dropbox').droppable = true;
+    assertHas(errors(issues(sc)), 'is droppable');
+    sc = clean();
+    room(sc, 'lobby').objects = [];
+    sc.startItemsInInventory = [{ id: 'kit_dropbox', type: 'pc', name: 'Network drop box', rogueDevice: true }];
+    assert.deepEqual(errors(issues(sc)), [], 'a start item needs no takeable field');
+});
+
+test('a rogue device required and consumed by another object is an error', { skip }, () => {
+    const sc = clean();
+    room(sc, 'lobby').objects.push({ id: 'dock', type: 'pc', requiresItem: 'kit_dropbox', consumesItem: true, triggerOnInteract: [] });
+    assertHas(errors(issues(sc)), "'rooms/lobby/objects[1]' requires and consumes 'kit_dropbox', a rogue device");
+});
+
+test('headless on a non-sign-in object, with no network, or on an owned workstation is an error', { skip }, () => {
+    let sc = clean();
+    room(sc, 'store').objects.push({ id: 'crate', type: 'safe', headless: true });
+    assertHas(errors(issues(sc)), "'crate' has 'headless' but is not lockType \"login\"");
+    sc = clean();
+    delete obj(sc, 'store', 'door_box').network;
+    assertHas(errors(issues(sc)), "headless host 'door_box' has no network");
+    sc = clean();
+    obj(sc, 'finance_office', 'lena_pc').headless = true;
+    assertHas(errors(issues(sc)), "headless host 'lena_pc' is a workstation with an owner");
+});
+
+// Lab networks review R2 n3: a contents that is present but not a list reads as none.
+test('a file share whose contents is not a list warns that it is treated as listed only', { skip }, () => {
+    for (const contents of [{ id: 'x' }, 'ledger.xlsx', null]) {
+        const sc = clean();
+        sc.resources.scanned_inbox.contents = contents;
+        assertHas(warnings(issues(sc)), "'resources/scanned_inbox' contents is ");
+        assertHas(warnings(issues(sc)), 'treated as listed only');
+    }
+    const sc = clean();
+    assert.ok(!has(warnings(issues(sc)), 'not a list'), 'a list raises nothing');
+});
+
+test('contents on a resource that is not a file share is an error', { skip }, () => {
+    const sc = clean();
+    sc.resources.print_queue.contents = [{ id: 'job1', type: 'text_file', name: 'job1' }];
+    assertHas(errors(issues(sc)), "'resources/print_queue' has contents but kind 'printer'");
+});
+
+test('a resource or share item id equal to a room object, profile item or other resource id or name is an error', { skip }, () => {
+    let sc = clean();
+    sc.resources.lena_pc = { kind: 'printer', name: 'P', network: 'office_lan' };
+    assertHas(errors(issues(sc)), "'resources/lena_pc' id 'lena_pc' is also the id or name of room object");
+    sc = clean();
+    sc.resources.scanned_inbox.contents[0].id = 'Network drop box';
+    assertHas(errors(issues(sc)), "id 'Network drop box' is also the id or name of room object");
+    sc = clean();
+    sc.accountProfiles = { p: { for: { roles: ['staff'] }, contents: [{ id: 'handbook', type: 'text_file', name: 'scan_0412' }] } };
+    assertHas(errors(issues(sc)), "'resources/scanned_inbox/contents[0]' id 'scan_0412' is also the id or name of profile item");
+    sc = clean();
+    sc.resources.scanned_inbox.contents.push({ id: 'ledger_archive', type: 'text_file', name: 'x' });
+    assertHas(errors(issues(sc)), "id 'ledger_archive' is also the id or name of resource entry 'resources/ledger_archive'");
+    sc = clean();
+    sc.resources.scanned_inbox.contents.push({ id: 'ledger_2024', type: 'text_file', name: 'x' });
+    assertHas(errors(issues(sc)), "id 'ledger_2024' is also the id or name of resource entry");
+});
+
+test('a sign-in object in a resource\'s contents is an error', { skip }, () => {
+    const sc = clean();
+    sc.resources.scanned_inbox.contents.push({ id: 'nas_admin', type: 'pc', name: 'NAS', locked: true, lockType: 'login' });
+    assertHas(errors(issues(sc)), "'resources/scanned_inbox/contents[1]' is a sign-in object");
+});
+
+test('a resource access list naming no NPC is an error; a role nobody holds a warning', { skip }, () => {
+    const sc = clean();
+    sc.resources.ledger_archive.access = { roles: ['auditors'], people: ['ghost'] };
+    const out = issues(sc);
+    assertHas(errors(out), "'resources/ledger_archive/access' names unknown person 'ghost'");
+    assertHas(warnings(out), "'resources/ledger_archive/access' admits role 'auditors', which no NPC holds");
+});
+
+test('a policy remote that is neither allowed nor blocked is an error', { skip }, () => {
+    const sc = clean();
+    sc.policies.hardened.remote = 'off';
+    assertHas(errors(issues(sc)), "'policies/hardened' remote 'off' must be");
+});
+
+test('an account password in a network or resource string is an error, and is never quoted', { skip }, () => {
+    const sc = clean();
+    sc.networks.office_lan.name = `LAN ${PASSWORD}`;
+    sc.resources.print_queue.observations = `Pin ${PASSWORD}`;
+    const out = errors(issues(sc));
+    assertHas(out, "creds.password appears in 'networks/office_lan/name'");
+    assertHas(out, "creds.password appears in 'resources/print_queue/observations'");
+    assert.ok(!out.some(s => s.includes(PASSWORD)), 'no message quotes the password');
+});
+
+test('no 9.3b field is refused as "needs slice 9.3b" any more (K, O, W, P, I all landed)', { skip }, () => {
+    const sc = clean();
+    sc.networks.office_lan.offWhen = 'power_off';
+    sc.globalVariables = { power_off: false };
+    const out = errors(issues(sc));
+    assertNot(out, 'needs slice 9.3b');
+});
+
+// ---- Outages (sub-slice O, 5.2) ----
+
+// A second network with its own offWhen, down by default, and a declared global.
+function withOutage({ down = true } = {}) {
+    const sc = clean();
+    sc.networks.server_net = { name: 'Server network', offWhen: 'servers_offline' };
+    sc.networkLinks = [['office_lan', 'server_net']];
+    sc.globalVariables = { servers_offline: down };
+    return sc;
+}
+
+test('a clean network offWhen scenario raises no outage error', { skip }, () => {
+    const out = errors(issues(withOutage()));
+    assertNot(out, 'offWhen');
+});
+
+test('a network offWhen that is not the requireGlobal form errors', { skip }, () => {
+    const sc = withOutage();
+    sc.networks.server_net.offWhen = 5;
+    assertHas(errors(issues(sc)), "'networks/server_net/offWhen' must be a global name or { name: value } (the requireGlobal form).");
+});
+
+test('an undeclared network offWhen global warns', { skip }, () => {
+    const sc = withOutage();
+    delete sc.globalVariables;
+    assertHas(warnings(issues(sc)), "networks.server_net.offWhen names 'servers_offline', which is not declared in globalVariables");
+});
+
+test('an open share with contents on a network that starts down warns', { skip }, () => {
+    const sc = withOutage({ down: true });
+    sc.resources.public_drop = {
+        kind: 'file_share', name: 'Public-Drop', host: 'SV-FS02', network: 'server_net',
+        contents: [{ id: 'leak_0001', type: 'text_file', name: 'leak.txt', takeable: true, text: 'z' }]
+    };
+    assertHas(warnings(issues(sc)), "open share 'public_drop' with contents is on network 'server_net', which starts down");
+});
+
+test('the same open share raises no start-down warning when the network starts up', { skip }, () => {
+    const sc = withOutage({ down: false });
+    sc.resources.public_drop = {
+        kind: 'file_share', name: 'Public-Drop', host: 'SV-FS02', network: 'server_net',
+        contents: [{ id: 'leak_0001', type: 'text_file', name: 'leak.txt', takeable: true, text: 'z' }]
+    };
+    assertNot(warnings(issues(sc)), "open share 'public_drop' with contents is on network 'server_net', which starts down");
+});
+
+test('the outage info line reports a network offWhen and its starting state', { skip }, () => {
+    const out = infos(issues(withOutage({ down: true })));
+    assertHas(out, "Outage: network 'server_net' is down while \"servers_offline\" holds; it starts down.");
+});
+
+// ---- grant_foothold (implants, sub-slice I) ----
+
+// A desk-side prop next to lena_pc with a BadUSB action, and a dropped-device action on a
+// timer an NPC beat fires. A badusb device sits in the lobby. lena_pc is the target PC.
+function withImplants() {
+    const sc = clean();
+    sc.startItemsInInventory = [{ id: 'badusb', type: 'usb_stick', name: 'Rubber ducky', usbClass: 'hid' }];
+    room(sc, 'finance_office').objects.push({
+        id: 'usb_socket', type: 'pc', name: 'Desk USB socket',
+        triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb', name: 'BadUSB: Lena desk' }]
+    });
+    sc.timers = [{ id: 'npc_plugs', startOnGlobal: 'stick_dropped', actions: [
+        { type: 'grant_foothold', pc: 'lena_pc', needsDropped: 'badusb', name: 'USB foothold: Lena desk' }
+    ] }];
+    return sc;
+}
+
+test('a clean grant_foothold scenario raises no grant_foothold error', { skip }, () => {
+    const out = errors(issues(withImplants()));
+    assertNot(out, 'grant_foothold');
+});
+
+test('a grant_foothold on a path the engine does not run server-side errors', { skip }, () => {
+    const sc = clean();
+    sc.eventMappings = { some_event: [{ type: 'grant_foothold', pc: 'lena_pc', needsDropped: 'badusb' }] };
+    assertHas(errors(issues(sc)), 'is on a path the engine does not run server-side');
+});
+
+test('a grant_foothold with neither or both shapes errors', { skip }, () => {
+    let sc = clean();
+    room(sc, 'lobby').objects.push({ id: 'p1', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc' }] });
+    assertHas(errors(issues(sc)), "sets neither 'needsDropped' nor 'needsSession'");
+    sc = clean();
+    room(sc, 'lobby').objects.push({ id: 'p2', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsDropped: 'x', needsSession: true }] });
+    assertHas(errors(issues(sc)), "sets both 'needsDropped' and 'needsSession'");
+});
+
+test('a grant_foothold whose pc is not a sign-in object on a network errors', { skip }, () => {
+    const sc = clean();
+    room(sc, 'lobby').objects.push({ id: 'p3', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'kit_dropbox', needsDropped: 'kit_dropbox' }] });
+    assertHas(errors(issues(sc)), "names pc 'kit_dropbox', which is not a sign-in object");
+});
+
+test('a needsSession grant_foothold with a missing or unknown needsHeld errors', { skip }, () => {
+    let sc = clean();
+    room(sc, 'finance_office').objects.push({ id: 's1', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true }] });
+    assertHas(errors(issues(sc)), "is a 'needsSession' action with no 'needsHeld'");
+    sc = clean();
+    room(sc, 'finance_office').objects.push({ id: 's2', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'nope' }] });
+    assertHas(errors(issues(sc)), "'needsHeld' names 'nope', which is no item");
+});
+
+test('a needsSession grant_foothold on the sign-in PC itself, or one that consumes its item, errors', { skip }, () => {
+    let sc = withImplants();
+    // Move the action onto lena_pc itself.
+    obj(sc, 'finance_office', 'lena_pc').triggerOnInteract = [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb' }];
+    assertHas(errors(issues(sc)), 'is a \'needsSession\' action on the sign-in PC it targets');
+    sc = withImplants();
+    obj(sc, 'finance_office', 'usb_socket').consumesItem = true;
+    assertHas(errors(issues(sc)), "whose host object sets 'consumesItem'");
+});
+
+test('a needsSession grant_foothold whose needsHeld device has no id errors (R2 m1)', { skip }, () => {
+    const sc = clean();
+    // The device is named by type, and the device object carries no id; the implant is reconciled
+    // off the tray by id, so an id-less device can never be removed.
+    sc.startItemsInInventory = [{ type: 'usb_stick', name: 'Rubber ducky', usbClass: 'hid' }];
+    room(sc, 'finance_office').objects.push({
+        id: 'usb_socket', type: 'pc',
+        triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'usb_stick', name: 'BadUSB' }]
+    });
+    assertHas(errors(issues(sc)), "device object has no 'id'");
+});
+
+test('the session-shape guards cover a grant_foothold placed in a timer (R2 m2)', { skip }, () => {
+    const sc = clean();
+    sc.startItemsInInventory = [{ id: 'badusb', type: 'usb_stick', name: 'Rubber ducky', usbClass: 'hid' }];
+    // The host-consumesItem guard must see the timer as the action's host, not nil.
+    sc.timers = [{ id: 'npc_plugs', startOnGlobal: 'g', consumesItem: true, actions: [
+        { type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb', name: 'BadUSB' }
+    ] }];
+    assertHas(errors(issues(sc)), "whose host object sets 'consumesItem'");
+});
+
+test('two grant_foothold actions for one pc and shape error', { skip }, () => {
+    const sc = withImplants();
+    room(sc, 'finance_office').objects.push({ id: 'usb_socket2', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb' }] });
+    assertHas(errors(issues(sc)), "the same shape; the route cannot tell them apart");
+});
+
+test('a grant_foothold whose PC refuses the device USB class warns', { skip }, () => {
+    const sc = withImplants();
+    sc.policies.hardened.usb = 'blocked';
+    obj(sc, 'finance_office', 'lena_pc').policy = 'hardened';
+    assertHas(warnings(issues(sc)), "whose USB policy refuses the usbClass of 'badusb'");
+});
+
+// ---- port security (sub-slice P, section 5.4 / 9.2) ----
+
+test('portSecurity on a jack is accepted (no error)', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'comms_room', 'comms_port').portSecurity = true;
+    obj(sc, 'comms_room', 'comms_port').portSecurityMessage = 'Known machines only.';
+    const out = issues(sc);
+    assertNot(out, 'portSecurity');
+    assertNot(out, 'needs slice 9.3b');
+});
+
+test('portSecurity on an object that is not a jack is an error', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'store', 'door_box').portSecurity = true;
+    assertHas(errors(issues(sc)), "has 'portSecurity' but is not a networkJack");
+});
+
+test('portSecurityMessage without portSecurity is an error', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'comms_room', 'comms_port').portSecurityMessage = 'Known machines only.';
+    assertHas(errors(issues(sc)), "has 'portSecurityMessage' without 'portSecurity'");
+});
+
+test('a blank or whitespace-only portSecurityMessage warns (review R1 minor 2)', { skip }, () => {
+    for (const message of ['', '   ']) {
+        const sc = clean();
+        const port = obj(sc, 'comms_room', 'comms_port');
+        port.portSecurity = true;
+        port.portSecurityMessage = message;
+        assertHas(warnings(issues(sc)), "has a blank 'portSecurityMessage'");
+    }
+    const sc = clean();
+    const port = obj(sc, 'comms_room', 'comms_port');
+    port.portSecurity = true;
+    port.portSecurityMessage = 'Known machines only.';
+    assertNot(warnings(issues(sc)), 'blank');
+});
+
+test('a jack that is both portSecurity and wifiAp is an error', { skip }, () => {
+    const sc = clean();
+    const port = obj(sc, 'comms_room', 'comms_port');
+    port.portSecurity = true;
+    port.wifiAp = true;
+    assertHas(errors(issues(sc)), "is both 'portSecurity' and 'wifiAp'");
+});
+
+// Now that W has made wifiAp a real field, the portSecurity/wifiAp cross-check can be
+// exercised on its own: the combination is refused by the cross-check itself, not because
+// either field is still reserved for a later sub-slice.
+test('the portSecurity/wifiAp cross-check fires, and neither field is refused as reserved', { skip }, () => {
+    const sc = clean();
+    const port = obj(sc, 'comms_room', 'comms_port');
+    port.portSecurity = true;
+    port.wifiAp = true;
+    const out = errors(issues(sc));
+    assertHas(out, "is both 'portSecurity' and 'wifiAp'");
+    assertNot(out, "'portSecurity', which needs slice 9.3b");
+    assertNot(out, "'wifiAp', which needs slice 9.3b");
+});
+
+// ---- Wi-Fi (slice 9.3b sub-slice W, 5.3) ----
+
+// clean() with a guest_wifi network, an access point on it, and a readable note that
+// names the key, so a clean Wi-Fi scenario raises nothing.
+function wifiClean() {
+    const sc = clean();
+    sc.networks.guest_wifi = { name: 'Guest Wi-Fi', wifi: { ssid: 'Harbour-Guest', psk: 'seabreeze-2025' } };
+    room(sc, 'lobby').objects.push({ id: 'guest_ap', type: 'pc', sprite: 'wifi_ap1', name: 'Guest AP', wifiAp: true, network: 'guest_wifi' });
+    room(sc, 'lobby').objects.push({ id: 'wifi_note', type: 'postit_note', name: 'Reception note',
+        text: 'Guest Wi-Fi key: seabreeze-2025', takeable: false });
+    return sc;
+}
+
+test('a clean Wi-Fi scenario raises no Wi-Fi error or warning', { skip }, () => {
+    const list = issues(wifiClean());
+    assertNot(errors(list), 'wifi');
+    assertNot(warnings(list), 'psk');
+    assertNot(errors(list), "has 'wifiAp'");
+});
+
+test('a wifi block needs an ssid and a string psk', { skip }, () => {
+    let sc = wifiClean();
+    delete sc.networks.guest_wifi.wifi.ssid;
+    assertHas(errors(issues(sc)), "'networks/guest_wifi/wifi' has no 'ssid'");
+    sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = 1234;
+    assertHas(errors(issues(sc)), "'networks/guest_wifi/wifi' psk must be a string");
+});
+
+test('a whitespace-only psk is an error (the server would treat it as open, not keyed)', { skip }, () => {
+    let sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = '   ';
+    const list = issues(sc);
+    assertHas(errors(list), "psk is only whitespace");
+    // and it must not also be reported as a short/unreadable key warning
+    assertNot(warnings(list), 'psk is shorter than eight characters');
+    sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = '';
+    assertNot(errors(issues(sc)), "psk is only whitespace");
+});
+
+test('wifiAp is refused without a network, without a wifi block, on a sign-in object, a jack, or a lock', { skip }, () => {
+    let sc = wifiClean();
+    delete obj(sc, 'lobby', 'guest_ap').network;
+    assertHas(errors(issues(sc)), "has 'wifiAp' but no network");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').network = 'office_lan';
+    assertHas(errors(issues(sc)), "its network 'office_lan' defines no 'wifi' block");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').lockType = 'login';
+    obj(sc, 'lobby', 'guest_ap').access = { roles: ['staff'] };
+    assertHas(errors(issues(sc)), "is a sign-in object");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').networkJack = true;
+    assertHas(errors(issues(sc)), "is a network jack with 'wifiAp'");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').locked = true;
+    assertHas(errors(issues(sc)), "has 'wifiAp' and a lock");
+});
+
+test('a short Wi-Fi key, and a key the player cannot read, warn', { skip }, () => {
+    let sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = 'short';
+    obj(sc, 'lobby', 'wifi_note').text = 'Guest Wi-Fi key: short';
+    assertHas(warnings(issues(sc)), "psk is shorter than eight characters");
+    sc = wifiClean();
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    assertHas(warnings(issues(sc)), "psk appears nowhere the player can read");
+});
+
+// ---- warnings ----
+
+test('a sign-in PC in a locked room reached from a jack outside it warns until the policy says remote', { skip }, () => {
+    const sc = clean();
+    delete obj(sc, 'finance_office', 'lena_pc').policy;
+    assertHas(warnings(issues(sc)), "sign-in PC 'lena_pc' sits in locked room 'finance_office'");
+    sc.defaultPolicy = 'hardened';
+    assertNot(warnings(issues(sc)), "sign-in PC 'lena_pc' sits in locked room");
+});
+
+test('a jack with no rogue device, and a rogue device with no jack, warn', { skip }, () => {
+    let sc = clean();
+    room(sc, 'lobby').objects = [];
+    assertHas(warnings(issues(sc)), "has a jack ('comms_port') but no item with \"rogueDevice\": true");
+    sc = clean();
+    room(sc, 'comms_room').objects = [];
+    assertHas(warnings(issues(sc)), "has a rogue device ('kit_dropbox') but no jack");
+});
+
+test('a protected share nobody can map warns, for each of the three reasons', { skip }, () => {
+    let sc = clean();
+    sc.networks.plant_net = { name: 'Plant' };
+    sc.resources.ledger_archive.network = 'plant_net';
+    assertHas(warnings(issues(sc)), "share 'ledger_archive' has an access list but no sign-in object on its network");
+    sc = clean();
+    sc.resources.ledger_archive.access = { people: [] };
+    assertHas(warnings(issues(sc)), "share 'ledger_archive' has an access list that admits no account");
+    sc = clean();
+    sc.resources.ledger_archive.access = { roles: ['it'] };
+    obj(sc, 'store', 'door_box').access = { roles: ['finance'] };
+    obj(sc, 'finance_office', 'lena_pc').access = { roles: ['finance'] };
+    assertHas(warnings(issues(sc)), "share 'ledger_archive' admits 'ian', but none of them can sign in at an object on its network");
+});
+
+test('a protected share with no contents warns that the list does nothing, and gets no map lines', { skip }, () => {
+    for (const contents of [undefined, []]) {
+        const sc = clean();
+        if (contents) sc.resources.ledger_archive.contents = contents;
+        else delete sc.resources.ledger_archive.contents;
+        sc.resources.ledger_archive.observations = 'Folders by year.';
+        const list = issues(sc);
+        assertHas(warnings(list), "share 'ledger_archive' has an access list and no contents: no desktop maps it");
+        assertNot(warnings(list), "share 'ledger_archive' has an access list but");
+        assertNot(infos(list), "share 'ledger_archive' maps on");
+    }
+    assertNot(warnings(issues(clean())), 'has an access list and no contents');
+});
+
+test('the implicit staff role counts in a share\'s access list', { skip }, () => {
+    const sc = clean();
+    sc.resources.ledger_archive.access = { roles: ['staff'] };
+    const out = issues(sc);
+    assertNot(warnings(out), "share 'ledger_archive'");
+    assertHas(infos(out), "share 'ledger_archive' maps on 'lena_pc' (lena)");
+});
+
+test('two sign-in hosts with one host label warn', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'store', 'door_box').host = 'HB-FIN-02';
+    assertHas(warnings(issues(sc)), "sign-in objects 'lena_pc', 'door_box' share the host label 'HB-FIN-02'");
+});
+
+test('a hosts device (N13) shares a host label with a sign-in object: warns, both kinds', { skip }, () => {
+    const sc = clean();
+    sc.hosts = { cam01: { name: 'HB-FIN-02', network: 'office_lan' }, cam02: { name: 'Quiet camera', network: 'office_lan' } };
+    obj(sc, 'finance_office', 'lena_pc').host = 'HB-FIN-02';
+    assertHas(warnings(issues(sc)), "hosts 'lena_pc', 'cam01' share the host label 'HB-FIN-02'");
+    const two = clean();
+    two.hosts = { cam01: { name: 'Same name', network: 'office_lan' }, cam02: { name: 'Same name', network: 'office_lan' } };
+    assertHas(warnings(issues(two)), "hosts 'cam01', 'cam02' share the host label 'Same name'");
+    assertNot(warnings(issues(clean())), 'share the host label');
+});
+
+test('a physical item on a host\'s desktop warns', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'store', 'door_box').contents = [{ id: 'spare_card', type: 'keycard', name: 'Spare card', takeable: true }];
+    assertHas(warnings(issues(sc)), "is a keycard on the desktop of host 'door_box'");
+});
+
+test('a remote-only host under a lockout policy warns', { skip }, () => {
+    const sc = clean();
+    sc.policies.strict = { maxAttempts: 3 };
+    obj(sc, 'store', 'door_box').policy = 'strict';
+    assertHas(warnings(issues(sc)), "host 'door_box' can be signed in to only over the network, under a policy with maxAttempts 3");
+});
+
+test('an actions list on a jack or a sign-in host warns', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'comms_room', 'comms_port').actions = [{ label: 'Look' }];
+    obj(sc, 'finance_office', 'lena_pc').actions = [{ label: 'Look' }];
+    const out = warnings(issues(sc));
+    assertHas(out, "jack 'comms_port' has an 'actions' list");
+    assertHas(out, "sign-in host 'lena_pc' has an 'actions' list");
+});
+
+// ---- schema and known fields ----
+
+function validatorRun(scenario, call) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      data = JSON.parse(STDIN.read)
+      puts JSON.generate(${call})`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+const SCHEMA = JSON.stringify(join(root, 'scripts/scenario-schema.json'));
+
+test('the network fields are known fields and pass the schema', { skip }, () => {
+    const sc = { scenario_brief: 'networks', ...clean() };
+    Object.assign(obj(sc, 'comms_room', 'comms_port'), { jackConfirm: 'Plug it in?', linkName: 'Drop box', linkStoreIn: 'capture_log' });
+    const unknown = validatorRun(sc, 'check_unknown_fields(data)');
+    assert.deepEqual(unknown, []);
+    assert.deepEqual(validatorRun(sc, `validate_json(data, ${SCHEMA})`), []);
+    sc.policies.hardened.remote = 'off';
+    const bad = validatorRun(sc, `validate_json(data, ${SCHEMA})`);
+    assert.ok(bad.some(s => s.includes('remote')), bad.join('\n'));
+});
+
+test('validate_scenario.rb loads the network checks', { skip }, () => {
+    const sc = clean();
+    sc.networkLinks = [['office_lan', 'ghost_net']];
+    assertHas(errors(validatorRun(sc, 'check_network_model(data)')), "names no entry in 'networks'");
+});
+
+// ---- Links and the pivot (slice 9.3b sub-slice K, 5.1) ----
+
+// A server network linked to the office LAN, reached by a pivot through the office hosts.
+function linkClean() {
+    const sc = clean();
+    sc.networks.server_net = { name: 'Server network' };
+    sc.networkLinks = [['office_lan', 'server_net']];
+    sc.resources.backup_vault = { kind: 'file_share', name: 'Backup-Vault', host: 'SV-FS02', network: 'server_net',
+        access: { roles: ['it'] }, contents: [{ id: 'bk', type: 'text_file', name: 'r.txt', takeable: true, text: 'x' }] };
+    room(sc, 'store').objects.push({ id: 'sv_fs02', type: 'pc', name: 'Server host', host: 'SV-FS02', network: 'server_net',
+        locked: true, lockType: 'login', access: { roles: ['it'] } });
+    return sc;
+}
+
+test('a clean linked scenario raises no link error or warning and prints link reach', { skip }, () => {
+    const list = issues(linkClean());
+    assertNot(errors(list), 'networkLinks');
+    assertNot(warnings(list), 'pivot');
+    assertHas(list, "ℹ️ Link reach: from 'office_lan' a pivot reaches 'server_net'");
+});
+
+test('a networkLinks entry must be a two-item list of defined, distinct networks', { skip }, () => {
+    const sc = linkClean();
+    sc.networkLinks = [['office_lan'], ['office_lan', 'ghost_net'], ['office_lan', 'office_lan'], 'junk'];
+    const out = errors(issues(sc));
+    assertHas(out, 'must be a two-item list of network ids');
+    assertHas(out, "names no entry in 'networks'");
+    assertHas(out, 'links a network to itself');
+});
+
+test('a network reachable only by a pivot with no host to open it warns', { skip }, () => {
+    const sc = linkClean();
+    // Drop every office-LAN sign-in host so no pivot session can be opened.
+    for (const r of Object.values(sc.rooms)) {
+        if (Array.isArray(r.objects)) r.objects = r.objects.filter(o => !(o.lockType === 'login' && o.network !== 'server_net'));
+    }
+    const out = warnings(issues(sc));
+    assertHas(out, "network 'server_net' is reachable only by pivoting");
+});
+
+// Review K R2 m1: judged per path. office_lan (jacked, with hosts) -> mid_net (no host) ->
+// server_net: the office host opens the first hop, but nothing on mid_net opens the second,
+// so the server network can never be reached and warns, though a host sits on the way.
+test('a pivot chain through a network with no sign-in host warns even when the jacked network has one', { skip }, () => {
+    const sc = linkClean();
+    sc.networks.mid_net = { name: 'Middle network' };
+    sc.networkLinks = [['office_lan', 'mid_net'], ['mid_net', 'server_net']];
+    assertHas(warnings(issues(sc)), "network 'server_net' is reachable only by pivoting");
+});
+
+test('a pivot chain with a sign-in host on every network before the target does not warn', { skip }, () => {
+    const sc = linkClean();
+    sc.networks.mid_net = { name: 'Middle network' };
+    sc.networkLinks = [['office_lan', 'mid_net'], ['mid_net', 'server_net']];
+    room(sc, 'store').objects.push({ id: 'mid_pc', type: 'pc', name: 'Middle host', host: 'MID-01', network: 'mid_net',
+        locked: true, lockType: 'login', access: { roles: ['it'] } });
+    assertNot(warnings(issues(sc)), "network 'server_net' is reachable only by pivoting");
+});
+
+// N13: a network that holds only a `hosts` device carries something worth reaching (a device has no
+// session to pivot through, so it never opens a hop: the middle network's device does not help).
+test('a device-only network reached through a network with no sign-in host warns; a device does not open the hop', { skip }, () => {
+    const sc = linkClean();
+    sc.networks.mid_net = { name: 'Middle network' };
+    sc.networks.plant_net = { name: 'Plant network' };
+    sc.networkLinks = [['office_lan', 'mid_net'], ['mid_net', 'plant_net']];
+    sc.hosts = { plant_dev: { name: 'Plant device', network: 'plant_net' }, mid_dev: { name: 'Middle device', network: 'mid_net' } };
+    assertHas(warnings(issues(sc)), "network 'plant_net' is reachable only by pivoting");
+    const ok = linkClean();
+    ok.networks.plant_net = { name: 'Plant network' };
+    ok.networkLinks = [['office_lan', 'plant_net']];
+    ok.hosts = { plant_dev: { name: 'Plant device', network: 'plant_net' } };
+    assertNot(warnings(issues(ok)), "network 'plant_net' is reachable only by pivoting");
+});
+
+test('more than eight link paths between two carrying networks warns', { skip }, () => {
+    const sc = clean();
+    const links = [['office_lan', 'server_net']];
+    for (let i = 1; i <= 10; i++) { sc.networks['m' + i] = { name: 'M' + i }; links.push(['office_lan', 'm' + i], ['m' + i, 'server_net']); }
+    sc.networks.server_net = { name: 'Server network' };
+    sc.resources.backup_vault = { kind: 'file_share', name: 'Backup-Vault', host: 'SV-FS02', network: 'server_net',
+        contents: [{ id: 'bk', type: 'text_file', name: 'r.txt', takeable: true, text: 'x' }] };
+    sc.networkLinks = links;
+    assertHas(warnings(issues(sc)), 'link paths; the pivot keeps only the first');
+});
+
+// C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md, 9): a psk only in alternative-set feed posts.
+test('a Wi-Fi key only in set member posts warns about timing; on an own post outside any set it is findable', { skip }, () => {
+    const feeder = (ventText, ownText) => ({
+        id: 'ivy', displayName: 'Ivy', npcType: 'person',
+        needs: { social_media: { decayPerMin: 60, urgentAt: 40 } },
+        feed: { site: 'friendface', person: 'ivy', posts: [
+            { id: 'ivy_own', text: ownText },
+            { id: 'ivy_vent', text: ventText, when: { cause: 'down', need: 'work' } },
+            { id: 'ivy_re', text: '{name}, the shared drive is down here too.', replyTo: 'tom_vent', insteadOf: 'ivy_vent',
+                when: { cause: 'down', need: 'work' } }
+        ] }
+    });
+    let sc = wifiClean();
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    room(sc, 'lobby').npcs = [...(room(sc, 'lobby').npcs || []), feeder('Guest key is seabreeze-2025 if anyone asks.', 'Quiet morning so far.')];
+    let w = warnings(issues(sc));
+    assertHas(w, 'psk appears only in posts whose shipping depends on timing (alternative sets ivy_vent)');
+    assertHas(w, 'the dungeon graph does not draw this clue');
+    assert.ok(!w.some(s => s.includes('psk appears nowhere')), w.join('\n'));
+    sc = wifiClean();
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    room(sc, 'lobby').npcs = [...(room(sc, 'lobby').npcs || []), feeder('Nothing saves this morning.', 'Guest key is seabreeze-2025 if anyone asks.')];
+    w = warnings(issues(sc));
+    assert.ok(!w.some(s => s.includes('psk appears')), w.join('\n'));
+});
+
+// ---- Patch panel: panelOf / panelPorts (Pentest B1, E0.4) ----
+function panelScenario(mutate) {
+    const s = {
+        startRoom: 'r1',
+        networks: { office_lan: { name: 'LAN' }, lw_voice: { name: 'Voice' } },
+        rooms: { r1: { type: 'room_office', objects: [
+            { id: 'panel', type: 'table', name: 'Patch panel', interactable: true,
+              panelPorts: [{ port: 1, label: 'D01', desk: 'Desk 1', jack: 'lan_port' }, { port: 2, label: 'V02', desk: 'Phone', jack: 'voice_port' }, { port: 3, label: 'D03', desk: 'Spare' }] },
+            { id: 'lan_port', type: 'table', name: 'LAN port', networkJack: true, network: 'office_lan' },
+            { id: 'voice_port', name: 'Voice port', networkJack: true, network: 'lw_voice', panelOf: 'panel' }
+        ] } }
+    };
+    if (mutate) mutate(s.rooms.r1.objects);
+    return s;
+}
+test('panelOf: a well-formed panel raises no panel error', () => {
+    const list = errors(issues(panelScenario()));
+    assertNot(list, 'panelOf');
+    assertNot(list, 'panelPorts');
+});
+test('panelOf: names no object in the room', () => {
+    assertHas(errors(issues(panelScenario(o => { o[2].panelOf = 'nope'; }))), "has panelOf 'nope'");
+});
+test('panelOf: the panel does not list the jack', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts.splice(1, 1); }))), 'does not list it in panelPorts');
+});
+test('panelOf: a sprite or a position is refused', () => {
+    assertHas(errors(issues(panelScenario(o => { o[2].sprite = 'x'; }))), 'a panel port has no sprite');
+    assertHas(errors(issues(panelScenario(o => { o[2].x = 4; }))), 'a panel port has none');
+});
+test('panelPorts: an entry names a missing jack, a non-jack, or a jack for another panel', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[0].jack = 'ghost'; }))), "jack 'ghost'");
+    assertHas(errors(issues(panelScenario(o => { delete o[1].networkJack; }))), 'not a networkJack');
+    assertHas(errors(issues(panelScenario(o => { o[2].panelOf = 'lan_port'; o[1].panelPorts = []; }))), 'panelOf names');
+});
+test('panelPorts: a repeated port number or the same jack listed twice is an error', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[1].port = 1; }))), 'lists port 1 more than once');
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[2].jack = 'lan_port'; }))), "lists jack 'lan_port' more than once");
+    assertNot(errors(issues(panelScenario())), 'more than once');
+});
+test('panelOf: a panel port that is not a networkJack is refused, and the texture message names sprite only', () => {
+    const list = errors(issues(panelScenario(o => { delete o[2].networkJack; })));
+    assertHas(list, 'has panelOf but is not a networkJack');
+    assertNot(errors(issues(panelScenario(o => { o[2].sprite = 'x'; }))), "'sprite' or 'type'");
+});
+test('the full validator reports no unknown errors on test_access_devices', () => {
+    const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/test_access_devices/scenario.json.erb', '--skip-ink', '--no-graph'], {
+        cwd: root, encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr + r.stdout.slice(-2000));
+    // Known errors (scripts/validator_known_failures.json, e.g. the rogue_ap sprite awaiting A3 art) are allowed.
+    assert.match(r.stdout, /Result: (0 errors|(\d+) errors \(\2 known\))/);
+});
+test('the full validator reports no unknown errors on demo_access_tour', () => {
+    const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/demo_access_tour/scenario.json.erb', '--skip-ink', '--no-graph'], {
+        cwd: root, encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr + r.stdout.slice(-2000));
+    assert.match(r.stdout, /Result: (0 errors|(\d+) errors \(\2 known\))/);
+});
+
+// ---- E0.4: the Wi-Fi key as a capture secret ----
+
+const KEY = 'quiet-harbour-77';
+// wifiClean() with the staff key unreadable in any note, written by a phone NPC's capture
+// mapping whose proof is a plant on a consuming desk.
+function keyCaptureScenario(proof) {
+    const sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = KEY;
+    sc.social = { captures: { revealSecret: true } };
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    room(sc, 'lobby').objects.push(
+        { id: 'kit_ap', type: 'usb', name: 'Pocket AP', takeable: true },
+        { id: 'ap_spot', type: 'pc', name: 'Socket', requiresItem: 'kit_ap', consumesItem: true, triggerOnInteract: [] });
+    const writer = { eventPattern: 'q', addCapture: { targetId: 'staff_wifi_key', kind: 'credential', secret: KEY } };
+    if (proof) writer.addCapture.proof = proof;
+    room(sc, 'lobby').npcs = [...(room(sc, 'lobby').npcs || []), { id: 'hax', npcType: 'phone', eventMappings: [writer] }];
+    return sc;
+}
+
+test('E0.4: a key with a satisfiable proof-carrying capture writer counts as readable', { skip }, () => {
+    const list = issues(keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' }));
+    assertNot(warnings(list), 'appears nowhere the player can read');
+});
+
+test('R3 m2: a key whose plant site is nested in a container is still unreadable', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    const lobby = room(sc, 'lobby');
+    const spot = lobby.objects.find(o => o.id === 'ap_spot');
+    lobby.objects = lobby.objects.filter(o => o !== spot);
+    lobby.objects.push({ id: 'cabinet', type: 'safe', name: 'Cabinet', contents: [spot] });
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R3 m1: a key writer with kind foothold, or a whitespace targetId, is never served, so it still warns', { skip }, () => {
+    let sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.kind = 'foothold';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+    sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.targetId = '  ';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('E0.4: a key with no capture writer is still unreadable', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs = (room(sc, 'lobby').npcs || []).filter(n => n.id !== 'hax');
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('E0.4: a key whose capture proof cannot be satisfied is still unreadable', { skip }, () => {
+    const list = issues(keyCaptureScenario({ planted: 'kit_ap', on: 'no_such_object' }));
+    assertHas(warnings(list), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer is not served when social.captures.revealSecret is off, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    delete sc.social.captures.revealSecret;
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer addressed to an account username is not served, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.push({ id: 'ann', npcType: 'person', creds: { username: 'ann.b', password: 'Ann-Pass-901' } });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.address = 'Ann.B';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer owned by an account holder is not served, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').creds = { username: 'hax.h', password: 'Hax-Pass-902' };
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: only the first writer of a target id is served', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'no_such_object' });
+    room(sc, 'lobby').npcs.push({ id: 'hax2', npcType: 'phone', eventMappings: [{ eventPattern: 'r',
+        addCapture: { targetId: 'staff_wifi_key', kind: 'credential', secret: KEY, proof: { planted: 'kit_ap', on: 'ap_spot' } } }] });
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('E0.4: a key writer with no proof is a warning (the server never serves it)', { skip }, () => {
+    const list = issues(keyCaptureScenario(null));
+    assertHas(warnings(list), 'carries no proof');
+    assertNot(list, KEY);
+});
+
+test('E0.4: a key writer with a proof raises no such warning', { skip }, () => {
+    assertNot(warnings(issues(keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' }))), 'carries no proof');
+});
+
+test('E0.4: a planted non-jack item that carries rogueDevice is a warning', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').objects.find(o => o.id === 'kit_ap').rogueDevice = true;
+    assertHas(warnings(issues(sc)), 'rogueDevice');
+});
+
+test('E0.4: a planted item with no rogueDevice raises no such warning', { skip }, () => {
+    assertNot(warnings(issues(keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' }))), 'carries rogueDevice');
+});
+
+test('E0.4: a rogue device planted on a jack is not warned about', { skip }, () => {
+    const sc = clean();
+    const jack = room(sc, 'comms_room').objects.find(o => o.networkJack);
+    const dev = Object.values(sc.rooms).flatMap(r => r.objects || []).find(o => o.rogueDevice);
+    assert.ok(jack && dev);
+    sc.rooms.lobby.npcs = [...(sc.rooms.lobby.npcs || []), { id: 'hax', npcType: 'phone', eventMappings: [{ eventPattern: 'q',
+        addCapture: { targetId: 'jackcap', kind: 'foothold', host: 'x', proof: { planted: dev.id, on: jack.id } } }] }];
+    assertNot(warnings(issues(sc)), 'carries rogueDevice');
+});

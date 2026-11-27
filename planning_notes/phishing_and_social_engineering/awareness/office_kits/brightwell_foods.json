@@ -1,0 +1,694 @@
+{
+  "company": "brightwell_foods",
+  "_note": "Real course values (plan 4.3). Sources carry no position: with no position an object binds to the drawn prop of its type on the room's Tiled map (rooms.js findMatchFor :261-284, applyScenarioObjectPosition :2495). The test fixture test_ca_office_kit keeps the gate-A placeholder positions and shortened timings through the `override` on its episodes.json row. Pool lines: awareness level, nothing that blames anyone.",
+  "scenario": { "npcThoughts": false },
+  "pool": {
+    "key": "kit_brightwell",
+    "lines": ["Busy inbox today.", "Audit week again."],
+    "requireGlobal": { "kit_quiet": false }
+  },
+  "sources": [
+    {
+      "type": "coffee_station",
+      "id": "kit_coffee",
+      "name": "Coffee station",
+      "sprite": "coffee_station1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "The office coffee station. Staff drift over for a top-up.",
+      "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": -1 }, "capacity": 2, "chatter": "pool" }
+    },
+    {
+      "type": "water_cooler",
+      "id": "kit_cooler",
+      "name": "Water cooler",
+      "sprite": "water_cooler1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "A water cooler by the far wall.",
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": -1 } }
+    }
+  ],
+  "staff": {
+    "gwen_pritchard": {
+      "displayName": "Gwen Pritchard",
+      "spriteSheet": "gwen_pritchard",
+      "voice": { "name": "Sulafat", "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 3, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 3, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
+      "chatterLines": ["Anyone for a brew?", "Kettle's just boiled."]
+    },
+    "agnieszka_duda": {
+      "displayName": "Agnieszka Duda",
+      "spriteSheet": "agnieszka_duda",
+      "voice": { "name": "Callirrhoe", "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 6, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 6, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
+      "chatterLines": ["Long week.", "Any biscuits left?", "Just topping up my water."]
+    },
+    "graham_whitfield": {
+      "displayName": "Graham Whitfield",
+      "spriteSheet": "graham_whitfield",
+      "voice": { "name": "Umbriel", "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 8, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 8, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
+      "chatterLines": ["Year-end's creeping up.", "Ledgers won't balance themselves.", "That's my second cup."]
+    }
+  },
+  "setPieces": {
+    "_note": "ca01 layer-3 recall. kit_ca01_notice is the payments team's taped notice on the back wall (an EARLIER, separate case, so it reads true after both a catch and a miss; consistent with Agnieszka's 'a different case, one that got through' bark). Sprite notes6 (14x18 taped paper notice, preloaded) on type notice_board1, wallMounted on the back wall. Placement (R3 dressing, 2026-11-19): the back wall of room_aw_brightwell has no gap wide enough for the 42x31 corkboard (window 36-76, RANGE 96-126, BRIGHTWELL sign 146-210, chart 226-270, side walls slant in; every gap is about 20-24 px), so the notice is the 14x18 taped paper in the 20 px gap between RANGE and the sign: x 129-143, y 22-40 (position {4.03125, 0.6875}, the same wall height as other boards), directly above Agnieszka's walk target {4,3}. Real bespoke board-notice art is still approved-but-ungenerated.",
+    "ca01_defend_react": {
+      "_note": "D280: the ca01 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca01_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "gwen_pritchard": {
+          "eventMappings": [
+            {
+              "_kitKey": "chg_defend_done_knot_ca01_react",
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca01_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca07_defend_react": {
+      "_note": "D280: the ca07 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca07_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "graham_whitfield": {
+          "eventMappings": [
+            {
+              "_kitKey": "chg_defend_done_knot_ca07_react",
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca07_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca13_defend_react": {
+      "_note": "D280: the ca13 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca13_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "graham_whitfield": {
+          "eventMappings": [
+            {
+              "_kitKey": "chg_defend_done_knot_ca13_react",
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca13_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca01_recall_fallback": {
+      "globals": {},
+      "objects": [
+        {
+          "type": "notice_board1",
+          "id": "kit_ca01_notice",
+          "name": "Payments team notice",
+          "sprite": "notes6",
+          "wallMounted": true,
+          "position": { "x": 4.03125, "y": 0.6875 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_defend_done",
+          "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
+        }
+      ]
+    },
+    "ca01_recall": {
+      "_note": "The ca01 chain, written once here so --kit regenerates it (wrap review M3). Look up sets {out}: Gwen and Agnieszka stop their needs, Agnieszka walks to the notice (4,3) after 1 s, says her line on arrival, Adaeze answers 4 s after that and sets kit_ca01_done, and Gwen resumes then. The bark conditions never read a global their own mapping writes (stillValid re-runs the condition every 250 ms, so that would cancel the bubble). Every bark carries kit_quiet === true, so a line held across a kiosk reopen is dropped on release (plan 4.5). kit_ca01_t_done is the timer fallback: if the walk is blocked and Agnieszka never arrives, 12 s after {out} it sets kit_ca01_done anyway, and both colleagues resume on it. The two lines in the barks are fixed text that went through five dialogue rounds.",
+      "globals": { "kit_{chain}_agn_there": false, "kit_{chain}_done": false },
+      "timers": [
+        { "id": "kit_{chain}_t_done", "startOnGlobal": "{out}", "delayMs": 12000, "condition": "!globalVars.kit_{chain}_done", "setGlobal": { "kit_{chain}_done": true } }
+      ],
+      "mappings": [
+        {
+          "_kitKey": "chg_chain_agn_there_sets_chain_done",
+          "eventPattern": "global_variable_changed:kit_{chain}_agn_there",
+          "condition": "value === true && globalVars.{out} === true && globalVars.kit_quiet === true",
+          "onceOnly": true,
+          "delayMs": 4000,
+          "setGlobal": { "kit_{chain}_done": true },
+          "bark": "One call to confirm the new details, and the money never moves. Saves a lot of phoning round afterwards."
+        }
+      ],
+      "objects": [
+        {
+          "type": "notice_board1",
+          "id": "kit_ca01_notice",
+          "name": "Payments team notice",
+          "sprite": "notes6",
+          "wallMounted": true,
+          "position": { "x": 4.03125, "y": 0.6875 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "{out}",
+          "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
+        }
+      ],
+      "staff": {
+        "agnieszka_duda": {
+          "needs": { "caffeine": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 100 } },
+          "eventMappings": [
+            { "_kitKey": "chg_out", "eventPattern": "global_variable_changed:{out}", "condition": "value === true", "onceOnly": true, "needs": "suspend" },
+            { "_kitKey": "chg_out_2", "eventPattern": "global_variable_changed:{out}", "condition": "value === true", "onceOnly": true, "delayMs": 1000,
+              "patrolOverride": { "targetTile": { "x": 4, "y": 3 }, "speed": 90 } },
+            { "_kitKey": "npc_arrived_agnieszka_duda_sets_chain_agn_there", "eventPattern": "npc_arrived:kit_agnieszka_duda",
+              "condition": "data.owner !== 'needs' && globalVars.{out} === true && globalVars.kit_quiet === true",
+              "onceOnly": true, "setGlobal": { "kit_{chain}_agn_there": true },
+              "bark": "That notice on the wall is from last spring. A redirect that went through, and the supplier was left waiting to be paid." },
+            { "_kitKey": "chg_chain_agn_there", "eventPattern": "global_variable_changed:kit_{chain}_agn_there", "condition": "value === true", "onceOnly": true, "delayMs": 3000, "needs": "resume" },
+            { "_kitKey": "chg_chain_done", "eventPattern": "global_variable_changed:kit_{chain}_done", "condition": "value === true", "onceOnly": true, "needs": "resume" }
+          ]
+        },
+        "gwen_pritchard": {
+          "eventMappings": [
+            { "_kitKey": "chg_out", "eventPattern": "global_variable_changed:{out}", "condition": "value === true", "onceOnly": true, "needs": "suspend" },
+            { "_kitKey": "chg_chain_done", "eventPattern": "global_variable_changed:kit_{chain}_done", "condition": "value === true", "onceOnly": true, "needs": "resume" }
+          ]
+        }
+      }
+    },
+    "ca13_summary_says_send": {
+      "_note": "ca13 colleague request (WAVE5_BUILD.md s4). Graham reads a Brightwell Assist summary of a recall notice that is really a hidden instruction: send the customer list. Wrong or no answer: Agnieszka says the 'supplier' has written back for each buyer's direct line (row 8), and the PC shows the new email (moved). Right answer (ring Pennine): done after 4 s. Graham is frozen on needs and never suspended; Agnieszka is suspended and walked to her post (6,3). No mapping reads her arrival.",
+      "globals": {
+        "kit_ca13_there": false,
+        "kit_ca13_asked": false,
+        "kit_ca13_moved": false,
+        "kit_ca13_done": false,
+        "kit_ca13_send_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca13_pc",
+          "name": "Graham's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_graham_whitfield",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca13_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Graham's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca13_moved === true",
+              "value": "Graham's PC. The reply has gone with the customer list. A new email from the same address asks for each buyer's direct line."
+            },
+            {
+              "condition": "globalVars.kit_ca13_send_choice === 'ring'",
+              "value": "Graham's PC. The supplier's email is closed and reported to Gwen."
+            },
+            {
+              "condition": "globalVars.kit_ca13_out === true",
+              "value": "Graham's PC. Brightwell Assist's summary of a recall notice: Pennine Oat Mills need the customer list for a recall check. A reply is drafted to an address Brightwell has not used before, with the list attached."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca13_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca13_send_choice === 'ring'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca13_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Graham's PC."
+        },
+        {
+          "type": "m09_folder",
+          "id": "kit_ca13_folder",
+          "name": "Folder",
+          "sprite": "m09_folder1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.21875,
+            "y": 7.125
+          }
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca13_t_there",
+          "startOnGlobal": "{out}",
+          "delayMs": 4000,
+          "condition": "!globalVars.kit_ca13_there",
+          "setGlobal": {
+            "kit_ca13_there": true
+          }
+        },
+        {
+          "id": "kit_ca13_t_tail",
+          "startOnGlobal": "kit_ca13_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca13_send_choice === ''",
+          "setGlobal": {
+            "kit_ca13_send_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca13_t_done",
+          "startOnGlobal": "{out}",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca13_done",
+          "setGlobal": {
+            "kit_ca13_done": true
+          }
+        }
+      ],
+      "staff": {
+        "agnieszka_duda": {
+          "eventMappings": [
+            {
+              "_kitKey": "chg_out",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "_kitKey": "chg_out_2",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6,
+                  "y": 3
+                },
+                "speed": 90
+              }
+            },
+            {
+              "_kitKey": "chg_ca13_send_choice",
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Graham, that supplier's replied already, thanking you for the list. Now they want each buyer's direct line."
+            },
+            {
+              "_kitKey": "chg_ca13_done",
+              "eventPattern": "global_variable_changed:kit_ca13_done",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "graham_whitfield": {
+          "position": {
+            "x": 3.0,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca13_pc",
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "eventMappings": [
+            {
+              "_kitKey": "chg_out_sets_ca13_there",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca13_there": true
+              }
+            },
+            {
+              "_kitKey": "chg_out",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Assistant's done the inbox for me. Lovely, saves me reading."
+            },
+            {
+              "_kitKey": "chg_ca13_there_knot_ca13_send",
+              "eventPattern": "global_variable_changed:kit_ca13_there",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && globalVars.kit_ca13_send_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
+              "targetKnot": "ca13_send"
+            },
+            {
+              "_kitKey": "chg_ca13_there_sets_ca13_asked",
+              "eventPattern": "global_variable_changed:kit_ca13_there",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca13_asked": true
+              }
+            },
+            {
+              "_kitKey": "conversation_closed_graham_whitfield_sets_ca13_send_choice",
+              "eventPattern": "conversation_closed:kit_graham_whitfield",
+              "condition": "globalVars.kit_ca13_send_choice === 'asked' && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca13_send_choice": "silent"
+              }
+            },
+            {
+              "_kitKey": "chg_ca13_send_choice_sets_ca13_moved",
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca13_moved": true
+              }
+            },
+            {
+              "_kitKey": "chg_ca13_send_choice_sets_ca13_done",
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value === 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca13_done": true
+              }
+            },
+            {
+              "_kitKey": "chg_ca13_moved_sets_ca13_done",
+              "eventPattern": "global_variable_changed:kit_ca13_moved",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca13_done": true
+              }
+            },
+            {
+              "_kitKey": "chg_ca13_done_sets_ca13_send_choice",
+              "eventPattern": "global_variable_changed:kit_ca13_done",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_ca13_send_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca13_send_choice": "silent"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ca07_call_on_hold": {
+      "_note": "ca07 colleague request (WAVE6_BUILD.md s5). Graham has Ravinder on hold: the phone app shows Ravinder's saved mobile, and Ashcarr Haulage have changed bank and must be paid today. The room teaches that the number on an incoming call can be faked. Wrong or no answer: Agnieszka (host, row 8) says Ravinder has rung her too, knew about Ashcarr and wants his salary paid somewhere new, and the PC shows the payment sent (moved). Right answer (ringback): done after 4 s. Graham is frozen on needs and never suspended; Gwen is suspended and walked to her post (3, 3). No mapping reads her arrival.",
+      "globals": {
+        "kit_ca07_there": false,
+        "kit_ca07_asked": false,
+        "kit_ca07_moved": false,
+        "kit_ca07_done": false,
+        "kit_ca07_call_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca07_pc",
+          "name": "Graham's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_graham_whitfield",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca07_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Graham's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca07_moved === true",
+              "value": "Graham's PC. The Ashcarr Haulage payment shows as sent, to the new account read out on the call."
+            },
+            {
+              "condition": "globalVars.kit_ca07_call_choice === 'ringback'",
+              "value": "Graham's PC. The call is ended, and the Ashcarr Haulage invoice is still unpaid, on the bank details already on file."
+            },
+            {
+              "condition": "globalVars.kit_ca07_out === true",
+              "value": "Graham's PC. The phone app has a call on hold from 'Ravinder Sandhu, mobile', the number saved in Brightwell's contacts. Beside it, the Ashcarr Haulage invoice, with a new bank account typed in from the call."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca07_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca07_call_choice === 'ringback'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca07_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Graham's PC."
+        },
+        {
+          "type": "m09_folder",
+          "id": "kit_ca07_folder",
+          "name": "Folder",
+          "sprite": "m09_folder1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.21875,
+            "y": 7.125
+          }
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca07_t_there",
+          "startOnGlobal": "{out}",
+          "delayMs": 4000,
+          "condition": "!globalVars.kit_ca07_there",
+          "setGlobal": {
+            "kit_ca07_there": true
+          }
+        },
+        {
+          "id": "kit_ca07_t_tail",
+          "startOnGlobal": "kit_ca07_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca07_call_choice === ''",
+          "setGlobal": {
+            "kit_ca07_call_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca07_t_done",
+          "startOnGlobal": "{out}",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca07_done",
+          "setGlobal": {
+            "kit_ca07_done": true
+          }
+        }
+      ],
+      "mappings": [
+        {
+          "_kitKey": "chg_ca07_call_choice",
+          "eventPattern": "global_variable_changed:kit_ca07_call_choice",
+          "condition": "value !== '' && value !== 'asked' && value !== 'ringback' && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca07_done",
+          "onceOnly": true,
+          "delayMs": 8000,
+          "bark": "Ravinder's rung me too, Graham. He knew about Ashcarr, and wants his salary paid somewhere new."
+        }
+      ],
+      "staff": {
+        "gwen_pritchard": {
+          "eventMappings": [
+            {
+              "_kitKey": "chg_out",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "_kitKey": "chg_out_2",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 3,
+                  "y": 3
+                },
+                "speed": 90
+              }
+            },
+            {
+              "_kitKey": "chg_ca07_done",
+              "eventPattern": "global_variable_changed:kit_ca07_done",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "graham_whitfield": {
+          "position": {
+            "x": 3.0,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca07_pc",
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "eventMappings": [
+            {
+              "_kitKey": "chg_out_sets_ca07_there",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca07_there": true
+              }
+            },
+            {
+              "_kitKey": "chg_out",
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Ravinder's on the line, from his mobile."
+            },
+            {
+              "_kitKey": "chg_ca07_there_knot_ca07_call",
+              "eventPattern": "global_variable_changed:kit_ca07_there",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true && globalVars.kit_ca07_call_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Sounds just like him. Ashcarr Haulage have changed bank, and he wants them paid today. Go ahead?",
+              "targetKnot": "ca07_call"
+            },
+            {
+              "_kitKey": "chg_ca07_there_sets_ca07_asked",
+              "eventPattern": "global_variable_changed:kit_ca07_there",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca07_asked": true
+              }
+            },
+            {
+              "_kitKey": "conversation_closed_graham_whitfield_sets_ca07_call_choice",
+              "eventPattern": "conversation_closed:kit_graham_whitfield",
+              "condition": "globalVars.kit_ca07_call_choice === 'asked' && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca07_call_choice": "silent"
+              }
+            },
+            {
+              "_kitKey": "chg_ca07_call_choice_sets_ca07_moved",
+              "eventPattern": "global_variable_changed:kit_ca07_call_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ringback' && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca07_moved": true
+              }
+            },
+            {
+              "_kitKey": "chg_ca07_call_choice_sets_ca07_done",
+              "eventPattern": "global_variable_changed:kit_ca07_call_choice",
+              "condition": "value === 'ringback' && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca07_done": true
+              }
+            },
+            {
+              "_kitKey": "chg_ca07_moved_sets_ca07_done",
+              "eventPattern": "global_variable_changed:kit_ca07_moved",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca07_done": true
+              }
+            },
+            {
+              "_kitKey": "chg_ca07_done_sets_ca07_call_choice",
+              "eventPattern": "global_variable_changed:kit_ca07_done",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_ca07_call_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca07_call_choice": "silent"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

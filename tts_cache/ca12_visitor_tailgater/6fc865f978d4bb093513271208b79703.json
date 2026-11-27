@@ -1,0 +1,13 @@
+{
+  "key": "6fc865f978d4bb093513271208b79703",
+  "npc": "kit_camila_ospina",
+  "text": "Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up.",
+  "voice": "Zephyr",
+  "style": "A client-side account rep in her mid 40s, confident and friendly, with the easy manner of someone sure she is expected. Speak with a consistent London accent with a light Colombian inflection throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:28:39Z"
+}

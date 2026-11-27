@@ -1,0 +1,13 @@
+{
+  "key": "1fe260b9339a1c2057fb5d0b25d8f2e5",
+  "npc": "priya_s",
+  "text": "Hall 1's gone, and nobody's hurt. Practise the evacuation as hard as you practise the shutdown.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:24:53Z"
+}

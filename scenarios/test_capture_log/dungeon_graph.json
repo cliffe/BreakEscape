@@ -1,0 +1,131 @@
+{
+  "scenario": "test_capture_log",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "lock_chris_pc",
+      "label": "Chris's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_sofia_pc",
+      "label": "Sofia's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_mel_pc",
+      "label": "Mel's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "grant_finding_scope",
+      "label": "Finding: scope note<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Test Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "grant_finding_wall_port",
+      "label": "Finding: live wall port<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "grant_remote_session_box",
+      "label": "Remote session: drop box<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "signin_chris",
+      "label": "Chris Hampshire sign-in<br/>(c.hampshire)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_sofia",
+      "label": "Sofia Lord sign-in<br/>(s.lord)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_mel",
+      "label": "Mel Pierce sign-in<br/>(m.pierce)",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "lock_chris_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_sofia_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_mel_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "grant_finding_scope",
+      "soft": true,
+      "label": "finding_welcome"
+    },
+    {
+      "from": "office",
+      "to": "grant_finding_wall_port",
+      "soft": true,
+      "label": "box_planted"
+    },
+    {
+      "from": "office",
+      "to": "grant_remote_session_box",
+      "soft": true,
+      "label": "box_planted"
+    },
+    {
+      "from": "office",
+      "to": "signin_chris",
+      "soft": false
+    },
+    {
+      "from": "signin_chris",
+      "to": "lock_chris_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_sofia",
+      "soft": false
+    },
+    {
+      "from": "signin_sofia",
+      "to": "lock_sofia_pc",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "signin_mel",
+      "soft": false
+    },
+    {
+      "from": "signin_mel",
+      "to": "lock_mel_pc",
+      "soft": false
+    }
+  ]
+}

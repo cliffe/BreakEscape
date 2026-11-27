@@ -1,0 +1,7 @@
+{
+  "display_name": "Docs Reuse Proof",
+  "description": "A two-room reuse proof for the social-engineering systems, authored only from README_scenario_design.md, README_ink_best_practices.md and the data contract (M11). Research a target, send one phishing email, write up the engagement, then triage the target's inbox and pick its fixes as a defender.",
+  "difficulty_level": 1,
+  "collection": "testing",
+  "ui_theme": "spy"
+}

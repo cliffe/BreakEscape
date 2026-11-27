@@ -1,0 +1,13 @@
+{
+  "key": "44f25a8c927f1f81c224b1708664828e",
+  "npc": "narrator",
+  "text": "SAFETYNET headquarters, the Citadel. Every badge reader blinks red. Nobody looks at the person at the next desk.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:38:31Z"
+}

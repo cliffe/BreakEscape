@@ -1,0 +1,13 @@
+{
+  "key": "a3857e5b0c0a5807aef79a1c5a29d438",
+  "npc": "static_power",
+  "text": "He doesn't need me, then.",
+  "voice": "Umbriel",
+  "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:05:12Z"
+}

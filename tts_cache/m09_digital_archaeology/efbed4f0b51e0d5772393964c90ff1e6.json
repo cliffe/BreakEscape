@@ -1,0 +1,13 @@
+{
+  "key": "efbed4f0b51e0d5772393964c90ff1e6",
+  "npc": "closing_debrief",
+  "text": "Was he right?",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:15:42Z"
+}

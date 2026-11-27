@@ -1,0 +1,13 @@
+{
+  "key": "4013348039192295585cdfac3ee5d9bd",
+  "npc": "jodie",
+  "text": "How was the weekend?",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:14:09Z"
+}

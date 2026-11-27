@@ -1,0 +1,13 @@
+{
+  "key": "e776450ca86120bc1b872d4ea7d4d471",
+  "npc": "sarah_mitchell",
+  "text": "So we're on paper. Two nurses, six patients, and the only alarms are at the bedsides.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

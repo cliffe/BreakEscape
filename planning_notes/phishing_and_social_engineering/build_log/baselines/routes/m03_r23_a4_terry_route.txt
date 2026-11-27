@@ -1,0 +1,109 @@
+
+## R23 (A4 fix pass, S6): Terry's 'Why d'you want to know my route?' now has an answer. (a) the plausible excuse, back to his hub; (b) the flustered one, back to his hub colder; (c) backing off ends the chat, then a reopen; (d) a reload at his question re-asks it.
+   {set {"briefing_played":true,"badge_received":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true}}
+
+## (a) plausible
+
+--- terry ---
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Building's shut, mate. So you're either lost or you're trouble.
+  Terry Mott: Go on, then. Why are you here?
+     (4 options)
+ > Sterling asked me to grab some files. We met today about the training programme.
+  Terry Mott: Ms. Sterling mentioned a potential recruit... alright.
+  Terry Mott: She does ring down at odd hours. Which files?
+     (2 options)
+ > Training programme enrolment forms. From her office.
+  Terry Mott: Don't make me come looking for you.
+     (5 options)
+ > Long night ahead of you?
+  Terry Mott: Double shift tonight. On till six. Quiet, most nights.
+  Terry Mott: I do my rounds. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+     (3 options)
+ > What's your route?
+  Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
+  Terry Mott: Why d'you want to know my route?
+     (3 options)
+ > So I'm not under your feet. I'll be done before you come round again.
+  Terry Mott: Considerate. I'll be back past this door before long. Be done by then.
+     (4 options)
+ > I'll let you get on.
+  Terry Mott: I've got your face now. Don't make me use it.
+  [chat closes]
+
+## (b) flustered
+   {set {"topic_shift":false}}
+
+--- terry @ask_shift ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: Double shift tonight. On till six. Quiet, most nights.
+  Terry Mott: Though tonight's been more eventful than usual.
+  Terry Mott: I do my rounds. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+     (3 options)
+ > What's your route?
+  Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
+  Terry Mott: Why d'you want to know my route?
+     (3 options)
+ > No reason! Just... making conversation.
+  Terry Mott: Making conversation. At eleven at night. About my route.
+  Terry Mott: I'll be making mine past this corridor a lot more often, then.
+     (4 options)
+ > I'll let you get on.
+  Terry Mott: I've got your face now. Don't make me use it.
+  [chat closes]
+
+## (c) backs off, then talks to him again
+   {set {"topic_shift":false}}
+
+--- terry @ask_shift ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: Double shift tonight. On till six. Quiet, most nights.
+  Terry Mott: Though tonight's been more eventful than usual.
+  Terry Mott: I do my rounds. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+     (3 options)
+ > What's your route?
+  Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
+  Terry Mott: Why d'you want to know my route?
+     (3 options)
+ > Forget I asked. I'll get out of your way.
+  Terry Mott: Best idea you've had tonight.
+  [chat closes]
+
+--- terry ---
+  Narrator: The guard's torch swings your way again.
+ > Talk to the guard
+  Terry Mott: You again.
+     (4 options)
+ > I'll let you get on.
+  Terry Mott: I've got your face now. Don't make me use it.
+  [chat closes]
+
+## (d) reload while his question is on screen
+   {set {"topic_shift":false}}
+
+--- terry @ask_shift ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: Double shift tonight. On till six. Quiet, most nights.
+  Terry Mott: Though tonight's been more eventful than usual.
+  Terry Mott: I do my rounds. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+     (3 options)
+ > What's your route?
+  Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
+  Terry Mott: Why d'you want to know my route?
+     [0] So I'm not under your feet. I'll be done before you come round again.
+     [1] No reason! Just... making conversation.
+     [2] Forget I asked. I'll get out of your way.
+  [stopped: no pick]
+
+--- terry @route_reply ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: I asked you a question. My route. Why?
+     (3 options)
+ > So I'm not under your feet. I'll be done before you come round again.
+  Terry Mott: Considerate. I'll be back past this door before long. Be done by then.
+     (4 options)
+ > I'll let you get on.
+  Terry Mott: I've got your face now. Don't make me use it.
+  [chat closes]
+
+[stats] spoken/narrated lines 37, choices 16, longest run without a choice 3 (terry); runs>=6: 

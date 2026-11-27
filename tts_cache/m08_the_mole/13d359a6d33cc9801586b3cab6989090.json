@@ -1,0 +1,13 @@
+{
+  "key": "13d359a6d33cc9801586b3cab6989090",
+  "npc": "opening_briefing_cutscene",
+  "text": "The Director's office is north of this lobby. Do try not to trust anyone on the way.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI, running at a heightened security posture. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, faintly wrong -- a voice built to reassure, doing it in a building where nobody is reassured.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:17:02Z"
+}

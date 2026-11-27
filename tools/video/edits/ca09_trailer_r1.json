@@ -1,0 +1,784 @@
+{
+ "mission": "ca09",
+ "id": "ca09_trailer_r1",
+ "theme": "ca",
+ "title": "Cyber Aware ca09 trailer, round 1 (16:9; 9:16 and 1:1 render from ca09_trailer_r1_narrow.json)",
+ "script": {
+  "heading": "ca09 trailer script (Passwords)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca09_trailer_script.md (round 2) and docs/video/takes_ca09.md (recorded 23 Nov, commit 2f0218df8). Model ca01 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Quietly Cinematic window from 57.378 s."
+ },
+ "fps": 30,
+ "length": 70.533,
+ "music": {
+  "track": "PeaceFolk/Quietly Cinematic.mp3",
+  "analysis": "quietly_cinematic_75.json",
+  "start": 57.378,
+  "length": 70.533,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Quietly Cinematic.mp3 @56.189",
+   "PeaceFolk/Guitar Motif.mp3 @29.863"
+  ]
+ },
+ "beat": {
+  "bpm": 91.02,
+  "period": 0.6592,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_nilesh_hook.trimmed.mkv",
+    "in": 12.1,
+    "out": 17.1
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true,
+    "post": 0.3
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t01: portrait up 9.61; welcome speech 9.92 to 17.25 (silencedetect) with a 0.42 s gap 11.78 to 12.20 after 'exercise.'; in 12.10 is 0.10 s before 'Most' and 0.32 s after the gap opens, out 17.40 is 0.15 s after 'over.'; the unknown sound at 0 to 2.35 is not in; game bar framed out, the two sentences burned as captions; split between the two caption entries (2.3 s) is an estimate, check by ear on the render; hook picture 5.0 s (12.10 to 17.10, inside the cold-open limit) and audio.post 0.3 carries 'over.' (ends 17.25) to 17.40 under the open card (L-cut, as ca08 t05); open card 5.4 s so the timeline after it is unchanged; v1 at 5.5 is 0.4 s clear of the cast line ending 5.15"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.76,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.74,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.1,
+     "end": 2.3,
+     "speaker": "Nilesh",
+     "text": "Most passwords aren't cracked."
+    },
+    {
+     "start": 2.5,
+     "end": 4.95,
+     "speaker": "Nilesh",
+     "text": "They're guessed, reused or handed over."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Passwords",
+    "company": "Tarrowby Logistics",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.7
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 7.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 9.0,
+    "out": 16.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: browser-open 5.76, friendface-tab 7.38, topic_start 8.84, Colin's four posts on screen from about 9.0, first note click note-team 17.23; window 9.0 to 16.4 is 7.4 s (v1b+v1c need 7.34 s: topic beat 0.9 s longer than the script table, as the script's review changes say) and ends 0.8 s before the first click; nothing noted, public posts only | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.44,
+     "cy": 0.45,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.44,
+     "cy": 0.46,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.2,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 17.03,
+    "out": 21.03
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: note-team 17.23 and note-pet 19.69 (each 'Noted: ...' line appears for the team and the dog); in 0.2 s before the first click, out 21.03 is before note-forum 22.19; public facts only | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.44,
+     "cy": 0.45,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.44,
+     "cy": 0.46,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 5.3,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 36.5,
+    "out": 41.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: build_start 36.39, pattern rows tick at 37.41 / 39.70 / 41.96; window 36.50 to 41.80 is continuous with the lands shot; common-passwords panel, passphrase panel and live log hidden by CSS in the take (nothing real-looking on screen) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "PASSWORD GUESSER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.54,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.54,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.54,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 41.8,
+    "out": 46.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: continues from the build shot at 41.80; lands_start 43.07, reuse-opens 43.64 ('opens the account'); out 46.80 is 0.05 s before lands_end 46.85, before the 'Three random words' panel; 5.0 s because v5+v6 need 4.97 s and the take's lands window is 3.8 s (script slot 6.0 s did not fit); pattern level only | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "PASSWORD GUESSER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.54,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.54,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.54,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 49.6,
+    "out": 51.6
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "masks": [
+    {
+     "x": 596,
+     "y": 300,
+     "w": 730,
+     "h": 740,
+     "color": "#f6f8f8"
+    }
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: switch 49.52, flip-up 49.56, flip overlay sound 49.79 to 50.11 (t02b 50.08 to 50.41) is in the window; the overlay shows the IT text and the tell below y 300, which the plan says stays out: a crop alone cannot do it (16:9 would need zoom 3.6, a 533 px window, which cuts the strip; 9:16 and 1:1 worse), so a flat bar in the page colour (#f6f8f8, panel at x 590 to 1336) covers y 300 to 1040 in every aspect and the framing is a heading-and-strip window; CHECK ON THE RENDER that the bar matches the panel and nothing reads below the strip (this is the one mask in the edit, hides the tell only) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR PHONE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 2.4
+    },
+    "9:16": {
+     "cx": 0.41,
+     "cy": 0.4,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.35,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
+   "id": "nilesh_flip",
+   "type": "gameplay",
+   "duration": 5.133,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_nilesh_flip.trimmed.mkv",
+    "in": 16.6,
+    "out": 21.733
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03: portrait up 9.61, N2 speech 10.02 to 15.30 (cut), N3 speech 16.76 to 21.56; in 16.60 is 0.16 s before the first word and in the 1.46 s gap after N2, out 21.733 is 0.17 s after the last word and before chat-closed 22.52; no menu; Nilesh's real portrait from the first frame; N3 plays 4.80 s audible | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR PHONE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.76,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.74,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.16,
+     "end": 4.96,
+     "speaker": "Nilesh",
+     "text": "Now it's your turn in the seat: your phone's buzzing, and someone has a password of yours."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true,
+    "16:9": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.0,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You lock your own account down"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "triage_list",
+   "type": "gameplay",
+   "duration": 7.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_defend_list.trimmed.mkv",
+    "in": 2.1,
+    "out": 9.7
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04: list-up 2.04 (frames before it show the rules intro page, so in is 2.10), list held to 10.04; eight rows, none sorted, team tally hidden by CSS; no verdict, nothing pressed | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SIGN-IN PROMPTS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "triage_card",
+   "type": "gameplay",
+   "duration": 1.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_defend_list.trimmed.mkv",
+    "in": 17.8,
+    "out": 19.6
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04: click-prompt 17.79, card-open 17.86; sign-in prompt card 'Are you trying to sign in?' with its three verbs, hover only, nothing pressed; recorded after the row hover but cut here out of order, as the take notes plan (a, b, c) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SIGN-IN PROMPTS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "triage_rows",
+   "type": "gameplay",
+   "duration": 4.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_defend_list.trimmed.mkv",
+    "in": 10.8,
+    "out": 15.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04: pointer hovers down the password-choice rows (hover-row 1..5 at 11.00/12.46/13.80/15.08/16.48), no card open (recorded before the card); out 15.2 is inside rows_hover_end; no verdict | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SIGN-IN PROMPTS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "chidi",
+   "type": "gameplay",
+   "duration": 6.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_chidi_note.trimmed.mkv",
+    "in": 10.3,
+    "out": 16.8
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05: look_up 4.03, C2 speech 6.26 to 10.05 (cut: in 10.30 is 0.25 s after it), C1 bubble up 10.14, C1 speech 10.66 to 15.40 and 15.66 to 16.48, out 16.80 is 0.32 s after 'flag?' and before the '!' ask cue (about 17.5); kiosk panel (frames 1 to 3) is not in; Chidi's PC is not examined, the sticky note is a tiny yellow square, no readable text; script's chidi_end slot was 7.2 s, 6.5 s is all the take allows without the '!' cue | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE DEPOT",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.31,
+     "cy": 0.56,
+     "zoom": 2.4
+    },
+    "9:16": {
+     "cx": 0.31,
+     "cy": 0.55,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.31,
+     "cy": 0.55,
+     "zoom": 1.8
+    }
+   },
+   "lines": [
+    {
+     "start": 0.36,
+     "end": 6.18,
+     "speaker": "Chidi",
+     "text": "Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?"
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Passwords",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 5.42,
+   "end": 10.532,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 10.9,
+   "end": 15.58,
+   "text": "Colin posts about Pennington Rangers and his dog, Bramble.",
+   "caption": "Colin posts about\nPennington Rangers\nand his dog, Bramble.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 15.83,
+   "end": 17.894,
+   "text": "This episode: passwords.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 18.3,
+   "end": 20.7,
+   "text": "First, you play the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 21.5,
+   "end": 24.212,
+   "text": "His own posts hand you the guesses.",
+   "caption": "His own posts hand\nyou the guesses.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 25.5,
+   "end": 30.348,
+   "text": "Turn his team, his dog and the company's founding year into guesses.",
+   "caption": "Turn his team, his dog and\nthe company's founding year\ninto guesses.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 30.8,
+   "end": 32.792,
+   "text": "His angling forum was breached.",
+   "caption": "His angling forum\nwas breached.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 33.042,
+   "end": 35.418,
+   "text": "The same password opens his work account.",
+   "caption": "The same password opens\nhis work account.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v8",
+   "start": 44.933,
+   "end": 52.085,
+   "text": "Eight things to sort: sign-in prompts, a message claiming to be IT, and your own password choices.",
+   "caption": "Eight things to sort:\nsign-in prompts, a message\nclaiming to be IT, and your\nown password choices.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v8.mp3"
+  },
+  {
+   "id": "v9",
+   "start": 52.335,
+   "end": 53.895,
+   "text": "Did you start this sign-in?",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v9.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 54.333,
+   "end": 57.909,
+   "text": "One password per account, kept in a manager.",
+   "caption": "One password per account,\nkept in a manager.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 65.233,
+   "end": 70.201,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}

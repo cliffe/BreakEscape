@@ -1,0 +1,16 @@
+{
+"globals": { "schedule_read": true },
+"steps": [
+{ "note": "R41: the hour read after the schedule was read, cut off at HaX's anything-to-add choice. The re-ring (hour_read_resume) says Still here and goes straight back to that choice, not to the opening. A reopen after the answer does nothing." },
+{ "talk": "phone", "knot": "hour_read", "picks": ["Isn't it", "Who gets it first", "Analysis had a guess"] },
+{ "said": ["That job on his box still copies to Tomb Gamma", "I'm sending this up to Netherton. Anything to add", "[choice] Read me the defences"],
+  "notSaid": ["He shredded everyone but himself"] },
+{ "expect": { "hour_read_choice_reached": true, "hour_read_done": false } },
+{ "talk": "phone", "knot": "hour_read_resume", "reload": true, "picks": ["Read me the defences", "Understood"] },
+{ "said": ["Still here. Before this goes to Netherton, anything to add", "[choice] Her schedule. His cage has no tick", "They're ours, turned round"],
+  "notSaid": ["That job on his box still copies", "Full disclosure is one researcher", "Nobody's wiping this box"] },
+{ "expect": { "hour_read_done": true } },
+{ "talk": "phone", "knot": "hour_read_resume", "reload": true },
+{ "notSaid": ["Still here. Before this goes to Netherton", "[choice] Read me the defences"] }
+]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ae97c53f462efd31ef95f406470df980",
+  "npc": "kit_zainab_hussain",
+  "text": "Back off the road at last.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T14:59:25Z"
+}

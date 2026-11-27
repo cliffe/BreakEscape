@@ -1,0 +1,13 @@
+{
+  "key": "ad69f186699e6c207941065ccee7edf1",
+  "npc": "operative_cipher",
+  "text": "I will.",
+  "voice": "Fenrir",
+  "style": "ENTROPY operative posing as a maintenance contractor, late twenties. Speak with a consistent Dutch-accented English (Rotterdam) throughout, fluent with slightly clipped consonants -- do not shift to any other accent. Mid-to-high pitch; fast, sharp pace. Jumpy and aggressive, covering nerves with bluster.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:07:10Z"
+}

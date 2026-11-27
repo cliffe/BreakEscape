@@ -1,0 +1,13 @@
+{
+  "key": "d28c0ee3a1bb39da44a3c63ad1c876c5",
+  "npc": "closing_debrief_person",
+  "text": "At four, someone went through the field HQ. Everything we couldn't carry is theirs now. We won't be going back.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

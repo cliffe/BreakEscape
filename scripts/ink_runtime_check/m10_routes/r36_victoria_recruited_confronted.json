@@ -1,0 +1,64 @@
+{
+ "imports": {
+  "m03_victoria_fate": "recruited"
+ },
+ "steps": [
+  {
+   "note": "Victoria recruited in m03, first meeting: she offers the lock to either side. Confronting her with Zero Day's order opens the door, kills the order, and her credits line says she was held."
+  },
+  {
+   "talk": "victoria",
+   "picks": [
+    "Before you touch that lock"
+   ]
+  },
+  {
+   "said": [
+    "Zero Day sent me to collect at four, and here I am, standing at their door.",
+    "Nobody's told me yet which.",
+    "Then you know I'm hedging. So is everyone. There. It's open.",
+    "And you've killed their order already, so this one's free."
+   ],
+   "notSaid": [
+    "St. Catherine's was a proof of concept.",
+    "There's your door. I'm sorry."
+   ]
+  },
+  {
+   "expect": {
+    "victoria_gallery": "confronted",
+    "share_zero_day": "stopped"
+   }
+  },
+  {
+   "talk": "victoria",
+   "picks": []
+  },
+  {
+   "said": [
+    "You've seen what I'd have done. Go in before I think about it again."
+   ],
+   "notSaid": [
+    "The lock's still shut. My offer isn't."
+   ]
+  },
+  {
+   "set": {
+    "ending": "arrest",
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "VICTORIA STERLING: Held, and opened the lock. The tap on Zero Day's brokers went dark at five."
+   ],
+   "notSaid": [
+    "Sold the raid.",
+    "Never handed anything."
+   ]
+  }
+ ]
+}

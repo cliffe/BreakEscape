@@ -1,0 +1,13 @@
+{
+  "key": "5cfd040df6e1d22e3f33ba60825f8f76",
+  "npc": "kit_agnieszka_duda",
+  "text": "Just topping up my water.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:01:04Z"
+}

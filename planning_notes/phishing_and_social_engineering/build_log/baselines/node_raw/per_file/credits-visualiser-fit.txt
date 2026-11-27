@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: the layout columns cannot grow past the window
+ok 1 - the layout columns cannot grow past the window
+  ---
+  duration_ms: 0.540554
+  ...
+# Subtest: the close control comes back once the last credits line has shown
+ok 2 - the close control comes back once the last credits line has shown
+  ---
+  duration_ms: 0.106976
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 69.330589

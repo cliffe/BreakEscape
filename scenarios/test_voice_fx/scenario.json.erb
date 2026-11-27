@@ -1,0 +1,85 @@
+{
+  "scenario_brief": "TEST: Voice FX (Ghost's voice-distortion preset)\n\nGhost calls two seconds in and says one line through the voice-distortion preset: an octave-down layer under the voice, soft drive, then the band limit. Choose Again to hear it again. The clip lasts as long as it does with no FX, and the choices come back when it ends. To compare with the old preset and no FX, run tools/playtest/voice-fx-render.js in the page (it writes three WAVs).",
+  "endGoal": "Hear Ghost's call.",
+  "startRoom": "test_room",
+  "objectives": [
+    {
+      "aimId": "listen",
+      "title": "Listen",
+      "description": "Hear Ghost through the voice FX.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "hear_ghost",
+          "title": "Hear Ghost",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": [
+        "ghost"
+      ],
+      "observations": "Your phone."
+    }
+  ],
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ghost",
+          "displayName": "Ghost",
+          "npcType": "phone",
+          "storyPath": "scenarios/test_voice_fx/ink/ghost_line.json",
+          "avatar": "assets/npc/avatars/npc_hacker.png",
+          "voice": {
+            "name": "Iapetus",
+            "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+            "language": "en-GB",
+            "fx": "voice-distortion"
+          },
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "timedConversation": {
+            "delay": 2000,
+            "targetKnot": "start",
+            "waitForEvent": "game_loaded",
+            "voiced": true
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "conversation_closed:ghost",
+              "onceOnly": true,
+              "completeTask": "hear_ghost"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": {
+            "x": 2,
+            "y": 2
+          },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: Ghost's call uses the voice-distortion FX (an octave-down layer, soft drive, band limit). Choose Again to replay it. The line should last exactly as long as the clip, and the choices come back when it ends.",
+          "observations": "Test instructions."
+        }
+      ]
+    }
+  }
+}

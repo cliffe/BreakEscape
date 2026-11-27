@@ -1,0 +1,13 @@
+{
+  "key": "776afd8826102663edb62cf8c4a0cb88",
+  "npc": "narrator",
+  "text": "The post beside the comms relay is empty.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

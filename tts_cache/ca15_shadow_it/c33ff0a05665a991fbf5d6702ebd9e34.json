@@ -1,0 +1,13 @@
+{
+  "key": "c33ff0a05665a991fbf5d6702ebd9e34",
+  "npc": "nilesh_solanki",
+  "text": "Thanks, Fatima. I'll check it on a spare machine that isn't connected to anything.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:23:20Z"
+}

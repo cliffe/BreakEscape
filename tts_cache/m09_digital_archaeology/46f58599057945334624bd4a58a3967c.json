@@ -1,0 +1,13 @@
+{
+  "key": "46f58599057945334624bd4a58a3967c",
+  "npc": "closing_debrief",
+  "text": "The clerk on the front desk went home and rang her father. Noor Haddad. She is on one of the Recruiter's lists, and she does not know it.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:23:56Z"
+}

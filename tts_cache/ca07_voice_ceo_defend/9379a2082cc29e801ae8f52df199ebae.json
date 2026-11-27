@@ -1,0 +1,13 @@
+{
+  "key": "9379a2082cc29e801ae8f52df199ebae",
+  "npc": "agnieszka_duda",
+  "text": "You held that payment back, so a voice that sounded like the boss didn't move money out the door.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:51:17Z"
+}

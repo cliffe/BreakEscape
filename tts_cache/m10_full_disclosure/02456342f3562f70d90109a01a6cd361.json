@@ -1,0 +1,21 @@
+{
+  "key": "02456342f3562f70d90109a01a6cd361",
+  "npc": "ghost_phone",
+  "text": "Not from you. You don't get to ask me about hospitals.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:07:15Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/02456342f3562f70d90109a01a6cd361.mp3",
+    "clean_md5": "f8cc34bba826f85a19e9283aa89ba3ab",
+    "baked_md5": "9591eb7eb9bf36b8b8927e08549d07f5",
+    "baked": "2026-11-24"
+  }
+}

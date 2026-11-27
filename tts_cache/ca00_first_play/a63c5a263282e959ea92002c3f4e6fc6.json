@@ -1,0 +1,14 @@
+{
+  "key": "a63c5a263282e959ea92002c3f4e6fc6",
+  "npc": "kit_darren_price",
+  "text": "Those copied sign-in pages are catching folk out all week. The address bar's where they slip.",
+  "delivery": "dry, matter-of-fact",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca00_first_play",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:09:55Z"
+}

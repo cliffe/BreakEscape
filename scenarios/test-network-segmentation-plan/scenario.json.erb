@@ -1,0 +1,159 @@
+{
+  "scenario_brief": "St. Catherine's Hospital is under a ransomware attack. You are in the IT department. The network between corporate and clinical systems was never properly segmented — two ward exceptions and one legacy admin route still bridge both zones. Review the topology and decide whether to sever the link.",
+  "endGoal": "Assess the network segmentation diagram and make the isolation decision.",
+  "startRoom": "it_security_office",
+  "startItemsInInventory": [],
+  "objectives": [
+    {
+      "aimId": "review_network_map",
+      "title": "Network Isolation Decision",
+      "description": "Review the network segmentation diagram and decide whether to sever the corporate-to-clinical link.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "access_network_map",
+          "title": "Access the Network Segmentation Map",
+          "type": "unlock_object",
+          "targetObject": "network_map_terminal",
+          "status": "active"
+        },
+        {
+          "taskId": "make_isolation_decision",
+          "title": "Make the network isolation decision",
+          "type": "manual",
+          "status": "active",
+          "description": "Review the legacy exception rules and confirm or decline the SEVER action."
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "it_security_office": {
+      "type": "room_office",
+      "name": "IT Department",
+      "connections": {},
+      "objects": [
+        {
+          "type": "network-segmentation-map",
+          "sprite": "pc",
+          "id": "network_map_terminal",
+          "name": "Network Segmentation Map",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "scenarioData": {
+            "id": "network_map_terminal",
+            "type": "network-segmentation-map",
+            "name": "Network Segmentation Map",
+            "title": "ST. CATHERINE'S HOSPITAL // NETWORK SEGMENTATION MAP",
+            "severButtonLabel": "SEVER CORPORATE → CLINICAL LINK",
+            "severVar": "network_isolated",
+            "rulesReviewedVar": "network_rules_reviewed",
+            "auth": {
+              "itsecVar": "itsec_authorised",
+              "clinicalVar": "clinical_eng_authorised",
+              "resultVar": "network_isolation_authorised",
+              "itsecLabel": "IT Security (Marcus Webb)",
+              "clinicalLabel": "Clinical Engineering (Head of Department)",
+              "claimRef": "CLAIM-SC-003"
+            },
+            "zones": [
+              {
+                "slot": "external",
+                "label": "EXTERNAL ZONE",
+                "devices": ["Internet", "NHS HSCN Network", "Remote Access Gateway"]
+              },
+              {
+                "slot": "enterprise",
+                "label": "CORPORATE IT ZONE",
+                "devices": ["Domain Controller", "Email Gateway", "Patient Administration System", "File Server", "Finance Workstations", "Offsite Backup (FTP)"]
+              },
+              {
+                "slot": "clinical",
+                "label": "CLINICAL SYSTEMS ZONE",
+                "devices": ["Ventilator Controllers (12)", "Patient Monitor Array", "Defibrillator Fleet", "Drug Dispensing Cabinets", "ICU Workstations"]
+              },
+              {
+                "slot": "legacy",
+                "label": "LEGACY SEGMENT",
+                "devices": ["Bedside Monitors (Legacy)", "Corridor Workstations", "Portering Terminals"]
+              }
+            ],
+            "rules": [
+              {
+                "id": "rule1",
+                "label": "ICU",
+                "title": "ICU Direct Corporate Access",
+                "connectionType": "direct",
+                "fromSlot": "enterprise",
+                "toSlot": "clinical",
+                "consequences": [
+                  { "severity": "high",     "text": "ICU workstations lose access to patient administration system" },
+                  { "severity": "high",     "text": "Drug dispensing cabinets revert to offline manual override" },
+                  { "severity": "med",      "text": "Nursing staff cannot access shift schedules or digital orders" },
+                  { "severity": "positive", "isAttackPath": true, "text": "Compromised domain account → permitted ICU firewall rule → ventilator controller network" }
+                ]
+              },
+              {
+                "id": "rule2",
+                "label": "BACKUP",
+                "title": "Legacy FTP Backup Route",
+                "connectionType": "curved",
+                "fromSlot": "enterprise",
+                "toSlot": "legacy",
+                "consequences": [
+                  { "severity": "high",     "text": "Offsite FTP backup agent loses access to legacy segment data" },
+                  { "severity": "med",      "text": "Bedside monitor logs will not replicate until link is restored" },
+                  { "severity": "positive", "isAttackPath": true, "text": "ProFTPD CVE-2010-4652 exploit on backup server → lateral move into legacy segment" }
+                ]
+              },
+              {
+                "id": "rule3",
+                "label": "MGMT",
+                "title": "Remote Management Access",
+                "connectionType": "direct",
+                "fromSlot": "enterprise",
+                "toSlot": "clinical",
+                "consequences": [
+                  { "severity": "high",     "text": "Remote management access to clinical devices lost" },
+                  { "severity": "med",      "text": "Firmware updates and configuration changes require physical access" },
+                  { "severity": "positive", "isAttackPath": true, "text": "Compromised admin workstation → management subnet rule → defibrillator fleet" }
+                ]
+              }
+            ],
+            "modalConsequences": [
+              "ICU workstation access to PAS lost — paper-based prescribing",
+              "Drug dispensing cabinets revert to manual override",
+              "Remote device management unavailable"
+            ],
+            "defaultConsequences": [
+              {
+                "section": "IF SEVER IS CONFIRMED:",
+                "items": [
+                  { "severity": "high", "text": "ICU loses electronic access to patient administration system" },
+                  { "severity": "high", "text": "Drug dispensing cabinets go offline — manual override required" },
+                  { "severity": "med",  "text": "Remote clinical device management unavailable" }
+                ]
+              },
+              {
+                "section": "SECURITY BENEFIT:",
+                "items": [
+                  { "severity": "positive", "text": "Ransomware propagation route from corporate network blocked" },
+                  { "severity": "positive", "text": "Ventilators, defibrillators, and monitors isolated from infection" }
+                ]
+              }
+            ],
+            "severConsequences": [
+              { "severity": "high",     "text": "PATIENT ADMIN SYSTEM OFFLINE — ICU on paper records" },
+              { "severity": "high",     "text": "DRUG DISPENSING OFFLINE — manual override only" },
+              { "severity": "positive", "text": "Corporate-to-clinical link SEVERED" },
+              { "severity": "positive", "text": "Ransomware propagation route blocked" }
+            ]
+          },
+          "observations": "A wall-mounted touch screen showing the hospital's network topology. Legacy exception rules are highlighted in orange."
+        }
+      ]
+    }
+  }
+}

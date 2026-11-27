@@ -1,0 +1,13 @@
+{
+  "key": "bee8e925b566ce60f9ea6b8d9a1f707c",
+  "npc": "background_agent",
+  "text": "Phantom's stopped being charming. He was off the floor all that morning, two days before Portland, and nobody's said where.",
+  "voice": "Puck",
+  "style": "An off-duty SAFETYNET agent in his forties pretending to read while eavesdropping on everyone. Consistent Geordie (Newcastle) accent throughout -- do not shift to any other accent. Low, conspiratorial pitch; unhurried pace. Gossipy and paranoid, enjoying the drama a little too much.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:48:22Z"
+}

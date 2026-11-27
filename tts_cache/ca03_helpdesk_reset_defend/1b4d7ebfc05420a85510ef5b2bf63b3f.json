@@ -1,0 +1,13 @@
+{
+  "key": "1b4d7ebfc05420a85510ef5b2bf63b3f",
+  "npc": "kit_anjali_rao",
+  "text": "Hello. Grab a drink from the cooler whenever you like.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:59Z"
+}

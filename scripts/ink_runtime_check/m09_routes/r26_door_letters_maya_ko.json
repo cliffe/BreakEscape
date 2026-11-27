@@ -1,0 +1,10 @@
+{
+"imports": { "m01_final_choice": "fight", "m01_maya_ko": true },
+"steps": [
+{ "note": "R26: the cage door as a player who fought at Viral Dynamics and knocked Maya out. Sorensen quotes the fight, the player takes the letters, HaX says Butte is warned and adds the line about Maya." },
+{ "talk": "door", "knot": "door", "picks": ["Take the letters"] },
+{ "said": ["You put a man on the floor after you'd already won", "You came in by the maintenance code, not my hatch", "Social Fabric letters", "The letters. You'd rather save someone who's still walking around", "Arakawa's ringing Butte", "That's the warning we didn't have"],
+  "notSaid": ["Nightshade cleared from his locker", "[choice] Take Nightshade's copy", "Of course. He'd want to be read"] },
+{ "expect": { "cage_bin": "letters", "bin_chosen": true } }
+]
+}

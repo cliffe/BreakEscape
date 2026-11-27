@@ -1,0 +1,13 @@
+{
+  "key": "44bf3a7a2e2e418f461309c9aa98fefa",
+  "npc": "narrator",
+  "text": "Her face closes.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-10-17",
+  "recorded_at": "2026-10-17T22:22:40Z"
+}

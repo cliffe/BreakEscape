@@ -1,0 +1,14 @@
+{
+  "key": "ded9b0d010f434a70a799de4a55cf81c",
+  "npc": "terry_mott",
+  "text": "No more talking. You're trespassing.",
+  "delivery": "angry and sharp, cutting the player off, hard and raised and clipped Every word clearly enunciated, his South London accent and age kept.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T01:54:24Z"
+}

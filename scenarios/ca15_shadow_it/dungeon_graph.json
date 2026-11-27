@@ -1,0 +1,37 @@
+{
+  "scenario": "ca15_shadow_it",
+  "start_room": "training_room",
+  "nodes": [
+    {
+      "id": "grant_ca15_session_note",
+      "label": "Session note: TL-OPS-04<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "training_room",
+      "label": "Training Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "open_plan",
+      "label": "Open-Plan Office",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "training_room",
+      "to": "grant_ca15_session_note",
+      "soft": true,
+      "label": "ca15_drop_used"
+    },
+    {
+      "from": "training_room",
+      "to": "open_plan",
+      "soft": false
+    }
+  ]
+}

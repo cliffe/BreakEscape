@@ -1,0 +1,13 @@
+{
+  "key": "a43548b25b5f6766d1e776f1c5269c3d",
+  "npc": "narrator",
+  "text": "She looks at you for a long moment. Somewhere behind you a generator changes note.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

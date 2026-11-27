@@ -1,0 +1,13 @@
+{
+  "key": "95111a688648e3e949a0f828e2530c87",
+  "npc": "sidhu_selvarajan",
+  "text": "Change one byte, even a new line you can't see, and you get a different fingerprint entirely. That's all my ledger is doing.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

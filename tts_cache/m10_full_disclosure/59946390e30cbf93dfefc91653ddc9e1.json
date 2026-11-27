@@ -1,0 +1,13 @@
+{
+  "key": "59946390e30cbf93dfefc91653ddc9e1",
+  "npc": "vos",
+  "text": "You put Sterling in hospital. I sent flowers. Business is business.",
+  "voice": "Schedar",
+  "style": "Zero Day's broker, fifties, from Rotterdam. Consistent Dutch-accented English throughout -- do not shift to any other accent. Flat, courteous, unhurried; everything is a delivery date.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:35:44Z"
+}

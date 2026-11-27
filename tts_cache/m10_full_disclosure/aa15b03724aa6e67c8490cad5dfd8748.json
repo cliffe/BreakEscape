@@ -1,0 +1,21 @@
+{
+  "key": "aa15b03724aa6e67c8490cad5dfd8748",
+  "npc": "ghost_phone",
+  "text": "The cupboard on the west wall's yours when you've answered.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:05:43Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/aa15b03724aa6e67c8490cad5dfd8748.mp3",
+    "clean_md5": "d42868607defb11e41f457b17995e6ca",
+    "baked_md5": "85545356f21d6d21fbb56ee5070a0897",
+    "baked": "2026-11-24"
+  }
+}

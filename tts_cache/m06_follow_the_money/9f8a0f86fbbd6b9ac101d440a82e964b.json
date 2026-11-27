@@ -1,0 +1,13 @@
+{
+  "key": "9f8a0f86fbbd6b9ac101d440a82e964b",
+  "npc": "director_netherton",
+  "text": "Agent 0x00. Every cell we have hit is being paid by someone. Tonight we chase the money. HaX.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:22:30Z"
+}

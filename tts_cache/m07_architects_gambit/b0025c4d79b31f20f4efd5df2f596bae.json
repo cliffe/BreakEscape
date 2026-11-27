@@ -1,0 +1,13 @@
+{
+  "key": "b0025c4d79b31f20f4efd5df2f596bae",
+  "npc": "thomas_park",
+  "text": "If somebody's had a tap on that run for months, they didn't need me for the building. They needed me for the dark.",
+  "voice": "Rasalgethi",
+  "style": "A plant maintenance technician in his forties, sent to break the one thing that would have held the load. Consistent Korean-American accent, Pacific Northwest, throughout -- do not shift to any other accent. Mid-low pitch; short sentences, steady pace. Practical, terse, hands-first. Not a believer, and increasingly aware of it.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:29:52Z"
+}

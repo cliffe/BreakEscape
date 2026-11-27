@@ -1,0 +1,36 @@
+{
+  "scenario_brief": "Fixture: every social.characters lint fires once.",
+  "startRoom": "a",
+  "importGlobals": [ { "from": "m91_source", "var": "x", "as": "bob_influence", "default": 0 } ],
+  "globalVariables": {
+    "bob_mood": "calm", "bob_calm": true, "bob_wary": "no", "bob_report": false
+  },
+  "objectives": [
+    { "aimId": "a1", "title": "One", "status": "active", "order": 0, "tasks": [] },
+    { "aimId": "a2", "title": "Two", "status": "locked", "order": 1, "unlockCondition": { "globalVariable": "bob_report", "greaterThan": 3 }, "tasks": [] }
+  ],
+  "rooms": {
+    "a": { "type": "room_office", "connections": { "north": "b" },
+      "objects": [ { "type": "mail_terminal", "id": "dup_terminal", "name": "T" }, { "type": "notes", "id": "ok_one", "name": "N" } ],
+      "npcs": [ { "id": "bob_phone", "displayName": "Bob", "npcType": "phone", "phoneId": "player_phone",
+                  "storyPath": "test/js/fixtures/social_framework/scenarios/sf_broken/ink/bob.json" } ] },
+    "b": { "type": "room_office", "connections": { "south": "a" }, "objects": [ { "type": "kiosk", "id": "dup_terminal", "name": "K" } ] }
+  },
+  "social": {
+    "characters": {
+      "bob": {
+        "displayName": "Bob",
+        "channels": { "phone": "bob_phone" },
+        "influence": { "global": "bob_influence", "min": -100, "max": 100, "start": 500, "display": { "bar": true, "glow": true, "number": "yes" } },
+        "syncedVars": ["bob_influence", "bob_ghost", "bob_mood"],
+        "thresholds": [
+          { "id": "refuses", "at": -50, "effects": [ { "type": "setGlobal", "global": "bob_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "wary", "at": -40, "effects": [ { "type": "setGlobal", "global": "bob_count", "value": 3, "clearOnRearm": true } ] },
+          { "id": "reports", "at": -70, "effects": [ { "type": "setGlobal", "global": "bob_report", "value": true },
+              { "type": "lockout", "scope": "channel", "until": null, "recoverTo": -45 } ] }
+        ]
+      }
+    },
+    "influenceDisplay": { "bar": false, "number": true }
+  }
+}

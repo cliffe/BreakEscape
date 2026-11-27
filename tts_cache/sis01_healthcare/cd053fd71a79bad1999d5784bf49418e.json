@@ -1,0 +1,13 @@
+{
+  "key": "cd053fd71a79bad1999d5784bf49418e",
+  "npc": "dr_sharma",
+  "text": "The scan only finds what you already knew to look for. If he left something else, it's back inside. That's a trade you can defend, if it's written down.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

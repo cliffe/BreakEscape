@@ -1,0 +1,13 @@
+{
+  "key": "7dd5e869c44e5bbc0f0ab4959a490920",
+  "npc": "narrator",
+  "text": "Two dead terminals, a cold mug with a skin on it, and a printed stack of his own emails squared up beside the keyboard.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

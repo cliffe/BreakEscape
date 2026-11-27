@@ -1,0 +1,13 @@
+{
+  "key": "8e1c7c4897e8c9c4c3de6c4aadf085ab",
+  "npc": "ama_owusu",
+  "text": "One person, one password, two accounts. That's reuse.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:34:46Z"
+}

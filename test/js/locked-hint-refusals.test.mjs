@@ -1,0 +1,153 @@
+// lockedHint on non-key refusals: RFID, PIN, password, biometric, gate doors and the default
+// fallback show the hint when the player is refused; a key lock keeps its exact text; nothing
+// is added when the door opens or has no hint. The helper is imported for real; the callers
+// (which need Phaser) are checked at source level, and a small harness replays the exact
+// alert expressions they use.
+// Run with: node --test test/js/locked-hint-refusals.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const js = join(root, 'public/break_escape/js');
+const dir = mkdtempSync(join(tmpdir(), 'locked-hint-refusals-'));
+writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+writeFileSync(join(dir, 'locked-hint.js'), readFileSync(join(js, 'utils/locked-hint.js'), 'utf8'));
+const { appendLockedHint, lockedHintDuration, showLockedHintToast, hintToastMs } =
+    await import(pathToFileURL(join(dir, 'locked-hint.js')));
+
+const HINT = 'Ruth has the spare badge.';
+const door = (extra = {}) => ({ doorProperties: { lockedHint: HINT, ...extra } });
+const src = (f) => readFileSync(join(js, f), 'utf8');
+
+function captureAlerts(fn) {
+    const alerts = [];
+    globalThis.window = { gameAlert: (...a) => alerts.push(a) };
+    try { fn(); } finally { delete globalThis.window; }
+    return alerts;
+}
+
+test('rfid refusal text carries the hint after a full stop; no hint leaves it unchanged', () => {
+    assert.equal(appendLockedHint('Requires RFID keycard', door()), `Requires RFID keycard. ${HINT}`);
+    assert.equal(appendLockedHint('Requires RFID keycard', door({ lockedHint: null })), 'Requires RFID keycard');
+    assert.equal(appendLockedHint('Access denied. No keycard.', door()), `Access denied. No keycard. ${HINT}`);
+});
+
+test('pin refusal text carries the hint; a longer toast is used', () => {
+    assert.equal(appendLockedHint('Failed to enter correct PIN.', door()), `Failed to enter correct PIN. ${HINT}`);
+    assert.equal(lockedHintDuration(door(), 3000, 'Failed to enter correct PIN.'), 6000);
+    // No hint: the refusal still lasts at least 5 s (feedback plan 7)
+    assert.equal(lockedHintDuration({}, 3000, 'Failed to enter correct PIN.'), 5000);
+});
+
+test('biometric/cloner refusal shows the hint as its own toast; nothing without a hint', () => {
+    assert.deepEqual(captureAlerts(() => showLockedHintToast(door())), [[HINT, 'error', 'Locked', 6000]]);
+    assert.deepEqual(captureAlerts(() => showLockedHintToast({})), []);
+});
+
+test('unlock-system: rfid, default and biometric/cloner refusals use the hint; key text is untouched', () => {
+    const s = src('systems/unlock-system.js');
+    assert.match(s, /appendLockedHint\('Requires RFID keycard', lockable\)/);
+    assert.match(s, /appendLockedHint\('Access denied\. No keycard, and nothing saved on the cloner\.', lockable\)/);
+    assert.match(s, /appendLockedHint\(`This \$\{type\} requires \$\{lockRequirements\.lockType\} to unlock\.`, lockable\)/);
+    assert.match(s, /\}, refusedWithHint\);/);
+    assert.match(s, /onRefused: refusedWithHint,/);
+    assert.match(s, /const refusedWithHint = \(reason\) => \{\s*emitDoorUnlockFailed\(reason\);\s*showLockedHintToast\(lockable\);/);
+    // key lock: the same wording as before ("Requires key. <hint>"), through the helpers
+    assert.match(s, /appendLockedHint\('Requires key', lockable\), 'error', 'Locked', lockedHintDuration\(lockable, 4000, 'Requires key'\)/);
+    assert.equal(appendLockedHint('Requires key', door()), `Requires key. ${HINT}`);
+    assert.equal(appendLockedHint('Requires key', {}), 'Requires key');
+});
+
+test('the door opening shows no hint: the hint is only on refusal paths', () => {
+    // 'Lock Picked' is now shown only by minigame-starters.js (unlock-system.js no longer toasts the pick: it showed twice)
+    const s = src('systems/unlock-system.js') + '\n' + src('systems/minigame-starters.js');
+    // success alerts never mention the hint
+    for (const ok of ["'Access Granted'", "'Lock Picked'"]) {
+        const line = s.split('\n').filter(l => l.includes(ok));
+        assert.ok(line.length > 0);
+        line.forEach(l => assert.doesNotMatch(l, /Hint/));
+    }
+    const m = src('systems/minigame-starters.js');
+    assert.doesNotMatch(m.match(/PIN Accepted[^\n]*/)[0], /Hint/);
+    // a PIN pad closed without an attempt says nothing, hint included
+    assert.match(m, /if \(!result\?\.cancelled && !window\.minigameClosedByDamage\?\.\(\)\) \{\s*window\.gameAlert\(appendLockedHint\("Failed to enter correct PIN\."/);
+});
+
+test('key locks: wrong-key text keeps going through withLockedHint', () => {
+    const m = src('systems/minigame-starters.js');
+    assert.match(m, /withLockedHint\('The selected key doesn\\'t work with this lock\.', lockable\)/);
+});
+
+test('gate door refusal emits door_gate_denied, then shows the notification with the hint appended', () => {
+    const d = src('systems/doors.js');
+    // UX slice 5 R1 M2: the event goes first, so an in-view NPC's answer can drop the notification
+    // (behaviour in ux-bark-gate-refusal.test.mjs); the hint then shows on its own
+    const body = d.slice(d.indexOf('function refuseAtGate('));
+    const emitAt = body.indexOf("window.eventDispatcher?.emit?.('door_gate_denied', data);");
+    const alertAt = body.indexOf("window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', title, lockedHintDuration(hintSource, 3000, denied));");
+    assert.ok(emitAt > 0 && alertAt > emitAt, 'door_gate_denied before the notification');
+    assert.match(body, /const denied = 'Access denied: this door only opens for authorised staff\.';/);
+    assert.match(body, /const title = doorRefusalTitle\(hintSource, 'Door'\);/);
+    // either sprite of the doorway may take the click: the hint falls back to the gate group's
+    assert.match(d, /props\.lockedHint \|\| gateGroup\?\.lockedHint/);
+    assert.match(readFileSync(join(js, 'systems/door-gates.js'), 'utf8'), /g\.lockedHint = props\.lockedHint/);
+    // the gate sprite carries the room's hint in doorProperties, which getLockedHint reads
+    assert.match(d, /lockedHint: lockProps\.lockedHint \?\? connectedRoomData\?\.lockedHint \?\? null/);
+    assert.match(appendLockedHint('Access denied: this door only opens for authorised staff.', { doorProperties: { lockedHint: HINT } }), new RegExp(HINT));
+});
+
+// Design review R3 M1: a hint toast lasts by length, so a long hint (the lab's tailgate
+// hint) can be read. One rule and one function, shared with the requiresItem hint.
+test('a hint toast lasts 300 ms per word, at least 6 s and at most 12 s, the base line counted', async () => {
+    const words = n => Array.from({ length: n }, () => 'word').join(' ');
+    const long = n => ({ doorProperties: { lockedHint: words(n) } });
+    assert.equal(hintToastMs(words(20)), 6000);
+    assert.equal(hintToastMs(words(30)), 9000);
+    assert.equal(hintToastMs(words(64)), 12000);
+    // no hint: by the length of the line, from 5 s (feedback plan 7), the caller's time if longer
+    assert.equal(lockedHintDuration({}, 3000, 'Access denied.'), 5000);
+    assert.equal(lockedHintDuration({}, 8000, 'Access denied.'), 8000);
+    assert.equal(lockedHintDuration({}, 3000, words(30)), 9000);
+    assert.equal(lockedHintDuration({}, 3000, words(64)), 12000);
+    // the whole line is counted: the base it is appended to and the hint
+    const base = 'Access denied: this door only opens for authorised staff.';
+    assert.equal(base.split(' ').length, 9);
+    assert.equal(lockedHintDuration(long(25), 3000, base), (9 + 25) * 300);
+    assert.equal(lockedHintDuration(long(55), 3000, base), 12000);
+    assert.deepEqual(captureAlerts(() => showLockedHintToast(long(30))), [[words(30), 'error', 'Locked', 9000]]);
+    // the requiresItem hint uses the same function
+    assert.match(src('systems/interactions.js'), /window\.gameAlert\?\.\(hint, 'info', '', hintToastMs\(hint\)\)/);
+});
+
+// Code review R1 m7: one rule for every hint toast. Every caller passes the base line it
+// shows, the key lock and the wrong-key lines included, so no hinted refusal keeps a
+// fixed duration.
+test('every lockedHintDuration call passes its base line; no fixed duration is left on a hinted refusal', () => {
+    const files = ['systems/unlock-system.js', 'systems/minigame-starters.js', 'systems/doors.js'];
+    let calls = 0;
+    for (const f of files) {
+        for (const m of src(f).matchAll(/lockedHintDuration\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g)) {
+            if (/^\s*\{/.test(m[1])) continue;   // the import list
+            calls += 1;
+            const args = m[1].split(/,(?![^'"`]*['"`]\s*(?:,|$))/);
+            assert.ok(args.length >= 3 && args.slice(2).join(',').trim(), `${f}: lockedHintDuration(${m[1]}) has no base line`);
+        }
+    }
+    assert.equal(calls, 17, 'the callers this test knows: 10 in unlock-system (3 server refusals, the pre-load handshake refusal, feedback plan 7), 4 in minigame-starters, 3 in doors (the gate refusal, the clone refusal and the inert-gate room refusal; with an NPC in view answering, the hint goes in her bubble: slice 5 R2 m3)');
+    assert.doesNotMatch(src('systems/unlock-system.js'), /\b5500\b/);
+    // every line that shows a hint takes its duration from the helper
+    for (const f of files) {
+        for (const line of src(f).split('\n')) {
+            if (/gameAlert\??\.?\((appendLockedHint|withLockedHint)\(/.test(line)) assert.match(line, /lockedHintDuration\(/, `${f}: ${line.trim()}`);
+        }
+    }
+    // the base is required: with a hint, a missing base is not silently the hint alone
+    const long = { doorProperties: { lockedHint: Array.from({ length: 25 }, () => 'word').join(' ') } };
+    assert.equal(lockedHintDuration(long, 4000, 'Requires key'), 27 * 300);
+    assert.equal(lockedHintDuration(long, 4000, 'The selected key doesn\'t work with this lock.'), 33 * 300);
+    assert.equal(lockedHintDuration({}, 4000, 'Requires key'), 5000);
+});

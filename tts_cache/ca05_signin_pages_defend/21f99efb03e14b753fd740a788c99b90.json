@@ -1,0 +1,13 @@
+{
+  "key": "21f99efb03e14b753fd740a788c99b90",
+  "npc": "niamh_doherty",
+  "text": "That page copying our sign-on, on an address that was almost right, was the one to stop.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:50:50Z"
+}

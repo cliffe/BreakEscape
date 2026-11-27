@@ -1,0 +1,40 @@
+
+## R28 (post-close fix: first-call hub guard): HaX's first call opened at the gate and closed unanswered. The player gets inside and finishes the night; reopening the phone lands on the hub, not the stale first-call answers, and 'Bring me in' is there. Then a fresh-start check: a first open inside still gets the inside answers.
+   {set {"briefing_played":true}}
+
+--- phone ---
+  Agent, status check. Are you inside the facility?
+     [0] Not yet. I'm at the gate.
+  [stopped: no pick]
+   [PASS] said: "Agent, status check. Are you inside the facility?"
+   [PASS] said: "Not yet. I'm at the gate."
+   {set {"guard_admitted":true,"checkpoint_passed":true,"vance_met":true,"vance_spoken":true,"vance_provided_keycard":true,"vance_card_cloned":true}}
+   {set {"anomaly_detected":true,"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"plant_room_entered":true,"operative_static_defeated":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+   {ko voltage}
+   {set {"esd_authorized":true,"attack_prevented":true}}
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Where do I stand?
+     [1] Nothing right now.
+  [stopped: no pick]
+   [PASS] not said: "Inside the facility. Beginning investigation now."
+   [PASS] not said: "Met Robert Vance, the facility manager"
+   [PASS] mission_complete = true (expected true)
+
+[stats] spoken/narrated lines 6, choices 3, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

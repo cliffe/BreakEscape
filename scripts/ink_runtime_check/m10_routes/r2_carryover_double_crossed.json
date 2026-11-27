@@ -1,0 +1,44 @@
+{
+ "imports": {
+  "m09_recruiter_offer": "double_crossed"
+ },
+ "steps": [
+  {
+   "note": "Carry-over: Kowalczyk double-crossed in m09. Briefing opens on the empty place, the aside has no whodunit, the tether names Quintero breaching alone."
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "What are the two times",
+    "You knew him well",
+    "How many will it kill",
+    "He wants us there",
+    "She's right",
+    "How long have we got",
+    "Leave him in the van"
+   ]
+  },
+  {
+   "said": [
+    "One place at the table is empty.",
+    "Kowalczyk walked off the apron in Helena. We know where she has gone.",
+    "Kowalczyk has gone where he is. You will meet her there before any of us do.",
+    "Get past her. Don't argue with her.",
+    "Quintero breaches alone"
+   ],
+   "notSaid": [
+    "Quintero cuffs Kowalczyk",
+    "Kowalczyk hands you a PIN cracker",
+    "Their ledger calls that person WREN",
+    "Do we know who"
+   ]
+  },
+  {
+   "expect": {
+    "briefing_done": true,
+    "aside_done": true,
+    "door_scene_done": true
+   }
+  }
+ ]
+}

@@ -1,0 +1,3924 @@
+/**
+ * NPC Behavior System - Core Behavior Management
+ *
+ * Manages all NPC behaviors including:
+ * - Face Player: Turn to face player when nearby
+ * - Patrol: Random movement within area (using EasyStar.js pathfinding)
+ * - Personal Space: Back away if player too close
+ * - Hostile: Red tint, future chase/flee behaviors
+ *
+ * Architecture:
+ * - NPCBehaviorManager: Singleton manager for all NPC behaviors
+ * - NPCBehavior: Individual behavior instance per NPC
+ * - NPCPathfindingManager: Manages EasyStar pathfinding per room
+ *
+ * Lifecycle:
+ * - Manager initialized once in game.js create()
+ * - Behaviors registered per-room when sprites created
+ * - Updated every frame (throttled to 50ms)
+ * - Rooms never unload, so no cleanup needed
+ *
+ * @module npc-behavior
+ */
+
+import { TILE_SIZE } from '../utils/constants.js';
+import { NPCPathfindingManager } from './npc-pathfinding.js';
+import { COMBAT_CONFIG } from '../config/combat-config.js';
+import { hostileMayChase, resolveChaseRange, shouldCloseInDirectly, CLOSE_IN_MARGIN } from './npc-chase-leash.js';
+import { resolveFightStyle, pickFleeHeading } from './fight-styles.js';
+
+// How long an NPC's "can I see the player to turn to them" answer is reused (canSeePlayerToFace)
+const FACE_SIGHT_MS = 150;
+
+// Stuck watch (_checkPathStuck): an NPC walking a path that neither moves
+// NPC_STUCK_MOVE_PX nor reaches a path node for NPC_STUCK_MS is wedged and
+// recovers. A gap of more than NPC_STUCK_GAP_MS between checks (it paused for the
+// player, dwelt, talked, settled) re-arms the watch. Times on clockNow().
+export const NPC_STUCK_MS = 4000;
+export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
+const NPC_STUCK_GAP_MS = 500;
+const SETTLE_GRACE_MS = 600;       // after a settle ends, contact may not start another for this long
+const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
+const NPC_NUDGE_OWN_CELL_PX = 6;    // half an 8 px grid cell's diagonal: the nearest walkable centre is the body's own cell
+const NPC_NUDGE_BODY_PX = 14;       // a needs nudge keeps this far from another moving body's centre
+const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedged, held up
+// Wedged this close to a route waypoint that carries an action (unlockRoom at a badge
+// reader), the NPC has arrived: a chair or another body is standing on the spot.
+const ROUTE_ACTION_REACH_PX = TILE_SIZE * 1.5;
+// An unlockRoom whose room is not loaded yet: skipping it would leave the route waiting
+// at that room for good. Once the room is loaded the action is only a pause. A timed
+// useObject (useMs, a PIN keyed at a reader) is work too: a scenario waits on its event.
+const routeUseMs = action => (action?.useObject && Number(action.useMs) > 0 ? Math.min(Number(action.useMs), 30000) : 0);
+// Code review R3 (m1): how long a guard at a timed useObject (a PIN at a reader) stands
+// waiting while the gate beyond is held shut against him before he turns back. A player
+// who is inside the gate's radius at the moment he arrives and then steps away does not
+// cost him the lap: he keys as normal once it clears.
+export const USE_HELD_GRACE_MS = 1500;
+const routeActionHasWork = action => !!((action?.unlockRoom && !window.rooms?.[action.unlockRoom]) || routeUseMs(action) > 0);
+
+// Local avoidance (_handleBlockerAhead): a walking NPC that meets the player or
+// another NPC AHEAD on its path waits, then detours, then (if there is no way
+// round) backs off or gently squeezes past — instead of shoving into the body.
+// A body behind or beside the NPC is ignored, so the tailgate/body-block lever is
+// untouched. Times on clockNow(). Tie-breaks are deterministic (no Math.random).
+export const AVOID_LOOKAHEAD_PX = TILE_SIZE + 10;   // a body within this far ahead blocks
+export const AVOID_LANE_HALF_PX = 13;    // lateral half-width of the "ahead" lane (~body half + a hair)
+const AVOID_WAIT_MS        = 600;   // stop and wait this long before acting
+const AVOID_PRIORITY_WAIT_MS = 1800; // a higher-priority NPC waits this long for the yielder first
+const AVOID_REPATH_MS      = 400;   // at most one detour re-path this often
+const AVOID_GIVEUP_MS      = 2500;  // no detour found by now: back off or squeeze
+const AVOID_SQUEEZE_MS     = 450;   // a gentle nudge lasts this long, then a cooldown wait
+const AVOID_SQUEEZE_FACTOR = 0.45;  // squeeze/back-off speed as a fraction of patrol speed
+// Head-on yield (sims tidy R6 M1, games 6093 to 6104): a back-off used to last one behaviour
+// update (about 2 px), then the full wait and detour cycle ran again, so a yielder in a one-lane
+// passage gave ground at about 1 px a second and the two stood nose to nose for 20 s or more.
+// Now each back-off step lasts AVOID_BACKOFF_MS, and while the detour still finds nothing the
+// next step follows at once, so the yielder walks back out of the lane. A step that gains less
+// than AVOID_BACKOFF_PINNED_PX is pinned (a body behind it): the pinned NPC stops yielding for
+// this meeting and the NPCs that meet it yield to it instead (the one with room behind backs off).
+export const AVOID_BACKOFF_MS = 700;
+export const AVOID_BACKOFF_PINNED_PX = 3;
+const AVOID_BACKOFF_REACH_PX = TILE_SIZE * 2;   // how far ahead of the step its aim point lies
+// A yielder keeps yielding to the same NPC while it is still this close ahead, for up to
+// AVOID_YIELD_HOLD_MS from its first step (sims tidy R6, three-NPC lane test): a step that took it
+// just past AVOID_LOOKAHEAD_PX used to clear the meeting, so it walked straight back in and met
+// the same NPC again after a fresh wait, a back-and-forth in which neither got through the lane.
+export const AVOID_YIELD_HOLD_PX = TILE_SIZE * 3;
+export const AVOID_YIELD_HOLD_MS = 10000;
+// Sims tidy R7 M1: the whole-step back-off and the yield hold are only for a blocker that is
+// itself trying to come through (it has a path it is following, or it is walking towards the
+// yielder). Backing off from an NPC that stands still gains nothing: nothing clears the gap,
+// so the yielder paced to and fro in front of it for ever, and each step re-armed the patrol's
+// stall and stuck watches. Against a standing NPC the yielder keeps the older behaviour: a
+// one-update nudge away, then wait and detour again, so a waypoint patrol re-targets.
+// R7 m1: before a step it checks the ground behind (the player, or a wall within
+// AVOID_BACKOFF_BEHIND_PX); with either there it counts as pinned instead of stepping.
+const AVOID_BACKOFF_BEHIND_PX = TILE_SIZE * 0.75;
+// R8 m3: after this many back-off steps to the same NPC inside one yield hold, a yielder stands
+// instead of stepping again, so a queue that cannot clear (one against three in a one-body lane)
+// stops pacing and a waypoint patrol's stall check can re-target, as on main.
+export const AVOID_YIELD_MAX_STEPS = 6;
+// R8 m2: a body, for the player-behind check (a back-off step moves AVOID_BACKOFF_MS at the squeeze speed)
+const AVOID_BODY_PX = 20;
+// Squeeze past the player (lab_physical_pentest USB foothold, games 8412 to 8420): a needs walk
+// (a job, need or interest) that the player's body has blocked for AVOID_PLAYER_PASS_MS walks on
+// through the player: the player's body is ignored by its avoidance and by the NPC and player
+// collider until the two are clear. Walls, doors, furniture and other NPCs still block it. A
+// player near the walk's target (the pickup or use cell) is passed after AVOID_WAIT_MS instead,
+// since the errand only fires at that cell. A block that lapses for AVOID_PLAYER_BLOCK_GAP_MS
+// starts the timer again, so a player walking across the NPC's path changes nothing. The timer
+// survives a detour and a needs re-issue of the same walk (the re-issue every 3 s used to reset
+// the avoidance before it ever gave up). Hostile or KO'd NPCs never pass, and an NPC whose
+// behaviour sets squeezePastPlayer: false keeps the player's body block on every walk.
+export const AVOID_PLAYER_PASS_MS = 2500;
+export const AVOID_PLAYER_BLOCK_GAP_MS = 1000;
+export const AVOID_PLAYER_CLEAR_PX = AVOID_BODY_PX + 8;   // centre to centre: the bodies no longer touch
+// A pass in progress arrives at the walk's target from this far out (the radius the collision used
+// to arrive from, NEEDS_COLLISION_ARRIVE_PX in npc-sprites.js): the pass turns that collision off,
+// and the NPC would otherwise walk on to its use or pickup cell inside the player's body (M1)
+export const AVOID_PLAYER_ARRIVE_PX = 48;
+
+/**
+ * The nearest blocker that lies AHEAD of a walker on its heading, or null.
+ * `pos` {x,y} the walker's feet; `heading` a unit vector toward the next
+ * waypoint; `blockers` [{x,y,...}] candidate feet centres. A blocker counts
+ * only when its forward offset is in (0, lookAhead] and its lateral offset is
+ * within laneHalf — so a body behind or beside the walker never blocks it.
+ * Returns the forward-closest blocker (with `.fwd` set), ties broken by id so
+ * the pick is deterministic.
+ * @private exported for unit tests
+ */
+export function nearestBlockerAhead(pos, heading, blockers, lookAhead = AVOID_LOOKAHEAD_PX, laneHalf = AVOID_LANE_HALF_PX) {
+    if (!blockers || !blockers.length) return null;
+    const hx = heading.x, hy = heading.y;
+    const hlen = Math.hypot(hx, hy);
+    if (hlen < 1e-6) return null;
+    const ux = hx / hlen, uy = hy / hlen;   // forward unit
+    const px = -uy, py = ux;                 // left/right unit
+    let best = null;
+    for (const b of blockers) {
+        const dx = b.x - pos.x, dy = b.y - pos.y;
+        const fwd = dx * ux + dy * uy;
+        if (fwd <= 0 || fwd > lookAhead) continue;
+        const lat = dx * px + dy * py;
+        if (Math.abs(lat) > laneHalf) continue;
+        if (!best || fwd < best.fwd ||
+            (fwd === best.fwd && String(b.id) < String(best.id))) {
+            best = { ...b, fwd, lat };
+        }
+    }
+    return best;
+}
+
+// Scratch segments for nearestBlockerOnPath, reused every call (no per-frame arrays)
+const _pathSegs = [];
+
+/**
+ * The nearest blocker that lies on the walker's PATH for its first `lookAhead`
+ * px, or null. `pos` {x,y} the walker's feet; `waypoints` the path points still
+ * to walk, the next one first. The path is the polyline pos -> waypoints[0] ->
+ * waypoints[1] ...; a blocker counts when it is within `laneHalf` of a segment,
+ * walking the segments until `lookAhead` px of path is used up. The first
+ * segment keeps the forward rule (a body behind or beside the walker never
+ * blocks); later segments use the distance to the segment, rounded at its
+ * start, so a body at a corner counts. The last segment runs on past the final waypoint for any
+ * look-ahead left, as the heading check does. So a body ahead of a short first
+ * segment where the path turns away no longer counts: a detour that bends
+ * round the player is walked, not stopped by the same check (game 5443).
+ * With fewer than two waypoints this is nearestBlockerAhead on the heading.
+ * `startIndex` reads `waypoints` from that index in place (the walker's pathIndex),
+ * so the frame loop copies no path.
+ * Returns the blocker nearest along the path (`.fwd` the path distance,
+ * `.lat` its offset), ties broken by id.
+ * @private exported for unit tests
+ */
+export function nearestBlockerOnPath(pos, waypoints, blockers, lookAhead = AVOID_LOOKAHEAD_PX, laneHalf = AVOID_LANE_HALF_PX, startIndex = 0) {
+    if (!blockers || !blockers.length || !waypoints) return null;
+    const left = waypoints.length - startIndex;
+    if (left <= 0) return null;
+    if (left < 2) {
+        const w = waypoints[startIndex];
+        return nearestBlockerAhead(pos, { x: w.x - pos.x, y: w.y - pos.y }, blockers, lookAhead, laneHalf);
+    }
+    let n = 0, used = 0, sx = pos.x, sy = pos.y;
+    for (let i = startIndex; i < waypoints.length && used < lookAhead; i++) {
+        const w = waypoints[i];
+        const dx = w.x - sx, dy = w.y - sy;
+        const full = Math.hypot(dx, dy);
+        if (full < 1e-6) continue;
+        const last = i === waypoints.length - 1;
+        const len = last ? lookAhead - used : Math.min(full, lookAhead - used);
+        const s = _pathSegs[n] || (_pathSegs[n] = {});
+        s.sx = sx; s.sy = sy; s.ux = dx / full; s.uy = dy / full; s.len = len; s.s0 = used; s.first = n === 0;
+        n++;
+        used += len;
+        sx = w.x; sy = w.y;
+    }
+    let best = null, bestFwd = 0, bestLat = 0;
+    for (const b of blockers) {
+        for (let k = 0; k < n; k++) {
+            const s = _pathSegs[k];
+            const dx = b.x - s.sx, dy = b.y - s.sy;
+            const t = dx * s.ux + dy * s.uy;
+            const lat = dx * -s.uy + dy * s.ux;
+            let along;
+            if (s.first) {
+                if (t <= 0 || t > s.len || Math.abs(lat) > laneHalf) continue;
+                along = t;
+            } else {
+                // A corner (segment start) is rounded; the far end is not, since
+                // the next segment's start covers a corner and the look-ahead stops.
+                if (t > s.len) continue;
+                along = Math.max(0, t);
+                if (Math.hypot(dx - along * s.ux, dy - along * s.uy) > laneHalf) continue;
+            }
+            const fwd = s.s0 + along;
+            if (!best || fwd < bestFwd ||
+                (fwd === bestFwd && String(b.id) < String(best.id))) {
+                best = b; bestFwd = fwd; bestLat = lat;
+            }
+            break;   // the first segment it touches is the nearest along the path
+        }
+    }
+    return best ? { ...best, fwd: bestFwd, lat: bestLat } : null;
+}
+
+/**
+ * Deterministic tie-break for a head-on NPC meeting: does `self` give way to
+ * `other`? A busy NPC (on a scripted/needs errand) keeps its priority over an
+ * idle wanderer; between two equally-busy (or equally-idle) NPCs the higher id
+ * yields. No randomness, so two NPCs in a corridor never both yield or both
+ * push. @private exported for unit tests
+ */
+export function avoidanceYieldsTo(selfId, selfBusy, otherId, otherBusy) {
+    if (selfBusy !== otherBusy) return !selfBusy;      // idle yields to busy
+    return String(selfId) > String(otherId);           // tie: higher id yields
+}
+
+/**
+ * NPCBehaviorManager - Manages all NPC behaviors
+ *
+ * Initialized once in game.js create() phase
+ * Updated every frame in game.js update() phase
+ *
+ * IMPORTANT: Rooms never unload, so no lifecycle management needed.
+ * Behaviors persist for entire game session once registered.
+ */
+export class NPCBehaviorManager {
+    constructor(scene, npcManager) {
+        this.scene = scene;              // Phaser scene reference
+        this.npcManager = npcManager;    // NPC Manager reference
+        this.behaviors = new Map();      // Map<npcId, NPCBehavior>
+        this.updateInterval = 50;        // Update behaviors every 50ms
+        this.lastUpdate = 0;
+        
+        // Use the pathfinding manager created by initializeRooms()
+        // It's already been initialized in rooms.js and should be available on window
+        this.pathfindingManager = window.pathfindingManager;
+        
+        if (!this.pathfindingManager) {
+            console.warn(`⚠️ Pathfinding manager not yet available, will use window.pathfindingManager when needed`);
+        }
+
+        console.log('✅ NPCBehaviorManager initialized');
+    }
+    
+    /**
+     * Get pathfinding manager (used by NPCBehavior instances)
+     * Retrieves from window.pathfindingManager to ensure latest reference
+     */
+    getPathfindingManager() {
+        return window.pathfindingManager || this.pathfindingManager;
+    }
+
+    /**
+     * Register a behavior instance for an NPC sprite
+     * Called when NPC sprite is created in createNPCSpritesForRoom()
+     *
+     * No unregister needed - rooms never unload, sprites persist
+     */
+    registerBehavior(npcId, sprite, config) {
+        try {
+            // Get latest pathfinding manager reference
+            const pathfindingManager = window.pathfindingManager || this.pathfindingManager;
+            const behavior = new NPCBehavior(npcId, sprite, config, this.scene, pathfindingManager);
+            this.behaviors.set(npcId, behavior);
+            console.log(`🤖 Behavior registered for ${npcId}`);
+        } catch (error) {
+            console.error(`❌ Failed to register behavior for ${npcId}:`, error);
+        }
+    }
+
+    /**
+     * Main update loop (called from game.js update())
+     */
+    update(time, delta) {
+        // R13: while the player is on the VM (vm-context-pause.js), NPCs hold still.
+        // Read through window so this file keeps no extra import.
+        if (typeof window !== 'undefined' && window.isVmContextActive?.()) {
+            if (!this._vmPaused) {
+                this._vmPaused = true;
+                this.freezeAll();
+            }
+            return;
+        }
+        this._vmPaused = false;
+
+        // Throttle updates to every 50ms for performance
+        if (time - this.lastUpdate < this.updateInterval) {
+            return;
+        }
+        this.lastUpdate = time;
+
+        // Get player position once for all behaviors.
+        // Use body.center (feet collider) — same reference point that pathfinding and
+        // distance calculations use — rather than the sprite visual centre.
+        const player = window.player;
+        if (!player) {
+            return; // No player yet
+        }
+        const playerPos = {
+            x: player.body?.center.x ?? player.x,
+            y: player.body?.center.y ?? player.y
+        };
+
+        this._tickStartWhen();
+        for (const [npcId, behavior] of this.behaviors) {
+            behavior.update(time, delta, playerPos);
+        }
+        // NPC walk-in/walk-out (systems/npc-walk.js installs it). A hidden NPC's update
+        // never runs, so the walk state machine ticks here, in the manager.
+        this._walkTick?.(time, playerPos);
+    }
+
+    /**
+     * Stand every NPC still: velocity 0 and the idle animation. Skipping behaviour
+     * updates alone leaves each NPC with its last velocity, and it slides on.
+     * @returns {number} how many NPCs were stopped
+     */
+    freezeAll() {
+        let n = 0;
+        for (const behavior of this.behaviors.values()) {
+            const sprite = behavior?.sprite;
+            if (!sprite?.body || sprite.destroyed) continue;
+            try {
+                sprite.body.setVelocity(0, 0);
+                behavior.isMoving = false;
+                const ko = window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
+                if (!ko && behavior.direction) behavior.playAnimation('idle', behavior.direction);
+                n++;
+            } catch (err) {
+                // one bad sprite must not stop the rest
+            }
+        }
+        return n;
+    }
+
+    /**
+     * Update behavior config (called from Ink tag handlers)
+     */
+    setBehaviorState(npcId, property, value) {
+        const behavior = this.behaviors.get(npcId);
+        if (behavior) {
+            behavior.setState(property, value);
+        }
+    }
+
+    /**
+     * Get behavior instance for an NPC
+     */
+    getBehavior(npcId) {
+        return this.behaviors.get(npcId) || null;
+    }
+
+    /**
+     * Command an NPC to walk to a world position and stop there.
+     * Used for event-driven interrupts (bed escalations, emergency responses).
+     * 
+     * @param {string} npcId - The NPC ID
+     * @param {number} worldX - Target world X coordinate
+     * @param {number} worldY - Target world Y coordinate
+     * @param {number} [speed] - Override patrol speed for this move (optional)
+     */
+    goToAndStay(npcId, worldX, worldY, speed, opts) {
+        const behavior = this.behaviors.get(npcId);
+        if (behavior) {
+            behavior.goToAndStay(worldX, worldY, speed, opts);
+        } else {
+            console.warn(`⚠️ goToAndStay: no behavior for ${npcId}`);
+        }
+    }
+
+    /** Start an NPC's authored patrol (apply-actions start_patrol). Returns true when it started. */
+    startPatrol(npcId, opts) {
+        const b = this.behaviors.get(npcId);
+        if (!b) { console.warn(`⚠️ startPatrol: no behavior for ${npcId}`); return false; }
+        // Already walking its patrol: a repeat (set_global fires global_variable_changed even for
+        // the same value) must not restart it from waypoint 0 (E4 R2 m2)
+        if (!b.config.patrol.startDeferred && b.config.patrol.enabled && !b._patrolOverridden && !b._stopOnArrival) return false;
+        return b.restartAuthoredPatrol({ ...opts, why: 'start_patrol' });
+    }
+
+    /** Hand an NPC back its authored patrol after an override (apply-actions resume_patrol). */
+    resumePatrol(npcId, opts) {
+        const b = this.behaviors.get(npcId);
+        if (!b) { console.warn(`⚠️ resumePatrol: no behavior for ${npcId}`); return false; }
+        // A patrol that was never started is start_patrol's job (E4 R1 m2)
+        if (b.config.patrol.startDeferred) {
+            console.warn(`⚠️ resumePatrol: ${npcId} has not started its deferred patrol yet (use start_patrol)`);
+            return false;
+        }
+        // Still on it: patrol on and no move in flight. Any goToAndStay, a needs move included,
+        // counts as off the patrol (E4 R1 M2)
+        if (!b._patrolOverridden && b.config.patrol.enabled && !b._stopOnArrival) return false;
+        return b.restartAuthoredPatrol({ ...opts, why: 'resume_patrol' });
+    }
+
+    /**
+     * patrol.startWhen (E4 R1 M1): a deferred patrol that starts itself once its condition holds
+     * (utils/global-condition.js grammar, read from window so this file keeps no import). Read
+     * every manager tick, so after a reload it starts on the first tick once the restored globals
+     * satisfy it, which a start_patrol action cannot do. One shot per page load: the restart
+     * clears startDeferred. A patrolOverride stop is not saved either, so the condition should
+     * turn false when the NPC must stand.
+     */
+    _tickStartWhen() {
+        for (const b of this.behaviors.values()) {
+            const patrol = b.config?.patrol;
+            if (!patrol?.startDeferred || !patrol.startWhen || b._startWhenBad) continue;
+            if (!b._startWhenFn) {
+                if (typeof window.parseActionCondition !== 'function') continue;   // not loaded yet: next tick
+                b._startWhenFn = window.parseActionCondition(patrol.startWhen);
+                if (!b._startWhenFn) {
+                    b._startWhenBad = true;
+                    console.warn(`⚠️ [${b.npcId}] patrol.startWhen "${patrol.startWhen}" is not in the condition grammar`);
+                    continue;
+                }
+            }
+            if (b._walk) continue;   // a walk-in/walk-out owns the move: retry after it (E4 R2 m1)
+            let holds = false;
+            try { holds = b._startWhenFn(window.gameState?.globalVariables || {}) === true; } catch (e) { /* not yet */ }
+            if (holds && !b.restartAuthoredPatrol({ why: 'startWhen' })) {
+                b._startWhenBad = true;   // refused for good (no authored patrol): warn once, not every frame
+            }
+        }
+    }
+
+    /** Stop an in-flight goToAndStay without an arrival (npc-needs.js aborts). */
+    cancelMove(npcId) {
+        this.behaviors.get(npcId)?.cancelMove();
+    }
+
+    /**
+     * Set an NPC's visibility (for initially hidden NPCs).
+     * Makes the sprite visible and enables physics body, or vice versa.
+     * Syncs state to server for persistence across sessions.
+     * 
+     * @param {string} npcId - The NPC ID
+     * @param {boolean} visible - True to show, false to hide
+     */
+    setNPCVisible(npcId, visible) {
+        // Always record the desired visibility on the NPC data so sprite creation
+        // (room not yet loaded) honours it instead of behavior.initiallyHidden.
+        const npcData = window.npcManager?.getNPC(npcId);
+        const wasRecordedHidden = window.npcManager?.isHiddenByMapping?.(npcId) === true;
+        const wasHidden = wasRecordedHidden
+            || npcData?.isVisible === false
+            || this.behaviors.get(npcId)?.sprite?.visible === false;
+        if (npcData) {
+            npcData.isVisible = visible;
+        }
+        // Saved with the state sync and re-applied when the NPC registers after a reload,
+        // whether or not its sprite exists yet; a onceOnly reveal doesn't replay (N2)
+        window.npcManager?.recordNpcVisibility?.(npcId, visible);
+
+        // The fight music follows the count of hostiles that can attack. Hiding a conscious
+        // hostile can leave none (music handler re-checks on npc_hidden); revealing one brings
+        // the fight back, as a restored hostile is announced after a reload.
+        const hostileSys = window.npcHostileSystem;
+        if (hostileSys?.isNPCHostile?.(npcId) && !hostileSys.isNPCKO?.(npcId)) {
+            if (!visible) {
+                // Only a real change: a repeat hide (reload, room_entered) must not re-run the
+                // all_hostiles_ko check. A never-shown initiallyHidden hostile has no record yet,
+                // so its first hide still emits.
+                if (!wasRecordedHidden) window.eventDispatcher?.emit?.('npc_hidden', { npcId, wasHostile: true });
+            } else if (wasHidden) {
+                hostileSys.announceRestoredHostile?.(npcId, this.behaviors.get(npcId)?.config?.hostile);
+            }
+        }
+
+        const behavior = this.behaviors.get(npcId);
+        const sprite = behavior?.sprite;
+        if (!behavior || !sprite) {
+            console.warn(`⚠️ setNPCVisible: no ${behavior ? 'sprite' : 'behavior'} for ${npcId} yet, recorded isVisible=${visible} for when it is created`);
+            if (npcData && window.RoomStateSync && npcData.roomId) {
+                window.RoomStateSync.updateNpcState(npcData.roomId, npcId, {
+                    isVisible: visible
+                }).catch(err => {
+                    console.error('Failed to sync NPC visibility state to server:', err);
+                });
+            }
+            return;
+        }
+        if (!visible) {
+            // A hidden NPC's update never runs, so nothing else would let go of what it holds.
+            // Stand a sitter up where it is (no walk): that ends its breathing image and crop,
+            // frees the chair's place and drops it from officeTypists. It shows standing.
+            window.seating?.unseatNPC?.(behavior, { instant: true });
+            // Pose and idle breathing end by themselves (NpcPoses.update hides the image on an
+            // invisible sprite); this is defensive
+            window.npcPoses?.stopBreath?.(npcId, sprite);
+        }
+        sprite.setVisible(visible);
+        sprite.setAlpha(visible ? 1 : 0);
+        if (sprite.body) {
+            sprite.body.enable = visible;
+        }
+        // A startHostile NPC created hidden turns hostile on its first reveal, so the one
+        // npc_hostile_state_changed fires with it on screen (see the NPCBehavior constructor)
+        // (a KO'd pending NPC stays down: clear the flag either way)
+        if (visible && behavior._startHostileOnReveal) {
+            behavior._startHostileOnReveal = false;
+            if (!window.npcHostileSystem?.isNPCKO?.(npcId)) behavior.setHostile(true);
+        }
+        // If revealing and patrol is configured, enable it
+        if (visible && behavior.config.patrol.waypoints?.length > 0 && !behavior.config.patrol.startDeferred) {
+            behavior.config.patrol.enabled = true;
+        }
+        
+        // Sync NPC visibility state to server for persistence (like KO state)
+        const npc = window.npcManager?.getNPC(npcId);
+        if (npc && window.RoomStateSync && npc.roomId) {
+            window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
+                isVisible: visible
+            }).catch(err => {
+                console.error('Failed to sync NPC visibility state to server:', err);
+            });
+        }
+        
+        console.log(`👁️ [${npcId}] Visibility set to ${visible}`);
+    }
+}
+
+/**
+ * NPCBehavior - Individual NPC behavior instance
+ * Exported for the SIMS-2 arrival unit test (test/js/npc-behavior-arrival.test.mjs); the manager
+ * remains the only constructor used in the game.
+ */
+export class NPCBehavior {
+    constructor(npcId, sprite, config, scene, pathfindingManager) {
+        this.npcId = npcId;
+        this.sprite = sprite;
+        this.scene = scene;
+        // Store pathfinding manager, but prefer window.pathfindingManager if available
+        this.pathfindingManager = pathfindingManager || window.pathfindingManager;
+
+        // Validate sprite reference
+        if (!this.sprite || !this.sprite.body) {
+            throw new Error(`❌ Invalid sprite provided for NPC ${npcId}`);
+        }
+
+        // Get NPC data and validate room ID
+        const npcData = window.npcManager?.npcs?.get(npcId);
+        if (!npcData || !npcData.roomId) {
+            console.warn(`⚠️ NPC ${npcId} has no room assignment, using default`);
+            this.roomId = 'unknown';
+        } else {
+            this.roomId = npcData.roomId;
+        }
+        // The room the NPC belongs to: a stationary NPC's chase leash is tied to it (7.1a)
+        this.homeRoomId = this.roomId;
+
+        // Verify sprite reference matches stored sprite
+        if (npcData && npcData._sprite && npcData._sprite !== this.sprite) {
+            console.warn(`⚠️ Sprite reference mismatch for ${npcId}`);
+        }
+
+        this.config = this.parseConfig(config || {});
+        this._authoredPatrol = JSON.parse(JSON.stringify(this.config.patrol));   // restartAuthoredPatrol (start_patrol / resume_patrol)
+        this._patrolOverridden = false;   // set by a goToAndStay from a script (resume_patrol)
+
+        // State
+        this.currentState = 'idle';
+        this.direction = 'down';          // Current facing direction
+        this.hostile = false;             // Will be set via setHostile() if startHostile is true
+        this.influence = 0;
+
+        // Patrol state
+        this.patrolTarget = null;
+        this.currentPath = [];           // Current path from EasyStar pathfinding
+        this.pathIndex = 0;              // Current position in path
+        this.lastPatrolChange = 0;
+        this.lastPosition = { x: this.sprite.x, y: this.sprite.y }; // sprite pos OK here — body not yet offset at construction
+        this.collisionRotationAngle = 0;  // Clockwise rotation angle when blocked (0-360)
+        this.wasBlockedLastFrame = false; // Track block state for smooth transitions
+        this.pathFollowingActive = false; // Track whether we're currently following a path to target
+        this._pathfindingInProgress = false; // True while an async findWorldPath call is in flight (prevents flood, mirrors chasePathPending)
+        this._pathRetryAfter = 0;            // Timestamp after which a failed path may be retried
+        this._routeWait = null;              // Multi-room route: waiting on a waypoint action (unlock + load a room)
+        this._pendingRouteAction = null;     // The action of the route waypoint just reached
+        this._routeUse = null;               // A route useObject in progress: { action, until, done }
+        this._useHeld = null;                // Waiting at a useObject with the gate held shut: { action, since, last }
+        this._routeWallRooms = new Set();    // Route rooms whose wall boxes this NPC already collides with
+
+        // Chase state (for hostile NPCs)
+        this.chasePath = [];             // Path to player when chasing
+        this.chasePathIndex = 0;         // Current position in chase path
+        this.lastChasePathRequest = 0;   // Timestamp of last pathfinding request
+        this.chasePathUpdateInterval = 500; // Recalculate path every 500ms
+        this.lastPlayerPosition = null;  // Track player position for path recalculation
+        this.chasePathPending = false;   // True while EasyStar is computing a path (prevents flood)
+        this.chaseDebugGraphics = null;  // Graphics overlay showing current chase path
+        this._chaseAnchor = null;        // The post the chase leash is measured from (7.1a)
+        this._lastChaseAt = 0;           // When the NPC last chased (ms)
+        this._gaveUpChase = false;       // Past the leash: logged once per give-up
+
+        // Patrol debug visualization
+        this.patrolDebugGraphics = null; // Graphics overlay showing patrol path and waypoints
+
+        // Personal space state
+        this.backingAway = false;
+
+        // Animation tracking
+        this.lastAnimationKey = null;
+        this.isMoving = false;
+
+        // Collision settling state
+        // After being pushed/collided, NPCs pause briefly before resuming patrol
+        this.isSettling = false;
+        this.settleEndTime = 0;
+        this.settleDuration = 300; // ms to settle after collision
+
+        // Home position tracking for stationary NPCs
+        // When stationary NPCs are pushed away from their starting position,
+        // they will automatically return home
+        //
+        // IMPORTANT: body.center is NOT yet correct at construction time.
+        // createNPCSprite calls setSize() (which updates halfWidth/Height + center),
+        // then setOffset(), then repositions the sprite — but body.center is only
+        // re-synced with the adjusted sprite position on the first physics preUpdate().
+        // Using npcBodyPos() / body.center here therefore yields a stale value that
+        // is offset from the NPC's true spawn position, causing an immediate false
+        // "pushed from home" trigger on the first frame.
+        //
+        // Instead, compute the correct body centre from first principles, mirroring
+        // the bodyXOffset/bodyYOffset formula used in createNPCSprite:
+        //   body.center = sprite.topLeft + offset + halfSize
+        {
+            const b = this.sprite.body;
+            const homeX = this.sprite.x
+                          - this.sprite.displayWidth  * this.sprite.originX
+                          + b.offset.x + b.halfWidth;
+            const homeY = this.sprite.y
+                          - this.sprite.displayHeight * this.sprite.originY
+                          + b.offset.y + b.halfHeight;
+            this.homePosition = { x: homeX, y: homeY };
+        }
+        this.homeReturnThreshold = 32; // Distance in pixels before returning home
+        this.returningHome = false;
+
+        // Wall collision escape tracking
+        // When NPCs get pushed through walls, they can get unstuck
+        this.stuckInWall = false;
+        this.unstuckAttempts = 0;
+        this.lastUnstuckCheck = 0;
+        this.unstuckCheckInterval = 200; // Check for stuck every 200ms
+        this.escapeWallBox = null; // Reference to the wall we're escaping from
+
+        // Hostility saved before a reload (E-B) wins over startHostile: an NPC
+        // that turned stays hostile, one that was calmed stays calm, a KO'd one
+        // stays down without a health bar. Otherwise apply the configured state.
+        const restored = window.npcHostileSystem?.takeRestoredHostility?.(npcId);
+        if (restored) {
+            // The restore built this state before any config existed: apply the NPC's own
+            // combat numbers whatever its state (a KO or calm NPC is never announced)
+            window.npcHostileSystem?.applyRestoredStats?.(npcId, this.config.hostile);
+            if (restored.hostile) {
+                this.hostile = true;
+                if (!restored.ko) {
+                    this.sprite?.setTint?.(0xff6666);
+                    // A hostile a mapping hid can't attack: announce it when it is revealed
+                    // (setNPCVisible), not now, or the fight music would start for nobody
+                    // (or whose sprite starts hidden, a restored initiallyHidden hostile)
+                    if (this.sprite?.visible !== false) {
+                        window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    } else {
+                        // Counted and announced must agree: until the reveal it neither counts
+                        // (anyHostilesAlive) nor cues the music (R3 m3)
+                        window.npcManager?.recordNpcVisibility?.(npcId, false);
+                    }
+                }
+            }
+        } else if (this.config.hostile.startHostile) {
+            if (this.sprite?.visible === false) {
+                // Hidden at creation (initiallyHidden or a mapping): hostile only once shown, so
+                // it neither cues the fight music nor counts as a live hostile while unseen
+                this._startHostileOnReveal = true;
+            } else {
+                this.setHostile(true);
+            }
+        }
+
+        console.log(`✅ Behavior initialized for ${npcId} in room ${this.roomId}`);
+    }
+
+    parseConfig(config) {
+        // Parse and apply defaults to config
+        const merged = {
+            facePlayer: config.facePlayer !== undefined ? config.facePlayer : true,
+            facePlayerDistance: config.facePlayerDistance || 96,
+            // false: this NPC never squeezes past the player's body (_mayPassPlayer)
+            squeezePastPlayer: config.squeezePastPlayer !== false,
+            patrol: {
+                enabled: config.patrol?.enabled || false,
+                speed: config.patrol?.speed || 100,
+                changeDirectionInterval: config.patrol?.changeDirectionInterval || 3000,
+                bounds: config.patrol?.bounds || null,
+                waypoints: config.patrol?.waypoints || null,        // List of waypoints
+                waypointMode: config.patrol?.waypointMode || 'sequential',  // sequential or random
+                waypointIndex: 0,  // Current waypoint index for sequential mode
+                // Stop patrol when player nearby. A multi-room route walker defaults to false:
+                // stopping for a player who follows him through a doorway jams the route.
+                pauseForPlayer: config.patrol?.pauseForPlayer !== undefined ? config.patrol.pauseForPlayer
+                    : !(config.patrol?.multiRoom && config.patrol?.route?.length > 0),
+                // Multi-room route support
+                multiRoom: config.patrol?.multiRoom || false,        // Enable multi-room patrolling
+                route: config.patrol?.route || null,                 // Array of {room, waypoints} segments
+                currentSegmentIndex: 0                               // Current segment in route
+            },
+            personalSpace: {
+                enabled: config.personalSpace?.enabled || false,
+                distance: config.personalSpace?.distance || 48,
+                backAwaySpeed: config.personalSpace?.backAwaySpeed || 30,
+                backAwayDistance: config.personalSpace?.backAwayDistance || 5
+            },
+            hostile: {
+                startHostile: config.hostile?.startHostile || false,
+                influenceThreshold: config.hostile?.influenceThreshold || -50,
+                chaseSpeed: config.hostile?.chaseSpeed || 145,
+                fleeSpeed: config.hostile?.fleeSpeed || 180,
+                aggroDistance: config.hostile?.aggroDistance || 160,
+                attackDamage: config.hostile?.attackDamage || 10,
+                // Optional per-NPC combat numbers (7.1e); undefined falls back to
+                // combat-config.js in npc-hostile.js createHostileState
+                maxHP: config.hostile?.maxHP,
+                attackCooldown: config.hostile?.attackCooldown,
+                attackRange: config.hostile?.attackRange,
+                // Chase leash (7.1a), opt-in with leash: true: px from the
+                // NPC's post, and whether it still follows the player out of
+                // its room (npc-chase-leash.js). Unleashed NPCs ignore both.
+                leash: config.hostile?.leash === true,
+                chaseRange: resolveChaseRange(config.hostile?.chaseRange, COMBAT_CONFIG.npc.chaseRange),
+                chaseAcrossRooms: config.hostile?.chaseAcrossRooms === true,
+                pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true,
+                // How it fights (fight-styles.js): brawler (default), guarded,
+                // slugger or cower
+                fightStyle: typeof config.hostile?.fightStyle === 'string' ? config.hostile.fightStyle : undefined
+            }
+        };
+
+        // Auto-enable patrol if waypoints or bounds are provided but enabled not explicitly set
+        // patrol.startDeferred: authored and validated now, but stands still until a start_patrol
+        // action (apply-actions.js) sets it off; auto-enable below is how validation runs on it
+        // patrol.startWhen "<condition>" implies startDeferred and starts it itself (_tickStartWhen)
+        const startWhen = typeof config.patrol?.startWhen === 'string' && config.patrol.startWhen.trim()
+            ? config.patrol.startWhen : null;
+        const deferredPatrol = config.patrol?.startDeferred === true || !!startWhen;
+        if (deferredPatrol) merged.patrol.startDeferred = true;
+        if (startWhen) merged.patrol.startWhen = startWhen;
+        if ((!config.patrol?.enabled && (config.patrol?.waypoints?.length > 0 || config.patrol?.bounds)) || deferredPatrol) {
+            merged.patrol.enabled = true;
+            console.log(`🤖 Auto-enabled patrol for ${this.npcId} (waypoints/bounds detected)`);
+        }
+
+        // Pre-calculate squared distances for performance
+        merged.facePlayerDistanceSq = merged.facePlayerDistance ** 2;
+        merged.personalSpace.distanceSq = merged.personalSpace.distance ** 2;
+        merged.hostile.aggroDistanceSq = merged.hostile.aggroDistance ** 2;
+
+        // Validate multi-room route if provided
+        if (merged.patrol.enabled && merged.patrol.multiRoom && merged.patrol.route && merged.patrol.route.length > 0) {
+            this.validateMultiRoomRoute(merged);
+        }
+
+        // Validate and process waypoints if provided (single-room or first room of multi-room)
+        if (merged.patrol.enabled && merged.patrol.waypoints && merged.patrol.waypoints.length > 0) {
+            this.validateWaypoints(merged);
+        }
+
+        // Validate patrol bounds include starting position (only if no waypoints)
+        if (merged.patrol.enabled && merged.patrol.bounds && (!merged.patrol.waypoints || merged.patrol.waypoints.length === 0)) {
+            const bounds = merged.patrol.bounds;
+            const spriteX = this.sprite.x;
+            const spriteY = this.sprite.y;
+
+            // Get room offset for bounds calculation
+            const roomData = window.rooms ? window.rooms[this.roomId] : null;
+            const roomWorldX = roomData?.worldX || 0;
+            const roomWorldY = roomData?.worldY || 0;
+
+            // Convert bounds to world coordinates
+            const worldBounds = {
+                x: roomWorldX + bounds.x,
+                y: roomWorldY + bounds.y,
+                width: bounds.width,
+                height: bounds.height
+            };
+
+            const inBoundsX = spriteX >= worldBounds.x && spriteX <= (worldBounds.x + worldBounds.width);
+            const inBoundsY = spriteY >= worldBounds.y && spriteY <= (worldBounds.y + worldBounds.height);
+
+            if (!inBoundsX || !inBoundsY) {
+                console.warn(`⚠️ NPC ${this.npcId} starting position (${spriteX}, ${spriteY}) is outside patrol bounds. Expanding bounds...`);
+
+                // Auto-expand bounds to include starting position
+                const newX = Math.min(worldBounds.x, spriteX);
+                const newY = Math.min(worldBounds.y, spriteY);
+                const newMaxX = Math.max(worldBounds.x + worldBounds.width, spriteX);
+                const newMaxY = Math.max(worldBounds.y + worldBounds.height, spriteY);
+
+                // Store bounds in world coordinates for easier calculation
+                merged.patrol.worldBounds = {
+                    x: newX,
+                    y: newY,
+                    width: newMaxX - newX,
+                    height: newMaxY - newY
+                };
+
+                console.log(`✅ Patrol bounds expanded to include starting position`);
+            } else {
+                // Store bounds in world coordinates
+                merged.patrol.worldBounds = worldBounds;
+            }
+        }
+
+        if (deferredPatrol) merged.patrol.enabled = false;
+        return merged;
+    }
+
+    /**
+     * Put the NPC back on its authored patrol (the config as parseConfig left it): the
+     * waypoints, route, bounds and speed, from the first waypoint. Cancels a goToAndStay
+     * that is still walking. For a route walker it starts at the segment in the room it
+     * stands in. Returns false when no patrol was authored.
+     */
+    restartAuthoredPatrol({ speed, why = 'patrol' } = {}) {
+        const snap = this._authoredPatrol;
+        if (!snap || !(snap.waypoints?.length || (snap.multiRoom && snap.route?.length) || snap.bounds || snap.worldBounds)) {
+            console.warn(`⚠️ [${this.npcId}] ${why}: no authored patrol`);
+            return false;
+        }
+        // An NPC mid walk-in/walk-out stays on the walk: it owns the move (npc-walk.js) and would
+        // call cancelMove again, or fade the NPC out. Refuse rather than fight it.
+        if (this._walk) {
+            console.warn(`⚠️ [${this.npcId}] ${why}: refused, a walk-in/walk-out is in progress`);
+            return false;
+        }
+        // Tell the systems that own a move, as goToAndStay does: the needs job is aborted and
+        // suspended (else its 3 s re-issue overwrites the waypoints), a chair fetch is dropped
+        window.npcNeedsSystem?.onExternalMove?.(this.npcId, 'patrol');
+        window.seating?.cancelFetch?.(this, `move:${why}`);
+        window.seating?.unseatNPC?.(this);
+        this.cancelMove();
+        const fresh = JSON.parse(JSON.stringify(snap));
+        const patrol = this.config.patrol;
+        Object.assign(patrol, fresh, { enabled: true, startDeferred: false, waypointIndex: 0, currentSegmentIndex: 0 });
+        if (patrol.multiRoom && patrol.route?.length) {
+            const i = patrol.route.findIndex(seg => seg.room === this.roomId);
+            patrol.currentSegmentIndex = i >= 0 ? i : 0;
+        }
+        if (Number(speed) > 0) patrol.speed = Number(speed);
+        this._patrolOverridden = false;
+        this.patrolTarget = null;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.pathFollowingActive = false;
+        this.patrolReachedTime = 0;
+        this.lastPatrolChange = 0;
+        this._pendingRouteAction = null;
+        this._routeWait = null;
+        this._routeUse = null;
+        this._useHeld = null;
+        this.returningHome = false;
+        console.log(`🚶 [${this.npcId}] ${why}: authored patrol restarted`);
+        return true;
+    }
+
+    /**
+     * Validate and process waypoints from scenario config
+     * Converts tile coordinates to world coordinates
+     * Validates waypoints are walkable
+     */
+    validateWaypoints(merged) {
+        try {
+            const roomData = window.rooms ? window.rooms[this.roomId] : null;
+            if (!roomData) {
+                console.warn(`⚠️ Cannot validate waypoints: room ${this.roomId} not found`);
+                merged.patrol.waypoints = null;
+                return;
+            }
+
+            const roomWorldX = roomData.position?.x ?? roomData.worldX ?? 0;
+            const roomWorldY = roomData.position?.y ?? roomData.worldY ?? 0;
+
+            const validWaypoints = [];
+
+            for (const wp of merged.patrol.waypoints) {
+                // Validate waypoint has x, y
+                if (wp.x === undefined || wp.y === undefined) {
+                    console.warn(`⚠️ Waypoint missing x or y coordinate`);
+                    continue;
+                }
+
+                // Convert tile coordinates to world coordinates
+                const worldX = roomWorldX + (wp.x * TILE_SIZE);
+                const worldY = roomWorldY + (wp.y * TILE_SIZE);
+
+                // Basic bounds check
+                const roomBounds = window.pathfindingManager?.getBounds(this.roomId);
+                if (roomBounds) {
+                    // Convert tile bounds to world coordinates for comparison
+                    const minWorldX = roomWorldX + (roomBounds.x * TILE_SIZE);
+                    const minWorldY = roomWorldY + (roomBounds.y * TILE_SIZE);
+                    const maxWorldX = minWorldX + (roomBounds.width * TILE_SIZE);
+                    const maxWorldY = minWorldY + (roomBounds.height * TILE_SIZE);
+
+                    if (worldX < minWorldX || worldX > maxWorldX || worldY < minWorldY || worldY > maxWorldY) {
+                        console.warn(`⚠️ Waypoint (${wp.x}, ${wp.y}) at world (${worldX}, ${worldY}) outside patrol bounds`);
+                        continue;
+                    }
+                }
+
+                // Store validated waypoint with world coordinates
+                validWaypoints.push({
+                    tileX: wp.x,
+                    tileY: wp.y,
+                    worldX: worldX,
+                    worldY: worldY,
+                    dwellTime: wp.dwellTime || 0
+                });
+            }
+
+            if (validWaypoints.length > 0) {
+                merged.patrol.waypoints = validWaypoints;
+                merged.patrol.waypointIndex = 0;
+                console.log(`✅ Validated ${validWaypoints.length} waypoints for ${this.npcId}`);
+            } else {
+                console.warn(`⚠️ No valid waypoints for ${this.npcId}, using random patrol`);
+                merged.patrol.waypoints = null;
+            }
+        } catch (error) {
+            console.error(`❌ Error validating waypoints for ${this.npcId}:`, error);
+            merged.patrol.waypoints = null;
+        }
+    }
+
+    /**
+     * Validate multi-room route configuration
+     * Checks that all rooms exist and are properly connected
+     * Pre-loads all route rooms for immediate access
+     */
+    validateMultiRoomRoute(merged) {
+        try {
+            const gameScenario = window.gameScenario;
+            if (!gameScenario || !gameScenario.rooms) {
+                console.warn(`⚠️ No scenario rooms available, disabling multi-room route for ${this.npcId}`);
+                merged.patrol.multiRoom = false;
+                return;
+            }
+
+            const route = merged.patrol.route;
+            if (!Array.isArray(route) || route.length === 0) {
+                console.warn(`⚠️ Invalid route for ${this.npcId}, disabling multi-room`);
+                merged.patrol.multiRoom = false;
+                return;
+            }
+
+            // Validate all rooms in route exist
+            for (let i = 0; i < route.length; i++) {
+                const segment = route[i];
+                if (!segment.room) {
+                    console.warn(`⚠️ Route segment ${i} missing room ID for ${this.npcId}`);
+                    merged.patrol.multiRoom = false;
+                    return;
+                }
+
+                if (!gameScenario.rooms[segment.room]) {
+                    console.warn(`⚠️ Route room "${segment.room}" not found in scenario for ${this.npcId}`);
+                    merged.patrol.multiRoom = false;
+                    return;
+                }
+
+                // Validate waypoints in this segment
+                if (segment.waypoints && Array.isArray(segment.waypoints)) {
+                    for (const wp of segment.waypoints) {
+                        if (wp.x === undefined || wp.y === undefined) {
+                            console.warn(`⚠️ Route segment ${i} (room: ${segment.room}) has invalid waypoint`);
+                            merged.patrol.multiRoom = false;
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Validate connections between consecutive rooms
+            for (let i = 0; i < route.length; i++) {
+                const currentRoom = route[i].room;
+                const nextRoomIndex = (i + 1) % route.length; // Loop back to first room
+                const nextRoom = route[nextRoomIndex].room;
+
+                const currentRoomData = gameScenario.rooms[currentRoom];
+                const connections = currentRoomData.connections || {};
+
+                // Check if there's a door connecting current room to next room
+                let isConnected = false;
+                for (const [direction, connectedRooms] of Object.entries(connections)) {
+                    const roomList = Array.isArray(connectedRooms) ? connectedRooms : [connectedRooms];
+                    if (roomList.includes(nextRoom)) {
+                        isConnected = true;
+                        break;
+                    }
+                }
+
+                if (!isConnected) {
+                    console.warn(`⚠️ Route rooms not connected: ${currentRoom} ↔ ${nextRoom} for ${this.npcId}`);
+                    merged.patrol.multiRoom = false;
+                    return;
+                }
+            }
+
+            // Pre-load all route rooms
+            console.log(`🚪 Pre-loading ${route.length} rooms for multi-room route: ${route.map(r => r.room).join(' → ')}`);
+            for (const segment of route) {
+                const roomId = segment.room;
+                if (window.rooms && !window.rooms[roomId]) {
+                    // A locked room would be refused by the server (403): its route
+                    // action (a waypoint "action": { "unlockRoom": ... }) unlocks and
+                    // loads it when the NPC gets there.
+                    if (gameScenario.rooms[roomId]?.locked) {
+                        console.log(`🔒 Not pre-loading locked route room ${roomId} (its route action loads it)`);
+                        continue;
+                    }
+                    // Pre-load the room if not already loaded
+                    window.loadRoom(roomId).catch(err => {
+                        console.warn(`⚠️ Failed to pre-load room ${roomId}:`, err);
+                    });
+                }
+            }
+
+            console.log(`✅ Multi-room route validated for ${this.npcId} with ${route.length} segments`);
+        } catch (error) {
+            console.error(`❌ Error validating multi-room route for ${this.npcId}:`, error);
+            merged.patrol.multiRoom = false;
+        }
+    }
+
+    update(time, delta, playerPos) {
+        try {
+            // Validate sprite
+            if (!this.sprite || !this.sprite.body || this.sprite.destroyed) {
+                console.warn(`⚠️ Invalid sprite for ${this.npcId}, skipping update`);
+                return;
+            }
+
+            // Skip all behaviour for hidden NPCs (body.enable = false is set by
+            // initiallyHidden and isVisible:false handling in npc-sprites.js).
+            // When the body is disabled, Phaser's physics preUpdate() is skipped,
+            // so body.center is never synced from the sprite — causing stale
+            // position reads that trigger false home-push returns and spam logs.
+            if (!this.sprite.body.enable) {
+                return;
+            }
+
+            // The once-per-chat turn flag resets whenever no chat is open, even on a frame the seat
+            // code takes over (a seat move, a step off, seated)
+            const needsChat = !!(window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId));
+            if (!needsChat) this._chatFaced = false;
+
+            // A seated NPC (scenario "seated", seating.js) holds its chair until a move,
+            // hostility or a KO gets it up
+            if (window.seating?.updateSeatedNPC?.(this, playerPos)) {
+                this._avoid = null;   // R7 m2: no pin or yield hold carried off the path
+                return;
+            }
+
+            // Needs NPCs (npc-needs.js) hold still while the player talks to them,
+            // even mid-walk: a goToAndStay move never pauses on its own. Scoped to
+            // needs NPCs so every other NPC behaves as before.
+            if (needsChat) {
+                this._avoid = null;
+                this.sprite.body.setVelocity(0, 0);
+                if (!this._chatFaced) { this._chatFaced = true; this.faceForChat(playerPos); }   // once per chat
+                if (this.isMoving) {
+                    this.isMoving = false;
+                    this.playAnimation('idle', this.direction);
+                }
+                this.updateDepth();
+                return;
+            }
+
+            // Update NPC's current room if they've moved to a different room
+            // This allows hostile NPCs to chase across rooms with correct pathfinding
+            this.updateCurrentRoom();
+
+            // A route walker collides with the walls of every route room once loaded
+            // (npc-sprites.js only adds the spawn room's)
+            if (this.config?.patrol?.multiRoom && this.config.patrol.route?.length > 0) {
+                this._ensureRouteWallColliders();
+            }
+
+            // Check if NPC is stuck in a wall and needs to escape
+            this.checkAndEscapeWall(time);
+
+            // Check if NPC has been pushed from home position (for stationary NPCs)
+            this.checkAndHandleHomePush();
+
+            // Main behavior update logic
+            // 1. Determine highest priority state
+            const state = this.determineState(playerPos);
+
+            // 2. Execute state behavior
+            this.executeState(state, time, delta, playerPos);
+
+            // 3. CRITICAL: Update depth after any movement
+            // This ensures correct Y-sorting with player and other NPCs
+            this.updateDepth();
+
+        } catch (error) {
+            console.error(`❌ Behavior update error for ${this.npcId}:`, error);
+        }
+    }
+
+    /**
+     * Update NPC's current room based on their position
+     * This allows NPCs to chase across rooms and use correct pathfinding data
+     */
+    updateCurrentRoom() {
+        const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
+        if (!pathfindingManager) return;
+
+        const { x: npcX, y: npcY } = this.npcBodyPos();
+
+        // Check all loaded rooms to see which one contains the NPC
+        const roomBounds = pathfindingManager.roomBounds;
+        for (const [roomId, bounds] of roomBounds) {
+            const roomMinX = bounds.worldX;
+            const roomMinY = bounds.worldY;
+            const roomMaxX = bounds.worldX + (bounds.mapWidth * 32);
+            const roomMaxY = bounds.worldY + (bounds.mapHeight * 32);
+
+            // Check if NPC is within this room's bounds
+            if (npcX >= roomMinX && npcX <= roomMaxX && npcY >= roomMinY && npcY <= roomMaxY) {
+                if (this.roomId !== roomId) {
+                    console.log(`🚪 [${this.npcId}] Moved from ${this.roomId} to ${roomId}`);
+                    this.roomId = roomId;
+                    // A route walker's room is where he is (sight checks, LOS read npc.roomId);
+                    // so is a walk-in/walk-out walker's (npc-walk.js sets this._walk)
+                    if (this._walk || (this.config?.patrol?.multiRoom && this.config.patrol.route?.length > 0)) {
+                        const npcData = window.npcManager?.npcs?.get(this.npcId);
+                        if (npcData) npcData.roomId = roomId;
+                    }
+                    
+                    // Clear chase path since we're in a new room
+                    this.chasePath = [];
+                    this.chasePathIndex = 0;
+                }
+                return; // Found the room, stop checking
+            }
+        }
+    }
+
+    determineState(playerPos) {
+        if (!playerPos) {
+            return 'idle';
+        }
+
+        // Calculate distance to player (both measured at feet/body-centre)
+        const { x: nx, y: ny } = this.npcBodyPos();
+        const dx = playerPos.x - nx;
+        const dy = playerPos.y - ny;
+        const distanceSq = dx * dx + dy * dy;
+
+        // Check hostile state from hostile system (overrides config)
+        const isHostile = window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(this.npcId);
+        const isKO = window.npcHostileSystem && window.npcHostileSystem.isNPCKO(this.npcId);
+
+        // If KO, always idle
+        if (isKO) {
+            return 'idle';
+        }
+
+        // Priority 5: Chase (hostile + in range). A leashed NPC (7.1a,
+        // behavior.hostile.leash) gives up past chaseRange from its post, or
+        // once the player leaves its room, and falls through to going home or
+        // its patrol; an unleashed one follows the player anywhere
+        if (isHostile && distanceSq < this.config.hostile.aggroDistanceSq) {
+            if (!this._chaseAnchor) this._chaseAnchor = this._chasePost();
+            if (!this.config.hostile.leash || hostileMayChase({
+                playerPos,
+                playerRoomId: window.currentPlayerRoom || null,
+                anchor: this._chaseAnchor,
+                chaseRange: this.config.hostile.chaseRange,
+                acrossRooms: this.config.hostile.chaseAcrossRooms
+            })) {
+                this._lastChaseAt = Date.now();
+                this._gaveUpChase = false;
+                return 'chase';
+            }
+            if (!this._gaveUpChase) {
+                this._gaveUpChase = true;
+                this.chasePath = [];
+                this.chasePathIndex = 0;
+                console.log(`🪢 [${this.npcId}] Gave up the chase (past its leash), returning to its post`);
+            }
+        } else {
+            this._releaseChaseAnchor(isHostile);
+        }
+
+        // A hostile that gave up walks back (home or patrol) rather than
+        // stopping to stare at the player across the door
+        if (isHostile && this._gaveUpChase && this.config.patrol.enabled) {
+            return 'patrol';
+        }
+
+        // Priority 3: Maintain Personal Space
+        // (none of the turn-to-player states fire through a wall: canSeePlayerToFace)
+        if (this.config.personalSpace.enabled && distanceSq < this.config.personalSpace.distanceSq && this.canSeePlayerToFace(playerPos)) {
+            return 'maintain_space';
+        }
+
+        // Priority 2: Patrol
+        if (this.config.patrol.enabled) {
+            // Check if player is in interaction range - if so, face player instead (configurable).
+            // A scripted goToAndStay move (patrolOverride) never pauses: a nurse answering
+            // an alarm must reach the bed even when the player is standing beside it.
+            if (this.config.patrol.pauseForPlayer && (!this._stopOnArrival || this._moveYieldsToPlayer) && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer && this.canSeePlayerToFace(playerPos)) {
+                return 'face_player';
+            }
+            return 'patrol';
+        }
+
+        // Priority 1: Face Player
+        if (this.config.facePlayer && distanceSq < this.config.facePlayerDistanceSq && this.canSeePlayerToFace(playerPos)) {
+            return 'face_player';
+        }
+
+        // Priority 0: Idle
+        return 'idle';
+    }
+
+    /**
+     * Where the chase leash is measured from (7.1a): a stationary NPC's home
+     * spot in its own room; for a patroller, where it was when the chase began.
+     */
+    _chasePost() {
+        const stationary = !this.config.patrol.enabled || this.returningHome;
+        if (stationary && this.homePosition) {
+            return { x: this.homePosition.x, y: this.homePosition.y, roomId: this.homeRoomId };
+        }
+        const { x, y } = this.npcBodyPos();
+        return { x, y, roomId: this.roomId };
+    }
+
+    /** Forget the leash post once the NPC is calm, or has stopped chasing for a while. */
+    _releaseChaseAnchor(isHostile) {
+        if (!this._chaseAnchor) return;
+        if (!isHostile || Date.now() - this._lastChaseAt > 8000) {
+            this._chaseAnchor = null;
+            this._gaveUpChase = false;
+        }
+    }
+
+    executeState(state, time, delta, playerPos) {
+        this.currentState = state;
+        // Sims tidy R7 m2: avoidance state (a pin, a yield hold) belongs to the walk it was set
+        // on. Off the path (facing the player, idle, chase, arrived, seated, timed out, a new
+        // walk) it is dropped, or a stale pin made every NPC that met this one yield to it.
+        if (state !== 'patrol') this._avoid = null;
+
+        // Check if NPC is KO - if so, don't override death animation
+        const isKO = window.npcHostileSystem && window.npcHostileSystem.isNPCKO(this.npcId);
+        if (isKO) {
+            // NPC is knocked out - stop movement but don't change animation (death anim is playing)
+            this.sprite.body.setVelocity(0, 0);
+            this.isMoving = false;
+            return;
+        }
+
+        switch (state) {
+            case 'idle':
+                this.sprite.body.setVelocity(0, 0);
+                this.playAnimation('idle', this.direction);
+                this.isMoving = false;
+                break;
+
+            case 'face_player':
+                this.facePlayer(playerPos);
+                this.sprite.body.setVelocity(0, 0);
+                this.isMoving = false;
+                break;
+
+            case 'patrol':
+                this.updatePatrol(time, delta);
+                break;
+
+            case 'maintain_space':
+                this.maintainPersonalSpace(playerPos, delta);
+                break;
+
+            case 'chase':
+                // Stub for future implementation
+                this.updateHostileBehavior(playerPos, delta);
+                break;
+
+            case 'flee':
+                // Stub for future implementation
+                this.updateHostileBehavior(playerPos, delta);
+                break;
+        }
+    }
+
+    /**
+     * The one clock for this NPC's patrol timers (lastPatrolChange, dwell, settling,
+     * path retry back-off, route waits, stuck watch): Phaser scene time, which
+     * update(time) also receives. In Phaser 3.60 that is the rAF timestamp, on the
+     * performance.now() timeline (ms since page load), so performance.now() is the
+     * fallback before the scene clock has started. Never Date.now(): epoch ms is
+     * ~1.8e12 and stamped into lastPatrolChange it made `time - lastPatrolChange`
+     * hugely negative, so the stall re-target never fired again for that NPC.
+     */
+    clockNow() {
+        const t = this.scene?.time?.now;
+        if (Number.isFinite(t) && t > 0) return t;
+        return typeof performance !== 'undefined' ? performance.now() : 0;
+    }
+
+    /**
+     * Returns the world position of this NPC's physics body centre (feet collider).
+     * Use this for all pathfinding, LOS and distance checks — mirrors playerBodyPos()
+     * in player.js.
+     */
+    npcBodyPos() {
+        if (this.sprite?.body) {
+            return { x: this.sprite.body.center.x, y: this.sprite.body.center.y };
+        }
+        return { x: this.sprite.x, y: this.sprite.y };
+    }
+
+    /**
+     * May this NPC turn towards the player? Not through a wall. An NPC with an
+     * los block uses its sight occlusion (walls, closed doors and tall props;
+     * los.occlusion: false sees through all of it); any other NPC only the
+     * walls-and-closed-doors test. Both from npc-sight-occlusion.js, feet to
+     * feet. Cached for FACE_SIGHT_MS.
+     */
+    canSeePlayerToFace(playerPos) {
+        const occ = window.npcSightOcclusion;
+        if (!occ || !playerPos) return true;
+        const now = Date.now();
+        if (this._faceSightAt !== undefined && now - this._faceSightAt < FACE_SIGHT_MS) return this._faceSightClear;
+        const los = window.npcManager?.getNPC?.(this.npcId)?.los;
+        const from = this.npcBodyPos();
+        let clear = true;
+        if (los && typeof los === 'object') {
+            if (los.occlusion !== false && typeof occ.isClearBetween === 'function') clear = occ.isClearBetween(from, playerPos);
+        } else if (typeof occ.isWallClearBetween === 'function') {
+            clear = occ.isWallClearBetween(from, playerPos);
+        }
+        this._faceSightAt = now;
+        this._faceSightClear = clear;
+        return clear;
+    }
+
+    /**
+     * A conversation starts: release any pose hold (npc-poses.js) and turn to the player, which
+     * always wins over a pose's machine or phone. Needs NPCs return early during a chat, so
+     * face_player never runs for them; this is the one turn at chat start.
+     */
+    faceForChat(playerPos) {
+        this._poseHoldFacing = false;
+        if (!this.config?.facePlayer || !playerPos) return;
+        const { x: nx, y: ny } = this.npcBodyPos();
+        this.direction = this.calculateDirection(playerPos.x - nx, playerPos.y - ny);
+        this.playAnimation('idle', this.direction);
+    }
+
+    facePlayer(playerPos) {
+        if (!this.config.facePlayer || !playerPos) return;
+        if (this._poseHoldFacing) return; // turned to its machine or phone for a pose (npc-poses.js)
+        if (!this.canSeePlayerToFace(playerPos)) return; // wall between
+
+        const { x: nx, y: ny } = this.npcBodyPos();
+        const dx = playerPos.x - nx;
+        const dy = playerPos.y - ny;
+
+        // Calculate direction (8-way)
+        this.direction = this.calculateDirection(dx, dy);
+
+        // Play idle animation facing player
+        this.playAnimation('idle', this.direction);
+    }
+    updatePatrol(time, delta) {
+        if (!this.config.patrol.enabled) return;
+
+        // Belt and braces for clockNow(): a stamp from another clock lies far in
+        // this clock's future and would never expire (a frozen NPC). Pull it back.
+        if (this.lastPatrolChange > time) this.lastPatrolChange = time;
+        if (this.isSettling && this.settleEndTime - time > this.settleDuration) {
+            this.settleEndTime = time + this.settleDuration;
+        }
+
+        // The settle grace is stamped and read on clockNow() (npc-sprites settleGraceRunning), so a
+        // stamp from another clock must not outlive one grace: it would switch off settling and
+        // avoidance for this walker. Pull it back like settleEndTime.
+        if (this._settleGraceUntil) {
+            const graceNow = this.clockNow();
+            if (this._settleGraceUntil - graceNow > SETTLE_GRACE_MS) this._settleGraceUntil = graceNow + SETTLE_GRACE_MS;
+        }
+
+        // If settling after collision, pause patrol briefly to let physics settle
+        if (this.isSettling) {
+            if (time >= this.settleEndTime) {
+                // Settling complete, resume patrol
+                this.isSettling = false;
+                // A walker still touching a body that will not move away would re-settle on the
+                // next overlap callback, before its velocity ever moved it: the grace lets it walk.
+                this._settleGraceUntil = this.clockNow() + SETTLE_GRACE_MS;
+                console.log(`✅ [${this.npcId}] Finished settling, resuming patrol`);
+            } else {
+                // Still settling - don't move, just idle
+                this.sprite.body.setVelocity(0, 0);
+                this.playAnimation('idle', this.direction);
+                this.isMoving = false;
+                return;
+            }
+        }
+
+        // If we just finished returning home, don't continue patrol
+        if (this.returningHome && !this.config.patrol.enabled) {
+            return;
+        }
+
+        // Update debug visualization
+        if (this.pathFollowingActive && this.currentPath.length > 0) {
+            this._drawPatrolPathDebug(this.currentPath);
+        } else {
+            this._clearPatrolPathDebug();
+        }
+
+        // Check if path needs recalculation (e.g., after NPC-to-NPC collision avoidance)
+        if (this._needsPathRecalc && this.patrolTarget) {
+            this._needsPathRecalc = false;
+            console.log(`🔄 [${this.npcId}] Recalculating path to waypoint after collision avoidance`);
+            
+            // Clear current path and recalculate
+            this.currentPath = [];
+            this.pathIndex = 0;
+            
+            const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
+            if (pathfindingManager) {
+                const { x: rnx, y: rny } = this.npcBodyPos();
+                const rSnapped = pathfindingManager.findNearestWalkableStartCell(rnx, rny)
+                                 || { x: rnx, y: rny };
+                this._planMovePath(pathfindingManager,
+                    rSnapped.x,
+                    rSnapped.y,
+                    this.patrolTarget.x,
+                    this.patrolTarget.y,
+                    (path) => {
+                        if (path && path.length > 0) {
+                            this.currentPath = path;
+                            this.pathIndex = 0;
+                            console.log(`✅ [${this.npcId}] Recalculated path with ${path.length} waypoints after collision`);
+                        } else {
+                            console.warn(`⚠️ [${this.npcId}] Path recalculation failed after collision`);
+                        }
+                    }
+                );
+            }
+            return;
+        }
+
+        // Handle dwell time at waypoint
+        // Only start dwelling if:
+        // 1. We have a target waypoint with dwell time
+        // 2. We've finished following the path to that waypoint (pathFollowingActive is false)
+        if (this.patrolTarget && this.patrolTarget.dwellTime && this.patrolTarget.dwellTime > 0 && !this.pathFollowingActive) {
+            if (this.patrolReachedTime === 0) {
+                // Just reached waypoint, start dwell timer
+                this.patrolReachedTime = time;
+                this.sprite.body.setVelocity(0, 0);
+                this.playAnimation('idle', this.direction);
+                this.isMoving = false;
+                console.log(`⏸️ [${this.npcId}] Dwelling at waypoint (${this.patrolTarget.x}, ${this.patrolTarget.y}) for ${this.patrolTarget.dwellTime}ms`);
+                return;
+            }
+
+            // Check if dwell time expired
+            const dwellElapsed = time - this.patrolReachedTime;
+            if (dwellElapsed < this.patrolTarget.dwellTime) {
+                // Still dwelling - face player only if pauseForPlayer is enabled
+                if (this.config.patrol.pauseForPlayer) {
+                    const dwellPlayer = window.player;
+                    const playerPos = dwellPlayer ? {
+                        x: dwellPlayer.body?.center.x ?? dwellPlayer.x,
+                        y: dwellPlayer.body?.center.y ?? dwellPlayer.y
+                    } : null;
+                    if (playerPos) {
+                        const { x: dnx, y: dny } = this.npcBodyPos();
+                        const distSq = (dnx - playerPos.x) ** 2 + (dny - playerPos.y) ** 2;
+                        if (distSq < this.config.facePlayerDistanceSq && this.config.facePlayer) {
+                            this.facePlayer(playerPos);
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Dwell time expired, reset and choose next target
+            console.log(`✅ [${this.npcId}] Dwell time expired (${dwellElapsed}ms >= ${this.patrolTarget.dwellTime}ms), choosing next target`);
+            this.patrolReachedTime = 0;
+            // Don't clear path/target yet - let chooseNewPatrolTarget do that
+            this.chooseNewPatrolTarget(time);
+            return;
+        }
+
+        // Time to choose a new patrol target? Random wandering re-targets every
+        // changeDirectionInterval. A waypoint patrol keeps walking to its waypoint
+        // (a leg longer than the interval used to be cut short, so the NPC never
+        // arrived or dwelt: m02 Val, 3.6 s legs against the 3 s default) and only
+        // re-targets if it has stopped making progress for that long.
+        if (this._playerPass?.active && this._tickPlayerPass(this.npcBodyPos(), time)) return;
+        const intervalElapsed = time - this.lastPatrolChange > this.config.patrol.changeDirectionInterval;
+        if (!this.patrolTarget ||
+            this.currentPath.length === 0 ||
+            (intervalElapsed && (!this._isWaypointPatrol() || this._patrolStalled(time)))) {
+            // Don't fire another findWorldPath while one is already in flight, and
+            // respect the retry backoff set after a failed path request.
+            if (this._pathfindingInProgress) return;
+            if (this._pathRetryAfter > 0 && time < this._pathRetryAfter) return;
+            this.chooseNewPatrolTarget(time);
+            return;
+        }
+
+        // Arrival-tolerance guard: when doing a goToAndStay move, stop as soon as
+        // we're within 1 tile of the destination even if the exact final cell is
+        // blocked (e.g. occupied by another NPC).  This prevents endless
+        // collision-avoidance oscillation near the target.
+        // NOTE: was 2 tiles, reduced to 1 tile — the 2-tile radius caused the nurse
+        // to stop ~2 tiles short of the target when approaching from the bed 5 side,
+        // making her appear to be near bed 5 instead of the bed 4 monitor.
+        if (this._stopOnArrival && this._goToStayDest) {
+            const { x: gnx, y: gny } = this.npcBodyPos();
+            const gdx = this._goToStayDest.x - gnx;
+            const gdy = this._goToStayDest.y - gny;
+            const d2 = gdx * gdx + gdy * gdy;
+            // A needs move to a use, queue or pair cell (arriveWithin, npc-needs.js slice 10) walks
+            // on to that cell, so two NPCs at one machine stand where they were sent; it still
+            // stops within the tile if it has been held there 1.5 s (the cell is occupied).
+            const tol = this._arriveWithin;
+            if (d2 < TILE_SIZE * TILE_SIZE) {
+                if (!tol || d2 <= tol * tol) { this._triggerGoToStayArrival(); return; }
+                if (!this._nearDestSince) this._nearDestSince = time;
+                else if (time - this._nearDestSince > 1500) { this._triggerGoToStayArrival(); return; }
+            }
+        }
+
+        // Follow current path
+        if (this.currentPath.length > 0 && this.pathIndex < this.currentPath.length) {
+            const nextWaypoint = this.currentPath[this.pathIndex];
+            const { x: pnx, y: pny } = this.npcBodyPos();
+            const dx = nextWaypoint.x - pnx;
+            const dy = nextWaypoint.y - pny;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Reached waypoint? Move to next
+            if (distance < 8) {
+                this.pathIndex++;
+
+                // Reached end of path? Choose new target
+                if (this.pathIndex >= this.currentPath.length) {
+                    if (this._stopOnArrival && (this.patrolTarget?.isTemporary || this.patrolTarget?.gateApproach)) {
+                        // The end of a bump's sidestep leg, not of the move: the proximity guard above
+                        // already handled being near the destination, so this is short of it. Drop the
+                        // sidestep and head for the real destination; the move keeps its owner and id,
+                        // and the arrival fires there, once. A leg back to a shut gate (gateApproach,
+                        // E4 R2 M1) ends the same way: the next choice plans to the stop through it.
+                        this.config.patrol.waypoints = this.config.patrol.waypoints.filter(wp => !wp.isTemporary);
+                        this.config.patrol.waypointIndex = 0;
+                        this.patrolTarget = null;
+                        this.currentPath = [];
+                        this.pathIndex = 0;
+                        this.pathFollowingActive = false;
+                        return;
+                    }
+                    if (this._stopOnArrival) {
+                        // NPC has arrived at its emergency destination — stop permanently
+                        this._triggerGoToStayArrival();
+                        return;
+                    }
+                    // Path complete, mark reached time and stop following path
+                    this.patrolReachedTime = time;
+                    this._avoid = null;
+                    // A route waypoint with an action runs it before the next leg
+                    if (this.patrolTarget?.routeAction) { this._pendingRouteAction = this.patrolTarget.routeAction; this._routeUse = null; }
+                    this.pathFollowingActive = false; // Path is done, dwell will start next frame
+                    this.sprite.body.setVelocity(0, 0); // Stop movement immediately
+                    this.isMoving = false;
+                    this.playAnimation('idle', this.direction); // Play idle instead of walk
+                    console.log(`🎯 [${this.npcId}] Reached waypoint at (${this.patrolTarget.x}, ${this.patrolTarget.y}), path complete`);
+                    return;
+                }
+                return; // Let next frame handle the new waypoint
+            }
+
+            // Wedged on the way (a corner, a prop, another NPC)? Recover rather
+            // than push at it for ever.
+            if (this._checkPathStuck(time)) return;
+
+            // The player or another NPC AHEAD on the path? Wait, then detour or
+            // give way — never shove into them. Exception: on the final approach to
+            // a waypoint that carries a scripted route action (e.g. unlockRoom), a
+            // sustained yield would stop that action ever firing, so the yield is
+            // time-boxed and then squeezes through (handled inside via mustReach).
+            const mustReach = !!(this.patrolTarget?.routeAction &&
+                this.pathIndex === this.currentPath.length - 1);
+            if (this._handleBlockerAhead(time, nextWaypoint, mustReach)) return;
+
+            // Move toward current waypoint
+            const velocityX = (dx / distance) * this.config.patrol.speed;
+            const velocityY = (dy / distance) * this.config.patrol.speed;
+            this.sprite.body.setVelocity(velocityX, velocityY);
+
+            // Update direction and animation
+            this.direction = this.calculateDirection(dx, dy);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+
+            // console.log(`🚶 [${this.npcId}] Patrol waypoint ${this.pathIndex + 1}/${this.currentPath.length} - velocity: (${velocityX.toFixed(0)}, ${velocityY.toFixed(0)})`);
+        } else {
+            // No path found, choose new target
+            this.chooseNewPatrolTarget(time);
+        }
+    }
+
+    /**
+     * Stuck watch. Called only from updatePatrol's path-following branch, so it
+     * never runs while the NPC dwells, settles, has arrived (goToAndStay), sits,
+     * talks, is KO or hidden, waits on a route action or has no path. It also
+     * re-arms while a path request is in flight and while the player stands
+     * beside the NPC (the player holding it up is play, not a wedge).
+     * Progress is NPC_STUCK_MOVE_PX of movement or reaching a path node. After
+     * NPC_STUCK_MS without progress it recovers, escalating while the NPC stays
+     * put: 1) re-path to the same target; 2) nudge onto the nearest walkable
+     * cell (at most a tile) and re-path; 3) drop the target, so the patrol
+     * chooses again next frame. Real progress resets the escalation.
+     * @returns {boolean} true when it acted this frame (the caller stops there)
+     */
+    _checkPathStuck(time) {
+        const { x, y } = this.npcBodyPos();
+        const w = this._stuckWatch;
+        const moved = w && (x - w.x) ** 2 + (y - w.y) ** 2 > NPC_STUCK_MOVE_PX ** 2;
+        const advanced = w && w.path === this.currentPath && this.pathIndex > w.pathIndex;
+        if (!w || moved || advanced) {
+            this._stuckWatch = { x, y, since: time, lastSeen: time,
+                path: this.currentPath, pathIndex: this.pathIndex, attempts: 0 };
+            return false;
+        }
+        const rearm = !(time >= w.lastSeen) || time - w.lastSeen > NPC_STUCK_GAP_MS ||
+            this._pathfindingInProgress || !(this.config.patrol.speed > 0) || this._playerBeside(x, y);
+        w.lastSeen = time;
+        w.path = this.currentPath;
+        w.pathIndex = this.pathIndex;
+        if (rearm) {
+            w.x = x; w.y = y; w.since = time;
+            return false;
+        }
+        if (time - w.since < NPC_STUCK_MS) return false;
+
+        w.attempts++;
+        w.since = time;
+        const anchor = this._recoverFromStuck(w.attempts, x, y, time);
+        w.x = anchor.x; w.y = anchor.y;
+        if (w.attempts >= 3) w.attempts = 0;
+        return true;
+    }
+
+    /**
+     * May a needs re-route nudge the body from (x, y)? (code review R2, m1) Only when its cell is
+     * grid-blocked (a walkable cell's nearest centre is its own, under NPC_NUDGE_OWN_CELL_PX
+     * away, and the nudge would only re-centre it), never with the player beside it (as
+     * _checkPathStuck), and never onto a cell another moving body covers.
+     */
+    _needsNudgeSafe(pfm, x, y) {
+        if (this._playerBeside(x, y)) return false;
+        const cell = pfm.findNearestWalkableStartCell?.(x, y);
+        if (!cell || (cell.x - x) ** 2 + (cell.y - y) ** 2 < NPC_NUDGE_OWN_CELL_PX ** 2) return false;
+        return !this._dynamicBlockers().some(b => (b.x - cell.x) ** 2 + (b.y - cell.y) ** 2 < NPC_NUDGE_BODY_PX ** 2);
+    }
+
+    /** Is the player's body within NPC_STUCK_PLAYER_PX of (x, y)? */
+    _playerBeside(x, y) {
+        const p = window.player;
+        if (!p) return false;
+        const px = p.body?.center?.x ?? p.x;
+        const py = p.body?.center?.y ?? p.y;
+        if (!Number.isFinite(px) || !Number.isFinite(py)) return false;
+        return (px - x) ** 2 + (py - y) ** 2 < NPC_STUCK_PLAYER_PX ** 2;
+    }
+
+    /**
+     * One recovery step for _checkPathStuck. Returns where the NPC now stands
+     * (the stuck watch's new anchor, so a nudge doesn't count as progress).
+     */
+    _recoverFromStuck(attempt, x, y, time = this.scene?.time?.now ?? 0) {
+        const pfm = this.pathfindingManager || window.pathfindingManager;
+        const target = this.patrolTarget;
+        this.sprite.body.setVelocity(0, 0);
+        this.isMoving = false;
+        this._patrolProgress = null;
+        this._needsPathRecalc = false;
+        console.warn(`🧱 [${this.npcId}] No progress for ${NPC_STUCK_MS}ms at (${x.toFixed(0)}, ${y.toFixed(0)}), recovery step ${Math.min(attempt, 3)}`);
+
+        if (this._arriveForRouteAction(target, x, y, time)) return { x, y };
+
+        if (attempt >= 3 || !target || typeof pfm?.findWorldPath !== 'function') {
+            this._keepRouteLeg(target);
+            this.currentPath = [];
+            this.pathIndex = 0;
+            this.patrolTarget = null;
+            this.pathFollowingActive = false;
+            this._pathRetryAfter = 0;
+            return { x, y };
+        }
+
+        // A wedged needs walk plans round seated and held bodies from here on (_planMovePath)
+        if (this._moveOwner === 'needs' && this._stopOnArrival) this._moveReroute = true;
+        let at = { x, y };
+        if (attempt >= 2) at = this._nudgeToWalkable(pfm, x, y);
+        const from = pfm.findNearestWalkableStartCell?.(at.x, at.y) || at;
+        this._pathfindingInProgress = true;
+        this._planMovePath(pfm, from.x, from.y, target.x, target.y, (path) => {
+            this._pathfindingInProgress = false;
+            if (this.patrolTarget !== target) return; // re-targeted meanwhile
+            if (path && path.length > 0) {
+                this.currentPath = path;
+                this.pathIndex = 0;
+                this.pathFollowingActive = true;
+            } else {
+                this._keepRouteLeg(target);
+                this.currentPath = [];
+                this.patrolTarget = null;
+                this.pathFollowingActive = false;
+                this._pathRetryAfter = this.clockNow() + 2000;
+            }
+        });
+        return at;
+    }
+
+    /**
+     * Wedged within ROUTE_ACTION_REACH_PX of a route waypoint with an action: treat it as
+     * the arrival, so the action runs next (as at the end of the path). Without this the
+     * stuck recovery dropped the leg, whose waypoint was already taken, and the action
+     * went with it: an NPC whose unlockRoom waypoint had a chair on it stood for good
+     * waiting for a room that was never unlocked (test_access_habits H9, Sara at (1, 7)).
+     * The route chooser asks the same when the stall re-target cuts such a leg short.
+     * @returns {boolean} true when it counted as the arrival
+     */
+    _arriveForRouteAction(target, x, y, time) {
+        if (!routeActionHasWork(target?.routeAction)) return false;
+        if ((target.x - x) ** 2 + (target.y - y) ** 2 > ROUTE_ACTION_REACH_PX ** 2) return false;
+        console.log(`🎯 [${this.npcId}] Wedged ${Math.hypot(target.x - x, target.y - y).toFixed(0)}px from a route waypoint with an action: arrived`);
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.pathFollowingActive = false;
+        this._pathRetryAfter = 0;
+        this.patrolReachedTime = target.dwellTime > 0 ? 0 : time;
+        this._pendingRouteAction = target.routeAction;
+        this._routeUse = null;
+        this.playAnimation?.('idle', this.direction);
+        return true;
+    }
+
+    /**
+     * The stuck recovery is giving up on a route leg further than ROUTE_ACTION_REACH_PX
+     * from a waypoint with an action: put that waypoint back, so the next choice walks the
+     * leg again instead of skipping the action (the route would then wait at the next room
+     * for good). Only while the route is still where the leg left it.
+     */
+    _keepRouteLeg(target) {
+        const leg = routeActionHasWork(target?.routeAction) && target.routeLeg;
+        const patrol = this.config?.patrol;
+        if (!leg || !patrol) return;
+        if (patrol.currentSegmentIndex === leg.segment && patrol.waypointIndex === leg.waypoint + 1) {
+            patrol.waypointIndex = leg.waypoint;
+        }
+    }
+
+    /**
+     * Move the NPC's feet onto the centre of the nearest walkable grid cell, if
+     * that is within NPC_STUCK_NUDGE_MAX_PX (an NPC clipping a corner or a
+     * prop's clearance). Returns the new feet position.
+     */
+    _nudgeToWalkable(pfm, x, y) {
+        const cell = pfm.findNearestWalkableStartCell?.(x, y);
+        if (!cell) return { x, y };
+        const dx = cell.x - x, dy = cell.y - y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 4 || d2 > NPC_STUCK_NUDGE_MAX_PX ** 2) return { x, y };
+        const sx = this.sprite.x + dx, sy = this.sprite.y + dy;
+        if (typeof this.sprite.body.reset === 'function') this.sprite.body.reset(sx, sy);
+        else if (typeof this.sprite.setPosition === 'function') this.sprite.setPosition(sx, sy);
+        else { this.sprite.x = sx; this.sprite.y = sy; }
+        console.log(`↔️ [${this.npcId}] Nudged ${Math.sqrt(d2).toFixed(0)}px onto a walkable cell`);
+        return { x: cell.x, y: cell.y };
+    }
+
+    /**
+     * findWorldPath for the walk's own planning points (chooseWaypointTarget, the multi-room
+     * route, the collision repath, the stuck recovery). During a needs move it carries the move's
+     * room leash (OFFICE_LIFE_PLAN 7.2), so the walk takes the same permitted route the needs
+     * system's reachability check approved. Any other move or patrol plans unconstrained.
+     */
+    /** Is this NPC on a job (scripted/needs move), so it keeps priority over an idle wanderer? */
+    _avoidIsBusy() {
+        return !!this._stopOnArrival;
+    }
+
+    /**
+     * A new patrol target starts a new walk: no pin, no back-off step in progress. A yield hold
+     * that is still running survives (R8 m1), so a random patrol's 3 s re-target does not walk
+     * it straight back into the NPC it just gave way to.
+     */
+    _resetAvoidForNewTarget(time) {
+        const a = this._avoid;
+        if (a?.yieldTo && time < a.yieldUntil) {
+            this._avoid = { since: time, repathAfter: 0, pending: false, gaveUp: false, squeezeUntil: 0,
+                yieldTo: a.yieldTo, yieldUntil: a.yieldUntil, yieldCount: a.yieldCount || 0 };
+        } else {
+            this._avoid = null;
+        }
+    }
+
+    /** Pinned in a head-on meeting: its back-off gained no ground, so others yield to it. */
+    _avoidIsPinned() {
+        return !!this._avoid?.pinned;
+    }
+
+    /** Following a path in the patrol state (not dwelling, arrived, facing the player or idle). */
+    _avoidIsWalking() {
+        return this.currentState === 'patrol' && !!this.pathFollowingActive &&
+            Array.isArray(this.currentPath) && this.pathIndex < this.currentPath.length;
+    }
+
+    /**
+     * Is there no room to back off from `pos` towards `dir` (a unit vector)? The player in
+     * that lane within the look-ahead, or a wall within AVOID_BACKOFF_BEHIND_PX (R7 m1).
+     */
+    _avoidBackBlocked(pos, dir, blockers) {
+        const player = blockers.filter(b => b.isPlayer);
+        // Reach: the whole step plus a body; lane: a body each side (R8 m2)
+        const step = AVOID_BACKOFF_MS * AVOID_SQUEEZE_FACTOR * (this.config.patrol.speed || 0) / 1000;
+        if (player.length && nearestBlockerAhead(pos, dir, player, step + AVOID_BODY_PX, AVOID_BODY_PX - 1)) return true;
+        const pfm = this.pathfindingManager || window.pathfindingManager;
+        if (typeof pfm?.hasWorldPhysicsLineOfSight !== 'function') return false;
+        return !pfm.hasWorldPhysicsLineOfSight(pos.x, pos.y,
+            pos.x + dir.x * AVOID_BACKOFF_BEHIND_PX, pos.y + dir.y * AVOID_BACKOFF_BEHIND_PX, 0, 0);
+    }
+
+    /** Feet centres of the player and every other active, non-seated NPC. */
+    _dynamicBlockers() {
+        const out = [];
+        const pb = window.player?.body;
+        if (pb && pb.enable !== false) {
+            out.push({ x: pb.center.x, y: pb.center.y, id: null, busy: false, isPlayer: true });
+        }
+        const rooms = window.rooms || {};
+        for (const roomId in rooms) {
+            const sprites = rooms[roomId]?.npcSprites;
+            if (!sprites) continue;
+            for (const sprite of sprites) {
+                if (sprite === this.sprite) continue;
+                const b = sprite.body;
+                if (!b || !b.enable || b.immovable) continue;  // skip disabled and seated/held NPCs
+                const beh = window.npcBehaviorManager?.getBehavior?.(sprite.npcId);
+                out.push({ x: b.center.x, y: b.center.y, id: sprite.npcId,
+                    busy: !!beh?._avoidIsBusy?.(), pinned: !!beh?._avoidIsPinned?.(),
+                    walking: !!beh?._avoidIsWalking?.(), vx: b.velocity?.x || 0, vy: b.velocity?.y || 0,
+                    isPlayer: false, sprite });
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Local avoidance for the path-follow branch of updatePatrol. Returns true
+     * when it has taken over this NPC's movement for the frame (the caller then
+     * stops). The sequence, per OFFICE_LIFE avoidance design:
+     *   1. a body ahead within AVOID_LOOKAHEAD_PX → stop and wait (AVOID_WAIT_MS);
+     *   2. still blocked → re-path round the blocker (throttled AVOID_REPATH_MS);
+     *   3. no way round after AVOID_GIVEUP_MS → the yielder backs off (NPC meeting)
+     *      or a gentle, bounded squeeze toward the waypoint (player/doorway), then
+     *      a cooldown wait. Never a sustained shove, never per-frame jitter.
+     * Only bodies AHEAD block, so a player behind or beside is ignored (the
+     * tailgate/body-block lever is untouched). Disabled with window.__npcAvoidOff.
+     */
+    _handleBlockerAhead(time, nextWaypoint, mustReach = false) {
+        if (window.__npcAvoidOff) { this._avoid = null; return false; }
+        if (!(this.config.patrol.speed > 0)) return false;
+        const pos = this.npcBodyPos();
+        // "Ahead" follows the path itself for the look-ahead, not just the heading
+        // to the next waypoint: a short first leg that points at a body before the
+        // path turns away (a detour round the player) is not blocked by it. With no
+        // path behind nextWaypoint, the heading check alone.
+        const path = this.currentPath;
+        const onPath = Array.isArray(path) && path[this.pathIndex] === nextWaypoint;
+        let blockers = this._dynamicBlockers();
+        const ahead = (list, reach) => onPath
+            ? nearestBlockerOnPath(pos, path, list, reach, AVOID_LANE_HALF_PX, this.pathIndex)
+            : nearestBlockerAhead(pos, { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y }, list, reach);
+        // Trying to come through (R7 M1): following a path, or walking towards this NPC
+        const coming = b => !b.isPlayer && (b.walking || b.vx * (pos.x - b.x) + b.vy * (pos.y - b.y) > 0);
+        // Squeezing past the player: the player's body is not a blocker until the two are clear
+        if (this._updatePlayerPass(pos, blockers, ahead)) blockers = blockers.filter(b => !b.isPlayer);
+        let hit = ahead(blockers, AVOID_LOOKAHEAD_PX);
+        // Still yielding: the NPC it backed off from, a little beyond the look-ahead, still counts
+        // while it is still coming through
+        const held = this._avoid;
+        if (!hit && held?.yieldTo && time < held.yieldUntil) {
+            hit = ahead(blockers.filter(b => b.id === held.yieldTo && coming(b)), AVOID_YIELD_HOLD_PX);
+        }
+        if (!hit) { this._avoid = null; this._notePlayerBlock(time, false); return false; }
+
+        // A needs walk that may not pass (opted out with squeezePastPlayer: false, hostile or KO'd) keeps the older bounded squeeze for
+        // a player at its pickup or use cell (games 1099 to 1124): the errand only fires there, so a
+        // time-boxed wait and a squeeze up to the cell, not a hold or a detour until the job times out.
+        if (!mustReach && hit.isPlayer && this._moveOwner === 'needs' && !this._mayPassPlayer() && this.patrolTarget) {
+            const dxt = this.patrolTarget.x - hit.x, dyt = this.patrolTarget.y - hit.y;
+            if (dxt * dxt + dyt * dyt <= AVOID_LOOKAHEAD_PX * AVOID_LOOKAHEAD_PX) mustReach = true;
+        }
+
+        // The player's body in the way of a needs walk: after AVOID_PLAYER_PASS_MS (AVOID_WAIT_MS
+        // when the player stands at the walk's target, games 1099 to 1124) walk on through the
+        // player instead of holding or detouring for ever (games 8412 to 8420).
+        if (hit.isPlayer && this._notePlayerBlock(time, true, hit)) {
+            this._avoid = null;
+            return false;
+        }
+
+        const a = this._avoid || (this._avoid = { since: time, repathAfter: 0, pending: false, gaveUp: false, squeezeUntil: 0 });
+        // Phase: gentle squeeze in progress — let the bounded nudge run, then cool down.
+        if (a.squeezeUntil && time < a.squeezeUntil) {
+            this._moveToward(nextWaypoint, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+        if (a.squeezeUntil && time >= a.squeezeUntil) {   // squeeze done → cooldown wait, re-assess
+            a.squeezeUntil = 0; a.since = time; a.gaveUp = false; a.repathAfter = 0;
+        }
+        // Phase: a back-off step (head-on yield) runs for AVOID_BACKOFF_MS. When it ends, a fresh
+        // detour try comes at once and, if none, the next step: no new wait (R6 M1).
+        if (a.backoffUntil && time < a.backoffUntil) {
+            this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+        if (a.backoffUntil) {
+            const gained = Math.hypot(pos.x - a.backoffFrom.x, pos.y - a.backoffFrom.y);
+            a.pinned = gained < AVOID_BACKOFF_PINNED_PX;   // a step that gains ground clears the pin
+            a.backoffUntil = 0; a.since = time - AVOID_GIVEUP_MS - 1; a.gaveUp = false; a.repathAfter = 0;
+        }
+
+        // Default action while deciding: hold still (no shove).
+        this._stopHere();
+        const waited = time - a.since;
+        if (waited < AVOID_WAIT_MS) return true;
+
+        // Final approach to a scripted-action waypoint (unlockRoom, useObject, ...):
+        // the action only fires once the NPC reaches the cell, so a detour, back-off
+        // or indefinite hold would strand the route for ever. After the brief wait,
+        // squeeze straight through at the bounded speed until the cell is reached.
+        // (The action cell itself is not the blocker; the body is beyond it.)
+        if (mustReach) {
+            this._moveToward(nextWaypoint, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+
+        // A pinned NPC (no room behind) stops yielding; one that meets a pinned NPC yields to it.
+        // Both pinned (or neither): the usual tie-break, so two pinned NPCs never both hold (R6).
+        const amYielder = hit.isPlayer || (!!a.pinned === !!hit.pinned
+            ? avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy)
+            : !!hit.pinned);
+        // A higher-priority NPC first gives the yielder time to move, then tries its own detour.
+        if (!amYielder && waited < AVOID_PRIORITY_WAIT_MS) return true;
+
+        // Try a detour round the blocker (throttled).
+        if (!a.gaveUp && !a.pending && time >= a.repathAfter) {
+            a.repathAfter = time + AVOID_REPATH_MS;
+            this._requestDetour(a);
+            return true;
+        }
+        if (a.pending) return true;
+
+        if (a.gaveUp && waited > AVOID_GIVEUP_MS) {
+            // No way round. A yielding NPC meeting another NPC backs off to clear the
+            // path; otherwise (player, doorway) a short, gentle squeeze forward.
+            if (!hit.isPlayer && amYielder) {
+                const dx = pos.x - hit.x, dy = pos.y - hit.y, d = Math.hypot(dx, dy) || 1;
+                if (!coming(hit)) {
+                    // A blocker standing still (R7 M1): main's nudge, one update away, then wait
+                    // and detour again; a waypoint patrol held here re-targets (_patrolStalled)
+                    this._moveToward({ x: pos.x + dx, y: pos.y + dy }, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+                    a.since = time; a.gaveUp = false; a.repathAfter = 0;
+                    return true;
+                }
+                if (this._avoidBackBlocked(pos, { x: dx / d, y: dy / d }, blockers)) {
+                    // The player or a wall behind (R7 m1): no step, so no push into or through
+                    // the player; pinned, so the other NPC yields instead. Re-assess after a wait.
+                    a.pinned = true;
+                    a.since = time; a.gaveUp = false; a.repathAfter = 0;
+                    return true;
+                }
+                if (a.yieldTo !== hit.id || time >= a.yieldUntil) { a.yieldTo = hit.id; a.yieldUntil = time + AVOID_YIELD_HOLD_MS; a.yieldCount = 0; }
+                if ((a.yieldCount || 0) >= AVOID_YIELD_MAX_STEPS) {
+                    // Gave way to this NPC often enough and it still has not cleared (R8 m3): stand, as
+                    // main does, so a waypoint patrol's stall check can re-target
+                    a.since = time; a.gaveUp = false; a.repathAfter = 0;
+                    return true;
+                }
+                a.yieldCount = (a.yieldCount || 0) + 1;
+                // One step of AVOID_BACKOFF_MS straight away from the blocker; re-assessed when it ends
+                a.backoffFrom = { x: pos.x, y: pos.y };
+                a.backoffTo = { x: pos.x + dx / d * AVOID_BACKOFF_REACH_PX, y: pos.y + dy / d * AVOID_BACKOFF_REACH_PX };
+                a.backoffUntil = time + AVOID_BACKOFF_MS;
+                this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+                return true;
+            }
+            a.squeezeUntil = time + AVOID_SQUEEZE_MS;
+            this._moveToward(nextWaypoint, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+        return true;
+    }
+
+    /**
+     * May this walk squeeze past the player? A needs walk (job, need or interest) or an NPC
+     * walk-in/out (owner 'walk') in progress,
+     * not hostile or KO'd, and not opted out with behaviour squeezePastPlayer: false.
+     */
+    _mayPassPlayer() {
+        if (this.config?.squeezePastPlayer === false) return false;
+        // 'walk': an NPC walk-in or walk-out (npc-walk.js). A walk-out through the door the
+        // player stands in used to shove the player back through it for the whole 20 s timeout
+        // (m10 gallery guards), since the routed NPC holds and only the player gives way.
+        if ((this._moveOwner !== 'needs' && this._moveOwner !== 'walk') || !this._stopOnArrival) return false;
+        const hs = window.npcHostileSystem;
+        if (hs?.isNPCKO?.(this.npcId) || hs?.isNPCHostile?.(this.npcId)) return false;
+        return true;
+    }
+
+    /** Is this NPC squeezing past the player now (its collider with the player is off)? */
+    isPassingPlayer() {
+        return !!this._playerPass?.active && this._mayPassPlayer();
+    }
+
+    /**
+     * Record whether the player blocks this frame; returns true when the block has lasted long
+     * enough to squeeze past (and starts the pass). `hit` is the player blocker when blocked.
+     */
+    _notePlayerBlock(time, blocked, hit = null) {
+        const p = this._playerPass;
+        // `reissued`: goToAndStay kept this timer across a needs re-issue of the same walk. The
+        // frames until its path comes back (up to the 2 s path retry) skip the blocker check, so
+        // that one gap does not count as the block lapsing (code review R1 m5).
+        const lapsed = p && time - p.lastSeen > AVOID_PLAYER_BLOCK_GAP_MS && !p.reissued;
+        if (!blocked || !this._mayPassPlayer()) {
+            if (p && !p.active && (!this._mayPassPlayer() || lapsed)) this._playerPass = null;
+            else if (p) p.reissued = false;
+            return false;
+        }
+        if (!p || p.active || lapsed) {
+            this._playerPass = { since: time, lastSeen: time, active: false };
+            return false;
+        }
+        p.reissued = false;
+        p.lastSeen = time;
+        let wait = AVOID_PLAYER_PASS_MS;
+        const t = this.patrolTarget;
+        if (t && hit) {
+            const dxt = t.x - hit.x, dyt = t.y - hit.y;
+            if (dxt * dxt + dyt * dyt <= AVOID_LOOKAHEAD_PX * AVOID_LOOKAHEAD_PX) wait = AVOID_WAIT_MS;
+        }
+        if (time - p.since < wait) return false;
+        p.active = true;
+        console.log(`🫥 [${this.npcId}] Squeezing past the player after ${Math.round(time - p.since)} ms`);
+        return true;
+    }
+
+    /**
+     * Every frame of a walk, before the path is followed: a pass is ended when the walk may no
+     * longer pass, or by distance when no path is being followed (the following branch ends it
+     * itself in _updatePlayerPass), and arrives the walk at its target once it is within
+     * AVOID_PLAYER_ARRIVE_PX, as the collision used to: the walk would otherwise go on to the use
+     * or pickup cell inside the player's body and leave the next walk starting there (code review
+     * R1 M1, m1). Returns true when it arrived the walk.
+     */
+    _tickPlayerPass(pos, time = this.scene?.time?.now ?? 0) {
+        const p = this._playerPass;
+        if (!p?.active) return false;
+        // The re-issue skip below lasts one AVOID_PLAYER_BLOCK_GAP_MS at most, so a path that never
+        // comes back cannot hold the player's collider off (code review R3 m2).
+        if (p.reissued) {
+            p.reissuedAt ??= time;
+            if (time - p.reissuedAt > AVOID_PLAYER_BLOCK_GAP_MS) p.reissued = false;
+        }
+        if (!this._mayPassPlayer()) { this._playerPass = null; return false; }
+        const d = this._goToStayDest;
+        // Arrive early only when the player is also at the target: that is the case the old collision
+        // covered. Otherwise a use or queue cell is walked onto (code review R2 m2).
+        if (d && Math.hypot(d.x - pos.x, d.y - pos.y) <= AVOID_PLAYER_ARRIVE_PX &&
+            this._dynamicBlockers().some(b => b.isPlayer && Math.hypot(b.x - d.x, b.y - d.y) <= AVOID_PLAYER_ARRIVE_PX)) {
+            this._triggerGoToStayArrival();   // clears the pass
+            return true;
+        }
+        if (!(this.currentPath?.length > 0) && !p.reissued) {   // a re-issue empties the path for a frame (R2 m1)
+            const touching = this._dynamicBlockers().some(b => b.isPlayer && Math.hypot(b.x - pos.x, b.y - pos.y) < AVOID_PLAYER_CLEAR_PX);
+            if (!touching) this._playerPass = null;
+        }
+        return false;
+    }
+
+    /**
+     * While a pass is active, keep it until the player is clear: not ahead within the look-ahead
+     * and not touching. Ends at once if the walk is no longer one that may pass. Returns true
+     * while the pass is active.
+     */
+    _updatePlayerPass(pos, blockers, ahead) {
+        const p = this._playerPass;
+        if (!p?.active) return false;
+        if (!this._mayPassPlayer()) { this._playerPass = null; return false; }
+        const player = blockers.filter(b => b.isPlayer);
+        const touching = player.some(b => Math.hypot(b.x - pos.x, b.y - pos.y) < AVOID_PLAYER_CLEAR_PX);
+        if (!touching && !ahead(player, AVOID_LOOKAHEAD_PX)) { this._playerPass = null; return false; }
+        return true;
+    }
+
+    /** Stop and idle in place (helper for _handleBlockerAhead). */
+    _stopHere() {
+        if (this.sprite?.body) this.sprite.body.setVelocity(0, 0);
+        if (this.isMoving) { this.isMoving = false; this.playAnimation('idle', this.direction); }
+    }
+
+    /** Drive the body toward a world point at `speed` (used for squeeze and back-off). */
+    _moveToward(pt, speed) {
+        const pos = this.npcBodyPos();
+        const dx = pt.x - pos.x, dy = pt.y - pos.y;
+        const d = Math.hypot(dx, dy) || 1;
+        this.sprite.body.setVelocity((dx / d) * speed, (dy / d) * speed);
+        this.direction = this.calculateDirection(dx, dy);
+        this.playAnimation('walk', this.direction);
+        this.isMoving = true;
+    }
+
+    /**
+     * Ask for a detour to the current target that routes round the player and
+     * every other NPC. On success adopt it and clear the avoidance state; on
+     * failure mark gaveUp so _handleBlockerAhead backs off or squeezes.
+     */
+    _requestDetour(a) {
+        const pfm = this.pathfindingManager || window.pathfindingManager;
+        const target = this.patrolTarget;
+        if (!target || typeof pfm?.findWorldPath !== 'function') { a.gaveUp = true; return; }
+        const pos = this.npcBodyPos();
+        const from = pfm.findNearestWalkableStartCell?.(pos.x, pos.y) || pos;
+        a.pending = true;
+        const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
+        // A needs walk first routes round held bodies too (chairs, seated staff); when their
+        // clearance rings close the only aisle that search finds nothing, so it tries the tight
+        // search (exact body reach, a standing NPC in a narrow aisle), then the 'moving' detour round
+        // the moving bodies only (not the plain path, which avoids none), before giving up (code review R1, M1; return stall R1, m3)
+        const held = this._moveOwner === 'needs';
+        const search = (tier) => {
+            const includeHeld = tier !== 'moving';
+            const opts = tier === 'tight' ? this._tightOpts(rooms) : { avoidDynamic: { exceptSprite: this.sprite, includeHeld, ...(includeHeld ? { laneHalf: AVOID_LANE_HALF_PX } : {}) } };   // the 'moving' tier skips the held-body rules, so the planner never reads laneHalf there (return stall R4, n1)
+            if (tier !== 'tight' && rooms?.length) opts.avoidRooms = rooms;
+            pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
+                if (this.patrolTarget !== target) { a.pending = false; this._avoid = null; return; }  // re-targeted meanwhile
+                if (this._avoid !== a) { a.pending = false; return; }   // avoidance cleared or replaced meanwhile (R2 m4)
+                if (path && path.length > 0) {
+                    a.pending = false;
+                    this.currentPath = path;
+                    this.pathIndex = 0;
+                    this.pathFollowingActive = true;
+                    this._avoid = null;        // detour adopted — resume normal following
+                    this._detourTier = tier;
+                    console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints, ${tier})`);
+                } else if (tier === 'held') {
+                    search('tight');           // the clearance rings close the way: the exact reach
+                } else if (tier === 'tight') {
+                    search('moving');          // nothing held-aware: the detour round the moving bodies only
+                } else {
+                    a.pending = false;
+                    a.gaveUp = true;           // nothing routes round the blocker
+                }
+            }, false, opts);
+        };
+        search(held ? 'held' : 'moving');
+    }
+
+    /** Options for the tight held-aware search (npc-pathfinding.js), with the needs room leash. */
+    _tightOpts(rooms) {
+        const o = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, tight: true, laneHalf: AVOID_LANE_HALF_PX } };
+        if (rooms?.length) o.avoidRooms = rooms;
+        return o;
+    }
+
+    _planMovePath(pfm, sx, sy, ex, ey, callback) {
+        const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
+        // A rerouted needs walk (OFFICE_LIFE_STUCK_RETURN.md) plans round every other body,
+        // seated and held ones included; with no such path it takes the plain one. _moveReroute is
+        // set by the return stall watch, by an outbound walk_rerouted, by the wedge recovery of any
+        // needs goToAndStay, and stays set for collision re-plans of that move (code review R1, m5).
+        if (this._moveOwner === 'needs' && this._moveReroute) {
+            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, laneHalf: AVOID_LANE_HALF_PX } };
+            if (rooms?.length) opts.avoidRooms = rooms;
+            // Three tiers: round every body with a clearance ring; else round their exact reach (a
+            // standing NPC in an aisle the ring closes); else the plain path. _planTier records the
+            // tier that gave the path, for live checks (code review R1, m2).
+            const plain = () => {
+                this._planTier = 'plain';
+                if (rooms?.length) pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
+                else pfm.findWorldPath(sx, sy, ex, ey, callback);
+            };
+            return pfm.findWorldPath(sx, sy, ex, ey, (path) => {
+                if (path && path.length > 0) { this._planTier = 'ring'; callback(path); return; }
+                pfm.findWorldPath(sx, sy, ex, ey, (p2) => {
+                    if (p2 && p2.length > 0) { this._planTier = 'tight'; callback(p2); } else plain();
+                }, false, this._tightOpts(rooms));
+            }, false, opts);
+        }
+        if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
+        return pfm.findWorldPath(sx, sy, ex, ey, callback);
+    }
+
+    /** Does this patrol follow waypoints (single-room or a multi-room route)? */
+    _isWaypointPatrol() {
+        const patrol = this.config.patrol;
+        return (patrol.waypoints?.length > 0) ||
+            !!(patrol.multiRoom && patrol.route?.length > 0);
+    }
+
+    /**
+     * True once the NPC has moved less than 4 px for a whole changeDirectionInterval
+     * since its current target was chosen (blocked by another NPC or furniture).
+     */
+    _patrolStalled(time) {
+        const { x, y } = this.npcBodyPos();
+        const mark = this._patrolProgress;
+        if (!mark || mark.target !== this.patrolTarget ||
+            (x - mark.x) ** 2 + (y - mark.y) ** 2 > 16) {
+            this._patrolProgress = { x, y, time, target: this.patrolTarget };
+            return false;
+        }
+        return time - mark.time > this.config.patrol.changeDirectionInterval;
+    }
+
+    chooseNewPatrolTarget(time) {
+        // Don't choose new targets if we just disabled patrol (e.g., finished returning home)
+        if (!this.config.patrol.enabled) {
+            return;
+        }
+
+        // Check if using waypoint patrol (a multi-room route needs no top-level waypoints)
+        if (this._isWaypointPatrol()) {
+            this.chooseWaypointTarget(time);
+        } else {
+            // Fall back to random patrol
+            this.chooseRandomPatrolTarget(time);
+        }
+    }
+
+    /**
+     * Choose target from waypoint list (single-room or multi-room)
+     */
+    chooseWaypointTarget(time) {
+        this._resetAvoidForNewTarget(time);   // no pin or back-off step; a live yield hold stays (R8 m1)
+        // Handle multi-room routes. A move in flight (goToAndStay: a patrolOverride, a needs or
+        // walk move) is a one-waypoint patrol, so a route walker takes the single-room branch
+        // and stops where he was sent, not at the next route waypoint (E4 review R1 B1).
+        if (!this._stopOnArrival && this.config.patrol.multiRoom && this.config.patrol.route && this.config.patrol.route.length > 0) {
+            this.chooseWaypointTargetMultiRoom(time);
+            return;
+        }
+
+        // Single-room waypoint patrol
+        let nextWaypoint;
+
+        if (this.config.patrol.waypointMode === 'sequential') {
+            // Sequential: follow waypoints in order
+            nextWaypoint = this.config.patrol.waypoints[this.config.patrol.waypointIndex];
+            console.log(`🎯 [${this.npcId}] Waypoint mode: sequential, index ${this.config.patrol.waypointIndex} of ${this.config.patrol.waypoints.length}`);
+            this.config.patrol.waypointIndex = (this.config.patrol.waypointIndex + 1) % this.config.patrol.waypoints.length;
+        } else {
+            // Random: pick random waypoint
+            const randomIndex = Math.floor(Math.random() * this.config.patrol.waypoints.length);
+            nextWaypoint = this.config.patrol.waypoints[randomIndex];
+            console.log(`🎯 [${this.npcId}] Waypoint mode: random, picked index ${randomIndex}`);
+        }
+
+        if (!nextWaypoint) {
+            console.warn(`⚠️ [${this.npcId}] No valid waypoint, falling back to random patrol`);
+            this.chooseRandomPatrolTarget(time);
+            return;
+        }
+
+        // Request pathfinding to waypoint
+        const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
+        if (!pathfindingManager) {
+            console.warn(`⚠️ No pathfinding manager for ${this.npcId}`);
+            return;
+        }
+
+        // Snap the destination to the nearest walkable cell so that a blocked target tile
+        // (e.g. an NPC or interactable object sitting on it) doesn't permanently prevent
+        // pathfinding — the NPC will navigate as close as possible instead.
+        const wpDest = pathfindingManager.findNearestWalkableWorldCell(nextWaypoint.worldX, nextWaypoint.worldY)
+                       || { x: nextWaypoint.worldX, y: nextWaypoint.worldY };
+
+        this.patrolTarget = {
+            x: wpDest.x,
+            y: wpDest.y,
+            dwellTime: nextWaypoint.dwellTime || 0,
+            isTemporary: !!nextWaypoint.isTemporary   // a bump's sidestep (npc-sprites.js), not a real stop
+        };
+
+        this.lastPatrolChange = time;
+        this.pathIndex = 0;
+        this.currentPath = [];
+        this.patrolReachedTime = 0;
+        this.pathFollowingActive = false; // Reset flag when choosing new target
+
+        console.log(`🗺️ [${this.npcId}] New waypoint target at (${wpDest.x}, ${wpDest.y}), dwell: ${nextWaypoint.dwellTime}ms`);
+
+        const { x: wpnx, y: wpny } = this.npcBodyPos();
+        const wpSnapped = pathfindingManager.findNearestWalkableStartCell(wpnx, wpny)
+                          || { x: wpnx, y: wpny };
+        this._pathfindingInProgress = true;
+        const legTarget = this.patrolTarget;
+        this._planMovePath(pathfindingManager,
+            wpSnapped.x,
+            wpSnapped.y,
+            wpDest.x,
+            wpDest.y,
+            (path) => {
+                this._pathfindingInProgress = false;
+                // The target changed while this answer was on its way (a goToAndStay move):
+                // leave it alone, path or none, as the route leg does
+                if (this.patrolTarget !== legTarget) return;
+                if (path && path.length > 0) {
+                    this._pathRetryAfter = 0; // Clear any backoff on success
+                    this.currentPath = path;
+                    this.pathIndex = 0;
+                    this.pathFollowingActive = true; // Path is ready, start following
+                    console.log(`✅ [${this.npcId}] Path calculated: ${path.length} waypoints to target`);
+                } else {
+                    // A stop beyond a shut gate of his own (E4 R2 M1): walk back to the gate first,
+                    // as the route branch does, or he retries from where he stands for ever
+                    if (this._stopOnArrival && this._approachRouteGate(pathfindingManager, null)) return;
+                    // Waypoint is unreachable — back off before retrying so we don't flood
+                    // the pathfinding queue every 50ms. 2 s gives the scene time to settle
+                    // (e.g. an NPC or object that was blocking a tile may have moved).
+                    this._pathRetryAfter = this.clockNow() + 2000;
+                    console.warn(`⚠️ [${this.npcId}] No path found to waypoint, will retry in 2s`);
+                    this.currentPath = [];
+                    this.patrolTarget = null;
+                    this.pathFollowingActive = false;
+                }
+            }
+        );
+    }
+
+    /**
+     * Choose waypoint target for multi-room route
+     * Handles transitioning between rooms when waypoints in current room are exhausted
+     */
+    chooseWaypointTargetMultiRoom(time) {
+        const now = this.clockNow();
+        // A timed useObject (a PIN keyed at a reader): stand facing it until useMs is up,
+        // then say so (npc_used_object_done:<id>) and run the rest of the action.
+        const use = this._routeUse;
+        if (use && !use.done && use.action === this._pendingRouteAction) {
+            if (now < use.until) { this._haltForRoute(); return; }
+            use.done = true;
+            this._emitRouteUse('npc_used_object_done', use.action);
+            this._runRouteAction(this._pendingRouteAction, time);
+            return;
+        }
+        // Waiting on a route action (unlock + load the next room): stand still, retry
+        // after the back-off, time out after 15 s. Never advance into an unloaded room.
+        if (this._routeWait) {
+            const w = this._routeWait;
+            if (w.inFlight && now > w.until) {
+                console.warn(`⏱️ [${this.npcId}] Route action for ${w.roomId} timed out, retrying in 5s`);
+                this._routeWait = { roomId: w.roomId, retryAt: now + 5000 };
+            } else if (!w.inFlight && now >= w.retryAt) {
+                this._runRouteAction(this._pendingRouteAction, time);
+            }
+            return;
+        }
+        if (this._pendingRouteAction) {
+            this._runRouteAction(this._pendingRouteAction, time);
+            return;
+        }
+        // A leg to a waypoint with an action, cut short before the end of its path (the
+        // stall re-target after changeDirectionInterval with no progress): close to the
+        // spot it counts as the arrival; further off the waypoint is put back. Either way
+        // the action is not skipped, as it was when its waypoint had been taken already.
+        const cut = this.patrolTarget;
+        if (cut?.routeAction && this.currentPath.length > 0 && this.pathIndex < this.currentPath.length) {
+            const { x: cx, y: cy } = this.npcBodyPos();
+            this._haltForRoute();
+            if (this._arriveForRouteAction(cut, cx, cy, time)) return;
+            this._keepRouteLeg(cut);
+        }
+
+        const route = this.config.patrol.route;
+        const currentSegmentIndex = this.config.patrol.currentSegmentIndex;
+        const currentSegment = route[currentSegmentIndex];
+
+        // Get current room's waypoints
+        let currentRoomWaypoints = currentSegment.waypoints;
+        if (!currentRoomWaypoints || !Array.isArray(currentRoomWaypoints) || currentRoomWaypoints.length === 0) {
+            // No waypoints in this segment, move to next room
+            console.log(`⏭️ [${this.npcId}] No waypoints in current segment, moving to next room`);
+            this.transitionToNextRoom(time);
+            return;
+        }
+
+        // Get next waypoint in current room
+        let nextWaypoint;
+        if (this.config.patrol.waypointMode === 'sequential') {
+            // All of this room's waypoints visited (the last one included): next room
+            if (this.config.patrol.waypointIndex >= currentRoomWaypoints.length) {
+                console.log(`🔄 [${this.npcId}] Completed all waypoints in room ${currentSegment.room}, transitioning...`);
+                this.transitionToNextRoom(time);
+                return;
+            }
+            nextWaypoint = currentRoomWaypoints[this.config.patrol.waypointIndex];
+        } else {
+            // Random: pick random waypoint
+            const randomIndex = Math.floor(Math.random() * currentRoomWaypoints.length);
+            nextWaypoint = currentRoomWaypoints[randomIndex];
+        }
+
+        if (!nextWaypoint) {
+            console.warn(`⚠️ [${this.npcId}] No valid waypoint in multi-room route`);
+            this.chooseRandomPatrolTarget(time);
+            return;
+        }
+
+        // Convert tile coordinates to world coordinates for current room. A room that
+        // isn't loaded (locked, its route action not run yet): wait, don't wander.
+        const roomData = window.rooms?.[currentSegment.room];
+        if (!roomData) {
+            console.warn(`⚠️ [${this.npcId}] Route room ${currentSegment.room} not loaded, retrying in 2s`);
+            this._pathRetryAfter = now + 2000;
+            this.patrolTarget = null;
+            this.currentPath = [];
+            this.pathFollowingActive = false;
+            this._haltForRoute();
+            return;
+        }
+
+        const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
+        if (!pathfindingManager) {
+            console.warn(`⚠️ No pathfinding manager for ${this.npcId}`);
+            return;
+        }
+
+        const roomWorldX = roomData.position?.x || 0;
+        const roomWorldY = roomData.position?.y || 0;
+        const rawX = roomWorldX + (nextWaypoint.x * TILE_SIZE);
+        const rawY = roomWorldY + (nextWaypoint.y * TILE_SIZE);
+        // Snap to a walkable cell, as single-room waypoints do
+        const dest = pathfindingManager.findNearestWalkableWorldCell?.(rawX, rawY) || { x: rawX, y: rawY };
+
+        this.patrolTarget = {
+            x: dest.x,
+            y: dest.y,
+            dwellTime: nextWaypoint.dwellTime || 0,
+            routeAction: nextWaypoint.action || null,
+            // Which waypoint this leg is, so a stuck recovery can put it back (_keepRouteLeg)
+            routeLeg: { segment: currentSegmentIndex, waypoint: this.config.patrol.waypointIndex }
+        };
+
+        this.lastPatrolChange = time;
+        this.pathIndex = 0;
+        this.currentPath = [];
+        this.patrolReachedTime = 0;
+        this.pathFollowingActive = false;
+
+        const segmentAtRequest = currentSegmentIndex;
+        const { x: mrnx, y: mrny } = this.npcBodyPos();
+        const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
+                          || { x: mrnx, y: mrny };
+        this._pathfindingInProgress = true;
+        const legTarget = this.patrolTarget;
+        this._planMovePath(pathfindingManager,
+            mrSnapped.x,
+            mrSnapped.y,
+            dest.x,
+            dest.y,
+            (path) => {
+                this._pathfindingInProgress = false;
+                // The target changed while this answer was on its way (a goToAndStay move,
+                // or a turn back at a gate, turnBackFromGate): leave it alone, whether the
+                // answer is a path or none. A path taken here would be walked on top of
+                // the new move's own waypoint.
+                if (this.patrolTarget !== legTarget) return;
+                if (path && path.length > 0) {
+                    this._pathRetryAfter = 0;
+                    this.currentPath = path;
+                    this.pathIndex = 0;
+                    this.pathFollowingActive = true;   // so a dwell runs on arrival, not before the leg
+                    // This waypoint is taken: the next choice is the one after it
+                    if (this.config.patrol.waypointMode === 'sequential' &&
+                        this.config.patrol.currentSegmentIndex === segmentAtRequest) {
+                        this.config.patrol.waypointIndex++;
+                    }
+                    console.log(`✅ [${this.npcId}] Route path with ${path.length} waypoints to (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room}`);
+                } else {
+                    // Unreachable (a shut door, a body in the way): stay on this
+                    // waypoint and retry after a back-off; never skip a room.
+                    // If a shut gate of his own is what stands in the way and he is
+                    // out of its reach, he walks back to it first (it opens as he
+                    // nears), or he would retry from where he stands for ever.
+                    if (this._approachRouteGate(pathfindingManager, [currentSegment.room])) return;
+                    console.warn(`⚠️ [${this.npcId}] Waypoint (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room} unreachable, retrying in 2s`);
+                    this._pathRetryAfter = this.clockNow() + 2000;
+                    this.currentPath = [];
+                    this.patrolTarget = null;
+                    this.pathFollowingActive = false;
+                }
+            }
+        );
+    }
+
+    /** A gate this NPC opens has just opened (door-gates.js): retry a failed route leg now. */
+    gateOpened() {
+        this._pathRetryAfter = 0;
+    }
+
+    /**
+     * A route leg was unreachable. If this NPC has a shut gate door of his own into
+     * one of `roomIds` and stands outside its reach, head for the spot in front of
+     * it (door-gates.js approachPoint) without taking the waypoint: the gate opens
+     * as he nears and the next choice finds the leg. This is what brings a guard
+     * back after the player has pushed him along a wall, away from his door, or
+     * when a leg ends just out of the gate's radius. Before this he retried the
+     * same unreachable path from where he stood, for good.
+     * @returns {boolean} true when he is now heading for (or planning a path to) the gate
+     */
+    _approachRouteGate(pfm, roomIds) {
+        const gates = window.doorGates;
+        if (typeof gates?.approachPoint !== 'function' || typeof pfm?.findWorldPath !== 'function') return false;
+        const { x, y } = this.npcBodyPos();
+        const spot = gates.approachPoint(this.npcId, { x, y }, roomIds);
+        if (!spot) return false;
+        const dest = pfm.findNearestWalkableWorldCell?.(spot.x, spot.y) || { x: spot.x, y: spot.y };
+        // Already as close as the floor allows: nothing to walk, so back off as before
+        if ((dest.x - x) ** 2 + (dest.y - y) ** 2 < 8 * 8) return false;
+        const from = pfm.findNearestWalkableStartCell?.(x, y) || { x, y };
+        // gateApproach marks the target for the tests and the console; nothing in the engine reads it
+        const target = { x: dest.x, y: dest.y, dwellTime: 0, routeAction: null, gateApproach: true };
+        this.patrolTarget = target;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.patrolReachedTime = 0;
+        this.pathFollowingActive = false;
+        this._pathfindingInProgress = true;
+        console.log(`🚪 [${this.npcId}] Route leg blocked by a shut gate out of reach: walking back to it at (${dest.x.toFixed(0)}, ${dest.y.toFixed(0)})`);
+        this._planMovePath(pfm, from.x, from.y, dest.x, dest.y, (path) => {
+            this._pathfindingInProgress = false;
+            if (this.patrolTarget !== target) return;   // re-targeted meanwhile
+            if (path && path.length > 0) {
+                this._pathRetryAfter = 0;
+                this.currentPath = path;
+                this.pathIndex = 0;
+                this.pathFollowingActive = true;
+            } else {
+                this._pathRetryAfter = this.clockNow() + 2000;
+                this.currentPath = [];
+                this.patrolTarget = null;
+                this.pathFollowingActive = false;
+            }
+        });
+        return true;
+    }
+
+    _ensureRouteWallColliders() {
+        this._ensureWallCollidersFor((this.config.patrol.route || []).map(seg => seg?.room));
+    }
+
+    /**
+     * Collide this NPC with the wall boxes of each loaded room in roomIds, once per room.
+     * Route walkers pass their route rooms; a walk-in/walk-out passes its far room.
+     */
+    _ensureWallCollidersFor(roomIds) {
+        if (!this._routeWallRooms.size) this._routeWallRooms.add(this.homeRoomId || this.roomId);   // spawn room: rooms.js added it
+        const physics = this.scene?.physics || window.game?.scene?.scenes?.[0]?.physics;
+        if (!physics?.add?.collider) return;
+        for (const roomId of roomIds || []) {
+            if (!roomId || this._routeWallRooms.has(roomId)) continue;
+            const room = window.rooms?.[roomId];
+            if (!room?.wallCollisionBoxes) continue;
+            room.wallCollisionBoxes.forEach(box => { if (box.body) physics.add.collider(this.sprite, box); });
+            this._routeWallRooms.add(roomId);
+            console.log(`🧱 [${this.npcId}] Wall collisions added for room ${roomId}`);
+        }
+    }
+
+    /** Stop walking and idle (waiting on a route action or an unloaded room). */
+    _haltForRoute() {
+        if (this.sprite?.body) this.sprite.body.setVelocity(0, 0);
+        if (this.isMoving) {
+            this.isMoving = false;
+            this.playAnimation('idle', this.direction);
+        }
+    }
+
+    /**
+     * Run a route waypoint's action, e.g. { "unlockRoom": "vault", "useObject": "reader" }.
+     * unlockRoom: unlock the room on the server as this NPC (the NPC needs an
+     * eventMapping with unlockDoor naming the room: game.rb npc_mapping_unlocks_door?),
+     * load it, wait for the world grid to include it, then carry on. On failure, back
+     * off 5 s and retry; the route never moves on into an unloaded room. Once the room
+     * is loaded the action is only a pause (no network call).
+     */
+    _runRouteAction(action, time) {
+        const roomId = action?.unlockRoom;
+        // useObject: face it and emit npc_used_object:<id> once per arrival (a retry of the
+        // unlock below does not repeat it). With useMs the NPC stands there that long first
+        // (chooseWaypointTargetMultiRoom holds him), then npc_used_object_done:<id>.
+        if (action?.useObject && this._routeUse?.action !== action) {
+            if (this._turnBackBeforeUse(action)) return;
+            this._useHeld = null;
+            // He keys now: a gate he turned back from earlier opens for him again
+            window.doorGates?.clearTurnedBack?.(this.npcId);
+            this._faceRouteObject(action.useObject);
+            const ms = routeUseMs(action);
+            this._routeUse = { action, until: this.clockNow() + ms, done: ms === 0 };
+            this._emitRouteUse('npc_used_object', action);
+            if (ms > 0) { this._haltForRoute(); return; }
+            this._emitRouteUse('npc_used_object_done', action);
+        }
+        if (!roomId || window.rooms?.[roomId]) {
+            this._pendingRouteAction = null;
+            this._routeWait = null;
+            this._routeUse = null;
+            return;
+        }
+        const token = {};
+        this._routeWait = { roomId, inFlight: true, until: this.clockNow() + 15000, token };
+        this.patrolTarget = null;
+        this.currentPath = [];
+        this.pathFollowingActive = false;
+        this._haltForRoute();
+        console.log(`🔑 [${this.npcId}] Route action: unlock and load ${roomId}`);
+        (async () => {
+            const locked = !!window.gameScenario?.rooms?.[roomId]?.locked;
+            if (locked) {
+                const res = await window.NPCGameBridge?.unlockDoor?.(roomId, this.npcId);
+                if (!res?.success) {
+                    this._warnUnlockRefusedOnce(roomId);
+                    throw new Error(res?.error || 'unlock refused');
+                }
+            }
+            await window.loadRoom?.(roomId);
+            if (!window.rooms?.[roomId]) throw new Error('room did not load');
+            // initializeRoomPathfinding rebuilds the world grid 200 ms after the room is made
+            await new Promise(r => setTimeout(r, 300));
+        })().then(() => {
+            if (this._routeWait?.token !== token) return;
+            console.log(`✅ [${this.npcId}] Route action done: ${roomId} unlocked and loaded`);
+            this._routeWait = null;
+            this._pendingRouteAction = null;
+            this._routeUse = null;
+        }).catch(err => {
+            if (this._routeWait?.token !== token) return;
+            console.warn(`⚠️ [${this.npcId}] Route action for ${roomId} failed (${err?.message || err}), retrying in 5s`);
+            this._routeWait = { roomId, retryAt: this.clockNow() + 5000 };
+        });
+    }
+
+    /** One console.warn per NPC+room when the server refuses a route unlockRoom (retries stay quiet). */
+    _warnUnlockRefusedOnce(roomId) {
+        if (!this._unlockRefusalWarned) this._unlockRefusalWarned = new Set();
+        if (this._unlockRefusalWarned.has(roomId)) return;
+        this._unlockRefusalWarned.add(roomId);
+        console.warn(`⚠️ [${this.npcId}] The server refused this NPC's route unlockRoom for '${roomId}'. ` +
+            `Fix: add an eventMapping with unlockDoor: "${roomId}" to this NPC (see README_scenario_design.md); ` +
+            `without one the NPC retries at the door forever.`);
+    }
+
+    /** npc_used_object[_done]:<objectId> { npcId, objectId, roomId, useMs } for a route useObject. */
+    _emitRouteUse(name, action) {
+        const objectId = action.useObject;
+        try {
+            window.eventDispatcher?.emit?.(`${name}:${objectId}`, { npcId: this.npcId, objectId, roomId: this.roomId, useMs: routeUseMs(action) });
+        } catch (e) { /* an event never stops the route */ }
+    }
+
+    _faceRouteObject(objectId) {
+        for (const room of Object.values(window.rooms || {})) {
+            const objs = room?.objects;
+            if (!objs) continue;
+            const sp = objs[objectId] || Object.values(objs).find(o => o?.scenarioData?.id === objectId);
+            if (sp && typeof this.faceWorldPoint === 'function') { this.faceWorldPoint(sp.x, sp.y); return; }
+        }
+    }
+
+    /**
+     * Move on to the next room in the multi-room route. The sprite is never moved:
+     * the NPC walks to the next room's first waypoint through the doorway, on the
+     * world grid, and its room follows its position (updateCurrentRoom).
+     */
+    transitionToNextRoom(time) {
+        const route = this.config.patrol.route;
+        if (!route || route.length === 0) {
+            console.warn(`⚠️ [${this.npcId}] No route available for room transition`);
+            return;
+        }
+
+        const nextSegmentIndex = (this.config.patrol.currentSegmentIndex + 1) % route.length;
+        const currentSegment = route[this.config.patrol.currentSegmentIndex];
+        const nextSegment = route[nextSegmentIndex];
+
+        // Never head into a room that isn't loaded (locked, no route action run yet)
+        if (!window.rooms?.[nextSegment.room]) {
+            console.warn(`⚠️ [${this.npcId}] Next route room ${nextSegment.room} not loaded, retrying in 2s`);
+            this._pathRetryAfter = this.clockNow() + 2000;
+            this.patrolTarget = null;
+            this.currentPath = [];
+            this.pathFollowingActive = false;
+            this._haltForRoute();
+            return;
+        }
+
+        console.log(`🚪 [${this.npcId}] Route: ${currentSegment.room} → ${nextSegment.room} (walking)`);
+        this.config.patrol.currentSegmentIndex = nextSegmentIndex;
+        this.config.patrol.waypointIndex = 0;
+
+        // Choose waypoint in new room
+        this.chooseNewPatrolTarget(time);
+    }
+
+    /**
+     * Does this route walker's current leg take him across the gate described by
+     * `gate` ({ roomId, connectedRoom })? True when his route segment is in the
+     * gate's other room from the one he stands in. door-gates asks this before
+     * timing a held guard, so a guard who only dwells beside a gate is never
+     * turned back.
+     */
+    wantsToCrossGate(gate) {
+        // A walk-in/walk-out walker (npc-walk.js) wants to cross a gate between the room he
+        // is in and the walk's far room.
+        const walk = this._walk;
+        if (walk) {
+            const here = this.roomId;
+            const far = walk.farRoom;
+            if (!here || !far || here === far) return false;
+            const rooms = [gate?.roomId, gate?.connectedRoom];
+            return rooms.includes(here) && rooms.includes(far);
+        }
+        const patrol = this.config?.patrol;
+        if (!patrol?.enabled || !patrol.multiRoom || !patrol.route?.length) return false;
+        if (this._stopOnArrival) return false;   // a move in flight, not the route (E4 R1 B1)
+        const target = patrol.route[patrol.currentSegmentIndex]?.room;
+        const here = this.roomId;
+        if (!target || !here || target === here) return false;
+        const rooms = [gate?.roomId, gate?.connectedRoom];
+        return rooms.includes(target) && rooms.includes(here);
+    }
+
+    /**
+     * door-gates: the gate this guard wants to cross has been held shut against him
+     * (an undisguised player at his shoulder, or a recent force-shut). He gives up
+     * this crossing: glances at the player, then resumes his route at the next
+     * segment in the room he is in, as though the far room's leg were done. His
+     * patrol never stops, and he tries the door again on his next cycle.
+     * @returns {boolean} true if he turned back
+     */
+    turnBackFromGate(gate) {
+        // A walker waits at the gate and falls back on the walk's timeoutMs instead
+        if (this._walk) return false;
+        if (!this.wantsToCrossGate(gate)) return false;
+        return this._resumeOnThisSide(`Gate to ${this.config.patrol.route[this.config.patrol.currentSegmentIndex].room} held shut`);
+    }
+
+    /**
+     * Code review R2 (m4): a timed useObject (a PIN at a reader) at the last waypoint of his
+     * segment, with the next leg across a gate held shut against him (door-gates
+     * heldShutAgainst: a barred player at the door or a recent force-shut). He stands at the
+     * reader without keying for up to USE_HELD_GRACE_MS (code review R3, m1); if the gate
+     * is still held then, he turns back, as turnBackFromGate would 5 s later, still without
+     * keying: no npc_used_object event, so a watcher never sees him key with the door
+     * staying shut. If it clears in time he keys as normal. The turn-back goes through
+     * door-gates guardTurnedBack, which emits door_gate_guard_turned_back
+     * { roomId, connectedRoom, direction, x, y, npcId, beforeUse: true } and keeps the
+     * gate from opening for him as he walks away.
+     * @returns {boolean} true if he does not key now (waiting or turned back)
+     */
+    _turnBackBeforeUse(action) {
+        const patrol = this.config?.patrol;
+        if (!routeUseMs(action) || !patrol?.enabled || !patrol.multiRoom || !patrol.route?.length) return false;
+        const seg = patrol.route[patrol.currentSegmentIndex];
+        const here = this.roomId;
+        if (!here || seg?.room !== here) return false;
+        const wps = seg.waypoints || [];
+        if (wps[wps.length - 1]?.action !== action) return false;   // more stops in this room first
+        const next = patrol.route[(patrol.currentSegmentIndex + 1) % patrol.route.length]?.room;
+        if (!next || next === here) return false;
+        const gate = window.doorGates?.heldShutAgainst?.(this.npcId, here, next);
+        if (!gate) { this._useHeld = null; return false; }
+        const now = this.clockNow();
+        // A fresh wait unless this is the same stop asked again within a moment (the route
+        // action is the same object every lap, so a wait left by an interruption is stale)
+        const w = this._useHeld;
+        if (w?.action !== action || now - w.last > 1000) this._useHeld = { action, since: now, last: now };
+        else w.last = now;
+        if (now - this._useHeld.since < USE_HELD_GRACE_MS) { this._haltForRoute(); return true; }
+        if (!this._resumeOnThisSide(`Gate to ${next} held shut before keying`, 1)) { this._useHeld = null; return false; }
+        if (typeof window.doorGates?.guardTurnedBack === 'function') {
+            window.doorGates.guardTurnedBack(this.npcId, gate, { beforeUse: true });
+        } else {
+            window.eventDispatcher?.emit?.('door_gate_guard_turned_back', {
+                roomId: gate.roomId, connectedRoom: gate.connectedRoom, direction: gate.direction,
+                x: gate.x, y: gate.y, npcId: this.npcId, beforeUse: true
+            });
+        }
+        return true;
+    }
+
+    /**
+     * Resume the route at the next segment in the room he stands in, starting the search
+     * `from` segments on (1: the segment after the current one, which for a two-room loop
+     * comes back round to the current one), with a beat facing the player.
+     */
+    _resumeOnThisSide(why, from = 1) {
+        const patrol = this.config.patrol;
+        const route = patrol.route;
+        let resume = -1;
+        for (let k = from; k <= route.length; k++) {
+            const i = (patrol.currentSegmentIndex + k) % route.length;
+            if (route[i]?.room === this.roomId) { resume = i; break; }
+        }
+        if (resume < 0) return false;
+        console.log(`↩️ [${this.npcId}] ${why}: turning back to ${route[resume].room} segment ${resume}`);
+        patrol.currentSegmentIndex = resume;
+        patrol.waypointIndex = 0;
+        this.patrolTarget = null;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.pathFollowingActive = false;
+        this.patrolReachedTime = 0;
+        this._pendingRouteAction = null;
+        this._routeWait = null;
+        this._routeUse = null;
+        this._useHeld = null;
+        this._haltForRoute();
+        // A beat facing the player who held the door before walking off
+        const p = window.player;
+        if (p) this.facePlayer?.({ x: p.body?.center?.x ?? p.x, y: p.body?.center?.y ?? p.y });
+        this._pathRetryAfter = this.clockNow() + 1000;
+        return true;
+    }
+
+    /**
+     * Choose random patrol target (original behavior)
+     */
+    chooseRandomPatrolTarget(time) {
+        this._resetAvoidForNewTarget(time);   // no pin or back-off step; a live yield hold stays (R8 m1)
+        // Ensure we have the latest pathfinding manager reference
+        const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
+        
+        if (!pathfindingManager) {
+            console.warn(`⚠️ No pathfinding manager for ${this.npcId}`);
+            return;
+        }
+
+        // Get random target position using pathfinding manager
+        const targetPos = pathfindingManager.getRandomPatrolTarget(this.roomId);
+        if (!targetPos) {
+            console.warn(`⚠️ Could not find random patrol target for ${this.npcId}`);
+            // Fall back to idle if can't find a target
+            this.sprite.body.setVelocity(0, 0);
+            this.playAnimation('idle', this.direction);
+            this.isMoving = false;
+            return;
+        }
+
+        this.patrolTarget = targetPos;
+        this.lastPatrolChange = time;
+        this.pathIndex = 0;
+        this.currentPath = [];
+
+        // Request pathfinding from current position to target
+        const { x: rndnx, y: rndny } = this.npcBodyPos();
+        const rndSnapped = pathfindingManager.findNearestWalkableStartCell(rndnx, rndny)
+                           || { x: rndnx, y: rndny };
+        const legTarget = this.patrolTarget;
+        pathfindingManager.findWorldPath(
+            rndSnapped.x,
+            rndSnapped.y,
+            targetPos.x,
+            targetPos.y,
+            (path) => {
+                // A late answer for a target since replaced (a goToAndStay move): drop it
+                if (this.patrolTarget !== legTarget) return;
+                if (path && path.length > 0) {
+                    this.currentPath = path;
+                    this.pathIndex = 0;
+                    console.log(`✅ [${this.npcId}] New patrol path with ${path.length} waypoints`);
+                } else {
+                    console.warn(`⚠️ [${this.npcId}] Pathfinding failed, target unreachable`);
+                    this.currentPath = [];
+                    this.patrolTarget = null;
+                }
+            }
+        );
+    }
+
+    maintainPersonalSpace(playerPos, delta) {
+        if (!this.config.personalSpace.enabled || !playerPos) {
+            return false;
+        }
+
+        const { x: psnx, y: psny } = this.npcBodyPos();
+        const dx = psnx - playerPos.x;  // Away from player
+        const dy = psny - playerPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance === 0) return false; // Avoid division by zero
+
+        // Back away using velocity (physics-safe movement)
+        // Normalize direction and apply velocity push
+        const backAwaySpeed = this.config.personalSpace.backAwaySpeed || 30;
+        const velocityX = (dx / distance) * backAwaySpeed;
+        const velocityY = (dy / distance) * backAwaySpeed;
+        
+        if (this.sprite.body) {
+            this.sprite.body.setVelocity(velocityX, velocityY);
+        }
+
+        // Face player while backing away
+        this.direction = this.calculateDirection(-dx, -dy);  // Negative = face player
+        this.playAnimation('idle', this.direction);  // Use idle, not walk
+
+        this.isMoving = false;  // Not "walking", just adjusting position
+        this.backingAway = true;
+
+        return true; // Personal space behavior active
+    }
+
+    updateHostileBehavior(playerPos, delta) {
+        if (!playerPos) return false;
+
+        // Don't move if currently attacking (punch animation playing) - only if pauseToAttack is enabled
+        if (this.config.hostile.pauseToAttack && window.npcCombat && window.npcCombat.npcAttacking && window.npcCombat.npcAttacking.has(this.npcId)) {
+            this.sprite.body.setVelocity(0, 0);
+            this.isMoving = false;
+            return true;
+        }
+
+        const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
+        const chaseSpeed = this.config.hostile.chaseSpeed || 145;
+
+        // Calculate distance to player (both at feet/body-centre)
+        const { x: hnx, y: hny } = this.npcBodyPos();
+        const dx = playerPos.x - hnx;
+        const dy = playerPos.y - hny;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Get attack range from hostile system
+        const attackRange = window.npcHostileSystem ?
+            window.npcHostileSystem.getState(this.npcId)?.attackRange || 32 : 32;
+
+        const style = resolveFightStyle(this.config.hostile.fightStyle);
+
+        // In range by distance, but a wall (or the strip behind a back wall) stands between: keep
+        // chasing, so the path takes it round to the player instead of freezing it in place
+        const reachable = window.npcCombat?.canReachPlayer ? window.npcCombat.canReachPlayer(this.sprite) : true;
+
+        // If in attack range, try to attack
+        if (distance <= attackRange && reachable) {
+            // Stop moving and clear chase path
+            this.sprite.body.setVelocity(0, 0);
+            this.isMoving = false;
+            this.chasePath = [];
+            this.chasePathIndex = 0;
+
+            // Face player: in guard if its style guards and it isn't swinging
+            this.direction = this.calculateDirection(dx, dy);
+            if (window.npcCombat?.isGuarding?.(this.npcId)) {
+                this.showGuardPose();
+            } else {
+                this.playAnimation('idle', this.direction);
+            }
+
+            // Attempt attack
+            if (window.npcCombat) {
+                window.npcCombat.attemptAttack(this.npcId, this.sprite);
+            }
+
+            return true;
+        }
+
+        // A cowering fighter keeps its distance and only jabs when caught
+        if (style.flees) {
+            return this.updateCowerBehavior(dx, dy, distance, style, pathfindingManager);
+        }
+
+        // Just out of reach (a knockback, a step back) with a clear line: walk
+        // straight in, since a path over a cell or two can come back empty or
+        // already reached, and the NPC then stood off (m04 confirmation N2)
+        if (pathfindingManager && distance <= attackRange + CLOSE_IN_MARGIN &&
+            shouldCloseInDirectly({
+                distance,
+                attackRange,
+                lineOfSight: pathfindingManager.hasWorldPhysicsLineOfSight(hnx, hny, playerPos.x, playerPos.y)
+            })) {
+            this.chasePath = [];
+            this.chasePathIndex = 0;
+            this.sprite.body.setVelocity((dx / distance) * chaseSpeed, (dy / distance) * chaseSpeed);
+            this.direction = this.calculateDirection(dx, dy);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            return true;
+        }
+
+        // Otherwise pathfind to chase the player — never walk directly (avoids wall-walking).
+        // LOS only tunes how often we refresh the path.
+        const currentTime = Date.now();
+
+        const playerMovedFar = this.lastPlayerPosition &&
+            (Math.abs(playerPos.x - this.lastPlayerPosition.x) > 64 ||
+             Math.abs(playerPos.y - this.lastPlayerPosition.y) > 64);
+
+        // Determine refresh interval: tighter when we can see the player.
+        let refreshInterval = this.chasePathUpdateInterval; // 500ms default
+        if (pathfindingManager && !this.chasePathPending) {
+            const { x: losnx, y: losny } = this.npcBodyPos();
+            const los = pathfindingManager.hasWorldPhysicsLineOfSight(
+                losnx, losny, playerPos.x, playerPos.y
+            );
+            if (los) refreshInterval = 250;
+        }
+
+        // Only request a new path when none is in flight AND conditions warrant it.
+        const needsNewPath = !this.chasePathPending && (
+            (this.chasePath.length === 0) ||
+            (this.chasePathIndex >= this.chasePath.length) ||
+            (currentTime - this.lastChasePathRequest > refreshInterval) ||
+            playerMovedFar
+        );
+
+        if (needsNewPath) {
+            this.requestChasePath(playerPos, currentTime);
+        }
+
+        // Follow the current chase path
+        if (this.chasePath.length > 0 && this.chasePathIndex < this.chasePath.length) {
+            const nextWaypoint = this.chasePath[this.chasePathIndex];
+            const { x: cwnx, y: cwny } = this.npcBodyPos();
+            const waypointDx = nextWaypoint.x - cwnx;
+            const waypointDy = nextWaypoint.y - cwny;
+            const waypointDistance = Math.sqrt(waypointDx * waypointDx + waypointDy * waypointDy);
+
+            // Reached current waypoint — advance to next
+            if (waypointDistance < 12) {
+                this.chasePathIndex++;
+                if (this.chasePathIndex >= this.chasePath.length) {
+                    this.chasePath = [];
+                    this.chasePathIndex = 0;
+                }
+                return true;
+            }
+
+            // Don't move if attacking (only if pauseToAttack is enabled)
+            if (this.config.hostile.pauseToAttack && window.npcCombat &&
+                window.npcCombat.npcAttacking && window.npcCombat.npcAttacking.has(this.npcId)) {
+                this.sprite.body.setVelocity(0, 0);
+                this.isMoving = false;
+                return true;
+            }
+
+            const velocityX = (waypointDx / waypointDistance) * chaseSpeed;
+            const velocityY = (waypointDy / waypointDistance) * chaseSpeed;
+            this.sprite.body.setVelocity(velocityX, velocityY);
+
+            this.direction = this.calculateDirection(waypointDx, waypointDy);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+
+            return true;
+        }
+
+        // No path available yet (waiting for first EasyStar result) — hold position
+        this.sprite.body.setVelocity(0, 0);
+        this.playAnimation('idle', this.direction);
+        this.isMoving = false;
+
+        return true;
+    }
+
+    /**
+     * A cowering hostile (fightStyle "cower"): runs from the player while the
+     * player is within its flee distance, along the open heading that points
+     * most directly away and stays in its room. Cornered, or once far enough,
+     * it stops and watches the player. It jabs only when the player is in
+     * reach (the in-range branch of updateHostileBehavior).
+     * @param {number} dx - player x minus NPC x (body centres)
+     * @param {number} dy - player y minus NPC y
+     */
+    updateCowerBehavior(dx, dy, distance, style, pathfindingManager) {
+        this.chasePath = [];
+        this.chasePathIndex = 0;
+        const fleeDistance = style.fleeDistance || 112;
+        const speed = this.config.hostile.fleeSpeed || 180;
+
+        let heading = null;
+        if (distance < fleeDistance) {
+            const { x: nx, y: ny } = this.npcBodyPos();
+            const room = window.rooms?.[this.roomId];
+            const bounds = room?.position && room?.map ? {
+                left: room.position.x + 32, right: room.position.x + room.map.widthInPixels - 32,
+                top: room.position.y + 64, bottom: room.position.y + room.map.heightInPixels - 32
+            } : null;
+            const look = 40;
+            heading = pickFleeHeading(-dx, -dy, (ux, uy) => {
+                const tx = nx + ux * look;
+                const ty = ny + uy * look;
+                if (bounds && (tx < bounds.left || tx > bounds.right || ty < bounds.top || ty > bounds.bottom)) return false;
+                return pathfindingManager?.hasWorldPhysicsLineOfSight
+                    ? pathfindingManager.hasWorldPhysicsLineOfSight(nx, ny, tx, ty)
+                    : true;
+            });
+        }
+
+        if (heading) {
+            this.sprite.body.setVelocity(heading.x * speed, heading.y * speed);
+            this.direction = this.calculateDirection(heading.x, heading.y);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            return true;
+        }
+
+        // Far enough, or cornered: stand and watch the player
+        this.sprite.body.setVelocity(0, 0);
+        this.isMoving = false;
+        this.direction = this.calculateDirection(dx, dy);
+        this.playAnimation('idle', this.direction);
+        return true;
+    }
+
+    /**
+     * Hold the guard pose: the first frame of the NPC's lead-jab in the way it
+     * faces (fists up, knees bent). Sprites without a jab keep their idle.
+     */
+    showGuardPose() {
+        const jab = this.scene?.anims?.get(`npc-${this.npcId}-jab-${this.direction}`);
+        const frame = jab?.frames?.[0];
+        if (!frame) {
+            this.playAnimation('idle', this.direction);
+            return;
+        }
+        if (this.sprite.anims.isPlaying) this.sprite.anims.stop();
+        if (this.sprite.frame?.name !== frame.textureFrame || this.sprite.texture?.key !== frame.textureKey) {
+            this.sprite.setTexture(frame.textureKey, frame.textureFrame);
+        }
+        this.sprite.setFlipX(false);
+        // Next playAnimation call always restarts its animation
+        this.lastAnimationKey = null;
+    }
+
+    /**
+     * Request a new pathfinding calculation to chase the player.
+     * Uses the unified world EasyStar grid — mirrors what the player's click-to-move does.
+     * A chasePathPending flag prevents flooding EasyStar while a result is in-flight.
+     */
+    requestChasePath(playerPos, currentTime) {
+        if (this.chasePathPending) return; // already waiting
+
+        this.chasePathPending = true;
+        this.lastChasePathRequest = currentTime;
+        this.lastPlayerPosition = { x: playerPos.x, y: playerPos.y };
+
+        const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
+        if (!pathfindingManager) {
+            console.warn(`⚠️ No pathfinding manager for hostile ${this.npcId}`);
+            this.chasePathPending = false;
+            return;
+        }
+
+        // Snap both positions to walkable cells — EasyStar cannot path from/to blocked cells.
+        // This is the same strategy player.js uses in movePlayerToPoint.
+        const { x: csnx, y: csny } = this.npcBodyPos();
+        const npcSnapped  = pathfindingManager.findNearestWalkableStartCell(csnx, csny)
+                            || { x: csnx, y: csny };
+        const destSnapped = pathfindingManager.findNearestWalkableWorldCell(playerPos.x, playerPos.y)
+                            || { x: playerPos.x, y: playerPos.y };
+
+        pathfindingManager.findWorldPath(
+            npcSnapped.x, npcSnapped.y,
+            destSnapped.x, destSnapped.y,
+            (path) => {
+                this.chasePathPending = false;
+                if (path && path.length > 0) {
+                    // Apply the same greedy string-pull smoothing that the player uses
+                    const smoothed = pathfindingManager.smoothWorldPathForPlayer(
+                        npcSnapped.x, npcSnapped.y, path
+                    );
+                    this.chasePath = smoothed;
+                    this.chasePathIndex = 0;
+                    if (window.breakEscapeDebug) this._drawChasePathDebug(smoothed);
+                    else this._clearChasePathDebug();
+                } else {
+                    // No path found (unreachable or grid not ready)
+                    this.chasePath = [];
+                    this.chasePathIndex = 0;
+                    this._clearChasePathDebug();
+                }
+            }
+        );
+    }
+
+    /** Draw the current chase path as a red overlay for debugging (debug mode only). */
+    _drawChasePathDebug(path) {
+        this._clearChasePathDebug();
+        if (!window.breakEscapeDebug || !path || path.length === 0) return;
+
+        const scene = this.scene || window.game?.scene?.scenes[0];
+        if (!scene) return;
+
+        const g = scene.add.graphics();
+        g.setDepth(851); // between world objects (800) and player path debug (900)
+        this.chaseDebugGraphics = g;
+
+        const { x: dbnx, y: dbny } = this.npcBodyPos();
+        const origin = { x: dbnx, y: dbny };
+        const allPoints = [origin, ...path];
+
+        // Red dashed line connecting waypoints
+        g.lineStyle(2, 0xff2222, 0.75);
+        g.beginPath();
+        g.moveTo(allPoints[0].x, allPoints[0].y);
+        for (let i = 1; i < allPoints.length; i++) g.lineTo(allPoints[i].x, allPoints[i].y);
+        g.strokePath();
+
+        // Waypoint circles (orange = next target, red = future)
+        for (let i = 0; i < path.length; i++) {
+            const p = path[i];
+            const isCurrent = (i === this.chasePathIndex);
+            g.fillStyle(isCurrent ? 0xff8800 : 0xff2222, 0.85);
+            g.fillCircle(p.x, p.y, isCurrent ? 6 : 4);
+            g.lineStyle(1.5, 0xff0000, 1);
+            g.strokeCircle(p.x, p.y, isCurrent ? 6 : 4);
+        }
+    }
+
+    /** Remove the chase path overlay. */
+    _clearChasePathDebug() {
+        if (this.chaseDebugGraphics) {
+            this.chaseDebugGraphics.destroy();
+            this.chaseDebugGraphics = null;
+        }
+    }
+
+    /** Draw the current patrol path and waypoints as a blue overlay for debugging (debug mode only). */
+    _drawPatrolPathDebug(path) {
+        this._clearPatrolPathDebug();
+        if (!window.breakEscapeDebug || !path || path.length === 0) return;
+
+        const scene = this.scene || window.game?.scene?.scenes[0];
+        if (!scene) return;
+
+        const g = scene.add.graphics();
+        g.setDepth(851); // between world objects (800) and player path debug (900)
+        this.patrolDebugGraphics = g;
+
+        const { x: pnx, y: pny } = this.npcBodyPos();
+        const origin = { x: pnx, y: pny };
+        const allPoints = [origin, ...path];
+
+        // Blue line connecting waypoints along the patrol path
+        g.lineStyle(2.5, 0x2222ff, 0.75);
+        g.beginPath();
+        g.moveTo(allPoints[0].x, allPoints[0].y);
+        for (let i = 1; i < allPoints.length; i++) g.lineTo(allPoints[i].x, allPoints[i].y);
+        g.strokePath();
+
+        // Start point (green circle at NPC current position)
+        g.fillStyle(0x22ff22, 0.85);
+        g.fillCircle(origin.x, origin.y, 5);
+        g.lineStyle(1.5, 0x00cc00, 1);
+        g.strokeCircle(origin.x, origin.y, 5);
+
+        // Path waypoints (blue circles, brighter for current target)
+        for (let i = 0; i < path.length; i++) {
+            const p = path[i];
+            const isCurrent = (i === this.pathIndex);
+            g.fillStyle(isCurrent ? 0x4488ff : 0x2255dd, 0.85);
+            g.fillCircle(p.x, p.y, isCurrent ? 6 : 4);
+            g.lineStyle(1.5, 0x0000ff, 1);
+            g.strokeCircle(p.x, p.y, isCurrent ? 6 : 4);
+        }
+
+        // Draw the target waypoint as a purple marker if we have one
+        if (this.patrolTarget) {
+            g.fillStyle(0xff00ff, 0.6);
+            g.fillCircle(this.patrolTarget.x, this.patrolTarget.y, 8);
+            g.lineStyle(2, 0xff00ff, 0.9);
+            g.strokeCircle(this.patrolTarget.x, this.patrolTarget.y, 8);
+            
+            // Label: "Target"
+            if (scene.add.text) {
+                const text = scene.add.text(this.patrolTarget.x + 10, this.patrolTarget.y - 15, 'Target', {
+                    fontSize: '10px',
+                    color: '#ff00ff',
+                    backgroundColor: '#000',
+                    padding: { x: 3, y: 2 }
+                });
+                text.setDepth(852);
+            }
+        }
+    }
+
+    /** Remove the patrol path overlay. */
+    _clearPatrolPathDebug() {
+        if (this.patrolDebugGraphics) {
+            this.patrolDebugGraphics.destroy();
+            this.patrolDebugGraphics = null;
+        }
+    }
+
+    calculateDirection(dx, dy) {
+        const absVX = Math.abs(dx);
+        const absVY = Math.abs(dy);
+
+        // Threshold: if one axis is > 2x the other, consider it pure cardinal
+        if (absVX > absVY * 2) {
+            return dx > 0 ? 'right' : 'left';
+        }
+
+        if (absVY > absVX * 2) {
+            return dy > 0 ? 'down' : 'up';
+        }
+
+        // Diagonal
+        if (dy > 0) {
+            return dx > 0 ? 'down-right' : 'down-left';
+        } else {
+            return dx > 0 ? 'up-right' : 'up-left';
+        }
+    }
+
+    playAnimation(state, direction) {
+        if (this._seat) return; // seated (seating.js): the sit frame stays
+        // Don't interrupt attack animations (red tint placeholder)
+        const currentAnim = this.sprite.anims?.currentAnim?.key || '';
+        if ((currentAnim.includes('attack') || currentAnim.includes('punch') || currentAnim.includes('-jab-')) &&
+            this.sprite.anims.isPlaying) {
+            return;
+        }
+        
+        // Check if this NPC uses atlas-based animations (8 native directions)
+        // by checking if the direct left-facing animation exists
+        const directAnimKey = `npc-${this.npcId}-${state}-${direction}`;
+        // (an animation with no frames throws when played, so it doesn't count)
+        const hasNativeLeftAnimations = (this.scene?.anims?.get(directAnimKey)?.frames?.length || 0) > 0;
+
+        let animDirection = direction;
+        let flipX = false;
+
+        // For legacy sprites (5 directions), map left to right with flipX
+        // For atlas sprites (8 directions), use native directions
+        if (!hasNativeLeftAnimations && direction.includes('left')) {
+            animDirection = direction.replace('left', 'right');
+            flipX = true;
+        }
+
+        const animKey = hasNativeLeftAnimations ? directAnimKey : `npc-${this.npcId}-${state}-${animDirection}`;
+
+        // Only change animation if different (also check flipX to ensure proper updates)
+        if (this.lastAnimationKey !== animKey || this.sprite.flipX !== flipX) {
+            // Use scene.anims to check if animation exists in the global animation manager
+            if (this.scene?.anims?.exists(animKey)) {
+                this.sprite.play(animKey, true);
+                this.lastAnimationKey = animKey;
+            } else {
+                // Fallback: use idle animation if walk doesn't exist
+                if (state === 'walk') {
+                    const idleKey = `npc-${this.npcId}-idle-${animDirection}`;
+                    if (this.scene?.anims?.exists(idleKey)) {
+                        this.sprite.play(idleKey, true);
+                        this.lastAnimationKey = idleKey;
+                        console.warn(`⚠️ [${this.npcId}] Walk animation missing, using idle: ${idleKey}`);
+                    } else {
+                        console.error(`❌ [${this.npcId}] BOTH animations missing! Walk: ${animKey}, Idle: ${idleKey}`);
+                    }
+                }
+            }
+        }
+
+        // Set flipX for left-facing directions (only for legacy sprites)
+        this.sprite.setFlipX(flipX);
+    }
+
+    updateDepth() {
+        if (!this.sprite || !this.sprite.body) return;
+
+        // Calculate depth based on bottom Y position (same as player)
+        const spriteBottomY = this.sprite.y + (this.sprite.displayHeight / 2);
+        const depth = spriteBottomY + 0.5; // World Y + sprite layer offset
+
+        // Always update depth - no caching
+        // Depth determines Y-sorting, must update every frame for moving NPCs
+        this.sprite.setDepth(depth);
+    }
+
+    /**
+     * Check if NPC is stuck in a wall and attempt to escape
+     * When an NPC gets pushed through a wall collision box, this detects it
+     * and gradually pushes the NPC back out to freedom
+     */
+    checkAndEscapeWall(time) {
+        // Only check periodically to avoid performance issues
+        if (time - this.lastUnstuckCheck < this.unstuckCheckInterval) {
+            if (!this.stuckInWall) {
+                return; // Not stuck, no need to escape
+            }
+            // Continue trying to escape if already stuck
+        } else {
+            this.lastUnstuckCheck = time;
+        }
+
+        const room = window.rooms ? window.rooms[this.roomId] : null;
+        if (!room) {
+            return; // No room reference
+        }
+
+        // Check if NPC is overlapping with any wall collision box or table
+        let isOverlappingWall = false;
+        let overlappingWall = null;
+
+        // Check walls
+        if (room.wallCollisionBoxes) {
+            for (const wallBox of room.wallCollisionBoxes) {
+                if (!wallBox.body) continue;
+
+                // Check if NPC body overlaps with wall using scene physics
+                if (this.scene.physics.overlap(this.sprite, wallBox)) {
+                    isOverlappingWall = true;
+                    overlappingWall = wallBox;
+                    break;
+                }
+            }
+        }
+
+        // Check tables (if not already stuck in a wall)
+        if (!isOverlappingWall && room.objects) {
+            for (const obj of Object.values(room.objects)) {
+                if (!obj || !obj.body) continue;
+
+                // Check if this is a table (has scenarioData.type === 'table' or name includes 'desk')
+                const isTable = (obj.scenarioData && obj.scenarioData.type === 'table') || 
+                               (obj.name && obj.name.toLowerCase().includes('desk'));
+
+                if (isTable && this.scene.physics.overlap(this.sprite, obj)) {
+                    isOverlappingWall = true;
+                    overlappingWall = obj;
+                    break;
+                }
+            }
+        }
+
+        if (isOverlappingWall && overlappingWall) {
+            // NPC is stuck! Try to escape
+            if (!this.stuckInWall) {
+                console.log(`🚨 [${this.npcId}] Detected stuck in wall at (${this.sprite.x.toFixed(0)}, ${this.sprite.y.toFixed(0)})`);
+                this.stuckInWall = true;
+                this.unstuckAttempts = 0;
+                this.escapeWallBox = overlappingWall; // Remember which wall we're escaping from
+            }
+
+            this.unstuckAttempts++;
+
+            // Push NPC away from wall center
+            const wallCenterX = overlappingWall.body.center.x;
+            const wallCenterY = overlappingWall.body.center.y;
+            
+            const dx = this.sprite.x - wallCenterX;
+            const dy = this.sprite.y - wallCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 0.1) {
+                // Normalize and apply escape velocity - very forceful to break free quickly
+                const escapeSpeed = 300; // Pixels per second (increased from 200)
+                const escapeX = (dx / distance) * escapeSpeed;
+                const escapeY = (dy / distance) * escapeSpeed;
+                
+                this.sprite.body.setVelocity(escapeX, escapeY);
+            }
+
+            // Stop trying after 50 attempts (~10 seconds at 200ms intervals)
+            if (this.unstuckAttempts > 50) {
+                console.warn(`⚠️ [${this.npcId}] Failed to escape wall after ${this.unstuckAttempts} attempts, giving up`);
+                this.stuckInWall = false;
+                this.unstuckAttempts = 0;
+                this.escapeWallBox = null;
+                this.sprite.body.setVelocity(0, 0);
+            }
+        } else {
+            // Check if we've actually escaped
+            if (this.stuckInWall && this.escapeWallBox) {
+                // If overlap has cleared, consider it escaped
+                if (this.scene.physics.overlap(this.sprite, this.escapeWallBox)) {
+                    // Still stuck in the wall, keep trying
+                    return;
+                }
+                
+                // Not overlapping anymore - escaped!
+                console.log(`✅ [${this.npcId}] Escaped from wall after ${this.unstuckAttempts} attempts`);
+                this.stuckInWall = false;
+                this.unstuckAttempts = 0;
+                this.escapeWallBox = null;
+                this.sprite.body.setVelocity(0, 0);
+            }
+        }
+    }
+
+    /**
+     * Check if NPC has been pushed away from home and trigger return if needed
+     * For stationary NPCs (no patrol configured), automatically return home if pushed
+     * Returns true if NPC should be in return-home mode
+     */
+    checkAndHandleHomePush() {
+        // Only apply to stationary NPCs (no patrol configured originally)
+        if (this.config.patrol.enabled && !this.returningHome) {
+            return false; // Already has patrol behavior
+        }
+
+        const { x: hmnx, y: hmny } = this.npcBodyPos();
+        const distanceFromHome = Math.sqrt(
+            Math.pow(hmnx - this.homePosition.x, 2) +
+            Math.pow(hmny - this.homePosition.y, 2)
+        );
+
+        // If we're already returning home, check if we've arrived
+        if (this.returningHome) {
+            if (distanceFromHome < 12) {
+                // Arrived home! Disable patrol and return to normal behavior
+                console.log(`🏠 [${this.npcId}] Arrived home, resuming normal behavior`);
+                this.returningHome = false;
+                this.config.patrol.enabled = false;
+                this.patrolTarget = null;
+                this.currentPath = [];
+                this.pathIndex = 0;
+                // IMPORTANT: Set velocity to 0 to stop movement
+                this.sprite.body.setVelocity(0, 0);
+                return false;
+            }
+            return true; // Still returning
+        }
+
+        // Check if pushed beyond threshold
+        if (distanceFromHome > this.homeReturnThreshold) {
+            // NPC has been pushed away! Enable temporary patrol mode to return home
+            console.log(`🔄 [${this.npcId}] Pushed ${distanceFromHome.toFixed(0)}px from home, returning...`);
+            this.returningHome = true;
+            this.config.patrol.enabled = true;
+            
+            // Set home as a single waypoint
+            this.config.patrol.waypoints = [{
+                tileX: Math.floor(this.homePosition.x / TILE_SIZE),
+                tileY: Math.floor(this.homePosition.y / TILE_SIZE),
+                worldX: this.homePosition.x,
+                worldY: this.homePosition.y,
+                dwellTime: 0
+            }];
+            this.config.patrol.waypointMode = 'sequential';
+            this.config.patrol.waypointIndex = 0;
+            
+            // Clear any existing patrol state to force re-pathing
+            this.patrolTarget = null;
+            this.currentPath = [];
+            this.pathIndex = 0;
+            this.lastPatrolChange = 0;
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Trigger settling state after collision/push
+     * Pauses patrol for a brief moment to allow physics to settle
+     */
+    triggerSettling(time) {
+        if (!this.isSettling) {
+            // Just after a settle: no new one, so contact that outlasts the pause (a face_player
+            // NPC or the player standing against the walker) cannot hold it still for ever.
+            if (this._settleGraceUntil > time) return false;
+            this.isSettling = true;
+            this.settleEndTime = time + this.settleDuration;
+            console.log(`⏸️ [${this.npcId}] Settling after collision for ${this.settleDuration}ms`);
+        }
+        return true;
+    }
+
+    /**
+     * Override current patrol with a single destination.
+     * NPC walks to the target at the given speed, then stops permanently.
+     * Used for event-driven interrupts (e.g., nurse rushing to an emergency bed).
+     *
+     * @param {number} worldX - Target world X coordinate
+     * @param {number} worldY - Target world Y coordinate
+     * @param {number} [speed] - Override patrol speed for this move (optional)
+     */
+    goToAndStay(worldX, worldY, speed, opts = {}) {
+        window.seating?.unseatNPC?.(this); // a seated NPC gets up first
+        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this, `move:${opts?.owner || 'script'}`); // and drops a chair it was fetching
+        // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
+        // anyone else suspends the NPC's needs, so scripts always win.
+        // A pass or a half-served block timer belongs to one walk: keep it only for a needs
+        // re-issue of the same destination (the 3 s re-issue the timer must survive), else the
+        // new walk starts afresh (code review R1 m1, m2)
+        const od = this._goToStayDest;
+        const sameDest = !!od && Math.hypot(od.x - worldX, od.y - worldY) < 1;
+        if (opts?.owner !== 'needs' || !sameDest) this._playerPass = null;
+        else if (this._playerPass) { this._playerPass.reissued = true; this._playerPass.reissuedAt = null; }
+        this._moveOwner = opts?.owner;
+        if (opts?.owner !== 'needs' && opts?.owner !== 'walk') this._patrolOverridden = true;
+        // Arrival extras (npc-walk.js): a callback, data spread into npc_arrived, and a
+        // silent arrival (a walk-out ends with npc_left, never npc_arrived)
+        this._moveOnArrive = typeof opts?.onArrive === 'function' ? opts.onArrive : null;
+        this._moveArrivalData = opts?.arrivalData || null;
+        this._moveSilent = !!opts?.silentArrival;
+        // Room leash for a needs move: rooms the walk must not enter. A needs move without
+        // avoidRooms (seating's chair fetch, in the NPC's own room) keeps the current value;
+        // any other move drops it (scripts ignore the leash).
+        if (opts?.owner !== 'needs') this._moveAvoidRooms = undefined;
+        else if (Array.isArray(opts.avoidRooms)) this._moveAvoidRooms = opts.avoidRooms.slice();
+        // Walk-home moves pause for a nearby player like a patrol does.
+        this._moveYieldsToPlayer = !!opts?.yieldToPlayer;
+        // A needs re-issue after a stall plans round other bodies (OFFICE_LIFE_STUCK_RETURN.md)
+        this._moveReroute = opts?.owner === 'needs' && !!opts?.reroute;
+        // The needs stall watch's last re-route in one place: step onto the nearest walkable cell
+        // first, the stuck recovery's attempt 2, which a needs walk's 3 s re-issues never reach.
+        // _lastNudge says where the body landed, or null when no nudge ran (refused by
+        // _needsNudgeSafe, or under 2 px), so the needs layer marks a place nudged only when it was
+        // (code review R3, M1)
+        this._lastNudge = null;
+        if (this._moveReroute && opts?.nudge && this.sprite?.body) {
+            const pfm = this.pathfindingManager || window.pathfindingManager;
+            const at = this.npcBodyPos();
+            if (pfm && this._needsNudgeSafe(pfm, at.x, at.y)) {
+                const to = this._nudgeToWalkable(pfm, at.x, at.y);
+                if (to.x !== at.x || to.y !== at.y) this._lastNudge = { x: to.x, y: to.y };
+            }
+        }
+        if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
+        // Stop current movement
+        this._avoid = null;
+        this.currentPath = [];
+        this.patrolTarget = null;
+        this.pathIndex = 0;
+        this.lastPatrolChange = 0;
+        this.patrolReachedTime = 0;
+        this.pathFollowingActive = false;
+
+        // worldX/worldY are feet-centre (body.center) world coordinates — tile * TILE_SIZE.
+        // NPC spawns are now adjusted so body.center = tile * TILE_SIZE, so no further
+        // offset compensation is needed here.
+
+        // Set a single non-looping waypoint
+        const tileX = Math.round(worldX / TILE_SIZE);
+        const tileY = Math.round(worldY / TILE_SIZE);
+        this.config.patrol.waypoints = [{
+            tileX, tileY,
+            worldX, worldY,
+            dwellTime: 0
+        }];
+        this.config.patrol.waypointMode = 'sequential';
+        this.config.patrol.waypointIndex = 0;
+        // A route stop mid-way: drop the route's pending action, timed use and wait (E4 R1 B1),
+        // as restartAuthoredPatrol does
+        this._pendingRouteAction = null;
+        this._routeWait = null;
+        this._routeUse = null;
+        this._useHeld = null;
+        this.config.patrol.enabled = true;
+        this._stopOnArrival = true; // New flag: disable patrol after reaching this waypoint
+        this._goToStayDest = { x: worldX, y: worldY }; // Original destination for arrival-tolerance guard
+        this._moveId = opts?.moveId ?? null;   // SIMS-2: echoed in npc_arrived so needs can ignore a stale arrival
+        this._arriveWithin = Number(opts?.arriveWithin) > 0 ? Number(opts.arriveWithin) : 0;   // 0: the 1-tile guard
+        this._nearDestSince = 0;
+
+        // Optionally override speed
+        if (speed !== undefined) {
+            this._tempSpeed = this.config.patrol.speed;
+            this.config.patrol.speed = speed;
+        }
+
+        console.log(`🏥 [${this.npcId}] goToAndStay: heading to (${worldX}, ${worldY}) at speed ${speed || this.config.patrol.speed}`);
+    }
+
+    /**
+     * Shared arrival logic for goToAndStay — stops the NPC and resets all
+     * emergency-move state.  Called both when the path is fully consumed and
+     * when the arrival-tolerance proximity check fires early (e.g. the final
+     * tile is blocked by another NPC).
+     */
+    /** Stop an in-flight goToAndStay with no arrival event. */
+    cancelMove() {
+        this._avoid = null;
+        this._stopOnArrival = false;
+        this._goToStayDest = null;
+        this._moveId = null;   // SIMS-2: a cancelled move issues no arrival
+        this._moveOwner = undefined;
+        this._moveOnArrive = null;
+        this._moveArrivalData = null;
+        this._moveSilent = false;
+        this._playerPass = null;
+        this._moveAvoidRooms = undefined;
+        this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
+        this.config.patrol.enabled = false;
+        this.pathFollowingActive = false;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        if (this._tempSpeed !== undefined) {
+            this.config.patrol.speed = this._tempSpeed;
+            this._tempSpeed = undefined;
+        }
+        if (this.sprite?.body) this.sprite.body.setVelocity(0, 0);
+        this.isMoving = false;
+        this.playAnimation('idle', this.direction);
+    }
+
+    /** Turn to face a world point (idle animation), e.g. the object being used. */
+    faceWorldPoint(x, y) {
+        const p = this.npcBodyPos();
+        this.direction = this.calculateDirection(x - p.x, y - p.y);
+        this.playAnimation('idle', this.direction);
+    }
+
+    _triggerGoToStayArrival() {
+        const owner = this._moveOwner;
+        // SIMS-2: read the move id and the steps the path had left before the path is cleared below.
+        const moveId = this._moveId ?? null;
+        const pathLeft = Math.max(0, (this.currentPath?.length || 0) - (this.pathIndex || 0));
+        const onArrive = this._moveOnArrive;
+        const arrivalData = this._moveArrivalData;
+        const silent = this._moveSilent;
+        this._moveOnArrive = null;
+        this._moveArrivalData = null;
+        this._moveSilent = false;
+        this._moveId = null;
+        this._avoid = null;
+        this._moveOwner = undefined;
+        this._playerPass = null;
+        this._moveAvoidRooms = undefined;
+        this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
+        this._stopOnArrival = false;
+        this._goToStayDest = null;
+        this.config.patrol.enabled = false;
+        this.pathFollowingActive = false;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this._clearPatrolPathDebug();
+        if (this._tempSpeed !== undefined) {
+            this.config.patrol.speed = this._tempSpeed;
+            this._tempSpeed = undefined;
+        }
+        if (this.sprite.body) {
+            this.sprite.body.setVelocity(0, 0);
+        }
+        this.isMoving = false;
+        this.playAnimation('idle', this.direction);
+        const arrivedPos = this.npcBodyPos();
+        this.homePosition = { x: arrivedPos.x, y: arrivedPos.y };
+        console.log(`🏥 [${this.npcId}] Arrived at emergency target (within tolerance), stopping patrol`);
+
+        // Arrival hook: fire a per-NPC event the moment a scripted goToAndStay move
+        // completes, so a scenario can react when the NPC actually reaches the target
+        // (e.g. a staff member sitting down at a PC), not when it was told to walk.
+        // The guard above (_stopOnArrival cleared at the top of this method) means this
+        // fires exactly once per move. Scenario NPCs subscribe with an exact-match
+        // eventMapping `"eventPattern": "npc_arrived:<npcId>"` (npc-manager.js registers
+        // one dispatcher listener per mapping pattern), so no manager change is needed.
+        if (window.eventDispatcher && !silent) {
+            window.eventDispatcher.emit(`npc_arrived:${this.npcId}`, {
+                npcId: this.npcId,
+                x: arrivedPos.x,
+                y: arrivedPos.y,
+                owner,
+                moveId,
+                pathLeft,
+                ...(arrivalData || {})
+            });
+        }
+        if (onArrive) {
+            try { onArrive(arrivedPos); } catch (e) { console.error(`❌ [${this.npcId}] arrival callback failed:`, e); }
+        }
+    }
+
+    /**
+     * Set NPC behavior state (used by game engine and event handlers)
+     * Properties: hostile, influence, patrol, personalSpaceDistance, patrolSpeed, dwellMultiplier
+     */
+    setState(property, value) {
+        switch (property) {
+            case 'hostile':
+                this.setHostile(value);
+                break;
+
+            case 'influence':
+                this.setInfluence(value);
+                break;
+
+            case 'patrol':
+                this.config.patrol.enabled = value;
+                console.log(`🚶 ${this.npcId} patrol ${value ? 'enabled' : 'disabled'}`);
+                break;
+
+            case 'personalSpaceDistance':
+                this.config.personalSpace.distance = value;
+                this.config.personalSpace.distanceSq = value ** 2;
+                console.log(`↔️ ${this.npcId} personal space: ${value}px`);
+                break;
+
+            case 'patrolSpeed':
+                this.config.patrol.speed = value;
+                console.log(`🏃 ${this.npcId} patrol speed set to ${value}`);
+                break;
+
+            case 'dwellMultiplier':
+                // Scale all waypoint dwell times
+                if (this.config.patrol.waypoints) {
+                    this.config.patrol.waypoints.forEach(wp => {
+                        // Persist the original value so repeated calls don't compound the multiplier
+                        wp._baseDwellTime = wp._baseDwellTime || wp.dwellTime || 0;
+                        wp.dwellTime = Math.round(wp._baseDwellTime * value);
+                    });
+                }
+                console.log(`⏱️ ${this.npcId} dwell multiplier set to ${value}`);
+                break;
+
+            default:
+                console.warn(`⚠️ Unknown behavior property: ${property}`);
+        }
+    }
+
+    setHostile(hostile) {
+        // an explicit change replaces the deferred start; a calm set must be saved, since the
+        // early return below records nothing and a reload would re-apply startHostile (R3 m1)
+        if (!hostile && this._startHostileOnReveal) window.npcHostileSystem?.recordCalm?.(this.npcId);
+        this._startHostileOnReveal = false;
+        if (this.hostile === hostile) return; // No change
+        if (hostile) { window.seating?.unseatNPC?.(this); this._playerPass = null; }
+
+        this.hostile = hostile;
+
+        // Register with hostile system to enable combat mechanics
+        if (window.npcHostileSystem) {
+            window.npcHostileSystem.setNPCHostile(this.npcId, hostile, this.config.hostile);
+            console.log(`⚔️ ${this.npcId} registered with hostile system: ${hostile}`);
+        }
+
+        // Emit event for other systems to react
+        if (window.eventDispatcher) {
+            window.eventDispatcher.emit('npc_hostile_changed', {
+                npcId: this.npcId,
+                hostile: hostile
+            });
+        }
+
+        if (hostile) {
+            // Red tint (0xff0000 with 50% strength)
+            this.sprite.setTint(0xff6666);
+            console.log(`🔴 ${this.npcId} is now hostile`);
+        } else {
+            // Clear tint
+            this.sprite.clearTint();
+            console.log(`✅ ${this.npcId} is no longer hostile`);
+        }
+    }
+
+    setInfluence(influence) {
+        this.influence = influence;
+
+        // Check if influence change should trigger hostile state
+        const threshold = this.config.hostile.influenceThreshold;
+
+        // Auto-trigger hostile if influence drops below threshold
+        if (influence < threshold && !this.hostile) {
+            this.setHostile(true);
+            console.log(`⚠️ ${this.npcId} became hostile due to low influence (${influence} < ${threshold})`);
+        }
+        // Auto-disable hostile if influence recovers
+        else if (influence >= threshold && this.hostile) {
+            this.setHostile(false);
+            console.log(`✅ ${this.npcId} no longer hostile (influence: ${influence})`);
+        }
+
+        console.log(`💯 ${this.npcId} influence: ${influence}`);
+    }
+}
+
+// Export for module imports
+export default {
+    NPCBehaviorManager,
+    NPCBehavior
+};

@@ -1,0 +1,13 @@
+{
+  "key": "df58270ab475ccddc5f4088fa452f414",
+  "npc": "narrator",
+  "text": "The hallway's still on its night lights. Off to the east, the guard goes round again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:13:55Z"
+}

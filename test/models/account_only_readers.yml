@@ -1,0 +1,546 @@
+# Ops S5bc unit 20: every method in app/ and lib/ that loops room NPCs, marked skip (an account-only NPC is left out) or keep.
+# The test scans the source and fails on a missing or stale entry; a skip entry must name account_only? in its body.
+app/controllers/break_escape/games_controller.rb#annotate_station_submission_status!:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/controllers/break_escape/games_controller.rb#discovered_station_name:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/controllers/break_escape/games_controller.rb#find_accessible_item:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/controllers/break_escape/games_controller.rb#find_flag_station_by_id:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/controllers/break_escape/games_controller.rb#find_flag_station_for_flag:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/controllers/break_escape/games_controller.rb#find_npc_holding_item:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/controllers/break_escape/games_controller.rb#find_npc_in_scenario:
+  action: skip
+  why: 'GET /ink and POST /tts: an account-only id gets the not-found answer an invented
+    id gets (R1-SERVER3)'
+app/controllers/break_escape/games_controller.rb#headless_email_record?:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/controllers/break_escape/games_controller.rb#room:
+  action: skip
+  why: the NPC count in the log counts people only
+app/controllers/break_escape/games_controller.rb#scenario_map:
+  action: skip
+  why: hasNPCs counts people only
+app/controllers/break_escape/games_controller.rb#track_npc_encounters:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/avatar_unlocks.rb#scenario_npcs:
+  action: keep
+  why: lists every person NPC; an account-only NPC has no sprite sheet (the validator
+    forbids spriteSheet on one), so none of its entries can name it
+app/models/break_escape/cached_credentials.rb#cached_accounts_at:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/cached_credentials.rb#note_borrow_cached!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/credential_keyring.rb#cracked_keyring_entries:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/credential_keyring.rb#implicit_keyring_entries:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/game.rb#account_capture_passwords:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+app/models/break_escape/game.rb#account_for_username:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/game.rb#account_npcs:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+app/models/break_escape/game.rb#account_only_npc_ids:
+  action: skip
+  why: leaves an account-only NPC out
+app/models/break_escape/game.rb#account_usernames:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/game.rb#apply_current_call_config!:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/game.rb#apply_ko_positions!:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/game.rb#apply_npc_carry!:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/game.rb#apply_room_state_changes!:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/game.rb#build_authored_capture_secrets:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+app/models/break_escape/game.rb#character_sprite_keys:
+  action: skip
+  why: no world sprite for an account
+app/models/break_escape/game.rb#claim_guest_session!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/game.rb#compile_npc_plan!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/game.rb#confirmable_clone_source:
+  action: keep
+  why: reads the card of a holder the server already named; an account-only account
+    has no creds.card (privilege_account_only forbids one)
+app/models/break_escape/game.rb#encounter_npc!:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/game.rb#filter_requires_and_contents_recursive:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/game.rb#filtered_room_data:
+  action: skip
+  why: drops the whole NPC entry from every room answer
+app/models/break_escape/game.rb#filtered_scenario_for_bootstrap:
+  action: skip
+  why: hasPresentNpc counts people only
+app/models/break_escape/game.rb#find_npc_in_scenario:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+app/models/break_escape/game.rb#flag_reward_stations_targeting:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/game.rb#flag_reward_unlocks_object?:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/game.rb#headless_email_npc?:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/game.rb#each_held_source_item:
+  action: skip
+  why: an account holds no carriable items
+app/models/break_escape/game.rb#ko_claimable_room_npc_ids:
+  action: skip
+  why: no person to knock out
+app/models/break_escape/game.rb#login_account_tiles:
+  action: skip
+  why: leaves an account-only NPC out
+app/models/break_escape/game.rb#login_pc_owner:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/game.rb#needs_npc_ids:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+app/models/break_escape/game.rb#normalise_access_model!:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/game.rb#npc_card_definition_for:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+app/models/break_escape/game.rb#npc_in_room?:
+  action: skip
+  why: an account is never in a room
+app/models/break_escape/game.rb#ops_account_as:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/game.rb#ops_badge_as:
+  action: keep
+  why: reads the card of a holder the server already named; an account-only account
+    has no creds.card (privilege_account_only forbids one)
+app/models/break_escape/game.rb#record_card_clone!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/game.rb#released_npc_containers:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/game.rb#rfid_identity_passes?:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+app/models/break_escape/game.rb#scenario_keycard_definitions:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/game.rb#scenario_npc_ids:
+  action: skip
+  why: leaves an account-only NPC out
+app/models/break_escape/game.rb#scenario_npc_records:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+app/models/break_escape/game.rb#scenario_room_npc:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+app/models/break_escape/game.rb#self.scenario_npc_records:
+  action: keep
+  why: the base list of every NPC record; its readers that decide what a sync or an
+    answer holds (scenario_npc_ids) filter it, the others read accounts (R1-SERVER4)
+app/models/break_escape/game.rb#self.scenario_room_npcs:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+app/models/break_escape/game.rb#session_for_client:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/game.rb#session_identity:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/game.rb#stamp_scenario_object_ids!:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/helpdesk_access.rb#helpdesk_keyring_entries:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/helpdesk_access.rb#helpdesk_npc_serving?:
+  action: skip
+  why: a desk is served by a person who has been met; an account with no person behind
+    it serves none
+app/models/break_escape/lock_step_reach.rb#build_carried_step_chains:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+app/models/break_escape/mfa_sign_in.rb#mfa_device_answer:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/mfa_sign_in.rb#mfa_pending_account:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/mfa_sign_in.rb#phone_request_rows:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/mission.rb#self.call_configs_from:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+app/models/break_escape/mission.rb#self.voice_configs_from:
+  action: keep
+  why: voice and story tooling; an account has no lines
+app/models/break_escape/network_access.rb#hide_planted_devices!:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/network_access.rb#host_row:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/network_access.rb#resource_admitting:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/network_access.rb#via_for:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/network_ops.rb#ops_grant_of:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/network_ops.rb#ops_technique_repeat:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/npc_frustration.rb#complete_npc_workaround!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/npc_frustration.rb#note_npcs_met!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/npc_frustration.rb#npc_frustration_for_client:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/npc_frustration.rb#own_npc_leash:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/npc_frustration.rb#performable?:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/npc_frustration.rb#report_one!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/npc_frustration.rb#share_heard_in?:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/npc_frustration.rb#shared_login_body:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/npc_frustration.rb#workaround_done_kind?:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/ops_cracking.rb#crack_reused_hit?:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/ops_log.rb#collect_authored_collisions:
+  action: keep
+  why: reads accounts or an authored record; an account-only account is an account
+    holder and stays
+app/models/break_escape/social_feed.rb#declared_friendface_phones:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+app/models/break_escape/social_feed.rb#feed_posts_for_client:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/social_feed.rb#npc_offers_item?:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+app/models/break_escape/social_feed.rb#open_friendface_phone:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/models/break_escape/social_feed.rb#reveal_feed_post!:
+  action: keep
+  why: looks one NPC up by an id the server holds (session, owner, authored workaround)
+    or one the client named, which answers as an invented id for an account-only NPC
+    (R1 probe P8)
+app/services/break_escape/tts_line_extractor.rb#characters:
+  action: keep
+  why: voice and story tooling; an account has no lines
+app/services/break_escape/tts_line_extractor.rb#each_room_npc:
+  action: keep
+  why: voice and story tooling; an account has no lines
+app/services/break_escape/tts_line_resolver.rb#narrator_line_in_stories:
+  action: keep
+  why: voice and story tooling; an account has no lines
+app/services/break_escape/tts_line_resolver.rb#self.find_npc:
+  action: keep
+  why: voice tooling and the extractor read the authored record; the only route that
+    reaches it, the controller find_npc_in_scenario, skips an account-only NPC (R1-SERVER3)
+app/services/break_escape/tts_office_lines.rb#office_knots:
+  action: keep
+  why: voice and story tooling; an account has no lines
+lib/break_escape/access_identities.rb#cards:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_identities.rb#reach:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_identities.rb#room_npcs:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+lib/break_escape/access_identities.rb#room_objects:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/access_identities.rb#uses_access_model?:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_work.rb#drawable_feed_posts:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_work.rb#feed_facts:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_work.rb#feed_reactions:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_work.rb#reply_target:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_work.rb#room_npc:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/access_work.rb#usb_habit_sticks:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/capture_model.rb#all_capture_candidates:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#ambiguous_account_address?:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#capture_account_npc_id:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#declared_target_ids:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#declares_proofs?:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#room_npc_list:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+lib/break_escape/capture_model.rb#served_capture_writers:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#share_login_npc?:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#shared_login_capture:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#shorthand_proofs:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/capture_model.rb#target_capture_proofs:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/credential_model.rb#account_npc:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/credential_model.rb#room_npcs:
+  action: keep
+  why: reads accounts or cards from the NPC record; an account keeps it
+lib/break_escape/format_upgrade.rb#each_room_object:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/format_upgrade.rb#needs_home_npc_map:
+  action: keep
+  why: reads or edits a record by id from a room answer that already left the account
+    out, or by id from the scenario
+lib/break_escape/hiding_spots.rb#item_defs:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/lock_step_model.rb#each_lock_step:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/lock_step_model.rb#find_npc:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/mfa_model.rb#each_authored_item:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/network_model.rb#rogue_device_definitions:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/network_model.rb#technique_items:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/npc_habits.rb#expand!:
+  action: skip
+  why: leaves an account-only NPC out
+lib/break_escape/npc_habits/clues.rb#admitted_accounts:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/npc_habits/clues.rb#readable_texts:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/npc_habits/clues.rb#readable_without?:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/npc_habits/clues.rb#secret_homes:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/npc_habits/clues.rb#set_member_texts:
+  action: keep
+  why: walks objects or items held, not people; an account holds none that a player
+    can reach
+lib/break_escape/ops_log_events.rb#account_npc:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/ops_log_events.rb#npc_held_entry:
+  action: keep
+  why: reads the authored scenario for tooling, models or the server's own checks,
+    never an answer; an account keeps its place
+lib/break_escape/ops_log_events.rb#npc_named:
+  action: keep
+  why: names the holder of a card the log row carries; an account-only account has
+    no creds.card (the validator rule privilege_account_only forbids one)
+lib/break_escape/ops_log_events.rb#profile_owner:
+  action: keep
+  why: returns the owner whose existence check needs it; the shown name goes through
+    profile_shown_name, which gives the profile id for an account-only owner (R1-SERVER6)

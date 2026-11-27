@@ -1,0 +1,13 @@
+{
+  "key": "3ba3bdaf3fe4c0cebe7b3fb93e431ee3",
+  "npc": "narrator",
+  "text": "The cloner reads.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:01:10Z"
+}

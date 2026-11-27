@@ -1,0 +1,13 @@
+{
+  "key": "26cdf1013d7b508cbf11ce020c1ed4db",
+  "npc": "julian_sallow",
+  "text": "They've taken someone down to the suite.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:49:46Z"
+}

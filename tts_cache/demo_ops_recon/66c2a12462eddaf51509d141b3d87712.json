@@ -1,0 +1,13 @@
+{
+  "key": "66c2a12462eddaf51509d141b3d87712",
+  "npc": "graham_whitfield",
+  "text": "I don't watch it all day. The log does that for me.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind; he looks after the office network. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:39:54Z"
+}

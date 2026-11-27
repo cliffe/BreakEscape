@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: slots and path
+ok 1 - slots and path
+  ---
+  duration_ms: 1.014662
+  ...
+# Subtest: a missing file leaves the fallback, a present one sets the art
+ok 2 - a missing file leaves the fallback, a present one sets the art
+  ---
+  duration_ms: 7.282277
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 160.397605

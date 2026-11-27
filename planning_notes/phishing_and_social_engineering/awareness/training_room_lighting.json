@@ -1,0 +1,64 @@
+{
+  "_note": "Lighting for the four awareness training rooms (TRAINING_ROOM_PLAN.md §5). Per company: 'scenario' is the scenario-level block, 'room' goes on rooms.training_room. training_room.py reads this file, so the generators and the full-shell patcher take it from there. Light x,y are tiles on the room_aw_* maps.",
+  "brightwell_foods": {
+    "mood": "Afternoon before the three o'clock payment run; warm sun through the window (west).",
+    "scenario": { "enabled": true, "defaultMode": "on" },
+    "room": {
+      "emitters": {
+        "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
+        "window_blinds": { "color": "#ffd9a0", "radius": 48, "intensity": 0.1, "floorTint": 0.5 },
+        "fire_alarm_point": [ { "intensity": 0 } ]
+      },
+      "lights": [ { "x": 1.75, "y": 2.6, "color": "#ffe2b0", "radius": 110, "intensity": 0.5 } ]
+    }
+  },
+  "tarrowby_logistics": {
+    "mood": "Early shift at the depot, greyer daylight from the rooflights, the vending machine's glow.",
+    "scenario": { "enabled": true, "defaultMode": "on", "ambient": "#bcc2cc" },
+    "room": {
+      "emitters": {
+        "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
+        "drinks_vending": { "color": "#e0f0ff", "radius": 40, "intensity": 0.45 },
+        "fire_alarm_point": [ { "intensity": 0 } ]
+      },
+      "lights": [ { "x": 4.5, "y": 5, "color": "#dfe8f4", "radius": 110, "intensity": 0.25 } ]
+    }
+  },
+  "quayholt_insurance": {
+    "mood": "Bright corporate office; the screens carry it.",
+    "scenario": { "enabled": true, "defaultMode": "on" },
+    "room": {
+      "emitters": {
+        "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
+        "aw_quayholt_queue": { "color": "#9fc0ff", "radius": 32, "intensity": 0.25, "effect": "screen" },
+        "info_screen": { "intensity": 0.25, "radius": 24 },
+        "fire_alarm_point": [ { "intensity": 0 } ]
+      },
+      "lights": [ { "x": 1.75, "y": 2.3, "color": "#e8f0ff", "radius": 72, "intensity": 0.3 } ]
+    }
+  },
+  "carrholme_services": {
+    "mood": "Bright support-services office; the screens carry it.",
+    "scenario": { "enabled": true, "defaultMode": "on" },
+    "room": {
+      "emitters": {
+        "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
+        "info_screen": { "intensity": 0.25, "radius": 24 },
+        "fire_alarm_point": [ { "intensity": 0 } ]
+      },
+      "lights": [ { "x": 1.75, "y": 2.3, "color": "#e8f0ff", "radius": 72, "intensity": 0.3 } ]
+    }
+  },
+  "merrin_sallow": {
+    "mood": "Warm studio, the big window on the right (east), a banker's lamp on the crit table.",
+    "scenario": { "enabled": true, "defaultMode": "on", "ambient": "#cac4bc" },
+    "room": {
+      "emitters": {
+        "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
+        "bankers_lamp": { "color": "#ffd9a0", "radius": 40, "intensity": 0.5 },
+        "fire_alarm_point": [ { "intensity": 0 } ]
+      },
+      "lights": [ { "x": 7.55, "y": 2.3, "color": "#f0f4ff", "radius": 96, "intensity": 0.4 } ]
+    }
+  }
+}

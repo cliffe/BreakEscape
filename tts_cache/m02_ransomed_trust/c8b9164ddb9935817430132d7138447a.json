@@ -1,0 +1,13 @@
+{
+  "key": "c8b9164ddb9935817430132d7138447a",
+  "npc": "patient_bed2",
+  "text": "Like I'm plugged into summat I can't switch off. Which I am.",
+  "voice": "Sulafat",
+  "style": "Woman in her seventies on ECMO life support. Consistent Lancashire accent -- flat, warm, entirely matter-of-fact about her own situation. Speaks in fragments and only just above a whisper, because the machine is doing the work of her heart and lungs and she has no breath spare for anything decorative.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

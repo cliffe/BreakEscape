@@ -1,0 +1,82 @@
+{
+ "globals": {
+  "found_casualty_projections": true,
+  "talked_to_maya": true,
+  "maya_identity_protected": false,
+  "kevin_choice": "ignore",
+  "contingency_file_read": true,
+  "final_choice": "surrender",
+  "derek_surrendered": true,
+  "derek_confronted": true,
+  "player_launched_attack": true
+ },
+ "steps": [
+  {
+   "note": "R21: the worst-case debrief: the launch went through, Kevin was left to the frame-up, Maya's identity compromised, Derek surrendered. The launch opening, the Kevin arrest scene and the failed-mission credits."
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "said": [
+    "I'm going to assume Derek triggered a failsafe",
+    "Kevin Park was arrested this morning",
+    "Kevin spent six hours in interrogation",
+    "You made a choice. Focus on the mission. Let Kevin be collateral damage",
+    "He surrendered. Voluntarily",
+    "But the attack went through"
+   ],
+   "notSaid": [
+    "They're going to live. Because of you",
+    "Shatter's dead in the water",
+    "His career is intact",
+    "The people you saved will never know your name"
+   ]
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "MISSION FAILED",
+    "OPERATION SHATTER: EXECUTED",
+    "SUBSTANTIAL: Casualty projections secured",
+    "DEREK LAWSON: Surrendered, in custody",
+    "MAYA CHEN: Identity compromised, under SAFETYNET protection",
+    "KEVIN PARK: Arrested under Derek's frame-up, later cleared"
+   ],
+   "notSaid": [
+    "MISSION COMPLETE",
+    "LIVES SAVED",
+    "MAYA CHEN: Identity protected"
+   ]
+  }
+ ]
+}

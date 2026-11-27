@@ -1,0 +1,13 @@
+{
+  "key": "da51123e381f59e46847e888270e6015",
+  "npc": "zainab_hussain",
+  "text": "There's another card in my tool roll, for settings somebody left open. Help yourself.",
+  "voice": "Achernar",
+  "style": "Fenlow Managed IT's field engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:59Z"
+}

@@ -1,0 +1,19 @@
+Characters wanted but not in gnf.ttf. pixel-text.js draws these as the plain letter,
+a stand-in or ?:
+U+00A4 ¤
+U+00C5 Å
+U+00C6 Æ
+U+00D0 Ð
+U+00DD Ý
+U+00DE Þ
+U+00E5 å
+U+00E6 æ
+U+00F0 ð
+U+00FD ý
+U+00FE þ
+U+0141 Ł
+U+0142 ł
+U+015B ś
+U+0152 Œ
+U+0153 œ
+U+2717 ✗

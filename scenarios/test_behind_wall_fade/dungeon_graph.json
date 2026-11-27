@@ -1,0 +1,47 @@
+{
+  "scenario": "test_behind_wall_fade",
+  "start_room": "hall",
+  "nodes": [
+    {
+      "id": "hall",
+      "label": "Hall",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "office_n",
+      "label": "North Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception",
+      "label": "Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "server",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "hall",
+      "to": "office_n",
+      "soft": false
+    },
+    {
+      "from": "hall",
+      "to": "reception",
+      "soft": false
+    },
+    {
+      "from": "hall",
+      "to": "server",
+      "soft": false
+    }
+  ]
+}

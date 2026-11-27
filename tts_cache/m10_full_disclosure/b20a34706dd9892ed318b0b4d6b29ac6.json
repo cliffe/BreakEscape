@@ -1,0 +1,13 @@
+{
+  "key": "b20a34706dd9892ed318b0b4d6b29ac6",
+  "npc": "vos",
+  "text": "Whatever speech you have ready, I don't do philosophy. I do delivery dates.",
+  "voice": "Schedar",
+  "style": "Zero Day's broker, fifties, from Rotterdam. Consistent Dutch-accented English throughout -- do not shift to any other accent. Flat, courteous, unhurried; everything is a delivery date.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:35:48Z"
+}

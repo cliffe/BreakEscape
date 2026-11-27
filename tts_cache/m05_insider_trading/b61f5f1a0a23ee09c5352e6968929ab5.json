@@ -1,0 +1,13 @@
+{
+  "key": "b61f5f1a0a23ee09c5352e6968929ab5",
+  "npc": "lisa_park",
+  "text": "Dr Halloran had a stand-up row with the CEO last month about publishing. Half the building heard it.",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:01:11Z"
+}

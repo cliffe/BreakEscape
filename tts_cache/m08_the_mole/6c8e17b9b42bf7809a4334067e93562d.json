@@ -1,0 +1,13 @@
+{
+  "key": "6c8e17b9b42bf7809a4334067e93562d",
+  "npc": "director_netherton",
+  "text": "The code card is in my safe as well, with Dr Okafor's evaluation. Read hers before you face him.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:30:24Z"
+}

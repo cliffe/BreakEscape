@@ -1,0 +1,13 @@
+{
+  "key": "849b4c5af46007230765f41f4f9f6934",
+  "npc": "kit_thandiwe_moyo",
+  "text": "Sounds like the front desk had a good morning.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:19:14Z"
+}

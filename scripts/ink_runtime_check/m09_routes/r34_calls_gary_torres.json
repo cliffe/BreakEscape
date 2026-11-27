@@ -1,0 +1,13 @@
+{
+"steps": [
+{ "note": "R34: Gary's call at the keypad (the salvage keypad still locked, so he gives the cipher hint) and David Torres's call before the H&L box has been opened and no shortlist exists." },
+{ "talk": "gary", "knot": "call", "picks": ["How's the new job"] },
+{ "said": ["It's Gary. Whitlock, from St. Catherine's", "Read it like a shelf mark, not a number. Vigenère", "There'll be a chart near the keypad", "Director of Cyber Security, me"],
+  "notSaid": ["Didn't need me, then"] },
+{ "expect": { "gary_called": true } },
+{ "talk": "torres", "knot": "call", "picks": ["Are you safe"] },
+{ "said": ["I gave you this address back in October", "Their boxes take the ledger's file number. Then the placing sheet", "Look for the ones with a sick parent", "Safe enough. Please be quick"],
+  "notSaid": ["Two names from the firm's sheet", "Read the placing sheet in the firm's box"] },
+{ "expect": { "torres_called": true } }
+]
+}

@@ -1,0 +1,145 @@
+TAP version 13
+# Subtest: countWords ignores emote cues and tags are stripped
+ok 1 - countWords ignores emote cues and tags are stripped
+  ---
+  duration_ms: 4.938341
+  ...
+# Subtest: line caps differ by channel
+ok 2 - line caps differ by channel
+  ---
+  duration_ms: 2.3994
+  ...
+# Subtest: Narrator lines are not counted as spoken length
+ok 3 - Narrator lines are not counted as spoken length
+  ---
+  duration_ms: 0.145341
+  ...
+# Subtest: You: after a choice is flagged for checking, non-verbal ones noted
+ok 4 - You: after a choice is flagged for checking, non-verbal ones noted
+  ---
+  duration_ms: 0.864387
+  ...
+# Subtest: AI tells and spellings
+ok 5 - AI tells and spellings
+  ---
+  duration_ms: 0.306368
+  ...
+# Subtest: tags, conditions and code are ignored
+ok 6 - tags, conditions and code are ignored
+  ---
+  duration_ms: 0.233815
+  ...
+# Subtest: scenario channel and timed texts are read from the erb
+ok 7 - scenario channel and timed texts are read from the erb
+  ---
+  duration_ms: 0.61067
+  ...
+# Subtest: CLI runs on m01 and emits JSON
+ok 8 - CLI runs on m01 and emits JSON
+  ---
+  duration_ms: 183.403669
+  ...
+# Subtest: phone channel counts unprefixed prose as the contact line; person channel does not
+ok 9 - phone channel counts unprefixed prose as the contact line; person channel does not
+  ---
+  duration_ms: 1.566692
+  ...
+# Subtest: phone unprefixed lines still get AI-tell checks, prefixed lines unchanged
+ok 10 - phone unprefixed lines still get AI-tell checks, prefixed lines unchanged
+  ---
+  duration_ms: 0.229297
+  ...
+# Subtest: choice-fallthrough: a first-meeting block that flips its own flag falls into the return visit (m06 Dani)
+ok 11 - choice-fallthrough: a first-meeting block that flips its own flag falls into the return visit (m06 Dani)
+  ---
+  duration_ms: 1.196617
+  ...
+# Subtest: choice-fallthrough: sibling blocks on independent conditions and choice groups are fine (m01 debrief bands)
+ok 12 - choice-fallthrough: sibling blocks on independent conditions and choice groups are fine (m01 debrief bands)
+  ---
+  duration_ms: 0.358203
+  ...
+# Subtest: blank-reentry: person chat parked at a choices-only knot; a quiet-flag line clears it; phone exempt
+ok 13 - blank-reentry: person chat parked at a choices-only knot; a quiet-flag line clears it; phone exempt
+  ---
+  duration_ms: 0.704383
+  ...
+# Subtest: tag-on-narrator: an influence tag before a divert lands on the next knot's first line
+ok 14 - tag-on-narrator: an influence tag before a divert lands on the next knot's first line
+  ---
+  duration_ms: 0.490494
+  ...
+# Subtest: phone-self-prefix: the contact's own Name: prefix in a phone ink
+ok 15 - phone-self-prefix: the contact's own Name: prefix in a phone ink
+  ---
+  duration_ms: 0.349753
+  ...
+# Subtest: exit-no-reply: a spoken goodbye that closes the chat with no answer
+ok 16 - exit-no-reply: a spoken goodbye that closes the chat with no answer
+  ---
+  duration_ms: 0.932261
+  ...
+# Subtest: stage cues: none on lines with numbers; density above m01's
+ok 17 - stage cues: none on lines with numbers; density above m01's
+  ---
+  duration_ms: 4.051413
+  ...
+# Subtest: not-x-but-y: two-sentence, pronoun and "like X, and not Y" forms
+ok 18 - not-x-but-y: two-sentence, pronoun and "like X, and not Y" forms
+  ---
+  duration_ms: 0.721563
+  ...
+# Subtest: scenarioInfo reads each NPC's displayName and id for the phone-self-prefix rule
+ok 19 - scenarioInfo reads each NPC's displayName and id for the phone-self-prefix rule
+  ---
+  duration_ms: 0.543301
+  ...
+# Subtest: exit-no-reply also covers a choice that runs into -> END / DONE, and is a warning
+ok 20 - exit-no-reply also covers a choice that runs into -> END / DONE, and is a warning
+  ---
+  duration_ms: 0.631657
+  ...
+# Subtest: blank-reentry: a park inside a stitch reopens at its knot, which may greet (m06 checkpoint guard)
+ok 21 - blank-reentry: a park inside a stitch reopens at its knot, which may greet (m06 checkpoint guard)
+  ---
+  duration_ms: 0.850271
+  ...
+# Subtest: crowded-hub: 11 plain choices in one knot are flagged, with the m01 citation in the fix hint
+ok 22 - crowded-hub: 11 plain choices in one knot are flagged, with the m01 citation in the fix hint
+  ---
+  duration_ms: 1.496323
+  ...
+# Subtest: crowded-hub: 10 choices are fine, and the count is per knot, not per file
+ok 23 - crowded-hub: 10 choices are fine, and the count is per knot, not per file
+  ---
+  duration_ms: 4.72137
+  ...
+# Subtest: crowded-hub: conditional choices count, once-only ones too, nested replies do not
+ok 24 - crowded-hub: conditional choices count, once-only ones too, nested replies do not
+  ---
+  duration_ms: 3.659054
+  ...
+# Subtest: crowded-hub: a stitch is its own block
+ok 25 - crowded-hub: a stitch is its own block
+  ---
+  duration_ms: 2.402202
+  ...
+# Subtest: crowded-hub: a retiring, ordered hub passes (the m01 pattern); an unconditional choice in the middle does not
+ok 26 - crowded-hub: a retiring, ordered hub passes (the m01 pattern); an unconditional choice in the middle does not
+  ---
+  duration_ms: 2.580691
+  ...
+# Subtest: crowded-hub: m01 handler hub (support_hub in m01_phone_agent0x99.ink) is the exemplar and passes
+ok 27 - crowded-hub: m01 handler hub (support_hub in m01_phone_agent0x99.ink) is the exemplar and passes
+  ---
+  duration_ms: 40.828535
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 530.621769

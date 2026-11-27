@@ -1,0 +1,13 @@
+{
+  "key": "42f4f9fa57926529f9a23d921af76fbc",
+  "npc": "alpha_recording",
+  "text": "The best lock there is opens for the right name. Nobody fights a door that's expecting them.",
+  "voice": "Sadaltager",
+  "style": "A SAFETYNET strategy lecturer in his fifties, recorded on reel tape in a lecture hall. Educated, unplaceable English. Low, unhurried, a lecturer's precision; patient with a room of students. Faintly amused.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:34:16Z"
+}

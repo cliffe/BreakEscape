@@ -1,0 +1,88 @@
+Room room_aes_workshop: 320x320 px (10x10 tiles; about 6 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+## back wall (hung on it)
+  pegboard_tools1  x=100..156 y=14..58
+  network_architecture  x=160..208 y=18..52
+  wall_clock1  x=236..261 y=12..38
+  aes_ppe_sign1  x=266..286 y=17..44
+
+## against the back wall (standing on the floor)
+  network_rack1  x=222..256 y=53..112
+  ?(collision; look at the render)  x=224..288 y=80..96
+  server_rack1  x=258..288 y=55..110
+
+## left wall
+  fire_extinguisher1  x=14..30 y=112..140
+
+## behind the camera (leave out)
+  aes_lockers_grey1  x=34..92 y=241..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=36..90 y=276..288  [feet ~4.0 m out from the back wall; a rough guide, confirm in the render]
+  aes_tool_trolley1  x=92..118 y=277..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=94..116 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+  aes_cable_drum1  x=124..151 y=276..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=126..149 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid centre
+  zds_desk1  x=100..178 y=121..160  [feet ~1.6 m out from the back wall; a rough guide, confirm in the render]
+    on zds_desk1: pc10  x=99..136 (conditional; see EMPTY below)
+    on zds_desk1: flag-station  x=154..180 (conditional; see EMPTY below)
+  chair-darkgray-1  x=112..136 y=147..184  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+  briefcase-yellow-1  x=180..202 y=169..186 (conditional; see EMPTY below)  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near centre
+  it_workbench2  x=104..156 y=186..246  [feet ~3.3 m out from the back wall; a rough guide, confirm in the render]
+  electronics_bench2  x=166..208 y=191..246  [feet ~3.3 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near left
+  supply_shelves1  x=34..84 y=162..222  [feet ~2.8 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=36..82 y=198..210  [feet ~2.6 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near right
+  ?(collision; look at the render)  x=216..236 y=236..246  [feet ~3.3 m out from the back wall; a rough guide, confirm in the render]
+  desk3  x=238..289 y=161..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+    on desk3: cable_tangle1  x=252..276
+    on desk3: notes3  x=256..270 (conditional; see EMPTY below)
+
+## near edge (bottom of the frame, mostly cropped; include only if it matters)
+  aes_battery_module1  x=214..238 y=234..256  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+  kvm_cart1  x=250..287 y=209..270 (conditional; see EMPTY below)  [feet ~3.7 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=252..285 y=246..258  [feet ~3.5 m out from the back wall; a rough guide, confirm in the render]
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  { "mode": "motion", "ambient": "#aab4c6", "darkAmbient": "#0a0f1c" }
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'north': 'battery_hall_1'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  none
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       vm-launcher "BMS Jump Server Terminal" -> pc10 (conditional_table_items) at 99,139
+  ok       flag-station "SAFETYNET Drop-Site Terminal" -> flag-station (conditional_table_items) at 154,139
+  ok       notes "Workshop Access Log" -> notes3 (conditional_table_items) at 256,177
+  ok       pc "Network Monitoring Station" -> kvm_cart1 (conditional_items) at 250,270
+  ok       briefcase "OptiGrid Tool Case" -> briefcase-yellow-1 (conditional_items) at 180,186
+
+## where this background will show
+  !! no NPCs in this room: the background shows only if an NPC from elsewhere talks here

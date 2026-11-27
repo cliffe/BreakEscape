@@ -1,0 +1,30 @@
+{
+  "_comment": "Keys each apply-actions.js action type reads. `type`, `condition` and keys starting with `_` are allowed on every action. `tableOnly` types have no case in apply-actions.js (the client handles them as ink tags) and the drift test skips them. A mapping's `actions` list treats a missing required key or an unknown key as an error; the older action lists (triggerOnInteract, onConfirm, timers) report the same as warnings. A new action added to apply-actions.js fails test/js/action-key-table.test.mjs until it is entered here.",
+  "actions": {
+    "set_global":        { "required": ["key"], "optional": ["value"] },
+    "grant_fact":        { "required": ["fact"], "optional": ["entry"] },
+    "emit_event":        { "required": ["event_name"], "optional": [] },
+    "complete_task":     { "required": ["taskId"], "optional": [] },
+    "unlock_task":       { "required": ["taskId"], "optional": [], "tableOnly": true },
+    "unlock_aim":        { "required": ["aimId"], "optional": [], "tableOnly": true },
+    "unlock_object":     { "required": ["objectId"], "optional": [] },
+    "unlock_door":       { "required": ["room_id"], "optional": [] },
+    "give_item":         { "required": ["item"], "optional": ["facts"] },
+    "remove_item":       { "required": ["item"], "optional": [] },
+    "remove_world_item": { "required": ["item"], "optional": ["roomId", "roomIds"] },
+    "revoke_card":       { "required": ["card_id"], "optional": [] },
+    "add_capture":       { "required": ["capture"], "optional": [] },
+    "set_costume":       { "required": [], "optional": ["costume", "id", "value"] },
+    "clear_costume":     { "required": [], "optional": [] },
+    "wear":              { "required": ["itemId"], "optional": [] },
+    "take_off":          { "required": [], "optional": ["itemId"] },
+    "tint_objects":      { "required": ["roomId", "textureKey"], "optional": ["color", "pulse"] },
+    "lighting_dip":      { "required": [], "optional": ["level", "ms"] },
+    "confirm_action":    { "required": ["text"], "optional": ["onConfirm", "confirmLabel", "cancelLabel", "closeX"] },
+    "show_end_screen":   { "required": [], "optional": ["title", "outcome", "body", "buttonText"] },
+    "hint":              { "required": ["message"], "optional": ["title"] },
+    "grant_foothold":    { "required": ["pc"], "optional": ["needsSession", "path", "needsDropped", "needsHeld", "name"] },
+    "start_patrol":      { "required": ["npc"], "optional": ["speed"] },
+    "resume_patrol":     { "required": ["npc"], "optional": ["speed"] }
+  }
+}

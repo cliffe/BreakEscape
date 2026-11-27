@@ -1,0 +1,13 @@
+{
+  "key": "c0703844d3655a1a96a0221705d8747f",
+  "npc": "graham_whitfield",
+  "text": "And I meant it both times.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:20Z"
+}

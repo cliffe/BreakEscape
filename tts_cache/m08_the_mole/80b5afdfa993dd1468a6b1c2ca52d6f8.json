@@ -1,0 +1,13 @@
+{
+  "key": "80b5afdfa993dd1468a6b1c2ca52d6f8",
+  "npc": "nightshade_confrontation",
+  "text": "I gave them your deployment. Four fires, one bucket, and you in one of them. I did the arithmetic of who, and did it anyway.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is the mole, unmasked, across an interrogation table from an agent he taught, with nothing left to lose and no intention of apologising: rueful, articulate and completely unrepentant -- he argues his case like a man who has rehearsed it alone for years.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:42:23Z"
+}

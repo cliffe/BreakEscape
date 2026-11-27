@@ -1,0 +1,14 @@
+{
+  "key": "99d711e0fcd04732805b6312cf02ad4f",
+  "npc": "victoria_sterling",
+  "text": "Danny Foster's survey. One of mine.",
+  "delivery": "after a moment",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:47:35Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "4cc57939e85f00693a0e789124a74d90",
+  "npc": "trader_npc",
+  "text": "Asia's about to open. Need this.",
+  "voice": "Puck",
+  "style": "Young man, a cryptocurrency trader in his early twenties, British-Nigerian, jittery on caffeine and increasingly frightened by what he has noticed. Speak with a consistent south-east London (Peckham) accent throughout — do not shift to any other accent. Mid-to-high pitch; fast, nervy pace, over-explaining.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:09:39Z"
+}

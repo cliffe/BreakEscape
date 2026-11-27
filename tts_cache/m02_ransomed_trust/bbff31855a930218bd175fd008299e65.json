@@ -1,0 +1,13 @@
+{
+  "key": "bbff31855a930218bd175fd008299e65",
+  "npc": "narrator",
+  "text": "She reads the signature twice, then the extension, then looks at you over it.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:53:12Z"
+}

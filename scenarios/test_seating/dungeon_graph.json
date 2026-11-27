@@ -1,0 +1,47 @@
+{
+  "scenario": "test_seating",
+  "start_room": "seat_briefing",
+  "nodes": [
+    {
+      "id": "seat_briefing",
+      "label": "Briefing",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "seat_reception",
+      "label": "Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "seat_office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "seat_lounge",
+      "label": "Lounge",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "seat_briefing",
+      "to": "seat_reception",
+      "soft": false
+    },
+    {
+      "from": "seat_reception",
+      "to": "seat_office",
+      "soft": false
+    },
+    {
+      "from": "seat_office",
+      "to": "seat_lounge",
+      "soft": false
+    }
+  ]
+}

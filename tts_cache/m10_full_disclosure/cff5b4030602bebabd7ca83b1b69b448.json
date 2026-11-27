@@ -1,0 +1,21 @@
+{
+  "key": "cff5b4030602bebabd7ca83b1b69b448",
+  "npc": "ghost_phone",
+  "text": "One question, and then I'm gone for good. Did the board ever thank you?",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:05:39Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/cff5b4030602bebabd7ca83b1b69b448.mp3",
+    "clean_md5": "de8ed5ab87ac074bf5dc98ee01b5b67f",
+    "baked_md5": "298d46f122e6aaac80c1006b7115b5cf",
+    "baked": "2026-11-24"
+  }
+}

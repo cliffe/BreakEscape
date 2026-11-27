@@ -1,0 +1,13 @@
+{
+  "key": "d2a97a849dbe332f8a2802794490a2de",
+  "npc": "arakawa_post",
+  "text": "Holding the gate. Nothing's come up the road.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:57:49Z"
+}

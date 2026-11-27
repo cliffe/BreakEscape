@@ -1,0 +1,13 @@
+{
+  "key": "520de488545871ab35afad969e0edfec",
+  "npc": "ama_owusu",
+  "text": "That's how you look a weakness up. It doesn't tell you it's real here.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:32:15Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "2b0d934df186be8f911e82bbaa9dfbf8",
+  "npc": "narrator",
+  "text": "Her hand stops halfway. She weighs it, and leaves the radio where it is.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:08:03Z"
+}

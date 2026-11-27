@@ -1,0 +1,13 @@
+{
+  "key": "ef092e2b892c22573101cd892543769f",
+  "npc": "kit_graham_whitfield",
+  "text": "Fair enough. I'll ring them on the number on file, and report the email to Gwen.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:39:32Z"
+}

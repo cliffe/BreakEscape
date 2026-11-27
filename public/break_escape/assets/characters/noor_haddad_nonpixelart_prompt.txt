@@ -1,0 +1,10 @@
+Make portrait for Noor Haddad
+A slim Lebanese-American woman of about 34 from Dearborn, Michigan, with light olive skin, dark arched brows, and long wavy dark-brown hair pulled back into a loose low bun with a pencil pushed through it, a records clerk at a government archive working the late shift. Dark brown eyes with shadows of tiredness under them and a wary, careful, kind look. She wears a mustard-yellow knit cardigan with the sleeves pushed up over a plain black top, charcoal-grey trousers, a thin black belt, a fine gold chain necklace and a small silver wristwatch; her hands rest at her sides. Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (finale batch). Reframed with reframe_portrait.py --flip; unflipped original is noor_haddad_concept_1_raw.png. Approved by the user 2026-10-22; adopted from wip/noor_haddad_concept_1.png.

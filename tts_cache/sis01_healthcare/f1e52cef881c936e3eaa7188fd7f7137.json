@@ -1,0 +1,13 @@
+{
+  "key": "f1e52cef881c936e3eaa7188fd7f7137",
+  "npc": "helen_carver",
+  "text": "I'll notify them once we've contained this and know what was taken. One report, and an accurate one.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,72 @@
+{
+ "steps": [
+  {
+   "note": "Three server-side hubs, defaults: Voltage fought off the board (cut by hand); Asante argues the release and shows the schedule; Mercer is left to his console."
+  },
+  {
+   "talk": "voltage",
+   "picks": [
+    "Step away from the board",
+    "Stay down"
+   ]
+  },
+  {
+   "said": [
+    "Albion's agent. You came a long way to stand in my power room.",
+    "The shutter stays live until he says otherwise.",
+    "Then be quick about it.",
+    "I'm not going anywhere tonight."
+   ],
+   "notSaid": [
+    "Sensible. Leave me the console"
+   ]
+  },
+  {
+   "expect": {
+    "voltage_outcome": "fought",
+    "cut_by_hand": true
+   }
+  },
+  {
+   "talk": "asante",
+   "picks": [
+    "Who built this release",
+    "Some of those controllers will never get a patch",
+    "Show me the schedule"
+   ]
+  },
+  {
+   "said": [
+    "Don't touch my console and we'll get on.",
+    "I wrote it. I'd write it again.",
+    "You lot have been asking nicely for thirty years.",
+    "Then they should never have been on a network.",
+    "You'll read it anyway. There. First entries by city, and what goes in each.",
+    "I don't hide my work. That's the whole point of it."
+   ],
+   "notSaid": [
+    "Albion's agent."
+   ]
+  },
+  {
+   "expect": {
+    "asante_outcome": "talked"
+   }
+  },
+  {
+   "talk": "mercer",
+   "picks": [
+    "Back off"
+   ]
+  },
+  {
+   "said": [
+    "When the fourth submission is declined, somebody does this.",
+    "Sensible. Leave me the console and we'll get along."
+   ],
+   "notSaid": [
+    "I wrote it. I'd write it again."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Finale Calls and Credits",
+  "description": "Engine trial (finale F14): a forced phone call that rings again and resumes at the unanswered choice, a text arriving during the call, a second speaker in HaX's thread, and a computed closing card with per-person credits.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "finale_calls_credits",
+  "test_objective": "Forced call: Esc ignored, re-ring on close resumes at the unanswered choice; closing card, teaser and per-person credit blocks render from globals"
+}

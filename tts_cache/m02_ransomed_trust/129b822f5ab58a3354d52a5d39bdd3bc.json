@@ -1,0 +1,13 @@
+{
+  "key": "129b822f5ab58a3354d52a5d39bdd3bc",
+  "npc": "security_guard_patrol",
+  "text": "I have. And it stays in my pocket for now.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:56:53Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "893d84492f8d44ac6a38e3e144c0c7a7",
+  "npc": "joanne_pell",
+  "text": "Not at this hour, no thank you.",
+  "voice": "Zephyr",
+  "style": "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:20:42Z"
+}

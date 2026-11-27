@@ -1,0 +1,681 @@
+{
+ "mission": "ca05",
+ "id": "ca05_trailer_r1",
+ "theme": "ca",
+ "title": "Cyber Aware ca05 trailer, round 1 (16:9; 9:16 and 1:1 render from ca05_trailer_r1_narrow.json)",
+ "script": {
+  "heading": "ca05 trailer script (Fake sign-in pages)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca05_trailer_script.md (round 2) and docs/video/takes_ca05.md (recorded 23 Nov). Model ca01 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Quiet Reflection window from 24.014 s."
+ },
+ "fps": 30,
+ "length": 65.1,
+ "music": {
+  "track": "PeaceFolk/Quiet Reflection.mp3",
+  "analysis": "quiet_reflection_75.json",
+  "start": 24.014,
+  "length": 65.1,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Gently Decaying Again.mp3 @25.061",
+   "PeaceFolk/Quiet Reflection.mp3 @91.43"
+  ]
+ },
+ "beat": {
+  "bpm": 142.4,
+  "period": 0.4213,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 4.667,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_darren_prompt.trimmed.mkv",
+    "in": 5.43,
+    "out": 10.097
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t07 bark 1: cut at bark1_start 5.58 - 0.15 = 5.43; speech 6.02-9.98 (silencedetect) so out 10.097 is 0.12 s after the last word; bark 1 bubble to look_up 1.65 s (inside the 5 s cold-open limit); Darren at his workstation, office worker sprite, no hood | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.36,
+     "cy": 0.5,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.33,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.35,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "lines": [
+    {
+     "start": 0.59,
+     "end": 4.55,
+     "speaker": "Darren",
+     "text": "Voicemail's come through by email. Signing in to hear it."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Fake sign-in pages",
+    "company": "Quayholt Insurance",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.4
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 7.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_pages_list.listonly.trimmed.mkv",
+    "in": 7.1,
+    "out": 14.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05 list-only run: list mark 7.05 (the intro panel with rule text is 5.7-7.05, so in 7.1), list-held 15.05; five-row list, nothing picked, tally badge hidden | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "PAGES BEHIND LINKS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.62
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 3.6,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 14.2,
+    "out": 17.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: news-open 14.16, note-news 16.36 (yellow highlight, then noted by about 17.0); Quayholt Company news page, single sign-on move noted, public facts only | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.38,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 7.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_page_builder.trimmed.mkv",
+    "in": 4.9,
+    "out": 11.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03: builder-open 1.99, svc 5.79, address-chosen 7.94, padlock-chosen 10.40 (t03b: 2.00, 5.77, 7.83, 10.28); in keeps the 3.04 s offset to the address click so v4b starts 0.26 s before it; counter and score hidden, three addresses readable; never scored | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "LOOK-ALIKE PAGE BUILDER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.49,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "9:16": {
+     "cx": 0.52,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.52,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 46.1,
+    "out": 49.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: send 46.48, green landed panel on screen at once, landed-held 49.48; Hana's reply variant not used (v6 not voiced); composer shows no red-flag meter | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE SEND",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.42,
+     "cy": 0.4,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 57.65,
+    "out": 59.65
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: mail-closed 57.58, flip-up 57.59, flip-held 60.39; in 57.65 is after the mail client closes; heading 'Now it lands on you' and strip only (CSS hides the body and Continue) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.455,
+     "cy": 0.4,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "niamh_flip",
+   "type": "gameplay",
+   "duration": 4.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_niamh_flip.trimmed.mkv",
+    "in": 11.71,
+    "out": 16.31
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "RE-RECORDED 23 Nov (Niamh visemes, new bust framing). t04 Niamh N1: portrait up 9.06-10.6, speech 9.593-16.095 (silencedetect -35 dB d 0.08) with a pause 11.372-11.906; in 11.71 = pause end - 0.2 so no word is cut and the picture is after the portrait swap; plays 'Now take the other seat...' to 16.095, out 16.31 = speech end + 0.215, before n1_end 16.48 and chat-closed 17.03; mouth opens (teeth visible); old art and timings in takes/old_niamh_v1; no menu | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.355,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.67,
+     "cy": 0.377,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.667,
+     "cy": 0.377,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 0.2,
+     "end": 4.39,
+     "speaker": "Niamh",
+     "text": "Now take the other seat and check the pages that land behind links like yours."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true,
+    "16:9": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.0,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You check the pages"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "pages",
+   "type": "gameplay",
+   "duration": 10.733,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_pages_list.default.trimmed.mkv",
+    "in": 7.7,
+    "out": 18.433
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05 default run: list 6.70, row_open 11.10, card-held 18.10 (t05b: 6.80, 11.16, 18.16); the intro panel ends at the list mark so in is after it; row 'Your mailbox is 98% full' opened, address bar, padlock and heading on screen, body paragraph hidden by CSS, nothing pressed; out stays inside the held card (take runs 0.4 s past the end mark) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "PAGES BEHIND LINKS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.33,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.62
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "office",
+   "type": "gameplay",
+   "duration": 6.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_darren_prompt.trimmed.mkv",
+    "in": 11.02,
+    "out": 17.62
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t07 bark 2: bubble from 11.12 (bark2_start), speech 11.65-17.42, bubble clears at 18.59 (bark2_end); out 17.62 is 0.2 s after the last word; ends before the menu (never shown, never clicked) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.36,
+     "cy": 0.5,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.33,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.35,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "lines": [
+    {
+     "start": 0.63,
+     "end": 6.4,
+     "speaker": "Darren",
+     "text": "Password's in, and now my phone wants me to approve it. Fine to say yes?"
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Fake sign-in pages",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.787,
+   "end": 9.899,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 10.267,
+   "end": 13.819,
+   "text": "A copied sign-in page looks just like the real one.",
+   "caption": "A copied sign-in page\nlooks just like the real one.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 14.069,
+   "end": 16.829,
+   "text": "This episode: fake sign-in pages.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 17.267,
+   "end": 19.667,
+   "text": "First, you play the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 20.267,
+   "end": 22.811,
+   "text": "The company's own news gives you a reason.",
+   "caption": "The company's own news\ngives you a reason.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 23.867,
+   "end": 26.195,
+   "text": "Build the page from ready-made parts.",
+   "caption": "Build the page from\nready-made parts.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v4b",
+   "start": 26.445,
+   "end": 28.413,
+   "text": "Choose the address it would live at.",
+   "caption": "Choose the address\nit would live at.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v4b.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 30.867,
+   "end": 32.883,
+   "text": "Email the link to Hana.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v8a",
+   "start": 42.467,
+   "end": 45.227,
+   "text": "Five pages, each behind a link.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v8a.mp3"
+  },
+  {
+   "id": "v8b",
+   "start": 45.477,
+   "end": 47.205,
+   "text": "Every one has a padlock.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v8b.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 47.455,
+   "end": 50.911,
+   "text": "A page can look right and live somewhere else.",
+   "caption": "A page can look right\nand live somewhere else.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v10b",
+   "start": 51.161,
+   "end": 52.841,
+   "text": "Then a colleague asks.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v10b.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 59.8,
+   "end": 64.768,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+"imports": { "m08_nightshade_triple_agent": true },
+"steps": [
+{ "note": "R36: Nightshade's call at three points: cage still locked, cage open, and holding his file. HaX has the last word on every one." },
+{ "talk": "nightshade", "knot": "call", "picks": ["Why help me", "Noted"] },
+{ "said": ["I'd ask how the leave was", "Sorensen's card is on custom keys. Crack the keys first", "That plan cabinet isn't on her schedule", "I'd rather be useful than watched", "Every lock is a promise somebody made years ago", "He's right. I hate that he's right"],
+  "notSaid": ["You're past her gate", "So you've found my file", "She's been listening since before you picked up"] },
+{ "set": { "cage_opened": true } },
+{ "talk": "nightshade", "knot": "call", "picks": ["HaX is on this line", "Noted"] },
+{ "said": ["You're past her gate. The plan cabinet was never on her schedule", "She's been listening since before you picked up"],
+  "notSaid": ["Crack the keys first", "So you've found my file", "I'd rather be useful than watched"] },
+{ "set": { "nightshade_file_held": true } },
+{ "talk": "nightshade", "knot": "call", "picks": ["Why help me", "Noted"] },
+{ "said": ["So you've found my file. Never mind the boy in it. Look at the handwriting"],
+  "notSaid": ["You're past her gate", "Crack the keys first"] }
+]
+}

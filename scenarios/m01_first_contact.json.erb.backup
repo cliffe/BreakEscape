@@ -1,0 +1,2 @@
+<%# Backup of original file before restructuring %>
+<%= File.read('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scenarios/m01_first_contact.json.erb') %>

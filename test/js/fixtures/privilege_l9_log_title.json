@@ -1,0 +1,113 @@
+{
+  "startRoom": "office",
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "id": "dom_pc",
+          "type": "pc",
+          "name": "Domain PC",
+          "lockType": "login",
+          "locked": true,
+          "owner": "dana",
+          "domain": "corp",
+          "host": "dom-pc-01"
+        },
+        {
+          "id": "lab_pc",
+          "type": "pc",
+          "name": "Lab PC",
+          "lockType": "login",
+          "locked": true,
+          "owner": "lee",
+          "cachedAccounts": [
+            {
+              "npc": "lee"
+            },
+            {
+              "npc": "svc"
+            }
+          ]
+        },
+        {
+          "id": "notes",
+          "type": "notes",
+          "name": "Notes"
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dana",
+          "npcType": "person",
+          "creds": {
+            "username": "dana.k",
+            "password": "Dana-Pass-1",
+            "accountKind": "domain",
+            "domain": "corp"
+          }
+        },
+        {
+          "id": "lee",
+          "npcType": "person",
+          "creds": {
+            "username": "lee.m",
+            "password": "Lee-Pass-2",
+            "accountKind": "local",
+            "localTo": [
+              "lab_pc"
+            ],
+            "admin": true
+          }
+        },
+        {
+          "id": "bo",
+          "npcType": "person",
+          "creds": {
+            "username": "bo.r",
+            "password": "Bo-Pass-3"
+          },
+          "workarounds": [
+            {
+              "do": "borrow_session",
+              "pc": "dom_pc"
+            }
+          ]
+        },
+        {
+          "id": "svc",
+          "npcType": "person",
+          "accountOnly": true,
+          "staff": false,
+          "creds": {
+            "username": "svc_backup"
+          },
+          "displayName": "domain audit"
+        }
+      ],
+      "name": "Open office"
+    }
+  },
+  "credentials": {
+    "lab_lee": {
+      "kind": "hash",
+      "account": "lee",
+      "proof": {
+        "harvested": "lab_pc"
+      }
+    },
+    "lab_svc": {
+      "kind": "hash",
+      "account": "svc",
+      "proof": {
+        "harvested": "lab_pc"
+      }
+    }
+  },
+  "logSources": {
+    "dom_log": {
+      "title": "Domain audit"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "key": "b5b32fa8f4c8ffee8d806f3236450c36",
+  "npc": "eleanor_vance",
+  "text": "That's thorough. Let's talk about the other coverage issue: state attribution.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:53Z"
+}

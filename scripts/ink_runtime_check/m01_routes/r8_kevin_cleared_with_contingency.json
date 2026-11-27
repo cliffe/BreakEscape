@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R8: with the contingency file read, the planted evidence is answered with the exoneration branch and the evidence-left-visible outcome."},
+  {"set": {"framing_evidence_seen": true, "contingency_file_read": true}},
+  {"talk": "kevin", "knot": "hub", "picks": ["I have evidence that implicates you", "He's not. We have his contingency files", "Leave the contingency files visible"]},
+  {"said": ["He actually wrote down what he was planning to do to me", "So I'll be protected without even knowing how", "The forged email header alone should be enough"],
+   "notSaid": ["I understand you have a job to do", "Act normal. Okay. I can do that"]},
+  {"expect": {"kevin_choice": "evidence", "kevin_protected": true}}
+ ]
+}

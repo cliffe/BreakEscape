@@ -1,0 +1,13 @@
+{
+  "key": "0a86d451d6c77282b953a6e7834ce26f",
+  "npc": "nilesh_solanki",
+  "text": "And nobody gets told off for asking.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-23",
+  "recorded_at": "2026-11-23T02:41:54Z"
+}

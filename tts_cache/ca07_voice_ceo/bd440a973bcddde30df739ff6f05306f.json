@@ -1,0 +1,13 @@
+{
+  "key": "bd440a973bcddde30df739ff6f05306f",
+  "npc": "agnieszka_duda",
+  "text": "You didn't release that payment on the voice alone, so what sounded so urgent never left the building.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:08:48Z"
+}

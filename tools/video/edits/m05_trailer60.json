@@ -1,0 +1,1467 @@
+{
+ "mission": "m05",
+ "id": "m05_trailer60_v5",
+ "title": "SAFETYNET: Licence to Hack, m05 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v4 (2026-11-24): re-takes. hook and HaX stakes now from t01c_briefing (Netherton new mouth-only visemes; hook -0.12 s, stakes +9.963 s by silencedetect); cr_niamh from t24b_faces_break_room (Niamh new closer bust; 15.6333-15.9). v3 (2026-11-23): owner notes. No burned captions in 16:9 (crops keep them); hook and HaX stakes re-cut from t01b_briefing (Netherton was on male_spy art; now his own art and re-registered visemes): hook +0.557 s, stakes +4.019 s by silencedetect. Niamh's new bust still to come (t24 re-take). v2 (2026-11-23): night-turn J-cut now uses the Recruiter's 'Fanaticism is somebody else's department. I just staff the operation.' (t10 111.66-116.09) since D356 cut 'I find people the week before...' from the game; night_strike 60->54 frames, recruiter_night 48->54, no other shot moved. v1 (2026-11-23): first cut. Music Midnight Double Agent from 47.992 s (downbeat): quiet bar, lift at 12.78 on the Mission card cut, track drops at 59.66. Real Hacking slot is the m02 slate placeholder. Missing footage (Bernadette face, walks, espresso) cut around.",
+ "music": {
+  "track": "SpyAction/Midnight Double Agent.mp3",
+  "analysis": "midnight_double_agent_60.json",
+  "start": 47.992,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2.0,
+  "alternatives": [
+   "Midnight Double Agent window 50.123 (analysis best; opens on a hit)",
+   "Noir Encrypted Shadows (window 105.537)"
+  ]
+ },
+ "beat": {
+  "bpm": 112.65,
+  "period": 0.5326,
+  "offset": 0,
+  "note": "window times: bars every 2.1304 s from 0; lift 12.78 (Mission card -> stakes); hit 19.69; quiet build 0-12.8; track drops 59.66. Frame-aligned, snap false."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "Torres hidden: no face, name, office, mug text, subtitle or voice line naming him",
+  "t10 audio only 111.53-116.2 and 146.5-152.0 (Torres marks 11.61, 40.03, 80.82, 95.83, 117.85, 126.89)",
+  "dusting: canvas only",
+  "no codes, PINs, passwords or flags",
+  "no naming menu, no ending"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false
+  },
+  {
+   "id": "hook_netherton",
+   "type": "gameplay",
+   "duration": 5.2667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t01c_briefing.trimmed.mkv",
+    "in": 9.437,
+    "out": 14.7037
+   },
+   "note": "hook: audio from t01 8.0 (J-cut pre 1.0) so only the third sentence is heard (voice 8.12-13.82 by silencedetect; 'dislike.' ends 7.64); the bar shows the whole ink line, so UI-free with captions in every aspect",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 1.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Netherton premise line, no name"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "Someone inside a Home Office contractor is handing ENTROPY the crown jewels.",
+     "start": -0.88,
+     "end": 4.82
+    }
+   ]
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 5",
+    "Insider",
+    "Trading"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "stakes_hax",
+   "type": "gameplay",
+   "duration": 4.5667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t01c_briefing.trimmed.mkv",
+    "in": 43.032,
+    "out": 47.5987
+   },
+   "note": "HaX stakes, voice 29.24-33.44; out 33.62 before 'Early modelling' (34.33); bar shows only this line; captions 9:16/1:1",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "stakes figure (minutes), allowed; no casualty line"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent HaX",
+     "text": "Every ambulance, fire and police call through it runs six to eleven minutes slower.",
+     "start": 0.19,
+     "end": 4.39
+    }
+   ]
+  },
+  {
+   "id": "walk_patricia",
+   "type": "gameplay",
+   "duration": 0.9333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_patricia_vetted.trimmed.mkv",
+    "in": 1.4,
+    "out": 2.3333
+   },
+   "note": "short walk to Patricia in her office (stand-in for the missing two-room walk)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.6,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.55,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.58,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "short walk to Patricia in her office (stand-in for the missing two-room walk)"
+   }
+  },
+  {
+   "id": "patricia_vetted",
+   "type": "gameplay",
+   "duration": 4.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_patricia_vetted.trimmed.mkv",
+    "in": 53.85,
+    "out": 58.1167
+   },
+   "note": "voice 53.97-57.76; out 58.12, menu first at 58.5",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "premise line, no name"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Patricia Morgan",
+     "text": "All vetted. All trusted. One of them shouldn't be.",
+     "start": 0.12,
+     "end": 3.91
+    }
+   ]
+  },
+  {
+   "id": "m_lockpick",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_lockpick.trimmed.mkv",
+    "in": 6.9,
+    "out": 7.9
+   },
+   "note": "filing-cabinet lockpick, pins setting (out long before contents at 11.97)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.6
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "filing-cabinet lockpick, pins setting (out long before contents at 11.97)"
+   }
+  },
+  {
+   "id": "m_clone",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_rfid_clone.trimmed.mkv",
+    "in": 4.2,
+    "out": 5.2
+   },
+   "note": "cloner saved tick; data rows blurred in the take, no number",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "cloner saved tick; data rows blurred in the take, no number"
+   }
+  },
+  {
+   "id": "card_insider",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Name the",
+    "Insider"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "owen_spare",
+   "type": "gameplay",
+   "duration": 6.0667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t21_owen_spare.trimmed.mkv",
+    "in": 38.95,
+    "out": 45.0167
+   },
+   "note": "voice 39.08-44.77; out 45.02 before 'Mind, a spare' (45.62)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "evidence points at Halloran, the red herring; no Torres"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Owen Gallagher",
+     "text": "That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.",
+     "start": 0.13,
+     "end": 5.82
+    }
+   ]
+  },
+  {
+   "id": "halloran_plea",
+   "type": "gameplay",
+   "duration": 2.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_halloran_wrong.trimmed.mkv",
+    "in": 18.7,
+    "out": 21.1
+   },
+   "note": "trimmed to the second sentence (voice 18.80-20.98); bar shows the whole line, so UI-free with captions in every aspect",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.75,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.75,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "red herring's plea, no reveal"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Dr Ruth Halloran",
+     "text": "And I hope to God you're wrong about my team.",
+     "start": 0.1,
+     "end": 2.28
+    }
+   ]
+  },
+  {
+   "id": "patricia_who",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t23_patricia_who.trimmed.mkv",
+    "in": 70.6,
+    "out": 72.4
+   },
+   "note": "voice 70.74-71.97; out 72.40, menu at 72.83 (no name picked)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ask only, no menu"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Patricia Morgan",
+     "text": "Go on, then. Who?",
+     "start": 0.14,
+     "end": 1.37
+    }
+   ]
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "real_hacking",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m05_console_script_clip.mp4",
+    "in": 0.4,
+    "out": 2.2
+   },
+   "note": "v5: m05 attack-script read (vm_console_full_RAW_s959 67.0-69.6; crop x0-500 y342-558 at 3.45x nearest on #21242D): msf resource lines with shell variables only; account-name line and base64 blob above the crop never appear (CONSOLE_CLIPS.md, 67fa6f631). Replaces the nmap recon (owner note 7).",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "placeholder": false,
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "script lines with variables only; no flag, password or credential"
+   }
+  },
+  {
+   "id": "night_dark",
+   "type": "gameplay",
+   "duration": 1.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11b_night_corridor.trimmed.mkv",
+    "in": 79.0,
+    "out": 80.6
+   },
+   "note": "night turn: corridor lights time out at 79.5 (empty corridor, player in the lobby); 2x nearest; Recruiter voice J-cut starts here; caption carries the line (lines are caption-only; the voice and its duck belong to recruiter_night's pre) | v5: retake t11b after the lobby fix (5fc162203): the 999 ROLLOUT screen no longer covers the north door (owner note 5).",
+   "framing": {
+    "16:9": {
+     "cx": 0.333,
+     "cy": 0.25,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.47,
+     "cy": 0.45,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.42,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty corridor, no NPC"
+   },
+   "lines": [
+    {
+     "speaker": "The Recruiter",
+     "text": "Fanaticism is somebody else's department. I just staff the operation.",
+     "start": 0.66,
+     "end": 99
+    }
+   ]
+  },
+  {
+   "id": "night_strike",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11b_night_corridor.trimmed.mkv",
+    "in": 88.0,
+    "out": 89.8
+   },
+   "note": "player walks back up, the corridor light strikes 88-89.5; 2x nearest (lines are caption-only; the voice and its duck belong to recruiter_night's pre) | v5: retake t11b after the lobby fix (5fc162203): the 999 ROLLOUT screen no longer covers the north door (owner note 5).",
+   "framing": {
+    "16:9": {
+     "cx": 0.333,
+     "cy": 0.4,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.44,
+     "cy": 0.45,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.42,
+     "cy": 0.4,
+     "zoom": 2
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty corridor"
+   },
+   "lines": [
+    {
+     "speaker": "The Recruiter",
+     "text": "Fanaticism is somebody else's department. I just staff the operation.",
+     "start": 0,
+     "end": 99
+    }
+   ]
+  },
+  {
+   "id": "recruiter_night",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_recruiter_call.trimmed.mkv",
+    "in": 114.4,
+    "out": 116.2
+   },
+   "note": "cut to the phone on 'I just staff' (114.48); call screen shows 'I'm a recruiter who is very good at her job...' bold with 'YOU: You're a fanatic dressed up as a headhunter.' dimmed (clean). Audio J-cut pre 2.87: take audio 111.53-116.20 ONLY (a -33 dB blip at 111.45-111.52 stays out) ('her job.' ends 111.27; voice 111.66-116.09; next subtitle, naming Torres, at 117.85). No caption: the phone shows the line",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.333,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.333,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 2.87,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Recruiter staffing line, names no one; window 111.53-116.2"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Recruiter",
+     "text": "Fanaticism is somebody else's department. I just staff the operation.",
+     "start": -2.74,
+     "end": 1.69
+    }
+   ]
+  },
+  {
+   "id": "card_upload",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Before the",
+    "Final Upload"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "cr_password",
+   "type": "gameplay",
+   "duration": 0.4667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t17_password_panel.trimmed.mkv",
+    "in": 5.0,
+    "out": 5.4667
+   },
+   "note": "password panel, masked dots, never submitted",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.495,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.495,
+     "zoom": 0.9
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.495,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "password panel, masked dots, never submitted"
+   }
+  },
+  {
+   "id": "cr_lisa",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t24_faces_break_room.trimmed.mkv",
+    "in": 3.4,
+    "out": 3.8
+   },
+   "note": "Lisa Park face, narrator bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.67,
+     "cy": 0.25,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.67,
+     "cy": 0.31,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.67,
+     "cy": 0.28,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_lockbox",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_lockbox_flag.trimmed.mkv",
+    "in": 7.4,
+    "out": 7.8
+   },
+   "note": "PIN pad '729_' (not the code), ENTER never pressed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "three wrong digits"
+   }
+  },
+  {
+   "id": "cr_thandiwe",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t24_faces_break_room.trimmed.mkv",
+    "in": 9.5,
+    "out": 9.8333
+   },
+   "note": "Thandiwe Moyo face",
+   "framing": {
+    "16:9": {
+     "cx": 0.71,
+     "cy": 0.25,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.71,
+     "cy": 0.31,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.71,
+     "cy": 0.28,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_dust",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_dust_brush.trimmed.mkv",
+    "in": 17.5,
+    "out": 17.8333
+   },
+   "note": "dusting canvas ONLY (title says Mug; right panel off)",
+   "framing": {
+    "16:9": {
+     "cx": 0.402,
+     "cy": 0.426,
+     "zoom": 4
+    },
+    "9:16": {
+     "cx": 0.402,
+     "cy": 0.426,
+     "zoom": 2.25
+    },
+    "1:1": {
+     "cx": 0.402,
+     "cy": 0.426,
+     "zoom": 3
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ridges only, no mug text, no cards"
+   }
+  },
+  {
+   "id": "cr_niamh",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t24b_faces_break_room.trimmed.mkv",
+    "in": 15.6333,
+    "out": 15.9
+   },
+   "note": "Niamh Doherty face",
+   "framing": {
+    "16:9": {
+     "cx": 0.68,
+     "cy": 0.25,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.31,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.28,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_bio",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_biometric_door.trimmed.mkv",
+    "in": 5.0,
+    "out": 5.2667
+   },
+   "note": "biometric reader before a scan, unidentified lift",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.9
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "no match, no name"
+   }
+  },
+  {
+   "id": "cr_nightshade",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_briefing.trimmed.mkv",
+    "in": 18.4,
+    "out": 18.6333
+   },
+   "note": "Nightshade face (briefing)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.25,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.31,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.28,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_reader",
+   "type": "gameplay",
+   "duration": 0.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_rfid_reader.trimmed.mkv",
+    "in": 8.5,
+    "out": 8.7
+   },
+   "note": "RFID reader Access Granted",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "RFID reader Access Granted"
+   }
+  },
+  {
+   "id": "cr_phone",
+   "type": "gameplay",
+   "duration": 0.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_phone.trimmed.mkv",
+    "in": 8.0,
+    "out": 8.1667
+   },
+   "note": "HaX thread with three reply choices",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.333,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.333,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "HaX thread with three reply choices"
+   }
+  },
+  {
+   "id": "cr_flag",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_lockbox_flag.trimmed.mkv",
+    "in": 14.0,
+    "out": 14.1333
+   },
+   "note": "flag station, nothing submitted",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.478,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.478,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.478,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty field"
+   }
+  },
+  {
+   "id": "recruiter_wide",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_recruiter_call.trimmed.mkv",
+    "in": 148.55,
+    "out": 149.75
+   },
+   "note": "price line, J-cut pre 1.95 under the crescendo (audio from 146.60, inside 146.5-152.0); phone shows it bold with 'Leave it out...' dimmed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.333,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.333,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 1.95,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "menace line, no Torres"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Recruiter",
+     "text": "Everyone has a price, agent.",
+     "start": -1.72,
+     "end": 0.85
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "id": "recruiter_close",
+   "type": "gameplay",
+   "duration": 2.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_recruiter_call.trimmed.mkv",
+    "in": 149.75,
+    "out": 151.95
+   },
+   "note": "hard cut in the pause (149.40-150.07) to the headshot close-up, subtitle box off; out 151.95 < 152.0 (menu 152.7)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.25,
+     "zoom": 4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.231,
+     "zoom": 2.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.25,
+     "zoom": 3
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "headshot, no menu"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Recruiter",
+     "text": "I'm asking what yours is.",
+     "start": 0.32,
+     "end": 1.9
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false
+  }
+ ]
+}

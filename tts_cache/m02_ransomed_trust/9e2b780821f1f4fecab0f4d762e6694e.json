@@ -1,0 +1,13 @@
+{
+  "key": "9e2b780821f1f4fecab0f4d762e6694e",
+  "npc": "closing_debrief_trigger",
+  "text": "Six people died in the downtime. That also matters.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-12",
+  "recorded_at": "2026-11-12T00:01:43Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "949c7de9adc9213e8bac559f2b2a26c3",
+  "npc": "yusuf_demir",
+  "text": "I ran security in-house for years. Policies, audits, the lot.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:43:23Z"
+}

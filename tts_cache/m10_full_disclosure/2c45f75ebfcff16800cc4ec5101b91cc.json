@@ -1,0 +1,13 @@
+{
+  "key": "2c45f75ebfcff16800cc4ec5101b91cc",
+  "npc": "tunnel_guard",
+  "text": "Huh. It did say a name. Go on, then. Fast.",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:18:03Z"
+}

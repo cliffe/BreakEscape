@@ -1,0 +1,13 @@
+{
+  "key": "62ba9602621f18163f8041b62dd7e966",
+  "npc": "trader_npc",
+  "text": "Eight, nine hundred million a day, dollar equivalent. Irina's kit holds up.",
+  "voice": "Puck",
+  "style": "Young man, a cryptocurrency trader in his early twenties, British-Nigerian, jittery on caffeine and increasingly frightened by what he has noticed. Speak with a consistent south-east London (Peckham) accent throughout — do not shift to any other accent. Mid-to-high pitch; fast, nervy pace, over-explaining.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:06:00Z"
+}

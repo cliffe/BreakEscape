@@ -1,0 +1,13 @@
+{
+  "key": "c3f31de510b95d79108bd1c037ad0f76",
+  "npc": "niamh_doherty",
+  "text": "The kiosk takes you through a morning of fake downloads, 'verify you are human' boxes and pop-ups that want you to call.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T17:15:30Z"
+}

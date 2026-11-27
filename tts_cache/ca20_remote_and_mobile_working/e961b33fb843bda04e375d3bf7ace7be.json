@@ -1,0 +1,13 @@
+{
+  "key": "e961b33fb843bda04e375d3bf7ace7be",
+  "npc": "zainab_hussain",
+  "text": "A screen someone reads, a call someone hears, a bag left for a minute, a password typed into the wrong Wi-Fi page.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca20_remote_and_mobile_working",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:40Z"
+}

@@ -1,0 +1,22 @@
+Engine sweep R3: the fix commit's tests run against the code before it (ba1300ab1^), and two mutations.
+Method: git archive ba1300ab1^ (public/break_escape/js, test/js, scripts, bin) into a scratch dir, the five test files
+from ba1300ab1 copied over it, node_modules symlinked from the main checkout, each file run with plain `node`.
+
+ba1300ab1^ + new tests:
+  validator-phone-calls     not ok 32 (callbackWhen ||/non-global), not ok 33 (ringWhile ||/non-global)   pass 32 fail 2
+  phone-ringwhile           not ok 6 (R2 n1 no re-emit), not ok 7 (R2 n2 no clobber)                    pass 6  fail 2
+  phone-outgoing-ui         not ok 8 (_renderCallChrome caption at render)                             fail 2 (the other,
+                            not ok 6 css, is the scratch copy lacking public/break_escape/css)
+  phone-call-terminal-beat  pass 8 fail 0   (n5: pins correct code, so it passes before; see mutations)
+  phone-outgoing-ringer     pass 15 fail 0  (n6: likewise)
+
+Mutations on the same scratch copy:
+  phone-chat-minigame.js:1864 closeConversation -> _completeRingerCallWithBeat(true)   => not ok 6 (n5 test catches it)
+  phone-chat-minigame.js:1571 _exitRingerCall   -> _completeRingerCallWithBeat(false)  => not ok 7 (n5 test catches it)
+  phone-ringer.js:451 dropDisplaced marks d.callOpened = true                          => not ok 12 (n6 test catches it)
+
+At ba1300ab1 (worktree, under flock): bin/test-js phone-*, social-lab-*, pretext-*, validator-phone-calls,
+validator-social-lab: 62 passed, 0 failed. Rails mission_test.rb + task_set_global_test.rb: 20 runs, 0 failures.
+
+Validator, every scenario (179 scenario.json.erb), --no-graph, ba1300ab1^ vs ba1300ab1 scripts/lib over the same tree:
+  phone-call lines identical in all 179; no "ERROR: phone calls" anywhere; 7 pre-existing phone-call warnings.

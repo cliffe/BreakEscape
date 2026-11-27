@@ -1,0 +1,13 @@
+{
+  "key": "9f4c7dab94bfdfa0a93b7ea64471319d",
+  "npc": "julian_sallow",
+  "text": "Long enough to know a quiet floor isn't a calm one.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:17Z"
+}

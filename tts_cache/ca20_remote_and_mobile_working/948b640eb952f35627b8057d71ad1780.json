@@ -1,0 +1,13 @@
+{
+  "key": "948b640eb952f35627b8057d71ad1780",
+  "npc": "zainab_hussain",
+  "text": "Treat a network named like the venue's as a trap, and ring in the moment a device goes missing. Reported fast, it's locked in minutes.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca20_remote_and_mobile_working",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:34Z"
+}

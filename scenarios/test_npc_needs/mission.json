@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: NPC Needs",
+  "description": "Throwaway engine test for the generic NPC needs system: one NPC leaves its desk for a drink and comes back, one collects a dropped tagged item and uses an object, one has no needs and never moves. Generic behaviour only.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 3,
+  "test_type": "npc_needs",
+  "test_objective": "Verify needs decay, urgent need job and return, interest pickup and use, npc_used payload and playerNearby, untouched NPC, and drop persistence across a reload"
+}

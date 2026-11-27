@@ -1,0 +1,13 @@
+{
+  "key": "09e6e3ce3975781aec03afe1aac34fca",
+  "npc": "ama_owusu",
+  "text": "Picture that password on the fake page. The account behind it reaches client files and the finance controller's mail.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:47:28Z"
+}

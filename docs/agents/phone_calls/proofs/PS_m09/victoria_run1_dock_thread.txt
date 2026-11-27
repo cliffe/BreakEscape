@@ -1,0 +1,13 @@
+game 2259 (victoria)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+  room: "restricted_stacks"
+"opened"
+  after opening HaX by hand: "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false"
+  WARN choice /Something else/ never showed
+  "no choice /Something else/: 1. The office door. I'll pick it. / 2. The shutter. I'll time his round."
+  WARN choice /Victoria/ never showed
+  "no choice /Victoria/: 1. The office door. I'll pick it. / 2. The shutter. I'll time his round."
+  after the code: "maintenance_code_used=false cage_opened=false"  "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false"
+shot victoria_hub_after_code
+GATE FAILED: wait_ring nightshade_phone 12
+{"ringer":null,"queue":0,"callActive":false,"closed":false,"banner":null,"bannerImg":null,"mg":null,"globals":{}}

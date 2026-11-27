@@ -1,0 +1,13 @@
+{
+  "key": "73ec5af28c51cecd13e14cb4f9e8b2b5",
+  "npc": "narrator",
+  "text": "Quintero comes in from the lock and takes Kowalczyk by the arm. Kowalczyk doesn't fight her.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:40:06Z"
+}

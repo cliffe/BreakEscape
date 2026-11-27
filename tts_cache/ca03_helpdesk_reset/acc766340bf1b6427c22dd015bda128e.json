@@ -1,0 +1,13 @@
+{
+  "key": "acc766340bf1b6427c22dd015bda128e",
+  "npc": "darren_price",
+  "text": "That's the desk covered from both seats, thanks.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:43Z"
+}

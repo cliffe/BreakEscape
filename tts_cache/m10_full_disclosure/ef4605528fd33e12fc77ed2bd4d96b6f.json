@@ -1,0 +1,13 @@
+{
+  "key": "ef4605528fd33e12fc77ed2bd4d96b6f",
+  "npc": "director_netherton",
+  "text": "Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:54:40Z"
+}

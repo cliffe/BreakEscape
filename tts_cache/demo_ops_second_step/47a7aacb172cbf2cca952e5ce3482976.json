@@ -1,0 +1,13 @@
+{
+  "key": "47a7aacb172cbf2cca952e5ce3482976",
+  "npc": "darren_price",
+  "text": "Quiet one today, isn't it?",
+  "voice": "Orus",
+  "style": "Operations coordinator at Merrin & Sallow, in his 40s, easily flustered and quick to give in. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:02:37Z"
+}

@@ -1,0 +1,3 @@
+
+## 2026-11-25 v2 edit list (m09_trailer60_v2, not rendered)
+Owner notes applied. Music Midnight Trigger from 93.0 s. card_vig dropped. vig_password now after card_real, before the console. Dillard starts at take 15.0 (portrait open, pop-in gone, line 15.28-19.60 whole, 4.7 s). hook_netherton 4.4 s (line ends 10.32), flash 10.4-11.5, Mission 9 card on the 11.5 beat. Noor unchanged (slot and length), pending the visemes fix and re-take. All cuts re-fitted to the beat grid (0.5231 s, half beats where needed); filler fill_lockpick (t23 6.5-7.55) opens the crescendo, which is 5 frames shorter. Ending_wide/close cut on 48.64, CTA at 52.0. Dillard framing re-centred in 9:16 (cx 0.75) and 1:1 (cx 0.7) after a frame check. Lint: 0 errors, 1 expected placeholder warning.

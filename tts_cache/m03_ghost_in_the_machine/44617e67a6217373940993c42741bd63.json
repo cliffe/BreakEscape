@@ -1,0 +1,13 @@
+{
+  "key": "44617e67a6217373940993c42741bd63",
+  "npc": "danny_foster",
+  "text": "I read every article. I could tell you the ward layout from memory because I drew it. I keep thinking if I'd asked one more question --",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:36:53Z"
+}

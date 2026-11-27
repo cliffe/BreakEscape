@@ -1,0 +1,13 @@
+{
+  "key": "9b81b9aebfba71f3bf3e4ee68cd13b5c",
+  "npc": "kit_niamh_doherty",
+  "text": "Phones haven't stopped today.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:00:37Z"
+}

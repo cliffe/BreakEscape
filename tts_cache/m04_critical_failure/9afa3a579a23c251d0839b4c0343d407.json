@@ -1,0 +1,13 @@
+{
+  "key": "9afa3a579a23c251d0839b4c0343d407",
+  "npc": "agent_nightshade",
+  "text": "Get me a real reading off that floor, and I'll tell you how much time we actually have.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:35:35Z"
+}

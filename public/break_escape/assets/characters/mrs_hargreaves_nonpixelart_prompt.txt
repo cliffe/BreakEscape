@@ -1,0 +1,12 @@
+Make portrait for Mrs Hargreaves
+An elderly frail white British woman in her seventies, a critically ill hospital patient lying in an intensive care bed on an ECMO life-support machine. Greying brown hair spread against a pale green pillow, a very pale drawn tired face, eyes barely open. A thin nasal oxygen cannula and monitoring leads. A green hospital blanket drawn up over her chest. Fragile, weak, exhausted.
+Head resting on the pillow, face angled in a three-quarter view toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the patient lying propped up in a hospital bed, upper body and head on the pillow with a green hospital blanket drawn up over the chest, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism. Smooth vector linework, NOT pixel art.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background solid warm grey.
+# Bedridden patient: in-bed framing instead of the standing hips-up crop. Bed sprite (objects/bed2.png) used as a DESCRIPTION guide only, NOT as a Gemini reference image -- attaching the pixel sprite makes Gemini render the whole portrait in pixel-art style.

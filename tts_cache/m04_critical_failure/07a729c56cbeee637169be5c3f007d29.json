@@ -1,0 +1,13 @@
+{
+  "key": "07a729c56cbeee637169be5c3f007d29",
+  "npc": "narrator",
+  "text": "The silence goes on a beat too long.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:08:57Z"
+}

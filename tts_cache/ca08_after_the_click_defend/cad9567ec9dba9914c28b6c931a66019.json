@@ -1,0 +1,13 @@
+{
+  "key": "cad9567ec9dba9914c28b6c931a66019",
+  "npc": "anjali_rao",
+  "text": "Unreported, the account stays open to them. They could send messages in Ayaan's name, lock him out and reach the shared drive.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:47:56Z"
+}

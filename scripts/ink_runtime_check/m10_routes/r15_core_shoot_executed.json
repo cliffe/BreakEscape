@@ -1,0 +1,79 @@
+{
+ "steps": [
+  {
+   "note": "Core, standing: Shoot him where he stands is warned about, and Do it is the executed ending (the media story runs even without m07)."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Zero Day has it. You didn't stop that one",
+    "Still HaX."
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Someone corrected your sheet",
+    "Go on.",
+    "Only a shock",
+    "And the last one",
+    "Better you",
+    "Stop it",
+    "Put him through",
+    "And if we keep them",
+    "And if ours go",
+    "There's a third way"
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Secure it",
+    "Shoot him where he stands",
+    "Do it"
+   ]
+  },
+  {
+   "said": [
+    "If you fire now, it's an execution, and HaX is on the line.",
+    "He is still looking at you when you fire.",
+    "takes the weapon out of your hand"
+   ],
+   "notSaid": [
+    "A courtroom, then."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "executed",
+    "media_story_ran": true
+   }
+  }
+ ]
+}

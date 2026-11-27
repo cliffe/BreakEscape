@@ -1,0 +1,21 @@
+{
+  "key": "79f1b8554614478ab1a332a6bf71d7df",
+  "npc": "ghost",
+  "text": "No. Nothing is. I'd be insulted if you'd taken it at face value.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:28:09Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/79f1b8554614478ab1a332a6bf71d7df.mp3",
+    "clean_md5": "61c0b908b29a10743cb2cfb09926da42",
+    "baked_md5": "b1be77cb435b7a9842e48e57aee7c523",
+    "baked": "2026-11-24"
+  }
+}

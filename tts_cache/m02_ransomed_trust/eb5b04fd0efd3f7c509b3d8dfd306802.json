@@ -1,0 +1,13 @@
+{
+  "key": "eb5b04fd0efd3f7c509b3d8dfd306802",
+  "npc": "narrator",
+  "text": "He nods at the sticky note on the monitor bezel.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:54:20Z"
+}

@@ -1,0 +1,267 @@
+
+## R32 (blind run A fixes): HaX gives the fight controls as the briefing closes, before Hollis can see the player. Every choice that starts a fight is marked '(Fight him.)' and warned in narration (Hollis, Park, Mercer); Park's way out is marked, and on the second visit says there won't be another. Hollis's in-fight texts add only what the early text didn't. The hands-down text comes once, on the first KO. The SCADA keypad's case hint (after a near miss only, since the post-engine follow-ups), the flag-3 'window just shut' text, the 'I'm stuck' line, Hollis's bluff reply and Elena's desk-summary choice.
+
+--- briefing ---
+  Narrator: Two forty-one in the morning, Pacific time. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
+  Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
+  Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
+  Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+  Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
+  Narrator: The Portland pin stops blinking and goes solid.
+  Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations. Eight point four million people in Washington, Oregon and Northern California.
+  Director Magnus Netherton: A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside.
+  Director Magnus Netherton: You have your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
+     (5 options)
+ > Understood. Talk to me about the other three.
+  Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, three twenty-four by the dashboard clock.
+  Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
+  Director Magnus Netherton: The other two go unanswered.
+  Narrator: The line holds for a second longer than a bad connection would explain.
+  Director Magnus Netherton: Fracture, in Washington. Trojan Horse, outside Austin. Meltdown, in San Francisco. Ask about any of them, in any order.
+  Director Magnus Netherton: The desk's summary is on your handset if you want the figures on paper. The team needs your call before you are through the gate.
+     [0] Walk me through Fracture.
+     [1] Walk me through Trojan Horse.
+     [2] Walk me through Meltdown.
+     [3] Skip the rest. Where do you want them?
+     [4] I've made the call.
+  [stopped: no pick]
+   [text agent_0x99 +2500ms] The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything.
+   [PASS] said: "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything."
+   {set {"team_assigned":true,"team_assignment":"fracture"}}
+      [mapping agent_0x99: set hurt_line_said=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   [text agent_0x99 +2000ms] Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during.
+   {event player_spotted:ray_hollis}
+   [opens ray_hollis @start (person-chat)]
+
+--- hollis @start ---
+  Narrator: He clocks you at thirty feet. His hand goes to his belt before his face moves. The flashlight finds your chest.
+  Ray Hollis: Building's evacuating. So you're lost, or you're the other thing.
+     (4 options)
+ > I'm on the contractor list. Check it.
+  Narrator: He doesn't check a list. He watches your hands.
+  Ray Hollis: Contractors came out with everyone else. I walked them out myself.
+  Ray Hollis: Nice try. Keep your hands where I can see them.
+     (4 options)
+ > Walk at him. "I'm not here to fight you, Ray."
+  Narrator: He backs into the turnstile frame. Nowhere left to go. One more push and this turns into a fight.
+  Ray Hollis: Stay there. STAY THERE.
+     [0] Put it down. (Fight him.)
+     [1] I'm stepping back. Look at me. I'm stepping back.
+  [stopped: no pick]
+   [PASS] said: "Nice try. Keep your hands where I can see them."
+   [PASS] said: "One more push and this turns into a fight."
+   [PASS] said: "[choice] Put it down. (Fight him.)"
+   [PASS] said: "[choice] I'm stepping back."
+   [PASS] not said: "Try again, and stand still"
+
+--- hollis @hostile_option ---
+  Narrator: He backs into the turnstile frame. Nowhere left to go. One more push and this turns into a fight.
+  Ray Hollis: Stay there. STAY THERE.
+     (2 options)
+ > Put it down. (Fight him.)
+  Ray Hollis: I can't afford you. I'm sorry. I mean it.
+  Narrator: He comes off the frame at you with his fists up. This is going to be a fight.
+      [ink: hollis_resolved="ko"]
+      [set_global hollis_resolved=ko]
+      [engine: ray_hollis hostile]
+   [text agent_0x99 +1000ms] He's coming for you. Fists up, face him, hit him. Q a second time throws the harder punch.
+   [text agent_0x99 +5500ms] He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else.
+  [chat closes]
+   [PASS] said: "He comes off the frame at you with his fists up. This is going to be a fight."
+   [PASS] said: "Fists up, face him, hit him. Q a second time throws the harder punch."
+   [PASS] said: "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."
+   [PASS] not said: "Q switches to fists"
+   [PASS] not said: "Keep pressing Q until the open hand shows"
+   {ko ray_hollis}
+      [task: clear_the_checkpoint (taskOnKO)]
+   [text agent_0x99 +2000ms] Hollis is down. His badge should be on the floor by him. Or the badge station behind his desk prints one, if you find its PIN.
+      [mapping agent_0x99: set hands_down_said=true]
+   [text agent_0x99 +7000ms] Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open.
+   [PASS] said: "Hollis is down"
+   [PASS] said: "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open."
+   {pickup hollis_server_badge}
+      [kit: Facility Access Badge -- Server Zone]
+      [mapping agent_0x99: set badge_obtained=true]
+   {enter operations_floor}
+      [mapping agent_0x99: set inside_reached=true]
+      [mapping the_architect: set architect_contact=true]
+   [text the_architect +5000ms] Agent 0x00.
+   {enter server_room}
+      [mapping agent_0x99: set server_hall_reached=true]
+      [aim unlocked: reach_the_control_room,trace_the_intrusion]
+      [mapping agent_0x99: set lockpicking_guide_offered=true]
+   [text agent_0x99 +9000ms] Plant door, south side of this hall, is a keyed lock. There's a key on the ops floor, but your picks will open it. Want the lockpicking guide?
+   {event object_interacted}
+      [mapping agent_0x99: set vm_terminal_used=true]
+      [mapping agent_0x99: set recon_guide_offered=true]
+      [mapping agent_0x99: set nfs_guide_offered=true]
+   [text agent_0x99 +1500ms] Your attack box. Map the host first. NFS is the door they left open, and a listener on it talks too much. Recon guide, or the NFS and netcat one?
+
+--- phone @hub ---
+     (5 options)
+ > I'm stuck on something.
+  Tell me where.
+     (3 options)
+ > Never mind.
+     [0] Talk to me about the two we're not covering.
+     [1] About the people in here.
+     [2] I'm stuck on something.
+     [3] Where do I stand?
+     [4] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "Tell me where."
+   [PASS] said: "[choice] I'm on the Kali box. Where do I start on their host?"
+
+--- elena ---
+      [task: question_elena]
+      [set_global elena_met=true]
+  Narrator: She is kneeling at the SCADA backup rack, a laptop on one knee and a flashlight in her teeth. She sees you, and does not get up.
+  Elena Rodriguez: If you're one of his, you can tell him it isn't working and I'm not stopping.
+  Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish this rack first.
+     (3 options)
+ > SAFETYNET. Hands where I can see them.
+  Elena Rodriguez: *lifts both hands, unimpressed* There. Now what? You've got as little time as I have, and you're spending it on me.
+     (5 options)
+ > What were you told this was?
+  Elena Rodriguez: Six hours. One region. Ten at night to four in the morning, on a Sunday in September, when nobody needs the heating.
+  Elena Rodriguez: It's December. It's below freezing out there.
+  Elena Rodriguez: Hospitals, dialysis, water treatment, all carved out. I asked about each one, and got a schedule with all three on it.
+  Elena Rodriguez: Long enough that the committee that's ignored this grid for eleven years would have to read about it. Nobody hurt.
+  Elena Rodriguez: That was the plan I agreed to. I have the version I signed off. It's on that laptop.
+     (5 options)
+ > The other three operations tonight. What were you told about them?
+  Narrator: She stops working. For the first time, both her hands are still.
+  Elena Rodriguez: Told? Nothing. I was copied on their schedule. What were you told about Austin?
+     [0] The desk summary says ninety days dormant. No deaths projected.
+     [1] Why Austin?
+  [stopped: no pick]
+   [PASS] said: "[choice] The desk summary says ninety days dormant. No deaths projected."
+   [PASS] not said: "Dormant ninety days. No projected fatalities. That's our brief."
+   {set {"scada_password_found":true}}
+   {event door_unlock_attempt}
+   [PASS] not said: "Capital C, capital W"
+   {event door_unlock_failed:scada_control}
+   [PASS] not said: "Capital C, capital W"
+   {event door_unlock_failed:scada_control}
+   [text agent_0x99 +800ms] Right word, wrong case. Capital C, capital W.
+   [PASS] said: "Right word, wrong case. Capital C, capital W."
+   {enter generator_room}
+      [mapping agent_0x99: set generator_hall_reached=true]
+   {enter cable_vault}
+      [mapping agent_0x99: set vault_entered=true]
+   [opens thomas_park @start (person-chat)]
+
+--- park @start ---
+  Narrator: He is kneeling at an open junction box on the control run to the transfer switch. He doesn't stop working.
+  Thomas Park: Four minutes and I'd have been out. Four.
+     (4 options)
+ > Nothing. I was never here. (Back off.)
+  Narrator: You back into the dark of the stairwell. He waits, then goes back to the junction box.
+      [ink: park_resolved="evaded"]
+      [set_global park_resolved=evaded]
+  [chat closes]
+   [PASS] said: "[choice] Then finish it and see what happens. (Fight him.)"
+   [PASS] said: "[choice] Nothing. I was never here. (Back off.)"
+   [PASS] not said: "Next time he swings"
+   {enter cable_vault}
+   [text agent_0x99 +4000ms] He was briefed on a building, not a body count. Mercer's projection is in the control room. Carry it back down with you. He won't wait a third time.
+   [opens thomas_park @start (person-chat)]
+
+--- park @start ---
+  Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
+  Thomas Park: Second time. There isn't a third.
+     (4 options)
+ > Nothing. I was never here. (Back off. Next time he swings.)
+  Narrator: You back into the dark of the stairwell. He waits, then goes back to the junction box.
+      [set_global park_resolved=evaded]
+  [chat closes]
+   [PASS] said: "Second time. There isn't a third."
+   [PASS] said: "[choice] Nothing. I was never here. (Back off. Next time he swings.)"
+   {enter cable_vault}
+   [opens thomas_park @start (person-chat)]
+
+--- park @start ---
+  Narrator: He sets the wire down on the mat without looking round.
+  Thomas Park: I said there wasn't a third.
+  Narrator: He comes up off his knees with the crimping tool swinging. This is going to be a fight.
+      [ink: park_resolved="ko"]
+      [set_global park_resolved=ko]
+      [engine: thomas_park hostile]
+   [text agent_0x99 +1000ms] Park's swinging. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.
+   [text agent_0x99 +5500ms] To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the vault, and won't wait while you read.
+  [chat closes]
+   [PASS] said: "I said there wasn't a third."
+   [PASS] said: "crimping tool swinging. This is going to be a fight."
+   [PASS] said: "Park's swinging."
+   {ko thomas_park}
+      [task: neutralise_park (taskOnKO)]
+   [text agent_0x99 +2000ms] Park's out of it. Whatever he came down to cut, he hadn't finished. The vault's yours to search.
+   [PASS] not said: "Hands down: press Q"
+   {enter scada_control}
+      [mapping agent_0x99: set scada_door_reached=true]
+
+--- mercer ---
+      [task: confront_mercer]
+  Narrator: The control room is warm and quiet. One man at the master console, sleeves turned back, typing. He does not stop when the door opens.
+  Dr. James Mercer: You're early. Not by much.
+  Dr. James Mercer: James Mercer. I'd offer a hand, but you'd refuse it and we'd both be embarrassed.
+  Dr. James Mercer: Sit if you like. You've walked a long way through my building.
+  Dr. James Mercer: Before you start. Tell me how you've decided to hold this. It changes how long it takes.
+     (3 options)
+ > (Say nothing. Let him fill the silence.)
+      [ink: mercer_stance="silent"]
+      [set_global mercer_stance=silent]
+  Narrator: The display on the wall behind him hums. He waits as well.
+  Dr. James Mercer: All right. It's a decent technique. It won't work on me, but I'll take the invitation.
+  Dr. James Mercer: I spent twenty years being listened to politely by people who had already decided. I know what silence in a room means.
+     (5 options)
+ > Doctor, this ends here. How do you want it to end?
+  Dr. James Mercer: End it how? This chair takes no abort while the host drives it, and the sequence doesn't care what happens to me.
+  Dr. James Mercer: I built it that way so I couldn't be leaned on.
+  Dr. James Mercer: You don't need me. That's the part everyone gets wrong. You need the host in the server hall.
+  Dr. James Mercer: So. Your decision, not mine.
+     (3 options)
+ > Away from the console, or I put you on the floor. (Fight him.)
+      [ink: mercer_fate="ko"]
+      [set_global mercer_fate=ko]
+  Narrator: He stands. He is fifty-eight and not quick, and he comes towards you anyway. This is going to be a fight.
+  Dr. James Mercer: You've come a very long way to be one more person who won't listen.
+  Narrator: The console is behind him. Whatever happens in here, the sequence still waits on the host in the server hall.
+      [engine: james_mercer hostile]
+   [text agent_0x99 +1000ms] Mercer's coming at you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.
+   [text agent_0x99 +5500ms] To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the control room, and won't wait while you read.
+  Narrator: The console position is empty. The chair is still turned towards the door.
+  [chat closes]
+   [PASS] said: "[choice] Away from the console, or I put you on the floor. (Fight him.)"
+   [PASS] said: "comes towards you anyway. This is going to be a fight."
+   [PASS] said: "Mercer's coming at you."
+   {flag 1: give_item}
+      [kit: Coordination Schedule -- Relay Decode]
+      [task: recover_coordination_traffic]
+      [mapping agent_0x99: set flag1_submitted=true]
+   [text agent_0x99 +1500ms] The relay's decoded the file their share points at: their own schedule, all four operations. Read it against the threat desk summary in your kit.
+   {flag 2: give_item}
+      [kit: Listener Capture -- Operator Credentials]
+      [task: intercept_c2_channel]
+      [mapping agent_0x99: set flag2_submitted=true]
+      [mapping agent_0x99: set ssh_guide_offered=true]
+   [text agent_0x99 +1500ms] Their listener gives out passwords in clear. Same door password as Elena's, so she told you the truth. Capture's in your inventory. Name and password: want the SSH guide?
+   {flag 3: set_global}
+      [mapping agent_0x99: set redirect_window_closed=true]
+      [mapping agent_0x99: set cascade_armed=true]
+      [clock: architect_taunt_t5 started at 0 min]
+      [clock: architect_taunt_t1 started at 0 min]
+      [clock: cascade_zero started at 0 min]
+   [text agent_0x99 +1500ms] They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it.
+      [mapping agent_0x99: set privesc_guide_offered=true]
+      [task: escalate_on_attack_host]
+   [PASS] said: "The window to move the team just shut."
+   [PASS] not said: "The team stays where it is now."
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 63, choices 14, longest run without a choice 9 (briefing); runs>=6: briefing:9, briefing:6
+[result] all expectations met

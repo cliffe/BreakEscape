@@ -1,0 +1,21 @@
+{
+  "key": "abf6c40dcbdb026226d4d429092d8c9e",
+  "npc": "ghost_phone",
+  "text": "I hoped it would be you leading the raid. I said so at the time, and here you are.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:06:05Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/abf6c40dcbdb026226d4d429092d8c9e.mp3",
+    "clean_md5": "cf3ff154c3d34bf84c88df06feb744e0",
+    "baked_md5": "db19e974e146dd87baa799af1a896da2",
+    "baked": "2026-11-24"
+  }
+}

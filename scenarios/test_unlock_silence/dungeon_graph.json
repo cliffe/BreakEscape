@@ -1,0 +1,42 @@
+{
+  "scenario": "test_unlock_silence",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_vault",
+      "label": "Vault<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vault",
+      "label": "Vault",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_archive",
+      "label": "Archive<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "archive",
+      "label": "Archive",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_vault",
+      "to": "vault",
+      "soft": false
+    },
+    {
+      "from": "door_archive",
+      "to": "archive",
+      "soft": false
+    }
+  ]
+}

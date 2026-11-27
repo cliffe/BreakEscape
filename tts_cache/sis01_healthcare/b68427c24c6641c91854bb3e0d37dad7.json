@@ -1,0 +1,13 @@
+{
+  "key": "b68427c24c6641c91854bb3e0d37dad7",
+  "npc": "dr_sharma",
+  "text": "Your Board will read all of this as risk, so let's put it that way.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

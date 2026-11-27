@@ -1,0 +1,13 @@
+{
+  "key": "d28191cb0b692c7758b2d7c243d5dc62",
+  "npc": "agnieszka_duda",
+  "text": "The \"keep this quiet\" is the real tell. It's there to buy time before anyone checks.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:51:22Z"
+}

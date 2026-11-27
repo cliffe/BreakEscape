@@ -1,0 +1,13 @@
+{
+  "key": "5e1ef0426bc4030a663892d737a0b328",
+  "npc": "jordan_pike",
+  "text": "Data recovery. Companies get hit by ransomware, CryptoSecure gets them back up. Very busy, apparently.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

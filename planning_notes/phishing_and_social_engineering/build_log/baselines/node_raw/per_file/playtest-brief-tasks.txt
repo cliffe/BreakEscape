@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: openTasks lists only tasks the panel shows as to do; locked ones go to lockedTasks
+ok 1 - openTasks lists only tasks the panel shows as to do; locked ones go to lockedTasks
+  ---
+  duration_ms: 1.376137
+  ...
+# Subtest: lockedTasks is omitted when nothing is locked; empty input is safe
+ok 2 - lockedTasks is omitted when nothing is locked; empty input is safe
+  ---
+  duration_ms: 0.098347
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 108.075227

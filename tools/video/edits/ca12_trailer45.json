@@ -1,0 +1,595 @@
+{
+ "mission": "ca12",
+ "id": "ca12_trailer45",
+ "theme": "ca",
+ "title": "Cyber Aware ca12 trailer pilot (45 s)",
+ "fps": 30,
+ "length": 45.0,
+ "music": {
+  "none": true,
+  "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 3.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09_step_away.trimmed.mkv",
+    "in": 8.2,
+    "out": 12.0
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Thandiwe A1 voiced line over the studio; no tells"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.55,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.52,
+     "cy": 0.55,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.55,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 0.4,
+     "end": 3.8,
+     "speaker": "Thandiwe",
+     "text": "Right, five minutes on the sofa. The plans can wait."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Visitors and tailgating",
+    "company": "Merrin & Sallow Architects",
+    "stripe": "#8a5a2b"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t04_osint_note.trimmed.mkv",
+    "in": 4.4,
+    "out": 8.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Public profile page and a noted detail; no code"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.39,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 4.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_pretext_card.trimmed.mkv",
+    "in": 4.3,
+    "out": 8.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Pretext option lines masked (first reply menu options)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "PRETEXT CALL",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.42,
+     "cy": 0.3,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1.6
+    }
+   },
+   "masks": [
+    {
+     "x": 670,
+     "y": 344,
+     "w": 590,
+     "h": 88,
+     "rows": 3
+    }
+   ]
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 4.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_the_call.trimmed.mkv",
+    "in": 16.2,
+    "out": 20.8
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "D1 line only; Last change row masked; ends before the third reply menu at 21.0"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "FRONT DESK CALL",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.35,
+     "end": 4.4,
+     "speaker": "Delphine",
+     "text": "Go on then, I'll buzz you through. Studio's up the stairs on your left."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "masks": [
+    {
+     "x": 360,
+     "y": 852,
+     "w": 340,
+     "h": 26,
+     "rows": 1
+    }
+   ],
+   "dialogue": true
+  },
+  {
+   "id": "lorna",
+   "type": "gameplay",
+   "duration": 5.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_flip.trimmed.mkv",
+    "in": 9.0,
+    "out": 14.6
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Lorna L1 line only; recap lines excluded"
+   },
+   "seat": {
+    "seat": "attack",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.66,
+     "cy": 0.4,
+     "zoom": 1.3
+    }
+   },
+   "lines": [
+    {
+     "start": 0.19,
+     "end": 5.4,
+     "speaker": "Lorna",
+     "text": "You talked your way through that door just now. Here you're the one being asked, same visitors."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t07_flip.trimmed.mkv",
+    "in": 21.9,
+    "out": 23.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Kiosk flips to Defend; no verdicts"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
+   "id": "defend",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_triage.trimmed.mkv",
+    "in": 5.1,
+    "out": 10.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Triage list and one card, buttons visible; ends before any verdict; reply buttons and the Today's list line masked"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "VISITOR TRIAGE",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.2
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "masks": [
+    {
+     "x": 836,
+     "y": 410,
+     "w": 562,
+     "h": 176,
+     "rows": 4
+    },
+    {
+     "x": 850,
+     "y": 352,
+     "w": 548,
+     "h": 28,
+     "rows": 1
+    }
+   ]
+  },
+  {
+   "id": "away",
+   "type": "gameplay",
+   "duration": 3.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09_step_away.trimmed.mkv",
+    "in": 21.0,
+    "out": 24.4
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Thandiwe A2 voiced line; no tells"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.265,
+     "cy": 0.5,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.33,
+     "cy": 0.55,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 0.73,
+     "end": 3.4,
+     "speaker": "Thandiwe",
+     "text": "Right, that's me back. Anything I should know?"
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "spot",
+   "type": "card",
+   "style": "ca",
+   "duration": 2.8,
+   "join": {
+    "type": "dissolve",
+    "block": 16,
+    "pin": true
+   },
+   "text": [
+    "What you'll spot"
+   ],
+   "body": [
+    "A good story isn't a check",
+    "A friendly voice isn't a badge"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pattern-level card"
+   }
+  },
+  {
+   "id": "end",
+   "type": "gameplay",
+   "duration": 4.3,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t09_step_away.trimmed.mkv",
+    "in": 47.3,
+    "out": 51.6
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Camila C1 line at the door; no tells"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.31,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.27,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.27,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 0.2,
+     "end": 4.3,
+     "speaker": "Camila",
+     "text": "Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Visitors and tailgating",
+    "tagline": "15 minutes, in your browser · No installs",
+    "hacktivity": "Hacktivity"
+   }
+  }
+ ]
+}

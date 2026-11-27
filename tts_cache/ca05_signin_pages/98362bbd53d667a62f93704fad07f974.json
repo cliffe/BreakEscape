@@ -1,0 +1,14 @@
+{
+  "key": "98362bbd53d667a62f93704fad07f974",
+  "npc": "kit_anjali_rao",
+  "text": "Someone clocked that late-night sign-in prompt for what it was. They've already got the password, and that tap is the only thing left in their way.",
+  "delivery": "approving, calm",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:23Z"
+}

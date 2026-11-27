@@ -1,0 +1,13 @@
+{
+  "key": "c4a8f38b36b7ae96dcaf9bbff60e2c2f",
+  "npc": "anjali_rao",
+  "text": "Did you see the car park email?",
+  "voice": "Aoede",
+  "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:04:07Z"
+}

@@ -1,0 +1,101 @@
+{
+  "scenario_brief": "TEST: interactionWarning attribute\n\nMinimal 1-room scenario proving the interactionWarning any object can carry. A warning is shown BEFORE the object's normal interaction.\n  - DECLINE runs onDecline and STOPS (the normal interaction is blocked).\n  - PROCEED runs onProceed, THEN the object's normal interaction runs (the readable note opens).\n\nTwo objects:\n  - EVIDENCE BOX (once: true): Proceed sets iw_box_proceeded and adds a capture; Decline sets iw_box_declined and completes a task. After either choice the warning is answered-and-done (does not show again). Answered state persists over reload.\n  - LOGGED TERMINAL (once: false): a Decline is NOT recorded, so the warning shows AGAIN next time you interact. A Proceed is always permanent.",
+  "endGoal": "Exercise the evidence box and the logged terminal to prove the interactionWarning flow. There is no win condition; this is an engine test.",
+  "startRoom": "test_room",
+
+  "objectives": [
+    {
+      "aimId": "exercise_warning",
+      "title": "Exercise the interaction warning",
+      "description": "Interact with the evidence box and the logged terminal.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "box_declined_task",
+          "title": "Decline opening the evidence box",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "TEST: interactionWarning\n\nEVIDENCE BOX (once: true): interacting shows a warning first.\n  - Leave it: sets iw_box_declined, completes box_declined_task, BLOCKS the note.\n  - Open it anyway: sets iw_box_proceeded, adds a capture, THEN opens the box note.\n  After either choice the warning will not show again (answered-and-done), and that persists over reload.\n\nLOGGED TERMINAL (once: false): interacting shows a warning first.\n  - Back off: sets iw_term_declined; the warning SHOWS AGAIN next time you interact.\n  - Continue: sets iw_term_proceeded, then opens the terminal note (permanent).",
+          "observations": "A note with test instructions."
+        },
+        {
+          "type": "notes",
+          "id": "evidence_box",
+          "name": "Sealed evidence box",
+          "position": { "x": 6, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "EVIDENCE BOX CONTENTS (simulated): a bundle of client deeds. You opened it after the warning — the normal interaction ran.",
+          "observations": "A sealed evidence box. Interacting warns you before it opens.",
+          "interactionWarning": {
+            "text": "This box holds sealed client evidence. Opening it may breach the rules of engagement.",
+            "proceedLabel": "Open it anyway",
+            "declineLabel": "Leave it",
+            "once": true,
+            "onProceed": [
+              { "type": "set_global", "key": "iw_box_proceeded", "value": true },
+              { "type": "add_capture", "capture": { "targetId": "evidence_box", "kind": "foothold", "note": "Opened the sealed evidence box after the warning", "at": 0 } }
+            ],
+            "onDecline": [
+              { "type": "set_global", "key": "iw_box_declined", "value": true },
+              { "type": "complete_task", "taskId": "box_declined_task" }
+            ]
+          }
+        },
+        {
+          "type": "notes",
+          "id": "logged_terminal",
+          "name": "Logged terminal",
+          "position": { "x": 9, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "TERMINAL (simulated): access logged. You continued past the warning — the normal interaction ran.",
+          "observations": "A terminal that logs every access. Interacting warns you before it opens.",
+          "interactionWarning": {
+            "text": "This terminal logs every access. Continue?",
+            "proceedLabel": "Continue",
+            "declineLabel": "Back off",
+            "once": false,
+            "onProceed": [
+              { "type": "set_global", "key": "iw_term_proceeded", "value": true }
+            ],
+            "onDecline": [
+              { "type": "set_global", "key": "iw_term_declined", "value": true }
+            ]
+          }
+        }
+      ]
+    }
+  },
+
+  "globalVariables": {
+    "iw_box_proceeded": false,
+    "iw_box_declined": false,
+    "iw_term_proceeded": false,
+    "iw_term_declined": false
+  }
+}

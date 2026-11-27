@@ -1,0 +1,13 @@
+{
+  "key": "7cdb7dcc80380ce8b0ebd12b2605925e",
+  "npc": "kit_yusuf_demir",
+  "text": "Morning. I'm Yusuf, I keep an eye on security here. Grab a water if you need one.",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:23Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "6545c4063a06c95d4d4d7f3a92f3955f",
+  "npc": "adaeze_okafor",
+  "text": "Audit week again.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:02:56Z"
+}

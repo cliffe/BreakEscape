@@ -1,0 +1,269 @@
+<title>SAFETYNET m02 Trailer Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#0d0b1f; --stage:#07061a; --panel:#16132f; --ink:#ece9f6; --muted:#a6a2c2; --line:#2c2852;
+  --accent:#e7a1ff; --accent-ink:#1a0d22; --signal:#6fe0b4; --red:#d6404a; --chip:#211d42;
+  --display:"Press Start 2P", "Courier New", monospace;
+  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-block:28px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:44px}
+h1,h2{font-family:var(--display);font-weight:400;line-height:1.4;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.1rem,3.4vw,1.7rem)}
+h2{font-size:.95rem}
+p{margin:0;max-width:70ch}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.badge{display:inline-block;align-self:flex-start;background:var(--red);color:#fff;font-family:var(--display);font-size:.7rem;padding:6px 10px 5px;letter-spacing:.04em}
+.lede{color:var(--muted)}
+ul.changes{margin:0;padding-left:1.2em;color:var(--muted);max-width:75ch;display:flex;flex-direction:column;gap:4px}
+section{display:flex;flex-direction:column;gap:14px}
+code{font-family:var(--mono);font-size:.85em;background:var(--chip);padding:1px 5px;border-radius:3px}
+.hero{display:flex;flex-direction:column;gap:12px}
+.stage{background:var(--stage);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:12px}
+video{width:100%;display:block;background:#000}
+.jump{font:inherit;font-family:var(--mono);font-size:.8rem;background:transparent;color:var(--signal);border:1px solid var(--signal);padding:6px 12px;cursor:pointer;align-self:flex-start}
+.meta{font-family:var(--mono);font-size:.75rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+.tbl{overflow-x:auto;border:1px solid var(--line);background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.88rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:400}
+td.t{font-family:var(--mono);font-size:.78rem;color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.card td:nth-child(2){color:var(--signal)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.notes div{background:var(--panel);border:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.notes .k{font-family:var(--mono);font-size:.7rem;color:var(--signal);text-transform:uppercase;letter-spacing:.06em}
+.notes p{font-size:.9rem;color:var(--muted)}
+form{display:flex;flex-direction:column;gap:22px;background:var(--panel);border:2px solid var(--accent);padding:20px}
+fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+legend{font-weight:700;padding:0;margin-bottom:4px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid var(--line);padding:6px 10px;font-size:.9rem;cursor:pointer}
+.opts label:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--panel))}
+.opts input{accent-color:var(--accent);margin:0}
+.sug{font-family:var(--mono);font-size:.68rem;color:var(--signal);margin-left:4px}
+textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:8px 10px;width:100%;min-height:60px;resize:vertical}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.group-title{font-family:var(--display);font-size:.8rem;border-top:1px dashed var(--line);padding-top:14px;color:var(--accent)}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;position:sticky;bottom:0;background:var(--panel);padding-block:12px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+button.save{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;padding:10px 18px;cursor:pointer}
+button.save:disabled{opacity:.5;cursor:default}
+button.copy{font:inherit;font-family:var(--mono);font-size:.8rem;background:var(--chip);color:var(--ink);border:1px solid var(--line);padding:8px 12px;cursor:pointer}
+#status{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+a.srt{color:var(--signal);font-family:var(--mono);font-size:.8rem}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="badge">SAFETYNET</span>
+  <h1>Licence to Hack · Mission 2 trailer</h1>
+  <span class="eyebrow">Version 1 · 2 Nov 2026 · 60 s · 16:9 review copy</span>
+  <p class="lede">The first cut of the Mission 2 trailer, "Ransomed Trust": a hospital held to ransom, twelve hours on the generators. Built to the same recipe as the Mission 1 trailer you signed off: game title in, HaX hook, mission card, the lights drop, a real-tools section, the mystery, the people, a choices card, a walk montage, a minigame crescendo, the antagonist, then "Play now". All 18 gameplay shots are new captures from m02; the voices all play from the cache (nothing new was generated).</p>
+  <ul class="changes">
+    <li><strong>Music is a first pick by ear check:</strong> Noir "Steel Shadows in E Minor", chosen from the beat analysis (its drop lands on the lights, four-bar lifts carry the cards). I have not listened to it against the picture. Tell me if it is wrong for this mission.</li>
+    <li><strong>The antagonist is shown:</strong> Graham Reeves, the night security supervisor, the mission's answer. The recipe needs your say-so to show him. There is a fallback if you would rather not.</li>
+    <li><strong>Real Hacking is a marked placeholder:</strong> m02 has no footage in the old trailer, and I will not fabricate attack-terminal output, so that 1.9 s slot is a titled "footage in capture" slate over the server room. The real VM capture replaces it later.</li>
+    <li>Only 16:9 so far. The 9:16 and 1:1 cuts follow once you are happy with this.</li>
+  </ul>
+</header>
+
+<section>
+  <span class="eyebrow">Watch</span>
+  <h2>Trailer v1 (16:9)</h2>
+  <div class="stage">
+    <div id="mainBox"></div>
+    <button type="button" class="jump" id="jump">Jump to the crescendo (43 s)</button>
+    <div class="meta"><span>60.0 s</span><span>1080p, 30 fps (review copy 720p)</span><span>-13.8 LUFS, true peak -1.5 dB</span><span>Music: Noir "Steel Shadows in E Minor", 156 BPM</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">The cut</span>
+  <h2>Shot list (v1)</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Time</th><th>Shot</th></tr></thead>
+      <tbody>
+        <tr class="card"><td class="t">0-6</td><td>Spy walks into the keyhole; SAFETYNET / LICENCE TO HACK assembles</td></tr>
+        <tr><td class="t">6-8.9</td><td>Agent HaX: "If they refuse and you're too slow, people die on the ward."</td></tr>
+        <tr class="card"><td class="t">8.9-10.8</td><td>"Mission 2 / Ransomed Trust"</td></tr>
+        <tr><td class="t">10.8-12.3</td><td>Ward vestibule lights strike on the music drop</td></tr>
+        <tr><td class="t">12.3-16.9</td><td>Montage: lockpick, reception ransom screen, HaX phone, PIN pad (decoy digits)</td></tr>
+        <tr class="card"><td class="t">16.9-18.5</td><td>"Real / Hacking"</td></tr>
+        <tr><td class="t">18.5-20.4</td><td>Walk up to the SAFETYNET Field Console in the server room</td></tr>
+        <tr><td class="t">20.4-22.3</td><td><strong>Placeholder:</strong> "Real hacking // footage in capture" slate</td></tr>
+        <tr><td class="t">22.3-23.1</td><td>CyberChef, input pane only</td></tr>
+        <tr class="card"><td class="t">23.1-24.6</td><td>"Uncover / the Mystery"</td></tr>
+        <tr><td class="t">24.6-28.7</td><td>Val Okonkwo: "So. Who are you and who says you're allowed?"</td></tr>
+        <tr><td class="t">28.7-32.4</td><td>Sister Doyle: "The machines still run. Nobody's watching them."</td></tr>
+        <tr><td class="t">32.4-35.4</td><td>Mr Pryce: "Forty years I fixed buses."</td></tr>
+        <tr class="card"><td class="t">35.4-36.9</td><td>"Choices with / Consequences" (pixel dissolve)</td></tr>
+        <tr><td class="t">36.9-41.5</td><td>Walk up to Val; ward walk knocking a swivel chair; walk past Sister Doyle</td></tr>
+        <tr class="card"><td class="t">41.5-43.1</td><td>"Before the / Ward Goes Dark"</td></tr>
+        <tr><td class="t">43.1-45.4</td><td><strong>Minigame crescendo,</strong> ten cuts (15,15,7,7,7,7,3,3,3,2 frames): lockpick, keypad, ransom, recovery console, CyberChef, phone, supply cabinet, password, flag station, Field Console</td></tr>
+        <tr><td class="t">45.4-47.9</td><td>Graham Reeves, wide: "So you did the work." (voice begins under the crescendo)</td></tr>
+        <tr><td class="t">47.9-52</td><td>Reeves close-up: "Money. That's the first guess, always."</td></tr>
+        <tr class="card"><td class="t">52-60</td><td>Laptop, Labs → Games logo, key press, red curtain, "Play now", hacktivity.co.uk</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">What I'd flag</span>
+  <h2>Points to judge</h2>
+  <div class="notes">
+    <div><span class="k">Music by ear</span><p>Steel Shadows in E Minor was picked from the beat grid, not by listening. It is a Noir track m02 already plays, but m10 also uses it in game. Say if it is wrong; there are two analysed fallbacks.</p></div>
+    <div><span class="k">The antagonist</span><p>Graham Reeves is shown as the mystery's answer (45.4 to 52 s). Your call whether to reveal him. Fallback: a non-face beat, or a different line.</p></div>
+    <div><span class="k">The ransom screen</span><p>The reception ransom note (13.5 s) shows a fictional wallet and support URL and the £150,000 demand. It is the mission's premise and a player sees it in the first minute, so it is not an answer. Say if you want it cropped tighter.</p></div>
+    <div><span class="k">Kept off screen</span><p>CyberChef shows the encoded input only (the decoded pane is cropped off). The keypad digits are decoys, not the code. Gary's login post-it is cropped out of the password cut. Reeves's wide starts after his badge number clears.</p></div>
+    <div><span class="k">RFID left out</span><p>m02 never hands the player the cloner, so there is no RFID tap screen to film. The crescendo runs ten cuts without it.</p></div>
+    <div><span class="k">Real Hacking</span><p>A titled placeholder until in-game VM capture exists. m02's real tools are anonymous FTP, the ProFTPD backdoor, SSH as Gary and CyberChef (no Hydra: that is m01).</p></div>
+  </div>
+</section>
+
+<section id="feedback">
+  <span class="eyebrow">Your feedback</span>
+  <h2>Feedback on v1</h2>
+  <form id="f" novalidate>
+    <fieldset>
+      <legend>1. Verdict</legend>
+      <div class="opts" data-name="verdict" data-single>
+        <label><input type="radio" name="verdict" value="ship">Ship: render 9:16 and 1:1, add to hacktivity-videos</label>
+        <label><input type="radio" name="verdict" value="revise">Revise first<span class="sug">likely (first cut)</span></label>
+        <label><input type="radio" name="verdict" value="rethink">Rethink</label>
+      </div>
+      <textarea data-name="verdict_note" aria-label="Biggest single change you want"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>2. The music: Steel Shadows in E Minor for this mission?</legend>
+      <div class="opts" data-name="music" data-single>
+        <label><input type="radio" name="music" value="keep">Keeps it<span class="sug">suggested</span></label>
+        <label><input type="radio" name="music" value="fallback">Try a fallback (Shadowline Protocol / Encrypted Shadows)</label>
+        <label><input type="radio" name="music" value="other">Something else (say what)</label>
+      </div>
+      <textarea data-name="music_note" aria-label="Notes on the music"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>3. The hook and the three NPC lines (HaX, Val, Sister Doyle, Mr Pryce): keep, or swap for spares?</legend>
+      <div class="opts" data-name="lines" data-single>
+        <label><input type="radio" name="lines" value="keep">Keep<span class="sug">suggested</span></label>
+        <label><input type="radio" name="lines" value="swap">Swap one or more (say which)</label>
+      </div>
+      <textarea data-name="lines_note" aria-label="Notes on the lines" placeholder="Spares: HaX cold-open line; Bernie the receptionist; Dr Kim 'A replacement scanner. Three point two million.'"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>4. The antagonist moment (45.4 to 52 s): right to show Graham Reeves? Right line and cut?</legend>
+      <div class="opts" data-name="antagonist" data-single>
+        <label><input type="radio" name="antagonist" value="show">Show him, as is<span class="sug">suggested</span></label>
+        <label><input type="radio" name="antagonist" value="diffline">Show him, different line</label>
+        <label><input type="radio" name="antagonist" value="hide">Don't reveal his face</label>
+      </div>
+      <textarea data-name="antagonist_note" aria-label="Notes on the antagonist"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>5. The Real Hacking placeholder (20.4 to 22.3 s): acceptable for now, or hold the release until in-game VM capture?</legend>
+      <div class="opts" data-name="realhack" data-single>
+        <label><input type="radio" name="realhack" value="ok">Placeholder is fine for now<span class="sug">suggested</span></label>
+        <label><input type="radio" name="realhack" value="hold">Hold the release until real capture</label>
+        <label><input type="radio" name="realhack" value="other">Other (say what)</label>
+      </div>
+      <textarea data-name="realhack_note" aria-label="Notes on the Real Hacking slot"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>6. The minigame crescendo (43.1 to 45.4 s): right order and pace? Does Reeves's voice read over it? Any minigame missing?</legend>
+      <div class="opts" data-name="crescendo" data-single>
+        <label><input type="radio" name="crescendo" value="keep">Keep as is<span class="sug">suggested</span></label>
+        <label><input type="radio" name="crescendo" value="slower">Slower: fewer, longer cuts</label>
+        <label><input type="radio" name="crescendo" value="change">Change the order or shots (say how)</label>
+      </div>
+      <textarea data-name="crescendo_note" aria-label="Notes on the crescendo"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>7. The mission card: "Mission 2 / Ransomed Trust" named the way you want it?</legend>
+      <div class="opts" data-name="card" data-single>
+        <label><input type="radio" name="card" value="good">Good</label>
+        <label><input type="radio" name="card" value="change">Change (say what)</label>
+      </div>
+      <textarea data-name="card_note" aria-label="Notes on the mission card"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>8. Is anything on screen you would not want a viewer to see (an answer, a name, a place)? Step through 13 s (ransom), 22 s (CyberChef), 43 to 45 s (crescendo).</legend>
+      <div class="opts" data-name="spoilers" data-single>
+        <label><input type="radio" name="spoilers" value="clean">Nothing</label>
+        <label><input type="radio" name="spoilers" value="issue">Yes (say which)</label>
+      </div>
+      <textarea data-name="spoilers_note" aria-label="Spoiler notes"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>9. Pace: anything too fast or too slow? Which shot would you cut or lengthen?</legend>
+      <textarea data-name="pace" aria-label="Pace notes"></textarea>
+    </fieldset>
+    <fieldset>
+      <legend>10. The end card: "Play now" and the Games logo, right?</legend>
+      <div class="opts" data-name="cta" data-single>
+        <label><input type="radio" name="cta" value="good">Good</label>
+        <label><input type="radio" name="cta" value="change">Change (say what)</label>
+      </div>
+      <textarea data-name="cta_note" aria-label="Notes on the end card"></textarea>
+    </fieldset>
+    <div class="group-title">Overall</div>
+    <fieldset>
+      <legend>Anything else (give times if you can)</legend>
+      <textarea id="notes" data-name="notes" aria-label="General notes"></textarea>
+    </fieldset>
+    <div class="bar">
+      <button type="submit" class="save" id="save">Save feedback</button>
+      <button type="button" class="copy" id="copy">Copy answers</button>
+      <span id="status" role="status">Connecting…</span>
+    </div>
+  </form>
+</section>
+
+</div>
+
+<script>
+(function(){
+  const VID="/_blob/0356b6612361ff41821b243acb80722e";
+  function vid(src){ const v=document.createElement('video'); v.controls=true; v.preload='metadata'; v.playsInline=true; v.src=src; return v; }
+  const box=document.getElementById('mainBox');
+  box.replaceChildren(vid(VID));
+  document.getElementById('jump').addEventListener('click',()=>{ const v=box.querySelector('video'); if(!v)return; v.currentTime=43; v.play().catch(()=>{}); });
+
+  const form=document.getElementById('f'), statusEl=document.getElementById('status'), saveBtn=document.getElementById('save');
+  let ref=null, readOnly=false, saving=false;
+  function collect(){const o={};form.querySelectorAll('.opts[data-name]').forEach(g=>{const v=[...g.querySelectorAll('input:checked')].map(i=>i.value);o[g.dataset.name]=g.hasAttribute('data-single')?(v[0]||''):v;});form.querySelectorAll('textarea[data-name]').forEach(e=>{o[e.dataset.name]=e.value.trim();});return o;}
+  function apply(d){if(!d)return;form.querySelectorAll('.opts[data-name]').forEach(g=>{const v=d[g.dataset.name];const s=Array.isArray(v)?v:(v?[v]:[]);g.querySelectorAll('input').forEach(i=>{i.checked=s.includes(i.value);});});form.querySelectorAll('textarea[data-name]').forEach(e=>{if(typeof d[e.dataset.name]==='string')e.value=d[e.dataset.name];});}
+  const setStatus=t=>{statusEl.textContent=t;};
+  const fmt=iso=>{try{return new Date(iso).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}catch(e){return iso;}};
+  function lock(){form.querySelectorAll('input,textarea,button.save').forEach(e=>e.disabled=true);}
+  document.getElementById('copy').addEventListener('click',async()=>{
+    const lines=[];
+    form.querySelectorAll('fieldset').forEach(fs=>{const q=(fs.querySelector('legend')||{}).textContent||'';const g=fs.querySelector('.opts[data-name]');let a='';if(g){const i=g.querySelector('input:checked');a=i?i.value:'';}const t=[...fs.querySelectorAll('textarea')].map(x=>x.value.trim()).filter(Boolean).join(' / ');const key=g?g.dataset.name:(fs.querySelector('textarea')||{}).dataset?.name;if(a||t)lines.push(key+' ('+q.trim()+'): '+(a||'-')+(t?' - '+t:''));});
+    const text='m02 trailer v1 feedback\n'+lines.join('\n');
+    try{await navigator.clipboard.writeText(text);setStatus('Answers copied');}catch(e){setStatus('Copy failed: select and copy by hand');}
+  });
+  form.addEventListener('input',()=>{if(!readOnly)setStatus('Unsaved changes');});
+  form.addEventListener('submit',async e=>{
+    e.preventDefault(); if(!ref||readOnly||saving)return;
+    saving=true; saveBtn.disabled=true; setStatus('Saving…');
+    try{const now=new Date().toISOString(); await ref.set({...collect(),updatedAt:now}); setStatus('Saved '+fmt(now));}
+    catch(err){ if(err&&err.code==='invalid_argument'){readOnly=true;lock();setStatus('You can view this feedback but not change it.');} else setStatus('Could not save. Try again in a moment.'); }
+    finally{saving=false; if(!readOnly) saveBtn.disabled=false;}
+  });
+  (async function(){
+    if(!window.claude||!window.claude.use){setStatus('Saving is not available here.');saveBtn.disabled=true;return;}
+    const db=await window.claude.use('db'); if(!db){setStatus('Sign in to claude.ai to save feedback.');saveBtn.disabled=true;return;}
+    const user=await window.claude.use('user'); if(user){const can=await user.can('data.write'); if(can===false){readOnly=true;lock();}}
+    ref=db.doc('feedback/m02_trailer_v1');
+    try{const s=await ref.get(); if(s.exists){const d=s.data();apply(d);setStatus((readOnly?'Read only · ':'')+'Last saved '+fmt(d.updatedAt));} else setStatus(readOnly?'Nothing saved yet.':'Not saved yet');}
+    catch(e){setStatus('Could not load saved feedback.');}
+  })();
+})();
+</script>

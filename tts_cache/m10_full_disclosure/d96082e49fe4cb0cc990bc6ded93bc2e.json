@@ -1,0 +1,21 @@
+{
+  "key": "d96082e49fe4cb0cc990bc6ded93bc2e",
+  "npc": "ghost_phone",
+  "text": "Go on, then. Ask.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:07:03Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/d96082e49fe4cb0cc990bc6ded93bc2e.mp3",
+    "clean_md5": "ca63c816109e712b3b1f4fed8657a0b5",
+    "baked_md5": "55cdc73ea4d35bebac6893eff2556374",
+    "baked": "2026-11-24"
+  }
+}

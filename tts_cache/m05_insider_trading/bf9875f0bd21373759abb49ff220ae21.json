@@ -1,0 +1,13 @@
+{
+  "key": "bf9875f0bd21373759abb49ff220ae21",
+  "npc": "dr_halloran",
+  "text": "The twenty-third I was in Zurich, giving a paper to two hundred people. The lanyard's on my monitor.",
+  "voice": "Erinome",
+  "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:14:56Z"
+}

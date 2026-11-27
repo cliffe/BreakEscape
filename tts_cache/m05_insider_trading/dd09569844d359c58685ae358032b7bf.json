@@ -1,0 +1,13 @@
+{
+  "key": "dd09569844d359c58685ae358032b7bf",
+  "npc": "narrator",
+  "text": "Within the week, once the other targets have been warned. The police will come for him before then.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:39:18Z"
+}

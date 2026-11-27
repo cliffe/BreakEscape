@@ -1,0 +1,13 @@
+{
+  "key": "64296aa1cb55092e3bad06726f2c1a38",
+  "npc": "director_netherton",
+  "text": "He has his deal. He will earn it, or he will lose it.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:46:27Z"
+}

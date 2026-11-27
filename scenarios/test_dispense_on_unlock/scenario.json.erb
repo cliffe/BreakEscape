@@ -1,0 +1,107 @@
+{
+  "scenario_brief": "TEST: dispense on unlock\n\nOne lobby with three dispensers. The PIN dispenser (1234) holds one item. The password dispenser holds two (its password is on the sign). The jammed dispenser (4321) also holds a fixture bolted to its tray, so it cannot hand its contents over and opens the container screen instead. Each dispenser that works should put its items in the inventory with a single toast; pressing E twice quickly must still give exactly one copy.",
+  "endGoal": "Test only: open the dispensers.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 5, "y": 7 },
+  "needsDebugOverlay": true,
+
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "door_sign": "Lobby",
+      "connections": {},
+      "locked": false,
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_dispense",
+          "name": "Sign: dispensers",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Dispensers.\nThe PIN dispenser is 1234 and gives a fingerprint kit. The password dispenser is opensesame and gives a PIN cracker and a lockpick. The jammed dispenser is 4321: its tray has a fixture bolted down, so it opens the container screen instead of dispensing.",
+          "observations": "A sign on the wall."
+        },
+        {
+          "type": "safe",
+          "id": "pin_dispenser",
+          "name": "PIN Dispenser",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "1234",
+          "dispenses": true,
+          "observations": "A dispenser with a four-digit keypad.",
+          "contents": [
+            {
+              "type": "fingerprint_kit",
+              "id": "dispensed_kit",
+              "name": "Fingerprint Kit",
+              "takeable": true,
+              "observations": "A fingerprint kit from the dispenser."
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "password_dispenser",
+          "name": "Password Dispenser",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "opensesame",
+          "dispenses": true,
+          "observations": "A dispenser that wants a password.",
+          "contents": [
+            {
+              "type": "pin-cracker",
+              "id": "dispensed_cracker",
+              "name": "PIN Cracker",
+              "takeable": true,
+              "observations": "A PIN cracker from the dispenser."
+            },
+            {
+              "type": "lockpick",
+              "id": "dispensed_lockpick",
+              "name": "Lock Pick Set",
+              "takeable": true,
+              "observations": "A lockpick set from the dispenser."
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "jammed_dispenser",
+          "name": "Jammed Dispenser",
+          "position": { "x": 4, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "4321",
+          "dispenses": true,
+          "observations": "A dispenser with a tray that looks jammed.",
+          "contents": [
+            {
+              "type": "fingerprint_kit",
+              "id": "jammed_kit",
+              "name": "Jammed Fingerprint Kit",
+              "takeable": true,
+              "observations": "A kit wedged in the tray."
+            },
+            {
+              "type": "suitcase",
+              "id": "jammed_fixture",
+              "name": "Bolted Fixture",
+              "takeable": false,
+              "observations": "Bolted to the tray. It will not come out."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

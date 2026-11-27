@@ -1,0 +1,13 @@
+{
+  "key": "84ec06a9ca6bb130f722ef1079fb7de8",
+  "npc": "narrator",
+  "text": "You hold the cloner up to his lanyard.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:00:30Z"
+}

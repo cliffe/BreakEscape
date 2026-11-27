@@ -1,0 +1,291 @@
+module BreakEscape
+  class GamePolicy < ApplicationPolicy
+    def show?
+      # Owner, admin, or an account_manager who manages the player (same org when the
+      # host has orgs)
+      owner? || user&.admin? || managing_account_manager?
+    end
+
+    def update?
+      show?
+    end
+
+    def scenario?
+      show?
+    end
+
+    def scenario_map?
+      show?
+    end
+
+    def ink?
+      show?
+    end
+
+    def bootstrap?
+      show?
+    end
+
+    def sync_state?
+      show?
+    end
+
+    def crack?
+      show?
+    end
+
+    # S5b: the collect has the same rule as crack?
+    def harvest_credentials?
+      show?
+    end
+
+    def update_room?
+      show?
+    end
+
+    def unlock?
+      show?
+    end
+
+    def inventory?
+      show?
+    end
+
+    def room?
+      show?
+    end
+
+    def objectives?
+      show?
+    end
+
+    def capture_secrets?
+      show?
+    end
+
+    def keyring?
+      show?
+    end
+
+    def log_rows?
+      show?
+    end
+
+    def complete_task?
+      show?
+    end
+
+    def skip_task?
+      show?
+    end
+
+    def conclude_mission?
+      show?
+    end
+
+    def update_task_progress?
+      show?
+    end
+
+    def unlock_objective?
+      show?
+    end
+
+    def container?
+      show?
+    end
+
+    def login?
+      show?
+    end
+
+    def mfa_device?
+      show?
+    end
+
+    def mfa_verify?
+      show?
+    end
+
+    def mfa_prompt?
+      show?
+    end
+
+    def mfa_phone?
+      show?
+    end
+
+    def mfa_approve?
+      show?
+    end
+
+    # S8b unit 13
+    def helpdesk_request?
+      show?
+    end
+
+    def logout?
+      show?
+    end
+
+    def lock_session?
+      show?
+    end
+
+    def login_accounts?
+      show?
+    end
+
+    def clone_card?
+      show?
+    end
+
+    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1): failed and met uses an NPC reports
+    def npc_frustration?
+      show?
+    end
+
+    # Slice 9.2 (plan 6): the workaround runner reports a hand-over performed or dropped
+    def npc_workaround?
+      show?
+    end
+
+    # Slice 9.2 C: an NPC's next social media post
+    def feed_post?
+      show?
+    end
+
+    # q35: open a Friendface phone the player holds
+    def friendface_phone?
+      show?
+    end
+
+    # Fingerprint-kit dusting of a PIN pad (PinDust)
+    def pin_dust?
+      show?
+    end
+
+    # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
+    def wear?
+      show?
+    end
+
+    # Phish evidence Route 1 (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md): record a
+    # landing-page build. Same access as viewing the game.
+    def se_landing_page?
+      show?
+    end
+
+    # Phish evidence Route 2 (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md): record a phish
+    # send. Same access as viewing the game.
+    def se_phish_send?
+      show?
+    end
+
+    # Networks (slice 9.3a, section 5)
+    def network?
+      show?
+    end
+
+    def network_plant?
+      show?
+    end
+
+    def network_unplug?
+      show?
+    end
+
+    def network_implant?
+      show?
+    end
+
+    def network_join?
+      show?
+    end
+
+    def network_scan?
+      show?
+    end
+
+    def network_check?
+      show?
+    end
+
+    def network_confirm?
+      show?
+    end
+
+    def network_technique?
+      show?
+    end
+
+    def submit_flag?
+      show?
+    end
+
+    def tts?
+      show?
+    end
+
+    def reset?
+      show?
+    end
+
+    # Creates a game for, and abandons the game of, the current player, so only the
+    # owner may do it. Staff can view other players' games but not spawn sessions.
+    def new_session?
+      user.present? && owner?
+    end
+
+    def vm_panel?
+      show? && record.status == 'in_progress'
+    end
+
+    # Same rule as vm_panel?: only the owner (or managing staff) of an in-progress game may
+    # ask the server to unlock the console for a VM the player has reached in-game.
+    def unlock_vm_console?
+      show? && record.status == 'in_progress'
+    end
+
+    def vm_set_panel?
+      show? && record.status == 'in_progress'
+    end
+
+    private
+
+    # An account_manager only manages players in their own org. Hosts without orgs
+    # (standalone demo users have no org_id) keep the old behaviour of managing everyone.
+    def managing_account_manager?
+      return false unless user&.account_manager?
+      return true unless user.respond_to?(:org_id)
+
+      user.org_id.present? && record.player.respond_to?(:org_id) && record.player.org_id == user.org_id
+    end
+
+    # Owner check on the foreign key, so checking a request doesn't load the
+    # player's row (every sync_state is checked)
+    def owner?
+      user.is_a?(ActiveRecord::Base) &&
+        record.player_type == user.class.polymorphic_name && record.player_id == user.id
+    end
+
+    class Scope < Scope
+      def resolve
+        if user&.admin?
+          scope.all
+        elsif user&.account_manager?
+          if user.respond_to?(:org_id)
+            return scope.where(player: user) if user.org_id.blank?
+
+            same_org = user.class.where(org_id: user.org_id).select(:id)
+            scope.where(player_type: user.class.name, player_id: same_org)
+          else
+            scope.all
+          end
+        else
+          scope.where(player: user)
+        end
+      end
+    end
+  end
+end

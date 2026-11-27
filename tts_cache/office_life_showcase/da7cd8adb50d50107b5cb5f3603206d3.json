@@ -1,0 +1,13 @@
+{
+  "key": "da7cd8adb50d50107b5cb5f3603206d3",
+  "npc": "jun_watanabe",
+  "text": "Er, that's my desk. Can I help you?",
+  "voice": "Puck",
+  "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:38:36Z"
+}

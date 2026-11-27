@@ -1,0 +1,13 @@
+{
+  "key": "86d6946e5128df50867d6707a715fa06",
+  "npc": "director_netherton",
+  "text": "The cells get it at four, two hours early, as pay for stealing our database.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T21:56:21Z"
+}

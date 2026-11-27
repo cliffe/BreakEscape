@@ -1,0 +1,16 @@
+game 2389 (m07_taunt)
+T-30 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t30","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-30 call: {"lines":["Don't loo"],"choices":[]}
+beat started: {"beatAt":69483,"clipPlayingAtBeat":false,"lastLineAtBeat":"Let it hurt afterwards, not during. I expect you've been told that."}
+shot m07_taunt_during_beat
+1 s into beat: mg=null last=null
+T-20 offered during the beat: {"cur":null,"q":0,"banner":null,"bimg":null}
+closed: mg=null
+T-20 banner after close: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t20","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+records: [{"npc":"the_architect","theme":"terminal","forced":false,"openedAt":32781,"lines":[{"t":34529,"text":"D"},{"t":34586,"text":"Don"},{"t":34629,"text":"Don'"},{"t":34689,"text":"Don't"},{"t":34729,"text":"Don't l"},{"t":34818,"text":"Don't lo"},{"t":34851,"text":"Don't loo"},{"t":34912,"text":"Don't look"},{"t":35036,"text":"Don't look f"},{"t":35091,"text":"Don't look fo"},{"t":35168,"text":"Don't look for"},{"t":35364,"text":"Don't look for th"},{"t":35482,"text":"Don't look for the"},{"t":35603,"text":"Don't look for the t"},{"t":35664,"text":"Don't look for the tra"},{"t":35779,"text":"Don't look for the trac"},{"t":35861,"text":"Don't look for the trace."},{"t":36053,"text":"Don't look for the trace. It"},{"t":36230,"text":"Don't look for the trace. It i"},{"t":36319,"text":"Don't look for the trace. It is"},{"t":36377,"text":"Don't look for the trace. It isn"},{"t":36403,"text":"Don't look for the trace. It isn'"},{"t":36466,"text":"Don't look for the trace. It isn't"},{"t":36625,"text":"Don't look for the trace. It isn't t"},{"t":36648,"text":"Don't look for the trace. It isn't th"},{"t":36696,"text":"Don't look for the trace. It isn't the"},{"t":36783,"text":"Don't look for the trace. It isn't ther"},{"t":36833,"text":"Don't look for the trace. It isn't there"},{"t":36914,"text":"Don't look for the trace. It isn't there."},{"t":39637,"text":"I"},{"t":39729,"text":"I'"},{"t":39801,"text":"I've"},{"t":39929,"text":"I've r"},{"t":39999,"text":"I've rea"},{"t":400
+architect /tts: "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "Someone with a little of your attention tonight and no interest in wasting it." "There is a decision in front of you tonight. Make it however you like. I only want to see it made." "Let it hurt afterwards, not during. I expect you've been told that." 
+{"status":503,"text":"Don't look for the trace. It isn't there."}
+{"status":503,"text":"I've read your file. Files are written by people w"}
+{"status":503,"text":"Someone with a little of your attention tonight an"}
+{"status":503,"text":"There is a decision in front of you tonight. Make "}
+{"status":503,"text":"Let it hurt afterwards, not during. I expect you'v"}

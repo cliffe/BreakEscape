@@ -1,0 +1,13 @@
+{
+  "key": "c87b73e253f0861a7eb5ae6b1819c6a5",
+  "npc": "anjali_rao",
+  "text": "You kept your sign-in to yourself and sent the handover the proper way, so every action still points at whoever actually did it.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:57Z"
+}

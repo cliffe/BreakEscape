@@ -1,0 +1,13 @@
+{
+  "key": "cdbbbfb0ec9a511bdb7261e4cfa97a1e",
+  "npc": "closing_debrief",
+  "text": "Say it, Agent. I would rather hear it than watch you swallow it.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:46:02Z"
+}

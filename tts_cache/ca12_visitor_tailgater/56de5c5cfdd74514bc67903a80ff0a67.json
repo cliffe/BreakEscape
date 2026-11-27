@@ -1,0 +1,13 @@
+{
+  "key": "56de5c5cfdd74514bc67903a80ff0a67",
+  "npc": "kit_thandiwe_moyo",
+  "text": "Phones haven't stopped all morning.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T23:28:01Z"
+}

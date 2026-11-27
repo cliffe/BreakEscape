@@ -1,0 +1,10 @@
+{
+"steps": [
+{ "note": "R23: the hour read with the schedule unread. The player asks every question, HaX closes it with the box-wipe line and no choice about it." },
+{ "talk": "phone", "knot": "hour_read", "picks": ["Isn't it", "Who gets it first", "Analysis had a guess", "Understood"] },
+{ "said": ["That job on his box still copies to Tomb Gamma", "Full disclosure is one researcher publishing one flaw", "The cells. Oh-four-hundred, UTC", "His own number. Analysis guessed low", "Nobody's wiping this box. Not her, not him"],
+  "notSaid": ["I'm sending this up to Netherton", "Kemal Aydin walked out", "[choice] Her schedule", "He shredded everyone but himself"] },
+{ "expect": { "hour_read_started": true, "hour_read_done": true } },
+{ "tasks": { "hear_the_mirror_job": "unlocked" } }
+]
+}

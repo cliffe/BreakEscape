@@ -1,0 +1,1054 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m09_digital_archaeology",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "door_front_desk",
+        "optional": false
+      },
+      {
+        "id": "door_restricted_cage",
+        "optional": false
+      },
+      {
+        "id": "door_restricted_stacks",
+        "optional": false
+      },
+      {
+        "id": "door_salvage_cage",
+        "optional": false
+      },
+      {
+        "id": "door_sorensen_office",
+        "optional": false
+      },
+      {
+        "id": "door_staff_passage",
+        "optional": false
+      },
+      {
+        "id": "door_tape_room",
+        "optional": false
+      },
+      {
+        "id": "lock_director_safe",
+        "optional": false
+      },
+      {
+        "id": "lock_enrolment_crate",
+        "optional": false
+      },
+      {
+        "id": "lock_hl_box",
+        "optional": false
+      },
+      {
+        "id": "lock_plan_cabinet",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "key_card_tape_store",
+        "optional": false
+      },
+      {
+        "id": "key_ring_dock_office",
+        "optional": true
+      },
+      {
+        "id": "npc_agent_hax",
+        "optional": false
+      },
+      {
+        "id": "npc_cody_old_coyote",
+        "optional": false
+      },
+      {
+        "id": "npc_noor_haddad",
+        "optional": false
+      },
+      {
+        "id": "staff_card_n_haddad",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "front_desk",
+      "loading_dock",
+      "open_stacks",
+      "reading_room",
+      "restricted_cage",
+      "restricted_stacks",
+      "salvage_cage",
+      "server_closet",
+      "sorensen_office",
+      "staff_passage",
+      "tape_room"
+    ],
+    "edges": [
+      [
+        "andgate1",
+        "door_salvage_cage",
+        false
+      ],
+      [
+        "catalogue_salvage_cage",
+        "andgate1",
+        true
+      ],
+      [
+        "catalogue_salvage_cage",
+        "door_salvage_cage",
+        false
+      ],
+      [
+        "door_front_desk",
+        "front_desk",
+        false
+      ],
+      [
+        "door_restricted_cage",
+        "restricted_cage",
+        false
+      ],
+      [
+        "door_restricted_stacks",
+        "restricted_stacks",
+        false
+      ],
+      [
+        "door_salvage_cage",
+        "salvage_cage",
+        false
+      ],
+      [
+        "door_sorensen_office",
+        "sorensen_office",
+        false
+      ],
+      [
+        "door_staff_passage",
+        "staff_passage",
+        false
+      ],
+      [
+        "door_tape_room",
+        "tape_room",
+        false
+      ],
+      [
+        "field_laptop",
+        "vmch_submit_catalogue_flag",
+        false
+      ],
+      [
+        "floor_safe",
+        "door_tape_room",
+        false
+      ],
+      [
+        "front_desk",
+        "npc_noor_haddad",
+        false
+      ],
+      [
+        "key_card_tape_store",
+        "door_tape_room",
+        false
+      ],
+      [
+        "key_ring_dock_office",
+        "door_front_desk",
+        true
+      ],
+      [
+        "loading_dock",
+        "cyberchef_workstation",
+        false
+      ],
+      [
+        "loading_dock",
+        "fingerprint_kit",
+        false
+      ],
+      [
+        "loading_dock",
+        "lock_pick_kit",
+        false
+      ],
+      [
+        "loading_dock",
+        "npc_agent_hax",
+        false
+      ],
+      [
+        "loading_dock",
+        "open_stacks",
+        false
+      ],
+      [
+        "loading_dock",
+        "pin_cracker_kowalczyk_s",
+        false
+      ],
+      [
+        "loading_dock",
+        "rfid_cloner",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "destruction_schedule_master",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "key_card_tape_store",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "the_reading_1_viral_dynamics",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "the_reading_2_the_innocents",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "the_reading_3_albion",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "the_reading_4_portland",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "the_reading_last_page",
+        false
+      ],
+      [
+        "lock_hl_box",
+        "placement_record_hl2015_0477",
+        true
+      ],
+      [
+        "lock_pick_kit",
+        "door_front_desk",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_enrolment_crate",
+        false
+      ],
+      [
+        "lock_plan_cabinet",
+        "candidate_assessment_intake_2011",
+        false
+      ],
+      [
+        "npc_agent_hax",
+        "catalogue_salvage_cage",
+        false
+      ],
+      [
+        "npc_cody_old_coyote",
+        "key_ring_dock_office",
+        true
+      ],
+      [
+        "npc_noor_haddad",
+        "staff_card_n_haddad",
+        false
+      ],
+      [
+        "open_stacks",
+        "harwick_lowe_dead_files",
+        true
+      ],
+      [
+        "open_stacks",
+        "lock_hl_box",
+        false
+      ],
+      [
+        "open_stacks",
+        "npc_cody_old_coyote",
+        false
+      ],
+      [
+        "open_stacks",
+        "reading_room",
+        false
+      ],
+      [
+        "open_stacks",
+        "server_closet",
+        false
+      ],
+      [
+        "pin_cracker_kowalczyk_s",
+        "lock_director_safe",
+        false
+      ],
+      [
+        "reading_room",
+        "drop_terminal_screen",
+        false
+      ],
+      [
+        "reading_room",
+        "field_laptop",
+        false
+      ],
+      [
+        "reading_room",
+        "login_slip",
+        false
+      ],
+      [
+        "reading_room",
+        "safetynet_drop_terminal",
+        false
+      ],
+      [
+        "reading_room",
+        "training_notebook_scan",
+        false
+      ],
+      [
+        "rent_ledger",
+        "lock_director_safe",
+        true
+      ],
+      [
+        "restricted_cage",
+        "lock_plan_cabinet",
+        false
+      ],
+      [
+        "restricted_cage",
+        "plan_cabinet",
+        false
+      ],
+      [
+        "restricted_stacks",
+        "rubber_stamp",
+        false
+      ],
+      [
+        "rfid_cloner",
+        "door_restricted_cage",
+        false
+      ],
+      [
+        "rubber_stamp",
+        "lock_plan_cabinet",
+        false
+      ],
+      [
+        "safetynet_drop_terminal",
+        "door_restricted_stacks",
+        false
+      ],
+      [
+        "salvage_cage",
+        "crate_stencilled_beta",
+        true
+      ],
+      [
+        "salvage_cage",
+        "field_kit_link",
+        false
+      ],
+      [
+        "salvage_cage",
+        "lock_enrolment_crate",
+        false
+      ],
+      [
+        "shelf_marks",
+        "andgate1",
+        false
+      ],
+      [
+        "sorensen_office",
+        "floor_safe",
+        false
+      ],
+      [
+        "sorensen_office",
+        "lease_abstract_and_construction_file",
+        false
+      ],
+      [
+        "sorensen_office",
+        "lock_director_safe",
+        false
+      ],
+      [
+        "sorensen_office",
+        "rent_ledger",
+        true
+      ],
+      [
+        "staff_card_n_haddad",
+        "door_staff_passage",
+        false
+      ],
+      [
+        "tape_room",
+        "shelf_marks",
+        false
+      ],
+      [
+        "vmch_submit_catalogue_flag",
+        "vmfl_submit_catalogue_flag",
+        false
+      ],
+      [
+        "vmch_submit_control_flag",
+        "vmfl_submit_control_flag",
+        false
+      ],
+      [
+        "vmch_submit_ledger_flag",
+        "vmfl_submit_ledger_flag",
+        false
+      ],
+      [
+        "vmch_submit_owner_flag",
+        "vmfl_submit_owner_flag",
+        false
+      ],
+      [
+        "vmfl_submit_catalogue_flag",
+        "door_restricted_stacks",
+        false
+      ],
+      [
+        "vmfl_submit_catalogue_flag",
+        "vmch_submit_ledger_flag",
+        true
+      ],
+      [
+        "vmfl_submit_ledger_flag",
+        "vmch_submit_owner_flag",
+        true
+      ],
+      [
+        "vmfl_submit_owner_flag",
+        "vmch_submit_control_flag",
+        true
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/front_desk",
+      "id": null,
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "a6f1ee11af9ed622",
+      "requiresHash": "d45b5080c181b40f"
+    },
+    {
+      "path": "/rooms/open_stacks/objects[hl_box]",
+      "id": "hl_box",
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "fd009b4c3f9e9b4b",
+      "requiresHash": "396f0603a6882614"
+    },
+    {
+      "path": "/rooms/restricted_cage",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "184ade5f70129ed3",
+      "requiresHash": "e77bf6af1ba5c612"
+    },
+    {
+      "path": "/rooms/restricted_cage/objects[plan_cabinet]",
+      "id": "plan_cabinet",
+      "lockType": "biometric",
+      "locked": true,
+      "requirementHash": "acaf8c2c54159ed3",
+      "requiresHash": "bb4e67ccc08b21d8"
+    },
+    {
+      "path": "/rooms/restricted_stacks",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "ee60a9dbf9ba05f6",
+      "requiresHash": "f9e43264694985e1"
+    },
+    {
+      "path": "/rooms/salvage_cage",
+      "id": null,
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "0239c102b9bcfc7c",
+      "requiresHash": "6dc8d9915fa39855"
+    },
+    {
+      "path": "/rooms/salvage_cage/objects[enrolment_crate]",
+      "id": "enrolment_crate",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "14237428f0f7edd6",
+      "requiresHash": "966213e6384f8bfd"
+    },
+    {
+      "path": "/rooms/sorensen_office",
+      "id": null,
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "0fbb1e1d9c77a3b7",
+      "requiresHash": "ae25ea46f24d265e"
+    },
+    {
+      "path": "/rooms/sorensen_office/objects[director_safe]",
+      "id": "director_safe",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "fc0d2613063798bc",
+      "requiresHash": "02a9eacda28fb996"
+    },
+    {
+      "path": "/rooms/staff_passage",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "95269c424f64e491",
+      "requiresHash": "72e32cc69000444a"
+    },
+    {
+      "path": "/rooms/tape_room",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "87729763528e6f97",
+      "requiresHash": "a6237f89d405d44c"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "get_in",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "get_inside",
+          "type": "custom"
+        },
+        {
+          "taskId": "meet_the_clerk",
+          "type": "npc_conversation",
+          "targetNPC": "noor_haddad",
+          "optional": true
+        },
+        {
+          "taskId": "set_up_drop_terminal",
+          "type": "custom"
+        },
+        {
+          "taskId": "submit_catalogue_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "drop_terminal:catalogue_server-flag1"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "restricted_stacks"
+        }
+      ]
+    },
+    {
+      "aimId": "restricted_series",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "get_in"
+      },
+      "tasks": [
+        {
+          "taskId": "enter_restricted_stacks",
+          "type": "enter_room",
+          "targetRoom": "restricted_stacks"
+        },
+        {
+          "taskId": "talk_at_the_hatch",
+          "type": "custom"
+        },
+        {
+          "taskId": "open_the_cage",
+          "type": "custom"
+        },
+        {
+          "taskId": "open_plan_cabinet",
+          "type": "unlock_object",
+          "targetObject": "plan_cabinet"
+        },
+        {
+          "taskId": "match_the_hand",
+          "type": "custom"
+        },
+        {
+          "taskId": "stop_the_shredding",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "stop_the_tape_wipe",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "read_the_ledger",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "get_in"
+      },
+      "tasks": [
+        {
+          "taskId": "submit_ledger_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "drop_terminal:catalogue_server-flag2"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "answer_the_offer",
+          "type": "custom",
+          "puzzle_graph_unlocks": "sorensen_office"
+        },
+        {
+          "taskId": "cross_reference_wren",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "search_the_office",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "read_the_ledger"
+      },
+      "tasks": [
+        {
+          "taskId": "enter_office",
+          "type": "enter_room",
+          "targetRoom": "sorensen_office"
+        },
+        {
+          "taskId": "open_the_safe",
+          "type": "unlock_object",
+          "targetObject": "director_safe"
+        },
+        {
+          "taskId": "take_the_reading",
+          "type": "collect_items",
+          "targetItemIds": [
+            "the_reading"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "take_tape_room_card",
+          "type": "collect_items",
+          "targetItemIds": [
+            "tape_room_keycard"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "find_the_deed",
+          "type": "collect_items",
+          "targetItemIds": [
+            "lease_file"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "take_tomb_beta",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "read_the_ledger"
+      },
+      "tasks": [
+        {
+          "taskId": "enter_tape_room",
+          "type": "enter_room",
+          "targetRoom": "tape_room"
+        },
+        {
+          "taskId": "open_salvage_cage",
+          "type": "unlock_room",
+          "targetRoom": "salvage_cage"
+        },
+        {
+          "taskId": "submit_owner_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "tomb_beta_station:tomb_beta_server-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "hear_the_name",
+          "type": "custom"
+        },
+        {
+          "taskId": "submit_control_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "tomb_beta_station:tomb_beta_server-flag2"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "hear_the_mirror_job",
+          "type": "custom"
+        },
+        {
+          "taskId": "send_the_notice",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "report_in",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "take_tomb_beta"
+      },
+      "tasks": [
+        {
+          "taskId": "report_to_netherton",
+          "type": "custom"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[report_in]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_catalogue_flag",
+          "submit_ledger_flag",
+          "submit_owner_flag",
+          "submit_control_flag"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99": "loading_dock",
+    "albion_folder": "salvage_cage",
+    "alpha_annotations": "tape_room",
+    "alpha_recording": "tape_room",
+    "alpha_tape_deck": "tape_room",
+    "arakawa": "loading_dock",
+    "archive_guard": "open_stacks",
+    "beta_asset_tag": "salvage_cage",
+    "briefing_cutscene": "loading_dock",
+    "cage_shredder": "restricted_cage",
+    "case_file": "reading_room",
+    "catalogue_login_slip": "reading_room",
+    "catalogue_salvage_line": "loading_dock",
+    "clerk_certificate": "sorensen_office",
+    "closing_debrief": "loading_dock",
+    "danny_sheet": "sorensen_office",
+    "deck_controller": "sorensen_office",
+    "derek_file": "restricted_stacks",
+    "director_netherton": "loading_dock",
+    "director_safe": "sorensen_office",
+    "dock_office_key": "open_stacks",
+    "drop_terminal": "reading_room",
+    "drop_terminal_screen": "reading_room",
+    "enrolment_binders": "salvage_cage",
+    "enrolment_crate": "salvage_cage",
+    "feed_table_box": "restricted_cage",
+    "field_kit_link": "salvage_cage",
+    "field_laptop": "reading_room",
+    "gary_phone": "loading_dock",
+    "hax_voice": "loading_dock",
+    "hl_bay_label": "open_stacks",
+    "hl_box": "open_stacks",
+    "hl_placing_sheet": "open_stacks",
+    "incident_book": "loading_dock",
+    "jesse_tran": "server_closet",
+    "kowalczyk": "loading_dock",
+    "lease_file": "sorensen_office",
+    "letters": "restricted_stacks",
+    "m09_archive_code_guide": "loading_dock",
+    "m09_catalogue_field_guide": "loading_dock",
+    "m09_ledger_field_guide": "loading_dock",
+    "m09_tomb_beta_field_guide": "loading_dock",
+    "malhotra": "loading_dock",
+    "master_schedule": "sorensen_office",
+    "mirror_job_printout": "salvage_cage",
+    "nightshade_copy": "restricted_stacks",
+    "nightshade_file": "restricted_cage",
+    "nightshade_phone": "loading_dock",
+    "noor_desk_box": "front_desk",
+    "noor_haddad": "front_desk",
+    "noor_staff_card": "front_desk",
+    "notebook_scan": "reading_room",
+    "old_coyote": "open_stacks",
+    "plan_cabinet": "restricted_cage",
+    "printed_ledger": "restricted_cage",
+    "quintero": "loading_dock",
+    "recruiter": "loading_dock",
+    "refit_ledger": "sorensen_office",
+    "rent_book": "sorensen_office",
+    "shelf_code_legend": "tape_room",
+    "sorensen": "restricted_cage",
+    "sorensen_door": "restricted_cage",
+    "sorensen_hatch": "restricted_stacks",
+    "sorensen_stacks_card": "restricted_cage",
+    "sorensen_stamp": "restricted_stacks",
+    "tape_room_keycard": "sorensen_office",
+    "tape_side_console": "server_closet",
+    "the_reading": "sorensen_office",
+    "the_reading_2": "sorensen_office",
+    "the_reading_3": "sorensen_office",
+    "the_reading_4": "sorensen_office",
+    "the_reading_last_page": "sorensen_office",
+    "tomb_beta_rack": "salvage_cage",
+    "tomb_beta_station": "salvage_cage",
+    "torres_phone": "loading_dock",
+    "trolley_list": "front_desk"
+  },
+  "layout": {
+    "start": "loading_dock",
+    "adj": {
+      "front_desk": [
+        "loading_dock",
+        "staff_passage"
+      ],
+      "loading_dock": [
+        "front_desk",
+        "open_stacks"
+      ],
+      "open_stacks": [
+        "loading_dock",
+        "reading_room",
+        "server_closet"
+      ],
+      "reading_room": [
+        "open_stacks",
+        "restricted_stacks",
+        "staff_passage"
+      ],
+      "restricted_cage": [
+        "restricted_stacks"
+      ],
+      "restricted_stacks": [
+        "reading_room",
+        "restricted_cage",
+        "sorensen_office",
+        "tape_room"
+      ],
+      "salvage_cage": [
+        "tape_room"
+      ],
+      "server_closet": [
+        "open_stacks"
+      ],
+      "sorensen_office": [
+        "restricted_stacks"
+      ],
+      "staff_passage": [
+        "front_desk",
+        "reading_room"
+      ],
+      "tape_room": [
+        "restricted_stacks",
+        "salvage_cage"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "front_desk",
+      "task get_inside (mapping 'room_entered:front_desk')",
+      null
+    ],
+    [
+      "loading_dock",
+      "task answer_the_offer (ink of 'agent_0x99')",
+      "agent_0x99"
+    ],
+    [
+      "loading_dock",
+      "task answer_the_offer (ink of 'recruiter')",
+      "recruiter"
+    ],
+    [
+      "loading_dock",
+      "task hear_the_mirror_job (mapping 'global_variable_changed:tesseract_call_done')",
+      null
+    ],
+    [
+      "loading_dock",
+      "task hear_the_name (ink of 'agent_0x99')",
+      "agent_0x99"
+    ],
+    [
+      "loading_dock",
+      "task match_the_hand (ink of 'agent_0x99')",
+      "agent_0x99"
+    ],
+    [
+      "loading_dock",
+      "task open_the_cage (mapping 'global_variable_changed:cage_opened')",
+      null
+    ],
+    [
+      "loading_dock",
+      "task report_to_netherton (mapping 'conversation_closed:closing_debrief')",
+      "closing_debrief"
+    ],
+    [
+      "loading_dock",
+      "task report_to_netherton (mapping 'room_entered')",
+      null
+    ],
+    [
+      "loading_dock",
+      "task set_up_drop_terminal (mapping 'global_variable_changed:flag1_submitted')",
+      null
+    ],
+    [
+      "loading_dock",
+      "task set_up_drop_terminal (mapping 'object_interacted')",
+      null
+    ],
+    [
+      "loading_dock",
+      "task talk_at_the_hatch (mapping 'global_variable_changed:cage_opened')",
+      null
+    ],
+    [
+      "loading_dock",
+      "task talk_at_the_hatch (mapping 'global_variable_changed:hatch_talked')",
+      null
+    ],
+    [
+      "open_stacks",
+      "task get_inside (mapping 'room_entered:open_stacks')",
+      null
+    ],
+    [
+      "reading_room",
+      "VM launcher (flag tasks)",
+      "field_laptop"
+    ],
+    [
+      "reading_room",
+      "task set_up_drop_terminal (mapping 'global_variable_changed:flag1_submitted')",
+      null
+    ],
+    [
+      "reading_room",
+      "task submit_catalogue_flag (flag station)",
+      "drop_terminal"
+    ],
+    [
+      "reading_room",
+      "task submit_ledger_flag (flag station)",
+      "drop_terminal"
+    ],
+    [
+      "restricted_cage",
+      "task open_plan_cabinet",
+      "plan_cabinet"
+    ],
+    [
+      "restricted_stacks",
+      "task enter_restricted_stacks",
+      null
+    ],
+    [
+      "restricted_stacks",
+      "task talk_at_the_hatch (mapping 'global_variable_changed:hatch_talked')",
+      null
+    ],
+    [
+      "salvage_cage",
+      "VM launcher (flag tasks)",
+      "field_kit_link"
+    ],
+    [
+      "salvage_cage",
+      "task open_salvage_cage",
+      null
+    ],
+    [
+      "salvage_cage",
+      "task submit_control_flag (flag station)",
+      "tomb_beta_station"
+    ],
+    [
+      "salvage_cage",
+      "task submit_owner_flag (flag station)",
+      "tomb_beta_station"
+    ],
+    [
+      "sorensen_office",
+      "task enter_office",
+      null
+    ],
+    [
+      "sorensen_office",
+      "task find_the_deed",
+      "lease_file"
+    ],
+    [
+      "sorensen_office",
+      "task open_the_safe",
+      "director_safe"
+    ],
+    [
+      "sorensen_office",
+      "task take_tape_room_card",
+      "tape_room_keycard"
+    ],
+    [
+      "sorensen_office",
+      "task take_the_reading",
+      "the_reading"
+    ],
+    [
+      "tape_room",
+      "task enter_tape_room",
+      null
+    ]
+  ]
+}

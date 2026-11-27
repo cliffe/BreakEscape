@@ -1,0 +1,13 @@
+{
+  "key": "a1fe69dd3808e30ae0f5634d618aa600",
+  "npc": "fatima_begum",
+  "text": "You spotted the one that wanted a second click to open, so nothing ran and the inbox is clean.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:11:03Z"
+}

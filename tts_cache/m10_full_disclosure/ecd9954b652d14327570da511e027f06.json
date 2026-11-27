@@ -1,0 +1,13 @@
+{
+  "key": "ecd9954b652d14327570da511e027f06",
+  "npc": "duty_guard_b",
+  "text": "Turn around. I won't say it again.",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:26:02Z"
+}

@@ -1,0 +1,24 @@
+GLOBALS: {"ok":true,"cmd":"eval","result":{"ending":"sent","dm":true,"warned":false,"greeted":false}}
+GHOST THREAD: {"ok":true,"cmd":"eval","result":["Special Collections. Fourteen left. The key to the next one is somewhere a careful man keeps his accounts.","Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest.","Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall."]}
+BACKGROUND: {"ok":true,"cmd":"eval","result":["assets/backgrounds/hq5.png","http://127.0.0.1:3001/break_escape/assets/backgrounds/hq5.png"]}
+Agent HaX: I opened your report at the field HQ at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where it was.
+Agent HaX: We were all out before midnight. Nobody's hurt.
+Agent HaX: At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back.
+Agent HaX: Did you read it before you sent it?
+demo_player: No. I didn't decode it.
+Agent HaX: No. Most people wouldn't have. That's why it works.
+Agent HaX: Ghost withdrew the studentship this morning. They had what they wanted, and it was never you.
+Agent HaX: I'm meant to wonder whose side you're on. I'm trying not to.
+Agent HaX: One pixel. A picture too small to see, fetched from Ghost's server the moment anyone opens the report. That's all a location costs.
+Agent HaX: Your mail app does the same thing every day, unless you turn remote images off.
+Agent HaX: I bet Ghost never saw your face at St Catherine's. I lost.
+Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you anyway. That's worth knowing. I didn't enjoy learning it.
+Agent HaX: We're replacing your phone anyway. Ghost had the building's network all week.
+Agent HaX: Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have.
+Agent HaX: Jordan Pike got his referral bonus. He'll never know what for.
+Agent HaX: You can read Base64 now. Most people who'd have opened that report can't.
+demo_player: That's everything.
+Agent HaX: Term starts Monday. Go to your lectures. You never know who's watching.
+[no dialogue] mg= None
+CREDITS: {"ok":true,"cmd":"eval","result":["KEYHOLDER: OFFER WITHDRAWN","THE KEYHOLDER TRIALS","── HANDLER ──","THE FIELD HQ: Burned at four. Kit and cover lost. Nobody hurt.","AGENT HaX: Working from the fallback site.","REPORT: Sent unread.","AGENT HaX: Still your handler.","THE KEYHOLDER STUDENTSHIP: Never awarded.","── CAMPUS ──","MEGAN OYELARAN: Took the CryptoSecure placement.","JORDAN PIKE: Referral bonus paid.","DR TOM SHAW: Reported the stand to the department.","DR SIDHU SELVARAJAN: Still checks everything twice."]}
+DONE

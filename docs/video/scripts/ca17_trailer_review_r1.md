@@ -1,0 +1,40 @@
+# ca17 trailer script: sell and truth review, round 1
+
+Script: `docs/video/scripts/ca17_trailer_script.md` (71.7 s, defend only). Checked against `scenarios/ca17_acceptable_use_defend/` (scenario.json.erb, ink/nilesh_solanki.ink), the dry-run takes doc `docs/video/takes_ca17.md` (23 and 25 Nov), the recipe `docs/video/recipes/course-trailer.md` and the finished ca07 script. Reviewer: Opus (sell and truth). 25 Nov 2026.
+
+**Totals: 0 B, 2 M, 6 m.**
+
+Verified true: the hook and format lines are Nilesh's ink line 24 word for word; v1b (a logistics firm with a fleet and a Shipley depot); v7b ("there's no clock on you" is in `defendIntro` and `launchText`); all seven card situations are quoted exactly from the drill, and the montage split (two Ask first, one Allowed, four Not allowed) matches their `answer` fields; "What we monitor and why" is `isPhish: false`; the title is the scenario's `titleScreenName`; the inbox has six emails. Totals add up to 71.7 s. No dashes in any VO line.
+
+## Findings
+
+| # | Sev | Line | Issue | Proposed rewrite |
+|---|---|---|---|---|
+| 1 | M | v9 fit (line 38), cast cut points "End bark" (line 44), "Barks" paragraph (line 46), take note "End bark" (line 54), owner question 4 | The `room_end` row is now a silent walk-and-drink (Chidi can never bark at the machine: the takes doc shows that the pair chat always opens with Fatima). Five other places still describe a Chidi bark: a seeded bag, "any of his five lines", bark start minus 3.31 s, "retake if Fatima barks". Someone following the take note would search seeds for a line that cannot play. | Delete the "End bark" cut points, the Chidi half of "Barks", and the take note's seed search. Replace them with the takes doc's window: in = `chidi_walk` minus 0.3 s, out = in plus 5.8 s (before `fatima_at_machine`, about 31.4 s), chatter muted, bubbles hidden. v9 fit: cue 0.2 to 3.11 s over a silent picture. Rewrite owner question 4 to match finding 2. |
+| 2 | M | `room_end`, v9 "Out in the depot, Chidi's back." | (a) Truth: "back" was set up by the dropped bark "Parched after that yard run." On screen he leaves his desk for the drinks machine, so "back" now has nothing to point at. (b) Sell: the trailer ends on 5.8 s of silent footage, the weakest end in the batch, against the rule "end on a living-office moment" and the recipe's F4. The takes doc offers a voiced moment that already works: in t06 (`T06_VOICE=1`, game 12715) Fatima joins Chidi at the machine about 31.4 s in and her pair-chat line plays 32.1 to 33.9 s (cached, /tts 200). | Preferred: move the window to the pair. Chidi is already at the machine and Fatima walks over. v9 becomes **"Out in the depot, the day goes on."** (8 words, one stop: 3.78 s estimated, about 3.2 s real). In = Fatima's bark audio start minus (0.2 lead + VO + 0.2 clear), so about minus 3.6 s on a real read; out = her speech end plus 0.2 s. That makes a shot of about 5.4 s in the 5.8 s slot (it runs 6.0 s on the estimate: if so, add 0.2 s, total 71.9 s). Fatima's line is the cast caption. Pick a game whose first Fatima draw fits (`bag17.mjs` prints it; "Depot's heaving today." played in the dry run). A new line needs no voicing. If the owner prefers silence, keep the t06 window and change v9 to **"Out in the depot, Chidi takes a break."** (7 words, one stop). The t07 follow-camera take (not yet dry-run) also suits this version. |
+| 3 | m | `room` on-screen text | "Nilesh at his desk, Fatima and Chidi at theirs." The t02 dry-run frames show Nilesh walking about, not at a desk, with Fatima and Chidi seated at the table. | "the Tarrowby depot office, Fatima and Chidi seated at the table, Nilesh about the room, the drinks machine bottom right". |
+| 4 | m | Take notes "Montage cards" and "Inbox" (lines 51, 53) | Out of date. "Seven specific ones in one game is unlikely" no longer holds: seed 7673 draws all seven wanted cards (`findSeed`, takes doc). "The way through the sort is unverified" is also stale: the dry run proved nine picks, Done, "Open the inbox", Start. The takes doc's hazard is missing: the drill's X closes the whole kiosk. | Montage: "Seed 7673 draws all seven wanted cards (S01, S03, S04, S09, S11, S12, S16); keep the retake fallback only if the seed stops working." Inbox: "proved in the dry run". Add: "Never press the drill's X: it closes the kiosk and a reopen returns to 'Open the cards'." |
+| 5 | m | v7 "Then a short inbox of requests." | Two of the six emails are notices, not requests, and v8 opens one of them (the monitoring notice), so "requests" sits over a card that asks for nothing. "A short inbox" also repeats Nilesh's words from 25 s earlier. | **"Then six emails to handle."** (5 words, 2.52 s with lead and tail). |
+| 6 | m | v7b "There's no clock on you." | True, but the line says what the course is not, and the inbox half says nothing about why it is interesting. With no attack half, this is the trailer's only chance to touch the USP: four of the six emails are fakes, and three of those ask the reader to break a rule (install Roomcall, a "Quick favour" data lookup, "Watch my inbox?"). Saying so stays at pattern level and points at no single row. | **"Some want a rule bent."** (5 words). With the new v7: cues 0.2 to 2.37 s and 2.62 to 4.79 s, tail 4.94 s in 5.5. Owner's call; keep v7b as the fallback. |
+| 7 | m | v2 "One everyday moment per card." over the blue card "You sort the everyday moments" | The VO repeats the card's words and describes the card itself, when the owner rule asks for the action being done. | **"Then you make the calls."** (5 words, 2.52 s in 3.0). It also sets up the tagline. |
+| 8 | m | v10, close | The ca17 owner rule says the card text and the spoken close use the same words. The spoken tagline matches, but the plate "Learn on Hacktivity.co.uk" is never spoken, unlike ca07 and ca18. The timing reason given is sound. | No line change. Add one sentence to owner question 2: "ca17 is the only close that does not speak the Hacktivity.co.uk call." |
+
+Checked, no change: the hook (4.1 s, inside the 5.0 s limit); the bins sweep stays silent with nothing pressed; the key-fake row ("Join Tuesday's review, install R...") is in the list only and the cursor stays off it; the HR "reasonable personal use" row is held for 5.5 s or less; v8 asks a question over a genuine card with the verbs out of frame; the narration never says "kiosk".
+
+## Rubric (CA fun and USP; trailer-observable items)
+
+Scores are for the script as written. The figure in brackets is the score if findings 2 and 6 are applied.
+
+| Item | Score | Evidence |
+|---|---|---|
+| F1 Early hook | 2 | Nilesh, 0.0 to 4.1 s: "Nilesh, service desk. Every rule here has a 'because'." It names a person and a promise, but it is calm and sets up no question. |
+| F4 Living world | 1 (2) | The `room` wide shows seated staff and a drinks machine, but no voice from the office is heard after the hook, and the end is silent. With finding 2, Fatima speaks at the machine. |
+| O1 Attacker's method shown | 0 (1) | Defend only, so there is no attack half (owner question 1). Nothing tells the viewer that the inbox holds fakes. With finding 6, "Some want a rule bent." names the pattern. |
+| O2 Attacker reasoning visible | 0 | Nothing on screen or in the VO says why someone would send these requests. Not fixable inside a defend-only trailer without spelling out tells. |
+| O4 Tone | 3 | "There's no clock on you"; the monitoring notice "reads like a warning, but is genuine" is shown without a verdict; no fear framing anywhere. |
+| A1 Accuracy | 3 | Every card, cast line and scenario fact checked (list above). The only untrue line is v9's "back" (finding 2). |
+| A2 Safe takeaway | 3 | No answers, reasons, feedback or scores on screen; the fakes' bodies are never opened. |
+| P1 Practice or outcome | 1 | The sort and the inbox are shown as practice. No outcome is shown (by design: no verdicts on screen). |
+| F2, F3, F5, F6, O3 | not observable | A trailer cannot show these. |
+
+Trailer subtotal 13 of 24 (now), 15 of 24 with findings 2 and 6. The low O1 and O2 scores come from the episode (defend only), not from the script.

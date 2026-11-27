@@ -1,0 +1,25 @@
+{
+  "display_name": "Encoding and Encryption Lab",
+  "description": "Learn essential knowledge and skills related to encoding schemes, hash algorithms, and the use of tools like OpenSSL and Gnu Privacy Guard (GPG). Explore concepts like encoding data into different formats, encrypting and decrypting information, and managing keys. Complete CTF challenges in the VM to put your knowledge into practice.",
+  "difficulty_level": 2,
+  "secgen_scenario": "labs/cyber_security_landscape/4_encoding_encryption.xml",
+  "collection": "vm_labs",
+  "cybok": [
+    {
+      "ka": "AC",
+      "topic": "Algorithms, Schemes and Protocols",
+      "keywords": ["Encoding vs Cryptography", "Caesar cipher", "Vigenere cipher", "SYMMETRIC CRYPTOGRAPHY - AES (ADVANCED ENCRYPTION STANDARD)"]
+    },
+    {
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": ["Encoding and alternative data formats"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Fundamental Concepts and Approaches",
+      "keywords": ["ENCODING", "BASE64"]
+    }
+  ]
+}
+

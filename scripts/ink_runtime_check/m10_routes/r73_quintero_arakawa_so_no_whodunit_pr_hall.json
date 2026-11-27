@@ -1,0 +1,73 @@
+{
+ "steps": [
+  {
+   "note": "With the whodunit off (taken or double-crossed) the photo lines change: Quintero's likeness line and Arakawa's 'long way off'. Arakawa's power-room and server-hall copies keep their own lines and no accusation is offered."
+  },
+  {
+   "set": {
+    "whodunit_live": false,
+    "security_office_entered": true
+   }
+  },
+  {
+   "talk": "qso",
+   "picks": []
+  },
+  {
+   "said": [
+    "Good likeness. Somebody down here wants you alive, and I don't like that either."
+   ],
+   "notSaid": [
+    "Quiet door.",
+    "Service side."
+   ]
+  },
+  {
+   "talk": "aso",
+   "picks": []
+  },
+  {
+   "said": [
+    "They took that from a long way off. Somebody's been watching you a while."
+   ],
+   "notSaid": [
+    "This room was waiting for you."
+   ]
+  },
+  {
+   "set": {
+    "power_room_entered": true
+   }
+  },
+  {
+   "talk": "apr",
+   "picks": []
+  },
+  {
+   "said": [
+    "That hum's in my teeth. Let's not stay long."
+   ],
+   "notSaid": [
+    "They took that from a long way off."
+   ]
+  },
+  {
+   "set": {
+    "server_hall_entered": true
+   }
+  },
+  {
+   "talk": "ahall",
+   "picks": []
+  },
+  {
+   "said": [
+    "Two patrols. I'll watch the left half."
+   ],
+   "notSaid": [
+    "That hum's in my teeth.",
+    "You're WREN."
+   ]
+  }
+ ]
+}

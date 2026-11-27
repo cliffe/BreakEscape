@@ -1,0 +1,11 @@
+game 2014 (decline_vm)
+fire T-20
+banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t20","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+shot decline_vm_t20_banner
+after decline: {"cur":null,"q":0,"banner":null,"bimg":null} rows=["Missed call: No caller ID","Voicemail"]
+"opened the_architect"
+thread text: "☎ | Missed call: No caller ID | ☎ | Voicemail | Transcript: | Busy. Of course. You've sent your team. | Transcript: | You covered Washington. San Francisco and the vendors are on your clock. | Transcript: | Did you decide with a number, or with your stomach? | A carrier tone on a channel that should not have one. Nobody on it. He calls when he chooses."
+shot decline_vm_thread
+voice bubbles: ["Transcript:\nBusy. Of course. You've sent your team.","Transcript:\nYou covered Washington. San Francisco and the vendors are on your clock.","Transcript:\nDid you decide with a number, or with your stomach?"]
+taunt_t20 live text leaked? (should be empty): false
+architect /tts: 

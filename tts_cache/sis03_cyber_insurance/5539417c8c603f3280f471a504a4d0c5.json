@@ -1,0 +1,13 @@
+{
+  "key": "5539417c8c603f3280f471a504a4d0c5",
+  "npc": "eleanor_vance",
+  "text": "Good — you're here. I'm Eleanor Vance, Claims Manager.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:17:49Z"
+}

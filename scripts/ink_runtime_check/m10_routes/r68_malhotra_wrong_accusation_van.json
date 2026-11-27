@@ -1,0 +1,57 @@
+{
+ "steps": [
+  {
+   "note": "Malhotra after the breach, both clues held: 'Relay's up', the accusation taken back ('Gladly'), then confirmed. He goes to the van (officer_out) and the net loses his relay."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "breach_open": true
+   }
+  },
+  {
+   "talk": "malhotra",
+   "picks": [
+    "You're WREN",
+    "Forget I said it",
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "Relay's up. You're loud and clear.",
+    "If that's wrong, I lose Malhotra's relay till you can clear him. Sure?",
+    "Gladly.",
+    "Eleven years. Check the log again.",
+    "Officer Malhotra. Headset off, and sit in the van, please."
+   ],
+   "notSaid": [
+    "Comms check's clean."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "malhotra",
+    "wrong_accusation": true,
+    "accused": ""
+   }
+  },
+  {
+   "talk": "malhotra",
+   "picks": [
+    "Leave him be"
+   ]
+  },
+  {
+   "said": [
+    "(Leave him be.)"
+   ],
+   "notSaid": [
+    "Keep the line clean."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,39 @@
+TAP version 13
+# Subtest: the prompt counts as open from the call, through the delay, until answered
+ok 1 - the prompt counts as open from the call, through the delay, until answered
+  ---
+  duration_ms: 45.414029
+  ...
+# 👁️ SIGHT CHALLENGE: "gate_guard" spotted the player in "gate" → player_spotted:gate_guard
+# 👁️ SIGHT CHALLENGE: "gate_guard" spotted the player in "gate" → player_spotted:gate_guard
+# 👁️ SIGHT CHALLENGE: "gate_guard" spotted the player in "gate" → player_spotted:gate_guard
+# 👁️ SIGHT CHALLENGE: "gate_guard" spotted the player in "gate" → player_spotted:gate_guard
+# Subtest: a sighting waits while the prompt is up and fires once the player declines
+ok 2 - a sighting waits while the prompt is up and fires once the player declines
+  ---
+  duration_ms: 44.183838
+  ...
+# Subtest: accepting the tutorial also releases the challenge
+ok 3 - accepting the tutorial also releases the challenge
+  ---
+  duration_ms: 0.674586
+  ...
+# Subtest: conditions that stop holding while the prompt is open are respected after it closes
+ok 4 - conditions that stop holding while the prompt is open are respected after it closes
+  ---
+  duration_ms: 0.329928
+  ...
+# Subtest: no tutorial manager on the page (or no prompt): the watcher behaves as before
+ok 5 - no tutorial manager on the page (or no prompt): the watcher behaves as before
+  ---
+  duration_ms: 0.463801
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 244.871508

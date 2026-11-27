@@ -1,0 +1,75 @@
+{
+ "steps": [
+  {
+   "note": "HaX's line with Vector and Phantom on the team: Vector is named wrongly, naming Phantom is refused until he is recalled, then Phantom is named wrongly and recalled with his own lines."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "door_log_given": true,
+    "clue_alibi": true,
+    "vector_on_team": true,
+    "phantom_on_team": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Vector",
+    "Yes. Them.",
+    "I know who WREN is",
+    "Phantom",
+    "Bring Vector back"
+   ]
+  },
+  {
+   "said": [
+    "Vector's at the table with Netherton. If you're wrong, Netherton's a pair of hands short.",
+    "Vector, step away from the table, please.",
+    "Check it properly. Then say sorry properly.",
+    "Get Vector back first.",
+    "Vector, you are cleared. Back to the table.",
+    "I'll take the apology when you're out of there."
+   ],
+   "notSaid": [
+    "Phantom's at the table with Netherton."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "",
+    "vector_recalled": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Phantom",
+    "Yes. Them.",
+    "Bring Phantom back"
+   ]
+  },
+  {
+   "said": [
+    "Phantom's at the table with Netherton. If you're wrong, Netherton's a pair of hands short.",
+    "Phantom, step away from the table, please.",
+    "Ask me for my list next time. It has a name on it, and it isn't mine.",
+    "Phantom, you are cleared. Back to the table.",
+    "Noted. It's going on the list."
+   ],
+   "notSaid": [
+    "Get Phantom back first."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "",
+    "phantom_recalled": true
+   }
+  }
+ ]
+}

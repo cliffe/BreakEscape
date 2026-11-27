@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: interactionWarning",
+  "description": "Minimal 1-room scenario proving the interactionWarning attribute any scenario object can carry: a confirm shown BEFORE the object's normal interaction. Decline runs onDecline and blocks; Proceed runs onProceed then the normal interaction (opens the readable note). once:true is answered-and-done after either choice; once:false re-shows the warning after a Decline. Answered state persists over reload.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 1,
+  "test_type": "interaction_warning",
+  "test_objective": "Verify interactionWarning: the warning appears before interaction; Decline runs onDecline (set_global + complete_task) and blocks the normal interaction; Proceed runs onProceed (set_global + add_capture) then the normal interaction; once is respected (default true answered-and-done, false re-shows after Decline); answered state survives reload"
+}

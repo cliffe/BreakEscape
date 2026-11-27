@@ -1,0 +1,41 @@
+{
+ "scenario": "ca14_social_media",
+ "lists": {
+  "host": [
+   {"k": null, "h": "36703279"},
+   {"k": null, "h": "26177eed"},
+   {"k": "quiet_on", "h": "8d7ccc16"},
+   {"k": "attack_done", "h": "520843c8"},
+   {"k": "defend_done", "h": "84d872b0"},
+   {"k": "caught", "h": "08d69346"},
+   {"k": "quiet_off_debrief", "h": "af67ae4f"},
+   {"k": "quiet_off_debrief_seen", "h": "5936eb2d"},
+   {"k": "step_away", "h": "da8f44ae"},
+   {"k": "object_interacted_sets_ca14_seen", "h": "9f37714f"},
+   {"k": "object_interacted_sets_ca14_seen_2", "h": "50e8e83d"}
+  ],
+  "npc:kit_delphine_arvanitis": [
+   {"k": "chg_out", "h": "9c7b6927"},
+   {"k": "chg_out_2", "h": "9cb13e9c"},
+   {"k": "chg_ca14_photo_choice", "h": "93617ca5"},
+   {"k": "chg_ca14_done", "h": "cd890116"},
+   {"k": "chg_ca14_seen", "h": "b97d75b9"},
+   {"k": "chg_ca14_done_2", "h": "b4fa983c"}
+  ],
+  "npc:kit_lorna_easton": [
+   {"k": "chg_out_sets_ca14_there", "h": "e7668104"},
+   {"k": "chg_out", "h": "3be84166"},
+   {"k": "chg_ca14_there_knot_ca14_photo", "h": "ad8b0b67"},
+   {"k": "chg_ca14_there_sets_ca14_asked", "h": "8d23b622"},
+   {"k": "conversation_closed_lorna_easton_sets_ca14_photo_choice", "h": "214e975e"},
+   {"k": "chg_ca14_photo_choice_sets_ca14_moved", "h": "7ec65686"},
+   {"k": "chg_ca14_photo_choice_sets_ca14_done", "h": "338d5845"},
+   {"k": "chg_ca14_moved_sets_ca14_done", "h": "b79ed84e"},
+   {"k": "chg_ca14_done_sets_ca14_photo_choice", "h": "905284b6"},
+   {"k": "conversation_closed_lorna_easton_sets_ca14_closed_unseen", "h": "211da73b"},
+   {"k": "chg_ca14_there_knot_ca14_photo~rearm", "h": "dbf4147e"},
+   {"k": "chg_ca14_there_sets_ca14_asked~rearm", "h": "0f4225e3"},
+   {"k": "chg_ca14_there_sets_ca14_asked~rearm_cue", "h": "66a5d32f"}
+  ]
+ }
+}

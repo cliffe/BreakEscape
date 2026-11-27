@@ -1,0 +1,217 @@
+
+## R26 (PASS 5 design r2, N3/N2b/browser N2; inverted from the c2 reviewer's probe pB): root is in and the control room door was never opened. The ladder's root-in row and the clock answer both name the door and where the password is; the clock answer returns to the hub. Then the abort with flag 1 never through the relay and the fallback timer: the ladder no longer says 'call me', because Bring me in is gone.
+
+--- briefing ---
+  Narrator: Two forty-one in the morning, Pacific time. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
+  Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
+  Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
+  Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+  Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
+  Narrator: The Portland pin stops blinking and goes solid.
+  Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations. Eight point four million people in Washington, Oregon and Northern California.
+  Director Magnus Netherton: A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside.
+  Director Magnus Netherton: You have your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
+     (5 options)
+ > Understood. Talk to me about the other three.
+  Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, three twenty-four by the dashboard clock.
+  Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
+  Director Magnus Netherton: The other two go unanswered.
+  Narrator: The line holds for a second longer than a bad connection would explain.
+  Director Magnus Netherton: Fracture, in Washington. Trojan Horse, outside Austin. Meltdown, in San Francisco. Ask about any of them, in any order.
+  Director Magnus Netherton: The desk's summary is on your handset if you want the figures on paper. The team needs your call before you are through the gate.
+     (5 options)
+ > I've made the call.
+  Director Magnus Netherton: Say the word and their aircraft turns.
+     (4 options)
+ > Send them to Fracture. Washington.
+      [set_global team_assignment=fracture]
+      [set_global team_assigned=true]
+      [mapping agent_0x99: set hurt_line_said=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   [text agent_0x99 +2000ms] Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during.
+      [task: assign_tactical_team]
+      [mapping agent_0x99: set team_assigned=true]
+  Director Magnus Netherton: Fracture. Confirmed.
+  Narrator: The pin over Washington changes colour. The other two stay red.
+  Director Magnus Netherton: They will be on the ground in eleven minutes. Reeves will not be there. His cluster will.
+  Director Magnus Netherton: Two operations now run with nobody in their way. On the record, that is my decision as much as yours.
+  Director Magnus Netherton: Go. I will pick you up on the secure channel when it matters.
+  Narrator: Chain-link, a lowered barrier, three storeys of concrete. People are coming out of the front doors with coats over their heads.
+  Director Magnus Netherton: The building is evacuating. The operations floor is past the security checkpoint, and one guard on that shift is compromised.
+  Director Magnus Netherton: Assume the badge readers are logging you. The sequence has not started. Assume that changes the moment they notice you. Agent HaX has your channel from here.
+  Director Magnus Netherton: Eight point four million people, Agent. Go and do the part you can reach.
+  [end]
+   [text agent_0x99 +2500ms] The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything.
+
+--- phone ---
+  HaX here, Agent. I've got your channel and the board.
+  The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal.
+  The team's logged for Fracture, Washington. It's on the record. It'd take something new to move it.
+  Get past the checkpoint to the operations floor.
+     (3 options)
+ > Understood. Let's go.
+  Call me the second you hit something you can't open.
+     [0] Talk to me about the two we're not covering.
+     [1] Where do I stand?
+     [2] Remind me of the layout and the clock.
+     [3] I'll call you back.
+  [stopped: no pick]
+   {enter operations_floor}
+      [mapping agent_0x99: set inside_reached=true]
+      [mapping agent_0x99: set rfid_guide_offered=true]
+   [text agent_0x99 +9500ms] Server hall door, far side of this floor, wants a server-zone badge. Hollis has one. His desk's badge station prints them too, with its PIN. RFID guide?
+      [mapping the_architect: set architect_contact=true]
+   [text the_architect +5000ms] Agent 0x00.
+   {pickup hollis_server_badge}
+      [kit: Facility Access Badge -- Server Zone]
+      [mapping agent_0x99: set badge_obtained=true]
+   {enter server_room}
+      [mapping agent_0x99: set server_hall_reached=true]
+      [aim unlocked: reach_the_control_room,trace_the_intrusion]
+      [mapping agent_0x99: set lockpicking_guide_offered=true]
+   [text agent_0x99 +9000ms] Plant door, south side of this hall, is a keyed lock. There's a key on the ops floor, but your picks will open it. Want the lockpicking guide?
+   {event object_interacted}
+      [mapping agent_0x99: set vm_terminal_used=true]
+      [mapping agent_0x99: set recon_guide_offered=true]
+      [mapping agent_0x99: set nfs_guide_offered=true]
+   [text agent_0x99 +1500ms] Your attack box. Map the host first. NFS is the door they left open, and a listener on it talks too much. Recon guide, or the NFS and netcat one?
+   {flag 1: give_item}
+      [kit: Coordination Schedule -- Relay Decode]
+      [task: recover_coordination_traffic]
+      [mapping agent_0x99: set flag1_submitted=true]
+   [text agent_0x99 +1500ms] The relay's decoded the file their share points at: their own schedule, all four operations. Read it against the threat desk summary in your kit.
+   {flag 2: give_item}
+      [kit: Listener Capture -- Operator Credentials]
+      [task: intercept_c2_channel]
+      [mapping agent_0x99: set flag2_submitted=true]
+      [mapping agent_0x99: set scada_password_found=true]
+      [mapping agent_0x99: set ssh_guide_offered=true]
+   [text agent_0x99 +1500ms] Their listener gives out passwords in clear, the control room door's included. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?
+   {flag 3: set_global}
+      [mapping agent_0x99: set logged_in_before_door=true]
+      [mapping agent_0x99: set redirect_window_closed=true]
+      [mapping agent_0x99: set cascade_armed=true]
+      [clock: architect_taunt_t5 started at 0 min]
+      [clock: architect_taunt_t1 started at 0 min]
+      [clock: cascade_zero started at 0 min]
+   [text agent_0x99 +1500ms] They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it.
+      [mapping agent_0x99: set privesc_guide_offered=true]
+      [task: escalate_on_attack_host]
+   {flag 4: unlock_object}
+      [unlocked: crisis_control_system]
+      [task: terminate_cascade_scripts]
+      [mapping agent_0x99: set flag4_submitted=true]
+   [text agent_0x99 +1500ms] Root. Their job's dead and they're locked out. The console in the control room will take an abort now. Go and give it one.
+   [PASS] scada_door_reached = false (expected false)
+   [PASS] scada_password_found = true (expected true)
+
+--- phone @hub ---
+     (4 options)
+ > Where do I stand?
+  The clock's running. Fifteen minutes from your login on their host.
+  Root's in. Put the abort in at the console in the control room.
+  The door's north of the server hall.
+  The password's in the listener capture in your inventory.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (4 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Root's in. Put the abort in at the console in the control room."
+   [PASS] said: "The door's north of the server hall."
+   [PASS] said: "The password's in the listener capture in your inventory."
+   [PASS] not said: "You've got the password."
+
+## Phase 4 dialogue C1 (D7-5): the clock is in the report now; the layout-and-clock choice is gone past the server hall.
+
+--- phone @hub ---
+     (4 options)
+ > Where do I stand?
+  The clock's running. Fifteen minutes from your login on their host.
+  Root's in. Put the abort in at the console in the control room.
+  The door's north of the server hall.
+  The password's in the listener capture in your inventory.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     [0] Talk to me about the two we're not covering.
+     [1] I'm stuck on something.
+     [2] Where do I stand?
+     [3] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "The clock's running. Fifteen minutes from your login on their host."
+   [PASS] said: "Root's in. Put the abort in at the console in the control room."
+   [PASS] said: "The door's north of the server hall."
+   [PASS] said: "[choice] Where do I stand?"
+   [PASS] not said: "[choice] Remind me of the layout and the clock."
+
+## Browser N2: a reopen after the report lands on the hub.
+
+--- phone ---
+     (4 options)
+ > Where do I stand?
+  The clock's running. Fifteen minutes from your login on their host.
+  Root's in. Put the abort in at the console in the control room.
+  The door's north of the server hall.
+  The password's in the listener capture in your inventory.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (4 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "[choice] Where do I stand?"
+   [PASS] said: "Root's in."
+   [PASS] not said: "[choice] Understood. Let's go."
+   [PASS] not said: "[choice] What's the clock?"
+   {enter scada_control}
+      [mapping agent_0x99: set scada_door_reached=true]
+
+--- phone @hub ---
+     (4 options)
+ > Where do I stand?
+  The clock's running. Fifteen minutes from your login on their host.
+  Root's in. Put the abort in at the console in the control room.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (4 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Root's in. Put the abort in at the console in the control room."
+   [PASS] not said: "The door's north of the server hall."
+
+## PB2: the abort with flag 1 never through the relay; the fallback timer sets debrief_requested.
+   {set {"grid_saved":true}}
+      [clock: debrief_fallback started at 0 min]
+   {set {"flag1_submitted":false}}
+   {advance 10 min -> 10 min}
+      [clock: architect_taunt_t20 cancelled]
+      [clock: architect_taunt_t10 cancelled]
+      [clock: redirect_window_close cancelled]
+      [clock: redirect_window_display cancelled]
+      [clock: architect_taunt_t5 cancelled]
+      [clock: architect_taunt_t1 cancelled]
+      [clock: cascade_zero cancelled]
+      [clock 9 min: debrief_fallback FIRES {"debrief_timer_fired":true}]
+      [mapping agent_0x99: set debrief_requested=true]
+   [text agent_0x99 +500ms] Netherton's done waiting. The moment the last of it is through the relay, he's on.
+   [PASS] debrief_requested = true (expected true)
+
+--- phone @hub ---
+     (4 options)
+ > Where do I stand?
+  Grid's held. Put the rest of what you took through the relay and he's on straight after.
+     (4 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Grid's held. Put the rest of what you took through the relay and he's on straight after."
+   [PASS] not said: "Submit the rest, then call me."
+   [PASS] not said: "[choice] Bring me in."
+   [PASS] not said: "The plant's south of the server hall"
+
+## Phase 4 dialogue C1: no conversation runs more than nine lines without a choice.
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 53, choices 13, longest run without a choice 9 (briefing); runs>=6: briefing:9, briefing:6, briefing:9
+[result] all expectations met

@@ -1,0 +1,13 @@
+{
+  "key": "749b3defe461b5ceab59aa2229305df2",
+  "npc": "operative_relay",
+  "text": "You're not getting to those rack banks.",
+  "voice": "Pulcherrima",
+  "style": "ENTROPY operative, late thirties. Speak with a consistent Scottish (Edinburgh) accent throughout -- do not shift to any other accent. Cool, mid-range pitch; measured, unhurried pace. Confident and almost friendly; she costed this and came anyway, and nothing about it frightens her.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:00:54Z"
+}

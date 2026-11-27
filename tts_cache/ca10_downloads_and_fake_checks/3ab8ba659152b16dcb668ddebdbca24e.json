@@ -1,0 +1,13 @@
+{
+  "key": "3ab8ba659152b16dcb668ddebdbca24e",
+  "npc": "niamh_doherty",
+  "text": "Good, the email's away to Leo. Now take the other seat and sort a morning of the web the way it really turns up.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T17:15:26Z"
+}

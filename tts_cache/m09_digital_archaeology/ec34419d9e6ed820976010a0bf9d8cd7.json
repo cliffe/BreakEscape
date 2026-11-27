@@ -1,0 +1,13 @@
+{
+  "key": "ec34419d9e6ed820976010a0bf9d8cd7",
+  "npc": "jesse_tran",
+  "text": "The Bozeman number gets one call from me. After that I'm a guy who fixes printers.",
+  "voice": "Puck",
+  "style": "IT contractor in his late twenties from Seattle. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Fast, ironic, contemptuous, very online; talks to everyone as a tourist.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:30:26Z"
+}

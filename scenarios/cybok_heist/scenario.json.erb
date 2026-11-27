@@ -1,0 +1,170 @@
+{
+    "scenario_brief": "You are a cyber security student tasked with recovering the Professor's backup of the CyBOK LaTeX source files for the CyBOK 1.1 release. According to legend, the HDD is stored in a safe in the Professor's office. Follow the clues scattered around the department office to find the safe code. Time to put your physical security skills to the test! Good luck, and try not to get caught... or expelled.",
+    "endGoal": "Recover the CyBOK LaTeX source HDD",
+    "startRoom": "reception",
+    "startItemsInInventory": [
+    ],
+    "rooms": {
+        "reception": {
+            "type": "room_reception",
+            "connections": {
+                "north": "admin_office"
+            },
+            "objects": [
+                {
+                    "type": "phone",
+                    "id": "reception_phone",
+                    "name": "Reception Phone",
+                    "takeable": false,
+                    "readable": true,
+                    "voice": "Welcome to the Computer Science Department! The CyBOK backup is in the Professor's safe. The door through to the offices is also locked, so I guess it's safe for now.",
+                    "ttsVoice": {
+                        "name": "Leda",
+                        "style": "Friendly receptionist leaving a voicemail. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a warm, mid-range pitch.",
+                        "language": "en-GB"
+                    },
+                    "sender": "Receptionist",
+                    "timestamp": "Now",
+                    "observations": "The reception phone plays back a voicemail message"
+                },
+                {
+                    "type": "notes",
+                    "name": "Lockpicking Hint Notice",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "DEPARTMENT NOTICE:\n\nMany doors use pin tumbler locks.\n\nTip: Using a lockpick set, apply tension to the lock while manipulating the pins with a pick.\n\nDo NOT attempt this in front of colleagues.",
+                    "observations": "A cautionary notice about lockpicking techniques"
+                },
+                {
+                    "type": "bag",
+                    "name": "Heist Gear Backpack",
+                    "locked": false,
+                    "contents": [
+                        {
+                            "type": "lockpick",
+                            "name": "Lock Pick Kit",
+                            "takeable": true
+                        },
+                        {
+                            "type": "workstation",
+                            "name": "Crypto Analysis Station",
+                            "takeable": true,
+                            "observations": "A powerful workstation for cryptographic analysis"
+                        }
+                    ]
+                }
+            ]
+        },
+        "admin_office": {
+            "type": "room_office",
+            "locked": true,
+            "lockType": "key",
+            "requires": "admin_office_key",
+            "keyPins": [60,50,40,30],
+            "difficulty": "medium",
+            "door_sign": "Admin Office - Authorized Personnel Only",
+            "connections": {
+                "north": "professors_office",
+                "south": "reception"
+            },
+            "objects": [
+                {
+                    "type": "briefcase",
+                    "name": "Professor's briefcase",
+                    "locked": true,
+                    "takeable": false,
+                    "observations": "A worn briefcase sitting in the corner, partially open",
+                    "contents": [
+                        {
+                            "type": "notes",
+                            "name": "CyBOK Reference",
+                            "takeable": true,
+                            "readable": true,
+                            "text": "CYBOK 21 KNOWLEDGE AREAS:\n\n# Introductory Concepts\nIntroduction to CyBOK\n\n# Human, Organisational & Regulatory Aspects\nRisk Management & Governance\nLaw & Regulation\nHuman Factors\nPrivacy & Online Rights\n\n# Attacks & Defences\nMalware & Attack Technologies\nAdversarial Behaviours\nSecurity Operations & Incident Management\nForensics\n\n# Systems Security\nCryptography\nOperating Systems & Virtualisation Security\nDistributed Systems Security\nFormal Methods for Security\nAuthentication, Authorisation & Accountability\n\n# Software and Platform Security\nSoftware Security\nWeb & Mobile Security\nSecure Software Lifecycle\n\n# Infrastructure Security\nApplied Cryptography\nNetwork Security\nHardware Security\nCyber Physical Systems\nPhysical Layer and Telecommunications Security",
+                            "observations": "A reference card with CyBOK categories and knowledge areas listed"
+                        },
+                        {
+                            "type": "key",
+                            "name": "Professor's Office Key",
+                            "takeable": true,
+                            "opens_lock": "prof_office_key",
+                            "keyPins": [40, 35, 38, 32],
+                            "observations": "A dusty key marked 'Professor'."
+                        }
+                    ]
+                }
+            ]
+        },
+        "professors_office": {
+            "type": "room_ceo",
+            "connections": {
+                "south": "admin_office"
+            },
+            "locked": true,
+            "lockType": "key",
+            "requires": "prof_office_key",
+            "keyPins": [40, 35, 38, 32],
+            "difficulty": "medium",
+            "door_sign": "Professor's Office - Do Not Disturb!",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "Professor's PC",
+                    "takeable": false,
+                    "lockType": "password",
+                    "requires": "cybok2025",
+                    "showKeyboard": true,
+                    "maxAttempts": 3,
+                    "locked": true,
+                    "postitNote": "Y3lib2syMDI1Cg==",
+                    "showPostit": true,
+                    "observations": "The Professor's PC with a Base64-encoded password on a sticky note. This is an encoding challenge!",
+                    "contents": [
+                        {
+                            "type": "text_file",
+                            "name": "Safe Code Hint - DECODED",
+                            "takeable": false,
+                            "readable": true,
+                            "text": "SAFE CODE DECODED:\n\nI've written down a hint for the safe code down after forgetting it twice.\n\nThe code represents: How many Knowledge Areas does CyBOK 1.1 have?\n\nCount them carefully, and enter that number as the 4 digit safe PIN.\n"
+                        }
+                    ]
+                },
+                {
+                    "type": "notes",
+                    "name": "Using Cyber Chef to Decode Base64",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "CYBER CHEF TIPS:\n\nTo decode Base64 strings, use Cyber Chef's 'From Base64' operation.\n\nExample:\nInput: Y3lib2syMDI0\nOperation: From Base64\nOutput: cybok2024\n\nCyber Chef is a powerful tool for all your encoding and decoding needs!\n\nA good clue that a string is Base64 is if it ends with '=' or '=='.\n\nHappy decoding!",
+                    "observations": "A quick reference guide for using Cyber Chef to decode Base64"
+                },
+                {
+                    "type": "safe",
+                    "name": "Wall Safe",
+                    "takeable": false,
+                    "locked": true,
+                    "lockType": "pin",
+                    "requires": "0021",
+                    "difficulty": "hard",
+                    "observations": "A secure safe with a digital PIN lock",
+                    "contents": [
+                        {
+                            "type": "office-misc-hdd4",
+                            "name": "CyBOK LaTeX Source HDD",
+                            "takeable": true,
+                            "readable": true,
+                            "observations": "The legendary CyBOK LaTeX source HDD - your ticket to freedom!"
+                        },
+                        {
+                            "type": "notes",
+                            "name": "CyBOK LaTeX Source Notes",
+                            "takeable": true,
+                            "readable": true,
+                            "text": "🎉 SUCCESS! 🎉\n\nYou have successfully recovered the CyBOK 1.1 LaTeX source files!\n\n✅ 21 Knowledge Area chapters\n✅ 1029+ pages of security goodness\n✅ Comprehensive CyBOK framework documentation\n\n🚩 flag{cybok_heist_success}\n\nMission accomplished! Now get out before anyone notices!",
+                    "observations": "The legendary CyBOK LaTeX source HDD - your ticket to freedom!"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

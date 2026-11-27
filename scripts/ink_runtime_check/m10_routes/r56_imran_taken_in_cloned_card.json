@@ -1,0 +1,49 @@
+{
+ "steps": [
+  {
+   "note": "Imran alone at his bench: the player takes him in. HaX says the cost first, then he hands over a cloned card (no ghost watch on the route) and the supplier crate line plays. Re-talk is the quiet 'sit me somewhere warm'."
+  },
+  {
+   "set": {
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "imran",
+   "picks": [
+    "Someone corrected that sheet",
+    "I'm taking you in"
+   ]
+  },
+  {
+   "said": [
+    "I saw the scribble. I thought it was somebody being clever.",
+    "Let him go and the phone goes with him. Keep him, and we get his supplier.",
+    "Card's on my belt. Take your copy.",
+    "A crate signed for at the service door on Tuesday."
+   ],
+   "notSaid": [
+    "They told me to keep my card on me tonight.",
+    "Power room's open.",
+    "Gary landed on his feet."
+   ]
+  },
+  {
+   "expect": {
+    "imran_outcome": "taken_in"
+   }
+  },
+  {
+   "talk": "imran",
+   "picks": []
+  },
+  {
+   "said": [
+    "I've given you everything. Sit me somewhere warm."
+   ],
+   "notSaid": [
+    "You've got your copy."
+   ]
+  }
+ ]
+}

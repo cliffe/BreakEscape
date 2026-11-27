@@ -1,0 +1,25 @@
+{
+  "scenario": "test_social_m5_channels",
+  "start_room": "m5_room",
+  "nodes": [
+    {
+      "id": "lock_m5_locked_terminal",
+      "label": "Locked Laptop<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "m5_room",
+      "label": "M5 Fixture",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "m5_room",
+      "to": "lock_m5_locked_terminal",
+      "soft": false
+    }
+  ]
+}

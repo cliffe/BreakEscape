@@ -1,0 +1,13 @@
+{
+  "key": "1e2d2ac84d35b9ba245227ee4224ba7f",
+  "npc": "closing_debrief",
+  "text": "Then whoever taught her taught him. There are not many people left who could have done both, and I do not like any of the names.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:23:05Z"
+}

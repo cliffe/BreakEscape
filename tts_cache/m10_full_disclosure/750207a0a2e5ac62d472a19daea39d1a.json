@@ -1,0 +1,14 @@
+{
+  "key": "750207a0a2e5ac62d472a19daea39d1a",
+  "npc": "victoria_gallery",
+  "text": "Of course I am. I won't make you chase me down a stair.",
+  "delivery": "almost amused after the first sentence",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:24:57Z"
+}

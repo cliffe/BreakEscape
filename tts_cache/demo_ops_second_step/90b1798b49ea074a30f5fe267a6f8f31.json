@@ -1,0 +1,13 @@
+{
+  "key": "90b1798b49ea074a30f5fe267a6f8f31",
+  "npc": "lorna_easton",
+  "text": "Who's the cake from?",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:59:12Z"
+}

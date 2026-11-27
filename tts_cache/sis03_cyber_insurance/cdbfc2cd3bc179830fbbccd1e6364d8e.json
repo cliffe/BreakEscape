@@ -1,0 +1,13 @@
+{
+  "key": "cdbfc2cd3bc179830fbbccd1e6364d8e",
+  "npc": "eleanor_vance",
+  "text": "The forensic evidence shows the attacker used both of those pathways. The breach of W-07 was directly causal to the loss.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:56Z"
+}

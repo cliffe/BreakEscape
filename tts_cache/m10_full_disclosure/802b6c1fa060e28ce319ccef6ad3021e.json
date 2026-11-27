@@ -1,0 +1,13 @@
+{
+  "key": "802b6c1fa060e28ce319ccef6ad3021e",
+  "npc": "arakawa_post",
+  "text": "I've got him. He's not said a word to me all night.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:58:01Z"
+}

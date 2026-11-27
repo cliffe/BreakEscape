@@ -1,0 +1,16 @@
+{
+  "entries": {
+    "sample_note": {
+      "title": "Quillmark gateway sample note",
+      "module": "auxiliary/scanner/quillmark/unpatched_f2",
+      "script": "quillmark-sample",
+      "advisories": [
+        "CVE-0000-11111"
+      ],
+      "output": [
+        "State: sample state line.",
+        "Disclosed: 0000-01-01."
+      ]
+    }
+  }
+}

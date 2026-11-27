@@ -1,0 +1,13 @@
+{
+  "key": "c161027b8c22d15e9721b38a07469a1c",
+  "npc": "narrator",
+  "text": "David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94 per cent. Sixteen minutes to the window.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:28:06Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "3cc8c649703611417e6253735d87b76c",
+  "npc": "kit_yusuf_demir",
+  "text": "You'll want this today. In the wrong hands it's a shortlist of vulnerable people, with their addresses, handed over for free.",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:23:16Z"
+}

@@ -1,0 +1,14 @@
+{
+  "key": "537ec6e54b7eadd4e7a0ca26ba0b3c18",
+  "npc": "kit_graham_whitfield",
+  "text": "Well done. That instruction came from the document the assistant read, not from anyone here. It only passed it along.",
+  "delivery": "unhurried, warm",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:45:00Z"
+}

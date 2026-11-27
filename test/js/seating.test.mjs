@@ -1,0 +1,2115 @@
+// Seating (systems/seating.js): chair facings, frame orders and seat lookup.
+// The live paths (player sit/roll/stand/jump, placed and needs NPCs, chair fetching)
+// are proved by headless runs of scenarios/test_seating.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+globalThis.window = globalThis.window || {};
+const seating = await import('../../public/break_escape/js/systems/seating.js');
+const { COMPASS, seatSpec, chairFacing, snapFacing, isStaticSeatTexture } = seating;
+
+/** A swivel chair sprite as rooms.js builds it. */
+function swivel(base, frame) {
+    return { isSwivelChair: true, originalTexture: `${base}${frame}`, currentFrame: frame - 1, texture: { key: `${base}${frame}` } };
+}
+
+test('rotation sheets map to facings per chair (they do not share one order)', () => {
+    const cases = {
+        // clockwise from south
+        'chair-exec-rotate': ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'],
+        // anticlockwise from south
+        'chair-grey-4-rotate': ['south', 'south-west', 'west', 'north-west', 'north', 'north-east', 'east', 'south-east'],
+        'chair-darkgray-1-rotate': ['south', 'south-west', 'west', 'north-west', 'north', 'north-east', 'east', 'south-east'],
+        'chair-white-2-rotate': ['south', 'south-west', 'west', 'north-west', 'north', 'north-east', 'east', 'south-east'],
+        // clockwise from north
+        'chair-white-1-rotate': ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west']
+    };
+    for (const [base, facings] of Object.entries(cases)) {
+        facings.forEach((f, i) => assert.equal(chairFacing(swivel(base, i + 1)), f, `${base}${i + 1}`));
+    }
+});
+
+test('only known chairs are seats; trolleys and carts are not', () => {
+    assert.equal(seatSpec(swivel('chair-grey-1-rotate', 1))?.kind, 'swivel');
+    assert.equal(seatSpec(swivel('crash-cart-rotate', 1)), null);
+    assert.equal(seatSpec(swivel('wheelchair-rotate', 2)), null);
+    assert.equal(seatSpec({ texture: { key: 'hospital_chair_north' } })?.facing, 'north');
+    assert.equal(seatSpec({ texture: { key: 'chair-waiting-left-1' } })?.facing, 'west');
+    assert.equal(seatSpec({ texture: { key: 'leather_sofa1' } })?.places.length, 2); // two places
+    assert.equal(seatSpec({ texture: { key: 'm10_steel_chair1' } })?.facing, 'south');
+    assert.equal(seatSpec({ texture: { key: 'm10_steel_bench1' } }), null); // a workbench
+    assert.equal(seatSpec({ texture: { key: 'lecture_seat_row1' } }), null);
+    assert.ok(isStaticSeatTexture('exec_chair_back1'));
+    assert.ok(!isStaticSeatTexture('chair-grey-1')); // a static image that becomes a swivel chair
+});
+
+test('a static image placed as a swivel chair is not also a static seat', () => {
+    // exec_chair_back1 used as a texture by a swivel sprite must read as swivel
+    const s = { isSwivelChair: true, originalTexture: 'chair-exec-rotate5', currentFrame: 4, texture: { key: 'exec_chair_back1' } };
+    assert.equal(seatSpec(s)?.kind, 'swivel');
+});
+
+test('snapFacing keeps a valid facing and picks the nearest otherwise', () => {
+    assert.equal(snapFacing('east'), 'east');
+    assert.equal(snapFacing('north-east', ['north', 'south']), 'north');
+    assert.equal(snapFacing('south-west', ['south', 'west', 'east']), 'south');
+    assert.equal(snapFacing('west', ['north', 'south']), 'north'); // a tie keeps list order
+    assert.equal(COMPASS.length, 8);
+});
+
+// ── slice 2 (OFFICE_LIFE_PLAN 2.11): seated through an own-desk use ────────────
+test('needsStop: an own-desk work use keeps the home stop in every phase and on the returning tick after it', async () => {
+    const { NPCNeedsSystem, NEEDS_TICK_MS } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const { makeWorld } = await import('./fixtures/needs-stub-world.mjs');
+    const rec = { id: 'clerk', needsHome: 'own_pc', needs: { work: { decayPerMin: 20, urgentAt: 40, initial: 30, jitterPct: 0 } } };
+    const w = makeWorld({ npcs: { clerk: { pos: { x: 100, y: 100 }, rec } },
+        objects: [{ id: 'own_pc', x: 100, y: 68, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } }] });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const prev = window.npcManager;
+    window.npcManager = { getNPC: id => (id === 'clerk' ? rec : null) };
+    try {
+        const seen = new Set();
+        for (let i = 0; i < (10 * 60000) / NEEDS_TICK_MS; i++) {
+            sys.step(NEEDS_TICK_MS);
+            const ns = sys.states.get('clerk');
+            seen.add(ns.mode + (ns.job ? ':' + ns.job.phase : ''));
+            const stop = seating.needsStop(ns);
+            assert.ok(stop, `null stop at tick ${sys.tickCount} (${ns.mode}${ns.job ? ' ' + ns.job.phase : ''})`);
+            assert.equal(stop.key, 'at:own_pc');
+            assert.equal(stop.post, true);
+        }
+        assert.ok(seen.has('job:using') && seen.has('returning') && seen.has('idle'), [...seen].join(','));
+        assert.ok(sys.getLog().filter(e => e.ev === 'used' && e.target === 'own_pc').length >= 2);
+    } finally {
+        window.npcManager = prev;
+    }
+});
+
+test('needsStop: a real trip still unseats (null while walking out and back)', () => {
+    const prev = window.npcManager;
+    window.npcManager = { getNPC: () => ({ needsHome: 'own_pc' }) };
+    try {
+        const job = (phase, targetId) => ({ kind: 'use', phase, targetId, need: 'caffeine' });
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: job('goto_target', 'coffee') }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'returning', atPost: false, job: null }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: job('using', 'coffee') }).key, 'at:coffee');
+        // Own desk picked while away (walking back to it): not at the post, so no stop until using
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: job('goto_target', 'own_pc') }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job: job('goto_target', 'own_pc') }).key, 'at:own_pc');
+    } finally {
+        window.npcManager = prev;
+    }
+});
+
+test('needsStop: a visit to the own desk keeps the home stop in every phase (access 9.2 review R2 m2)', () => {
+    const prev = window.npcManager;
+    window.npcManager = { getNPC: () => ({ needsHome: 'own_pc' }) };
+    try {
+        const visit = (phase, targetId) => ({ kind: 'visit', phase, targetId, visit: { kind: 'check' } });
+        for (const phase of ['start', 'goto_target', 'using']) {
+            const stop = seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job: visit(phase, 'own_pc') });
+            assert.ok(stop, `null stop in ${phase}`);
+            assert.equal(stop.key, 'at:own_pc');
+            assert.equal(stop.post, true);
+        }
+        // a visit elsewhere still walks: no stop until it arrives
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job: visit('goto_target', 'printer') }), null);
+    } finally {
+        window.npcManager = prev;
+    }
+});
+
+test('compassToward: screen offsets map to the right facing (east is +x, south is +y)', () => {
+    const cases = { east: [1, 0], west: [-1, 0], south: [0, 1], north: [0, -1],
+                    'south-east': [1, 1], 'north-east': [1, -1], 'south-west': [-1, 1], 'north-west': [-1, -1] };
+    for (const [facing, [dx, dy]] of Object.entries(cases)) assert.equal(seating.compassToward(dx, dy), facing);
+});
+
+// ---- typing bob (OFFICE_LIFE_PLAN 2.12, slice 3)
+
+function seatedSprite() {
+    return {
+        x: 0, y: 0, displayOriginX: 40, displayOriginY: 40, texture: { key: 'bob_test_atlas' },
+        frame: { name: '' }, anims: { isPlaying: false }, body: null, moves: 0,
+        setPosition(x, y) { this.x = x; this.y = y; this.moves++; },
+        setFrame(n) { this.frame.name = n; }, setDepth(d) { this.depth = d; }
+    };
+}
+
+test('poseSprite: dy 1 places the sprite one pixel lower, and the next frame keeps it there while the bob is due', () => {
+    const chair = { x: 100, y: 200, depth: 230 };
+    const seat = { kind: 'static', seat: [16, 20], facing: 'south' };
+    const a = seatedSprite(), b = seatedSprite();
+    seating.poseSprite(a, chair, seat, 'south', 0, 0);
+    seating.poseSprite(b, chair, seat, 'south', 0, 1);
+    assert.equal(b.y, a.y + 1);
+    assert.equal(b.x, a.x);
+    const moves = b.moves;
+    seating.poseSprite(b, chair, seat, 'south', 0, 1);
+    assert.equal(b.y, a.y + 1, 'held while the bob is due');
+    assert.equal(b.moves, moves, 'not moved again');
+    seating.poseSprite(b, chair, seat, 'south', 0, 0);
+    assert.equal(b.y, a.y, 'back down');
+});
+
+test('typingBob: only a work use in its using phase, every 600 ms of the needs clock; off under reduced motion or officeVisuals false', () => {
+    const working = { mode: 'job', job: { kind: 'use', need: 'work', phase: 'using' } };
+    assert.equal(seating.typingBob(working, 0), 0);
+    assert.equal(seating.typingBob(working, 599), 0);
+    assert.equal(seating.typingBob(working, 600), 1);
+    assert.equal(seating.typingBob(working, 1250), 0);
+    assert.equal(seating.typingBob(working, 600, { reduced: true }), 0);
+    assert.equal(seating.typingBob(working, 600, { off: true }), 0);
+    assert.equal(seating.typingBob({ mode: 'job', job: { kind: 'use', need: 'work', phase: 'goto_target' } }, 600), 0);
+    assert.equal(seating.typingBob({ mode: 'job', job: { kind: 'use', need: 'caffeine', phase: 'using' } }, 600), 0);
+    assert.equal(seating.typingBob({ mode: 'idle', job: null }, 600), 0);
+    assert.equal(seating.typingBob(null, 600), 0);
+});
+
+// ── a needs NPC back at its post sits from its home cell, not where the walk stopped ──────
+// Live, lab_physical_pentest game 624: Melanie (pierce) came back from coffee and stopped at
+// (235,172), within the behaviour layer's one-tile arrival tolerance of her home cell (204,172).
+// Her static chair's foot is (200,186): 37.7 px from her feet, past NEAR_CHAIR (36), so she
+// stood at her desk for good. Measured from the home cell it is 14.6 px.
+
+test('needsSeatRef: home cell at the post within 1.5 tiles; the feet elsewhere', () => {
+    const home = { x: 204, y: 172 };
+    assert.deepEqual(seating.needsSeatRef({ x: 235, y: 172 }, { post: true }, home), home);
+    assert.deepEqual(seating.needsSeatRef({ x: 235, y: 172 }, { post: false }, home), { x: 235, y: 172 });
+    assert.deepEqual(seating.needsSeatRef({ x: 300, y: 172 }, { post: true }, home), { x: 300, y: 172 }, 'moved away by a script');
+    assert.deepEqual(seating.needsSeatRef({ x: 235, y: 172 }, { post: true }, null), { x: 235, y: 172 });
+});
+
+function labSeatRig(feetX) {
+    const chair = { x: 192, y: 160, width: 16, height: 26, depth: 186, active: true, objectId: 'pierce_chair',
+        texture: { key: 'aw_chair_north_charcoal1' }, scenarioData: { id: 'pierce_chair' } };
+    const pc = { id: 'staff_pc_2', roomId: 'open_plan', x: 204, y: 140, affordance: { satisfies: 'work', useFrom: { dx: 0, dy: 1 } } };
+    const sprite = {
+        x: feetX, y: 172, displayOriginX: 40, displayOriginY: 40, scaleX: 1, scaleY: 1,
+        texture: { key: 'lab_worker' }, frame: { name: 'breathing-idle_east_frame_000' }, anims: { isPlaying: false },
+        body: { offset: { x: 30, y: 35 }, width: 20, height: 10, checkCollision: { none: false }, immovable: false,
+            velocity: { x: 0, y: 0 }, setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { sprite.x = x; sprite.y = y; },
+            setSize(w, h) { this.width = w; this.height = h; }, setOffset(x, y) { this.offset.x = x; this.offset.y = y; } },
+        setPosition(x, y) { this.x = x; this.y = y; }, setFrame(n) { this.frame.name = n; }, setDepth(d) { this.depth = d; }
+    };
+    const behavior = { npcId: 'pierce', roomId: 'open_plan', sprite, isMoving: false, playAnimation() {} };
+    const ns = { npcId: 'pierce', mode: 'idle', atPost: true, job: null, home: { x: 204, y: 172, roomId: 'open_plan', objectId: 'staff_pc_2' } };
+    const saved = {};
+    for (const k of ['npcNeedsSystem', 'npcManager', 'rooms', 'game', 'pathfindingManager']) saved[k] = window[k];
+    window.npcNeedsSystem = { states: new Map([['pierce', ns]]), world: { npcStatus: () => ({}), getObject: id => (id === 'staff_pc_2' ? pc : null), inChatWith: () => false }, clockMs: 0 };
+    window.npcManager = { getNPC: id => (id === 'pierce' ? { needsHome: 'staff_pc_2' } : null) };
+    window.rooms = { open_plan: { objects: { pierce_chair: chair } } };
+    window.game = { textures: { get: () => ({ has: () => true }) } };
+    window.pathfindingManager = null;
+    const restore = () => { for (const [k, v] of Object.entries(saved)) window[k] = v; };
+    return { chair, sprite, behavior, restore };
+}
+
+test('needs NPC back at its post sits in its own chair though the walk stopped a tile short', () => {
+    const rig = labSeatRig(235 - 0);   // body centre x: sprite.x + (30 - 40) + 10 = sprite.x
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 }), true, 'walking onto the seat');
+        // NPC ticks (50 ms): the body moves by its velocity until it sits
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        assert.equal(rig.chair.seatedBy, 'pierce');
+        assert.equal(rig.sprite.frame.name, 'sit_north_frame_000');
+    } finally { rig.restore(); }
+});
+
+// startMount's walk target on a two-place sofa (R10 m1): the place nearest the post's home cell when
+// the NPC is at its post and within the 48 px gate of home, else the place nearest the feet. A
+// south-facing sofa at (80,90), 62x40: place feet (99,130) west (place 0) and (123,130) east
+// (place 1). The object the NPC faces sits due south of the sofa so a south seat counts as toward
+// it (staticFacesToward). The NPC's feet are at x 124, nearer the east place; home is beside the
+// west place (99,127), 25 px away, inside POST_SNAP.
+function sofaRig(feetX, atPost) {
+    const rig = labSeatRig(feetX);
+    Object.assign(rig.chair, { x: 80, y: 90, width: 62, height: 40, depth: 10, objectId: 'pierce_chair',
+        texture: { key: 'leather_sofa1' } });
+    rig.sprite.y = 127;
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.home = { x: 99, y: 127, roomId: 'open_plan', objectId: 'staff_pc_2' };
+    // The work object is due south of the sofa, so a south-facing seat faces toward it
+    const faced = { id: 'staff_pc_2', roomId: 'open_plan', x: 111, y: 400, affordance: { satisfies: ['work'] } };
+    window.npcNeedsSystem.world.getObject = () => faced;
+    if (!atPost) {
+        // Away from the post: a `use` job at another object, so the stop is not a post stop and
+        // needsSeatRef returns the feet, not the home cell
+        ns.mode = 'job';
+        ns.job = { kind: 'use', targetId: 'sofa_stop', phase: 'using', need: 'work' };
+        ns.atPost = false;
+    }
+    return rig;
+}
+
+test('startMount: at the post, feet 25 px east of home, walks to the post-side place', () => {
+    const rig = sofaRig(124, true);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+        const t = rig.behavior._seatMove?.target;
+        assert.ok(t, 'a walk target is set on the first call');
+        assert.equal(Math.round(t.x), 99, 'place 0, by the post, not the nearer east place');
+    } finally { rig.restore(); }
+});
+
+test('startMount: away from the post, walks to the place nearest the feet', () => {
+    const rig = sofaRig(124, false);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+        const t = rig.behavior._seatMove?.target;
+        assert.ok(t, 'a walk target is set on the first call');
+        assert.equal(Math.round(t.x), 123, 'place 1, nearest the feet');
+    } finally { rig.restore(); }
+});
+
+test('chairAtOtherPost: the nearest post owns a chair; within 36 px of a neighbour but nearer home stays own', () => {
+    const home = { x: 92, y: 124 }, marek = { x: 53, y: 128 };
+    assert.equal(seating.chairAtOtherPost({ x: 89, y: 126.4 }, home, [marek]), false, "Sanjay's tucked chair (live 5398)");
+    assert.equal(seating.chairAtOtherPost({ x: 60, y: 126 }, home, [marek]), true, 'by the neighbour: theirs');
+    assert.equal(seating.chairAtOtherPost({ x: 60, y: 126 }, home, []), false, 'no other posts');
+    assert.equal(seating.chairAtOtherPost({ x: 10, y: 126 }, home, [marek]), false, 'too far from the post');
+});
+
+test('needs NPC at its post sits in its own chair though a neighbour\'s post is within 36 px of it', () => {
+    const rig = labSeatRig(235);
+    try {
+        // chair foot (200,186), home cell (204,172); a neighbour's post 35 px west of the foot
+        window.npcNeedsSystem.states.set('neighbour', { npcId: 'neighbour', mode: 'idle', atPost: true, home: { x: 165, y: 186, roomId: 'open_plan' } });
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+    } finally { rig.restore(); }
+});
+
+test('postSeatRetryDue: at the post every 4 s of needs clock; away from the post one try is final', () => {
+    assert.equal(seating.postSeatRetryDue({ post: true }, undefined, 0), true);
+    assert.equal(seating.postSeatRetryDue({ post: true }, 1000, 4999), false);
+    assert.equal(seating.postSeatRetryDue({ post: true }, 1000, 5000), true);
+    assert.equal(seating.postSeatRetryDue({ post: false }, 1000, 60000), false);
+    assert.equal(seating.postSeatRetryDue(null, 1000, 60000), false);
+});
+
+test('needs NPC standing at its post tries its chair again once it is free (OFFICE_LIFE_STUCK_RETURN round 4)', () => {
+    const rig = labSeatRig(235);
+    try {
+        rig.chair.seatedBy = 'someone_else'; // the first try finds no free chair: stands
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        assert.equal(rig.behavior._seatMove ?? null, null, 'no seat move on the first try');
+        delete rig.chair.seatedBy;
+        window.npcNeedsSystem.clockMs = 3000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'not due yet');
+        window.npcNeedsSystem.world.inChatWith = () => true;
+        window.npcNeedsSystem.clockMs = 4000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'never mid-conversation');
+        window.npcNeedsSystem.world.inChatWith = () => false;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the retry walks onto the seat');
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, null);
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        assert.equal(rig.chair.seatedBy, 'pierce');
+    } finally { rig.restore(); }
+});
+
+test('postFetchRetryDue: a post retry fetches once per fetch timeout (15 s of needs clock)', () => {
+    assert.equal(seating.postFetchRetryDue({ post: true }, undefined, 0), true, 'never fetched at this stop');
+    assert.equal(seating.postFetchRetryDue({ post: true }, 1000, 15999), false);
+    assert.equal(seating.postFetchRetryDue({ post: true }, 1000, 16000), true);
+    assert.equal(seating.postFetchRetryDue({ post: false }, 1000, 60000), false, 'away from the post: never');
+    assert.equal(seating.postFetchRetryDue(null, undefined, 0), false);
+});
+
+test('needs NPC standing at its post fetches a chair again after a failed fetch, once per fetch timeout (OFFICE_LIFE_STUCK_RETURN round 5)', () => {
+    const rig = labSeatRig(235);
+    // Only a loose swivel chair 60 px south of the home cell (204,172): out of sitting reach, in fetch range
+    const chair = Object.assign(swivel('chair-white-1-rotate', 1), { x: 196, y: 206, width: 16, height: 26, depth: 232, active: true, objectId: 'loose_chair' });
+    chair.body = { enable: true, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+        setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { chair.x = x; chair.y = y; } };
+    chair.setPosition = (x, y) => { chair.x = x; chair.y = y; };
+    window.rooms = { open_plan: { objects: { loose_chair: chair } } };
+    const moves = [];
+    rig.behavior.goToAndStay = (x, y) => { moves.push([x, y]); rig.behavior._goToStayDest = { x, y }; };
+    rig.behavior.cancelMove = () => { rig.behavior._goToStayDest = null; };
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the first try fetches');
+        assert.ok(rig.behavior._fetch, 'fetching');
+        assert.equal(moves.length, 1);
+        seating.cancelFetch(rig.behavior); // the fetch fails (here: called away and back)
+        rig.behavior._goToStayDest = null;
+        window.npcNeedsSystem.clockMs = 4000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'a 4 s retry finds no chair in reach and does not fetch yet');
+        assert.equal(moves.length, 1);
+        window.npcNeedsSystem.clockMs = 15000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the retry 15 s after the fetch fetches again');
+        assert.ok(rig.behavior._fetch);
+        assert.equal(moves.length, 2);
+    } finally { rig.restore(); }
+});
+
+test('a needs NPC stopped away from its post tries a chair once only', () => {
+    const rig = labSeatRig(235);
+    try {
+        window.npcManager = { getNPC: () => ({ needsHome: 'elsewhere' }) }; // at a stop that is not its post
+        const ns = window.npcNeedsSystem.states.get('pierce');
+        Object.assign(ns, { mode: 'job', atPost: false, job: { kind: 'use', phase: 'using', targetId: 'staff_pc_2', need: 'work' } });
+        rig.chair.seatedBy = 'someone_else';
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        delete rig.chair.seatedBy;
+        window.npcNeedsSystem.clockMs = 60000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'no retry away from the post');
+        assert.equal(rig.behavior._seatMove ?? null, null);
+    } finally { rig.restore(); }
+});
+
+test('breathDown: head and shoulders are down for 40% of each 3.6s breath, offset by phase', () => {
+    let down = 0;
+    for (let t = 0; t < 3600; t += 10) if (seating.breathDown(t, 0)) down++;
+    assert.equal(down, 144); // 1440 ms of 3600
+    assert.equal(seating.breathDown(1700, 0), false);
+    assert.equal(seating.breathDown(1800, 0), true);
+    assert.equal(seating.breathDown(1700, 100), true); // phase shifts the cycle
+    assert.equal(seating.breathDown(3600 + 1800, 0), true); // repeats
+});
+
+test('breathRows: the cut sits 42% down the opaque figure; blank or tiny frames do not breathe', () => {
+    const prev = window.game;
+    // a 10x80 frame, opaque on rows 20..70
+    window.game = { textures: {
+        getFrame: (key, name) => (name === 'empty' || name === 'sit' ? { width: 10, height: 80 } : null),
+        getPixelAlpha: (x, y, key, name) => (name === 'sit' && y >= 20 && y <= 70 ? 255 : 0)
+    } };
+    try {
+        assert.deepEqual(seating.breathRows('stub_a', 'sit'), { top: 20, cut: 20 + Math.round(0.42 * 50) });
+        assert.equal(seating.breathRows('stub_a', 'empty'), null);
+        assert.equal(seating.breathRows('stub_a', 'missing'), null);
+    } finally {
+        window.game = prev;
+    }
+});
+
+// ── seat box slice 1: the stand-up order (docs/achitechture/SEAT_BOX_PLAN.md 1.3) ──────────
+
+test('seatedBlock: the driver always takes the chair body (the 12 x 8 experiment toggle is gone)', () => {
+    const body = { width: 18, height: 8 };
+    assert.deepEqual(seating.seatedBlock(body), { w: 18, h: 8 });
+    assert.deepEqual(seating.seatedBlock(body, { w: 8, h: 6 }), { w: 18, h: 8 }, 'a second argument is ignored');
+});
+
+test('nothing in the engine sets window.__seatBox (test-only: false selects the old stand-up code)', async () => {
+    const { readdirSync, readFileSync, statSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const root = new URL('../../public/break_escape/js/', import.meta.url).pathname;
+    const hits = [];
+    const walk = d => { for (const f of readdirSync(d)) { const p = join(d, f);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (p.endsWith('.js') && /__seatBox\s*=(?!=)/.test(readFileSync(p, 'utf8'))) hits.push(p); } };
+    walk(root);
+    assert.deepEqual(hits, []);
+    assert.equal(window.__seatBox, undefined);
+});
+
+test('pickStandSpot: compass, flood, approach, then stay seated or forced', () => {
+    // A desk box at x 48..126, y 264..280; the chair's castor base at (87, 260), facing south.
+    const desk = { x0: 48, x1: 126, y0: 264, y1: 280 };
+    const inDesk = (x, y, hw, hh) => x + hw > desk.x0 && x - hw < desk.x1 && y + hh > desk.y0 && y - hh < desk.y1;
+    const at = { cx: 87, cy: 260, facing: 'south', reach: 20 };
+    const world = (blocked = () => false, floodCells = []) => ({
+        cellNear: (x, y) => (blocked(x, y) || inDesk(x, y, 0, 0) ? null : { x, y }),
+        boxClear: (x, y) => !blocked(x, y) && !inDesk(x, y, 9, 5),
+        lineClear: (x, y) => [0.25, 0.5, 0.75].every(k => !inDesk(87 + (x - 87) * k, 260 + (y - 260) * k, 1, 1)),
+        flood: n => floodCells.slice(0, n * 4)
+    });
+    // 1. open floor behind the desk: a compass spot on the near side, never south of the desk
+    const a = seating.pickStandSpot(at, world());
+    assert.equal(a.via, 'compass');
+    assert.ok(a.y < desk.y0 - 5, `landed at y ${a.y}, desk back edge ${desk.y0}`);
+    // 2. every compass spot blocked (a wall to the north, the desk to the south): flood fill
+    const wallN = (x, y) => y < 252;
+    const b = seating.pickStandSpot(at, world(wallN, [{ x: 120, y: 256 }, { x: 140, y: 256 }]));
+    assert.equal(b.via, 'flood');
+    // 3. nothing near: the approach point
+    const shut = () => true;
+    const c = seating.pickStandSpot({ ...at, approach: { x: 87, y: 230 } }, { ...world(shut), boxClear: (x, y) => y === 230 });
+    assert.deepEqual([c.x, c.y, c.via], [87, 230, 'approach']);
+    // 4. a voluntary jump-off with nowhere clear stays seated
+    assert.equal(seating.pickStandSpot({ ...at, approach: { x: 87, y: 230 }, forced: false }, world(shut)), null);
+    // 5. forced, the 8-cell flood with the box check only (the line may cross something)
+    const far = Array.from({ length: 40 }, (_, i) => ({ x: 40 + i, y: 200 }));
+    const f = seating.pickStandSpot({ ...at, approach: { x: 87, y: 230 } },
+        { ...world(shut), boxClear: (x, y) => x === 60 && y === 200, lineClear: () => false, flood: n => (n === 8 ? far : []) });
+    assert.deepEqual([f.x, f.y, f.via], [60, 200, 'forced-flood']);
+    // 6. forced (KO, punch, chair gone) with nothing in the flood: the approach point even if blocked
+    const e = seating.pickStandSpot({ ...at, approach: { x: 87, y: 230 } }, world(shut));
+    assert.deepEqual([e.x, e.y, e.via], [87, 230, 'forced-approach']);
+    // the south cell across the desk is never returned by any branch
+    for (const r of [a, b, c, e]) assert.ok(!(r.y > desk.y1), JSON.stringify(r));
+});
+
+test('pickStandSpot: a voluntary stand takes the approach only within 32 px and line clear (R2 m4)', () => {
+    const at = { cx: 87, cy: 260, facing: 'south', reach: 23 };
+    const io = (lineOk) => ({ cellNear: () => null, boxClear: () => true, lineClear: () => lineOk, flood: () => [] });
+    const near = { x: 87, y: 230 }, far = { x: 87, y: 220 };   // 30 px, 40 px
+    assert.equal(seating.pickStandSpot({ ...at, approach: near, forced: false }, io(true)).via, 'approach');
+    assert.equal(seating.pickStandSpot({ ...at, approach: far, forced: false }, io(true)), null, '40 px away: refused');
+    assert.equal(seating.pickStandSpot({ ...at, approach: near, forced: false }, io(false)), null, 'across a desk: refused');
+    assert.equal(seating.pickStandSpot({ ...at, approach: far }, io(false)).via, 'approach', 'forced takes it');
+});
+
+// ── a rig that drives the real sit, roll, jump-off and standUp against fake bodies ──────
+
+const iter = list => ({ iterate(fn) { list.forEach(fn); } });
+const sBody = (left, top, w, h, name = 'desk') => ({ left, top, right: left + w, bottom: top + h, enable: true,
+    immovable: false, physicsType: 1, gameObject: { name } });
+const DESK1 = () => sBody(48, 264, 78, 16, 'desk1');   // desk1: F 280, foot 16
+
+/** A dynamic body that tracks a sprite (position from the sprite only on reset/update). */
+function dynBody(go, ox, oy, w, h) {
+    const b = {
+        gameObject: go, offset: { x: ox, y: oy }, width: w, height: h, enable: true, immovable: false, physicsType: 0,
+        velocity: { x: 0, y: 0 }, checkCollision: { none: false },
+        position: { x: 0, y: 0, copy(p) { this.x = p.x; this.y = p.y; } },
+        prev: { copy() {} }, prevFrame: { copy() {} },
+        get left() { return this.position.x; }, get top() { return this.position.y; },
+        get right() { return this.position.x + this.width; }, get bottom() { return this.position.y + this.height; },
+        setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; },
+        setSize(nw, nh) { this.width = nw; this.height = nh; },
+        setOffset(x, y) { this.offset.x = x; this.offset.y = y; },
+        reset(x, y) { go.x = x; go.y = y; },
+        updateFromGameObject() { this.position.x = go.x + this.offset.x; this.position.y = go.y + this.offset.y; },
+        updateCenter() {}
+    };
+    b.updateFromGameObject();
+    return b;
+}
+
+const ORDER_CCW_S = ['south', 'south-west', 'west', 'north-west', 'north', 'north-east', 'east', 'south-east'];
+
+/**
+ * castor: the chair's castor base; facing: the chair's facing when the player sits; approach:
+ * where the player stands to sit; statics: extra static bodies (desks, walls).
+ */
+async function standRig({ castor, facing, approach, statics = [], fixed = false }) {
+    const { NPCPathfindingManager } = await import('../../public/break_escape/js/systems/npc-pathfinding.js');
+    const { installEasyStar } = await import('./fixtures/world-grid-fixture.mjs');
+    installEasyStar();
+    const dynamics = [];
+    const fakeImg = () => { const o = { texture: { key: 'x' }, frame: { name: '' }, depth: 0, x: 0, y: 0,
+        anims: { stop() {} }, play() {}, setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setAlpha(a) { o.alpha = a; return o; },
+        setDepth(d) { o.depth = d; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; }, setCrop() { return o; },
+        setTexture() { return o; }, setFrame(n) { o.frame.name = n; return o; }, destroy() { o.destroyed = true; } }; return o; };
+    const scene = {
+        time: { delayedCall() {}, now: 0 },
+        physics: { world: { bounds: { x: 0, y: 0, width: 320, height: 400 }, staticBodies: iter(statics), bodies: iter(dynamics) } },
+        add: { sprite: () => fakeImg(), image: () => fakeImg() },
+        textures: { exists: () => false },
+        tweens: { addCounter(cfg) { cfg.onUpdate?.({ getValue: () => 1 }); cfg.onComplete?.(); } }
+    };
+    const chair = { scene, isSwivelChair: true, originalTexture: 'chair-grey-1-rotate1', texture: { key: 'chair-grey-1-rotate1' },
+        currentFrame: ORDER_CCW_S.indexOf(facing), x: castor.x - 20, y: castor.y - 35, displayOriginX: 0, displayOriginY: 0,
+        scaleX: 1, scaleY: 1, width: 40, height: 40, depth: 1, active: true, visible: true, objectId: 'rig_chair' };
+    chair.body = dynBody(chair, 11, 31, 18, 8);
+    if (fixed) chair.fixedChair = true;
+    const player = { x: 0, y: 0, displayOriginX: 0, displayOriginY: 0, scaleX: 1, scaleY: 1, visible: true, depth: 0,
+        texture: { key: 'rig_player' }, frame: { name: 'idle' }, direction: 'down',
+        anims: { isPlaying: false, stop() {}, play() {}, animationManager: { exists: () => false } },
+        setVisible(v) { this.visible = v; }, setDepth(d) { this.depth = d; } };
+    player.body = dynBody(player, 31, 60, 18, 10);
+    const feet = () => ({ x: player.x + player.body.offset.x + player.body.width / 2, y: player.y + player.body.offset.y + player.body.height / 2 });
+    const putFeet = (x, y) => { const f = feet(); player.x += x - f.x; player.y += y - f.y; player.body.updateFromGameObject(); };
+    putFeet(approach.x, approach.y);
+    dynamics.push(chair.body, player.body);
+    const pm = new NPCPathfindingManager(scene);
+    pm.rebuildWorldGrid();
+    const saved = {};
+    for (const k of ['player', 'pathfindingManager', 'game', 'gameAlert', '__seatBox']) saved[k] = window[k];
+    const alerts = [];
+    Object.assign(window, { player, pathfindingManager: pm, game: { textures: { get: () => ({ has: () => true }) } },
+        gameAlert: m => alerts.push(m) });
+    const rig = {
+        chair, player, scene, pm, alerts, feet, statics,
+        /** Physics frames with no collisions: afterPlayerMovement, move each enabled body by its velocity (the chair's drag 100), place. */
+        run(n = 120) {
+            for (let i = 0; i < n; i++) {
+                seating.afterPlayerMovement();
+                for (const go of [player, chair]) {
+                    const b = go.body;
+                    if (!b.enable) continue;
+                    go.x += b.velocity.x / 60; go.y += b.velocity.y / 60;
+                    if (go === chair) for (const k of ['x', 'y']) { const v = b.velocity[k]; b.velocity[k] = Math.sign(v) * Math.max(0, Math.abs(v) - 100 / 60); }
+                    b.updateFromGameObject();
+                }
+                seating.place();
+            }
+        },
+        sit() { assert.equal(seating.trySit(chair), true); assert.equal(seating.isSeated(), true); rig.run(); assert.equal(seating.isMounting(), false, 'on the seat'); },
+        /** Roll: move the driver's feet by (dx, dy) facing `dir` (a player direction), then place(). */
+        roll(dx, dy, dir) { const f = feet(); player.direction = dir; putFeet(f.x + dx, f.y + dy); seating.place(); },
+        jump() { seating.onJumpKey(); seating.onJumpKey(); rig.run(); },
+        stand() { seating.standUp(); rig.run(); },
+        last() { return window.seating.lastStand; },
+        restore() { if (seating.isSeated()) seating.standUp(); rig.run(); for (const [k, v] of Object.entries(saved)) window[k] = v; }
+    };
+    return rig;
+}
+
+/** The landing's walking box is clear of every static body and the line from the castor crosses none (1 px steps). */
+function assertCleanLanding(rig, castor, label) {
+    const f = rig.feet();
+    for (const b of rig.statics) {
+        assert.ok(!(f.x + 9 > b.left && f.x - 9 < b.right && f.y + 5 > b.top && f.y - 5 < b.bottom), `${label}: landed in ${b.gameObject.name} at ${f.x},${f.y}`);
+        const n = Math.ceil(Math.hypot(f.x - castor.x, f.y - castor.y));
+        for (let i = 1; i < n; i++) {
+            const x = castor.x + (f.x - castor.x) * i / n, y = castor.y + (f.y - castor.y) * i / n;
+            assert.ok(!(x > b.left && x < b.right && y > b.top && y < b.bottom), `${label}: across ${b.gameObject.name} to ${f.x},${f.y}`);
+        }
+    }
+    return f;
+}
+
+test('named cases on desk1 (R1 B1): behind, in front, each end; voluntary and forced land on the near side', async () => {
+    const cases = [
+        { name: 'behind', castor: { x: 87, y: 260 }, facing: 'south', approach: { x: 87, y: 232 }, ok: f => f.y < 264 },
+        { name: 'in front', castor: { x: 87, y: 284 }, facing: 'north', approach: { x: 87, y: 312 }, ok: f => f.y > 280 },
+        { name: 'west end', castor: { x: 39, y: 272 }, facing: 'east', approach: { x: 12, y: 272 }, ok: f => f.x < 48 || f.y < 264 || f.y > 280 },
+        { name: 'east end', castor: { x: 135, y: 272 }, facing: 'west', approach: { x: 162, y: 272 }, ok: f => f.x > 126 || f.y < 264 || f.y > 280 }
+    ];
+    for (const c of cases) {
+        for (const kind of ['voluntary', 'forced']) {
+            const rig = await standRig({ ...c, statics: [DESK1()] });
+            try {
+                rig.sit();
+                if (kind === 'voluntary') rig.jump(); else rig.stand();
+                assert.equal(seating.isSeated(), false, `${c.name} ${kind}: stood`);
+                const f = assertCleanLanding(rig, c.castor, `${c.name} ${kind}`);
+                assert.ok(c.ok(f), `${c.name} ${kind}: near side, landed ${f.x},${f.y}`);
+                assert.ok(Math.hypot(f.x - c.castor.x, f.y - c.castor.y) <= 40, `${c.name} ${kind}: beside the chair`);
+                assert.equal(rig.last().via, 'compass', `${c.name} ${kind}`);
+                assert.equal(rig.player.visible, true);
+            } finally { rig.restore(); }
+        }
+    }
+});
+
+test('__seatBox === false keeps the old code for the audit: behind desk1 it steps across the desk, never refuses', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'south', approach: { x: 87, y: 232 }, statics: [DESK1()] });
+    try {
+        window.__seatBox = false;
+        rig.sit();
+        rig.jump();
+        assert.equal(seating.isSeated(), false);
+        assert.equal(rig.last().via, 'legacy-compass');
+        assert.ok(rig.feet().y > 280, `old forward step lands south of the desk (${rig.feet().y})`);
+    } finally { delete window.__seatBox; rig.restore(); }
+});
+
+test('player facing (R3 M3): sat facing east, rolled north to a desk; the stand counts from the stand-time facing', async () => {
+    // Desk north of the chair (x 94..140, y 150..188), a cabinet east (x 110..150, y 190..230), a
+    // wall south (y 215..240). Open: west (beside the chair) and north-west (round the desk's corner).
+    const statics = [sBody(94, 150, 46, 38, 'desk'), sBody(110, 190, 40, 40, 'cabinet'), sBody(0, 215, 200, 25, 'wall')];
+    const rig = await standRig({ castor: { x: 100, y: 230 }, facing: 'east', approach: { x: 70, y: 230 }, statics: [] });
+    try {
+        rig.sit();
+        // roll 30 px north (the chair's body stays disabled where the player sat: stale)
+        rig.roll(0, -30, 'up');
+        rig.statics.push(...statics);   // the room's furniture, now that the chair is in place
+        rig.scene.physics.world.staticBodies = iter(rig.statics);
+        const castor = { x: rig.chair.x + 20, y: rig.chair.y + 35 };
+        assert.deepEqual(castor, { x: 100, y: 200 });
+        assert.equal(seating.currentSeat(), rig.chair);
+        rig.jump();
+        assert.equal(seating.isSeated(), false);
+        const f = assertCleanLanding(rig, castor, 'east then north');
+        assert.ok(f.x < 91 && f.y >= 196, `beside the chair to the west, not round the desk corner: ${f.x},${f.y}`);
+        assert.equal(rig.last().via, 'compass');
+    } finally { rig.restore(); }
+    // control: the same roll with the chair still facing east (as a sit-time facing would count
+    // it) tries north-west as a back diagonal before west, and steps round the desk's corner
+    const ctl = await standRig({ castor: { x: 100, y: 230 }, facing: 'east', approach: { x: 70, y: 230 }, statics: [] });
+    try {
+        ctl.sit();
+        ctl.roll(0, -30, 'right');
+        ctl.statics.push(...statics);
+        ctl.scene.physics.world.staticBodies = iter(ctl.statics);
+        ctl.jump();
+        const g = ctl.feet();
+        assert.ok(g.y < 196, `facing east: the north-west diagonal (${g.x},${g.y})`);
+    } finally { ctl.restore(); }
+});
+
+test('cramped (wall 12 px north of a chair behind desk1) and boxed in (voluntary refuses, forced takes the approach)', async () => {
+    // cramped: still lands clear and on the near side
+    {
+        const castor = { x: 87, y: 260 };
+        const rig = await standRig({ castor, facing: 'south', approach: { x: 40, y: 250 },
+            statics: [DESK1(), sBody(0, 32, 320, 212, 'wall north')] });   // wall bottom 244 = chair top 256 - 12
+        try {
+            rig.sit();
+            rig.jump();
+            assert.equal(seating.isSeated(), false, 'cramped: stood');
+            const f = assertCleanLanding(rig, castor, 'cramped');
+            assert.ok(f.y < 264, `cramped: near side ${f.x},${f.y}`);
+        } finally { rig.restore(); }
+    }
+    // boxed in: walls round the chair on every side, the desk south
+    {
+        const castor = { x: 87, y: 260 };
+        const box = [DESK1(), sBody(0, 32, 320, 218, 'wall north'), sBody(0, 250, 76, 14, 'wall west'), sBody(98, 250, 100, 14, 'wall east')];
+        const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 240 }, statics: box });
+        try {
+            rig.sit();
+            rig.jump();
+            assert.equal(seating.isSeated(), true, 'voluntary: stays seated');
+            assert.equal(rig.last().via, 'refused');
+            assert.deepEqual(rig.alerts, ['No room to stand up here.']);
+            rig.stand();
+            assert.equal(seating.isSeated(), false);
+            assert.equal(rig.last().via, 'forced-approach');
+            assert.deepEqual(rig.feet(), { x: 87, y: 240 });
+        } finally { rig.restore(); }
+    }
+});
+
+test('baked chair (R2 M1): a flood over the world grid can\'t leave a chair an NPC left; over the local grid it can', async () => {
+    const sb = await import('../../public/break_escape/js/systems/seat-box.js');
+    const castor = { x: 87, y: 260 };
+    const statics = [DESK1(), sBody(0, 32, 320, 200, 'wall north')];
+    const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 238 }, statics });
+    try {
+        rig.chair.body.immovable = true;
+        rig.pm.rebuildWorldGrid();          // baked: the chair's padded cells are blocked in the world grid
+        rig.chair.body.immovable = false;   // the NPC stood up; nothing rebuilds
+        const world = { grid: rig.pm.worldGrid, bounds: rig.pm.worldGridBounds };
+        assert.deepEqual(sb.floodStandCells(world, castor.x, castor.y, 4), [], 'world grid: the flood is stuck in the chair');
+        const local = sb.localStandGrid(rig.pm, { exclude: [rig.chair, rig.player] });
+        assert.ok(sb.floodStandCells(local, castor.x, castor.y, 4).length > 0, 'local grid: the flood gets out');
+        // and the player on that chair stands on the near side
+        rig.sit();
+        rig.jump();
+        assert.equal(seating.isSeated(), false);
+        const f = assertCleanLanding(rig, castor, 'baked');
+        assert.ok(f.y < 264, `near side ${f.x},${f.y}`);
+    } finally { rig.restore(); }
+});
+
+test('standUp survives a throw (R3 M1): body restored, visible, not seated, on the approach point', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'south', approach: { x: 87, y: 232 }, statics: [DESK1()] });
+    const err = console.error;
+    try {
+        rig.sit();
+        assert.equal(rig.player.visible, false);
+        window.pathfindingManager = { buildWorldGrid() { throw new Error('grid builder failed'); } };
+        console.error = () => {};
+        rig.stand();
+        assert.equal(seating.isSeated(), false);
+        assert.equal(rig.player.isSeated, false);
+        assert.equal(rig.player.visible, true);
+        assert.deepEqual([rig.player.body.width, rig.player.body.height, rig.player.body.offset.x, rig.player.body.offset.y], [18, 10, 31, 60]);
+        assert.deepEqual(rig.feet(), { x: 87, y: 232 });
+        assert.equal(rig.last().via, 'error-approach');
+        // the voluntary path too
+        window.pathfindingManager = rig.pm;
+        rig.sit();
+        window.pathfindingManager = { buildWorldGrid() { throw new Error('grid builder failed'); } };
+        rig.jump();
+        assert.equal(seating.isSeated(), false);
+        assert.equal(rig.player.visible, true);
+    } finally { console.error = err; rig.restore(); }
+});
+
+// ── physics sit and stand (2026-11-11): no teleport on or off, the collider always on ──────
+
+/** Feet per frame while `fn` runs frames one at a time: the largest move between two frames. */
+function maxStep(rig, frames) {
+    let prev = rig.feet(), worst = 0;
+    for (let i = 0; i < frames; i++) {
+        rig.run(1);
+        const f = rig.feet();
+        worst = Math.max(worst, Math.hypot(f.x - prev.x, f.y - prev.y));
+        prev = f;
+    }
+    return worst;
+}
+
+test('getting on a swivel chair: the player walks onto it with the seated block, collider on, then sits', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        assert.equal(seating.trySit(rig.chair), true);
+        assert.equal(seating.isMounting(), true, 'walking on, not there yet');
+        assert.equal(rig.player.visible, true, 'the player is seen walking on');
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 8], 'the seated block from the start');
+        assert.equal(rig.player.body.checkCollision.none, false, 'collider on');
+        assert.equal(rig.chair.body.enable, false, 'the chair body is off while the driver takes its place');
+        const worst = maxStep(rig, 60);
+        assert.ok(worst <= 90 / 60 + 2.01, `no frame moves more than a walking step plus the 2 px arrival (${worst.toFixed(2)})`);
+        assert.equal(seating.isMounting(), false);
+        assert.equal(rig.player.isSeated, true);
+        assert.equal(rig.player.visible, false);
+        assert.deepEqual(rig.feet(), castor, 'feet on the castor');
+    } finally { rig.restore(); }
+});
+
+test('getting off a swivel chair: the walking body comes back in place, the player steps off and the chair rolls back', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 232 }, statics: [DESK1()] });
+    try {
+        rig.sit();
+        const before = rig.feet();
+        seating.standUp();
+        assert.deepEqual(rig.feet(), before, 'no jump on standing: the feet stay put that frame');
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 10]);
+        assert.equal(rig.player.visible, true);
+        const spot = rig.last();
+        const vx = rig.chair.body.velocity.x, vy = rig.chair.body.velocity.y;
+        assert.ok(vx * (spot.x - before.x) + vy * (spot.y - before.y) < 0, 'the chair is pushed away from where the player steps');
+        const chair0 = { x: rig.chair.x, y: rig.chair.y };
+        const worst = maxStep(rig, 90);
+        assert.ok(worst <= 90 / 60 + 2.01, `a walk, not a hop (${worst.toFixed(2)})`);
+        assert.deepEqual(rig.feet(), { x: spot.x, y: spot.y }, 'on the landing spot');
+        const rolled = Math.hypot(rig.chair.x - chair0.x, rig.chair.y - chair0.y);
+        assert.ok(rolled > 10 && rolled < 40, `the chair rolled back a short way (${rolled.toFixed(1)} px)`);
+    } finally { rig.restore(); }
+});
+
+test('the jump off a chair moves the body at walking pace or less, with the pose sprite on an arc', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 232 }, statics: [DESK1()] });
+    try {
+        rig.sit();
+        seating.onJumpKey(); // stand on the seat
+        seating.onJumpKey(); // jump
+        assert.equal(seating.isSeated(), false);
+        assert.equal(rig.player.visible, false, 'the pose sprite shows the jump');
+        assert.equal(seating.trySit(rig.chair), true, 'a sit mid-jump is swallowed');
+        assert.equal(seating.isSeated(), false);
+        const worst = maxStep(rig, 40);
+        assert.ok(worst <= 3.01, `the body walks the jump (${worst.toFixed(2)} px/frame)`);
+        assert.equal(rig.player.visible, true, 'landed');
+        const spot = rig.last();
+        assert.deepEqual(rig.feet(), { x: spot.x, y: spot.y });
+    } finally { rig.restore(); }
+});
+
+test('a swivel chair out of reach (blocked on the way): no sit, the walking body and the chair body come back', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'south', approach: { x: 87, y: 220 }, statics: [] });
+    try {
+        seating.trySit(rig.chair);
+        // physics stops the player dead (a desk corner in the way): frames with no movement
+        for (let i = 0; i < 10; i++) { seating.afterPlayerMovement(); rig.player.body.setVelocity(0, 0); seating.place(); }
+        assert.equal(seating.isSeated(), false, 'gave up');
+        assert.deepEqual(rig.alerts, ["Can't reach that seat from here."]);
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 10]);
+        assert.equal(rig.chair.body.enable, true);
+        assert.equal(rig.chair.seatedBy, undefined, 'the chair is free again');
+        assert.deepEqual(rig.feet(), { x: 87, y: 220 }, 'no teleport onto the chair');
+    } finally { rig.restore(); }
+});
+
+test('rolling on a swivel chair: the chair keeps the driver\'s sub-pixel position (no rounding shimmer)', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'south', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        rig.sit();
+        rig.roll(0.4, 0.3, 'down');
+        assert.equal(rig.chair.x + 20, rig.feet().x);
+        assert.equal(rig.chair.y + 35, rig.feet().y);
+    } finally { rig.restore(); }
+});
+
+test('a static seat: walk to its foot, a smaller collider stays on while seated, a move walks off with no step', async () => {
+    const rig = await standRig({ castor: { x: 200, y: 300 }, facing: 'south', approach: { x: 87, y: 232 }, statics: [] });
+    const chair = { scene: rig.scene, texture: { key: 'hospital_chair_south' }, x: 79, y: 230, width: 16, height: 24,
+        depth: 1, active: true, visible: true, objectId: 'rig_static' };
+    try {
+        assert.equal(seating.trySit(chair), true);
+        assert.equal(seating.isMounting(), true);
+        rig.run();
+        assert.equal(seating.isMounting(), false);
+        assert.equal(rig.player.isSeated, true);
+        assert.deepEqual(rig.feet(), { x: 87, y: 252 }, 'feet at the seat foot (chair bottom - 2)');
+        assert.equal(rig.player.body.checkCollision.none, false, 'collider on while seated');
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [seating.STATIC_SEATED_BLOCK.w, seating.STATIC_SEATED_BLOCK.h]);
+        const at = rig.feet();
+        seating.onMoveIntent();
+        assert.equal(seating.isSeated(), false);
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 10]);
+        rig.run(10);
+        assert.deepEqual(rig.feet(), at, 'no auto step: the move itself walks the player off');
+    } finally { rig.restore(); }
+});
+
+// ── slice 21 (OFFICE_LIFE_PLAN 12.7): the chair roll mostly along x, out and back, and a rare swivel ──
+
+function lcg(seed = 1) {
+    let v = seed;
+    return () => { v = (v * 9301 + 49297) % 233280; return v / 233280; };
+}
+
+test('fidgetOffset: |y| <= 1 and |x| <= 3 on screen, never zero, never towards the desk; east and west roll back up to 2 px', () => {
+    const forward = { south: [0, 1], north: [0, -1], east: [1, 0], west: [-1, 0],
+                      'south-east': [1, 1], 'north-west': [-1, -1], 'north-east': [1, -1], 'south-west': [-1, 1] };
+    const rand = lcg(7);
+    for (const [facing, [fx, fy]] of Object.entries(forward)) {
+        const xs = new Set();
+        for (let i = 0; i < 300; i++) {
+            const o = seating.fidgetOffset(facing, rand);
+            assert.ok(Number.isInteger(o.x) && Number.isInteger(o.y), `${facing} whole pixels`);
+            assert.ok(Math.abs(o.x) <= 3 && Math.abs(o.y) <= 1, `${facing} ${o.x},${o.y} out of range`);
+            assert.ok(o.x !== 0 || o.y !== 0, `${facing} a roll that goes nowhere`);
+            assert.ok(o.x * fx <= 0 && o.y * fy <= 0, `${facing} ${o.x},${o.y} rolls towards the desk`);
+            if (fx) assert.ok(Math.abs(o.x) <= 2, `${facing} ${o.x} past 2 px back`);
+            xs.add(o.x);
+        }
+        if (!fx) assert.ok(xs.has(-3) && xs.has(3), `${facing}: both ways along x, up to 3 px`);
+    }
+    // A stub rand at its edges stays in range
+    for (const facing of Object.keys(forward)) {
+        for (const v of [0, 0.999999]) {
+            const o = seating.fidgetOffset(facing, () => v);
+            assert.ok(Math.abs(o.x) <= 3 && Math.abs(o.y) <= 1 && (o.x || o.y), `${facing} rand ${v}`);
+        }
+    }
+});
+
+test('fidgetStep: out, hold 1 to 2 s, back to zero; held starts none and brings a roll straight back', () => {
+    const rand = () => 0.5;
+    const fd = seating.newFidget(0, rand);
+    assert.equal(fd.phase, 'wait');
+    const start = fd.until;
+    assert.deepEqual(seating.fidgetStep(fd, start - 1, { facing: 'south', rand }), { x: 0, y: 0 });
+    // Held when due: no roll
+    seating.fidgetStep(fd, start, { held: true, facing: 'south', rand });
+    assert.equal(fd.phase, 'wait');
+    seating.fidgetStep(fd, start + 10, { facing: 'south', rand });
+    assert.equal(fd.phase, 'out');
+    const out = seating.fidgetStep(fd, start + 10 + 700, { facing: 'south', rand });
+    assert.equal(fd.phase, 'hold');
+    assert.ok(out.x !== 0 || out.y !== 0);
+    const holdEnd = fd.until;
+    assert.ok(holdEnd - (start + 710) >= 1000 && holdEnd - (start + 710) <= 2000, `hold ${holdEnd - start - 710}`);
+    assert.deepEqual(seating.fidgetStep(fd, holdEnd - 1, { facing: 'south', rand }), out, 'holds where it rolled to');
+    seating.fidgetStep(fd, holdEnd, { facing: 'south', rand });
+    assert.equal(fd.phase, 'back');
+    assert.deepEqual(seating.fidgetStep(fd, holdEnd + 700, { facing: 'south', rand }), { x: 0, y: 0 });
+    assert.equal(fd.phase, 'wait');
+    assert.ok(fd.until - (holdEnd + 700) >= 4000 && fd.until - (holdEnd + 700) <= 11000);
+    // Held mid-roll: it eases straight back, from where it is
+    seating.fidgetStep(fd, fd.until, { facing: 'south', rand });
+    const t0 = fd.start;
+    const mid = seating.fidgetStep(fd, t0 + 350, { facing: 'south', rand });
+    seating.fidgetStep(fd, t0 + 360, { held: true, facing: 'south', rand });
+    assert.equal(fd.phase, 'back');
+    assert.ok(Math.abs(fd.from.x - mid.x) <= Math.abs(mid.x) + 0.5);
+    assert.deepEqual(seating.fidgetStep(fd, t0 + 360 + 700, { held: true, facing: 'south', rand }), { x: 0, y: 0 });
+    assert.equal(fd.phase, 'wait');
+});
+
+test('idleMotionHeld: a call, a pairing, a line, typing or a chat with the player holds the roll and the swivel', () => {
+    assert.equal(seating.idleMotionHeld({}), false);
+    for (const k of ['call', 'paired', 'talking', 'typing', 'chatting']) assert.equal(seating.idleMotionHeld({ [k]: true }), true, k);
+    assert.equal(seating.isTyping({ mode: 'job', job: { kind: 'use', need: 'work', phase: 'using' } }), true);
+    assert.equal(seating.isTyping({ mode: 'job', job: { kind: 'use', need: 'caffeine', phase: 'using' } }), false);
+    assert.equal(seating.isTyping({ mode: 'idle', job: null }), false);
+});
+
+test('swivelFacing: same for a seed, about 5% of 6 s slots, one compass step snapped to valid, back to home, never typing', async () => {
+    const { seededRoll } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const roll = seed => salt => seededRoll(seed, 'tom', salt);
+    const idle = { mode: 'idle', job: null };
+    const facings = (seed, opts = {}) => {
+        const out = [];
+        for (let slot = 0; slot < 1000; slot++) {
+            out.push(seating.swivelFacing({ state: idle, clockMs: slot * 6000 + 500, homeFacing: 'south', roll: roll(seed), ...opts }));
+        }
+        return out;
+    };
+    const a = facings(1), b = facings(1), c = facings(2);
+    assert.deepEqual(a, b, 'same seed, same swivels');
+    assert.notDeepEqual(a, c);
+    const turned = a.filter(f => f !== 'south');
+    assert.ok(turned.length >= 30 && turned.length <= 75, `turned in ${turned.length} of 1000 slots`);
+    assert.ok(turned.every(f => f === 'south-east' || f === 'south-west'), 'one compass step');
+    assert.ok(turned.includes('south-east') && turned.includes('south-west'), 'both ways');
+    // Back to home within the slot (hold 2 to 4 s)
+    for (let slot = 0; slot < 1000; slot++) {
+        const f = seating.swivelFacing({ state: idle, clockMs: slot * 6000 + 4000, homeFacing: 'south', roll: roll(1) });
+        assert.equal(f, 'south', `slot ${slot} still turned after 4 s`);
+    }
+    // Snapped to the chair's valid facings
+    const snapped = facings(1, { valid: ['south', 'east', 'west'] });
+    assert.ok(snapped.every(f => ['south', 'east', 'west'].includes(f)));
+    // A swivelChance of 1 turns every slot; 0 none
+    assert.ok(facings(1, { chance: 1 }).every(f => f !== 'south'));
+    assert.ok(facings(1, { chance: 0 }).every(f => f === 'south'));
+    // Never while typing
+    const typing = { mode: 'job', job: { kind: 'use', need: 'work', phase: 'using' } };
+    for (let slot = 0; slot < 200; slot++) {
+        assert.equal(seating.swivelFacing({ state: typing, clockMs: slot * 6000 + 500, homeFacing: 'south', roll: roll(1), chance: 1 }), 'south');
+    }
+    // A coffee use (not work) may swivel
+    const coffee = { mode: 'job', job: { kind: 'use', need: 'caffeine', phase: 'using' } };
+    assert.notEqual(seating.swivelFacing({ state: coffee, clockMs: 500, homeFacing: 'south', roll: roll(1), chance: 1 }), 'south');
+});
+
+test('listenTarget: the nearest speaker in the same room within earshot (five tiles), until the line ends; never itself', () => {
+    const speakers = [
+        { npcId: 'rosa', roomId: 'office', x: 300, y: 100, until: 5000 },
+        { npcId: 'amara', roomId: 'office', x: 180, y: 100, until: 5000 },
+        { npcId: 'grace', roomId: 'kitchen', x: 110, y: 100, until: 5000 },
+        { npcId: 'tom', roomId: 'office', x: 100, y: 100, until: 5000 }
+    ];
+    const base = { npcId: 'tom', roomId: 'office', x: 100, y: 100, speakers };
+    assert.equal(seating.listenTarget({ ...base, clockMs: 1000 })?.npcId, 'amara');
+    assert.equal(seating.listenTarget({ ...base, clockMs: 5000 }), null, 'the line has ended');
+    assert.equal(seating.listenTarget({ ...base, x: 400, y: 400, clockMs: 1000 }), null, 'too far');
+    assert.equal(seating.listenTarget({ ...base, speakers: [], clockMs: 0 }), null);
+});
+
+test('listenTarget: the listen radius is the earshot radius, or the speaker\'s own overhearRadius', () => {
+    assert.equal(seating.LISTEN_RADIUS, 160, 'the earshot default (OVERHEAR_RADIUS)');
+    const at = (d, radius) => [{ npcId: 'sanjay', roomId: 'office', x: 100 + d, y: 100, until: 5000, ...(radius ? { radius } : {}) }];
+    const base = { npcId: 'tom', roomId: 'office', x: 100, y: 100, clockMs: 1000 };
+    // Round 6, game 5434: seated staff 149 to 192 px from the turn-back; 149 and 155 hear a 160 px line
+    assert.equal(seating.listenTarget({ ...base, speakers: at(149) })?.npcId, 'sanjay', 'inside 160 px (was outside 128)');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(160) })?.npcId, 'sanjay', 'on the edge');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(192) }), null, 'out of earshot');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(192, 200) })?.npcId, 'sanjay', 'a wider pool overhearRadius');
+    assert.equal(seating.listenTarget({ ...base, speakers: at(100, 80) }), null, 'a narrower pool overhearRadius');
+});
+
+test('swivelEnabled: swivel false, officeVisuals false and los.enabled turn it off', () => {
+    assert.equal(seating.swivelEnabled({}, {}), true);
+    assert.equal(seating.swivelEnabled({ swivel: false }, {}), false);
+    assert.equal(seating.swivelEnabled({}, { officeVisuals: false }), false);
+    assert.equal(seating.swivelEnabled({ los: { enabled: true } }, {}), false);
+    assert.equal(seating.swivelEnabled({ los: { enabled: false } }, {}), true);
+});
+
+test('the needs system builds the speakers list once per tick: chat lines and grumbles, with room and position', async () => {
+    const { NPCNeedsSystem, NEEDS_TICK_MS } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const { makeWorld } = await import('./fixtures/needs-stub-world.mjs');
+    const rec = id => ({ id, needsHome: `${id}_pc`, needs: { work: { decayPerMin: 1, urgentAt: 10, initial: 90, jitterPct: 0 } } });
+    const w = makeWorld({ npcs: { a: { pos: { x: 100, y: 100 }, rec: rec('a') }, b: { pos: { x: 160, y: 100 }, rec: rec('b'), room: 'kitchen' } },
+        objects: [] });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let built = 0;
+    const orig = sys._buildSpeakers.bind(sys);
+    sys._buildSpeakers = () => { built++; return orig(); };
+    for (let i = 0; i < 5; i++) sys.step(NEEDS_TICK_MS);
+    assert.equal(built, 5, 'once per tick');
+    assert.deepEqual(sys.speakers, []);
+    // A grumble (one-off line) and a chat line
+    sys.states.get('a').saying = { line: 'Not again.', until: sys.clockMs + 3000 };
+    sys._chats.set('cooler', { a: 'a', b: 'b', current: { speakerId: 'b', partnerId: 'a', line: 'Hi', until: sys.clockMs + 2000 } });
+    const list = sys._buildSpeakers();
+    assert.deepEqual(list.map(s => [s.npcId, s.roomId, s.x, s.y, s.until - sys.clockMs]).sort(),
+        [['a', 'office', 100, 100, 3000], ['b', 'kitchen', 160, 100, 2000]]);
+    sys._chats.clear();
+    sys.states.get('a').saying = null;
+    assert.deepEqual(sys._buildSpeakers(), []);
+});
+
+// The live path: updateSeatedNPC on a needs NPC at its post, with stub sprites
+function seatedNeedsRig({ rec = {}, ns = {}, speakers = [], clockMs = 500, partner = null, talking = null, chatWith = false } = {}) {
+    const chair = { isSwivelChair: true, originalTexture: 'chair-grey-1-rotate1', currentFrame: 0, texture: { key: 'chair-grey-1-rotate1' },
+        x: 100, y: 120, depth: 10, active: true, scene: { textures: { exists: () => true } },
+        body: { reset(x, y) { chair.bx = x; chair.by = y; } },
+        setTexture(k) { this.texture.key = k; } };
+    const seat = seating.seatSpec(chair);
+    const sprite = { x: 100, y: 100, displayOriginX: 40, displayOriginY: 40, scaleX: 1, scaleY: 1, active: false,
+        texture: { key: 'stub_atlas' }, frame: { name: '' }, anims: { isPlaying: false }, scene: { time: { now: 0 } },
+        body: { offset: { x: 30, y: 60 }, width: 20, height: 10, setVelocity() {}, reset() {} },
+        setFrame(n) { this.frame.name = n; }, setDepth() {}, setPosition() {} };
+    const behavior = { npcId: 'tom', roomId: 'office', sprite,
+        _seat: { chair, seat, facing: 'south', homeFacing: 'south', place: 0, needsStop: 'at:tom_pc', facePlayer: false } };
+    const state = { npcId: 'tom', mode: 'idle', atPost: true, job: null, ...ns };
+    const emitted = [];
+    const sys = {
+        states: new Map([['tom', state]]), speakers, clockMs,
+        world: { npcStatus: () => ({}), inChatWith: () => chatWith, npcPos: () => ({ x: 100, y: 100, roomId: 'office' }) },
+        _chatPartner: () => partner, _talking: () => talking,
+        roll: () => 0.01
+    };
+    return { behavior, chair, state, emitted, sys,
+        install() {
+            window.npcNeedsSystem = sys;
+            window.npcManager = { getNPC: () => ({ needsHome: 'tom_pc', ...rec }) };
+            window.eventDispatcher = { emit: (name, data) => emitted.push({ name, data }) };
+            window.gameScenario = {};
+        } };
+}
+
+test('updateSeatedNPC (needs): an idle swivel turns the chair and emits npc_swivelled with reason idle', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    try {
+        const rig = seatedNeedsRig();
+        rig.install();
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true);
+        assert.notEqual(rig.behavior._seat.facing, 'south');
+        assert.equal(rig.emitted.length, 1);
+        assert.equal(rig.emitted[0].name, 'npc_swivelled:tom');
+        assert.equal(rig.emitted[0].data.reason, 'idle');
+        // Back to home after the hold, no second event
+        rig.sys.clockMs = 5900;
+        seating.updateSeatedNPC(rig.behavior, null);
+        assert.equal(rig.behavior._seat.facing, 'south');
+        assert.equal(rig.emitted.length, 1);
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
+});
+
+test('updateSeatedNPC (needs): listening faces the speaker and ends with the line; a chat with the player overrides it', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    try {
+        const rig = seatedNeedsRig({ speakers: [{ npcId: 'amara', roomId: 'office', x: 200, y: 100, until: 3000 }], clockMs: 1000 });
+        rig.sys.roll = () => 0.99; // no idle swivel
+        rig.install();
+        seating.updateSeatedNPC(rig.behavior, null);
+        assert.equal(rig.behavior._seat.facing, 'east');
+        assert.deepEqual(rig.emitted.map(e => [e.name, e.data.reason, e.data.facing]), [['npc_swivelled:tom', 'listen', 'east']]);
+        rig.sys.clockMs = 3000;
+        seating.updateSeatedNPC(rig.behavior, null);
+        assert.equal(rig.behavior._seat.facing, 'south', 'the line ended');
+        // A chat with the player wins over a speaker
+        rig.sys.clockMs = 1000;
+        rig.sys.world.inChatWith = () => true;
+        seating.updateSeatedNPC(rig.behavior, { x: 0, y: 105 });
+        assert.equal(rig.behavior._seat.facing, 'west');
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
+});
+
+test('updateSeatedNPC (needs): no swivel or listening paired, talking, typing, with los.enabled or swivel false', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    const speakers = [{ npcId: 'amara', roomId: 'office', x: 200, y: 100, until: 3000 }];
+    const cases = {
+        // (a desk-phone call no longer seats the NPC at all: needsStop is null, see the needsStop tests)
+        paired: { partner: 'amara' },
+        talking: { talking: { line: 'Hi' } },
+        typing: { ns: { mode: 'job', job: { kind: 'use', need: 'work', phase: 'using', targetId: 'tom_pc' } } },
+        los: { rec: { los: { enabled: true } } },
+        off: { rec: { swivel: false } }
+    };
+    try {
+        for (const [name, opts] of Object.entries(cases)) {
+            const rig = seatedNeedsRig({ speakers, clockMs: 1000, ...opts });
+            rig.install();
+            seating.updateSeatedNPC(rig.behavior, null);
+            assert.equal(rig.behavior._seat.facing, 'south', name);
+            assert.equal(rig.emitted.length, 0, name);
+            if (name !== 'los' && name !== 'off') {
+                // and the roll is held: no roll starts, however long it waits
+                rig.behavior.sprite.scene.time.now = 60000;
+                seating.updateSeatedNPC(rig.behavior, null);
+                assert.equal(rig.behavior._seat.fidget.phase, 'wait', `${name}: roll held`);
+                assert.equal(rig.chair.x, 100, name);
+            }
+        }
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
+});
+
+// ── Code review R1 (OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md) M2 and m6 ──────────────────────
+
+test('M2: post seat retries stop after POST_SEAT_RETRY_MAX when every seat move sticks; one seat_gave_up line', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        let starts = 0;
+        for (let i = 0; i < 12; i++) {
+            if (seating.updateSeatedNPC(rig.behavior, null) && rig.behavior._seatMove) starts++;
+            // the seat move always sticks: it ends short with the NPC standing at its post
+            rig.behavior._seatMove = null;
+            rig.behavior.isMoving = false;
+            window.npcNeedsSystem.clockMs += 4000;
+        }
+        assert.equal(starts, 1 + seating.POST_SEAT_RETRY_MAX, 'the first try and three retries, then no more');
+        const gave = log.filter(e => e.ev === 'seat_gave_up');
+        assert.equal(gave.length, 1, 'one give-up line');
+        assert.equal(gave[0].npc, 'pierce');
+        assert.equal(gave[0].seatRetries, seating.POST_SEAT_RETRY_MAX);
+    } finally { rig.restore(); }
+});
+
+// Code review R2 m3 and m7: a give-up expires after SEAT_GIVE_UP_MS (one stop key can last the
+// session), and a new stop key resets the counts through updateSeatedNPC
+test('R2 m3: seat_gave_up expires after SEAT_GIVE_UP_MS; a new stop key resets the retry counts', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    const tryOnce = () => {
+        const started = seating.updateSeatedNPC(rig.behavior, null) && !!rig.behavior._seatMove;
+        rig.behavior._seatMove = null;
+        rig.behavior.isMoving = false;
+        window.npcNeedsSystem.clockMs += 4000;
+        return started;
+    };
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        for (let i = 0; i < 6; i++) tryOnce();
+        assert.equal(log.filter(e => e.ev === 'seat_gave_up').length, 1);
+        assert.equal(rig.behavior._seatGaveUp, true);
+        let starts = 0;
+        const until = window.npcNeedsSystem.clockMs + seating.SEAT_GIVE_UP_MS - 12000;
+        while (window.npcNeedsSystem.clockMs < until) if (tryOnce()) starts++;
+        assert.equal(starts, 0, 'stands through the give-up');
+        for (let i = 0; i < 6 && !starts; i++) if (tryOnce()) starts++;
+        assert.equal(starts, 1, 'then the stop starts over and the seat move runs again');
+        assert.equal(rig.behavior._seatGaveUp, false);
+        // a new stop key resets every count, whatever they were
+        rig.behavior._seatRetries = 2;
+        rig.behavior._fetchRetries = 1;
+        rig.behavior._seatGaveUp = true;
+        rig.behavior._seatStopKey = 'at:somewhere_else';
+        tryOnce();
+        assert.equal(rig.behavior._seatGaveUp, false, 'a new stop: no give-up');
+        assert.ok((rig.behavior._seatRetries || 0) <= 1, 'retry count started again');
+        assert.equal(rig.behavior._fetchRetries || 0, 0);
+    } finally { rig.restore(); }
+});
+
+// Code review R3 m4: the expiry gives back the seat retries only, never the chair fetches, and runs
+// at most SEAT_GIVE_UP_EXPIRIES times per stop key; then the give-up lasts until the stop changes
+test('R3 m4: a seat give-up expiry keeps the fetch count and is capped per stop', () => {
+    const rig = labSeatRig(235);
+    const log = [];
+    const tryOnce = () => {
+        const started = seating.updateSeatedNPC(rig.behavior, null) && !!rig.behavior._seatMove;
+        rig.behavior._seatMove = null;
+        rig.behavior.isMoving = false;
+        window.npcNeedsSystem.clockMs += 4000;
+        return started;
+    };
+    try {
+        window.npcNeedsSystem._log = (npc, ev, data) => log.push({ npc, ev, ...data });
+        for (let i = 0; i < 6; i++) tryOnce();
+        assert.equal(rig.behavior._seatGaveUp, true);
+        rig.behavior._fetchRetries = seating.POST_FETCH_RETRY_MAX;   // its fetches were spent too
+        const fetchedAt = rig.behavior._fetchTriedAt;
+        let starts = 0;
+        const end = window.npcNeedsSystem.clockMs + (seating.SEAT_GIVE_UP_EXPIRIES + 3) * (seating.SEAT_GIVE_UP_MS + 20000);
+        while (window.npcNeedsSystem.clockMs < end) if (tryOnce()) starts++;
+        assert.equal(rig.behavior._fetchRetries, seating.POST_FETCH_RETRY_MAX, 'the expiry does not give the fetches back');
+        assert.equal(rig.behavior._fetchTriedAt, fetchedAt, 'nor clear the last fetch time');
+        assert.equal(log.filter(e => e.ev === 'seat_gave_up').length, 1 + seating.SEAT_GIVE_UP_EXPIRIES,
+            'one give-up per expiry, then it lasts');
+        assert.equal(starts, seating.SEAT_GIVE_UP_EXPIRIES * (1 + seating.POST_SEAT_RETRY_MAX) - seating.SEAT_GIVE_UP_EXPIRIES,
+            'each expiry allows POST_SEAT_RETRY_MAX seat moves');
+        assert.equal(rig.behavior._seatGaveUp, true, 'given up for good at this stop');
+        rig.behavior._seatStopKey = 'at:somewhere_else';
+        tryOnce();
+        assert.equal(rig.behavior._seatGiveUpExpiries, 0, 'a new stop starts the expiry count again');
+        assert.equal(rig.behavior._seatGaveUpAt, undefined, 'and clears the give-up date with the flag');
+    } finally { rig.restore(); }
+});
+
+// Code review R4 m3: sitting at the stop gives the expiry and retry counts back
+test('R4 m3: an NPC that sits starts its give-up expiries and retries again', () => {
+    const rig = labSeatRig(235);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 }), true);
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        rig.behavior._seatGiveUpExpiries = seating.SEAT_GIVE_UP_EXPIRIES;
+        rig.behavior._seatRetries = 2;
+        rig.behavior._fetchRetries = 1;
+        seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        assert.equal(rig.behavior._seatGiveUpExpiries, 0);
+        assert.equal(rig.behavior._seatRetries, 0);
+        assert.equal(rig.behavior._fetchRetries, 0);
+    } finally { rig.restore(); }
+});
+
+test('M2 and m6: retry caps per kind and a recent fetch claims the chair for its fetcher', () => {
+    assert.equal(seating.postRetryAllowed('seat', 0), true);
+    assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX - 1), true);
+    assert.equal(seating.postRetryAllowed('seat', seating.POST_SEAT_RETRY_MAX), false);
+    assert.equal(seating.postRetryAllowed('fetch', seating.POST_FETCH_RETRY_MAX - 1), true);
+    assert.equal(seating.postRetryAllowed('fetch', seating.POST_FETCH_RETRY_MAX), false);
+    const chair = { fetchedBy: 'tom', fetchedAt: 10000 };
+    assert.equal(seating.chairClaimedByOther(chair, 'tom', 20000), false, 'the fetcher may fetch it again');
+    assert.equal(seating.chairClaimedByOther(chair, 'amara', 20000), true, 'another fetcher may not, so no back and forth');
+    assert.equal(seating.chairClaimedByOther(chair, 'amara', 10000 + seating.FETCH_CLAIM_MS), false, 'the claim lapses');
+    assert.equal(seating.chairClaimedByOther({}, 'amara', 0), false, 'never fetched');
+});
+
+// SIMS_TIDY_LOG.md item 3: Tom's straight seat walk caught a desk corner with his body edge.
+// Desk office_desk1_91: body x 40..98, y 195..205; Tom at (116,204), his work spot (96,192).
+test('seatWalkClear: an 18 x 10 walking box along the line, the last 8 px to the spot not checked', () => {
+    const desk = { l: 40, r: 98, t: 195, b: 205 };
+    const boxClear = (x, y) => !(x + 9 > desk.l && x - 9 < desk.r && y + 5 > desk.t && y - 5 < desk.b);
+    assert.equal(seating.seatWalkClear(boxClear, { x: 116, y: 204 }, { x: 96, y: 192 }), false, 'the body edge meets the desk corner');
+    assert.equal(seating.seatWalkClear(boxClear, { x: 96, y: 170 }, { x: 96, y: 192 }), true, 'from above, the stop short of the spot is within the give-up distance');
+    assert.equal(seating.seatWalkClear(() => true, { x: 0, y: 0 }, { x: 0, y: 0 }), true, 'no distance');
+    let calls = 0;
+    seating.seatWalkClear(() => { calls++; return true; }, { x: 0, y: 0 }, { x: 40, y: 0 });
+    assert.equal(calls, 7, 'every 4 px, stopping 8 px short of the spot (4..28)');
+});
+
+test('seatWalkWaypoints: drops points at the start and the spot, collapses straight runs, ends at the spot', () => {
+    const from = { x: 116, y: 204 }, ref = { x: 96, y: 192 };
+    const path = [{ x: 116, y: 204 }, { x: 116, y: 196 }, { x: 116, y: 188 }, { x: 116, y: 180 }, { x: 108, y: 180 },
+                  { x: 100, y: 180 }, { x: 96, y: 184 }, { x: 96, y: 190 }];
+    assert.deepEqual(seating.seatWalkWaypoints(path, from, ref),
+        [{ x: 116, y: 180 }, { x: 100, y: 180 }, { x: 96, y: 184 }, { x: 96, y: 192 }]);
+    assert.deepEqual(seating.seatWalkWaypoints([], from, ref), [{ x: 96, y: 192 }], 'no path: straight to the spot');
+    assert.deepEqual(seating.seatWalkWaypoints([{ x: 96, y: 200 }, { x: 96, y: 196 }], { x: 96, y: 210 }, ref), [{ x: 96, y: 192 }],
+        'points in line with the spot collapse into one leg');
+    assert.deepEqual(seating.seatWalkWaypoints([{ x: 100, y: 204 }, { x: 116, y: 204 }], from, { x: 140, y: 204 }),
+        [{ x: 100, y: 204 }, { x: 140, y: 204 }], 'a back-and-forth point is kept (not the same direction)');
+});
+
+test('a post seat waits for a resolved home before its first try (SIMS_TIDY_LOG.md item 3)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/systems/seating.js', import.meta.url), 'utf8');
+    const wait = 'if (postHomePending(stop, ns?.home, now, behavior._postWaitSince)) return false;';
+    assert.ok(src.includes(wait));
+    assert.ok(src.indexOf(wait) < src.indexOf('behavior._seatStopKey = stop.key'),
+        'the wait comes before the stop is marked tried, so the first try is not spent');
+    assert.match(src, /m\.route = planSeatWalk\(behavior, chair, f, opts\.ref\)/);
+});
+
+test('postHomePending (R1 M2): null always waits; a provisional home waits 5 s from the first seat check', () => {
+    const post = { post: true, key: 'at:desk' };
+    const prov = { x: 96, y: 192, provisional: true };
+    assert.equal(seating.postHomePending(post, null, 0, 0), true, 'home null before the first needs tick: wait');
+    assert.equal(seating.postHomePending(post, undefined, 1000, 0), true, 'no home yet: wait');
+    assert.equal(seating.postHomePending(post, null, 125000, 120000), true, 'null waits however long');
+    assert.equal(seating.postHomePending(post, prov, 4999, 0), true, 'provisional from clock 0: wait');
+    assert.equal(seating.postHomePending(post, prov, 5000, 0), false, 'wait over');
+    assert.equal(seating.postHomePending(post, prov, 120000, 120000), true, 'a room loaded late: first seen at 120000, waits');
+    assert.equal(seating.postHomePending(post, prov, 124999, 120000), true);
+    assert.equal(seating.postHomePending(post, prov, 125000, 120000), false, 'five seconds after the first check');
+    assert.equal(seating.postHomePending(post, { x: 92, y: 164 }, 0, 0), false, 'resolved home: no wait');
+    assert.equal(seating.postHomePending({ post: false, key: 'at:x' }, null, 0, 0), false, 'not the post: no wait');
+    assert.equal(seating.postHomePending(null, null, 0), false, 'no stop');
+});
+
+test('a late-loaded room\'s post NPC waits for its home: timed from its first seat check, not needs clock 0 (R1 M2)', () => {
+    const rig = labSeatRig(235);
+    try {
+        const ns = window.npcNeedsSystem.states.get('pierce');
+        const home = ns.home;
+        ns.home = null;
+        window.npcNeedsSystem.clockMs = 120000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'home null at 120000: waits');
+        assert.equal(rig.behavior._seatMove ?? null, null);
+        ns.home = { ...home, provisional: true };
+        window.npcNeedsSystem.clockMs = 121000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'provisional, 1 s after the first check: waits');
+        window.npcNeedsSystem.clockMs = 124999;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'still waiting');
+        assert.equal(rig.behavior._seatMove ?? null, null);
+        window.npcNeedsSystem.clockMs = 125000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'five seconds on: the first try walks onto the seat');
+    } finally { rig.restore(); }
+});
+
+test('a resolved home seats at once, and the wait start is per stop', () => {
+    const rig = labSeatRig(235);
+    try {
+        window.npcNeedsSystem.clockMs = 120000;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'resolved: no wait');
+        assert.equal(rig.behavior._postWaitSince, 120000);
+    } finally { rig.restore(); }
+});
+
+test('doorGapRect: side and front doors give their gaps', () => {
+    assert.deepEqual(seating.doorGapRect({ direction: 'west', worldX: 0, worldY: 80 }), { x0: -32, x1: 32, y0: 64, y1: 96, side: true });
+    assert.deepEqual(seating.doorGapRect({ direction: 'north', worldX: 160, worldY: 0 }), { x0: 144, x1: 176, y0: -32, y1: 32, side: false });
+    assert.equal(seating.doorGapRect({ direction: 'east' }), null, 'no position');
+});
+
+test('doorGapExit: a chair foot in a door gap goes out to its own side, clear of the mouth', () => {
+    const side = seating.doorGapRect({ direction: 'west', worldX: 0, worldY: 80 });
+    // Sanjay's reserved chair in tour 5658: foot (13,79), office side of the kitchen doorway
+    assert.deepEqual(seating.doorGapExit({ x: 13, y: 79 }, [side], { w: 11, h: 6 }), { x: 67, y: 79 });
+    assert.deepEqual(seating.doorGapExit({ x: -5, y: 85 }, [side], { w: 11, h: 6 }), { x: -67, y: 85 }, 'kitchen side');
+    assert.equal(seating.doorGapExit({ x: 92, y: 129 }, [side]), null, 'at its desk: stays');
+    assert.equal(seating.doorGapExit({ x: 13, y: 100 }, [side]), null, 'below the gap: stays');
+    const front = seating.doorGapRect({ direction: 'south', worldX: 160, worldY: 320 });
+    assert.deepEqual(seating.doorGapExit({ x: 158, y: 310 }, [null, front], { w: 11, h: 6 }), { x: 158, y: 258 }, 'front door: out north');
+});
+
+// Doorway chairs (sims tidy R1 M1 and m1). The kitchen doorway in test_needs_sims as two door sprites,
+// one per room, 32 px apart: the merged gap is centred on the door line at x 0.
+const KITCHEN_DOORS = [
+    { roomId: 'office', connectedRoom: 'kitchen', direction: 'west', worldX: 16, worldY: 80 },
+    { roomId: 'kitchen', connectedRoom: 'office', direction: 'east', worldX: -16, worldY: 80 }
+];
+
+test('doorGapRects (R1 m1): both sprites of one doorway merge into one gap centred between them', () => {
+    const rects = seating.doorGapRects(KITCHEN_DOORS);
+    assert.deepEqual(rects, [{ x0: -32, x1: 32, y0: 64, y1: 96, side: true }]);
+    // The review's case: foot (8,79), office side of the line at 0; per-sprite rects sent it west
+    assert.deepEqual(seating.doorGapExit({ x: 8, y: 79 }, rects, { w: 11, h: 6 }), { x: 67, y: 79 }, 'exits east, into the office');
+    assert.equal(seating.doorGapExit({ x: 8, y: 79 }, KITCHEN_DOORS.map(seating.doorGapRect), { w: 11, h: 6 }).x < 0, true,
+        'unmerged, the office sprite\'s rect (mid 16) sends it west: the bug');
+    assert.equal(seating.doorGapRects([...KITCHEN_DOORS, { roomId: 'office', connectedRoom: 'hall', direction: 'west', worldX: 16, worldY: 112 }]).length, 2,
+        'another room pair is its own gap');
+    assert.equal(seating.doorGapRects([KITCHEN_DOORS[0], { ...KITCHEN_DOORS[1], worldY: 160 }]).length, 2, 'same pair, another line: not merged');
+    assert.equal(seating.doorGapRects([KITCHEN_DOORS[0], { ...KITCHEN_DOORS[1], worldX: -80 }]).length, 2, 'more than 64 px apart: not merged');
+    const front = seating.doorGapRects([{ roomId: 'a', connectedRoom: 'b', direction: 'north', worldX: 160, worldY: 16 },
+        { roomId: 'b', connectedRoom: 'a', direction: 'south', worldX: 160, worldY: -16 }]);
+    assert.deepEqual(front, [{ x0: 144, x1: 176, y0: -32, y1: 32, side: false }], 'a front doorway merges along y');
+    assert.deepEqual(seating.doorGapRects([null, { direction: 'west' }]), [], 'no position: no gap');
+});
+
+test('doorwayChairCandidates: a tile beyond straight out and a tile sideways each way, then a tile sideways; near side first; straight out itself is not offered', () => {
+    const r = seating.doorGapRects(KITCHEN_DOORS)[0];
+    assert.deepEqual(seating.doorwayChairCandidates({ x: 8, y: 79 }, r, { w: 11, h: 6 }),
+        [{ x: 99, y: 47 }, { x: 99, y: 111 }, { x: 67, y: 47 }, { x: 67, y: 111 }]);
+    assert.deepEqual(seating.doorwayChairCandidates({ x: -8, y: 90 }, r, { w: 11, h: 6 }).slice(0, 2),
+        [{ x: -99, y: 122 }, { x: -99, y: 58 }], 'kitchen side, lower half: down first');
+    assert.deepEqual(seating.doorwayChairCandidates({ x: 100, y: 79 }, r), [], 'not in the gap');
+});
+
+test('doorwayChairSpot: refuses lane and blocked spots, takes the first clear one, { to: null } with none', () => {
+    const rects = seating.doorGapRects(KITCHEN_DOORS);
+    const half = { w: 11, h: 6 };
+    const tried = [];
+    const all = seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, (x, y) => { tried.push([x, y]); return true; });
+    assert.deepEqual(all, { to: { x: 99, y: 47 }, index: 0 }, 'the first candidate, a tile beyond straight out and a tile up');
+    assert.deepEqual(tried, [[99, 47]], 'the lane is checked before the box test');
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, (x, y) => y > 100), { to: { x: 99, y: 111 }, index: 1 });
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, () => false), { to: null }, 'nothing clear');
+    assert.equal(seating.doorwayChairSpot({ x: 120, y: 79 }, rects, half, () => true), null, 'not in a gap');
+    // A second doorway's lane counts too
+    const two = [...rects, ...seating.doorGapRects([{ roomId: 'office', connectedRoom: 'hall', direction: 'south', worldX: 96, worldY: 128 }])];
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, two, half, () => true), { to: { x: 67, y: 47 }, index: 2 },
+        'the hall lane (x 80..112, y 48..208) takes (99,47) and (99,111): box x 88..110 overlaps it');
+});
+
+test('doorwayChairSpot: the straight-out point would always be in its own lane (why it is not a candidate)', () => {
+    // Any foot inside a gap: the chair box at foot.y overlaps the gap's band, and straight out
+    // (half gap + half chair + DOOR_CLEAR_PX) stays within the DOOR_LANE_PX lane, so the lane rule refuses it.
+    const half = { w: 11, h: 6 };
+    for (const door of [...KITCHEN_DOORS, { roomId: 'office', connectedRoom: 'hall', direction: 'south', worldX: 96, worldY: 128 }]) {
+        const r = seating.doorGapRects([door])[0];
+        const lane = seating.doorLaneRect(r);
+        for (const foot of [{ x: r.x0 + 1, y: r.y0 + 1 }, { x: (r.x0 + r.x1) / 2 + 1, y: (r.y0 + r.y1) / 2 + 1 }, { x: r.x1 - 1, y: r.y1 - 1 }]) {
+            const c = seating.doorGapExit(foot, [r], half);
+            const overlaps = c.x + half.w > lane.x0 && c.x - half.w < lane.x1 && c.y + half.h > lane.y0 && c.y - half.h < lane.y1;
+            assert.ok(overlaps, `straight out from ${JSON.stringify(foot)} sits in the lane`);
+            assert.ok(!seating.doorwayChairCandidates(foot, r, half).some(p => p.x === c.x && p.y === c.y), 'and is not offered');
+        }
+    }
+});
+
+/** A resting swivel chair whose feet are (x, y), with its own stub physics world. */
+function doorChair(x, y, bodies = []) {
+    const c = Object.assign(swivel('chair-grey-1-rotate', 1), { x, y, displayOriginX: 11, displayOriginY: 6, scaleX: 1, scaleY: 1,
+        active: true, objectId: `chair_${x}_${y}` });
+    c.body = { enable: true, offset: { x: 0, y: 0 }, width: 22, height: 12, velocity: { x: 0, y: 0 },
+        setVelocity(vx, vy) { this.velocity.x = vx; this.velocity.y = vy; }, reset() {} };
+    c.scene = { physics: { world: { staticBodies: { iterate(fn) { bodies.forEach(fn); } }, bodies: { iterate(fn) { [c.body].forEach(fn); } } } } };
+    return c;
+}
+
+function doorSweepRig(chairs, { behaviors = {} } = {}) {
+    const saved = {};
+    for (const k of ['chairs', 'rooms', 'npcBehaviorManager', 'npcNeedsSystem']) saved[k] = window[k];
+    const log = [];
+    window.chairs = chairs;
+    const map = { widthInPixels: 320, heightInPixels: 320 };
+    window.rooms = {
+        office: { position: { x: 0, y: 0 }, map, doorSprites: [{ doorProperties: KITCHEN_DOORS[0] }] },
+        kitchen: { position: { x: -320, y: 0 }, map, doorSprites: [{ doorProperties: KITCHEN_DOORS[1] }] }
+    };
+    window.npcBehaviorManager = { getBehavior: id => behaviors[id] || null };
+    window.npcNeedsSystem = { _log: (who, ev, d) => log.push({ who, ev, ...d }) };
+    seating.resetDoorSweep();
+    const restore = () => {
+        for (const c of chairs) c.active = false;
+        seating.updateGlides(); // drops the stopped chairs' glides
+        for (const [k, v] of Object.entries(saved)) window[k] = v;
+        seating.resetDoorSweep();
+    };
+    return { log, restore };
+}
+
+test('sweepDoorwayChairs (R1 M1): a resting chair in the gap glides to a clear spot off the lane; the log names the spot', () => {
+    const chair = doorChair(8, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.deepEqual(seating.glideTarget(chair), { x: 99, y: 111 }, 'y 47 is off the floor (the wall rows): the next spot');
+        assert.deepEqual(rig.log, [{ who: 'chair', ev: 'chair_out_of_doorway', chair: 'chair_8_79', from: [8, 79], to: [99, 111], spot: 1 }]);
+        assert.equal(chair.x, 8, 'no teleport: it glides');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs: a blocked spot is passed over; with none clear it logs chair_in_doorway_no_spot once and stays', () => {
+    const desk = { enable: true, left: 84, right: 120, top: 100, bottom: 124 };
+    const chair = doorChair(8, 79, [desk]);
+    const rig = doorSweepRig([chair]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.deepEqual(seating.glideTarget(chair), { x: 67, y: 111 }, 'the desk covers (99,111): the last spot');
+    } finally { rig.restore(); }
+    const boxed = doorChair(8, 79, [{ enable: true, left: 40, right: 120, top: 100, bottom: 124 }]);
+    const rig2 = doorSweepRig([boxed]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.equal(seating.glideTarget(boxed), null, 'no clear spot: stays');
+        seating.sweepDoorwayChairs(1500);
+        seating.sweepDoorwayChairs(2000);
+        assert.deepEqual(rig2.log, [{ who: 'chair', ev: 'chair_in_doorway_no_spot', chair: 'chair_8_79', at: [8, 79] }],
+            'logged once for that foot position; the 1500 call is inside the second');
+    } finally { rig2.restore(); }
+});
+
+test('sweepDoorwayChairs (R2 m3): a glide that never gets out is tried three times from that foot, then logged once and left', () => {
+    const chair = doorChair(8, 79); // the stub body never moves, as a chair stuck on a wall corner does not
+    const rig = doorSweepRig([chair]);
+    try {
+        for (let t = 1000; t <= 8000; t += 1000) {
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides(); // the glide ends blocked (8 still frames)
+        }
+        const out = rig.log.filter(l => l.ev === 'chair_out_of_doorway');
+        const gaveUp = rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot');
+        assert.equal(out.length, 3, 'three glides from the same foot, not one a second');
+        assert.equal(gaveUp.length, 1, 'then one give-up line');
+        assert.deepEqual(gaveUp[0].at, [8, 79]);
+        assert.equal(seating.glideTarget(chair), null, 'no further glide');
+        // The chair really moves (a push, say): the count starts again from the new foot
+        chair.x = 14; chair.y = 85;
+        seating.sweepDoorwayChairs(9000);
+        assert.ok(seating.glideTarget(chair), 'a new foot position is tried afresh');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R3 m1, R4 m1): a stuck glide that shifts the foot 1 px each time, across a rounding edge, still gives up after three tries, logging once', () => {
+    const chair = doorChair(5, 79); // 5 and 6 fall in different cells of a 4 px rounding grid
+    const rig = doorSweepRig([chair]);
+    try {
+        let n = 0;
+        for (let t = 1000; t <= 8000; t += 1000) {
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides();
+            chair.x = 5 + (++n % 2); // physics nudges the foot 1 px after every failed glide (6, 5, 6, 5 ...)
+        }
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'three tries, not one a second');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 1, 'one give-up line');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R4 m1): a genuine move of more than 4 px from the first-try foot starts the count again', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const run = (from, to) => {
+            for (let t = from; t <= to; t += 1000) {
+                seating.sweepDoorwayChairs(t);
+                for (let i = 0; i < 12; i++) seating.updateGlides();
+            }
+        };
+        run(1000, 8000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'three tries, then given up');
+        chair.x = 10; // 5 px from the first-try foot (5): a real move
+        run(9000, 16000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'three more tries from the new foot');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 2, 'and a second give-up line');
+        chair.x = 14; // 4 px from the new anchor (10): still the same spot, no fresh tries
+        run(17000, 20000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'a 4 px nudge does not reset');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R5 m1): a foot swinging 0, 3, 6, 3, 0 past the anchor reaches the total cap, logs once and stops', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const xs = [5, 8, 11, 8]; // a triangle wave in 3 px steps: every 6 px excursion resets the anchor
+        for (let n = 0, t = 1000; n < 24; n++, t += 1000) {
+            chair.x = xs[n % 4];
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides();
+        }
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 9, 'nine glides in all, then none');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 1, 'one give-up line');
+        assert.equal(seating.glideTarget(chair), null, 'no further glide');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R5 m2): the anchor clears once the foot leaves every door gap, so a return gets fresh tries', () => {
+    const chair = doorChair(8, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const run = (from, to) => {
+            for (let t = from; t <= to; t += 1000) {
+                seating.sweepDoorwayChairs(t);
+                for (let i = 0; i < 12; i++) seating.updateGlides();
+            }
+        };
+        run(1000, 8000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'given up after three');
+        assert.ok(chair._doorSweep, 'anchor held while in the gap');
+        chair.x = 400; chair.y = 400; // well clear of every gap
+        seating.sweepDoorwayChairs(9000);
+        assert.equal(chair._doorSweep, undefined, 'anchor cleared');
+        chair.x = 8; chair.y = 79; // pushed back into the same gap
+        run(10000, 17000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'three fresh tries');
+    } finally { rig.restore(); }
+});
+
+// R6 m1: the cap must not outlive a real move. The rig's 0, 3, 6, 3 swing caps the chair first.
+const capChair = (chair, t0 = 1000) => {
+    const xs = [5, 8, 11, 8];
+    let t = t0;
+    for (let n = 0; n < 24; n++, t += 1000) {
+        chair.x = xs[n % 4];
+        seating.sweepDoorwayChairs(t);
+        for (let i = 0; i < 12; i++) seating.updateGlides();
+    }
+    return t;
+};
+const sweepFor = (t, n) => {
+    for (let k = 0; k < n; k++, t += 1000) {
+        seating.sweepDoorwayChairs(t);
+        for (let i = 0; i < 12; i++) seating.updateGlides();
+    }
+    return t;
+};
+const glideCount = rig => rig.log.filter(l => l.ev === 'chair_out_of_doorway').length;
+
+test('sweepDoorwayChairs (R6 m1): a capped chair shoved more than a chair width along the gap gets fresh tries', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        let t = capChair(chair);
+        assert.equal(glideCount(rig), 9, 'capped');
+        assert.ok(chair._doorSweep?.capped);
+        t = sweepFor(t, 2); // a still, capped chair stays capped
+        assert.equal(glideCount(rig), 9, 'no glide while it has not moved');
+        chair.x = -20; chair.y = 85; // 25 px along the gap, to the kitchen side
+        sweepFor(t, 3);
+        assert.ok(glideCount(rig) > 9, 'glides again after a real move');
+        assert.ok(!chair._doorSweep?.capped, 'cap cleared');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R6 m1): a capped chair sat on, carried out and back in, then let go gets fresh tries', () => {
+    const chair = doorChair(5, 79);
+    const beh = { amara: { _seat: null } };
+    const rig = doorSweepRig([chair], { behaviors: beh });
+    try {
+        let t = capChair(chair);
+        assert.equal(glideCount(rig), 9, 'capped');
+        chair.seatedBy = 'amara'; beh.amara._seat = { chair };
+        chair.x = 200; chair.y = 200; // rolled out while sat on: never seen resting outside the gaps
+        t = sweepFor(t, 3);
+        chair.x = -10; chair.y = 80; // and back into the gap
+        t = sweepFor(t, 2);
+        assert.equal(glideCount(rig), 9, 'no glide while sat on');
+        beh.amara._seat = null; chair.seatedBy = undefined; // let go
+        sweepFor(t, 3);
+        assert.ok(glideCount(rig) > 9, 'glides again once let go');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs: a chair sat on, fetched, mounted, gliding or moving stays; once a second at most', () => {
+    const make = () => doorChair(8, 79);
+    const cases = {
+        seated: c => { c.seatedBy = 'sanjay'; return { sanjay: { _seat: { chair: c } } }; },
+        fetching: c => { c.seatedBy = 'sanjay'; return { sanjay: { _fetch: { chair: c } } }; },
+        mounting: c => { c.seatedBy = 'sanjay'; return { sanjay: { _seatMove: { chair: c } } }; },
+        moving: c => { c.body.velocity.x = 20; return {}; },
+        inactive: c => { c.active = false; return {}; }
+    };
+    for (const [name, setup] of Object.entries(cases)) {
+        const c = make();
+        const rig = doorSweepRig([c], { behaviors: setup(c) });
+        try {
+            seating.sweepDoorwayChairs(1000);
+            assert.equal(seating.glideTarget(c), null, `${name}: stays`);
+            assert.equal(rig.log.length, 0, `${name}: no log`);
+        } finally { rig.restore(); }
+    }
+    // Reserved by an NPC whose behaviour no longer holds it (Sanjay's chair in 5658): it moves
+    const loose = make(); loose.seatedBy = 'sanjay';
+    const rigLoose = doorSweepRig([loose], { behaviors: { sanjay: {} } });
+    try {
+        seating.sweepDoorwayChairs(1000);
+        assert.ok(seating.glideTarget(loose), 'a stale reservation does not hold it');
+        assert.equal(rigLoose.log[0].who, 'sanjay');
+    } finally { rigLoose.restore(); }
+    // Already gliding elsewhere: its target is kept
+    const gliding = make();
+    const rigG = doorSweepRig([gliding]);
+    try {
+        seating.glideChairFootTo(gliding, 30, 200);
+        seating.sweepDoorwayChairs(1000);
+        assert.deepEqual(seating.glideTarget(gliding), { x: 30, y: 200 });
+    } finally { rigG.restore(); }
+    // Once a second
+    const late = make();
+    const rigT = doorSweepRig([late]);
+    try {
+        seating.sweepDoorwayChairs(1000);
+        seating.updateGlides(); // no physics step here: the glide just sets velocity
+        const t = seating.glideTarget(late);
+        assert.ok(t);
+        late.active = false; seating.updateGlides(); late.active = true; // glide dropped
+        late.body.setVelocity(0, 0); // and at rest again
+        seating.sweepDoorwayChairs(1999);
+        assert.equal(seating.glideTarget(late), null, 'within the second: not swept again');
+        seating.sweepDoorwayChairs(2000);
+        assert.ok(seating.glideTarget(late), 'next second: swept');
+    } finally { rigT.restore(); }
+});
+
+test('sweepDoorwayChairs runs from every NPC behaviour update', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/systems/seating.js', import.meta.url), 'utf8');
+    const fn = src.slice(src.indexOf('export function updateSeatedNPC('));
+    assert.match(fn.slice(0, 200), /^export function updateSeatedNPC\(behavior, playerPos\) \{\s*sweepDoorwayChairs\(\);/);
+});
+
+test('a routed seat walk goes leg by leg: through the waypoint, then the work spot (m.leg++)', () => {
+    const rig = labSeatRig(235);
+    const chair = Object.assign(swivel('chair-white-1-rotate', 1), { x: 196, y: 206, width: 16, height: 26, depth: 232, active: true, objectId: 'own_chair' });
+    chair.body = { enable: true, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+        setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { chair.x = x; chair.y = y; } };
+    try {
+        const key = seating.needsStop(window.npcNeedsSystem.states.get('pierce')).key;
+        const ref = { x: 204, y: 172 }, via = { x: 220, y: 196 };
+        rig.behavior._seatMove = { chair, seat: seating.seatSpec(chair), opts: { ref, needsStop: key }, stopKey: key,
+            savedImm: false, savedBody: null, stage: 'walk', ticks: 0, still: 0, last: Infinity, route: [via, ref], leg: 0 };
+        let maxY = 0, i = 0;
+        for (; i < 80 && rig.behavior._seatMove?.stage === 'walk'; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            maxY = Math.max(maxY, rig.sprite.y);
+            seating.updateSeatedNPC(rig.behavior, null);
+        }
+        assert.ok(maxY >= 194, `walked via the waypoint (max y ${maxY.toFixed(1)})`);
+        assert.equal(rig.behavior._seatMove?.stage, 'pull', 'the last leg reached the work spot and the pull started');
+        assert.ok(Math.hypot(rig.sprite.x - ref.x, rig.sprite.y - ref.y) <= 2, 'at the work spot');
+    } finally {
+        chair.active = false; seating.updateGlides();
+        rig.restore();
+    }
+});
+
+test('needsStop: a desk-phone call has no stop only when the NPC has pose_phone frames (stands for the call)', () => {
+    const prev = { m: window.npcManager, p: window.npcPoses };
+    window.npcManager = { getNPC: () => ({ needsHome: 'own_pc' }) };
+    const job = { kind: 'use', phase: 'using', targetId: 'spare_phone', need: null, phone: true };
+    const owner = { npcId: 'c', mode: 'idle', atPost: true, job: null, call: { phoneId: 'own_phone', until: 9 } };
+    try {
+        // With phone frames: a colleague (at the post or not) and the owner stand for the call
+        window.npcPoses = { hasPhonePose: id => id === 'c' };
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job }), null);
+        assert.equal(seating.needsStop(owner), null);
+        // The ordinary use of a non-phone object still stops
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: { ...job, phone: undefined, targetId: 'coffee' } }).key, 'at:coffee');
+        // After the call (returning to the post) it sits again
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'returning', atPost: true, job: null }).key, 'at:own_pc');
+        // No phone frames (or no pose module): exactly as on main, the NPC keeps its post stop and stays seated
+        for (const poses of [{ hasPhonePose: () => false }, undefined]) {
+            window.npcPoses = poses;
+            assert.equal(seating.needsStop(owner).key, 'at:own_pc', 'owner stays at its post for the call');
+            assert.equal(seating.needsStop({ ...owner, npcId: 'c' }).post, true);
+            assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job }).key, 'at:spare_phone',
+                'a poseless colleague uses the phone as on main');
+        }
+    } finally {
+        window.npcManager = prev.m; window.npcPoses = prev.p;
+    }
+});
+
+test('a chat that hangs up a call keeps the NPC standing; it sits only after the chat closes (M2)', () => {
+    const rig = labSeatRig(235);
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    const prev = window.npcPoses;
+    window.npcPoses = { hasPhonePose: () => true };
+    try {
+        // On the call: no stop, so the stop key is clear (the NPC stands)
+        ns.call = { phoneId: 'staff_pc_2', until: 99 };
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        assert.equal(rig.behavior._seatStopKey, null);
+        // The player starts a chat: the call is hung up, the home stop is back (a fresh stop)
+        ns.call = null;
+        window.npcNeedsSystem.world.inChatWith = () => true;
+        for (let i = 0; i < 5; i++) {
+            window.npcNeedsSystem.clockMs += 1000;
+            assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'standing through the chat');
+        }
+        assert.equal(rig.behavior._seatMove ?? null, null, 'no seat move while a chat is open');
+        assert.ok(!rig.behavior._seat, 'not seated');
+        // The chat closes: now it goes back to its chair
+        window.npcNeedsSystem.world.inChatWith = () => false;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the re-seat starts after the chat');
+    } finally { window.npcPoses = prev; rig.restore(); }
+});
+
+test('R2 m1: a chat that opens the NPC inventory keeps the NPC standing until the whole conversation closes', async () => {
+    const { createEngineWorld } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const rig = labSeatRig(235);
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    const prev = { p: window.npcPoses, mf: window.MinigameFramework, pend: window.pendingConversationReturn, ty: window.currentConversationMinigameType };
+    window.currentConversationMinigameType = null;   // person-chat clears it when it hands over
+    window.npcPoses = { hasPhonePose: () => true };
+    // The real world's inChatWith, not a stub: it is the thing that must see the child minigame
+    window.npcNeedsSystem.world.inChatWith = id => createEngineWorld().inChatWith(id);
+    class ContainerMinigame { constructor(npcId) { this.npcId = npcId; } }
+    try {
+        ns.call = null;
+        window.MinigameFramework = { currentMinigame: new ContainerMinigame('pierce') };
+        window.pendingConversationReturn = { npcId: 'pierce', type: 'person-chat' };
+        for (let i = 0; i < 5; i++) {
+            window.npcNeedsSystem.clockMs += 1000;
+            assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'standing through the inventory step');
+        }
+        assert.equal(rig.behavior._seatMove ?? null, null, 'no seat move during the inventory step');
+        // The chat closes for good
+        window.MinigameFramework = { currentMinigame: null };
+        window.pendingConversationReturn = null;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the re-seat starts after the whole conversation');
+    } finally {
+        window.npcPoses = prev.p; window.MinigameFramework = prev.mf; window.pendingConversationReturn = prev.pend; window.currentConversationMinigameType = prev.ty; rig.restore();
+    }
+});
+
+
+// ── fixed chairs (Tiled property `fixed`, rooms.js sets chair.fixedChair): no code path moves one ──
+// R1 B1/M2: immovable only stops bodies pushing a chair, so the seating and combat code has to leave it
+// alone itself. Each test below drives the real path with stub bodies, and moves the chair without the guard.
+
+test('fixed chair: a kick sets no velocity (a loose chair gets one)', async () => {
+    const { PlayerCombat } = await import('../../public/break_escape/js/systems/player-combat.js');
+    const saved = window.player;
+    window.player = { x: 0, y: 0 };
+    try {
+        for (const [fixedChair, moves] of [[true, false], [undefined, true]]) {
+            const chair = { x: 30, y: 0, fixedChair, body: dynBody({ x: 30, y: 0 }, 0, 0, 10, 10) };
+            PlayerCombat.prototype.kickChair.call({}, chair);
+            assert.equal(chair.body.velocity.x !== 0, moves, fixedChair ? 'fixed chair stays still' : 'loose chair is kicked');
+        }
+    } finally { window.player = saved; }
+});
+
+test('fixed chair: the player can sit on it but not roll it, and standing up does not push it', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'east', approach: { x: 87, y: 232 }, statics: [], fixed: true });
+    try {
+        const at = { x: rig.chair.x, y: rig.chair.y };
+        rig.sit();
+        assert.equal(seating.canRoll(), false, 'no rolling a fixed chair');
+        rig.roll(40, 0, 'right');
+        rig.run(30);
+        assert.deepEqual({ x: rig.chair.x, y: rig.chair.y }, at, 'the chair stayed where the map put it');
+        assert.deepEqual(rig.feet(), castor, 'the driver snapped back onto the chair');
+        rig.stand();
+        rig.run(120);
+        assert.deepEqual({ x: rig.chair.x, y: rig.chair.y }, at, 'standing up pushed nothing');
+        assert.deepEqual([rig.chair.body.velocity.x, rig.chair.body.velocity.y], [0, 0]);
+    } finally { rig.restore(); }
+});
+
+test('control: a loose chair rolls with the driver and is pushed on standing up', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'east', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        const at = { x: rig.chair.x, y: rig.chair.y };
+        rig.sit();
+        assert.equal(seating.canRoll(), true);
+        rig.roll(40, 0, 'right');
+        assert.ok(rig.chair.x > at.x + 30, 'it follows the driver');
+        const rolled = rig.chair.x;
+        rig.stand();
+        rig.run(120);
+        assert.notEqual(rig.chair.x, rolled, 'pushed on standing');
+    } finally { rig.restore(); }
+});
+
+test('fixed chair: seating glides (pull, contact, tuck-in, door sweep) leave it alone', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, fixed: true });
+    try {
+        const at = { x: rig.chair.x, y: rig.chair.y };
+        seating.glideChairFootTo(rig.chair, 130, 300);
+        assert.equal(seating.isGliding(rig.chair), false, 'no glide queued');
+        for (let i = 0; i < 30; i++) { seating.updateGlides(); rig.chair.x += rig.chair.body.velocity.x / 60; }
+        seating.tuckIn(rig.chair, seating.seatSpec(rig.chair), 'east', { glide: true });
+        seating.tuckIn(rig.chair, seating.seatSpec(rig.chair), 'east');
+        for (let i = 0; i < 30; i++) seating.updateGlides();
+        assert.deepEqual({ x: rig.chair.x, y: rig.chair.y }, at);
+        assert.deepEqual([rig.chair.body.velocity.x, rig.chair.body.velocity.y], [0, 0]);
+        // safety net: a stray velocity is zeroed by the next frame
+        window.chairs = [rig.chair];
+        rig.chair.body.setVelocity(50, 0);
+        seating.afterPlayerMovement();
+        assert.deepEqual([rig.chair.body.velocity.x, rig.chair.body.velocity.y], [0, 0]);
+        delete window.chairs;
+    } finally { rig.restore(); }
+});
+
+// A needs NPC with a coordinate home. The chair is a swivel (or static) one within reach of the home cell (204,172).
+function coordHomeRig(facing, { fixed = false, swivelChair = true } = {}) {
+    const rig = labSeatRig(204);
+    let chair;
+    if (swivelChair) {
+        chair = Object.assign(swivel('chair-white-1-rotate', 3), { x: 196, y: 156, width: 16, height: 26, depth: 190, active: true,
+            objectId: 'duty_chair', fixedChair: fixed || undefined, scene: { textures: { exists: () => false } } });
+        chair.body = { enable: true, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+            setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { chair.x = x; chair.y = y; } };
+        chair.setPosition = (x, y) => { chair.x = x; chair.y = y; };
+        window.rooms = { open_plan: { objects: { duty_chair: chair } } };
+    } else {
+        chair = rig.chair;   // aw_chair_north_charcoal1: a static chair facing north
+    }
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.home = { x: 204, y: 172, roomId: 'open_plan', objectId: null, facing };
+    window.npcManager = { getNPC: id => (id === 'pierce' ? { needsHome: { room: 'open_plan', x: 6, y: 5, facing } } : null) };
+    window.npcNeedsSystem.world.getObject = () => null;
+    rig.behavior.goToAndStay = (x, y) => { rig.behavior._goToStayDest = { x, y }; };
+    return { rig, chair };
+}
+
+test('needsHome.facing, seating half: a coordinate home turns the sit move toward its facing', () => {
+    for (const [facing, test] of [['east', p => p.x > 204 && Math.abs(p.y - 172) < 1], ['north', p => p.y < 172 && Math.abs(p.x - 204) < 1]]) {
+        const { rig } = coordHomeRig(facing);
+        try {
+            assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, `${facing}: the move starts`);
+            const toward = rig.behavior._seatMove?.opts.toward;
+            assert.ok(toward && test(toward), `${facing}: toward ${JSON.stringify(toward)}`);
+        } finally { rig.restore(); }
+    }
+    const { rig } = coordHomeRig(undefined);
+    try {
+        seating.updateSeatedNPC(rig.behavior, null);
+        assert.equal(rig.behavior._seatMove?.opts.toward, null, 'no facing, no turn');
+    } finally { rig.restore(); }
+});
+
+test('needsHome.facing: a static chair more than 67 degrees off the facing is refused; one facing about that way is taken', () => {
+    const a = coordHomeRig('south', { swivelChair: false });   // the chair faces north: 180 degrees off
+    try {
+        assert.equal(seating.updateSeatedNPC(a.rig.behavior, null), false, 'refused: the NPC stands');
+        assert.equal(a.rig.behavior._seatMove, undefined);
+    } finally { a.rig.restore(); }
+    const b = coordHomeRig('north-east', { swivelChair: false });   // 45 degrees off
+    try {
+        assert.equal(seating.updateSeatedNPC(b.rig.behavior, null), true, 'taken');
+        assert.ok(b.rig.behavior._seatMove);
+    } finally { b.rig.restore(); }
+});
+
+test('fixed chair: a needs NPC sits on it without moving it, and never fetches it', () => {
+    const { rig, chair } = coordHomeRig('east', { fixed: true });
+    try {
+        const at = { x: chair.x, y: chair.y };
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true);
+        for (let i = 0; i < 60 && !rig.behavior._seat; i++) {
+            seating.updateGlides();
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, null);
+        }
+        assert.ok(rig.behavior._seat, 'seated');
+        assert.deepEqual({ x: chair.x, y: chair.y }, at, 'the chair did not move');
+    } finally { rig.restore(); }
+    // fetch: only a fixed swivel chair 60 px from the home cell; a loose one would be fetched, a fixed one is skipped
+    for (const [fixed, fetches] of [[true, false], [false, true]]) {
+        const r = labSeatRig(235);
+        const c = Object.assign(swivel('chair-white-1-rotate', 1), { x: 196, y: 206, width: 16, height: 26, depth: 232, active: true,
+            objectId: 'far_chair', fixedChair: fixed || undefined });
+        c.body = { enable: true, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+            setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { c.x = x; c.y = y; } };
+        c.setPosition = (x, y) => { c.x = x; c.y = y; };
+        window.rooms = { open_plan: { objects: { far_chair: c } } };
+        r.behavior.goToAndStay = (x, y) => { r.behavior._goToStayDest = { x, y }; };
+        try {
+            assert.equal(seating.updateSeatedNPC(r.behavior, null), fetches, fixed ? 'fixed: not fetched' : 'loose: fetched');
+            assert.equal(!!r.behavior._fetch, fetches);
+        } finally { r.restore(); }
+    }
+});
+
+// ── R2 minors (fixed chairs and needsHome.facing) ────────────────────────────────────────
+
+function sitCoordHome(facing, homeDy) {
+    const { rig, chair } = coordHomeRig(facing, { fixed: true });
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.home.y = 182 - homeDy;   // the chair foot is (204, 182); the home sits homeDy px off it, across the facing
+    assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the sit move starts');
+    for (let i = 0; i < 80 && !rig.behavior._seat; i++) {
+        seating.updateGlides();
+        const v = rig.sprite.body.velocity;
+        rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+        seating.updateSeatedNPC(rig.behavior, null);
+    }
+    return { rig, chair };
+}
+
+test('R2 m1: a coordinate-home sitter takes the home facing even when the home is 30 px across it from the fixed chair foot', () => {
+    for (const [facing, dy] of [['east', 30], ['east', 0], ['west', 30]]) {
+        const { rig } = sitCoordHome(facing, dy);
+        try {
+            assert.ok(rig.behavior._seat, `${facing}/${dy}: seated`);
+            assert.equal(rig.behavior._seat.facing, facing, `${facing}/${dy}: facing comes from the home, not the foot bearing`);
+        } finally { rig.restore(); }
+    }
+});
+
+test('R2 m2: on a fixed swivel chair a move key or click stands the player up; a loose swivel chair too keeps its old behaviour', async () => {
+    const fixedRig = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [], fixed: true });
+    try {
+        fixedRig.sit();
+        seating.onMoveIntent();
+        assert.equal(seating.isSeated(), false, 'a move intent stands the player up');
+        assert.deepEqual([fixedRig.chair.x, fixedRig.chair.y], [67, 225], 'and the chair stays put');
+    } finally { fixedRig.restore(); }
+    const looseRig = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        looseRig.sit();
+        seating.onMoveIntent();
+        assert.equal(seating.isSeated(), true, 'a loose swivel still rolls instead');
+    } finally { looseRig.restore(); }
+});
+
+test('R2 m3: a fixed chair cancels the driver velocity (the roll branch), not scaled by ROLL_SPEED', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [], fixed: true });
+    try {
+        rig.sit();
+        rig.player.body.setVelocity(100, 0);
+        seating.afterPlayerMovement();
+        assert.deepEqual([rig.player.body.velocity.x, rig.player.body.velocity.y], [0, 0]);
+    } finally { rig.restore(); }
+    const loose = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        loose.sit();
+        loose.player.body.setVelocity(100, 0);
+        seating.afterPlayerMovement();
+        assert.ok(loose.player.body.velocity.x > 0, 'control: a loose chair keeps (scaled) velocity');
+    } finally { loose.restore(); }
+});
+
+test('R2 m3: a seated NPC\'s fixed chair never fidgets; a loose one does', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    try {
+        const moved = fixed => {
+            const rig = seatedNeedsRig({ clockMs: 1000 });
+            rig.install();
+            if (fixed) rig.chair.fixedChair = true;
+            rig.chair.body.enable = true; rig.chair.body.width = 16; rig.chair.body.height = 8; rig.chair.body.offset = { x: 0, y: 18 };
+            rig.chair.body.velocity = { x: 0, y: 0 };
+            rig.chair.body.setVelocity = () => {};
+            rig.chair.width = 16; rig.chair.height = 26;
+            let any = false;
+            for (let t = 0; t < 200000; t += 250) {
+                rig.behavior.sprite.scene.time.now = t;
+                seating.updateSeatedNPC(rig.behavior, null);
+                if (rig.chair.x !== 100 || rig.chair.y !== 120) any = true;
+            }
+            return any;
+        };
+        assert.equal(moved(false), true, 'control: a loose chair fidgets in 200 s');
+        assert.equal(moved(true), false, 'a fixed chair stays at its spot');
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
+});
+
+test('R2 m3: unseatNPC pushes a loose swivel chair back, never a fixed one', () => {
+    for (const [fixed, pushed] of [[false, true], [true, false]]) {
+        const rig = labSeatRig(204);
+        const chair = Object.assign(swivel('chair-white-1-rotate', 3), { x: 196, y: 156, width: 16, height: 26, depth: 190, active: true,
+            objectId: 'duty_chair', fixedChair: fixed || undefined, scene: { textures: { exists: () => false } } });
+        const pushes = [];
+        chair.body = { enable: true, immovable: false, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+            setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; if (x || y) pushes.push([x, y]); }, reset() {} };
+        window.rooms = { open_plan: { objects: { duty_chair: chair } } };
+        const sb = rig.sprite.body;
+        Object.assign(sb, { setSize() {}, setOffset() {} });
+        const st = { chair, seat: seating.seatSpec(chair), facing: 'east', homeFacing: 'east', place: 0, facePlayer: false,
+            saved: { none: false, immovable: false, chairImmovable: false, w: 20, h: 10, ox: 30, oy: 35 },
+            standAt: { x: 230, y: 172 } };
+        rig.behavior._seat = st;
+        try {
+            seating.unseatNPC(rig.behavior);
+            assert.equal(pushes.length > 0, pushed, fixed ? 'fixed: no push' : 'loose: pushed back');
+        } finally { rig.restore(); }
+    }
+});
+
+test('R2 m3: a punch cone over a fixed chair calls no kick; over a loose one it does', async () => {
+    const { PlayerCombat } = await import('../../public/break_escape/js/systems/player-combat.js');
+    const saved = { player: window.player, chairs: window.chairs, rooms: window.rooms };
+    try {
+        for (const [fixedChair, kicks] of [[true, 0], [undefined, 1]]) {
+            window.player = { x: 0, y: 0, lastDirection: 'right', body: { x: 0, y: 0, width: 10, height: 10 } };
+            window.rooms = {};
+            const chair = { x: 20, y: 31, isSwivelChair: true, fixedChair, body: { x: 15, y: 26, width: 10, height: 10 } };
+            window.chairs = [chair];
+            let n = 0;
+            const ctx = { getCurrentModeConfig: () => ({ damage: 1 }), bodyOverlapsCone: () => true, nearBody: () => true,
+                          kickChair() { n++; }, drawPunchHitbox() {} };
+            PlayerCombat.prototype.checkForHits.call(ctx);
+            assert.equal(n, kicks, fixedChair ? 'fixed: the loop skips it' : 'control: the loop kicks a loose chair');
+        }
+    } finally { Object.assign(window, saved); }
+});
+
+// ── a rest need sends an NPC to a sofa: she sits from either front corner (ca18 live proof) ──
+// The sofa faces south and its face point is its centre, which is north-west or north-east of
+// anyone at a front corner; staticFacesToward turned her away and she stood 11 s. A sofa the
+// need itself targets skips that test. A chair keeps it.
+function restRig(feetX, feetY, targetId, solid) {
+    const rig = labSeatRig(feetX);
+    rig.sprite.y = feetY;
+    Object.assign(rig.chair, solid);
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.mode = 'job';
+    ns.job = { kind: 'use', targetId, phase: 'using', need: 'rest' };
+    ns.atPost = false;
+    const target = { id: targetId, roomId: 'open_plan', x: rig.chair.x + rig.chair.width / 2, y: rig.chair.y + rig.chair.height / 2,
+        affordance: { satisfies: ['rest'] } };
+    window.npcNeedsSystem.world.getObject = () => target;
+    return rig;
+}
+const SOFA = { x: 216, y: 262, width: 62, height: 38, depth: 10, objectId: 'kit_sofa', texture: { key: 'leather_sofa1' }, scenarioData: { id: 'kit_sofa' } };
+
+test('rest need: arriving at a south-facing sofa\'s lower-right corner sits on the nearest place', () => {
+    const rig = restRig(252, 280, 'kit_sofa', SOFA);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the sofa');
+        assert.equal(Math.round(rig.behavior._seatMove?.target?.x), 259, 'east place (216 + 43)');
+    } finally { rig.restore(); }
+});
+
+test('rest need: arriving at a south-facing sofa\'s lower-left corner sits on the nearest place', () => {
+    const rig = restRig(226, 280, 'kit_sofa', SOFA);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the sofa');
+        assert.equal(Math.round(rig.behavior._seatMove?.target?.x), 235, 'west place (216 + 19)');
+    } finally { rig.restore(); }
+});
+
+test('rest need: a chair the need targets still refuses a sitter who is behind it', () => {
+    // north-facing static chair at (192,160): feet north of it, its centre lies south of them
+    const rig = restRig(200, 152, 'pierce_chair', {});
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'not seated from behind');
+        assert.ok(!rig.behavior._seatMove, 'no walk onto the seat');
+    } finally { rig.restore(); }
+});

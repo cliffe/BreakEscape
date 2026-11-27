@@ -1,0 +1,50 @@
+{
+  "scenario_brief": "Story-gate fixture for scripts/generate_dungeon_graph.rb",
+  "startRoom": "lobby",
+  "objectives": [
+    { "aimId": "get_in", "title": "Get In", "status": "active",
+      "tasks": [ { "taskId": "clone_card", "title": "Clone the card", "type": "custom", "status": "active" } ] },
+    { "aimId": "night_work", "title": "Night Work", "status": "locked",
+      "unlockCondition": { "globalVariable": "night_falls", "equals": true },
+      "tasks": [ { "taskId": "do_night", "title": "Work", "type": "custom", "status": "active" } ] },
+    { "aimId": "finale", "title": "Finale", "status": "locked",
+      "unlockCondition": { "globalVariable": "finale_ready", "equals": true },
+      "tasks": [ { "taskId": "do_finale", "title": "Finish", "type": "custom", "status": "active" } ] },
+    { "aimId": "bonus", "title": "Bonus", "status": "locked",
+      "unlockCondition": { "globalVariable": "bonus_earned", "equals": true },
+      "tasks": [ { "taskId": "do_bonus", "title": "Bonus", "type": "custom", "status": "active", "optional": true } ] },
+    { "aimId": "side", "title": "Side Quest", "status": "locked",
+      "unlockCondition": { "globalVariable": "side_open", "equals": true },
+      "tasks": [ { "taskId": "do_side", "title": "Side", "type": "custom", "status": "active" } ] }
+  ],
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        { "id": "handler", "displayName": "Handler", "npcType": "phone",
+          "eventMappings": [
+            { "eventPattern": "objective_task_completed:clone_card", "setGlobal": { "phase": "night" } },
+            { "eventPattern": "global_variable_changed:night_falls", "condition": "value === true", "unlockAim": "night_work" },
+            { "eventPattern": "objective_task_completed:do_night", "setGlobal": { "work_done": true } },
+            { "eventPattern": "global_variable_changed:work_done", "condition": "value === true", "setGlobal": { "finale_ready": true } },
+            { "eventPattern": "game_loaded", "condition": "globalVars.night_falls === true", "setGlobal": { "side_open": true } }
+          ] },
+        { "id": "night_scene", "displayName": "Night Scene", "npcType": "person",
+          "storyPath": "scenarios/story_gates/ink/night_scene.json",
+          "eventMappings": [
+            { "eventPattern": "room_entered:lobby", "condition": "globalVars.phase === 'night'", "conversationMode": "person-chat", "targetKnot": "start" },
+            { "eventPattern": "conversation_closed:night_scene", "setGlobal": { "night_falls": true } }
+          ] },
+        { "id": "debrief", "displayName": "Debrief", "npcType": "person",
+          "storyPath": "scenarios/story_gates/ink/debrief.json",
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:finale_ready", "condition": "value === true", "conversationMode": "person-chat", "targetKnot": "start" }
+          ] },
+        { "id": "stranger", "displayName": "Stranger", "npcType": "person",
+          "storyPath": "scenarios/story_gates/ink/stranger.json" }
+      ]
+    }
+  },
+  "globalVariables": { "phase": "day", "night_falls": false, "work_done": false, "finale_ready": false, "bonus_earned": false, "side_open": false }
+}

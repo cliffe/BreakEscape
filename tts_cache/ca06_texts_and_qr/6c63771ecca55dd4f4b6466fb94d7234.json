@@ -1,0 +1,13 @@
+{
+  "key": "6c63771ecca55dd4f4b6466fb94d7234",
+  "npc": "kit_zainab_hussain",
+  "text": "Nice one. Out on the road you'd scan that barrier code in a heartbeat, so glad you clocked it.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:15:25Z"
+}

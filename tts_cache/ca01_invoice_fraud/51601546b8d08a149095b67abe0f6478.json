@@ -1,0 +1,13 @@
+{
+  "key": "51601546b8d08a149095b67abe0f6478",
+  "npc": "adaeze_okafor",
+  "text": "You've worked it from both ends now.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:42Z"
+}

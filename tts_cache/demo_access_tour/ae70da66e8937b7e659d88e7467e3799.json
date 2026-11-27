@@ -1,0 +1,13 @@
+{
+  "key": "ae70da66e8937b7e659d88e7467e3799",
+  "npc": "julian",
+  "text": "My office is being rewired, so I'm in here with the kettle. Not that you'd get in.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:47:59Z"
+}

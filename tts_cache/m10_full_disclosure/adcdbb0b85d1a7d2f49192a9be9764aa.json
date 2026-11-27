@@ -1,0 +1,13 @@
+{
+  "key": "adcdbb0b85d1a7d2f49192a9be9764aa",
+  "npc": "voltage_van",
+  "text": "Shutter's isolated. Cuff me in front. I'll want my hands for the inquiry.",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:05:09Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "82cac7e76048f49a2f83527ee6130955",
+  "npc": "farah_guard",
+  "text": "You still here?",
+  "voice": "Zephyr",
+  "style": "Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:39:41Z"
+}

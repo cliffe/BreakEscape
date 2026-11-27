@@ -1,0 +1,13 @@
+{
+  "key": "560b228c0ce9d97a85a34c1136d9aed0",
+  "npc": "yusuf_demir",
+  "text": "And I've left my pass at home, so I wait out here like a visitor.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:43:10Z"
+}

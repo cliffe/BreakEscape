@@ -1,0 +1,21 @@
+{
+  "key": "78a8b8248c3a0520f31f4277ff49286d",
+  "npc": "the_architect",
+  "text": "Very possibly. It has never been the requirement.",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:20:04Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/78a8b8248c3a0520f31f4277ff49286d.mp3",
+    "clean_md5": "1bfca0d15670d12bda7608f9228b6e78",
+    "baked_md5": "8e3ed4948d747ec8dd46205f1dbbd631",
+    "baked": "2026-11-24"
+  }
+}

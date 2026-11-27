@@ -1,0 +1,13 @@
+{
+  "key": "83fe0f87dc7b2f2f2ad885ef8dbd0e14",
+  "npc": "fatima_begum",
+  "text": "No coffee here, then.",
+  "voice": "Zephyr",
+  "style": "Records clerk at Merrin & Sallow, in her late 20s, quick and cheerful, always carrying something. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:11:15Z"
+}

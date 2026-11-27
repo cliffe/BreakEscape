@@ -1,0 +1,151 @@
+
+## R12 (puzzle chains C1, F1): HaX's VM ladder shows only the current step. No box topic before the server room; the box topic from entering it until flag 1; the flag-2 topic between flags 1 and 2 (after a page reload); then credentials, then the mail, each gone once its flag is in. Probe p3, inverted.
+
+--- briefing ---
+  Narrator: SAFETYNET headquarters, the Citadel. Every badge reader blinks red. Nobody looks at the person at the next desk.
+  ATHENA: Welcome back, Agent 0x00. Security posture is Level Red. I have logged your entry, your route, and the precise time you crossed the threshold. Everyone's, actually. It's rather the point.
+  ATHENA: I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.
+  ATHENA: The PIN device you are thinking of is still signed out to Agent 0x47, Nightshade, as it has been since St. Catherine's.
+  ATHENA: Read nothing into it. Vector has a hardware token out tonight, and Phantom a travel pack. Everyone on the planning list keeps something they shouldn't.
+  ATHENA: You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did.
+  ATHENA: The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.
+  ATHENA: A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick.
+  ATHENA: The Director's office is north of this lobby. Do try not to trust anyone on the way.
+  [end]
+   [text agent_0x99 +2500ms] I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine.
+   {set {"briefing_played":true}}
+
+--- netherton ---
+      [ink: brief_taken=true]
+      [task: brief_with_netherton]
+  Narrator: The Director's office, blinds drawn against the night. Netherton stands at the window, his back to the door. He does not turn round.
+  Director Magnus Netherton: Agent. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
+  Director Magnus Netherton: What I did not tell you, because I did not yet know it, is that ENTROPY had your name before I signed the order.
+  Narrator: Now he turns.
+  Director Magnus Netherton: They did not out-think us at Portland. They were handed the board: your assignment, your timing, your identity on the ground.
+  Director Magnus Netherton: Two of ours are dead at the sites the team could not reach. They are dead because someone in this building told the enemy where the gaps would be.
+  Director Magnus Netherton: I have run field operations for five years. I have never had to say the next sentence.
+  Director Magnus Netherton: There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.
+  Director Magnus Netherton: Ask me what you need. Then go and prove something.
+     (7 options)
+ > I'm ready. Let me work.
+  Director Magnus Netherton: Go. Whoever it is was one of us this morning. Bring me a name I can prove.
+  [chat closes]
+   [text agent_0x99 +2000ms] Three names, three rooms. Vector on the ops floor, Phantom north of it, Nightshade in the Crypto Lab. See all three before the server room.
+      [reads: Post-It On The Coffee Machine]
+   {pickup printed_server_badge}
+      [kit: Printed Server-Zone Badge]
+      [mapping agent_0x99: set badge_cloned=true]
+   [text agent_0x99 +1500ms] A server-zone badge off our own printer, PIN on a post-it by the kettle. Everything we tell clients not to do. Server room's east of the ops floor.
+
+--- phone ---
+  Line's open. Same as Portland, except this time the target has a SAFETYNET lanyard and a name I probably know.
+  So I'm going to be very professional tonight. Bear with me.
+     (5 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] not said: "What am I looking at"
+   [PASS] not said: "Where do I look"
+   [PASS] not said: "I've got credentials"
+   {enter server_room}
+      [mapping agent_0x99: set recon_guide_offered=true]
+      [mapping agent_0x99: set server_room_entered=true]
+      [task: breach_server_room]
+   [text agent_0x99 +2500ms] You're on their internal network now. Map it before you touch anything. Want the recon and network mapping field guide? Ask me on the line.
+   [PASS] server_room_entered = true (expected true)
+   {event object_interacted}
+      [mapping agent_0x99: set scanning_guide_offered=true]
+      [mapping agent_0x99: set vulnanalysis_guide_offered=true]
+   [text agent_0x99 +1500ms] That's the repo box. Fingerprint the service, then go for the GitList flaw. I've got the scanning guide, and one on why that flaw works, if you want either.
+
+--- phone ---
+     (6 options)
+ > What am I looking at on this box?
+  A GitList instance our own team stood up and never patched.
+  One crafted request gets you code execution with no login at all. Get that working and it's your first flag.
+  And our first national embarrassment.
+     (6 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "Get that working and it's your first flag"
+   [PASS] not said: "That's your first flag"
+   [PASS] not said: "Where do I look"
+   [PASS] not said: "I've got credentials"
+   {flag 1}
+      [task: recover_gitlist_exposure]
+      [mapping agent_0x99: set found_gitlist_vuln=true]
+      [mapping agent_0x99: set gitsecrets_guide_offered=true]
+   [text agent_0x99 +1500ms] On the box already? Our own code server, no password. That's a report nobody will enjoy. Now read the history, not just the files. Want the git secrets guide?
+
+--- phone ---
+   (after a reload: variables kept, visit counts and position reset)
+     (6 options)
+ > I'm on the box. Where do I look?
+  Read the history, not just the files. Git keeps what people meant to throw away.
+  Whoever's account it is, they committed something they shouldn't have. Git secrets guide's yours if you want it.
+     (6 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "Read the history, not just the files"
+   [PASS] said: "Git secrets guide's yours"
+   [PASS] not said: "What am I looking at"
+   [PASS] not said: "I've got credentials"
+   {flag 2}
+      [task: recover_stashed_credentials]
+      [mapping agent_0x99: set found_leaked_creds=true]
+   [text agent_0x99 +1500ms] Credentials, committed straight into the repo and never scrubbed. Log in properly with them and let's see whose account it really is.
+
+--- phone ---
+     (6 options)
+ > I've got credentials. Now what?
+  Log in properly with them. Whoever committed those thought no one would ever read that far.
+  Get into the account and let's find out whose it is.
+     (6 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "Log in properly with them"
+   [PASS] not said: "Where do I look"
+   [PASS] not said: "What am I looking at"
+   [PASS] not said: "The mail's real"
+   {flag 3}
+      [task: recover_home_flag]
+      [mapping agent_0x99: set found_architect_comms=true]
+      [mapping agent_0x99: set privesc_guide_offered=true]
+   [text agent_0x99 +1500ms] You're in as them. The sent mail goes to architect@entropy.onion, from the sender stripped off the Portland intercept. The logs need root, via that sudo rule. Privesc guide?
+
+--- phone ---
+     (6 options)
+ > The mail's real. How do I make it stick?
+  You need root. A user shell shows you the mail file. Root shows you the logs, and logs put an account at a terminal.
+  There's a sudo rule on that box begging to be abused. Take it.
+     (6 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "You need root"
+   [PASS] not said: "I've got credentials"
+   [PASS] not said: "Where do I look"
+   {flag 4}
+      [task: escalate_to_root]
+      [mapping agent_0x99: set found_access_logs=true]
+      [mapping agent_0x99: set database_theft_understood=true]
+   [text agent_0x99 +2000ms] Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-2 10:38, forty-seven minutes. The root file says it was for our threat database. Who was behind that lab door?
+      [mapping closing_debrief: set all_flags_submitted=true]
+   [text agent_0x99 +6000ms] Whole chain's in: a terminal, a time, an account. The Director won't walk anyone anywhere on a login. Give him the person. Door audit.
+
+--- phone ---
+     (5 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] not said: "The mail's real"
+   [PASS] not said: "I've got credentials"
+   [PASS] not said: "Where do I look"
+   [PASS] not said: "What am I looking at"
+
+[stats] spoken/narrated lines 36, choices 11, longest run without a choice 9 (briefing); runs>=6: briefing:9, netherton:9
+[result] all expectations met

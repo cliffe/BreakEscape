@@ -1,0 +1,221 @@
+// scripts/validate_scenario.rb check_retired_keys (hardening step 7).
+// A rendered template carries current field names and no formatVersion. The validator errors on a
+// template that sets formatVersion and on any retired key (renamed by a FormatUpgrade step), unless
+// an alias keeps it for a deployed scenario (a warning). Author notes are skipped.
+// Run with: node --test test/js/validator-retired-keys.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const ruby = spawnSync('ruby', ['--version']);
+const skip = ruby.status !== 0 && 'ruby not found';
+
+// inject is a Ruby snippet run after the require and before the call (to push fixture steps/aliases).
+function issues(scenario, inject = '') {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      ${inject}
+      puts JSON.generate(check_retired_keys(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+const oneStep = `BreakEscape::FormatUpgrade::STEPS.concat([{version:1,name:"r",` +
+    `scenario:->(d){},player_state:->(s){},retired:[{path:nil,key:"downIf",now:"offWhen"}]}])`;
+
+test('no steps and no formatVersion: no issues', { skip }, () => {
+    assert.deepEqual(issues({ rooms: { a: { resources: { net: { downIf: 'g' } } } } }), []);
+});
+
+test('a retired key is one error naming the new name', { skip }, () => {
+    const out = issues({ rooms: { a: { resources: { net: { downIf: 'g' } } } } }, oneStep);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*downIf.*renamed to 'offWhen' in format 1/);
+});
+
+test('a retired key inside an author note is not reported', { skip }, () => {
+    const out = issues({ rooms: { a: { _draft: { resources: { net: { downIf: 'g' } } } } } }, oneStep);
+    assert.deepEqual(out, []);
+});
+
+test('a template that sets formatVersion is an error', { skip }, () => {
+    const out = issues({ formatVersion: 0, rooms: {} });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*formatVersion.*server stamps formatVersion at creation/);
+});
+
+test('an aliased retired key is a warning, not an error', { skip }, () => {
+    const alias = oneStep +
+        `\nmodule BreakEscape; module FormatUpgrade; def self.aliased?(k); k == "downIf"; end; end; end`;
+    const out = issues({ rooms: { a: { resources: { net: { downIf: 'g' } } } } }, alias);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /WARNING:.*downIf.*alias/);
+});
+
+// ---- Step 8a (format 1): the real retired entries, with no injected step ----
+
+test('8a: a network downIf is one rename error to offWhen', { skip }, () => {
+    const out = issues({ networks: { corp: { downIf: 'servers_offline' } } });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*networks\/corp\/downIf.*renamed to 'offWhen' in format 1/);
+});
+
+test('8a: a resource downIf is one rename error to offWhen', { skip }, () => {
+    const out = issues({ resources: { printer: { downIf: 'printer_jammed' } } });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*resources\/printer\/downIf.*renamed to 'offWhen' in format 1/);
+});
+
+test('8a: an object affordance.offWhen is one rename error (moved up to the object)', { skip }, () => {
+    const out = issues({ rooms: { r1: { objects: [{ id: 'pc1', affordance: { offWhen: 'pc_off' } }] } } });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /ERROR:.*affordance\/offWhen.*renamed to 'offWhen \(moved up to the object\)' in format 1/);
+});
+
+// Step 2 dedup (format hardening step 8a, item 4): a retired key reintroduced in a closed block
+// reaches the schema as an unknown key and is also caught by check_retired_keys. format_schema_errors
+// suppresses the schema line for it, so one slip prints one line (the rename, from check_retired_keys).
+function schemaErrors(scenario, messages) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(format_schema_errors(JSON.parse(STDIN.read), ${JSON.stringify(messages)}))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+test('8a: a reintroduced retired key in a closed block prints no schema unknown-key line', { skip }, () => {
+    const msg = "The property '#/networks/corp' contains additional properties [\"downIf\"] outside of the schema when none are allowed";
+    const out = schemaErrors({ networks: { corp: { downIf: 'servers_offline' } } }, [msg]);
+    assert.deepEqual(out, []);
+});
+
+test('8a: a genuine unknown key in a closed block still prints its schema line', { skip }, () => {
+    const msg = "The property '#/networks/corp' contains additional properties [\"bogus\"] outside of the schema when none are allowed";
+    const out = schemaErrors({ networks: { corp: { bogus: 'x' } } }, [msg]);
+    assert.equal(out.length, 1);
+    assert.match(out[0], /unknown key 'bogus'/);
+});
+
+// ---- Step 8b (format 2): the owner retired keys and the owner-field checks ----
+
+function owner(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(check_owner_fields(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+function unknownWarnings(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(check_unknown_fields(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+for (const [key, where, now] of [
+    ['screenOwner', { rooms: { r: { objects: [{ id: 'pc', screenOwner: 'a' }] } } }, 'owner'],
+    ['phoneOwner', { rooms: { r: { objects: [{ id: 'ph', phoneOwner: 'a' }] } } }, 'owner'],
+    ['phoneOf', { rooms: { r: { objects: [{ id: 'fp', phoneOf: 'a' }] } } }, 'owner'],
+    ['leftBehindBy', { rooms: { r: { objects: [{ id: 'm', leftBehindBy: 'a' }] } } }, 'owner'],
+]) {
+    test(`8b: a retired ${key} is one rename error to ${now}`, { skip }, () => {
+        const out = issues(where);
+        assert.equal(out.length, 1, JSON.stringify(out));
+        assert.match(out[0], new RegExp(`ERROR:.*${key}.*renamed to '${now}' in format 2`));
+    });
+}
+
+test('8b: affordance.owners and affordance.private are moved-up rename errors', { skip }, () => {
+    const out = issues({ rooms: { r: { objects: [{ id: 'p', affordance: { owners: ['a'], private: true } }] } } });
+    assert.equal(out.length, 2, JSON.stringify(out));
+    assert.ok(out.some(l => /affordance\/owners.*renamed to 'owner \(moved up to the object\)' in format 2/.test(l)));
+    assert.ok(out.some(l => /affordance\/private.*renamed to 'private \(moved up to the object\)' in format 2/.test(l)));
+});
+
+test('8b: a reintroduced affordance.private prints no schema unknown-key line', { skip }, () => {
+    const msg = "The property '#/rooms/r/objects/0/affordance' contains additional properties [\"private\"] outside of the schema when none are allowed";
+    const out = schemaErrors({ rooms: { r: { objects: [{ id: 'p', affordance: { private: true } }] } } }, [msg]);
+    assert.deepEqual(out, []);
+});
+
+for (const [kind, obj] of [
+    ['a workstation', { id: 'pc', workstation: true, owner: ['a', 'b'] }],
+    ['a desk phone', { id: 'ph', deskPhone: true, owner: ['a', 'b'] }],
+    ['a Friendface phone', { id: 'fp', type: 'phone_friendface', owner: ['a', 'b'] }],
+    ['a left-behind item', { id: 'm', leftBehindChance: 0.5, owner: ['a', 'b'] }],
+]) {
+    test(`8b: a list owner on ${kind} is one error`, { skip }, () => {
+        const out = owner({ rooms: { r: { objects: [obj] } } });
+        const errs = out.filter(l => l.includes('❌'));
+        assert.equal(errs.length, 1, JSON.stringify(out));
+        assert.match(errs[0], /owner must be a single NPC id/);
+    });
+}
+
+test('8b: a list owner on a private object is allowed (no error)', { skip }, () => {
+    const out = owner({ rooms: { r: { objects: [{ id: 'p', private: true, owner: ['a', 'b'] }] } } });
+    assert.deepEqual(out.filter(l => l.includes('❌')), []);
+});
+
+test('8b: a workstation that is an NPC needsHome with no owner warns needsHome no longer sets one', { skip }, () => {
+    const out = owner({ rooms: { r: {
+        npcs: [{ id: 'rosa', needsHome: 'rosa_pc' }],
+        objects: [{ id: 'rosa_pc', workstation: true }]
+    } } });
+    const warns = out.filter(l => l.includes('⚠️'));
+    assert.equal(warns.length, 1, JSON.stringify(out));
+    assert.match(warns[0], /needsHome no longer sets an owner.*owner: 'rosa'/);
+});
+
+test('8b: the same workstation with an explicit owner fires no such warning', { skip }, () => {
+    const out = owner({ rooms: { r: {
+        npcs: [{ id: 'rosa', needsHome: 'rosa_pc' }],
+        objects: [{ id: 'rosa_pc', workstation: true, owner: 'rosa' }]
+    } } });
+    assert.deepEqual(out, []);
+});
+
+test('8b: owner, private and deskPhone print no unknown-field warning', { skip }, () => {
+    const out = unknownWarnings({ rooms: { r: { objects: [{ id: 'pc', type: 'pc', name: 'PC', owner: 'a', private: true, deskPhone: true }] } } });
+    assert.deepEqual(out.filter(l => /'(owner|private|deskPhone)'/.test(l)), []);
+});
+
+// ---- Step 8c (format 3): the three NPC habit keys fold into the habits block ----
+
+for (const [key, now] of [
+    ['screenHabit', 'habits.screen'],
+    ['printHabit', 'habits.print'],
+    ['usbHabit', 'habits.usb'],
+]) {
+    test(`8c: a retired NPC ${key} is one rename error to ${now}`, { skip }, () => {
+        const out = issues({ rooms: { r: { npcs: [{ id: 'rosa', [key]: { foo: 1 } }] } } });
+        assert.equal(out.length, 1, JSON.stringify(out));
+        assert.match(out[0], new RegExp(`ERROR:.*npcs/0/${key}.*renamed to '${now.replace('.', '\\.')}' in format 3`));
+    });
+}
+
+test('8c: folded habits.screen/.print/.usb print no unknown-field warning', { skip }, () => {
+    const out = unknownWarnings({ rooms: { r: { npcs: [{ id: 'rosa',
+        habits: { screen: { lockChance: 0 }, print: { forgetChance: 0.5 }, usb: { every: 2 } } }] } } });
+    assert.deepEqual(out.filter(l => /unknown field/.test(l)), []);
+});
+
+test('8c: a reintroduced top-level screenHabit on an NPC prints no unknown-field warning', { skip }, () => {
+    // check_retired_keys prints the rename error; check_unknown_fields suppresses the redundant
+    // unknown-field warning for a retired NPC key, so one slip prints one line.
+    const out = unknownWarnings({ rooms: { r: { npcs: [{ id: 'rosa', screenHabit: { lockChance: 0 } }] } } });
+    assert.deepEqual(out.filter(l => /'screenHabit'/.test(l)), []);
+});

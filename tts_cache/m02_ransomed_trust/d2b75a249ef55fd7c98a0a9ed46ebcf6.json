@@ -1,0 +1,13 @@
+{
+  "key": "d2b75a249ef55fd7c98a0a9ed46ebcf6",
+  "npc": "ernesto_bautista",
+  "text": "Bloods all night. All on foot.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:14:10Z"
+}

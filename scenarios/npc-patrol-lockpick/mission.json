@@ -1,0 +1,24 @@
+{
+  "display_name": "NPC Patrol Lockpick",
+  "description": "Test scenario demonstrating NPC patrol mechanics combined with lockpicking gameplay.",
+  "difficulty_level": 2,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Physical security", "Lock bypass", "Patrol avoidance"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Lockpicking", "Physical access control", "Lock bypass"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Access control bypass", "Physical authentication"]
+    }
+  ]
+}

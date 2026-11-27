@@ -1,0 +1,13 @@
+{
+  "key": "cff1343d3fc547586780d293cdb03bb8",
+  "npc": "six_oclock",
+  "text": "Three water utilities went to manual at five. There is no patch for their old controllers. They will turn the valves by hand till spring.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:16:37Z"
+}

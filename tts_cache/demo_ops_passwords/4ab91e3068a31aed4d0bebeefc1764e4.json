@@ -1,0 +1,13 @@
+{
+  "key": "4ab91e3068a31aed4d0bebeefc1764e4",
+  "npc": "ama_owusu",
+  "text": "Julian's PC remembers who signed in. An administrator gets the stored records, never the passwords.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:35:06Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "5f14e29248ab1036254c7b8056d98ccb",
+  "npc": "graham_whitfield",
+  "text": "My screen locks itself, mind. IT set it to twenty seconds.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:36:52Z"
+}

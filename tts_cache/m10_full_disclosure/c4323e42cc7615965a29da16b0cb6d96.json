@@ -1,0 +1,13 @@
+{
+  "key": "c4323e42cc7615965a29da16b0cb6d96",
+  "npc": "farah_guard",
+  "text": "I said I didn't see you.",
+  "voice": "Zephyr",
+  "style": "Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:39:38Z"
+}

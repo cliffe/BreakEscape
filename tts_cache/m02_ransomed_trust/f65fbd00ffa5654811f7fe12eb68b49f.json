@@ -1,0 +1,13 @@
+{
+  "key": "f65fbd00ffa5654811f7fe12eb68b49f",
+  "npc": "patient_bed5",
+  "text": "That's it. Keep the bag going. You just bought him the time nobody else could.",
+  "voice": "Autonoe",
+  "style": "Retired schoolteacher, seventy-one, post-operative and fully alert. British-Chinese, raised in Edinburgh -- a clear, precise Scottish accent. Calm, observant, quietly furious on behalf of the sicker patients around her. Speaks in complete sentences because she has always spoken in complete sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:57:36Z"
+}

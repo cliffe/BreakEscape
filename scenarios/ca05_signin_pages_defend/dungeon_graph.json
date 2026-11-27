@@ -1,0 +1,10 @@
+{
+  "scenario": "ca05_signin_pages_defend",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

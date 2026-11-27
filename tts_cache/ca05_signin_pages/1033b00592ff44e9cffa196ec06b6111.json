@@ -1,0 +1,13 @@
+{
+  "key": "1033b00592ff44e9cffa196ec06b6111",
+  "npc": "niamh_doherty",
+  "text": "Your password went into the copy, so the attacker had your real account, the claimant data behind it and a seat to phish the rest of us from.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:59Z"
+}

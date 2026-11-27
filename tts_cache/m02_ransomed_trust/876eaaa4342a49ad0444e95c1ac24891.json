@@ -1,0 +1,13 @@
+{
+  "key": "876eaaa4342a49ad0444e95c1ac24891",
+  "npc": "agent_nightshade",
+  "text": "You turned it on their own man's wall safe, I hear. Any keypad that tells you how close you are has already given the code away.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent, quietly pleased by an interesting device; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:53:25Z"
+}

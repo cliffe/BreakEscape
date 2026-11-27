@@ -1,0 +1,6 @@
+{
+  "startRoom": "lobby",
+  "globalVariables": { "assets_seized": false, "secret": false, "count": 0, "team": "" },
+  "exportGlobals": ["assets_seized", "count", "team"],
+  "rooms": { "lobby": { "npcs": [ { "id": "hax", "storyPath": "scenarios/m91_source/ink/source.json" } ] } }
+}

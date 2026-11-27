@@ -1,0 +1,13 @@
+{
+  "key": "d7ba0715e2d8101dc9841d09639bc776",
+  "npc": "security_guard_patrol",
+  "text": "So somebody gave you that, and somebody else rang control to say you don't exist.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:55:37Z"
+}

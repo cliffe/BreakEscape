@@ -1,0 +1,23 @@
+OFFICE-LIFE SUMMARY (V1): 21 NPC(s)
+  agent_0x99 (loading_dock) class=task,task-mapping,conv post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  alpha_recording (tape_room) class=conv post=tape_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  arakawa (loading_dock) class=- post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  archive_guard (open_stacks) class=conv,fights,attackable post=open_stacks leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  briefing_cutscene (loading_dock) class=- post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  closing_debrief (loading_dock) class=task,task-mapping,conv post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  director_netherton (loading_dock) class=- post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  gary_phone (loading_dock) class=conv post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  hax_voice (loading_dock) class=- post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  jesse_tran (server_closet) class=fights,attackable post=server_closet leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  kowalczyk (loading_dock) class=- post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  malhotra (loading_dock) class=- post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  nightshade_phone (loading_dock) class=conv post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  noor_haddad (front_desk) class=task,key,fights,attackable post=front_desk leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  old_coyote (open_stacks) class=conv,key,fights,patrol,attackable post=open_stacks leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  quintero (loading_dock) class=- post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  recruiter (loading_dock) class=task,conv post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  sorensen (restricted_cage) class=conv,key,fights,attackable post=restricted_cage leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  sorensen_door (restricted_cage) class=conv post=restricted_cage leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  sorensen_hatch (restricted_stacks) class=- post=restricted_stacks leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  torres_phone (loading_dock) class=conv post=loading_dock leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+

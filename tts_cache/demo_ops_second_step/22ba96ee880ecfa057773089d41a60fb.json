@@ -1,0 +1,13 @@
+{
+  "key": "22ba96ee880ecfa057773089d41a60fb",
+  "npc": "anjali_rao",
+  "text": "Busy morning?",
+  "voice": "Aoede",
+  "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T20:04:00Z"
+}

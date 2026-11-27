@@ -1,0 +1,13 @@
+{
+  "key": "4f0ba45a8be27d4d2a88f86ebfc91ca8",
+  "npc": "narrator",
+  "text": "The transfer bar sits at 91 per cent. His hand is still beside the keyboard.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:37:41Z"
+}

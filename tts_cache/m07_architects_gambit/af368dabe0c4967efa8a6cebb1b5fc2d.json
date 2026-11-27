@@ -1,0 +1,13 @@
+{
+  "key": "af368dabe0c4967efa8a6cebb1b5fc2d",
+  "npc": "narrator",
+  "text": "You put the projection on the console beside his hand. His signature, his date, his handwriting along the foot of the page.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A building full of machinery that is about to be used against people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:22:41Z"
+}

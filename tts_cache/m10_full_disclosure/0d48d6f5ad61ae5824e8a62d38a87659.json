@@ -1,0 +1,13 @@
+{
+  "key": "0d48d6f5ad61ae5824e8a62d38a87659",
+  "npc": "darren_price",
+  "text": "Too cold for the laptops, never mind me.",
+  "voice": "Orus",
+  "style": "SAFETYNET field support from the regional office, in his 40s, measured and dry. Speak with a consistent Bristol and West Country accent throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:13:19Z"
+}

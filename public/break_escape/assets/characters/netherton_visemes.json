@@ -1,0 +1,36 @@
+{
+  "frameSize": 128,
+  "visemes": [
+    "rest",
+    "teeth",
+    "round",
+    "small_open",
+    "medium_open",
+    "wide_open",
+    "blink"
+  ],
+  "source": "PixelLab /inpaint-image (mcp inpaint_image, 128x128, custom rectangular mask) on the rest frame, 10 generations per call. Each mouth frame is the rest frame with only the mask area replaced, so every pixel outside the mask is identical to rest. blink is the previous sheet's blink frame, unchanged. Rebuild with tools/pixellab_overrides/netherton/visemes/build_sheet.py (see the README there). Replaces the 2026-11 talk-run composite and its frozenRows/rowShifts fix (apply_row_shifts.py is kept in history).",
+  "mask": {
+    "x": 57,
+    "y": 32,
+    "width": 16,
+    "height": 9,
+    "bbox": [57, 32, 72, 40]
+  },
+  "picks": {
+    "teeth": "teeth_s23",
+    "round": "round_s33",
+    "small_open": "small_open_s42",
+    "medium_open": "medium_open_s51",
+    "wide_open": "wide_open_s12"
+  },
+  "candidates": "tools/pixellab_overrides/netherton/visemes/cands/<shape>_s<seed>.png",
+  "changedVsRest": {
+    "teeth": {"pixels": 95, "bbox": [57, 32, 72, 40]},
+    "round": {"pixels": 129, "bbox": [57, 32, 72, 40]},
+    "small_open": {"pixels": 91, "bbox": [57, 32, 72, 40]},
+    "medium_open": {"pixels": 124, "bbox": [57, 32, 72, 40]},
+    "wide_open": {"pixels": 134, "bbox": [57, 32, 72, 40]},
+    "blink": {"pixels": 36, "bbox": [58, 19, 73, 23], "note": "eyes only, unchanged from the previous sheet"}
+  }
+}

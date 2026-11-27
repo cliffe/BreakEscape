@@ -1,0 +1,13 @@
+{
+  "key": "8af1df404988aeb6b0c6d198870155ae",
+  "npc": "kit_delphine_arvanitis",
+  "text": "Odd. Catherine's got a new account. It's just liked Lorna's photo and asked to connect with me.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:40:05Z"
+}

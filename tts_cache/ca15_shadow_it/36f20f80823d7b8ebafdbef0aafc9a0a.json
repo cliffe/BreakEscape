@@ -1,0 +1,14 @@
+{
+  "key": "36f20f80823d7b8ebafdbef0aafc9a0a",
+  "npc": "kit_chidi_okeke",
+  "text": "No real IT desk asks you to read back a code or tap approve. Do either and you've handed them the account.",
+  "delivery": "easy-going, matter-of-fact",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:43:49Z"
+}

@@ -1,0 +1,14 @@
+{
+  "key": "8a533aa37f59220ce63a9a936dc19c4e",
+  "npc": "fatima_begum",
+  "text": "I'm not meant to say, but Patricia's file was pulled the morning she went. Derek's name was on the request.",
+  "delivery": "lowering her voice",
+  "voice": "Vindemiatrix",
+  "style": "Recruitment lead in her thirties, British Bangladeshi, Yorkshire accent. Brisk, friendly, a little rushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:57:43Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "5f44456f143167658b0030b0695702c0",
+  "npc": "narrator",
+  "text": "A woman in her early fifties looks up from a wall of access logs. Military bearing, and a mug of tea gone cold by the keyboard.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:16:11Z"
+}

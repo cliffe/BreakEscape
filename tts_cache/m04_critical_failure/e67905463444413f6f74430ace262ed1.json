@@ -1,0 +1,13 @@
+{
+  "key": "e67905463444413f6f74430ace262ed1",
+  "npc": "opening_briefing_cutscene",
+  "text": "Albion Energy Storage. Two hundred megawatt-hours of grid batteries, and two hundred and forty thousand people get their power through that site.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:19:37Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "008d186ac3989135f704217ab86f061e",
+  "npc": "helen_marsh",
+  "text": "You're holding the notification till you know more. Your call. The clock's still running, mind.",
+  "voice": "Aoede",
+  "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:15:50Z"
+}

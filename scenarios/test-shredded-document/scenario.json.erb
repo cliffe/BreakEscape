@@ -1,0 +1,118 @@
+{
+  "scenario_brief": "You are investigating a physical security breach at Zero Day Systems. Intelligence suggests a staff memo containing temporary VPN credentials was improperly disposed of. Check the shredder waste bin in the IT office and the classified archive shredder in the server room.",
+  "endGoal": "Reconstruct the shredded documents to recover the VPN credentials and classified contact details.",
+  "startRoom": "it_office",
+  "startItemsInInventory": [],
+  "globalVariables": {
+    "vpn_creds_found": false,
+    "classified_contact_found": false
+  },
+  "objectives": [
+    {
+      "aimId": "recover_vpn_creds",
+      "title": "Recover VPN Credentials",
+      "description": "Reconstruct the shredded memo from the IT office waste bin to recover the temporary VPN credentials.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "reconstruct_vpn_memo",
+          "title": "Reconstruct the shredded IT memo",
+          "type": "unlock_object",
+          "targetObject": "shredder_waste_bin",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "recover_classified_contact",
+      "title": "Recover Classified Contact",
+      "description": "Reconstruct the classified archive fragment in the server room. The document has been cross-cut and some strips are face-down.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        {
+          "taskId": "reconstruct_classified_doc",
+          "title": "Reconstruct the classified archive fragment",
+          "type": "unlock_object",
+          "targetObject": "archive_shredder",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "it_office": {
+      "name": "IT Office",
+      "type": "room_office",
+      "connections": {
+        "north": "server_room"
+      },
+      "objects": [
+        {
+          "type": "shredder",
+          "sprite": "notes",
+          "id": "shredder_waste_bin",
+          "name": "Shredder Waste Bin",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A strip-cut shredder with a full waste bin beneath it. The strips are narrow but the text is still legible.",
+          "scenarioData": {
+            "id": "shredder_waste_bin",
+            "type": "shredder",
+            "name": "Shredder Waste Bin",
+            "interactionType": "shredded_document",
+            "minigameData": {
+              "title": "Shredded Document",
+              "documentTitle": "ZERO DAY SYSTEMS — INTERNAL MEMO",
+              "content": "CONFIDENTIAL MEMORANDUM — Zero Day Systems IT Operations. To: Facilities Management Team. Date: 22 November 2023. Ref: ZDS-IT-2023-0847. Following the failure of the primary badge reader on Level 3, temporary access credentials have been issued to the site audit team pending hardware repair. The VPN gateway has been reconfigured to accept the following credentials until the fault is resolved: Username auditor_tmp Password Aud!t2023# — these must be treated as strictly confidential and revoked no later than 30 November 2023. The audit team should be briefed that all access is logged and monitored. Under no circumstances should these credentials be forwarded or shared outside of the named individuals on the approved access list. Please ensure this memorandum is destroyed immediately after briefing. Retention of this document beyond 24 hours constitutes a breach of ZDS Security Policy SP-04. J. Moretti, Head of IT Operations.",
+              "stripCount": 12,
+              "allowRotation": true,
+              "successMessage": "Memo reconstructed. VPN credentials recovered: Username auditor_tmp | Password Aud!t2023#",
+              "stateWrites": {
+                "onComplete": "vpn_creds_found"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "server_room": {
+      "name": "Server Room",
+      "type": "room_servers",
+      "connections": {
+        "south": "it_office"
+      },
+      "objects": [
+        {
+          "type": "shredder",
+          "sprite": "notes",
+          "id": "archive_shredder",
+          "name": "Classified Archive Shredder",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A cross-cut shredder used for classified document disposal. The waste tray contains small rectangular fragments — several are face-down.",
+          "scenarioData": {
+            "id": "archive_shredder",
+            "type": "shredder",
+            "name": "Classified Archive Shredder",
+            "interactionType": "shredded_document",
+            "minigameData": {
+              "title": "Classified Archive Fragment",
+              "documentTitle": "SAFETYNET — CLASSIFIED — EYES ONLY",
+              "content": "OPERATION SAFETYNET — Classification SECRET — Eyes Only. This document authorises asset handler contact protocols for the current reporting period. Asset codename CARDINAL has been active in the target organisation for eleven months without compromise. Primary contact for CARDINAL is D. Harlow, Security Reference SN-0047, accessible via the encrypted channel on frequency 447.2 during the agreed window. In the event that the primary channel is unavailable or believed compromised, the fallback contact method is a physical dead drop at Locker 14, Central Station left luggage. The locker key is held under the reference SN-14 at the usual arrangement. All contact attempts must be logged against case file OP-SN-2019-04 within 48 hours. This document must be destroyed by the authorised handler immediately upon reading. Retention beyond the session in which it was accessed constitutes a breach of SAFETYNET protocol and will trigger a full operational review. Destruction confirmed by handler signature. Archive copy retained under SAFETYNET Records administration, 2019.",
+              "stripCount": 10,
+              "allowRotation": true,
+              "successMessage": "Document reconstructed. Asset CARDINAL, contact D. Harlow (SN-0047). Dead drop: Locker 14, Central Station. Key ref: SN-14.",
+              "stateWrites": {
+                "onComplete": "classified_contact_found"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

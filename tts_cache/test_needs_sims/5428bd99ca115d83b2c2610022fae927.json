@@ -1,0 +1,13 @@
+{
+  "key": "5428bd99ca115d83b2c2610022fae927",
+  "npc": "rosa",
+  "text": "This is really good.",
+  "voice": "Leda",
+  "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:27:29Z"
+}

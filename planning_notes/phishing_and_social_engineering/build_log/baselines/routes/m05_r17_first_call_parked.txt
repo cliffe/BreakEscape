@@ -1,0 +1,33 @@
+
+## R17 (round 4, N2; the reviewer's probe p4): HaX's first call left unanswered (phone closed on its choices); the night moves on (suspicion, a fate). The reopen lands on the hub, so 'I'm done here. Bring me in.' can be picked.
+   {set {"briefing_played":true}}
+
+--- phone ---
+  Agent. Four hours to the final upload window.
+  Patricia Morgan runs security. She called us in, and she can open doors for you. Keep her in the picture.
+  Someone in that building is feeding ENTROPY the keys to the 999 dispatch network. Find them before half past eight tonight.
+     [0] I'll get to work.
+     [1] What should I know going in?
+     [2] Anything I should be careful of?
+  [stopped: no pick]
+
+## (phone closed with the first-call choices showing)
+   {set {"torres_suspected":true,"final_choice":"arrest"}}
+      [aim unlocked: gather_evidence]
+      [task: name_a_suspect]
+      [task unlocked: call_in_after_sweep]
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Not yet. The research server isn't finished: all four flags in the drop-site, then I'll pull you out.
+     [0] I'm done here. Bring me in.
+     [1] Where do I stand?
+     [2] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "Bring me in"
+   [PASS] not said: "What should I know going in"
+   [PASS] longest run 3 (phone) <= 9
+
+[stats] spoken/narrated lines 4, choices 1, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

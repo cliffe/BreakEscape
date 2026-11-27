@@ -1,0 +1,13 @@
+{
+  "key": "01c73beec61b07ec5cfe3293c5c49b0d",
+  "npc": "adaeze_okafor",
+  "text": "Still here? I'm nearly done, I promise.",
+  "voice": "Gacrux",
+  "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent General American accent with a light Nigerian inflection throughout, do not shift to any other accent.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:50:49Z"
+}

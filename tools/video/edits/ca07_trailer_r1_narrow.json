@@ -1,0 +1,768 @@
+{
+ "mission": "ca07",
+ "id": "ca07_trailer_r1_narrow",
+ "theme": "ca",
+ "title": "Cyber Aware ca07 trailer, round 1 (narrow-panel takes for the research, builder, result and finance line; render 9:16 and 1:1 from this file)",
+ "script": {
+  "heading": "ca07 trailer script (Cloned voices)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca07_trailer_script.md and docs/video/takes_ca07.md (recorded 23 Nov, commit 89d64db97). Model ca01 and ca04 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Quiet Reflection window from 91.43 s. Hook is G1, end line G2; no cast line is under VO."
+ },
+ "fps": 30,
+ "length": 70.0333,
+ "music": {
+  "track": "PeaceFolk/Quiet Reflection.mp3",
+  "analysis": "quiet_reflection_75.json",
+  "start": 91.43,
+  "length": 70.0333,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Gently Decaying.mp3 @104.478",
+   "PeaceFolk/Quiet Reflection.mp3 @72.891"
+  ]
+ },
+ "beat": {
+  "bpm": 142.4,
+  "period": 0.4213,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 2.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_graham_call.trimmed.mkv",
+    "in": 5.94,
+    "out": 8.74
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t01 G1: speech 6.246 to 8.414 (silencedetect -35 dB, d 0.08; brief 6.24 to 8.43), in 5.94 = speech - 0.3, out 8.74 = speech end + 0.31; G1 bubble up from 5.54, kiosk panel 'Before the debrief' gone by 3.9; G2 bubble opens 11.08, never in; world bark so the game's own bubble shows and the caption is burned in all aspects; bubble above Graham at about x 0.19-0.42, y 0.43-0.50 of the frame (contact sheet read, check framing on the render) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "BRIGHTWELL FOODS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.33,
+     "cy": 0.5,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.305,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.31,
+     "cy": 0.52,
+     "zoom": 1.6
+    }
+   },
+   "lines": [
+    {
+     "start": 0.306,
+     "end": 2.474,
+     "speaker": "Graham",
+     "text": "Ravinder's on the line, from his mobile."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Cloned voices",
+    "company": "Brightwell Foods",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.4
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 6.1333,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04b_finance_line_narrow.trimmed.mkv",
+    "in": 6.2,
+    "out": 12.3333
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04b: list from 6.1, card opens 11.50, in 6.2 and out 11.4 keep the card out; five rows, '0 of 5 sorted', nothing opened or pressed; the cloned voicemail row (07700 900771) is in the list but no punch-in, framing is the whole panel | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "FINANCE LINE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 6.7,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02b_attack_run_narrow.trimmed.mkv",
+    "in": 6.2,
+    "out": 12.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: note-ceo 7.64, ff-open 9.30, ff-profile 10.55, note-post 12.01; in 6.2 is after the intro panels (to 5.4) and browser-open 5.45, out 12.9 = note-post + 0.9; 560 px browser stacked | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.46,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.47,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "build_a",
+   "type": "gameplay",
+   "duration": 4.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_run_narrow.trimmed.mkv",
+    "in": 23.9,
+    "out": 28.5
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: From slot filled (slot1 mark 27.48), out before the slot2 menu opens; composer panel 'Write' intro (t02 21.5 to 23.0) not in; Red flags text and the Ask row hidden by CSS, counter number only; frame-check the slot2 menu edge on the render | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "EMAIL BUILDER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.47,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "build_b",
+   "type": "gameplay",
+   "duration": 2.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_run_narrow.trimmed.mkv",
+    "in": 33.0,
+    "out": 35.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: payment slot menu opens about 2.2 s before slot3 (35.46) and the payment is chosen; out 0.42 s after the choice; v4b 'Tie it to a payment already due' plays over it; frame-check that the open menu shows no Ask text | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "EMAIL BUILDER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.47,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_run_narrow.trimmed.mkv",
+    "in": 36.1,
+    "out": 40.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: send 38.55, landed 38.56; the Send click falls 2.49 s into the shot so v5 ends just after it; result panel only (no Advisory, Ask empty), out is before the mail client closes and the flip card; Tom's reply not in frame | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE SEND",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.47,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02b_attack_run_narrow.trimmed.mkv",
+    "in": 43.0,
+    "out": 45.0
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: flip card on screen about 42.9, in 43.0, out 45.0 (end 45.64); 'Now it lands on you' heading and strip only, body hidden by CSS | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.8
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "agnieszka_flip",
+   "type": "gameplay",
+   "duration": 6.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_agnieszka_flip.trimmed.mkv",
+    "in": 18.2,
+    "out": 24.8
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03 A1: chat opens 15.20, speech 15.588 to 18.079 (sentence 1, not in), pause 18.079 to 18.316, sentence 2 18.316 to 24.554 (pauses 21.08-21.17 and 23.011-23.134, -30 dB d 0.04 gives the phrase splits); in 18.2 is mid-pause (0.116 s before 'Now'; the brief's 2.80 s arithmetic point 18.39 would fall inside the word 'Now'), out 24.8 is 0.25 s after the last word and before chat-closed 25.25; the chat view shows the whole A1 text at once, bar cropped out in every aspect (16:9 zoom 1.25, cy 0.4, below y 0.8 gone); Agnieszka real portrait right, Brightwell background, no menu; phrase split by syllable counts, check on the render | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.116,
+     "end": 2.88,
+     "speaker": "Agnieszka",
+     "text": "Now take the other seat at the kiosk"
+    },
+    {
+     "start": 2.97,
+     "end": 4.811,
+     "speaker": "Agnieszka",
+     "text": "and cover the finance line"
+    },
+    {
+     "start": 4.934,
+     "end": 6.354,
+     "speaker": "Agnieszka",
+     "text": "the way a call like that would land."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 3.0,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You cover the finance line"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "triage",
+   "type": "gameplay",
+   "duration": 9.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04b_finance_line_narrow.trimmed.mkv",
+    "in": 7.5,
+    "out": 16.5
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04b: list from 6.1, card opens 11.50; in = card - 4.0 so the list holds 4.0 s (v8) then the card 5.0 s (v9 from +4.2); transcript hidden by CSS (heading only), four verb buttons unpressed; nothing pressed; out is before card-held end | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "FINANCE LINE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "office",
+   "type": "gameplay",
+   "duration": 8.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_graham_call.trimmed.mkv",
+    "in": 9.49,
+    "out": 17.89
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t01 G2: speech 11.59 (brief; -35 dB 11.633) to 17.74 (pauses 12.709-12.98, 15.273-15.491, 16.73-17.234); in 9.49 = G2 speech - 2.1 so v10b (0.2 + 1.68 = 1.88 s) sits 0.22 s clear of G2; out 17.89 is 0.15 s after the last word and before the bubble clears and the '!' ask cue (18.9); G1's bubble is still up from the start of the shot (to 10.69), accepted; no click, no menu | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.33,
+     "cy": 0.5,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.305,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.31,
+     "cy": 0.52,
+     "zoom": 1.6
+    }
+   },
+   "lines": [
+    {
+     "start": 2.11,
+     "end": 3.219,
+     "speaker": "Graham",
+     "text": "Sounds just like him."
+    },
+    {
+     "start": 3.49,
+     "end": 5.783,
+     "speaker": "Graham",
+     "text": "Ashcarr Haulage have changed bank,"
+    },
+    {
+     "start": 6.0,
+     "end": 7.24,
+     "speaker": "Graham",
+     "text": "and he wants them paid today."
+    },
+    {
+     "start": 7.744,
+     "end": 8.212,
+     "speaker": "Graham",
+     "text": "Go ahead?"
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Cloned voices",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 2.92,
+   "end": 8.032,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 8.4,
+   "end": 11.568,
+   "text": "A voice you know can be faked on a live call.",
+   "caption": "A voice you know can be faked\non a live call.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 11.815,
+   "end": 14.167,
+   "text": "This episode: cloned voices.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 14.533,
+   "end": 16.933,
+   "text": "First, you play the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 17.533,
+   "end": 20.701,
+   "text": "The website names the chief executive, Ravinder.",
+   "caption": "The website names the chief\nexecutive, Ravinder.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v3b",
+   "start": 21.333,
+   "end": 23.613,
+   "text": "His post says he's in Leeds all week.",
+   "caption": "His post says he's in\nLeeds all week.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v3b.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 24.233,
+   "end": 27.713,
+   "text": "Write a phishing email to back up a cloned call.",
+   "caption": "Write a phishing email\nto back up a cloned call.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v4b",
+   "start": 28.833,
+   "end": 31.113,
+   "text": "Tie it to a payment already due.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v4b.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 31.733,
+   "end": 34.301,
+   "text": "Send it to Tom, who releases payments.",
+   "caption": "Send it to Tom, who\nreleases payments.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v7",
+   "start": 44.333,
+   "end": 46.613,
+   "text": "Now it's your phone and inbox.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v7.mp3"
+  },
+  {
+   "id": "v8",
+   "start": 47.333,
+   "end": 50.453,
+   "text": "Three voicemails and two emails to sort.",
+   "caption": "Three voicemails and two\nemails to sort.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v8.mp3"
+  },
+  {
+   "id": "v9",
+   "start": 51.333,
+   "end": 54.645,
+   "text": "Whose voice it is matters less than what it asks.",
+   "caption": "Whose voice it is matters\nless than what it asks.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v9.mp3"
+  },
+  {
+   "id": "v10b",
+   "start": 56.333,
+   "end": 58.013,
+   "text": "Then a colleague asks.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v10b.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 64.733,
+   "end": 69.701,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}

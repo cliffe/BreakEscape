@@ -1,0 +1,7 @@
+{
+ "steps": [
+  {"note": "R1: the briefing, the long way round (urgency, data, operative, cover, employees, tools, advice, other staff), then deployment."},
+  {"talk": "briefing", "picks": ["How urgent", "What kind of data", "Who's running", "How do I get to him", "What about the employees", "What about tools", "Any specific advice", "Anyone else", "x"]},
+  {"said": ["anonymous tip from someone inside", "Derek Lawson. Senior Marketing Manager", "IT contractor hired to audit", "Keep collateral damage to zero", "protect her identity", "Kali Linux terminal, and lockpicks", "Kevin Park, is your entry point", "Talk to Maya. She's your best lead", "laptop bag on your shoulder"]}
+ ]
+}

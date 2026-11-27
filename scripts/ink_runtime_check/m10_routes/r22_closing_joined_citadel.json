@@ -1,0 +1,60 @@
+{
+ "steps": [
+  {
+   "note": "Join ending: the Citadel an hour later, no 06:00 walkabout. The player pressed the key and Tesseract walked out with them."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "database_outcome": "disclosed",
+    "console_choice": "joined",
+    "ending": "joined"
+   }
+  },
+  {
+   "talk": "citadel",
+   "picks": [
+    "Keep driving"
+   ]
+  },
+  {
+   "said": [
+    "The Citadel, an hour later.",
+    "He said it had to be one of ours. He was right, and I signed for that agent myself.",
+    "Find 0x00. Bring them in, and bring them to me."
+   ],
+   "notSaid": [
+    "Floodlights, engines running"
+   ]
+  },
+  {
+   "expect": {
+    "closing_done": true,
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "AGENT 0x00: Pressed the key.",
+    "DR ADRIAN TESSERACT: Walked out with 0x00.",
+    "AGENT HAX: Handler. Her last message to 0x00 went unanswered."
+   ],
+   "notSaid": [
+    "Wiped both copies"
+   ]
+  },
+  {
+   "talk": "six",
+   "picks": []
+  },
+  {
+   "notSaid": [
+    "Floodlights, engines running",
+    "Go to Quintero"
+   ]
+  }
+ ]
+}

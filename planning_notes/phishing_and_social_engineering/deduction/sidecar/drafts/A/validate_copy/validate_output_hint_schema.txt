@@ -1,0 +1,133 @@
+Validating scenario: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/planning_notes/phishing_and_social_engineering/deduction/sidecar/drafts/A/validate_copy/test_social_deduction_a/scenario.json.erb
+Using schema: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/f343dc8a-c9f7-426c-b0b8-fbe5002f3392/scratchpad/schema_hint.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 1112 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+⚠️ Found 24 unknown field(s):
+
+1. ⚠️ WARNING: Top-level field '_note_brief' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+2. ⚠️ WARNING: Top-level field '_note_show_scenario_brief' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+3. ⚠️ WARNING: Top-level field '_note_startPosition' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+4. ⚠️ WARNING: Top-level field 'triggers' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+5. ⚠️ WARNING: 'startItemsInInventory[2](phone)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+6. ⚠️ WARNING: Room 'a_hall' has unknown field '_note' — this field will be ignored by the game engine.
+7. ⚠️ WARNING: 'rooms/a_hall/objects[0](a_board)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+8. ❌ ERROR: 'rooms/a_hall/objects[0](a_board)' minigameData has undeclared field 'allowSubmit' — not in schema for 'case-file'. Add it to minigame-data-schemas.json or remove it.
+9. ⚠️ WARNING: 'rooms/a_hall/objects[1](a_wine_glass)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+10. ⚠️ WARNING: 'rooms/a_hall/npcs[7](ded_a_handler)' has unknown field '_note' — this field will be ignored by the game engine.
+11. ⚠️ WARNING: 'rooms/a_hall/npcs[8](ded_a_doorman)' has unknown field '_note' — this field will be ignored by the game engine.
+12. ⚠️ WARNING: Room 'a_cloakroom' has unknown field '_note' — this field will be ignored by the game engine.
+13. ⚠️ WARNING: 'rooms/a_cloakroom/objects[0](a_locker)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+14. ⚠️ WARNING: 'rooms/a_cloakroom/objects[0](a_locker)/contents[0](a_coat_venn)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+15. ⚠️ WARNING: 'rooms/a_cloakroom/objects[0](a_locker)/contents[1](a_coat_ishikawa)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+16. ⚠️ WARNING: 'rooms/a_cloakroom/objects[1](a_marsh_phone)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+17. ⚠️ WARNING: 'rooms/a_cloakroom/objects[2](a_code_note)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+18. ⚠️ WARNING: 'rooms/a_cloakroom/npcs[0](ded_a_lookout)' has unknown field '_note' — this field will be ignored by the game engine.
+19. ⚠️ WARNING: 'rooms/a_archive/objects[0](a_badge_log)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+20. ⚠️ WARNING: 'rooms/a_archive/objects[1](a_camera)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+21. ⚠️ WARNING: 'rooms/a_archive/objects[2](a_reading_desk)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+22. ⚠️ WARNING: Room 'a_sanctum' has unknown field '_note' — this field will be ignored by the game engine.
+23. ⚠️ WARNING: 'rooms/a_sanctum/objects[0](a_altar)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+24. ⚠️ WARNING: 'rooms/a_sanctum/npcs[0](ded_a_acolyte)' has unknown field '_note' — this field will be ignored by the game engine.
+
+⏭️ Skipping ink file validation (--skip-ink)
+
+Checking objective task wiring...
+✓ Objective task wiring OK
+
+Checking room layout geometry...
+Checking door alignment...
+[DEPRECATION NOTICE] json-schema support for MultiJSON is deprecated and will be removed in a future version. To stop using MultiJSON, add `JSON::Validator.use_multi_json = false` to your application's initialization code.
+✓ Room layout geometry OK — no world-space overlaps
+
+✓ Door alignment OK
+
+Validating against schema...
+Checking for common issues...
+Checking recommended fields...
+✓ Schema validation passed!
+⚠️ Found 67 issue(s) and suggestion(s):
+
+1. 💡 SUGGESTION: objectives/a_conclusion has missionConclusion:true but no concludeRequires, so reaching the end of the story is the whole condition for concluding. That is the right answer for a scenario with no large technical work to gate on -- there is nothing here a player could skip. To say so deliberately rather than by omission, declare an empty gate: "concludeRequires": {}.
+2. ❌ INVALID: 'rooms/a_hall/npcs[7]/eventMappings[0]' is a phone NPC event mapping with 'targetKnot' — this does NOT work after the first conversation. Once a storyState is saved, targetKnot is ignored on reopen. Correct pattern: use 'setGlobal' to set a flag, then add a conditional hub option in the Ink story: '+ {flag_var} [Ask about it] -> knot'. Also add 'sendTimedMessage' to notify the player that new content is available.
+3. ❌ INVALID: 'rooms/a_hall/npcs[7]/eventMappings[1]' is a phone NPC event mapping with 'targetKnot' — this does NOT work after the first conversation. Once a storyState is saved, targetKnot is ignored on reopen. Correct pattern: use 'setGlobal' to set a flag, then add a conditional hub option in the Ink story: '+ {flag_var} [Ask about it] -> knot'. Also add 'sendTimedMessage' to notify the player that new content is available.
+4. ❌ INVALID: 'rooms/a_hall/npcs[7]/eventMappings[2]' is a phone NPC event mapping with 'targetKnot' — this does NOT work after the first conversation. Once a storyState is saved, targetKnot is ignored on reopen. Correct pattern: use 'setGlobal' to set a flag, then add a conditional hub option in the Ink story: '+ {flag_var} [Ask about it] -> knot'. Also add 'sendTimedMessage' to notify the player that new content is available.
+5. ⚠️ WARNING: 'startItemsInInventory[0]' is a lockpick but has no 'puzzle_graph_unlocks' — the dungeon graph won't show what it opens. Add puzzle_graph_unlocks: '<target>' (or an array). Key-locked targets in this scenario: 'rooms/a_cloakroom' (a_cloakroom)
+6. ✅ GOOD PRACTICE: Scenario uses the music system — dynamic music changes based on in-game events significantly enhance immersion.
+7. ✅ GOOD PRACTICE: Scenario uses hostile NPCs — this adds physical challenge and urgency. Ensure hostile NPCs have behavior.chaseSpeed, attackDamage, and pauseToAttack configured.
+8. 💡 SUGGESTION: Consider adding VM launcher terminals (type: 'vm-launcher') for hacking challenges. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+9. 💡 SUGGESTION: Consider adding flag station terminals (type: 'flag-station') for VM flag submission. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+10. 💡 SUGGESTION: Consider adding at least one PC container (type: 'pc') with files (type: 'text_file') in 'contents' array. Use collection_group on files and a matching targetGroup task to track reading progress. See scenarios/m01_first_contact/scenario.json.erb (it_room/kevin_office) for example
+11. 💡 SUGGESTION: Consider adding an opening briefing cutscene — a person NPC with timedConversation (delay: 0, targetKnot: '...', waitForEvent: 'game_loaded', skipIfGlobal: 'briefing_played', setGlobalOnStart: 'briefing_played') in the starting room. See scenarios/m01_first_contact/scenario.json.erb (briefing_cutscene) for example
+12. 💡 SUGGESTION: Consider adding event-driven closing debrief cutscene using this architecture:
+13.    1. Add global variable to scenario.globalVariables (e.g., 'start_debrief_cutscene': false)
+14.    2. In phone NPC's Ink story, add tags: #set_global:start_debrief_cutscene:true and #exit_conversation
+15.    3. Create person NPC with eventMappings: [{eventPattern: 'global_variable_changed:start_debrief_cutscene', condition: 'value === true', conversationMode: 'person-chat', targetKnot: 'start', background: 'assets/backgrounds/hq1.png', onceOnly: true}]
+16.    4. Add behavior: {initiallyHidden: true} to person NPC so it doesn't appear in-world
+17.    See scenarios/m01_first_contact/scenario.json.erb (closing_debrief_person) for complete reference implementation
+18. 💡 SUGGESTION: Consider adding patrol waypoints to at least one person NPC for dynamic movement. Add behavior.patrol.waypoints array with {x, y} coordinates, or behavior.patrol.route for multi-room patrols. See scenarios/m01_first_contact/scenario.json.erb for NPCs with hostile behavior and movement.
+19. 💡 SUGGESTION: Consider adding timedMessages to phone contacts for narrative delivery — timed messages drive the story forward at key moments. Phone NPCs without timed messages: rooms/a_hall/npcs[7] (HaX). See scenarios/m01_first_contact/scenario.json.erb (agent_0x99) for example
+20. 💡 SUGGESTION: Consider adding password locks (lockType: 'password') for computers and workstations — passwords are discovered through investigation. See scenarios/m01_first_contact/scenario.json.erb (derek_computer, kevin workstation) for examples
+21. 💡 SUGGESTION: Consider adding puzzle_graph_unlocks to key items (clue notes inside locked containers, NPC-held keys, submit_flags tasks) to enable the dungeon graph generator. Run 'ruby scripts/generate_dungeon_graph.rb <scenario>' to visualise puzzle flow. See README_scenario_design.md §Dungeon Graph Metadata for field reference.
+22. ⚠️ WARNING: a lock requires key 'a_cloakroom_door', but no item declares opens_lock 'a_cloakroom_door'. Unless that door is meant to be lockpicked only, nothing in the scenario can open it.
+23. ⚠️ WARNING: a lock requires rfid 'a_sanctum_seal', but no item declares card_id (or opens_lock) 'a_sanctum_seal'. Unless that door is meant to be lockpicked only, nothing in the scenario can open it.
+24. ⚠️ WARNING: 'rooms/a_hall/npcs[0]' (ded_a_okafor) has no spriteTalk and the derived portrait 'assets/characters/female_scientist_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+25. 💡 SUGGESTION: 'rooms/a_hall/npcs[0]' (ded_a_okafor) has no spriteVisemes, but 'assets/characters/female_scientist_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/female_scientist_visemes.png" so their portrait lip-syncs.
+26. ⚠️ WARNING: 'rooms/a_hall/npcs[1]' (ded_a_venn) has no spriteTalk and the derived portrait 'assets/characters/female_office_worker_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+27. 💡 SUGGESTION: 'rooms/a_hall/npcs[1]' (ded_a_venn) has no spriteVisemes, but 'assets/characters/female_office_worker_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/female_office_worker_visemes.png" so their portrait lip-syncs.
+28. ⚠️ WARNING: 'rooms/a_hall/npcs[2]' (ded_a_marsh) has no spriteTalk and the derived portrait 'assets/characters/female_blowse_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+29. 💡 SUGGESTION: 'rooms/a_hall/npcs[2]' (ded_a_marsh) has no spriteVisemes, but 'assets/characters/female_blowse_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/female_blowse_visemes.png" so their portrait lip-syncs.
+30. ⚠️ WARNING: 'rooms/a_hall/npcs[3]' (ded_a_ishikawa) has no spriteTalk and the derived portrait 'assets/characters/female_telecom_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+31. 💡 SUGGESTION: 'rooms/a_hall/npcs[3]' (ded_a_ishikawa) has no spriteVisemes, but 'assets/characters/female_telecom_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/female_telecom_visemes.png" so their portrait lip-syncs.
+32. ⚠️ WARNING: 'rooms/a_hall/npcs[4]' (ded_a_delacroix) has no spriteTalk and the derived portrait 'assets/characters/female_spy_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+33. ⚠️ WARNING: 'rooms/a_hall/npcs[5]' (ded_a_barstaff) has no spriteTalk and the derived portrait 'assets/characters/male_office_worker_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+34. 💡 SUGGESTION: 'rooms/a_hall/npcs[5]' (ded_a_barstaff) has no spriteVisemes, but 'assets/characters/male_office_worker_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/male_office_worker_visemes.png" so their portrait lip-syncs.
+35. ⚠️ WARNING: 'rooms/a_hall/npcs[6]' (ded_a_intern) has no spriteTalk and the derived portrait 'assets/characters/male_office_worker_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+36. 💡 SUGGESTION: 'rooms/a_hall/npcs[6]' (ded_a_intern) has no spriteVisemes, but 'assets/characters/male_office_worker_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/male_office_worker_visemes.png" so their portrait lip-syncs.
+37. ⚠️ WARNING: 'rooms/a_hall/npcs[8]' (ded_a_doorman) has no spriteTalk and the derived portrait 'assets/characters/female_security_guard_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+38. 💡 SUGGESTION: 'rooms/a_hall/npcs[8]' (ded_a_doorman) has no spriteVisemes, but 'assets/characters/female_security_guard_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/female_security_guard_visemes.png" so their portrait lip-syncs.
+39. ⚠️ WARNING: 'rooms/a_cloakroom/npcs[0]' (ded_a_lookout) has no spriteTalk and the derived portrait 'assets/characters/female_security_guard_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+40. 💡 SUGGESTION: 'rooms/a_cloakroom/npcs[0]' (ded_a_lookout) has no spriteVisemes, but 'assets/characters/female_security_guard_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/female_security_guard_visemes.png" so their portrait lip-syncs.
+41. ⚠️ WARNING: 'rooms/a_sanctum/npcs[0]' (ded_a_acolyte) has no spriteTalk and the derived portrait 'assets/characters/female_hacker_hood_v2_talk.png' doesn't exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png.
+42. 💡 SUGGESTION: 'rooms/a_sanctum/npcs[0]' (ded_a_acolyte) has no spriteVisemes, but 'assets/characters/female_hacker_hood_visemes.png' exists for its sheet. Add "spriteVisemes": "assets/characters/female_hacker_hood_visemes.png" so their portrait lip-syncs.
+43. 💡 SUGGESTION: spriteSheet 'female_hacker_hood_v2' is shared by different characters: Agent (player), Acolyte (ded_a_acolyte). On screen and in the portrait they look like the same person. Fine for a uniformed crew; otherwise give each their own sheet (m04 gate guard vs operatives, m08 Phantom vs Netherton).
+44. 💡 SUGGESTION: spriteSheet 'male_office_worker_v2' is shared by different characters: Callum Reid (ded_a_barstaff), Sunil Mehta (ded_a_intern). On screen and in the portrait they look like the same person. Fine for a uniformed crew; otherwise give each their own sheet (m04 gate guard vs operatives, m08 Phantom vs Netherton).
+45. 💡 SUGGESTION: spriteSheet 'female_security_guard_v2' is shared by different characters: Doorman (ded_a_doorman), Lookout (ded_a_lookout). On screen and in the portrait they look like the same person. Fine for a uniformed crew; otherwise give each their own sheet (m04 gate guard vs operatives, m08 Phantom vs Netherton).
+46. 💡 SUGGESTION: global 'has_marsh_phone' is set (/rooms/a_cloakroom/objects[1]/onPickup/setVariable) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+47. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_okafor_lecture_hall' contains additional properties ["deduction"] outside of the schema when none are allowed
+48. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_venn_archive_pass' contains additional properties ["deduction"] outside of the schema when none are allowed
+49. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_marsh_garden' contains additional properties ["deduction"] outside of the schema when none are allowed
+50. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_ishikawa_archive_pass' contains additional properties ["deduction"] outside of the schema when none are allowed
+51. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_delacroix_lecture_hall' contains additional properties ["deduction"] outside of the schema when none are allowed
+52. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_okafor_wants_codex' contains additional properties ["deduction"] outside of the schema when none are allowed
+53. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_venn_wants_funding' contains additional properties ["deduction"] outside of the schema when none are allowed
+54. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_marsh_wants_promotion' contains additional properties ["deduction"] outside of the schema when none are allowed
+55. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_ishikawa_wants_codex' contains additional properties ["deduction"] outside of the schema when none are allowed
+56. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_delacroix_wants_codex' contains additional properties ["deduction"] outside of the schema when none are allowed
+57. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_okafor_brass_key' contains additional properties ["deduction"] outside of the schema when none are allowed
+58. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_okafor_notebook' contains additional properties ["deduction"] outside of the schema when none are allowed
+59. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_venn_ward_charm' contains additional properties ["deduction"] outside of the schema when none are allowed
+60. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_marsh_sigil_ring' contains additional properties ["deduction"] outside of the schema when none are allowed
+61. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_marsh_burner_sim' contains additional properties ["deduction"] outside of the schema when none are allowed
+62. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_ishikawa_ward_charm' contains additional properties ["deduction"] outside of the schema when none are allowed
+63. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_ishikawa_notebook' contains additional properties ["deduction"] outside of the schema when none are allowed
+64. ❌ SOCIAL: schema: The property '#/social/intelFacts/a_delacroix_umbrella' contains additional properties ["deduction"] outside of the schema when none are allowed
+65. ❌ SOCIAL: schema: The property '#/social' contains additional properties ["deduction"] outside of the schema when none are allowed
+66. ⚠️ SOCIAL: /rooms/a_archive has a lockedHint but its lockType is "pin"; the hint is shown only for a key lock
+67. ⚠️ SOCIAL: /rooms/a_sanctum has a lockedHint but its lockType is "rfid"; the hint is shown only for a key lock
+
+⚠️ Found 1 missing recommended field(s):
+
+1. Missing recommended: No NPCs with 'timedConversation' - consider adding one for immersive starting cut-scenes
+
+✓ Validation complete!

@@ -1,0 +1,14 @@
+{
+  "key": "8592290c8419d281013c9bebfe492d91",
+  "npc": "kit_anjali_rao",
+  "text": "A sign-in prompt you never kicked off means someone already has the password and is hoping you'll tap yes. Deny it.",
+  "delivery": "calm, matter-of-fact",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:28Z"
+}

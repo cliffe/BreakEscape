@@ -1,0 +1,114 @@
+/* Examine minigame: an object's sprite at 2x with its name, observations and text */
+
+.examine-minigame .minigame-game-container {
+    width: auto;
+    height: auto;
+    max-width: min(640px, calc(100vw - 32px));
+    /* the card has no header or controls row to leave room for: keep only a 32px margin, so a
+       844x390 phone shows about 358px of card instead of 230px */
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    margin: 0 auto;
+    overflow-y: auto;
+    background: #1a1a1a;
+    border: 4px solid #444;
+}
+
+.examine-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    --examine-gap: 14px;
+    --examine-pad-x: 20px;
+    gap: var(--examine-gap);
+    padding: 20px;
+    padding-top: 44px;   /* the X sits in the card's top-right corner (critique A40) */
+    box-sizing: border-box;
+}
+
+/* A strip that sticks to the top of the scrolling card, so the content passes under it and
+   never under the X (the X is fixed at the card's top-right). It takes the card's own fill and
+   adds no height: the negative margins cancel its box and the flex gap. */
+.examine-panel::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex: none;
+    align-self: stretch;
+    height: 44px;
+    margin: -44px calc(var(--examine-pad-x) * -1) calc(var(--examine-gap) * -1);
+    background-color: var(--ui-surface-opaque, #1a1a1a);
+}
+
+.examine-image-box {
+    max-width: 100%;
+    overflow-x: auto; /* a sprite wider than the screen at 2x scrolls; it is never shrunk */
+    padding: 12px;
+    background: #0f0f0f;   /* opaque: nothing of the game shows through the examine popup */
+    border: 2px solid #4a4a4a;
+    box-sizing: border-box;
+}
+
+.examine-sprite {
+    display: block;
+    max-width: none; /* keep the exact 2x size */
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.examine-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0;
+    color: #3498db;
+    text-align: center;
+    overflow-wrap: anywhere;   /* an unbroken long name wraps instead of widening the card */
+}
+
+.examine-observations {
+    margin: 0;
+    font-size: 24px;
+    line-height: 36px;
+    color: #ecf0f1;
+    align-self: stretch;
+    overflow-wrap: anywhere;
+}
+
+.examine-text {
+    align-self: stretch;
+    padding: 10px 12px;
+    background: #0f0f0f;
+    border: 2px solid #333;
+    font-size: 24px;
+    line-height: 36px;
+    color: #ecf0f1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* The Close button sits under the panel, not over it */
+.examine-minigame .minigame-controls {
+    /* relative, not static: keeps the framework's z-index above spilled content */
+    position: relative;
+    transform: none;
+    margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+    .examine-panel {
+        padding: 44px 12px 12px;   /* keep the 44px X clearance (critique A40) */
+        --examine-gap: 10px;
+        --examine-pad-x: 12px;
+    }
+    /* Pixel fonts draw crisply on their own grid: Press Start 2P at multiples of 8, GNF at
+       multiples of 8 from 16, at whole px line heights (24px * 1.5 = 36px). The name stays at 16 (Press Start 2P's smallest crisp size). The
+       body takes 24 at every width (set in the base rules above), the same GNF size as the
+       conversation's dialogue text (person-chat-minigame.css), because 16 read too small. */
+    .examine-name {
+        font-size: 16px;
+    }
+}

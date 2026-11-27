@@ -1,0 +1,11 @@
+Make portrait for Mei Lin Chow
+A Chinese-British woman in her early thirties, a poised, confident film-noir private detective. Light warm skin, glossy black hair in soft shoulder-length waves, deep red lipstick, dark knowing eyes. She wears a belted dove-grey trench coat over a black high-neck blouse, black high-waisted trousers, and a charcoal fedora tilted slightly. No cigarette, no text, no logos.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain mid-grey background, no gradient, no pattern
+
+# agy 2026-11-03. Reframed with reframe_portrait.py --flip. Approved by the user as noir_f5.

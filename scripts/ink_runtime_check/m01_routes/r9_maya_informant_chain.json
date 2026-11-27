@@ -1,0 +1,12 @@
+{
+ "steps": [
+  {"note": "R9: Maya's first meeting by the SAFETYNET route, the operation, Derek and Patricia, then the tactical advice only the informant gets. The first talk unlocks the inform task."},
+  {"talk": "maya", "picks": ["You seem nervous", "What message?", "I'm from SAFETYNET", "Tell me everything", "When does it launch", "What can you tell me about Derek", "What about the others here", "What happened to Patricia", "What's in the briefcase", "What should I do first", "I'll get started"]},
+  {"said": ["Things aren't what they seem here", "The tip. To SAFETYNET. About Operation Shatter", "Thank god. I was starting to think no one would come", "42 to 85 people will die in the first 24 hours", "Sunday. 6 AM", "Part of a cell called \"Social Fabric", "Kevin's innocent", "They didn't even let her take her briefcase", "Her investigation notes, I think", "Derek's office, the server room: that's where the real answers are", "I was starting to think no one cared about stopping this", "task unlocked: inform_safetynet_operation_shatter"],
+   "notSaid": ["Only if you're here to stop it"]},
+  {"tasks": {"talk_to_maya": "completed"}},
+  {"talk": "maya", "reload": "page", "picks": ["I need to keep investigating"]},
+  {"said": ["Is it safe to talk?", "Derek's paranoid. If he suspects you're onto him"],
+   "notSaid": ["[choice] Tell me about Operation Shatter", "[choice] What can you tell me about Derek", "[choice] What happened to Patricia"]}
+ ]
+}

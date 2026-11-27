@@ -1,0 +1,25 @@
+{
+  "scenario": "test_exercise_station",
+  "start_room": "hall",
+  "nodes": [
+    {
+      "id": "door_vault",
+      "label": "Vault<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vault",
+      "label": "Vault",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_vault",
+      "to": "vault",
+      "soft": false
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+From 8ac2bd365cfedc0c941e35e7af38f41671772b9e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:17:47 +0000
+Subject: [PATCH 5/8] README_scenario_design: careful guards and gate.noHold
+ (slice 9.1 step 5)
+
+---
+ README_scenario_design.md | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/README_scenario_design.md b/README_scenario_design.md
+index 036594200..eeac4b856 100644
+--- a/README_scenario_design.md
++++ b/README_scenario_design.md
+@@ -140,6 +140,7 @@ A door entry in a room's `doors` array can carry a `gate`: it opens for listed N
+ | `openRadius` | `56` | Pixels from the door centre at which an `openFor` NPC opens it |
+ | `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
+ | `playerMayPassIf` | none | A global. While it is false, the gate is solid for a player outside the secured room even while it stands open for the NPC, and a player within `openRadius` keeps it shut, even beside the NPC, or shuts it as soon as nobody is in the doorway |
++| `noHold` | written by the server | The `openFor` NPCs whose `holdsDoors` habit is false (see "Careful guards" below). Not written on a gate with `playerMayPassIf`; an authored one wins |
+ | `sound` | the door release for an RFID door | The sound played each time the gate opens, for an NPC or for a clone. Left out, a door with an RFID lock plays `rfid_unlock` (the same strike as every RFID lock) and any other door is silent; a sound key plays that sound (any audio key the game has loaded, not only the sound manager's own list; a key that is not loaded logs a warning and plays nothing); `false` silences the gate. Heard only from the doorway's two rooms: full volume within 3 tiles of the door, fading to nothing at 12 |
+ 
+ A guard who has been moved out of `openRadius` (pushed by the player, say) walks back to the front of his door. Two limits follow from how he finds that door: give a guard one gate per pair of rooms, and make the gate the only shut door on that leg of his route. With two gates into one room he may be sent to the one he cannot reach, and a leg blocked by an ordinary locked door further on would walk him to the gate and hold it open while he stands there.
+@@ -148,6 +149,8 @@ A guard who has been moved out of `openRadius` (pushed by the player, say) walks
+ 
+ **Solid for a player it is not open to.** An open gate's door body still blocks a player outside the secured room unless the gate is open to them (`playerMayPassIf` true, or a clone window running). So a barred player who runs at the door while the NPC is in the doorway is stopped at the door, as at a shut one, and the gate shuts as soon as the NPC is clear. Walking into it (or clicking to walk through it) stops the walk and shows the same refusal as a click, at most once every 4 s, with `door_gate_denied`. The gate never closes on a player crossing a doorway it lets them through, and a body never switches on under the player: if their permission lapses on the doorstep (the clone window runs out, or the disguise comes off), they finish the crossing or step back first.
+ 
++**Careful guards (`holdsDoors`).** A gate with no `playerMayPassIf` follows its guards' `holdsDoors` habit (slice 9.1: `"awareness": "high"` sets it false, `low` and `medium` true, or set it by name in the NPC's `habits`). The server writes the careful guards into the gate's `noHold`; do not write it yourself unless you mean to override the habit. While every guard the gate opened for is careful (and, while it is shut, every guard near it), the gate treats the player as a false `playerMayPassIf` does: it will not open for her with the player within `openRadius` (she turns back after 5 s), once open it is solid for the player and shuts as soon as he comes within the radius instead of waiting `holdMs`. One guard who holds doors among them is enough for it to open beside the player and linger, as any gate does. So a careful guard's door cannot be tailgated at all: give the player another way in (a copied badge, a colleague who holds the door, another door), and map her bark onto `door_gate_denied` or `door_gate_guard_turned_back`. The validator warns when `holdsDoors: false` by name does nothing, and the dungeon graph's door label says who holds the gate and who does not.
++
+ **Leaving.** A player inside the secured room is never blocked by the open gate and never keeps it shut, with or without cover. A click on the shut gate from inside opens it for one `holdMs` window (`door_gate_exit_opened`); a click on the open gate does nothing (they walk out). Neither asks for a credential, refuses, credits a clone or emits `door_gate_player_opened` or `door_gate_opened`, so map nothing that must mean "the NPC is at the door" on the exit event.
+ 
+ North and south doors only: a gate on an east or west door is declined (a console warning and a validator warning) and the door behaves as an ordinary locked door. A gate keeps a player out of a room; it does not keep a secret, because the room's data reaches the browser once the NPC's route has loaded it. Anything that must not be read early stays behind a server-checked lock inside the room. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a refused click, or a bump into the open gate), `door_gate_player_opened` (credential accepted), `door_gate_exit_opened` (a player inside opened it to leave), `door_gate_guard_turned_back` (`npcId`). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
+-- 
+2.43.0
+

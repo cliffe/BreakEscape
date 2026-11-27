@@ -1,0 +1,64 @@
+{
+  "scenario": "test_npc_walk_in_out",
+  "start_room": "walk_lobby",
+  "nodes": [
+    {
+      "id": "door_walk_vault",
+      "label": "Vault<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "walk_vault",
+      "label": "Vault",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "walk_lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "walk_ward",
+      "label": "Ward",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "walk_store",
+      "label": "Store",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "walk_annex",
+      "label": "Annex",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_walk_vault",
+      "to": "walk_vault",
+      "soft": false
+    },
+    {
+      "from": "walk_lobby",
+      "to": "walk_ward",
+      "soft": false
+    },
+    {
+      "from": "walk_ward",
+      "to": "walk_store",
+      "soft": false
+    },
+    {
+      "from": "walk_ward",
+      "to": "walk_annex",
+      "soft": false
+    }
+  ]
+}

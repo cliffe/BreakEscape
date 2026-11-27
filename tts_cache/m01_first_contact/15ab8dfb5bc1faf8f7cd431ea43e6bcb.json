@@ -1,0 +1,14 @@
+{
+  "key": "15ab8dfb5bc1faf8f7cd431ea43e6bcb",
+  "npc": "derek_lawson",
+  "text": "Forty-two to eighty-five deaths. Let's call it sixty.",
+  "delivery": "cold, quiet and controlled, low and slow, no shouting, quietly menacing",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T16:51:38Z"
+}

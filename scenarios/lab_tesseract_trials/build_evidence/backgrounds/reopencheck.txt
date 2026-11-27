@@ -1,0 +1,20 @@
+
+== lab_tesseract_trials / agent_0x99 (phone_agent_0x99.json): 1800 reopens, 984 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in hub: 2 line(s)
+      "Go ahead."
+      "I'm here. Careful what you say on this line."
+   shown again as new output: hub: Go ahead.
+
+== lab_tesseract_trials / ghost (phone_ghost.json): 1800 reopens, 498 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in waiting: 6 line(s)
+      "A key word, then a key pair. Fewer than twenty of you will see the second."
+      "One more door. You have the key."
+      "The corridor. Fewer candidates every hour."
+   held back in closed: 1 line(s)
+      "NO CARRIER."
+   held back in the_offer_again: 1 line(s)
+      "Back. So you've decided."
+
+Total problems: 0

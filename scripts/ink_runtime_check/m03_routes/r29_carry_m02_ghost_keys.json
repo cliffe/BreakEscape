@@ -1,0 +1,37 @@
+{
+ "imports": {
+  "m02_completed": true,
+  "m02_ghost_keys_used": true,
+  "m02_ward_recovering": true
+ },
+ "steps": [
+  {
+   "note": "R29: m02 finished on Ghost's keys (ward_recovering too)."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Remind me what their deal",
+    "Which cells buy",
+    "Walk me through St. Catherine's",
+    "Then we take the supplier"
+   ]
+  },
+  {
+   "said": [
+    "You worked St. Catherine's last month",
+    "The recovery call was yours, and you know what it cost",
+    "You took Ghost's keys"
+   ],
+   "notSaid": [
+    "You paid the ransom and had the wards back",
+    "You ran the combined restore",
+    "bagged Mr Pryce by hand",
+    "Eleven and a half hours, and six people died"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

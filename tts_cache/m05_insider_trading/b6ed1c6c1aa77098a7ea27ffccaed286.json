@@ -1,0 +1,13 @@
+{
+  "key": "b6ed1c6c1aa77098a7ea27ffccaed286",
+  "npc": "narrator",
+  "text": "A woman in her mid-forties looks up from a whiteboard dense with lattice notation.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:10:27Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "c9b5d706d91fee48e49bf84968c76f05",
+  "npc": "eleanor_vance",
+  "text": "W-12 required Albion to ensure that any managed service provider with access to their network maintained equivalent security controls — and that Albion's SOC coverage included OT system monitoring.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:24:10Z"
+}

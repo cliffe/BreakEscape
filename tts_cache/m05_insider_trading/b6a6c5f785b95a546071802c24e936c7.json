@@ -1,0 +1,13 @@
+{
+  "key": "b6a6c5f785b95a546071802c24e936c7",
+  "npc": "niamh_doherty",
+  "text": "Is the security person still in?",
+  "voice": "Leda",
+  "style": "Quantum Dynamics' internal communications officer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T17:39:07Z"
+}

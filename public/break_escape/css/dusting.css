@@ -1,0 +1,427 @@
+/* Fingerprint dusting minigame. House style: dark panel, Press Start 2P headings, phosphor-green accent. */
+
+.dusting-container {
+    --d-accent: #00ff41;
+    --d-bg: #0b0f0c;
+    --d-panel: #121a14;
+    --d-line: #1f3a27;
+    --d-text: #d8e6dc;
+    --d-dim: #93a899;
+    --mg-label-colour: var(--d-dim);
+    --mg-heading-colour: var(--d-accent);
+    overflow-y: auto;
+    justify-content: flex-start;
+    padding: 12px 0;
+}
+
+.dusting-container .minigame-close-button { z-index: 5; }
+
+.dusting-game-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: auto 0;
+    height: auto;
+    flex: 0 0 auto;
+}
+
+/* The kit's frame is the window here: it is capped to the screen and scrolls inside, so its
+   title is never centred up past the top edge (critique A15). The game area around it is not
+   capped (the shell's frame cap would centre the kit over both edges). */
+.minigame-container > .dusting-game-container { max-height: none; margin: auto 0; }
+
+.dusting-root {
+    display: flex; flex-direction: column;   /* title and steps stay put; .dusting-body scrolls (the frame itself never does) */
+    align-self: center;
+    max-height: calc(100dvh - 24px);
+    overflow: hidden;
+    width: min(960px, 96vw);
+    background: var(--d-bg);
+    border: 2px solid var(--d-accent);
+    box-shadow: none;   /* pixel-art UI: no soft glow */
+    color: var(--d-text);
+    font-family: 'VT323', 'GNF', monospace;
+    font-size: 20px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+}
+
+/* The named scroll region: everything under the steps. In a frame capped to the screen (800x600, phone portrait) it is the only
+   part that scrolls. Its 6px padding is cancelled by the -6px margin (the outer size is unchanged), is position: relative so the visually hidden status stays inside this scroller, and gives a focus ring (3px
+   at offset 2px) room, because overflow clips at the padding edge; scroll-padding keeps a control scrolled into view 6px clear of the
+   edge for the same reason. The frame's own padding is 8px or more. Short landscape lays the frame out as a grid and scrolls its own columns, so the body drops out of the box tree there. */
+.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px; margin: -6px; scroll-padding: 6px; position: relative; }
+.dusting-short .dusting-body { display: contents; }
+
+/* padding-right keeps the title clear of the X in the frame's corner (critique A14) */
+.dusting-title { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; padding-right: 44px; }
+.dusting-title h2 { font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 24px; margin: 0; color: var(--d-accent); font-weight: normal; }
+.dusting-object { color: var(--d-dim); }
+
+.dusting-steps { list-style: none; display: flex; gap: 4px; margin: 0 0 10px; padding: 0; flex-wrap: wrap; }
+.dusting-steps li {
+    flex: 1 1 90px; text-align: center; padding: 4px 6px; border: 2px solid var(--d-line);
+    color: var(--d-dim); font-size: 18px; background: var(--d-panel);
+}
+.dusting-steps li.done { color: var(--d-text); border-color: #2f6b43; }
+.dusting-steps li.done::after { content: ' \2713'; }
+.dusting-steps li.active { color: #000; background: var(--d-accent); border-color: var(--d-accent); }
+.dusting-step-num { font-family: 'Press Start 2P', monospace; font-size: 8px; margin-right: 4px; }
+
+.dusting-main { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.dusting-stage { flex: 0 0 auto; }
+.dusting-canvas {
+    display: block; image-rendering: pixelated; border: 2px solid var(--d-line); background: #000;
+    cursor: crosshair; touch-action: none; outline: none;
+}
+.dusting-canvas:focus-visible { border-color: var(--d-accent); box-shadow: 0 0 0 2px var(--d-accent); }
+.dusting-panel { flex: 1 1 280px; min-width: 260px; }
+.dusting-panel h3 { font-family: 'Press Start 2P', monospace; font-size: 8px; margin: 0 0 10px; color: var(--d-accent); font-weight: normal; line-height: 16px; }
+.dusting-panel p { margin: 0 0 8px; line-height: 1.2; }
+.dusting-note, .dusting-dim { color: var(--d-dim); }
+/* A long item text (m08's base64 USB stick) made the panel taller than a
+   1400x1000 window; it now scrolls inside its own box (m08 R7) */
+.dusting-quote {
+    border-left: 3px solid var(--d-line); padding-left: 8px; font-style: italic; overflow-wrap: anywhere;
+    max-height: min(9.5em, 22vh); overflow-y: auto;
+}
+.dusting-feedback { min-height: 1.2em; color: #ffd75e; }
+.dusting-feedback.good { color: var(--d-accent); }
+.dusting-keys { color: var(--d-dim); }
+.dusting-estimate { color: var(--d-text); }
+.dusting-result .dusting-result-value { color: var(--d-accent); }
+
+.dusting-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.dusting-btn, .dusting-jar, .dusting-pattern, .dusting-ref {
+    font-family: inherit; font-size: 16px; color: var(--d-text); background: var(--d-panel);
+    border: 2px solid var(--d-line); border-radius: 0; cursor: pointer; min-height: 40px; padding: 6px 12px; text-align: left;
+}
+.dusting-btn:hover:not(:disabled), .dusting-jar:hover, .dusting-pattern:hover, .dusting-ref:hover:not(:disabled) { border-color: var(--d-accent); }
+.dusting-btn:focus-visible, .dusting-jar:focus-visible, .dusting-pattern:focus-visible, .dusting-ref:focus-visible,
+.dusting-options input:focus-visible { outline: 3px solid var(--d-accent); outline-offset: 2px; }
+.dusting-ref:focus-visible, .dusting-jar:focus-visible, .dusting-pattern:focus-visible, .dusting-btn:not(.dusting-primary):focus-visible { position: relative; z-index: 2; }   /* a later sibling would paint over the ring's edge */
+.dusting-btn:disabled, .dusting-ref[data-rejected] { opacity: 0.55; cursor: not-allowed; }
+.dusting-ref:disabled:not([data-rejected]) { cursor: default; }
+/* After the match only the matched card is framed in the accent; the other (untried) cards stay on the line colour */
+.dusting-ref[data-match] { border-color: var(--d-accent); }
+.dusting-primary { background: #0e3b1b; border-color: var(--d-accent); color: #eaffef; }
+.dusting-btn[aria-pressed="true"], .dusting-jar[aria-pressed="true"] { border-color: var(--d-accent); background: #0e3b1b; }
+/* Accent on the pressed jar's #0e3b1b fails in the cyberpunk theme (4.39:1): body text colour there only */
+[data-ui-theme="cyberpunk"] .dusting-jar[aria-pressed="true"] .mg-section-label { color: var(--d-text); }
+.dusting-btn[aria-pressed="true"]::before, .dusting-jar[aria-pressed="true"]::before { content: '\25CF '; color: var(--d-accent); }
+.dusting-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.dusting-tool { display: inline-flex; align-items: center; gap: 6px; }
+.dusting-art { image-rendering: pixelated; display: block; }
+/* Tool icons are drawn at their own pixel size (32x64 canvas, shown 1:1). Halving them with CSS threw pixels away. */
+.dusting-tool { min-height: 72px; }
+.dusting-btn [data-slot] { vertical-align: middle; flex: 0 0 auto; }
+.dusting-btn:has([data-slot]) { display: inline-flex; align-items: center; gap: 6px; }
+[data-slot] { display: inline-block; line-height: 0; }
+
+.dusting-jars { display: grid; gap: 8px; }
+.dusting-jar { display: flex; align-items: center; gap: 12px; width: 100%; }
+.dusting-jar-text { line-height: 1.15; }
+
+.dusting-hint { animation: dusting-pulse 1.1s ease-in-out infinite; }
+/* Hint nudge (D183): a 2px solid frame plus the words "Stuck? Try Hint" above it; never colour alone */
+.dusting-btn.dusting-nudged { border: 2px solid var(--d-accent); outline: 2px solid var(--d-accent); outline-offset: 2px; }
+.dusting-nudge { margin: 4px 0; color: var(--d-accent); font-family: 'VT323', monospace; font-size: 20px; min-height: 0; }
+.dusting-nudge:empty { display: none; }
+@keyframes dusting-pulse { 50% { box-shadow: 0 0 0 4px rgba(0, 255, 65, 0.4); } }
+
+.dusting-meters { margin: 8px 0; }
+.dusting-meter { margin-bottom: 6px; }
+.dusting-meter label { display: block; }
+.dusting-meter .dusting-meter-value { font-weight: normal; color: var(--d-accent); }
+.dusting-bar { position: relative; height: 12px; border: 2px solid var(--d-line); background: #050806; }
+.dusting-bar i { display: block; height: 100%; width: 0; background: var(--d-accent); }
+.dusting-bar u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #fff; }
+
+.dusting-patterns { display: grid; gap: 8px; }
+.dusting-pattern { display: flex; gap: 12px; align-items: center; width: 100%; line-height: 1.15; }
+.dusting-pattern-art svg { width: 48px; height: 48px; color: var(--d-accent); display: block; }
+
+.dusting-refs { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+.dusting-ref { display: flex; flex-direction: column; gap: 4px; padding: 6px; max-width: 100%; }
+.dusting-ref-canvas { image-rendering: pixelated; display: block; background: #f2f0ea; }
+/* Four cards (fingerprintCandidateCount 4): 2x2 by default, 4x1 once the panel is wide enough for four 144 px cards in a row
+   (about 600 px, e.g. 1280x720). Never 3+1: the switch is on the panel's own width, not the screen's. Every card has the same height. */
+.dusting-panel { container-type: inline-size; }
+.dusting-refs[data-count="4"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
+@container (min-width: 600px) {
+    .dusting-refs[data-count="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.dusting-refs[data-count="4"] .dusting-ref-wrap { height: 100%; }
+.dusting-refs[data-count="4"] .dusting-ref { flex: 1 1 auto; align-items: center; text-align: center; }
+.dusting-refs[data-count="4"] .dusting-ref-canvas { margin: 0 auto; }
+
+.dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 18px; line-height: 1.15; border-top: 2px solid var(--d-line); padding-top: 8px; }
+.dusting-status { min-height: 1.2em; color: var(--d-text); font-size: 18px; }
+.dusting-options { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 18px; color: var(--d-dim); }
+.dusting-options label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; }
+.dusting-options input { width: 20px; height: 20px; accent-color: var(--d-accent); }
+/* Pixel checkboxes (critique A17): a 2px square box, a filled square when ticked */
+.dusting-options input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 0;
+    border: 2px solid var(--d-accent);
+    background: var(--d-bg);
+    vertical-align: -2px;
+    font-size: 16px;   /* whole-pixel (the browser default is 13.33px) */
+    cursor: pointer;
+}
+.dusting-options input[type="checkbox"]:checked {
+    background: var(--d-accent);
+    box-shadow: inset 0 0 0 2px var(--d-bg);
+}
+
+/* High contrast: white on black, thick borders */
+.dusting-hc { --d-bg: #000; --d-panel: #000; --d-line: #fff; --d-text: #fff; --d-dim: #e0e0e0; border-color: #fff; box-shadow: none; }
+.dusting-hc .dusting-canvas { border-color: #fff; }
+.dusting-hc .dusting-steps li.active, .dusting-hc .dusting-primary { background: #fff; color: #000; }
+.dusting-hc .dusting-feedback { color: #fff; text-decoration: underline; }
+
+/* Reduced motion: no pulses or transitions */
+@media (prefers-reduced-motion: reduce) {
+    .dusting-hint { animation: none; outline: 3px dashed var(--d-accent); }
+}
+.dusting-reduced-motion .dusting-hint { animation: none; outline: 3px dashed var(--d-accent); }
+
+@media (max-width: 760px) {
+    .dusting-root { font-size: 18px; padding: 8px; }
+    .dusting-main { flex-direction: column; align-items: center; }
+    .dusting-panel { width: 100%; }
+}
+
+/* F26: legend for the marked minutiae on the lift and the reference cards */
+.dusting-legend { font-size: 16px; line-height: 1.2; }
+/* The mark key glyphs are 7 x 7 canvases drawn from markGlyph, shown at a whole-number 2x with no smoothing */
+.dusting-key-glyph { display: inline-block; width: 14px; height: 14px; image-rendering: pixelated; vertical-align: -2px; margin: 0 2px; }
+/* F26 follow-up: each card has a separate View large button; the card on show in the big frame is outlined */
+.dusting-ref-wrap { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+/* Cap each card at REF_CARD_W (144) so a long label ("2. Femi Adeyemi (not a match)") wraps at word boundaries inside the card
+   instead of widening it and pushing the row onto a second line. The four-card grid sizes its own columns. */
+.dusting-refs:not([data-count="4"]) .dusting-ref-wrap { flex: 0 0 144px; max-width: 144px; min-width: 0; }
+.dusting-ref > span { overflow-wrap: anywhere; min-width: 0; }
+/* Card captions show the whole name as text (a touch screen has no title tooltip): it wraps inside the card, never clipped, and
+   a rejected or matched card puts its state on its own line under the name. The frame's body scrolls, so a longer card cannot
+   push the frame past the screen. */
+.dusting-ref-name { display: block; overflow-wrap: anywhere; }
+.dusting-ref-tag { display: block; overflow-wrap: anywhere; }
+.dusting-ref-tag[data-state="match"] { color: var(--d-accent); }
+/* Cards in one row share the tallest card's height, so a wrapped label never leaves its View button lower than the rest */
+.dusting-refs:not([data-count="4"]) .dusting-ref { flex: 1 1 auto; }
+.dusting-view { font-size: 16px; padding: 3px 8px; overflow-wrap: anywhere; }
+.dusting-view[aria-pressed="true"] { border-color: var(--d-accent); }
+.dusting-ref[data-viewing] { border-color: var(--d-accent); outline: 2px solid var(--d-accent); }
+.dusting-canvas[hidden] { display: none; }
+.dusting-stage-note { margin-top: 8px; font-size: 16px; }
+.dusting-stage-note[hidden] { display: none; }
+.dusting-stage-note p { margin: 0 0 6px; }
+
+/* Phone portrait and narrow screens: the meters and the action buttons sit in normal flow at the foot of the panel.
+   A pinned strip here is 130 to 280 px of an 844 px frame and covered the tool buttons at scroll 0 (live r3). */
+.dusting-actions { background: var(--d-bg); }
+@media (max-width: 760px) {
+    .dusting-actions {
+        position: static;
+        border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 8px;
+    }
+    .dusting-actions .dusting-meters { margin: 0 0 4px; }
+    .dusting-actions .dusting-meter { margin-bottom: 2px; }
+    .dusting-actions .dusting-estimate, .dusting-actions .dusting-feedback { margin-bottom: 4px; }
+    .dusting-actions .dusting-buttons { margin-top: 4px; gap: 6px; }
+    .dusting-actions .dusting-btn { min-height: 40px; padding: 4px 8px; }
+}
+
+/* Phone portrait (not short): one 44 px bar stays pinned. Only the primary button (Lift, or Peel and mount) is sticky; the
+   wrappers use display: contents so it sticks to the foot of the scrolling body while the meters and the other buttons stay
+   in flow. DOM order is untouched, so Tab order is unchanged. */
+@media (max-width: 760px) {
+    .dusting-root:not(.dusting-short) .dusting-actions, .dusting-root:not(.dusting-short) .dusting-buttons { display: contents; }
+    .dusting-root:not(.dusting-short) .dusting-meters { border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 8px; }
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary {
+        position: sticky; bottom: -6px; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
+        margin: 4px 0; background: var(--d-bg); border-color: var(--d-accent);
+    }
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #0e3b1b; }
+    /* a translucent disabled button would show the meters scrolling under it: stay opaque, dim by colour and border */
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:disabled { opacity: 1; background: var(--d-bg); color: var(--d-dim); border-color: var(--d-line); }
+    .dusting-hc:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #fff; color: #000; }
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-btn:not(.dusting-primary) { margin: 4px 6px 4px 0; }
+    /* a focused control scrolled into view stops above the pinned bar (44 px + margin), as in short landscape */
+    .dusting-root:not(.dusting-short) .dusting-body { scroll-padding-bottom: 52px; }
+    /* the pinned primary sits 2px above the frame foot (the body's 6px padding is the most it can overhang the frame's 8px
+       padding), so its focus ring is drawn inside it (same colour and width) */
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:focus-visible { outline-offset: -5px; }
+}
+
+/* Action footer (examine and compare rows, class .dusting-foot). On phones the next step stays in view without scrolling.
+   Phone portrait: JS (_placeFoot) makes the row the last child of the scrolling .dusting-body, so the scroller is its containing
+   block and it pins to the scrollport foot (the content above scrolls; the frame never does). scroll-padding-bottom is the
+   row's measured height (--d-foot-h, set in JS) so a focused card is never left under it, even if the resume row wraps.
+   Short landscape: examine pins to the foot of the self-scrolling panel; compare pins to the foot of .dusting-root, the scroller there.
+   Desktop is unchanged (the row stays at the end of the panel). */
+@media (max-width: 760px) {
+    .dusting-root:not(.dusting-short) .dusting-buttons.dusting-foot {
+        display: flex; position: sticky; bottom: -6px; z-index: 3; background: var(--d-bg);
+        border-top: 2px solid var(--d-line); padding: 6px 0; margin: 8px 0 -6px;   /* -6px: the body's bottom padding must not sit under the row at max scroll */
+    }
+    .dusting-root:not(.dusting-short):is([data-step="examine"], [data-step="compare"]) .dusting-body { scroll-padding-bottom: var(--d-foot-h, 64px); }
+}
+.dusting-short[data-step="examine"] .dusting-buttons.dusting-foot {
+    position: sticky; bottom: 0; z-index: 3; background: var(--d-bg);
+    border-top: 2px solid var(--d-line); padding: 4px 0 6px; margin-top: 4px;
+}
+.dusting-short[data-step="compare"] .dusting-buttons.dusting-foot {
+    position: sticky; bottom: -6px; z-index: 3; background: var(--d-bg);
+    border-top: 2px solid var(--d-line); padding: 4px 0 6px; margin-top: 4px;
+}
+/* Short compare: _placeFoot makes the row the last child of .dusting-root (the scroller, a grid). A sticky box pins only within its grid
+   area, so the row spans every row (grid-row: 1 / -1) at the end of column 2, and a sixth grid row of the row's height keeps the content
+   clear of it. margin-bottom -6px lets it pin over the root's bottom padding, as in phone portrait. */
+.dusting-short[data-step="compare"] > .dusting-buttons.dusting-foot { grid-column: 2; grid-row: 1 / -1; align-self: end; margin: 4px 0 -6px; }
+
+/* Short landscape (a phone on its side; the class is set in _layout at 500 px high or less): two columns.
+   The canvas sits on the left at a whole-number scale chosen in JS (never below 1x), the title, steps and
+   controls on the right; the controls column scrolls on its own and keeps the action row pinned. */
+.dusting-short {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    column-gap: 12px; height: calc(100dvh - 24px); overflow: hidden; padding: 6px 10px; font-size: 18px;
+    scroll-padding: 6px;   /* a control scrolled into view keeps its focus ring clear of the root's scroll edge */
+}
+.dusting-short .dusting-title { grid-column: 1; grid-row: 1; margin-bottom: 4px; padding-right: 0; gap: 0 8px; }
+.dusting-short .dusting-steps { grid-column: 2; grid-row: 1; margin: 0 0 4px; flex-wrap: nowrap; padding-right: 44px; }
+.dusting-short .dusting-steps li { flex: 1 1 0; min-width: 0; padding: 2px 3px; font-size: 16px; overflow: hidden; white-space: nowrap; }
+.dusting-short .dusting-step-num { display: none; }
+.dusting-short .dusting-main { display: contents; }
+.dusting-short .dusting-stage { grid-column: 1; grid-row: 2 / 6; align-self: start; max-height: 100%; overflow-y: auto; }
+.dusting-short .dusting-panel { grid-column: 2; grid-row: 2; min-width: 0; width: auto; overflow-y: auto; align-self: stretch;
+    --d-pin-h: 44px; --d-strip-h: calc(var(--d-pin-h) + 36px); scroll-padding-bottom: var(--d-strip-h); display: flex; flex-direction: column; }
+/* Strip height 80 = buttons 44 + Coverage meter 36 (16 label + 16 bar + 2 rule + 2 padding). Tighter text rows
+   and compact one-line tool cards (no icon, 28 px) keep the tool row in the room above the strip. */
+.dusting-short .dusting-panel h3 { margin: 0 0 4px; }
+.dusting-short .dusting-panel p { margin: 0 0 4px; }
+/* Instruction text only (direct children of the panel on the dust and lift steps): GNF-crisp 16 px, one line = 16 px */
+.dusting-short[data-step="dust"] .dusting-panel > p, .dusting-short[data-step="lift"] .dusting-panel > p { font-size: 16px; line-height: 16px; }
+.dusting-short .dusting-lo, .dusting-root:not(.dusting-short) .dusting-so { display: none; }
+/* Long words are not shown or read in short landscape; the short label is what shows, and the accessible name starts with
+   exactly that text, then adds the detail (.dusting-ls, visually hidden here, not rendered in long mode) */
+.dusting-short .dusting-btn { position: relative; }
+.dusting-short .dusting-lx { display: none; }
+.dusting-root:not(.dusting-short) .dusting-ls { display: none; }
+.dusting-short .dusting-ls { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Dust and lift steps pin an 80 px strip over the panel's foot, so the panel needs room above it (the 667x375 panel has 134 px
+   and wants 168). Three lines give way there: the heading repeats the step tab and the forensic note is background reading
+   (both kept for screen readers, not drawn), and the Keys line repeats the instruction text. */
+.dusting-short[data-step="dust"] .dusting-panel > h3, .dusting-short[data-step="lift"] .dusting-panel > h3,
+.dusting-short[data-step="dust"] .dusting-forensic, .dusting-short[data-step="lift"] .dusting-forensic {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.dusting-short[data-step="dust"] .dusting-keys, .dusting-short[data-step="lift"] .dusting-keys { display: none; }
+/* On the dust and lift steps the feedback line shows the same text in full, so a sighted player would see it twice (the second copy
+   cut off). The status line stays in the tree as the live region for screen readers (visually hidden, never display: none). */
+.dusting-short[data-step="dust"] .dusting-status, .dusting-short[data-step="lift"] .dusting-status {
+    position: absolute; width: 1px; height: 1px; min-height: 0; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+/* Room for the feedback line above the pinned strip (the over-brush warning runs to three lines): once the first stroke is made
+   the instruction paragraph is visually hidden, and the "Lift would score" estimate is hidden on the dust step (the Lift button and
+   the meters carry the state; a screen reader still finds both when browsing, neither is a live region). */
+.dusting-short[data-step="dust"][data-brushed] .dusting-panel > .dusting-instr,
+.dusting-short[data-step="dust"] .dusting-actions .dusting-estimate {
+    position: absolute; width: 1px; height: 1px; min-height: 0; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.dusting-short .dusting-tools { flex-wrap: nowrap; gap: 4px; margin-bottom: 4px; }
+.dusting-short .dusting-tools .dusting-tool { flex: 1 1 auto; min-width: 0; min-height: 28px; padding: 2px 4px; line-height: 16px; font-size: 16px; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: clip; }
+.dusting-short .dusting-tools .dusting-tool [data-slot], .dusting-short .dusting-actions .dusting-btn [data-slot] { display: none; }
+.dusting-short .dusting-forensic { grid-column: 2; grid-row: 3; margin: 4px 0 0; padding-top: 4px; font-size: 16px; }
+.dusting-short .dusting-status { grid-column: 2; grid-row: 4; font-size: 16px; }
+.dusting-short .dusting-options { grid-column: 2; grid-row: 5; gap: 4px 12px; font-size: 16px; }
+.dusting-short .dusting-options label { min-height: 28px; }
+/* Dust step at 667x375: the over-brush warning wraps to four lines, so the options rows (24 px labels, no row gap) and the tools and
+   powder line (2 px, 0 px below) give the feedback line the 18 px it needs above the pinned strip. */
+.dusting-short[data-step="dust"] .dusting-options { row-gap: 0; }
+.dusting-short[data-step="dust"] .dusting-options label { min-height: 24px; }
+.dusting-short[data-step="dust"] .dusting-tools { margin-bottom: 2px; }
+.dusting-short[data-step="dust"] .dusting-panel > .dusting-powder-line { margin-bottom: 0; }
+/* Feedback line on the dust step: 16 px lines (the 21 px inherited pitch left room for three, the longest messages take four).
+   The Clarity meter loses its 2 px gap so four 16 px lines fit between it and the pinned Coverage strip at 667x375. */
+.dusting-short[data-step="dust"] .dusting-actions .dusting-feedback { font-size: 16px; line-height: 16px; }
+.dusting-short[data-step="dust"] .dusting-actions .dusting-meter:nth-child(2) { margin-bottom: 0; }
+/* Only the Coverage (or Tape pressed) bar and the button row are pinned, one 80 px strip (44 buttons + 36 Coverage) at the foot of the
+   panel; the tools, powder line, Clarity, estimate and feedback scroll above it. The panel is a flex column
+   here so the pinned bar sits directly above the buttons whatever the markup order is. */
+.dusting-short .dusting-panel > *, .dusting-short .dusting-actions .dusting-meter { flex: 0 0 auto; }
+.dusting-short .dusting-actions { display: contents; position: static; border-top: 0; padding-top: 0; margin: 0; }
+.dusting-short .dusting-actions .dusting-meters { display: contents; margin: 0; }
+.dusting-short .dusting-actions .dusting-meter { margin: 0 0 2px; font-size: 16px; line-height: 16px; }
+.dusting-short .dusting-actions .dusting-meter:nth-child(2) { order: 1; }
+.dusting-short .dusting-actions .dusting-estimate { order: 2; flex: 0 0 auto; margin: 0 0 4px; }
+.dusting-short .dusting-actions .dusting-feedback { order: 3; flex: 0 0 auto; margin: 0 0 4px; }
+.dusting-short .dusting-actions .dusting-meter:first-child {
+    order: 4; position: sticky; bottom: var(--d-pin-h); z-index: 3; background: var(--d-bg);
+    border-top: 2px solid var(--d-line); padding-top: 2px; margin: 0;
+}
+.dusting-short .dusting-actions .dusting-buttons {
+    order: 5; position: sticky; bottom: 0; z-index: 3; background: var(--d-bg); box-sizing: border-box;
+    height: var(--d-pin-h); margin: 0; padding: 4px 0; gap: 6px; flex-wrap: nowrap; align-items: stretch;
+}
+.dusting-short .dusting-actions .dusting-btn {
+    flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 2px 4px; font-size: 16px; white-space: nowrap; text-align: center;
+    overflow: hidden; text-overflow: clip;   /* guard only: the short labels fit */
+}
+.dusting-short .dusting-actions .dusting-buttons { gap: 4px; }
+/* Compare screen in short landscape: the frame scrolls as a whole (the panel no longer scrolls on its own) so
+   the reference cards sit right under the instructions on first view; the options and key lines are below. */
+.dusting-short[data-step="compare"] { grid-template-rows: auto auto auto auto auto calc(var(--d-foot-h, 50px) - 6px); overflow-y: auto; scroll-padding-bottom: var(--d-foot-h, 50px); }
+.dusting-short[data-step="compare"] .dusting-panel { overflow-y: visible; align-self: start; }
+.dusting-short[data-step="compare"] .dusting-refs { margin: 4px 0; gap: 6px; }
+.dusting-short .dusting-ref { padding: 4px; }
+.dusting-short .dusting-stage-note { font-size: 16px; }
+.dusting-short .dusting-btn, .dusting-short .dusting-jar, .dusting-short .dusting-pattern, .dusting-short .dusting-ref { min-height: 36px; padding: 4px 8px; }
+/* A capped 144px card holds its 128px canvas with even 4px padding (8px sides would leave 4px on the right only) */
+.dusting-short .dusting-refs:not([data-count="4"]) .dusting-ref { padding: 4px; }
+
+/* Compare: the lift and one card magnified side by side (whole-number scale, no smoothing). Tags are text with a 2px box. */
+.dusting-zoom { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.dusting-zoom[hidden] { display: none; }
+/* Stacked: the lift above the card, each pane its own row (the card pane is captioned "Card") */
+.dusting-zoom-stack { flex-direction: column; flex-wrap: nowrap; }
+.dusting-zoom-pane { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* One line, clipped to the pane with an ellipsis (width 0 + min-width 100% keeps a long name from widening the pane and the stage column). */
+.dusting-zoom-cap { font-size: 18px; color: var(--d-dim); width: 0; min-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dusting-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.dusting-zoom-box { position: relative; border: 2px solid var(--d-line); line-height: 0; background: #f2f0ea; align-self: flex-start; }
+.dusting-zoom-canvas { display: block; image-rendering: pixelated; }
+.dusting-zoom-tag {
+    position: absolute; box-sizing: border-box; min-width: 20px; height: 20px; padding: 0 3px; text-align: center;
+    font: 20px/16px 'VT323', 'GNF', monospace; color: #fff; background: #000; border: 2px solid #ffd23f;
+}
+.dusting-zoom-tag[data-none] { border-style: dashed; border-color: #ff5a6a; color: #ff5a6a; }
+.dusting-hc .dusting-zoom-tag { border-color: #fff; }
+
+/* Compare screen on a desktop-sized frame (1280x720): a smaller key note and tighter rows so the options and
+   key lines at the foot fit (live proof r1: scrollHeight 693 against 660). The status line repeats the feedback line, so it is
+   visually hidden here (still in the tree as the live region); with a very long candidate name the body may still scroll a little. */
+@media (min-width: 761px) {
+    .dusting-root:not(.dusting-short)[data-step="compare"] { padding-top: 8px; padding-bottom: 8px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-stage-note { font-size: 16px; line-height: 1.1; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-forensic { margin-top: 6px; padding-top: 6px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-options label { min-height: 32px; }
+    /* Heading and the lift's quality share a row, and the panel's rows sit 4 px apart, so the cards, a two-line "No match" message and
+       the buttons fit a 660 px frame with three cards (the live proof for check 25 needed about 60 px). */
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel > h3 { float: left; margin: 0 16px 0 0; line-height: 24px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel > p:not(.dusting-result) { clear: both; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel p { margin-bottom: 4px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-refs { margin: 4px 0; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-status {
+        position: absolute; width: 1px; height: 1px; min-height: 0; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+}
+
+/* Comparing: the forensic line is not needed while choosing (it comes back with the match), so the frame is a line shorter. */
+.dusting-root:not(.dusting-short)[data-step="compare"]:not(.dusting-matched) .dusting-forensic { display: none; }

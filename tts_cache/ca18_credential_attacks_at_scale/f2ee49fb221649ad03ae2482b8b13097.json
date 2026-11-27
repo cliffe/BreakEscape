@@ -1,0 +1,13 @@
+{
+  "key": "f2ee49fb221649ad03ae2482b8b13097",
+  "npc": "ama_owusu",
+  "text": "Nothing you touch here is a real password.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:35Z"
+}

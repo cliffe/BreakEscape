@@ -1,0 +1,13 @@
+{
+  "key": "577f8be5ef8d01c3c4206fe477b89281",
+  "npc": "vos",
+  "text": "Then find another way through. My delivery was cancelled, so I have time.",
+  "voice": "Schedar",
+  "style": "Zero Day's broker, fifties, from Rotterdam. Consistent Dutch-accented English throughout -- do not shift to any other accent. Flat, courteous, unhurried; everything is a delivery date.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:36:21Z"
+}

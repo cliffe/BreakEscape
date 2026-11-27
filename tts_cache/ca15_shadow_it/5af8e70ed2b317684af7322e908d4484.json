@@ -1,0 +1,13 @@
+{
+  "key": "5af8e70ed2b317684af7322e908d4484",
+  "npc": "ca15_niamh_doherty",
+  "text": "Depot's heaving today.",
+  "voice": "Leda",
+  "style": "Tarrowby's operations assistant, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:17:35Z"
+}

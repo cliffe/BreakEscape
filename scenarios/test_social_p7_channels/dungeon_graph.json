@@ -1,0 +1,10 @@
+{
+  "scenario": "test_social_p7_channels",
+  "start_room": "p7_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

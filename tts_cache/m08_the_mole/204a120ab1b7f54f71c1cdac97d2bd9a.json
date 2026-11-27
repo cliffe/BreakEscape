@@ -1,0 +1,13 @@
+{
+  "key": "204a120ab1b7f54f71c1cdac97d2bd9a",
+  "npc": "closing_debrief",
+  "text": "And he knew we were coming before we came. Whatever he had time to clear, we will never see now.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:21:29Z"
+}

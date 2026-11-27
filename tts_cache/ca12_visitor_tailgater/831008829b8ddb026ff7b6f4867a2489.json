@@ -1,0 +1,13 @@
+{
+  "key": "831008829b8ddb026ff7b6f4867a2489",
+  "npc": "kit_thandiwe_moyo",
+  "text": "Head down on a plan set.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:19:42Z"
+}

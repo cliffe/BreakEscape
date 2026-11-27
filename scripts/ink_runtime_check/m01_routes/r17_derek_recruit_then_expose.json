@@ -1,0 +1,15 @@
+{
+ "steps": [
+  {"note": "R17: the two choices that go nowhere new in play. Recruit: Derek refuses. Expose: the press line, two replies, the same hand-over. Run in turn (the second after resetting derek_confronted), both end with the same flags as an arrest."},
+  {"set": {"entropy_reveal_read": true}},
+  {"talk": "derek", "picks": ["I've seen the casualty projections", "42 to 85 people", "I don't need to hear this", "Work with us"]},
+  {"said": ["Become a double agent? Betray The Architect", "I will never betray ENTROPY", "SAFETYNET backup arrives. Derek Lawson is taken into custody"],
+   "notSaid": ["You think that hurts me? I WANT people to see this"]},
+  {"expect": {"final_choice": "recruit", "derek_confronted": true, "derek_surrendered": false}},
+  {"set": {"derek_confronted": false}},
+  {"talk": "derek", "reload": true, "picks": ["I know what you're planning", "You're insane", "Why?", "Stop talking", "I'm exposing everything publicly", "Then the world will also see you in handcuffs"]},
+  {"said": ["You think that hurts me? I WANT people to see this", "Fear is the first step to wisdom", "Not today", "The evidence upload completes"],
+   "notSaid": ["Become a double agent? Betray The Architect", "I will never betray ENTROPY"]},
+  {"expect": {"final_choice": "expose", "derek_confronted": true}}
+ ]
+}

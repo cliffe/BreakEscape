@@ -1,0 +1,196 @@
+{
+  "scenario": "test_access_signin",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_hot_desk",
+      "label": "Hot desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_known_pc",
+      "label": "Known-people PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_ian_pc",
+      "label": "Ian's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_lockout_pc",
+      "label": "Lockout PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_sam",
+      "label": "Sam Okafor sign-in<br/>(sokafor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_ian",
+      "label": "Ian Shaw sign-in<br/>(ishaw)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_room",
+      "label": "IT office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_lena",
+      "label": "Lena Fox sign-in<br/>(lfox)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "finance_room",
+      "label": "Finance",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "hot_desk_room",
+      "label": "Hot desk",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "known_room",
+      "label": "Known people",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lockout_room",
+      "label": "Lockout",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "hot_desk_room",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "known_room",
+      "to": "lock_known_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "lockout_room",
+      "to": "lock_lockout_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_sam",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_known_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_lockout_pc",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "signin_ian",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_known_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_lockout_pc",
+      "soft": false
+    },
+    {
+      "from": "finance_room",
+      "to": "signin_lena",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_known_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_lockout_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "hot_desk_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "it_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "known_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "lockout_room",
+      "soft": false
+    },
+    {
+      "from": "it_room",
+      "to": "finance_room",
+      "soft": false
+    }
+  ]
+}

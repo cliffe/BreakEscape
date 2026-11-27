@@ -1,0 +1,13 @@
+{
+  "key": "a814d7fbffb1c2ade0c141bb49d4e135",
+  "npc": "narrator",
+  "text": "She's quiet for a long moment.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:16Z"
+}

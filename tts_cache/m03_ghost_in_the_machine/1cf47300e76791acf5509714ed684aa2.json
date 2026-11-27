@@ -1,0 +1,13 @@
+{
+  "key": "1cf47300e76791acf5509714ed684aa2",
+  "npc": "zainab_hussain",
+  "text": "Locked my screen. Old habit, that.",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:46:01Z"
+}

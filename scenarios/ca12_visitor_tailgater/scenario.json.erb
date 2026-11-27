@@ -1,0 +1,2396 @@
+{
+  "scenario_id": "ca12_visitor_tailgater",
+  "scenario_name": "Visitor and tailgater: both sides",
+  "titleScreenName": "Visitors and tailgating",
+  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by the partners. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
+  "endGoal": "At the training kiosk, run the front-desk pretext, then work the reception desk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "npcThoughts": false,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "disguises": {
+    "courier": {
+      "sprite": "male_telecom_v2",
+      "talk": "assets/characters/male_telecom_talk.png"
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_aim",
+      "title": "Run the front-desk pretext",
+      "description": "Start the exercise at the training kiosk, then take the courier's hi-vis from Jo's kit bag, carry the parcel, and see whether the front desk and the studio door let you through without a badge.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "run_front_desk_pretext",
+          "title": "Start at the training kiosk, then approach the front desk as the courier",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "wear_hivis",
+          "title": "Optional: put on the courier's hi-vis",
+          "type": "manual",
+          "optional": true,
+          "status": "active"
+        },
+        {
+          "taskId": "slip_past_guard",
+          "title": "Optional: get through the studio door: follow staff in, or have the desk let you through",
+          "type": "manual",
+          "optional": true,
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "reception_desk_aim",
+      "title": "Cover the reception desk",
+      "description": "Work through the visitors at the reception desk at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e12_visitor_tailgater_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Visitor and tailgater: finished",
+        "body": "You've tried the front desk and the studio door as a courier, then sat on reception and worked through the visitors yourself. That's this episode finished."
+      },
+      "tasks": [
+        {
+          "taskId": "work_reception_desk",
+          "title": "Work through the reception desk",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e12_visitor_tailgater_state": {},
+    "se_awareness_records": [],
+    "episode_e12_visitor_tailgater_defend_percent": 0,
+    "episode_e12_visitor_tailgater_defend_reportRate": 0,
+    "episode_e12_visitor_tailgater_defend_complete": false,
+    "se_osint_state": {},
+    "se_intel_merrin_badge_door": false,
+    "se_intel_merrin_partner_travel": false,
+    "se_intel_merrin_courier_routine": false,
+    "delphine_influence": 0,
+    "delphine_latched": "",
+    "delphine_wary": false,
+    "delphine_refusing": false,
+    "delphine_alerted": false,
+    "delphine_buzzed_through": false,
+    "pretext_merrin_front_desk_state": {},
+    "pretext_merrin_front_desk_outcome": "",
+    "pretext_merrin_front_desk_lowest": 0,
+    "pretext_merrin_front_desk_reports": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca12",
+    "kit_ca12_out": false,
+    "kit_ca12_screen_choice": "",
+    "kit_ca12_door_choice": "",
+    "kit_ca12_sat": false,
+    "kit_ca12_screen_asked": false,
+    "kit_ca12_screen_done": false,
+    "kit_ca12_visitor_go": false,
+    "kit_ca12_visitor_there": false,
+    "kit_ca12_host_there": false,
+    "kit_ca12_at_desks": false,
+    "kit_ca12_visitor_leaving": false,
+    "kit_ca12_done": false,
+    "kit_ca12_screen_seen": false,
+    "kit_ca12_host_said": false,
+    "kit_key_caught": false,
+    "ca12_wearing_hivis": false,
+    "ca12_gate_open": false,
+    "ca12_world_on": false,
+    "ca12_runner_go": false,
+    "ca12_guard_alerted": false,
+    "ca12_challenged": false,
+    "ca12_entered": false,
+    "ca12_tailgated": false,
+    "ca12_desk_pass": false,
+    "ca12_delphine_at_door": false,
+    "ca12_delphine_back": false,
+    "ca12_door_missed": false,
+    "ca12_novest_hint": false,
+    "ca12_door_cue": false,
+    "ca12_world_done": false
+  },
+  "chatter": {
+    "kit_merrin": {
+      "lines": [
+        "Deadline on the Harbour job.",
+        "Printer's warm again.",
+        "Client's in this morning."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
+  },
+  "ttsPregenerateChatter": true,
+  "timers": [
+    {
+      "id": "kit_ca12_t_return",
+      "startOnGlobal": "kit_ca12_out",
+      "delayMs": 45000,
+      "condition": "!globalVars.kit_ca12_sat",
+      "setGlobal": {
+        "kit_ca12_sat": true
+      }
+    },
+    {
+      "id": "kit_ca12_t_screen_tail",
+      "startOnGlobal": "kit_ca12_screen_asked",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca12_screen_choice === ''",
+      "setGlobal": {
+        "kit_ca12_screen_done": true
+      }
+    },
+    {
+      "id": "kit_ca12_t_door",
+      "startOnGlobal": "kit_ca12_visitor_go",
+      "delayMs": 7500,
+      "condition": "!globalVars.kit_ca12_visitor_there",
+      "setGlobal": {
+        "kit_ca12_visitor_there": true
+      }
+    },
+    {
+      "id": "kit_ca12_t_door_tail",
+      "startOnGlobal": "kit_ca12_visitor_there",
+      "delayMs": 45000,
+      "condition": "globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done",
+      "setGlobal": {
+        "kit_ca12_door_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca12_t_done",
+      "startOnGlobal": "kit_ca12_out",
+      "delayMs": 150000,
+      "condition": "!globalVars.kit_ca12_done",
+      "setGlobal": {
+        "kit_ca12_done": true
+      }
+    },
+    {
+      "id": "ca12_t_grace",
+      "startOnGlobal": "ca12_entered",
+      "delayMs": 7500,
+      "setGlobal": {
+        "ca12_world_done": true
+      }
+    },
+    {
+      "id": "ca12_t_novest",
+      "startOnGlobal": "ca12_world_on",
+      "delayMs": 30000,
+      "condition": "!globalVars.ca12_wearing_hivis && !globalVars.ca12_world_done && !globalVars.ca12_guard_alerted",
+      "setGlobal": {
+        "ca12_novest_hint": true
+      }
+    },
+    {
+      "id": "ca12_t_door_missed",
+      "startOnGlobal": "ca12_delphine_back",
+      "delayMs": 14000,
+      "condition": "!globalVars.ca12_entered && !globalVars.ca12_challenged && !globalVars.ca12_world_done",
+      "setGlobal": {
+        "ca12_door_missed": true,
+        "ca12_world_done": true
+      }
+    }
+  ],
+  "social": {
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    },
+    "triageSets": [
+      {
+        "id": "e12_reception_desk",
+        "title": "Visitor and tailgater: the reception desk",
+        "brief": "You're on the Merrin & Sallow reception desk. Visitors come one at a time: some are expected, some are not, and one or two are trying to talk their way in. For each, choose Let them in, Report, Turn away or Check first, then tick what you noticed. Check first here means check the day's list or call the host. There's no clock, and checking or reporting when you're unsure is always fine and never marked down.",
+        "scoringProfile": "awareness",
+        "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "tailgating",
+          "no_escort",
+          "uniform_pretext",
+          "not_expected",
+          "unlocked_screen",
+          "borrowed_authority",
+          "secrecy_or_bypass"
+        ],
+        "flagChips": {
+          "tailgating": "Tailgating (following someone through a badged door)",
+          "no_escort": "No escort",
+          "uniform_pretext": "Uniform or job title as proof",
+          "not_expected": "Not on today's list",
+          "unlocked_screen": "Unlocked screen"
+        },
+        "genuineCopy": {
+          "binnedLeadOne": "One genuine visitor was turned away",
+          "binnedLeadMany": "{n} genuine visitors were turned away",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on a genuine visitor takes facilities' time to check, and one turned away is left stuck at the door.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on a genuine visitor takes facilities' time to check, and the visitor waits.",
+          "costBin": "Turning away a genuine visitor without a way to check has a cost: a client or contractor is left stuck at the door.",
+          "whyBothHalves": "Both halves matter: stopping the wrong visitor keeps the building safe, and letting in the right ones keeps work moving. The day's list or their host is how you tell."
+        },
+        "criticalWhat": "letting in a visitor you hadn't checked",
+        "bands": [
+          { "min": 85, "headline": "Well done: you spotted the risky visitors and knew why" },
+          { "min": 60, "headline": "Getting there: a few tells slipped past" },
+          { "min": 0, "headline": "Worth practising: here's where to look first" }
+        ],
+        "confirmPrompt": true,
+        "resultCopy": {
+          "noFlagsLead": "You didn't tick anything on these visitors, so there's nothing to grade skill by skill.",
+          "noFlags": "Next time, tick what you noticed. The review cards show what gave each one away.",
+          "caughtBreakdown": true,
+          "handledRightLabel": "Genuine visitors let in or checked"
+        },
+        "skillNames": {
+          "tailgating": "Spotting someone following through a secure door without badging in",
+          "no_escort": "Spotting a visitor or contractor left to move around unescorted",
+          "uniform_pretext": "Seeing through a hi-vis, a clipboard or a job title used as proof",
+          "not_expected": "Checking a visitor against today's list and their paperwork",
+          "unlocked_screen": "Spotting a screen left unlocked and unattended"
+        },
+        "_nudges": "CA-1 (UI sweep, Major): authored reception-desk next-step lines for the folded debrief's weakest-skill pointer, per tell id, so it no longer falls through to the generic phone-call fallback ('If a caller, prompt or voicemail...') in a visitor episode. Shared with e12/defend.json (fragment is source of record). Shown text only, never spoken.",
+        "nudges": {
+          "tailgating": "A held door is the easiest way in. Let each visitor badge in for themselves, and send anyone who follows you through back to the desk to sign in.",
+          "no_escort": "The visitor left on their own is the one who gets to wander. Walk them to their host or back to reception instead.",
+          "uniform_pretext": "A hi-vis, a clipboard or a job title are easy to put on and prove nothing on their own. Check the visitor is actually expected before letting them through.",
+          "not_expected": "The day's list and the visitor's own paperwork are what settle whether they belong. When the two don't match, hold the door and check with their host.",
+          "unlocked_screen": "An unlocked, unattended screen is someone's account left open to anyone nearby. Lock it or report it, and lock your own whenever you step away.",
+          "borrowed_authority": "A partner's name or 'they're expecting me' is used to wave away the sign-in, but a name you can't check is not a booking. Check the list before you let anyone through.",
+          "secrecy_or_bypass": "'Don't bother signing me in' or 'I'll let myself in' is a nudge to skip the one check that matters. That's exactly the moment to slow down and check."
+        },
+        "labels": {
+          "itemNoun": "visitor",
+          "kind": { "call": "Visitor" },
+          "callHeading": "Visitor at reception",
+          "callAria": "Visitor at reception",
+          "next": "Next visitor",
+          "teamBadge": "Visitors reported or checked for the team: {n}",
+          "teamBadgeTitle": "Visitors you reported or checked this round rather than letting through",
+          "phishCaughtLabel": "Risky visitors caught",
+          "verdictFeedback": {
+            "trust": {
+              "phish": "Not this time. Nothing showed this visitor was expected or allowed where they were going, so a check or a report was needed.",
+              "real": "That visitor was genuine. Letting someone in is fine once you have seen them on the list or checked with their host."
+            },
+            "report": {
+              "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building.",
+              "real": "That visitor was genuine, but reporting when you are unsure is never wrong."
+            },
+            "delete": {
+              "phish": "Safe: they did not get in. Reporting as well lets facilities or security look out for this visitor.",
+              "real": "That one was genuine, so turning them away was not needed. Letting them through or checking first would both have been fine."
+            },
+            "verify": {
+              "phish": "Right call: the day's list or a word with their host is how you check.",
+              "real": "Checking first is fine. This visitor was genuine, and the list or their host confirmed it."
+            }
+          },
+          "callActions": {
+            "comply": { "label": "Let them in", "hint": "Sign them in and let them through.", "past": "Let in" },
+            "escalate": { "label": "Report", "hint": "Tell facilities or security.", "past": "Reported" },
+            "refuse": { "label": "Turn away", "hint": "Politely decline and don't let them through.", "past": "Turned away" },
+            "verify_callback": { "label": "Check first", "hint": "Check the day's list or call the host.", "past": "Checked" }
+          },
+          "queue": {
+            "call": { "real": "Genuine visitors", "reportLabel": "Reported rather than just turned away" }
+          }
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e12_visitor_tailgater_defend_",
+          "passPercent": 0,
+          "messageGlobals": {
+            "e12_call_tailgater": "kit_key_caught"
+          }
+        },
+        "messages": [
+          {
+            "id": "e12_call_tailgater",
+            "kind": "call",
+            "subject": "At the gate, no badge",
+            "callerId": "A visitor at the gate, no badge",
+            "from": {
+              "name": "Unknown visitor",
+              "address": "At the gate, no badge"
+            },
+            "time": "09:12",
+            "transcript": [
+              {
+                "who": "Visitor",
+                "text": "Cheers, I'm with them."
+              },
+              {
+                "who": "Visitor",
+                "text": "(slips in behind a badge-holder at the gate and heads into the studio)"
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "tailgating",
+                "no_escort"
+              ],
+              "perFlagNote": {
+                "tailgating": "They came in behind someone else's badge, which is exactly what a wedge or a held door lets happen.",
+                "no_escort": "Into the studio alone, with nobody signing for them."
+              },
+              "ifTrusted": "An unbadged stranger is loose on the studio floor, where client plans and screens are open.",
+              "reportReply": "Thanks, we caught them in the studio; they weren't expected.", "reportReplyByVerdict": {"report": "Thanks, we caught them in the studio; they weren't expected.", "verify": "Thanks for checking: they weren't on the list, and we've sent someone to find them."}
+            },
+            "factorStrings": {
+              "tailgating": {
+                "redFlag": "Someone followed an authorised person through a secure door without badging in."
+              },
+              "no_escort": {
+                "redFlag": "A visitor or contractor left to move around unescorted."
+              }
+            }
+          },
+          {
+            "id": "e12_call_expected_client",
+            "kind": "call",
+            "subject": "At the desk",
+            "callerId": "Client, here for a 10:00 with Yasmin Chaudhry",
+            "from": {
+              "name": "Expected client",
+              "address": "At the desk"
+            },
+            "time": "09:55",
+            "transcript": [
+              {
+                "who": "Client",
+                "text": "Morning, I've a ten o'clock with Yasmin Chaudhry."
+              },
+              {
+                "who": "Client",
+                "text": "Happy to sign in and wait, no rush."
+              },
+              {
+                "who": "Today's list",
+                "text": "10:00, client in to see Yasmin Chaudhry. Expected."
+              }
+            ],
+            "truth": {
+              "verdictPoints": { "trust": 60 },
+              "isPhish": false,
+              "deleteLine": "That client was on the day's list to see Yasmin Chaudhry. Turning them away left a real client waiting in the lobby.",
+              "reportReplyByVerdict": {"report": "Thanks, they were on the day's list, so no harm done. A quick check of the list is enough next time."},
+              "flags": [],
+              "whyFine": {
+                "default": "They're on the day's list for a named meeting and happy to be signed in. Signing them in, or a glance at the list to confirm, is the right call.",
+                "not_expected": "They are on today's list, which a quick glance confirms."
+              },
+              "falseAlarmCost": "Turn them away and a real client is left in the lobby and the meeting is missed."
+            }
+          },
+          {
+            "id": "e12_call_fire_inspector",
+            "kind": "call",
+            "subject": "At the desk",
+            "callerId": "Visitor in hi-vis, wants the comms room",
+            "from": {
+              "name": "Visitor with a clipboard",
+              "address": "At the desk"
+            },
+            "time": "11:20",
+            "transcript": [
+              {
+                "who": "Inspector",
+                "text": "Annual check, I just need five minutes in your comms room."
+              },
+              {
+                "who": "Inspector",
+                "text": "I can let myself in, no need to trouble anyone."
+              },
+              {
+                "who": "Today's list",
+                "text": "No fire-safety inspection booked today. Maintenance is contracted to Thornfield Facilities; his paperwork names Redmarsh Fire Safety."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "uniform_pretext",
+                "not_expected",
+                "no_escort",
+                "secrecy_or_bypass"
+              ],
+              "flagAlternatives": [
+                [
+                  "uniform_pretext",
+                  "not_expected"
+                ],
+                [
+                  "no_escort",
+                  "secrecy_or_bypass"
+                ]
+              ],
+              "perFlagNote": {
+                "uniform_pretext": "A hi-vis and a clipboard are easy to get; neither proves he's expected.",
+                "not_expected": "No inspection on today's list, and his paperwork names Redmarsh Fire Safety, not Thornfield Facilities who hold the maintenance contract.",
+                "no_escort": "'I can let myself in' means roaming a secure room with nobody alongside him.",
+                "secrecy_or_bypass": "'I can let myself in' asks to skip the escort into a secure room."
+              },
+              "ifTrusted": "He'd be alone in the comms room with the building's network.",
+              "reportReply": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong.", "reportReplyByVerdict": {"report": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong.", "verify": "Thanks for checking: no inspection was booked and the firm's name was wrong, so facilities have been told."}
+            },
+            "factorStrings": {
+              "uniform_pretext": {
+                "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected."
+              },
+              "not_expected": {
+                "redFlag": "The visitor is not on today's list and their paperwork does not match."
+              },
+              "no_escort": {
+                "redFlag": "A visitor or contractor left to move around unescorted."
+              }
+            }
+          },
+          {
+            "id": "e12_call_courier_push",
+            "kind": "call",
+            "subject": "At the badge door",
+            "callerId": "Courier with a parcel",
+            "from": {
+              "name": "Courier",
+              "address": "At the badge door"
+            },
+            "time": "14:30",
+            "transcript": [
+              {
+                "who": "Courier",
+                "text": "Sample box for one of your partners, they said to send me straight up. Hands full, could you buzz me through?"
+              },
+              {
+                "who": "Courier",
+                "text": "Don't worry about signing me in, I'll be thirty seconds."
+              },
+              {
+                "who": "Today's list",
+                "text": "No parcels booked for any partner today, and no courier expected."
+              }
+            ],
+            "truth": {
+              "verdictPoints": {
+                "delete": 60
+              },
+              "isPhish": true,
+              "flags": [
+                "tailgating",
+                "borrowed_authority",
+                "secrecy_or_bypass",
+                "uniform_pretext",
+                "not_expected",
+                "no_escort"
+              ],
+              "flagAlternatives": [
+                [
+                  "secrecy_or_bypass",
+                  "tailgating",
+                  "no_escort"
+                ]
+              ],
+              "perFlagNote": {
+                "borrowed_authority": "'A partner said to send me straight up' leans on a name you can't check to wave away the sign-in; a name is not a booking.",
+                "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
+                "tailgating": "Buzzing the door without a badge is letting them tailgate on your say-so.",
+                "uniform_pretext": "The hi-vis and the parcel say 'courier', but neither proves this delivery was expected.",
+                "not_expected": "An unbooked drop-off: nothing on the day's list says a parcel for a partner was due.",
+                "no_escort": "Buzzed through with nobody to sign him in or walk him up, he's loose on the studio floor."
+              },
+              "ifTrusted": "A stranger is through the badge door and onto the studio floor.",
+              "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it.", "reportReplyByVerdict": {"report": "Thanks, real couriers leave the parcel at the desk; we logged it.", "verify": "Thanks for checking: real couriers leave the parcel at the desk, and we've logged this one."}
+            },
+            "factorStrings": {
+              "tailgating": {
+                "redFlag": "Someone followed an authorised person through a secure door without badging in."
+              },
+              "uniform_pretext": {
+                "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected."
+              },
+              "not_expected": {
+                "redFlag": "The visitor is not on today's list and their paperwork does not match."
+              },
+              "no_escort": {
+                "redFlag": "A visitor or contractor left to move around unescorted."
+              }
+            }
+          },
+          {
+            "id": "e12_call_forgot_badge",
+            "kind": "call",
+            "subject": "At the desk",
+            "callerId": "Staff member back from leave, no badge",
+            "from": {
+              "name": "Colleague back from leave",
+              "address": "At the desk"
+            },
+            "time": "15:40",
+            "transcript": [
+              {
+                "who": "Colleague",
+                "text": "First day back, I've left my pass at home, can you let me in?"
+              },
+              {
+                "who": "Colleague",
+                "text": "You can check me on the staff list, I don't mind waiting."
+              },
+              {
+                "who": "Staff list",
+                "text": "Back from leave today. On the staff list."
+              }
+            ],
+            "truth": {
+              "verdictPoints": {
+                "trust": 60
+              },
+              "isPhish": false,
+              "deleteLine": "That was a colleague back from leave, and the staff list confirms it. Turning them away left them locked out; checking the list and issuing a day pass was the answer.",
+              "reportReplyByVerdict": {"report": "Thanks, the staff list shows them back from leave today. A day pass would have sorted it."},
+              "flags": [],
+              "whyFine": {
+                "default": "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck.",
+                "tailgating": "The safe answer is a temporary pass of their own, so the record stays right."
+              },
+              "falseAlarmCost": "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help."
+            }
+          },
+          {
+            "id": "e12_call_unlocked_desk",
+            "kind": "call",
+            "kindTag": "At a colleague's desk",
+            "subject": "By an empty desk",
+            "callerId": "A visitor near a colleague's unlocked desk",
+            "from": {
+              "name": "Signed-in visitor",
+              "address": "By an empty desk"
+            },
+            "time": "16:10",
+            "transcript": [
+              {
+                "who": "Visitor",
+                "text": "(nobody's at the desk; the screen's open and they're having a good look)"
+              },
+              {
+                "who": "Visitor",
+                "text": "Oh, I'm just waiting for someone, don't mind me."
+              }
+            ],
+            "truth": {
+              "verdictPoints": {
+                "delete": 60
+              },
+              "isPhish": true,
+              "flags": [
+                "unlocked_screen",
+                "no_escort"
+              ],
+              "perFlagNote": {
+                "unlocked_screen": "An open screen is that colleague's email, files and account, there for anyone who sits down.",
+                "no_escort": "A visitor left alone by a desk, with nobody signing for them."
+              },
+              "ifTrusted": "A stranger reads client plans and the colleague's account over an unlocked screen.",
+              "reportReply": "Thanks, we locked it and had a quiet word; nobody's in trouble.", "reportReplyByVerdict": {"report": "Thanks, we locked it and had a quiet word; nobody's in trouble.", "verify": "Thanks for checking: the screen was open, so we locked it and had a quiet word. Nobody's in trouble."}
+            },
+            "factorStrings": {
+              "unlocked_screen": {
+                "redFlag": "A screen left unlocked and unattended, open to anyone who walks up or sits down."
+              },
+              "no_escort": {
+                "redFlag": "A visitor or contractor left to move around unescorted."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e12_visitor_tailgater",
+      "role": "general_staff",
+      "company": "merrin_sallow",
+      "brand": {
+        "name": "Merrin & Sallow Architects",
+        "logoText": "MERRIN & SALLOW",
+        "accent": "#8a5a2b"
+      },
+      "variant": "full",
+      "durationTargetMin": 15,
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: one practice approach to the front desk and the studio door as a courier, and six situations to handle on the reception seat. Jo's test is authorised and the costume is handed back afterwards.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "work_reception_desk",
+      "world": {
+        "room": "lobby",
+        "startRoom": "training_room",
+        "spawn": {
+          "x": 7.5,
+          "y": 6.5
+        },
+        "holdUntil": "ca12_world_done",
+        "holdMaxMs": 75000
+      },
+      "attack": {
+        "callId": "merrin_front_desk",
+        "siteIds": [
+          "merrin_site",
+          "merrin_social"
+        ],
+        "scored": false
+      },
+      "defend": {
+        "setId": "e12_reception_desk",
+        "reportAlwaysVisible": true,
+        "stage": null
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by the partners. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
+        "flipHeading": "Now you're the one on the desk",
+        "flipIntro": "This is how your approach looked from Delphine's side of the counter. The lines picked out below are what got the door open.",
+        "flipDefenderLine": "Your approach landed. What happened at the door is above; now you're the one on the desk, and the same kinds of visitor are on their way.",
+        "flipDefenderLineByGlobal": [
+          {
+            "global": "ca12_tailgated",
+            "line": "The door held, so nobody had to say yes.",
+            "heading": "In behind a member of staff"
+          },
+          {
+            "global": "ca12_desk_pass",
+            "line": "One conversation got you past desk and door."
+          },
+          {
+            "global": "ca12_door_missed",
+            "line": "The desk said yes and held the door, but you didn't go through. A held door lasts seconds."
+          },
+          {
+            "global": "ca12_guard_alerted",
+            "line": "The desk didn't buy it and called security. You never reached the door.",
+            "heading": "The desk called security"
+          },
+          {
+            "global": "ca12_challenged",
+            "line": "Yusuf stopped you at the door. The desk is the first layer. He was the second, and he held."
+          },
+          {
+            "global": "ca12_runner_go",
+            "line": "You never got past the lobby. The desk and the door both held this time."
+          }
+        ],
+        "flipNoSend": "You thought better of it and walked, so there's nothing to replay. The same kinds of visitor are about to reach your desk, and now the call is yours.",
+        "flipMissed": "No call to replay this time. The same kinds of visitor are about to reach your desk, and now the call is yours.",
+        "flipMissedHeading": "Your turn on the desk",
+        "flipLandedNoTells": "The door opened on a name and a parcel, with barely a push. That is how easily a busy desk gets walked past. Now it's your seat.",
+        "allPhishRight": "Every risky visitor was caught, with every tell named.",
+        "reportedPct": "Reported {pct}% of the risky visitors",
+        "teamLine": "By reporting or checking {n} of these visitors rather than letting them through, you kept the building safer for everyone in it.",
+        "noBlameLine": "A busy desk that tries to help a visitor with their hands full is doing its job; a miss just shows which visitor to slow down for next time.",
+        "noBlameLineCritical": "These visitors are played by people whose job is to look like they belong, so a miss here says more about the attack than about you. The points only show where to look next time.",
+        "mondayCard": "On Monday: if you don't recognise someone, help them, 'Can I help you find someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes past a check, using the route in the box below.",
+        "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. The ones worth a second look are shown below, with what gave each one away.",
+        "conceptPanel": [
+          {
+            "heading": "What these visitors relied on",
+            "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. To a real attacker, an unescorted visitor is time alone on the studio floor. A client list left on an open screen can be read and copied there, and a friendly \"she said to come straight up\" is often all it takes to get that far. At a practice like this, an earlier visitor was walked up without signing in while a screen sat unlocked. Nobody could say what had been seen, so the partners and reception spent an afternoon working out who had been on the floor."
+          },
+          {
+            "heading": "What Camila tried",
+            "text": "Camila used the same three things as the courier in the exercise: a real name from the practice, a reason to be there, and the confidence to keep walking. She never needed a badge, only for nobody to stop and ask.",
+            "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_visitor_there === true"
+          }
+        ],
+        "stages": {
+          "osint": {
+            "text": "Open the browser and read what you can find about the people and the building. Click a line that looks useful to add it to your notes. Close the browser when you have what you need."
+          }
+        },
+        "stepAwayHeading": "Before the debrief",
+        "stepAway": "Look up from the kiosk and watch the studio for a couple of minutes. People come and go, and someone may ask you something. Your place is saved.",
+        "defendIntro": "Now you're the one on the Merrin & Sallow desk. Visitors arrive one at a time: some are expected, some are not, and one or two will try to talk their way past a check. Take each as it comes; there's no clock on you here."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      },
+      "stepAway": true
+    },
+    "people": [
+      {
+        "id": "delphine",
+        "kind": "cast",
+        "address": "reception@merrinsallow.example",
+        "forms": {
+          "first": "Delphine",
+          "formal": "Ms Arvanitis",
+          "full": "Delphine Arvanitis"
+        }
+      },
+      {
+        "id": "lorna",
+        "kind": "cast",
+        "address": "lorna.easton@merrinsallow.example",
+        "forms": {
+          "first": "Lorna",
+          "formal": "Ms Easton",
+          "full": "Lorna Easton"
+        }
+      },
+      {
+        "id": "catherine",
+        "kind": "cast",
+        "address": "catherine.merrin@merrinsallow.example",
+        "forms": {
+          "first": "Catherine",
+          "formal": "Ms Merrin",
+          "full": "Catherine Merrin"
+        }
+      },
+      {
+        "id": "yusuf",
+        "kind": "cast",
+        "role": "Building security officer",
+        "forms": {
+          "first": "Yusuf",
+          "formal": "Mr Demir",
+          "full": "Yusuf Demir"
+        }
+      },
+      {
+        "id": "jun",
+        "kind": "cast",
+        "role": "Junior architect",
+        "address": "jun.watanabe@merrinsallow.example",
+        "forms": {
+          "first": "Jun",
+          "formal": "Mr Watanabe",
+          "full": "Jun Watanabe"
+        }
+      }
+    ],
+    "characters": {
+      "delphine": {
+        "displayName": "Delphine Arvanitis",
+        "channels": {
+          "person": "delphine_reception"
+        },
+        "influence": {
+          "global": "delphine_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "delphine_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -30,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "delphine_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "refuses",
+            "at": -50,
+            "icon": "refuses",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "delphine_refusing",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "delphine_alerted",
+                "value": true
+              },
+              {
+                "type": "endConversation"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "intelFacts": {
+      "merrin_badge_door": {
+        "text": "The design studio sits behind a badge door, and the front-of-house team buzzes expected visitors and couriers through from the reception desk.",
+        "subject": "company",
+        "source": "blk_visit",
+        "provides": [],
+        "reduceNote": "Spelling out that the desk buzzes people through a badge door tells an attacker there is a door to be talked through and who does the buzzing."
+      },
+      "merrin_partner_travel": {
+        "text": "Catherine Merrin, a partner, is often out at project sites, so parcels for her pile up at reception.",
+        "subject": "catherine",
+        "source": "post_merrin_site",
+        "provides": [
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "merrin_partner",
+            "label": "Catherine Merrin",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A partner's public post that she is away and her parcels wait at reception hands a courier a real name to drop and a reason the delivery is plausible."
+      },
+      "merrin_courier_routine": {
+        "text": "The studio takes frequent material-sample deliveries; the desk signs couriers in.",
+        "subject": "company",
+        "source": "blk_deliveries",
+        "provides": [],
+        "reduceNote": "Advertising that couriers come and go all day makes one more courier at the desk look routine rather than worth a second look."
+      }
+    },
+    "osint": {
+      "profile": "awareness",
+      "pinHints": true,
+      "sites": [
+        {
+          "id": "merrin_site",
+          "name": "Merrin & Sallow Architects",
+          "url": "merrinsallow.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "visit",
+              "title": "Visit us",
+              "blocks": [
+                {
+                  "id": "blk_visit",
+                  "kind": "p",
+                  "text": "Our design studio sits behind a badge door, and the front-of-house team buzzes expected visitors and couriers through from the reception desk.",
+                  "fact": "merrin_badge_door"
+                },
+                {
+                  "id": "blk_deliveries",
+                  "kind": "p",
+                  "text": "We take frequent material-sample deliveries, and the desk signs couriers in at reception.",
+                  "fact": "merrin_courier_routine"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "merrin_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "catherine",
+              "posts": [
+                {
+                  "id": "post_merrin_site",
+                  "text": "On site all week again, so the sample boxes are stacking up at reception. I'll get to them when I'm back.",
+                  "fact": "merrin_partner_travel"
+                },
+                {
+                  "id": "post_merrin_other",
+                  "text": "Lovely light on the river from the scaffold this morning."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "pretextNpcs": [
+      {
+        "character": "delphine",
+        "callId": "merrin_front_desk",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "full",
+          "showTechniqueNames": "live"
+        },
+        "susceptibility": {
+          "authority_borrowed": -5,
+          "urgency": -10,
+          "deflect": -10
+        },
+        "unverifiableCost": -10,
+        "knows": {
+          "recipient": {
+            "value": "merrin_partner",
+            "grade": "identity"
+          }
+        },
+        "labels": {
+          "merrin_partner": "Catherine Merrin"
+        },
+        "prepLabels": {
+          "approachTitle": "Your aim: talk the front desk into buzzing you through the badge door without a badge",
+          "heldTitle": "What you found",
+          "heldEmpty": "You haven't found anything to use yet."
+        },
+        "requireFact": true,
+        "requireFactLine": "Close this, then choose Back to research and open the browser. Click a line that names someone at the studio to add it to your notes: you need a name to ask for.",
+        "outcomeLabels": {
+          "got_it": "The desk said yes.",
+          "reported": "The desk reported you.",
+          "walked_away": "You walked away from the desk."
+        },
+        "lines": {
+          "open_parcel": {
+            "requires": [
+              "merrin_courier_routine"
+            ],
+            "claims": [],
+            "text": "Parcel for the studio, needs a signature from someone up there."
+          },
+          "name_drop_partner": {
+            "technique": "authority_borrowed",
+            "requires": [
+              "merrin_partner_travel"
+            ],
+            "blanks": {
+              "recipient": "recipient"
+            },
+            "claims": [
+              {
+                "fact": "recipient",
+                "from": "blank:recipient"
+              }
+            ],
+            "text": "It's the sample box for {recipient}, she's expecting it today."
+          },
+          "hands_full": {
+            "technique": "deflect",
+            "requires": [
+              "merrin_badge_door"
+            ],
+            "claims": [],
+            "text": "My hands are full and the badge's back in the van."
+          },
+          "double_parked": {
+            "technique": "urgency",
+            "also": [
+              "deflect"
+            ],
+            "claims": [],
+            "text": "I'm double-parked with a full run on, any chance you can be quick?"
+          },
+          "no_need_to_sign": {
+            "technique": "deflect",
+            "also": [
+              "urgency"
+            ],
+            "claims": [],
+            "text": "No need to sign me in, I'll be thirty seconds and straight back out."
+          }
+        },
+        "asks": {
+          "buzz_door": {
+            "pressure": -10,
+            "floor": -10,
+            "verification": [
+              "recipient"
+            ],
+            "grants": {
+              "setGlobal": {
+                "delphine_buzzed_through": true
+              }
+            }
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {
+            "line": "I'm going to stop you there. I'll take the parcel at the desk and ring facilities, and if it's really expected they'll come down for it."
+          },
+          "walked_away": {
+            "line": "Right you are. Mind how you go."
+          }
+        },
+        "tells": {
+          "recipient": {
+            "pass": "Recipient. Catherine Merrin is a partner here, so the name sounds right.",
+            "fail": "Recipient. You said \"{said}\". The desk has no {actual} expecting a parcel.",
+            "failCategory": "Recipient. That is not a name she can place.",
+            "unknown": "Recipient. With no name to check the parcel against, there is nothing for her to confirm, so she is right not to open the door."
+          },
+          "techniques": {
+            "authority_borrowed": "Borrowed authority. A partner's name on the box does not make the delivery expected.",
+            "urgency": "Urgency. Being in a hurry is the oldest line for skipping a check.",
+            "deflect": "Dodging the check. A genuine courier is happy to sign in and be walked up; trying to skip that is the tell."
+          },
+          "ask": {
+            "accepted": "She buzzed the door on the partner's name and the hurry, and neither of those proved the delivery was expected.",
+            "pending": "She wants to know who it is for before she opens the door.",
+            "refused": "She will not open the door on this."
+          },
+          "bands": {
+            "calm": "Delphine is happy to help.",
+            "wary": "Delphine has slowed down.",
+            "refusing": "Delphine has stopped and wants to check the delivery."
+          }
+        },
+        "hints": [
+          "Find out who at the studio takes deliveries before you walk up.",
+          "The site says the desk buzzes couriers through, and a partner posts that her parcels pile up at reception.",
+          "Catherine Merrin is the partner whose sample boxes wait at reception; drop her name as the one expecting the parcel."
+        ],
+        "defenderNotes": {
+          "buzz_door": "A parcel, a hurry and a borrowed name are all easy to supply, and none of them proves the delivery was expected. A quick look at the day's expected-deliveries list, and walking the courier to the desk rather than buzzing the door blind, is what a genuine courier never minds and this one could not survive."
+        }
+      }
+    ]
+  },
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "playlist": "peacefolk",
+        "fade": false,
+        "_comment": "Cyber Aware score: the PeaceFolk tracks (D331)"
+      }
+    ]
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#cac4bc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_merrin_sallow",
+      "door_sign": "Studio",
+      "chatBackground": "assets/backgrounds/rooms/aw_merrin_sallow_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "bankers_lamp": {
+            "color": "#ffd9a0",
+            "radius": 40,
+            "intensity": 0.5
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 7.55,
+            "y": 2.3,
+            "color": "#f0f4ff",
+            "radius": 96,
+            "intensity": 0.4
+          }
+        ]
+      },
+      "locked": true,
+      "lockType": "key",
+      "requires": "merrin_studio_badge",
+      "keyPins": [
+        40,
+        30,
+        55,
+        35
+      ],
+      "difficulty": "easy",
+      "connections": {
+        "east": "lobby"
+      },
+      "npcs": [
+        {
+          "id": "lorna_easton",
+          "voice": {
+            "name": "Erinome",
+            "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "displayName": "Lorna Easton",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "lorna_easton",
+          "spriteTalk": "assets/characters/lorna_easton_talk.png",
+          "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
+          "storyPath": "scenarios/ca12_visitor_tailgater/ink/lorna_easton.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:pretext_merrin_front_desk_outcome",
+              "condition": "value !== \"\"",
+              "onceOnly": true,
+              "completeTask": "run_front_desk_pretext"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "work_reception_desk"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_defend_complete",
+              "condition": "value === true && globalVars.episode_e12_visitor_tailgater_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_out": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+              "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 3.5,
+                  "y": 5.0
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:lorna_easton",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_host_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_host_there",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 3.8
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_at_desks",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 3.8
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
+              "onceOnly": true,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 3.8
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectName === \"Thandiwe's workstation\" && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_screen_seen": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:pretext_merrin_front_desk_outcome",
+              "condition": "value !== \"\"",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_world_on": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:pretext_merrin_front_desk_outcome",
+              "condition": "value === \"walked_away\"",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_runner_go": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:pretext_merrin_front_desk_outcome",
+              "condition": "value === \"reported\"",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_guard_alerted": true
+              }
+            },
+            {
+              "eventPattern": "room_entered:training_room",
+              "condition": "globalVars.ca12_world_on && !globalVars.ca12_world_done && !globalVars.ca12_entered && globalVars.ca12_wearing_hivis && globalVars.pretext_merrin_front_desk_outcome !== \"got_it\"",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_tailgated": true
+              },
+              "completeTask": "slip_past_guard"
+            },
+            {
+              "eventPattern": "room_entered:training_room",
+              "condition": "globalVars.ca12_world_on && !globalVars.ca12_world_done && !globalVars.ca12_entered && globalVars.ca12_wearing_hivis && globalVars.pretext_merrin_front_desk_outcome === \"got_it\"",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_desk_pass": true
+              },
+              "completeTask": "slip_past_guard"
+            },
+            {
+              "eventPattern": "room_entered:training_room",
+              "condition": "globalVars.ca12_world_on && !globalVars.ca12_world_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_entered": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_opened",
+              "condition": "data.connectedRoom === \"training_room\" && globalVars.ca12_world_on && !globalVars.ca12_world_done",
+              "setGlobal": {
+                "ca12_gate_open": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_closed",
+              "condition": "data.connectedRoom === \"training_room\" && globalVars.ca12_world_on && !globalVars.ca12_world_done",
+              "setGlobal": {
+                "ca12_gate_open": false
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_world_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_gate_open": false
+              },
+              "actions": [
+                {
+                  "type": "take_off",
+                  "itemId": "ca12_hivis",
+                  "condition": "globalVars.ca12_wearing_hivis"
+                }
+              ]
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_wearing_hivis",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "wear_hivis"
+            },
+            {
+              "eventPattern": "door_gate_opened",
+              "condition": "data.connectedRoom === \"training_room\" && globalVars.ca12_world_on && !globalVars.ca12_world_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "ca12_door_cue": true
+              },
+              "actions": [
+                {
+                  "type": "hint",
+                  "title": "Jo",
+                  "message": "The desk is the first layer. The door is the second. Watch how long it stays open, and for whom."
+                }
+              ]
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_novest_hint",
+              "condition": "value === true",
+              "actions": [
+                {
+                  "type": "hint",
+                  "title": "Jo",
+                  "message": "No uniform, no badge. Try the desk again, or talk to the guard."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "kit_thandiwe_moyo",
+          "displayName": "Thandiwe Moyo",
+          "person": "thandiwe_moyo",
+          "npcType": "person",
+          "position": {
+            "x": 3.9,
+            "y": 6.0
+          },
+          "spriteSheet": "thandiwe_moyo",
+          "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
+          "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/thandiwe_moyo_ambient.json",
+          "currentKnot": "start",
+          "needsHome": "kit_ca12_pc",
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Pulcherrima",
+            "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 100
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Rev C or Rev D?",
+                "Anyone seen the scale rule?",
+                "Phones haven't stopped all morning."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "needs": {
+                "set": {
+                  "rest": 10
+                }
+              }
+            },
+            {
+              "eventPattern": "workstation_owner_returned:kit_ca12_pc",
+              "condition": "globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_sat": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_sat",
+              "condition": "value === true && globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_screen_asked": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_sat",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "bark": "Right, that's me back. Anything I should know?",
+              "targetKnot": "ca12_screen"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_thandiwe_moyo",
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_asked === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_screen_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_screen_done",
+              "condition": "value === true && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "setGlobal": {
+                "kit_ca12_visitor_go": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "bark": "Right, five minutes on the sofa. The plans can wait."
+            }
+          ]
+        },
+        {
+          "id": "kit_julian_sallow",
+          "displayName": "Julian Sallow",
+          "person": "julian_sallow",
+          "npcType": "person",
+          "position": {
+            "x": 6.0,
+            "y": 8.0
+          },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/julian_sallow_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 6.0,
+            "y": 8.0,
+            "facing": "north"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Rasalgethi",
+            "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Planning panel on Thursday.",
+                "Where's that elevation?",
+                "That roof pitch still won't work."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 7.0,
+                  "y": 5.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        {
+          "id": "kit_camila_ospina",
+          "npcType": "person",
+          "displayName": "Camila Ospina",
+          "spriteSheet": "camila_ospina",
+          "spriteTalk": "assets/characters/camila_ospina_talk.png",
+          "spriteVisemes": "assets/characters/camila_ospina_visemes.png",
+          "voice": {
+            "name": "Zephyr",
+            "style": "A client-side account rep in her mid 40s, confident and friendly, with the easy manner of someone sure she is expected. Speak with a consistent London accent with a light Colombian inflection throughout, and do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "initiallyHidden": true
+          },
+          "position": {
+            "x": 8.5,
+            "y": 2.5
+          },
+          "storyPath": "scenarios/_office_kit/ink/camila_ospina_ca12.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "_comment": "r3 trailer script (26 Nov): Camila walks in from the lobby through the side-door gate (openFor Camila) to the step-in tile, replacing the old pop at the east door plus a 2 s patrolOverride. npc_arrived (owner walk) then sets kit_ca12_visitor_there as before.",
+              "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
+              "condition": "value === true && globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "walkIn": {
+                "from": "lobby",
+                "to": {
+                  "x": 6.5,
+                  "y": 4.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "_comment": "Retired 2026-11-26: the walk to the step-in tile is now the walkIn in chg_ca12_visitor_go. Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
+              "condition": "data.retired_2026_11_26 === true && value === true && globalVars.kit_ca12_out === true",
+              "onceOnly": true
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_visitor_go === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_visitor_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_visitor_there",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true && globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "bark": "Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up.",
+              "targetKnot": "ca12_door"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_camila_ospina",
+              "condition": "globalVars.kit_ca12_door_choice === 'asked' && globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_door_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+              "condition": "value === 'reception' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'reception'",
+              "onceOnly": true,
+              "setVisible": false,
+              "setGlobal": {
+                "kit_ca12_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+              "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 2.5,
+                  "y": 5.0
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_at_desks": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_host_there",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca12_visitor_leaving": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_at_desks",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca12_visitor_leaving": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true",
+              "onceOnly": true,
+              "setVisible": false,
+              "setGlobal": {
+                "kit_ca12_done": true
+              }
+            },
+            {
+              "_comment": "Retired 2026-11-20: V11r (re-walk after an early door arrival) is no longer needed now the engine no longer emits npc_arrived at an avoidance sidestep. Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.retired_2026_11_20 === true && data.owner !== 'needs' && globalVars.kit_ca12_out === true",
+              "onceOnly": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+              "condition": "value === 'silent' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'silent'",
+              "onceOnly": true,
+              "setVisible": false,
+              "setGlobal": {
+                "kit_ca12_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": false
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        {
+          "id": "ca12_jun_watanabe",
+          "displayName": "Jun Watanabe",
+          "npcType": "person",
+          "position": {
+            "x": 1.4,
+            "y": 6.0
+          },
+          "spriteSheet": "jun_watanabe",
+          "spriteTalk": "assets/characters/jun_watanabe_talk.png",
+          "spriteVisemes": "assets/characters/jun_watanabe_visemes.png",
+          "voice": {
+            "name": "Puck",
+            "style": "A junior architect at Merrin & Sallow, in his early 20s, in his first job, eager and polite; Japanese-British, grew up in the UK. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "multiRoom": true,
+              "waypointMode": "sequential",
+              "pauseForPlayer": false,
+              "speed": 70,
+              "startWhen": "globalVars.ca12_runner_go && !globalVars.ca12_world_done",
+              "route": [
+                {
+                  "room": "training_room",
+                  "waypoints": [
+                    {
+                      "x": 1.4,
+                      "y": 6.0,
+                      "dwellTime": 8000
+                    }
+                  ]
+                },
+                {
+                  "room": "lobby",
+                  "waypoints": [
+                    {
+                      "x": 1.5,
+                      "y": 2.5,
+                      "action": {
+                        "useObject": "ca12_badge_reader",
+                        "useMs": 1500
+                      }
+                    },
+                    {
+                      "x": 4.5,
+                      "y": 5.0,
+                      "dwellTime": 5000
+                    },
+                    {
+                      "x": 1.5,
+                      "y": 2.5,
+                      "action": {
+                        "useObject": "ca12_badge_reader",
+                        "useMs": 1500
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used_object:ca12_badge_reader",
+              "condition": "data.npcId === \"ca12_jun_watanabe\" && globalVars.ca12_world_on && !globalVars.ca12_world_done",
+              "cooldown": 8000,
+              "bark": "Morning, Yusuf."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_world_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "fireOnlyWhenLoaded": true,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.4,
+                  "y": 6.0
+                },
+                "speed": 70,
+                "stopOnArrival": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "ca12_jo",
+          "displayName": "Jo Fairweather",
+          "npcType": "person",
+          "position": {
+            "x": 9.0,
+            "y": 9.0
+          },
+          "behavior": {
+            "initiallyHidden": true
+          },
+          "voice": {
+            "name": "Leda",
+            "style": "Jo Fairweather, red-team lead at Northlight Security, in her mid 30s, warm, quick and practical, quietly pleased, speaking low into a tester's earpiece. Speak with a consistent Glaswegian accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:ca12_tailgated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "barkDelay": 2600,
+              "bark": "Nobody checked. A uniform and a held door beat both."
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Merrin & Sallow visitor exercise: first the red-team brief and the front-desk approach, then the visitors to handle on the reception seat.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_done !== true",
+              "value": "The kiosk. Your place is saved."
+            },
+            {
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
+              "value": "A touch-screen training kiosk for the Merrin & Sallow visitor exercise. That's this one finished."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e12_visitor_tailgater"
+          }
+        },
+        {
+          "type": "aes_hivis_hook",
+          "id": "ca12_kit_bag",
+          "name": "Jo's kit bag",
+          "sprite": "aes_hivis_hook1",
+          "position": {
+            "x": 8.25,
+            "y": 0.875,
+            "elevation": 8
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "triggerOnInteract": [
+            {
+              "type": "give_item",
+              "item": {
+                "type": "notes",
+                "id": "ca12_auth_letter",
+                "name": "Authorisation letter",
+                "sprite": "notes1",
+                "takeable": true,
+                "readable": true,
+                "text": "Authorisation letter. Merrin & Sallow has engaged the bearer to test physical entry at the studio door today. Signed, Julian Sallow, Partner.",
+                "observations": "The signed letter for Jo's test. Carry it, and only show it if a challenge goes further than stepping back."
+              }
+            },
+            {
+              "type": "give_item",
+              "item": {
+                "type": "aes_hivis_hook1",
+                "id": "ca12_hivis",
+                "name": "Courier hi-vis",
+                "sprite": "aes_hivis_hook1",
+                "takeable": false,
+                "interactable": true,
+                "active": true,
+                "wearable": {
+                  "costume": "courier",
+                  "global": "ca12_wearing_hivis",
+                  "unseenOnly": true,
+                  "seenBy": {
+                    "ignore": [
+                      "lorna_easton",
+                      "ca12_jun_watanabe",
+                      "ca12_jo",
+                      "kit_thandiwe_moyo",
+                      "kit_julian_sallow",
+                      "kit_camila_ospina"
+                    ]
+                  },
+                  "confirmOn": "Put the courier hi-vis on? In it you pass for a delivery, and staff may let you follow them through the studio door. Without it, the door and the guard treat you as a visitor.",
+                  "confirmOff": "Take the courier hi-vis off? You go back to looking like a visitor. It stays in your kit.",
+                  "onWear": [
+                    {
+                      "type": "hint",
+                      "title": "Hi-vis on",
+                      "message": "You pass for a courier now. Start the approach at the kiosk."
+                    }
+                  ],
+                  "onRemove": [
+                    {
+                      "type": "hint",
+                      "title": "Hi-vis off",
+                      "message": "You look like a visitor again. The hi-vis is still in your kit: click it there to put it back on."
+                    }
+                  ]
+                },
+                "observations": "The courier hi-vis from Jo's kit bag. Click it to put it on or take it off, where the lobby staff can't see you change."
+              }
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.ca12_wearing_hivis",
+              "text": "The hi-vis and the letter are in your kit now. Put the hi-vis on? In it you pass for a delivery, and staff may let you follow them through the studio door. You can leave it off and put it on from your kit later.",
+              "confirmLabel": "Put it on",
+              "cancelLabel": "Leave it off",
+              "onConfirm": [
+                {
+                  "type": "wear",
+                  "itemId": "ca12_hivis"
+                }
+              ]
+            }
+          ],
+          "observations": "Jo's kit bag on its hook: a courier's hi-vis and the signed authorisation letter. Take them and they go into your kit."
+        },
+        {
+          "type": "leather_sofa",
+          "id": "kit_sofa",
+          "name": "Sofa",
+          "sprite": "leather_sofa1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A studio sofa by the wall. Staff drop onto it for a breather.",
+          "affordance": {
+            "satisfies": "rest",
+            "restores": 70,
+            "useSeconds": 8,
+            "capacity": 2,
+            "chatter": "kit_merrin"
+          }
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca12_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca12_pc",
+          "name": "Thandiwe's workstation",
+          "sprite": "pc",
+          "workstation": true,
+          "owner": "kit_thandiwe_moyo",
+          "lockChance": 0,
+          "takeable": false,
+          "requiresItem": "merrin_screen_lock_token",
+          "triggerOnInteract": [],
+          "requiresItemHint": "That's Thandiwe's session, signed in as her. It's hers to lock before she steps away.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca12_screen_choice === 'mention'",
+              "value": "Locked now. Hers to unlock."
+            },
+            {
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_done !== true",
+              "value": "Thandiwe's still signed in, with the Harbour job's client list open. Anyone passing could read it, or take a photo."
+            }
+          ],
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca12_screen_choice === 'mention'",
+              "value": "pc1_locked"
+            },
+            {
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_choice !== 'mention' && globalVars.kit_ca12_done !== true",
+              "value": "pc1_break"
+            }
+          ],
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca12_screen_choice === 'mention'",
+              "value": "Thandiwe's workstation. The screen is locked."
+            }
+          ],
+          "observations": "Thandiwe's workstation. The screen is still on."
+        }
+      ]
+    },
+    "lobby": {
+      "type": "room_aw_merrin_lobby",
+      "door_sign": "Reception",
+      "connections": {
+        "west": "training_room"
+      },
+      "doors": [
+        {
+          "connectedRoom": "training_room",
+          "direction": "west",
+          "gate": {
+            "openFor": [
+              "ca12_jun_watanabe",
+              "delphine_reception",
+              "kit_camila_ospina"
+            ],
+            "openRadius": 64,
+            "holdMs": 2500,
+            "playerMayPassIf": "ca12_wearing_hivis",
+            "activeIf": "globalVars.ca12_world_on && !globalVars.ca12_world_done"
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "delphine_reception",
+          "voice": {
+            "name": "Despina",
+            "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "displayName": "Delphine Arvanitis",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 5.0
+          },
+          "unlockable": [
+            "training_room"
+          ],
+          "spriteSheet": "delphine_arvanitis",
+          "spriteTalk": "assets/characters/delphine_arvanitis_talk.png",
+          "spriteVisemes": "assets/characters/delphine_arvanitis_visemes.png",
+          "storyPath": "scenarios/ca12_visitor_tailgater/ink/delphine_reception.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true && globalVars.kit_ca12_door_choice === 'reception' && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "bark": "Pop your name in the book and I'll let Yasmin know you're here."
+            },
+            {
+              "eventPattern": "global_variable_changed:pretext_merrin_front_desk_outcome",
+              "condition": "value === \"got_it\"",
+              "onceOnly": true,
+              "fireOnlyWhenLoaded": true,
+              "bark": "I'll get the door for you.",
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 2.5,
+                  "y": 3.5
+                },
+                "speed": 90
+              },
+              "setGlobal": {
+                "ca12_delphine_at_door": true
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:delphine_reception",
+              "condition": "globalVars.ca12_delphine_at_door",
+              "delayMs": 8000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 5.0
+                },
+                "speed": 90
+              },
+              "setGlobal": {
+                "ca12_delphine_at_door": false,
+                "ca12_delphine_back": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_guard_turned_back",
+              "condition": "data.npcId === \"delphine_reception\" && globalVars.ca12_delphine_at_door",
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 5.0
+                },
+                "speed": 90
+              },
+              "setGlobal": {
+                "ca12_delphine_at_door": false
+              }
+            }
+          ]
+        },
+        {
+          "id": "ca12_yusuf_demir",
+          "displayName": "Yusuf Demir",
+          "npcType": "person",
+          "position": {
+            "x": 1.5,
+            "y": 3.5
+          },
+          "spriteSheet": "yusuf_demir",
+          "spriteTalk": "assets/characters/yusuf_demir_talk.png",
+          "spriteVisemes": "assets/characters/yusuf_demir_visemes.png",
+          "storyPath": "scenarios/ca12_visitor_tailgater/ink/ca12_yusuf_demir.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Alnilam",
+            "style": "Merrin & Sallow's building security officer on the studio door, in his 40s, British Turkish, steady and practical; polite, firm, unhurried. Speak with a consistent British accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "waypointMode": "sequential",
+              "pauseForPlayer": false,
+              "speed": 70,
+              "waypoints": [
+                {
+                  "x": 2.0,
+                  "y": 3.5,
+                  "dwellTime": 8000
+                },
+                {
+                  "x": 6.5,
+                  "y": 3.0,
+                  "dwellTime": 4000
+                }
+              ]
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 200,
+            "angle": 120,
+            "challengeOnSight": {
+              "event": "player_in_view_near:ca12_yusuf_demir",
+              "near": {
+                "object": "ca12_badge_reader",
+                "radius": 60
+              },
+              "cooldown": 2000,
+              "rooms": [
+                "lobby"
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "player_in_view_near:ca12_yusuf_demir",
+              "condition": "globalVars.ca12_world_on && !globalVars.ca12_world_done && globalVars.ca12_wearing_hivis && !globalVars.ca12_guard_alerted && !globalVars.ca12_gate_open && globalVars.pretext_merrin_front_desk_outcome !== \"got_it\"",
+              "cooldown": 20000,
+              "bark": "Sorry, can I help you there? Deliveries go via the desk."
+            },
+            {
+              "eventPattern": "player_in_view_near:ca12_yusuf_demir",
+              "condition": "globalVars.ca12_world_on && !globalVars.ca12_world_done && !globalVars.ca12_wearing_hivis",
+              "onceOnly": true,
+              "cooldown": 20000,
+              "conversationMode": "person-chat",
+              "targetKnot": "challenge",
+              "setGlobal": {
+                "ca12_challenged": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_guard_alerted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "fireOnlyWhenLoaded": true,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6.5,
+                  "y": 6.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:ca12_yusuf_demir",
+              "condition": "globalVars.ca12_guard_alerted && globalVars.ca12_world_on && !globalVars.ca12_world_done && !globalVars.ca12_challenged",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "challenge",
+              "setGlobal": {
+                "ca12_challenged": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:ca12_yusuf_demir",
+              "condition": "globalVars.ca12_challenged && !globalVars.ca12_world_done",
+              "setGlobal": {
+                "ca12_world_done": true
+              }
+            },
+            {
+              "eventPattern": "room_entered:training_room",
+              "condition": "globalVars.ca12_wearing_hivis && globalVars.ca12_world_on && !globalVars.ca12_world_done && globalVars.pretext_merrin_front_desk_outcome === \"got_it\"",
+              "onceOnly": true,
+              "cooldown": 0,
+              "bark": "Morning. Mind the step."
+            },
+            {
+              "eventPattern": "room_entered:training_room",
+              "condition": "globalVars.ca12_wearing_hivis && globalVars.ca12_world_on && !globalVars.ca12_world_done && globalVars.pretext_merrin_front_desk_outcome !== \"got_it\"",
+              "onceOnly": true,
+              "cooldown": 0,
+              "bark": "Delivery? Studio's straight through."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_world_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "fireOnlyWhenLoaded": true,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 3.5
+                },
+                "speed": 70
+              }
+            },
+            {
+              "eventPattern": "door_gate_guard_turned_back",
+              "condition": "data.connectedRoom === \"training_room\" && globalVars.ca12_world_on && !globalVars.ca12_world_done && !globalVars.ca12_wearing_hivis && !globalVars.ca12_challenged",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "challenge",
+              "setGlobal": {
+                "ca12_challenged": true
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:ca12_yusuf_demir",
+              "condition": "globalVars.ca12_world_done",
+              "onceOnly": true,
+              "actions": [
+                {
+                  "type": "resume_patrol",
+                  "npc": "ca12_yusuf_demir"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "hq_badge_reader",
+          "id": "ca12_badge_reader",
+          "name": "Studio door badge reader",
+          "sprite": "hq_badge_reader1",
+          "position": {
+            "x": 1.0,
+            "y": 1.6
+          },
+          "takeable": false,
+          "interactable": false,
+          "active": true,
+          "observations": "The badge reader on the studio door. Staff badge in; visitors go via the desk."
+        },
+        {
+          "type": "pc",
+          "id": "lobby_hotdesk",
+          "name": "Hot-desk workstation",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A workstation left logged in, the screen awake and a client project list on show. Nobody is sitting at it."
+        }
+      ]
+    }
+  }
+}

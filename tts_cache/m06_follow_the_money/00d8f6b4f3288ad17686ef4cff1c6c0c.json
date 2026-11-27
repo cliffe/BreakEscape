@@ -1,0 +1,13 @@
+{
+  "key": "00d8f6b4f3288ad17686ef4cff1c6c0c",
+  "npc": "irina_volkova",
+  "text": "Being pleasant isn't proof of what my mixer moved. Show me where the money went.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:15:36Z"
+}

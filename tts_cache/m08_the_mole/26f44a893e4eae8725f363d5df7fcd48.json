@@ -1,0 +1,13 @@
+{
+  "key": "26f44a893e4eae8725f363d5df7fcd48",
+  "npc": "closing_debrief",
+  "text": "Watch him as you would a live wire. If he burns you, it is on my signature.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:21:59Z"
+}

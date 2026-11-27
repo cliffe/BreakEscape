@@ -1,0 +1,13 @@
+{
+  "key": "e9633c35e13361b9b97f2e784339c7f1",
+  "npc": "receptionist",
+  "text": "If it helps, the wards issue their own lanyards. Sister Doyle's got a drawer full for the agency staff.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

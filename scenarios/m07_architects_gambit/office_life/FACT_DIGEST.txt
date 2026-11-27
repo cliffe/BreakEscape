@@ -1,0 +1,181 @@
+M07 OFFICE-LIFE READ: HANDOVER (read-only, nothing edited, nothing committed)
+Worktree: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-ol-m07
+Line numbers below are for scenarios/m07_architects_gambit/scenario.json.erb (SCN) unless the file is named.
+
+DONE: read SCN in full (2612 lines); read all 8 ink files in full (ink/m07_*.ink).
+OPEN: items 6 (grep staff terms in docs), 8 (awareness HANDOVER.md, VOICE_CAST.md, BRAND_SET.md; sprite-key asset checks; other-mission grep), 10 ("stacked" grep), 11 (roomTone grep), and grep for patrolOverride and npc_attacked. Item 2 is done (no KO scoring function found).
+DO NOT open SecGen XML, Vagrantfile, field guides or "field guide" ink.
+
+== 1. *_ko in credits (SCN 218-297) ==
+223/222/225 etc. not *_ko. *_ko lines:
+- 256 "DR. JAMES MERCER (BLACKOUT): Neutralised at the console — questioning deferred" cond globalVars.mercer_ko
+- 257 Left before cordon (escaped && !mercer_ko); 258 Came at agent (ko && !mercer_ko); 259 Left at console (!mercer_fate && !mercer_ko)
+- 260/262/264 MERCER ON RECORD lines: all carry !mercer_ko; 263 and 265 (CONFRONTED) do not
+- 269 "ELENA RODRIGUEZ: Neutralised — never questioned" cond globalVars.elena_ko
+- 270 never spoken to (!elena_outcome && !elena_ko && !elena_met); 271 spoken to, left at rack (... && elena_met)
+- 273 "RAY HOLLIS: Neutralised on shift" cond globalVars.hollis_ko
+- 274 badge copied (hollis_cloned && evaded && !hollis_ko); 275 evaded (!hollis_cloned && !hollis_ko); 276 ko && !hollis_ko; 277 left at post (!hollis_ko && ...)
+- 279 "THOMAS PARK: Neutralised in the vault" cond globalVars.park_ko
+- 280 evaded (&& !park_ko); 281 ko (&& !park_ko); 282 seen left to work (vault_entered && !park_ko && ...); 283 never found (!vault_entered && !park_ko)
+- 226-233 credits: "ATTACK HOST" entries are unconditional or flag-keyed; no KO test there.
+
+== 2. Debrief ink (ink/m07_closing_debrief.ink) ==
+- VAR decls: 58 hollis_ko, 59 elena_ko, 60 mercer_ko, 61 park_ko (all = false). vault_entered 62.
+- Use sites: 434 mercer_ko (first branch, "left that control room on a stretcher"); 452/458/464 "mercer_fate == arrested and not mercer_ko" for stance; 477 elena_ko; 491 hollis_ko; 511 park_ko.
+- No function, counter or trust/penalty variable for KOs in the debrief. KO only changes which line is read.
+- Debrief eventMappings (SCN 1725-1744): triggers minigame_completed/minigame_failed (cond architect_signoff_done) and room_entered x6 (security_checkpoint, operations_floor, server_room, scada_control, generator_room, cable_vault); all_in cond at 1729; setGlobal start_debrief_cutscene; endingCheck true.
+
+== 3. globalVariables (SCN 2507-2611), all initial values ==
+Act turns (marked *):
+- *grid_saved false (2593) set by shut_down_the_cascade onComplete (641)
+- *countdown_expired false (2543) set by timer cascade_zero (760)
+- *cascade_armed false (2544) set by mapping flag3_submitted (1069, 1077)
+- *redirect_window_closed false (2531) set by timer redirect_window_close (717) and mapping flag3 (1069, 1077)
+- *architect_t20/t10/t5/t1_played false (2539-2542) set by timers (695, 706, 738, 749)
+- *debrief_timer_fired false (2524) set by timer debrief_fallback (779)
+- *debrief_requested false (2523) set by agent_0x99 bring_me_in (517) and mappings 1367, 1376
+- *architect_signoff_done false (2516) set by the_architect sign_off (411)
+- *architect_signoff_started false (2515) set by mapping 1686
+- *debrief_played false (2514) set by debrief start (85)
+- *start_debrief_cutscene false (2513) set by debrief mapping (1735)
+- *mission_complete false (2512) set by SCN 641
+- *briefing_played false (2511) set by briefing timedConversation setGlobalOnStart (839)
+- *team_assignment "" (2527); team_assigned false (2528). Set by briefing commit_menu (287, 295, 303) and HaX commit_team (189, 197, 206); team_assigned by mapping 882
+- *projection_revised false (2529): elena ink revision_beat (238), HaX deduce_right (586)
+- *team_redirected false (2530) and team_assignment=trojan_horse: HaX redirect_open_choices (641-642)
+- *redirect_declined false (2532): HaX (655)
+- *revision_found_open (2533), revision_before_commit (2534), decode_read_open (2535), decode_before_commit (2536): mappings 1014-1051
+- *elena_outcome "" (2552): elena ink turn_yes (304), pressure_recover (390), flee (399)
+- *elena_met false (2553): elena opening (79)
+- *mercer_fate "" (2554): mercer ink ending_record (326), ending_hollowed (348), ending_hostile (376), ending_walks (397). Reset to "" by mapping 1231-1238 on a restart after KO
+- *mercer_stance "" (2555): mercer ink stance_gate (94, 103, 112)
+- *mercer_told_diversion false (2556): mercer ink topic_diversion (250)
+- *hollis_resolved "" (2549): hollis ink deal_take "talked" (206), goes_loud "ko" (254); SCN mapping 1125 "evaded" (server_room entry)
+- *hollis_backed_off false (2550): hollis ink away (274), clone_debrief (158)
+- *hollis_cloned false (2551): SCN mapping 1278 (card_cloned)
+- *park_resolved "" (2557): park ink stand_down "talked" (115), turned "ko" (148), evade "evaded" (157); reset 1231-1238
+- *hollis_ko, elena_ko, mercer_ko, park_ko false (2563-2566): engine globalVarOnKO
+- *server_hall_reached false (2590): SCN 1131 (room_entered:server_room)
+- *inside_reached false (2589): SCN 1164 (room_entered:operations_floor)
+- *scada_door_reached false (2545): SCN 1056 (room_entered:scada_control)
+- *logged_in_before_door false (2546): SCN 1062 (flag3 with !scada_door_reached)
+- *generator_hall_reached false (2586): SCN 1138 (room_entered:generator_room)
+- *vault_entered false (2587): SCN 1144 (room_entered:cable_vault)
+- *vault_pin_found (2581) SCN 1150; *casualty_projection_found (2584) SCN 2258 onRead; *splice_found (2588) SCN 2447 onRead; *found_tomb_gamma (2594) SCN 2460; *found_mole_evidence (2595) SCN 2474; *visitor_log_read (2583) SCN 1788; *renewal_signoff_read (2585) SCN 1905 onPickup of shift_handover_sheet; *maintenance_key_found (2580) SCN 1394; *badge_obtained (2579) SCN 1401, 1407, 1278
+- *scada_password_found (2582) ink elena turn_yes (307) and SCN 973-986
+- Flags: flag1_submitted (2569), flag2_submitted (2571), flag3_submitted (2572), flag4_submitted (2573): SCN objective_task_completed mappings 913, 970, 1059 (flag3 via flagRewards 2053), 1084 (flag4)
+- *found_coordination_traffic (2574) SCN onRead 2079
+- *verdict_sent, verdict_from_elena (2575-2576): SCN 934, 942, 949, 956
+- *reuse_hint_sent (2570) SCN 992, 1000
+- *flags_nag_sent (2522) SCN 1342 (grid_saved mapping)
+- *hurt_line_said (2520) SCN 889, 899, 906; ink moral_soundingboard (691)
+- *hands_down_said (2521) SCN 1255
+- *architect_contact (2517) SCN 1607
+- *architect_echo_heard (2518) ink (t30_close 114)
+- *teacher_discussed (2519) ink topic_teacher (780)
+- *debrief_stance "" (2560) ink the_stance (663, 680, 687, 695, 708)
+- Guide latches all false (2598-2610): rfid/lockpicking/recon/ssh/nfs/privesc _offered and _hint_given, vm_terminal_used (2606). Set by SCN 1309, 1317, 1325, 1333; ink hint knots.
+- Other initial false: player_name "Agent 0x00" (2508).
+
+== 4. eventMappings keyed on room_entered:operations_floor / security_checkpoint / server_room / scada_control / cable_vault / generator_room; npc_ko:*; conversation_closed:* ==
+Owner ids and lines (owner block line):
+- agent_0x99 (phone, player_phone; block 843-1411, id line 844, phoneId 848):
+  - room_entered:operations_floor 896 (once; !hurt_line_said && !team_assigned; setGlobal hurt_line_said; msg 1000ms)
+  - room_entered:operations_floor 903 (once; !hurt_line_said && team_assigned; msg 1000ms)
+  - room_entered:operations_floor 1306 (once; !badge_obtained; rfid_guide_offered; msg 9500ms)
+  - room_entered:operations_floor 1162 (once; setGlobal inside_reached)
+  - room_entered:server_room 1122 (once; hollis_backed_off && hollis_resolved==='' && !hollis_ko; setGlobal hollis_resolved=evaded)
+  - room_entered:server_room 1129 (once; server_hall_reached; unlockAim reach_the_control_room, trace_the_intrusion)
+  - room_entered:server_room 1314 (once; !maintenance_key_found; lockpicking_guide_offered; msg 9000ms)
+  - room_entered:scada_control 1054 (once; scada_door_reached)
+  - room_entered:generator_room 1136 (once; generator_hall_reached)
+  - room_entered:cable_vault 1142 (once; vault_entered)
+  - room_entered:cable_vault 1155 (once; !casualty_projection_found && !park_ko && park_resolved==='evaded'; msg 4000ms)
+  - room_entered x6 1380-1388 (completeTask take_the_debrief if debrief_played)
+  - npc_ko:ray_hollis 1168 (once; msg 2000ms); npc_ko:elena_rodriguez 1173 (once; 2000ms); npc_ko:thomas_park 1178 (once; 2000ms)
+  - npc_ko:james_mercer 1282 (!grid_saved && !flag4_submitted), 1289 (!grid_saved && flag4_submitted), 1296 (grid_saved); each once, 2000ms
+  - npc_ko hands-down loop 1250-1258 for ray_hollis, thomas_park, james_mercer (once; !hands_down_said; 7000ms)
+  - npc_hostile_state_changed (not KO) 1189-1223: ray_hollis 1189/1195 (1000ms, 5500ms), thomas_park 1201/1207, james_mercer 1213/1219; all once, data.restored !== true
+  - reset rows 1232-1237 (cooldown 0): ray_hollis, thomas_park, james_mercer when isHostile false, reset true, latch === 'ko' -> latch ''
+  - conversation_closed:opening_briefing_cutscene 1243 (once; 2500ms)
+  - conversation_closed:elena_rodriguez 930, 939, 946, 953, 997 (verdict and reuse_hint; once)
+  - no npc_attacked:* mapping seen
+- the_architect (phone; block 1583-1704, id line 1585, phoneId 1588):
+  - room_entered:operations_floor 1604 (once; !architect_t20_played; architect_contact; delayMs 5000; taunt_t30; ring withheld; voicemail taunt_t30_vm)
+  - no other room_entered; sign-off on minigame_completed/minigame_failed 1683 (once; grid_saved && !architect_signoff_started)
+  - countdown_expired 1696 (once; !grid_saved; delayMs 500; seattle_call)
+- ray_hollis (block 1458-1582, id 1460): player_spotted 1483; global hollis_resolved 1489; room_entered:security_checkpoint 1494 (setVisible false when talked). No room_entered mapping for entering the room with hollis_ko. hollis start knot: down_and_out if hollis_ko.
+- elena_rodriguez (block 1953-1999, id 1956): global elena_outcome 1988 (fled -> hidden); room_entered:server_room 1993 (fled -> hidden)
+- james_mercer (block 2153-2195, id 2155): hide rows 2185-2192 (mercer_fate arrested|escaped via global and room_entered:scada_control)
+- thomas_park (block 2378-2436, id 2380): room_entered:cable_vault 2409 (speaks on entry while not ko/talked); global park_resolved 2415 (talked -> hidden); room_entered:cable_vault 2420 (talked -> hidden)
+- closing_debrief (block 1705-1745, id 1707): see item 2 above
+
+Registered at game start (in the security_checkpoint start room): npcs array 812-1582 holds opening_briefing_cutscene (id 815, hidden, initiallyHidden 832, timedConversation 833-840), agent_0x99 (id 844, phone), ray_hollis (id 1460, npcType person, position {3.5, 6.3}, 1464), the_architect (phone, id 1585), closing_debrief (id 1707, initiallyHidden 1724, not yet triggered). Player phone startItem 303-311 (phoneId player_phone, npcIds agent_0x99 and the_architect at 309). Other rooms: elena_rodriguez in server_room (id 1956, pos {3,7.5} 1960), james_mercer in scada_control (id 2155, pos {7,3} 2159), thomas_park in cable_vault (id 2380, pos {4.5,4.5} 2384), no NPCs in operations_floor (npcs: [] at 1842), generator_room (npcs: [] at 2292).
+
+== 5. Timers (SCN 687-783; delayMs lines) ==
+- architect_taunt_t20: delayMs 600000 (692), startOnGlobal team_assigned (693), cancelOnGlobal grid_saved (694), setGlobal architect_t20_played (695), onceOnly (697)
+- architect_taunt_t10: 1800000 (703), team_assigned (704), setGlobal architect_t10_played (706)
+- redirect_window_close: 2400000 (714), team_assigned (715), setGlobal redirect_window_closed (717)
+- redirect_window_display: 2400000 (725), team_assigned (726), showCountdown true (728), no setGlobal, cond at 723
+- architect_taunt_t5: 600000 (735), startOnGlobal cascade_armed (736), setGlobal architect_t5_played (738), label "Cascade in 05:00" (734)
+- architect_taunt_t1: 840000 (746), cascade_armed (747), setGlobal architect_t1_played (749), label "Cascade in 01:00" (745)
+- cascade_zero: 900000 (757), cascade_armed (758), setGlobal countdown_expired (760), showCountdown true (761)
+- debrief_fallback: 540000 (776), startOnGlobal grid_saved (777), cancelOnGlobal debrief_requested (778), setGlobal debrief_timer_fired (779)
+Header description 659-686. The 40-minute timer is redirect_window_close (2400000 ms), and the 15-minute countdown is cascade_zero (900000 ms).
+
+== 6. Staff-in-building / evacuation lines (so far) ==
+- SCN 1794-1801 checkpoint_evacuation_board (smartscreen): "SITE EVACUATION -- IN PROGRESS / MUSTER POINT: NORTH PARKING LOT / OPERATIONS 31 / 34 CLEAR / ENGINEERING 12 / 12 CLEAR / FACILITIES 6 / 6 CLEAR / SECURITY 5 / 6 CLEAR / CONTRACTORS UNKNOWN / DO NOT RE-ENTER". Observations 1800: "Somebody has been crossing names off it in marker, fast, and then stopped partway down."
+- SCN 1852 Plant Maintenance Key observations: "...left in the tray on the shift supervisor's desk... The supervisor is in the north parking lot."
+- SCN 1904 shift_handover_sheet: signed "-- D. Halvorsen, shift supervisor"
+- SCN 1917 ops_floor_workstation: "coffee still warm"; 1915-1921 read-only grid view
+- SCN 1913 name "Abandoned Operator Workstation"; 1917 observations "chair pushed back, coffee still warm"
+- SCN 1873 situation board observations "Every panel on it is amber."
+- SCN 1917: operator position 3 logged in
+- Briefing ink (m07_opening_briefing.ink) 75: "The building is mid-evacuation. That will help you, and it means nobody in there knows who you are." 323: "People are coming out of the front doors with coats over their heads." 325: "The building is evacuating. The operations floor is past the security checkpoint, and one guard on that shift is compromised."
+- Hollis ink 63: "Building's evacuating. So you're lost, or you're the other thing." 120: "Contractors came out with everyone else. I walked them out myself." 300: "The checkpoint is empty." 181: "Halvorsen. She never could leave a thing alone."
+- Elena ink 185: "I could be out of the parking lot in four minutes." 200: Mercer "in the control room, through the north door"
+- Park ink 107: "They said a building. Empty, they said. Nobody in it."
+- Debrief ink 487: Elena "She is gone, with everything she knows."; 503-506 Hollis at post; 521 Park
+- Debrief ink 318-323 unrelated
+- Architect ink t20 (139) "The handset cuts across the facility alarm."
+- Not yet grepped for: "thirty-one", "anyone else", "still inside", "operators", "muster" in other docs.
+
+== 7. Ray Hollis patrol (SCN 1458-1582) ==
+- Room security_checkpoint, room type room_pnw_checkpoint (SCN 790-791); room_security is 10x10 tiles (comment 1459)
+- patrol.enabled true (1516); pauseForPlayer false (1521); waypointMode sequential; loop true; speed 70 (1538-1540)
+- waypoints (1527, 1528, 1529, 1536): (3.5,6.3) dwell 6000; (5,6.3) dwell 1500; (6.5,6.3) dwell 5000; (5,6.3) dwell 1500. All on y 6.3 (comment 1523-1535)
+- Circuit stays on the strip x 3.5 to 6.5 (comment 1459, 1523-1526). Ink-free route; never leaves security_checkpoint by its waypoints (inferred: all waypoints are in the room bounds; room connections are 10x10 room tiles per 1459).
+- LOS: enabled, range 120, angle 50, visualize false, challengeOnSight cooldown 20000, requireGlobal briefing_played, skipIfGlobal [hollis_resolved, hollis_ko] (1559-1568)
+- patrolOverride: none seen in my read of SCN (grep not yet run)
+
+== 9. Voice first sentences (SCN voice.style) ==
+- ray_hollis (1473): "A facility guard in his mid-thirties, six months into taking money he has stopped being able to explain. Consistent working-class American accent, Pacific Northwest..." language en-US, voice Puck.
+- elena_rodriguez (1969): "A grid engineer in her early thirties... Consistent Californian American accent with Mexican-American Spanish inflection..." en-US, voice Leda.
+- james_mercer (2168): "An engineer in his late fifties... Consistent General American accent, Pacific Northwest..." en-US, voice Iapetus. Ink ending_hostile 379: "He is fifty-eight."
+- thomas_park (2393): "A plant maintenance technician in his forties... Consistent Korean-American accent, Pacific Northwest..." en-US, voice Rasalgethi.
+- the_architect (1596): "ENTROPY's planner, a man in his sixties ... deliberately unplaceable ... educated, faintly mid-Atlantic English", en-GB, voice Sadaltager, fx voice-distortion.
+- agent_0x99 (861): British RP handler, en-GB, voice Aoede.
+- netherton (828, 1720): British RP, en-GB, voice Charon.
+- narrator (126): voice Algenib, en-GB.
+- ray_hollis, elena, mercer, park: sprite keys are their names (SCN 1465, 1961, 2160, 2385), spriteTalk assets/characters/<name>_talk.png.
+
+== 11. ops floor objects (SCN 1806-1924) ==
+- generator_maintenance_key: type key, id generator_maintenance_key, line 1846-1847, opens generator_room
+- situation_board: type smartscreen, id situation_board, position as-type:pnw_video_wall (1862), sprite pnw_video_wall1 (1863)
+- substation_map: type chart, id substation_map, position as-type:pnw_substation_map (1890)
+- shift_handover_sheet: type notes, id shift_handover_sheet, takeable, puzzle clue badge_station_pin (1899-1908)
+- ops_floor_workstation: type pc, id ops_floor_workstation, host OPS-WS-03, position as-type:pnw_console_pos (1912-1915)
+- No coffee_station, water_cooler or phone declared in operations_floor. Lighting block 1810-1837 (no roomTone).
+- NOT yet grepped: roomTone / roomToneTypes anywhere in SCN.
+
+== Not done ==
+- Item 8 awareness cast (HANDOVER.md, VOICE_CAST.md, BRAND_SET.md) and sprite checks in assets/characters/ or public/break_escape/assets/characters/. Also grep scenarios/m0*/scenario.json.erb for each awareness sprite key.
+- Item 10 grep "stacked" in SCN and scenarios/m07_architects_gambit/ docs.
+- Item 6 grep docs for thirty-one, anyone else, still inside, operators, Halvorsen, muster, parking lot, supervisor.
+- Grep patrolOverride, npc_attacked, roomTone, roomToneTypes.
+
+== Gotchas ==
+- SCN is ERB: <% %> blocks are generated by ERB. Some lines (1231-1238, 1339-1347, 1370-1379, 1380-1388, 1250-1258, 1681-1692, 1729-1744, 2185-2192) are ERB loops. Lines are source lines, not expanded output.
+- hollis/park/mercer reset rows (1232-1237) and Park's room_entered (1155) use ERB-generated names.
+- Credits text uses an em dash at 222-297 (quoted text, not repo prose; leave as is).
+- No edits to SCN. The untracked file docs/agents/UI_PASS_RESUME.md is not part of this read.

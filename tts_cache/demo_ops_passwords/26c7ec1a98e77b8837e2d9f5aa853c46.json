@@ -1,0 +1,13 @@
+{
+  "key": "26c7ec1a98e77b8837e2d9f5aa853c46",
+  "npc": "jun_watanabe",
+  "text": "I'll have to try the hot desk.",
+  "voice": "Puck",
+  "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:41:18Z"
+}

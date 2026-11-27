@@ -1,0 +1,547 @@
+{
+  "scenario": "test_access_sessions",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_dana_pc",
+      "label": "Dana's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_ian_pc",
+      "label": "Ian's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_priya_pc",
+      "label": "Priya's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_omar_pc",
+      "label": "Omar's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_kai_pc",
+      "label": "Kai's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_mei_pc",
+      "label": "Mei's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_hot_desk",
+      "label": "Hot desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_tom_pc",
+      "label": "Tom's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_dana",
+      "label": "Dana Reyes sign-in<br/>(dreyes)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "dana_room",
+      "label": "Dana",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_ian",
+      "label": "Ian Shaw sign-in<br/>(ishaw)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "ian_room",
+      "label": "Ian",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_priya",
+      "label": "Priya Nair sign-in<br/>(pnair)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "priya_room",
+      "label": "Priya",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_omar",
+      "label": "Omar Haddad sign-in<br/>(ohaddad)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "omar_room",
+      "label": "Omar",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_kai",
+      "label": "Kai Brennan sign-in<br/>(kbrennan)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "kai_room",
+      "label": "Kai",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_mei",
+      "label": "Mei Lin sign-in<br/>(mlin)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "mei_room",
+      "label": "Mei",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_tom",
+      "label": "Tom Fletcher sign-in<br/>(tfletcher)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "tom_room",
+      "label": "Tom",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "hot_desk_room",
+      "label": "Hot desk",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "dana_room",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "ian_room",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "priya_room",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "omar_room",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "kai_room",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "mei_room",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "hot_desk_room",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "tom_room",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "dana_room",
+      "to": "signin_dana",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "ian_room",
+      "to": "signin_ian",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "priya_room",
+      "to": "signin_priya",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "omar_room",
+      "to": "signin_omar",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "kai_room",
+      "to": "signin_kai",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "mei_room",
+      "to": "signin_mei",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "tom_room",
+      "to": "signin_tom",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_hot_desk",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "dana_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "ian_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "priya_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "hot_desk_room",
+      "soft": false
+    },
+    {
+      "from": "dana_room",
+      "to": "omar_room",
+      "soft": false
+    },
+    {
+      "from": "ian_room",
+      "to": "kai_room",
+      "soft": false
+    },
+    {
+      "from": "priya_room",
+      "to": "mei_room",
+      "soft": false
+    },
+    {
+      "from": "hot_desk_room",
+      "to": "tom_room",
+      "soft": false
+    }
+  ]
+}

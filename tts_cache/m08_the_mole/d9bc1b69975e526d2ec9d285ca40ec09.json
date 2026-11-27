@@ -1,0 +1,13 @@
+{
+  "key": "d9bc1b69975e526d2ec9d285ca40ec09",
+  "npc": "closing_debrief",
+  "text": "Now we find where the database went. We have a name from the vault, Tomb Gamma, and no coordinate.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:23:34Z"
+}

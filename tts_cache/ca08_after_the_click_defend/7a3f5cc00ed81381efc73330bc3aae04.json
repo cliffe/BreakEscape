@@ -1,0 +1,13 @@
+{
+  "key": "7a3f5cc00ed81381efc73330bc3aae04",
+  "npc": "kit_darren_price",
+  "text": "IT pulled a machine off the network today. Updates had slipped, apparently.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:28Z"
+}

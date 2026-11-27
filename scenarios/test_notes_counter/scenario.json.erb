@@ -1,0 +1,340 @@
+{
+  "scenario_brief": "TEST: Notes counter\n\nTen readable notes and one filed page lie in the start room. Collect the notes, open the Notepad and check the Previous/Next row, the counter and the search.",
+  "endGoal": "Use the Mission Terminal to finish.",
+  "startRoom": "test_room",
+  "objectives": [
+    {
+      "aimId": "complete_mission",
+      "title": "Complete the Mission",
+      "description": "Interact with the Mission Terminal.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "conclusionScreen": {
+        "type": "end_screen"
+      },
+      "tasks": [
+        {
+          "taskId": "activate_terminal",
+          "title": "Activate the Mission Terminal",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "id": "proof_note_1",
+          "name": "Proof note 1: Door code rota",
+          "position": {
+            "x": 1,
+            "y": 2
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 1.\n\nDoor code rota: this is readable test text. Keyword even.",
+          "observations": "Test note 1 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_2",
+          "name": "Proof note 2: Visitor log",
+          "position": {
+            "x": 3,
+            "y": 2
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 2.\n\nVisitor log: this is readable test text. Keyword odd.",
+          "observations": "Test note 2 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_3",
+          "name": "Proof note 3: Printer fault",
+          "position": {
+            "x": 5,
+            "y": 2
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 3.\n\nPrinter fault: this is readable test text. Keyword even.",
+          "observations": "Test note 3 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_4",
+          "name": "Proof note 4: Cleaner shift",
+          "position": {
+            "x": 7,
+            "y": 2
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 4.\n\nCleaner shift: this is readable test text. Keyword odd.",
+          "observations": "Test note 4 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_5",
+          "name": "Proof note 5: Vending refill",
+          "position": {
+            "x": 8,
+            "y": 2
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 5.\n\nVending refill: this is readable test text. Keyword even.",
+          "observations": "Test note 5 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_6",
+          "name": "Proof note 6: Fire drill",
+          "position": {
+            "x": 1,
+            "y": 4
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 6.\n\nFire drill: this is readable test text. Keyword odd.",
+          "observations": "Test note 6 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_7",
+          "name": "Proof note 7: Server room key",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 7.\n\nServer room key: this is readable test text. Keyword even.",
+          "observations": "Test note 7 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_8",
+          "name": "Proof note 8: Wi-Fi guest voucher",
+          "position": {
+            "x": 5,
+            "y": 4
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 8.\n\nWi-Fi guest voucher: this is readable test text. Keyword odd.",
+          "observations": "Test note 8 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_9",
+          "name": "Proof note 9: Parking permits",
+          "position": {
+            "x": 7,
+            "y": 4
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 9.\n\nParking permits: this is readable test text. Keyword even.",
+          "observations": "Test note 9 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_note_10",
+          "name": "Proof note 10: Lunch order",
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "Proof note 10.\n\nLunch order: this is readable test text. Keyword odd.",
+          "observations": "Test note 10 of 10."
+        },
+        {
+          "type": "notes",
+          "id": "proof_filed_note",
+          "name": "Filed page: audit trail",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "takeable": true,
+          "readable": true,
+          "storeIn": "capture_log",
+          "text": "Filed page.\n\nThis page is filed in the capture log. Opening it must not add it to the Notepad.",
+          "observations": "A filed page for the notes counter proof."
+        },
+        {
+          "type": "safe",
+          "id": "proof_safe",
+          "name": "Proof Floor Safe",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Seven readable notes, one unreadable note and a key card, for the note-returns-to-container proof.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "safe_note_1",
+              "name": "Safe note 1: Backup rota",
+              "takeable": true,
+              "readable": true,
+              "text": "Safe note 1.\n\nBackup rota: readable test text inside a container.",
+              "observations": "Safe note 1 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_2",
+              "name": "Safe note 2: Alarm codes",
+              "takeable": true,
+              "readable": true,
+              "text": "Safe note 2.\n\nAlarm codes: readable test text inside a container.",
+              "observations": "Safe note 2 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_3",
+              "name": "Safe note 3: Lease terms",
+              "takeable": true,
+              "readable": true,
+              "text": "Safe note 3.\n\nLease terms: readable test text inside a container.",
+              "observations": "Safe note 3 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_4",
+              "name": "Safe note 4: Visitor badges",
+              "takeable": true,
+              "readable": true,
+              "text": "Safe note 4.\n\nVisitor badges: readable test text inside a container.",
+              "observations": "Safe note 4 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_5",
+              "name": "Safe note 5: Patch window",
+              "takeable": true,
+              "readable": true,
+              "text": "Safe note 5.\n\nPatch window: readable test text inside a container.",
+              "observations": "Safe note 5 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_6",
+              "name": "Safe note 6: Courier slip",
+              "takeable": true,
+              "readable": true,
+              "text": "Safe note 6.\n\nCourier slip: readable test text inside a container.",
+              "observations": "Safe note 6 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_7",
+              "name": "Safe note 7: Audit log",
+              "takeable": true,
+              "readable": true,
+              "text": "Safe note 7.\n\nAudit log: readable test text inside a container.",
+              "observations": "Safe note 7 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_unreadable",
+              "name": "Torn memo: Unreadable",
+              "takeable": true,
+              "readable": false,
+              "text": "Torn memo.\n\nNo reader opens for this one: taking it files it in the Notepad straight from the container.",
+              "observations": "An unreadable note, for the container take proof."
+            },
+            {
+              "type": "keycard",
+              "id": "proof_card",
+              "name": "Tape Card",
+              "takeable": true,
+              "observations": "A key card for the container proof."
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "proof_single_safe",
+          "name": "Proof Single Safe",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "One readable note: taking it closes to the world.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "single_note",
+              "name": "Single note: Last memo",
+              "takeable": true,
+              "readable": true,
+              "text": "Single note.\n\nThe only thing in this safe.",
+              "observations": "The only note."
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "success_terminal",
+          "name": "Mission Terminal",
+          "position": {
+            "x": 5,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "Completes the test.",
+          "locked": false,
+          "triggerOnInteract": [
+            {
+              "type": "complete_task",
+              "taskId": "activate_terminal"
+            },
+            {
+              "type": "show_end_screen",
+              "outcome": "success",
+              "title": "MISSION COMPLETE",
+              "body": "<strong>Test passed.</strong>",
+              "buttonText": "Return to Missions"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "startItemsInInventory": [
+    {
+      "type": "capture_log",
+      "id": "capture_log",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": {
+        "captures": true,
+        "items": true
+      },
+      "observations": "Holds the filed page."
+    }
+  ]
+}

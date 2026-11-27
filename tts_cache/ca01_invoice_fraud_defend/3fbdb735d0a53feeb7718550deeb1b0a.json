@@ -1,0 +1,13 @@
+{
+  "key": "3fbdb735d0a53feeb7718550deeb1b0a",
+  "npc": "adaeze_okafor",
+  "text": "You spotted that bank-change email, so the run paid Harlow's real account, not the one the email asked for.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T23:42:18Z"
+}

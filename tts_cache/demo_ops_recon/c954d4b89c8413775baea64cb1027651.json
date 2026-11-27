@@ -1,0 +1,13 @@
+{
+  "key": "c954d4b89c8413775baea64cb1027651",
+  "npc": "ama_owusu",
+  "text": "On the printer's admin page, press Check. It lists two reported weaknesses, called findings. Press Confirm on each to test which is real. High and Low are only how bad the report claims it is.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:58:38Z"
+}

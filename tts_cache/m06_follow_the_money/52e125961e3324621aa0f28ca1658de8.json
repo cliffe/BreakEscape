@@ -1,0 +1,13 @@
+{
+  "key": "52e125961e3324621aa0f28ca1658de8",
+  "npc": "narrator",
+  "text": "The man by the corner office turns, sees you, and steps squarely into your path.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:19:09Z"
+}

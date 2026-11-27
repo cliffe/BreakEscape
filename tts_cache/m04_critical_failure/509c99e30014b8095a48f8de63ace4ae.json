@@ -1,0 +1,13 @@
+{
+  "key": "509c99e30014b8095a48f8de63ace4ae",
+  "npc": "narrator",
+  "text": "The dock door bangs open onto the loading bay and the cold, and he's gone into it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:16:17Z"
+}

@@ -1,0 +1,306 @@
+
+## R24 (phase 4 dialogue C1, D8-2, D8-16): every person-chat greets a re-talk with its return line. A reopen re-enters the hub (route.js re-navigates to the knot that owns the saved choices, as person-chat does), the line plays once, and neither the farewell batch nor a return from a topic repeats it.
+
+--- briefing ---
+  Narrator: SAFETYNET headquarters, the Citadel. Every badge reader blinks red. Nobody looks at the person at the next desk.
+  ATHENA: Welcome back, Agent 0x00. Security posture is Level Red. I have logged your entry, your route, and the precise time you crossed the threshold. Everyone's, actually. It's rather the point.
+  ATHENA: I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.
+  ATHENA: The PIN device you are thinking of is still signed out to Agent 0x47, Nightshade, as it has been since St. Catherine's.
+  ATHENA: Read nothing into it. Vector has a hardware token out tonight, and Phantom a travel pack. Everyone on the planning list keeps something they shouldn't.
+  ATHENA: You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did.
+  ATHENA: The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.
+  ATHENA: A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick.
+  ATHENA: The Director's office is north of this lobby. Do try not to trust anyone on the way.
+  [end]
+   [text agent_0x99 +2500ms] I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine.
+   {set {"briefing_played":true}}
+
+--- netherton ---
+      [ink: brief_taken=true]
+      [task: brief_with_netherton]
+  Narrator: The Director's office, blinds drawn against the night. Netherton stands at the window, his back to the door. He does not turn round.
+  Director Magnus Netherton: Agent. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
+  Director Magnus Netherton: What I did not tell you, because I did not yet know it, is that ENTROPY had your name before I signed the order.
+  Narrator: Now he turns.
+  Director Magnus Netherton: They did not out-think us at Portland. They were handed the board: your assignment, your timing, your identity on the ground.
+  Director Magnus Netherton: Two of ours are dead at the sites the team could not reach. They are dead because someone in this building told the enemy where the gaps would be.
+  Director Magnus Netherton: I have run field operations for five years. I have never had to say the next sentence.
+  Director Magnus Netherton: There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.
+  Director Magnus Netherton: Ask me what you need. Then go and prove something.
+     (7 options)
+ > Tell me about Vector.
+  Director Magnus Netherton: Agent 0x23. Intelligence analyst, signals and cryptography, on the operations floor. Brilliant, friendless, keeps hours that make the roster clerk nervous.
+  Director Magnus Netherton: He carries a crypto annex badge and keeps a locked screen, and he has never once explained either. I should like to know why.
+     (6 options)
+ > I'm ready. Let me work.
+  Director Magnus Netherton: Go. Whoever it is was one of us this morning. Bring me a name I can prove.
+  [chat closes]
+   [text agent_0x99 +2000ms] Three names, three rooms. Vector on the ops floor, Phantom north of it, Nightshade in the Crypto Lab. See all three before the server room.
+   [PASS] said: "Go. Whoever it is"
+   [PASS] not said: "What do you need"
+
+--- netherton ---
+  Director Magnus Netherton: Agent. What do you need?
+     (6 options)
+ > I'm ready. Let me work.
+  Director Magnus Netherton: Go. Whoever it is was one of us this morning. Bring me a name I can prove.
+  [chat closes]
+   [PASS] said: "Agent. What do you need?"
+
+--- netherton ---
+   (after a reload: variables kept, visit counts and position reset)
+  Director Magnus Netherton: Agent. What do you need?
+     (6 options)
+ > I'm ready. Let me work.
+  Director Magnus Netherton: Go. Whoever it is was one of us this morning. Bring me a name I can prove.
+  [chat closes]
+   [PASS] said: "Agent. What do you need?"
+   [PASS] not said: "Nine days ago I sent you"
+
+--- vector ---
+      [ink: vector_interviewed=true]
+      [mapping agent_0x99: set vector_seen=true]
+      [task: interview_vector]
+  Narrator: Vector does not look up until you are right on top of him, and then he looks up too fast, knocking a stylus off the desk.
+  Agent 0x23 'Vector': I know how it looks. The hours, the locked screen, me flinching just now.
+  Agent 0x23 'Vector': I've run the inference on myself and it's not flattering. Ask your questions, so I can watch you decide I'm boring.
+     (6 options)
+ > That's all for now.
+  Agent 0x23 'Vector': You'll clear me on the evidence. Good. My face has never once done me a favour.
+  [chat closes]
+   [PASS] not said: "You again"
+
+--- vector ---
+  Agent 0x23 'Vector': You again. Come to cross me off, or add me back on?
+     (6 options)
+ > That's all for now.
+  Agent 0x23 'Vector': Back to the maths, then.
+  [chat closes]
+   [PASS] said: "You again. Come to cross me off"
+
+--- vector ---
+  Agent 0x23 'Vector': Back. Still boring, I promise.
+     (6 options)
+ > Why the odd hours, then?
+  Agent 0x23 'Vector': Because the work is classified above the clerk who writes the roster.
+  Agent 0x23 'Vector': I can't put "post-quantum key exchange, do not disturb" on a shared calendar. So I look like I'm hiding something.
+  Agent 0x23 'Vector': I am. It's just a very boring something, with a great deal of maths in it.
+     (5 options)
+ > That's all for now.
+  Agent 0x23 'Vector': The library door log. It's all in there.
+  [chat closes]
+   [PASS] said: "Back. Still boring, I promise."
+   [PASS] not said: "You again"
+
+--- phantom ---
+      [ink: phantom_interviewed=true]
+      [mapping agent_0x99: set phantom_seen=true]
+      [task: interview_phantom]
+  Agent 0x88 'Phantom': Agent 0x00. The Director's own bloodhound. Sit.
+  Agent 0x88 'Phantom': Let me save you the first four questions. Yes, I ask too much. Yes, I disappear for hours. Yes, I'm on your little list.
+  Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
+     (5 options)
+ > We'll talk again.
+  Agent 0x88 'Phantom': Go and get onto that repo. When the logs back me, tell the Director I was right to look.
+  [chat closes]
+   [PASS] not said: "Back again"
+
+--- phantom ---
+  Agent 0x88 'Phantom': Back again. Either you've cleared me or you've got nothing. Which is it?
+     (5 options)
+ > We'll talk again.
+  Agent 0x88 'Phantom': Go and get onto that repo. When the logs back me, tell the Director I was right to look.
+  [chat closes]
+   [PASS] said: "Back again. Either you've cleared me"
+
+--- nightshade ---
+      [ink: nightshade_interviewed=true]
+      [mapping agent_0x99: set nightshade_seen=true]
+      [mapping agent_0x99: set access_nudge_sent=true]
+   [text agent_0x99 +3000ms] That's all three. Now go and see the Director about the server room. Take the cloner, and give it time: his card has proper keys on it.
+      [task: interview_nightshade]
+  Narrator: The Crypto Lab is quiet. Nightshade turns as you come in and smiles as if the last nine days never happened.
+  Narrator: His desk behind him is bare: no photographs, no mug.
+  Agent 0x47 'Nightshade': There you are. I wondered when they'd send you.
+  Agent 0x47 'Nightshade': Of everyone in this building, they picked the one person who knows my tells. A compliment, or very poor planning. Ask me anything.
+     (6 options)
+ > We're done here.
+  Agent 0x47 'Nightshade': Come back when you can prove something. I'll be right here. I always am.
+  [chat closes]
+   [PASS] not said: "Back so soon"
+
+--- nightshade ---
+  Agent 0x47 'Nightshade': Back so soon. You must be enjoying my company, or getting nowhere. I hope it's the first.
+     (6 options)
+ > I think it's you, Nightshade. (Out loud. The whole floor will hear.)
+      [ink: nightshade_suspected=true]
+      [ink: accused_nightshade=true]
+      [mapping agent_0x99: set nightshade_tipped_off=true]
+      [mapping agent_0x99: set tipoff_source="accused_nightshade"]
+   [text agent_0x99 +2500ms] You've said it to someone's face. On this floor, that's said to everyone by midnight. If it's the right man, he knows we're looking.
+  Narrator: He doesn't blink.
+  Agent 0x47 'Nightshade': Do you. On instinct, or on evidence? I know you, and I know which one you're running on. It isn't evidence.
+  Agent 0x47 'Nightshade': Here's what will happen. You'll leave, because a hunch won't hold me.
+  Agent 0x47 'Nightshade': And I'll still be here when you come back. I've nowhere I'd rather be, and nothing I'm afraid of.
+      [set_global nightshade_suspected=true]
+      [set_global accused_nightshade=true]
+  Agent 0x47 'Nightshade': Go and get your proof. Whichever way it points, it'll be worth more than a guess.
+     (5 options)
+ > We're done here.
+  Agent 0x47 'Nightshade': Close the door gently. The whole floor's listening now.
+  [chat closes]
+   [PASS] said: "Back so soon"
+   [PASS] said: "it'll be worth more than a guess"
+   [PASS] said: "The whole floor's listening now"
+   [PASS] not said: "I'd rather you found me"
+
+--- nightshade ---
+  Agent 0x47 'Nightshade': Still here, as promised. Ask.
+     (5 options)
+ > We're done here.
+  Agent 0x47 'Nightshade': Close the door gently. The whole floor's listening now.
+  [chat closes]
+   [PASS] said: "Still here, as promised"
+   [PASS] not said: "[choice] I think it's you, Nightshade"
+
+--- vector ---
+  Agent 0x23 'Vector': You again. Come to cross me off, or add me back on?
+     (5 options)
+ > I think it's you, Vector. (Out loud. The whole floor will hear.)
+      [ink: accused_vector=true]
+  Narrator: He goes very still.
+  Agent 0x23 'Vector': On what? You haven't even pulled the auth logs. You've decided on my face.
+  Agent 0x23 'Vector': That's -- that's exactly how the wrong person walks free. You spend your suspicion on the easy target, and the careful one just... waits.
+  Agent 0x23 'Vector': Go and check. Please. Then come back and say sorry, or come back with cuffs. Just don't leave it hanging.
+     (5 options)
+ > That's all for now.
+  Agent 0x23 'Vector': Check the logs. That's all I ask.
+  [chat closes]
+   [PASS] said: "Go and check. Please."
+
+--- vector ---
+  Agent 0x23 'Vector': You again. Sorry, or cuffs?
+     (5 options)
+ > That's all for now.
+  Agent 0x23 'Vector': Check the logs. That's all I ask.
+  [chat closes]
+   [PASS] said: "Sorry, or cuffs?"
+   [PASS] not said: "[choice] I think it's you, Vector"
+   [PASS] not said: "Still boring"
+
+--- offduty ---
+  Narrator: He doesn't look up from the magazine.
+  Off-Duty Agent: You didn't hear it from me. Two days before Portland I was in here from before eight.
+  Off-Duty Agent: Went through to the lab for the stapler. Just gone twenty past ten, half past at the latest.
+  Off-Duty Agent: Someone at the bench at the far end. Had the build of the nerdy one, Vector. Or not. I wasn't looking.
+  Off-Duty Agent: And before you ask, I'm off-shift with no planning clearance. I couldn't open that share if I wanted to.
+  Off-Duty Agent: I'm sitting where I can see the door. You should too.
+     (3 options)
+ > I'll leave you to it.
+  Off-Duty Agent: Mind the door.
+  [chat closes]
+   [PASS] not said: "Still here"
+
+--- offduty ---
+  Off-Duty Agent: Still here. Still not reading this.
+     (3 options)
+ > Heard anything new?
+  Off-Duty Agent: Word is you've been calling people traitors to their faces. Whole floor's heard. If one of them is the mole, so has he.
+  Off-Duty Agent: Phantom's stopped being charming. He was off the floor all that morning, two days before Portland, and nobody's said where.
+  Off-Duty Agent: Nightshade's the same as ever.
+     (3 options)
+ > I'll leave you to it.
+  Off-Duty Agent: Mind the door.
+  [chat closes]
+   [PASS] said: "Still here. Still not reading this."
+   [PASS] said: "calling people traitors"
+   [PASS] not said: "Back again. People will talk"
+   [PASS] not said: "at the lockers in here"
+
+--- analyst ---
+  Junior Analyst: You're the one the Director brought in. Don't tell me anything. Knowing things is how you end up in an interview room.
+  Junior Analyst: I've read the same threat feed six times tonight and couldn't tell you a word of it. Everyone's watching the door.
+     (2 options)
+ > I'll leave you to it.
+  Junior Analyst: Close the door behind you. Please.
+  [chat closes]
+
+--- analyst ---
+  Junior Analyst: Still here. Still reading the same paragraph.
+     (2 options)
+ > I'll leave you to it.
+  Junior Analyst: Close the door behind you. Please.
+  [chat closes]
+   [PASS] said: "Still here. Still reading the same paragraph."
+
+--- analyst ---
+   (after a reload: variables kept, visit counts and position reset)
+  Junior Analyst: Still here. Still reading the same paragraph.
+     (2 options)
+ > I'll leave you to it.
+  Junior Analyst: Close the door behind you. Please.
+  [chat closes]
+   [PASS] not said: "You're the one the Director brought in"
+
+--- athena ---
+  ATHENA: Reception. How may I help you tonight, Agent? Discreetly, of course. Everything is discreet tonight.
+     (4 options)
+ > That's all, thank you.
+  ATHENA: Of course. I'll log that you were here. I log everything now.
+  [chat closes]
+   [PASS] not said: "Still discreet"
+
+--- athena ---
+  ATHENA: Reception. Still discreet.
+     (4 options)
+ > That's all, thank you.
+  ATHENA: Of course. I'll log that you were here. I log everything now.
+  [chat closes]
+   [PASS] said: "Reception. Still discreet."
+
+--- hax ---
+      [ink: hax_person_met=true]
+      [set_global hax_person_met=true]
+  Narrator: HaX is folded into the corner with a coffee she has let go stone cold. Off the wire, she is smaller than she sounds on it.
+  Agent HaX: Don't say anything kind, I'll come apart. Sit if you want. Don't, if you don't.
+     (5 options)
+ > I'll come back.
+  Agent HaX: I know you will. Go.
+  [chat closes]
+   [PASS] not said: "The coffee's still cold"
+
+--- hax ---
+  Agent HaX: Still here. The coffee's still cold.
+     (5 options)
+ > I'll come back.
+  Agent HaX: I know you will. Go.
+  [chat closes]
+   [PASS] said: "Still here. The coffee's still cold."
+
+--- hax ---
+  Agent HaX: You came back. Sit, if you want.
+     (5 options)
+ > Netherton send you down here?
+  Narrator: A small, worn smile.
+  Agent HaX: Other way round. I told him I needed five minutes where I wasn't a handler. He gave me ten and pretended not to.
+  Agent HaX: He's harder hit than he lets on. It's his house the rot grew in.
+  Agent HaX: Go easy on the old man at the debrief. Or don't. He'd respect either.
+     (5 options)
+ > I'll come back.
+  Agent HaX: I know you will. Go.
+  [chat closes]
+   [PASS] said: "You came back. Sit, if you want."
+   [PASS] not said: "The coffee's still cold"
+   {set {"found_access_logs":true}}
+
+--- netherton ---
+  Director Magnus Netherton: You've been in the logs. I can see it on you. A terminal and a time is not a man. Read me the door.
+     (8 options)
+ > I'm ready. Let me work.
+  Director Magnus Netherton: Go. Whoever it is was one of us this morning. Bring me a name I can prove.
+  [chat closes]
+   [PASS] said: "A terminal and a time is not a man. Read me the door."
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 100, choices 30, longest run without a choice 9 (briefing); runs>=6: briefing:9, netherton:9, offduty:6
+[result] all expectations met

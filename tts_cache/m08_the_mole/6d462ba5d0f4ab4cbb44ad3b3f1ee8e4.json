@@ -1,0 +1,13 @@
+{
+  "key": "6d462ba5d0f4ab4cbb44ad3b3f1ee8e4",
+  "npc": "background_agent",
+  "text": "Someone at the bench at the far end. Had the build of the nerdy one, Vector. Or not. I wasn't looking.",
+  "voice": "Puck",
+  "style": "An off-duty SAFETYNET agent in his forties pretending to read while eavesdropping on everyone. Consistent Geordie (Newcastle) accent throughout -- do not shift to any other accent. Low, conspiratorial pitch; unhurried pace. Gossipy and paranoid, enjoying the drama a little too much.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:47:35Z"
+}

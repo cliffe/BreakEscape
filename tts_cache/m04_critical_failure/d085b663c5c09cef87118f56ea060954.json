@@ -1,0 +1,13 @@
+{
+  "key": "d085b663c5c09cef87118f56ea060954",
+  "npc": "narrator",
+  "text": "He moves for the bench, Static comes off the wall at you, and the plant room stops being a place where anyone is talking.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:15:03Z"
+}

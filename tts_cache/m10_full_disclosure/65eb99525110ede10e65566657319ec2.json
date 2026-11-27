@@ -1,0 +1,13 @@
+{
+  "key": "65eb99525110ede10e65566657319ec2",
+  "npc": "kowalczyk_post",
+  "text": "Me? Go on, then. Show me.",
+  "voice": "Pulcherrima",
+  "style": "SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:54:10Z"
+}

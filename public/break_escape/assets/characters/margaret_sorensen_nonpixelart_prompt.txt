@@ -1,0 +1,10 @@
+Make portrait for Margaret Sorensen
+A small, upright white woman of about 66 from Montana, of Norwegian family, with pale, softly lined, rosy-cheeked skin and neat short silver-white hair set in soft curls, the director of a records archive and a former county clerk who believes people are records and she keeps them. Pale blue eyes behind gold-rimmed reading glasses on a thin chain, and a mild, grandmotherly, utterly certain look. She wears a buttoned oatmeal-beige cardigan over a high-collared navy-blue blouse, a small gold brooch at the collar, grey wool slacks and a thin brown belt; her hands are folded neatly in front of her at waist height. Standing alone against an empty plain mid-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (finale batch). Reframed with reframe_portrait.py --flip; unflipped original is margaret_sorensen_concept_1_raw.png. Approved by the user 2026-10-22; adopted from wip/margaret_sorensen_concept_1.png.

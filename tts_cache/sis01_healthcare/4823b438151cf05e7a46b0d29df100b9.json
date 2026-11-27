@@ -1,0 +1,13 @@
+{
+  "key": "4823b438151cf05e7a46b0d29df100b9",
+  "npc": "patrol_nurse",
+  "text": "That Bed 4 alarm's been going too long. Has anyone told Sarah?",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-10-11",
+  "recorded_at": "2026-10-11T00:11:40Z"
+}

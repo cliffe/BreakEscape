@@ -1,0 +1,14 @@
+{
+  "key": "f265d5d119d2809abc207aacb67e4bbc",
+  "npc": "kit_darren_price",
+  "text": "A sign-in from abroad right after a click is them already inside. The sooner it's reported, the less they reach.",
+  "delivery": "dry, matter-of-fact",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca00_first_play",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:42:52Z"
+}

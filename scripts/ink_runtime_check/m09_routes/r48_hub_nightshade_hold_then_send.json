@@ -1,0 +1,15 @@
+{
+"imports": { "m08_nightshade_triple_agent": true },
+"globals": { "dock_heard": true, "nightshade_file_held": true },
+"steps": [
+{ "note": "R48: the Nightshade file held. HaX says Held and nothing is sent; the original topic is gone, but a Send Nightshade his file row appears on the hub, and taking it goes straight to the send (no second send or hold question)." },
+{ "talk": "phone", "knot": "support_hub", "picks": ["Nightshade's file", "Hold it", "That's all for now"] },
+{ "said": ["Held. Say the word before the debrief if you change your mind"],
+  "notSaid": ["Sent. He'll read it tonight"] },
+{ "expect": { "nightshade_shown_file": false } },
+{ "talk": "phone", "knot": "support_hub", "reload": true, "picks": ["Send Nightshade his file", "That's all for now"] },
+{ "said": ["[choice] Send Nightshade his file", "Sent. He'll read it tonight"],
+  "notSaid": ["[choice] Nightshade's file", "[choice] Hold it", "He doesn't know this exists"] },
+{ "expect": { "nightshade_shown_file": true } }
+]
+}

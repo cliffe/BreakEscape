@@ -1,0 +1,140 @@
+TAP version 13
+# 📋 Setting up event mappings for patricia: {}
+# ✅ Registered 0 event mappings for patricia
+# 📋 Setting up event mappings for patricia: {}
+# ✅ Registered 0 event mappings for patricia
+# 📱 Restored saved phone state for 2 contact(s)
+# 📱 Restored patricia's phone thread (2 message(s))
+# 📋 Setting up event mappings for patricia: {}
+# ✅ Registered 0 event mappings for patricia
+# 📱 Restored hax's phone thread (1 message(s))
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# ⚠️ No text found in knot: bark_only_player
+# 📋 Setting up event mappings for patricia: {}
+# ✅ Registered 0 event mappings for patricia
+# 📱 Restored patricia's phone thread (2 message(s))
+# 📋 Setting up event mappings for patricia: {}
+# ✅ Registered 0 event mappings for patricia
+# 📱 Restored patricia's phone thread (1 message(s))
+# 📋 Setting up event mappings for patricia: {}
+# ✅ Registered 0 event mappings for patricia
+# Subtest: a "You:" or "Player:" line is the player's, prefix stripped; other lines keep their type
+ok 1 - a "You:" or "Player:" line is the player's, prefix stripped; other lines keep their type
+  ---
+  duration_ms: 3.394826
+  ...
+# Subtest: \#speaker:player marks a step as the player's; the last speaker tag wins
+ok 2 - \#speaker:player marks a step as the player's; the last speaker tag wins
+  ---
+  duration_ms: 0.465288
+  ...
+# Subtest: npcManager stores a "You:" line as a read player message, so it is not unread
+ok 3 - npcManager stores a "You:" line as a read player message, so it is not unread
+  ---
+  duration_ms: 3.633798
+  ...
+# Subtest: the preload stores a "You:" line in the opening as the player's and counts only NPC lines as unread
+ok 4 - the preload stores a "You:" line in the opening as the player's and counts only NPC lines as unread
+  ---
+  duration_ms: 12.147113
+  ...
+# Subtest: a player line survives a reload as the player's; a thread saved before the fix is corrected
+ok 5 - a player line survives a reload as the player's; a thread saved before the fix is corrected
+  ---
+  duration_ms: 0.945588
+  ...
+# Subtest: the server keeps a player message as sent (type "player" passes the sanitiser)
+ok 6 - the server keeps a player message as sent (type "player" passes the sanitiser)
+  ---
+  duration_ms: 0.677689
+  ...
+# Subtest: a live run returns "You:" lines and \#speaker:player lines in a form the minigame shows as the player's
+ok 7 - a live run returns "You:" lines and \#speaker:player lines in a form the minigame shows as the player's
+  ---
+  duration_ms: 2.550257
+  ...
+# Subtest: a reopen that re-runs the knot returns its new player line as the player's (E10/E13 path)
+ok 8 - a reopen that re-runs the knot returns its new player line as the player's (E10/E13 path)
+  ---
+  duration_ms: 3.916886
+  ...
+# Subtest: the phone minigame types every story line through the speaker check, with no NPC typing for player lines
+ok 9 - the phone minigame types every story line through the speaker check, with no NPC typing for player lines
+  ---
+  duration_ms: 0.482074
+  ...
+# Subtest: the phone UI shows a player line as a player bubble, never voices it, and labels it in the contact preview
+ok 10 - the phone UI shows a player line as a player bubble, never voices it, and labels it in the contact preview
+  ---
+  duration_ms: 0.289678
+  ...
+# Subtest: the contact's own "Name:" prefix is dropped; anyone else's stays
+ok 11 - the contact's own "Name:" prefix is dropped; anyone else's stays
+  ---
+  duration_ms: 0.806128
+  ...
+# Subtest: a stored line renders without the prefix, so threads saved earlier display cleanly
+ok 12 - a stored line renders without the prefix, so threads saved earlier display cleanly
+  ---
+  duration_ms: 0.219837
+  ...
+# Subtest: a bark shows only the contact's words, prefix dropped, or nothing
+ok 13 - a bark shows only the contact's words, prefix dropped, or nothing
+  ---
+  duration_ms: 0.204437
+  ...
+# Subtest: a mapping's bark knot that opens with the player's line barks the NPC's next line
+ok 14 - a mapping's bark knot that opens with the player's line barks the NPC's next line
+  ---
+  duration_ms: 1.291395
+  ...
+# Subtest: a bark knot with only the player's line shows no bark
+ok 15 - a bark knot with only the player's line shows no bark
+  ---
+  duration_ms: 0.883926
+  ...
+# Subtest: the bark popup filters its text before showing or voicing it
+ok 16 - the bark popup filters its text before showing or voicing it
+  ---
+  duration_ms: 1.158959
+  ...
+# Subtest: the phone UI, the notepad copy and the text export all render lines through displayPhoneLine
+ok 17 - the phone UI, the notepad copy and the text export all render lines through displayPhoneLine
+  ---
+  duration_ms: 0.651799
+  ...
+# Subtest: both typeouts keep untyped lines for the close-time flush, and a stale typeout stops
+ok 18 - both typeouts keep untyped lines for the close-time flush, and a stale typeout stops
+  ---
+  duration_ms: 0.605739
+  ...
+# Subtest: a "Narrator:" line is narration, prefix stripped; the last speaker tag decides a tagged step
+ok 19 - a "Narrator:" line is narration, prefix stripped; the last speaker tag decides a tagged step
+  ---
+  duration_ms: 0.372528
+  ...
+# Subtest: npcManager stores narration as a read narrator line: not unread, kept through a reload
+ok 20 - npcManager stores narration as a read narrator line: not unread, kept through a reload
+  ---
+  duration_ms: 0.683386
+  ...
+# Subtest: a bark knot that opens with narration stores it and barks the next contact line
+ok 21 - a bark knot that opens with narration stores it and barks the next contact line
+  ---
+  duration_ms: 0.396209
+  ...
+# Subtest: the phone UI draws narration without a bubble and skips it for the contact-list preview
+ok 22 - the phone UI draws narration without a bubble and skips it for the contact-list preview
+  ---
+  duration_ms: 0.380177
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 225.086176

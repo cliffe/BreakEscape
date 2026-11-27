@@ -1,0 +1,149 @@
+{
+  "scenario_brief": "Test scenario for NPC behavior system - demonstrates all behavior types",
+  "endGoal": "Interact with each NPC to observe different behaviors",
+  "startRoom": "behavior_test_room",
+  
+  "player": {
+    "id": "player",
+    "displayName": "Agent Test",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  
+  "rooms": {
+    "behavior_test_room": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "default_npc",
+          "displayName": "Default NPC (Face Player Only)",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/behavior-test-default.json",
+          "currentKnot": "start",
+          "_note": "No behavior config - defaults to face_player: true"
+        },
+        
+        {
+          "id": "patrol_npc",
+          "displayName": "Patrolling Guard",
+          "npcType": "person",
+          "position": { "x": 6, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/behavior-test-patrol.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96,
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "changeDirectionInterval": 4000,
+              "bounds": {
+                "x": 160,
+                "y": 32,
+                "width": 128,
+                "height": 160
+              }
+            }
+          },
+          "_note": "Patrols in small area, stops to face player when nearby"
+        },
+        
+        {
+          "id": "shy_npc",
+          "displayName": "Shy Person (Personal Space)",
+          "npcType": "person",
+          "position": { "x": 2, "y": 6 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/behavior-test-shy.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "personalSpace": {
+              "enabled": true,
+              "distance": 48,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            }
+          },
+          "_note": "Backs away slowly (5px at a time) if player gets within 48px (1.5 tiles), while still facing player. Stays within interaction range (64px)."
+        },
+        
+        {
+          "id": "hostile_npc",
+          "displayName": "Hostile Agent (Red Tint)",
+          "npcType": "person",
+          "position": { "x": 8, "y": 6 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/behavior-test-hostile.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "hostile": {
+              "defaultState": true,
+              "influenceThreshold": -30,
+              "aggroDistance": 160
+            }
+          },
+          "_note": "Starts hostile (red tint), can be made friendly via Ink tags"
+        },
+        
+        {
+          "id": "complex_npc",
+          "displayName": "Complex Behavior NPC",
+          "npcType": "person",
+          "position": { "x": 5, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/behavior-test-complex.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "patrol": {
+              "enabled": false,
+              "speed": 100,
+              "changeDirectionInterval": 3000
+            },
+            "personalSpace": {
+              "enabled": true,
+              "distance": 48,
+              "backAwaySpeed": 30,
+              "backAwayDistance": 5
+            },
+            "hostile": {
+              "defaultState": false,
+              "influenceThreshold": -40
+            }
+          },
+          "_note": "Starts with personal space (subtle backing), Ink story can enable patrol and toggle hostility"
+        }
+      ]
+    }
+  }
+}

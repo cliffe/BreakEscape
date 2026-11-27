@@ -1,0 +1,13 @@
+{
+  "key": "a34c673c667029a47b7ff6ad56a3c29b",
+  "npc": "kit_fatima_begum",
+  "text": "Good thinking. I'll take it to Nilesh just as it is.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout \u2014 do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca17_acceptable_use_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:22:39Z"
+}

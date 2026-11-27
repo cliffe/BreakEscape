@@ -1,0 +1,13 @@
+{
+  "key": "e738f33eccc4a53c6b4185efccfb05dd",
+  "npc": "victoria_line",
+  "text": "You asked nicely in Cardiff. Tonight you didn't bother. I'll want a doctor, and then a lawyer.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:14:49Z"
+}

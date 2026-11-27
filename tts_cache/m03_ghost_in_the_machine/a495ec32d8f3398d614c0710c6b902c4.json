@@ -1,0 +1,13 @@
+{
+  "key": "a495ec32d8f3398d614c0710c6b902c4",
+  "npc": "narrator",
+  "text": "The cloner didn't keep the read. You'll need to get close to her card again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:20:53Z"
+}

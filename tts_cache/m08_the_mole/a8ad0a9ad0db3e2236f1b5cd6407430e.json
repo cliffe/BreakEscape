@@ -1,0 +1,13 @@
+{
+  "key": "a8ad0a9ad0db3e2236f1b5cd6407430e",
+  "npc": "director_netherton",
+  "text": "Stand where you like, Agent. I shall be looking out of the window.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:46:02Z"
+}

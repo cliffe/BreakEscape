@@ -1,0 +1,1806 @@
+{
+ "mission": "m10",
+ "id": "m10_trailer60_v3",
+ "title": "SAFETYNET: Licence to Hack, m10 Full Disclosure 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v2 edit list (2026-11-25): owner notes. Four flash_* shots removed, replaced by post_team (t25) so the Mission 10 card still lands on the 10.28 lift; cr_* crescendo framings refitted so NPCs and panels sit fully inside per aspect. gallery_bark (t16) and the Tesseract ending (t14) await re-takes. Not rendered. Music SpyAgro/Hybrid Attack 1 from 98.599 s, 1 s fade-out.",
+ "music": {
+  "track": "SpyAgro/Hybrid Attack 1.mp3",
+  "analysis": "hybrid_attack_1_60.json",
+  "start": 98.599,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 1.0,
+  "alternatives": [
+   "Hybrid Attack 2 window 122.4 (quiet 0-10.5, lift 10.5, then flat and loud to the end)",
+   "Hybrid Attack 1 window 76.317 (analysis best, loud from the start, no quiet bed for the hook)"
+  ]
+ },
+ "beat": {
+  "bpm": 140.02,
+  "period": 0.4285,
+  "offset": 0,
+  "note": "output time = track time minus 98.599; loud tail 0-5.1, drop 5.14 (near-silence under hook and flash), lift 10.28 + hit 10.92 = Mission 10 card, drop 13.71 (quiet bars under Quintero, WREN card, sleeper line), lift 17.14 = Disable the Security card, drop 20.57 (HaX), lift 24.0 (isolator panel), lift 30.85 (console clip), hit 34.28 = It Goes at Six card, hit 37.70 on the cut into the tunnel, hits 38.57 and 41.14 under the fight; loud to the end, decay from 59.99."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no PIN, password, code, UID or flag value on screen; pads show at most 3 digits that are not a code; the t20 core pad is cut before the 4th digit",
+  "Kowalczyk's face (t23) only in the crescendo, between other faces, bar off; never next to the WREN Is on / the Team card; the sleeper picture is Netherton's portrait and nothing names the sleeper next to the sleeper beat",
+  "t10 only inside its marked windows (hook 79.30-83.70, sleeper 263.72-266.13); t14 never past 20.2 (stakes figure line)",
+  "no password screen with the CASUALTY MODEL hint, no menu, reply choices, toast, task panel, launcher post-it, door or bench log, incident file",
+  "t24 gary_tech flash not used (shows HaX's portrait)"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "vo": [
+  {
+   "id": "tess_my_turn",
+   "start": 34.65,
+   "end": 36.5,
+   "text": "Now it's my turn.",
+   "file": "/home/cliffe/video-takes-local/m10/vo/tess_my_turn.wav",
+   "gain_db": 0
+  }
+ ],
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false
+  },
+  {
+   "id": "hook_netherton",
+   "type": "gameplay",
+   "duration": 2.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10_briefing.trimmed.mkv",
+    "in": 80.4,
+    "out": 82.8
+   },
+   "note": "hook: Netherton, silencedetect voice 79.40-83.57; in 80.40, J-cut pre 1.1 (audio from 79.30), L-cut post 0.9 (to 83.70, inside the pause before the next sentence). Bar cropped in 16:9. t10 is a monolith: never outside 79.30-83.70 here.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 1.1,
+    "post": 0.9
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "hook line only, no outcome named"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "At six he publishes everything we ever catalogued.",
+     "start": -1.0,
+     "end": 3.17
+    }
+   ]
+  },
+  {
+   "id": "post_team",
+   "type": "gameplay",
+   "duration": 1.8667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t25_walk_gate.trimmed.mkv",
+    "in": 6.2,
+    "out": 8.0667
+   },
+   "note": "v2 fill for the removed flash_* shots (owner 25 Nov): forward post with the team at the table, player on the floor, from t25 (full-frame camera, no launcher, no names). Keeps card_mission on the 10.28 lift. Framing 9:16/1:1 centred left of the player so the team table and the player both sit inside.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.42,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "map view, no panel, no names"
+   }
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 10",
+    "Full",
+    "Disclosure"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only; lift 10.28 + hit 10.92"
+   }
+  },
+  {
+   "id": "quintero",
+   "type": "gameplay",
+   "duration": 2.7,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_quintero.trimmed.mkv",
+    "in": 10.4,
+    "out": 13.1
+   },
+   "note": "Quintero conversation view only, voice 10.57-12.71; never the map part of t11 (1.5-9 s, team copies); out before the menu (14.12)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait and wanted board only"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Quintero",
+     "text": "I don't like doors that know your name.",
+     "start": 0.17,
+     "end": 2.31
+    }
+   ]
+  },
+  {
+   "id": "card_wren",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "WREN Is on",
+    "the Team"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only; the sleeper line J-cuts in under it at 14.72. Next picture is Netherton, never Kowalczyk"
+   }
+  },
+  {
+   "id": "sleeper_netherton",
+   "type": "gameplay",
+   "duration": 1.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_briefing.trimmed.mkv",
+    "in": 264.9667,
+    "out": 266.1334
+   },
+   "note": "Netherton portrait, voice 263.77-266.13; pre 1.25 (audio from 263.717, inside the pause after the previous line). Picture is Netherton only: no frame names the sleeper. Bar says WREN (a codename).",
+   "framing": {
+    "16:9": {
+     "cx": 0.66,
+     "cy": 0.26,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 1.25,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "codename only, no name, portrait of Netherton"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "It puts WREN on this team.",
+     "start": -1.2,
+     "end": 1.16
+    }
+   ]
+  },
+  {
+   "id": "card_security",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Disable the",
+    "Security"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only; lift 17.14"
+   }
+  },
+  {
+   "id": "power_strike",
+   "type": "gameplay",
+   "duration": 1.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t27_walk_power.trimmed.mkv",
+    "in": 8.3,
+    "out": 9.4667
+   },
+   "note": "t27 (passed, HUD-free): player enters the power room (entered 8.65), lights strike; take audio low for the hum. Cut the guard chat (0-2.7) by staying after 5.9.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "room and lights only"
+   }
+  },
+  {
+   "id": "hax_call",
+   "type": "gameplay",
+   "duration": 3.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_power_room.trimmed.mkv",
+    "in": 12.4,
+    "out": 15.8
+   },
+   "note": "HaX phone call screen, voice 12.61-15.58; check older transcript lines (\"That's his sheet...\" at 11.12) are not showing; out before the choices (16.23). Phone framing is a guess: check in 9:16.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "call text only, no choices"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent 0x00 HaX",
+     "text": "Top row. The third breaker from the left feeds the shutter.",
+     "start": 0.21,
+     "end": 3.18
+    }
+   ]
+  },
+  {
+   "id": "isolator_panel",
+   "type": "gameplay",
+   "duration": 1.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_power_room.trimmed.mkv",
+    "in": 38.3,
+    "out": 39.6333
+   },
+   "note": "isolator panel text (GALLERY SHUTTER: ISOLATED, GALLERY CAMERA: OFF) is the payoff; check it is already up at 38.30 (else in 38.5). HUD of t12 must be cropped off. Framing is a guess.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "panel text only, no code"
+   }
+  },
+  {
+   "id": "gallery_bark",
+   "type": "gameplay",
+   "duration": 3.4333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_gallery_bark.trimmed.mkv",
+    "in": 5.5333,
+    "out": 8.9666
+   },
+   "note": "gallery guard bark, voice ~5.9-7.24 + 7.94-8.86 (26 Nov re-take, hall guards stood down); the guard walks west to the door while barking. 9:16 cx 0.66 keeps the whole bubble in from 5.6 to 8.9 s (checked on frames 26 Nov).",
+   "framing": {
+    "16:9": {
+     "cx": 0.64,
+     "cy": 0.52,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.66,
+     "cy": 0.55,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.64,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "bark only, no names or codes"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Gallery guard",
+     "text": "Camera's dead again. I'll go and look.",
+     "start": 0.28,
+     "end": 3.31
+    }
+   ]
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "walk_vm",
+   "type": "gameplay",
+   "duration": 1.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t25_walk_gate.trimmed.mkv",
+    "in": 2.5,
+    "out": 3.6667
+   },
+   "note": "t25 (passed): pan along the north wall and arrival at the gate end (pan 1.4-3.7); in after the first 2 s of team copies; no launcher. Camera ends at the gate end: framing cx is a guess.",
+   "framing": {
+    "16:9": {
+     "cx": 0.55,
+     "cy": 0.45,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.55,
+     "cy": 0.45,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.55,
+     "cy": 0.45,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "map walk, no panel, no names"
+   }
+  },
+  {
+   "id": "real_hacking",
+   "type": "gameplay",
+   "duration": 2.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m10_console_fileread_clip.mp4",
+    "in": 0.4,
+    "out": 2.4
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.264,
+     "cy": 0.5,
+     "zoom": 0.6
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "placeholder": false,
+   "note": "console file read, note lands at 0.53. Check no casualty figure in the plan text on the frame.",
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "CONSOLE_CLIPS: no flag, password or secret; the flag line never scrolls in"
+   }
+  },
+  {
+   "id": "cyberchef",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t28_cyberchef.trimmed.mkv",
+    "in": 7.5,
+    "out": 8.5
+   },
+   "note": "t28 (passed): ROT13 recipe with input and output both shown (output from 7.6). Generic demo text. m03's trailer also used ROT13: change if both end up in the same final.",
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.45,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "neutral demo text, nothing from the mission"
+   }
+  },
+  {
+   "id": "card_six",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "It Goes",
+    "at Six"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only; hit 34.28"
+   }
+  },
+  {
+   "id": "clock_panel",
+   "type": "gameplay",
+   "duration": 2.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_server_hall.trimmed.mkv",
+    "in": 12.6,
+    "out": 14.6
+   },
+   "note": "release console screen: times only (early access 04:00, release 06:00 UTC, now 03:30); 9:16 and 1:1 framed to the panel's full width. Tesseract's \"Now it's my turn.\" runs as a vo cue.",
+   "framing": {
+    "16:9": {
+     "cx": 0.49,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.49,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.49,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "times only, no code"
+   }
+  },
+  {
+   "id": "tunnel_in",
+   "type": "gameplay",
+   "duration": 1.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_tunnel_guard.trimmed.mkv",
+    "in": 4.6,
+    "out": 5.7
+   },
+   "note": "map, into the tunnel (entered 5.67); stay after 4.6, the forward post map at about 2 s shows team copies. t26 not used (not in the run 3 table).",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "map only"
+   }
+  },
+  {
+   "id": "guard_armed",
+   "type": "gameplay",
+   "duration": 2.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_tunnel_guard.trimmed.mkv",
+    "in": 12.75,
+    "out": 15.35
+   },
+   "note": "tunnel guard portrait, voice 13.02-14.82; crop the toast (about 13 s) or accept; out before the choices (15.44)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.735,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Tunnel guard",
+     "text": "Nobody said let you through armed.",
+     "start": 0.27,
+     "end": 2.07
+    }
+   ]
+  },
+  {
+   "id": "charge",
+   "type": "gameplay",
+   "duration": 2.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_tunnel_guard.trimmed.mkv",
+    "in": 17.6,
+    "out": 19.7
+   },
+   "note": "tight on the grapple, fight sound from the take; out before the swing lands (no KO)",
+   "framing": {
+    "16:9": {
+     "cx": 0.53,
+     "cy": 0.48,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.53,
+     "cy": 0.48,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "fight only"
+   }
+  },
+  {
+   "id": "cr_lockpick",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_security_office.trimmed.mkv",
+    "in": 30.2,
+    "out": 30.4667
+   },
+   "note": "crescendo cut: mid-pick, pins setting. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.395,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.395,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.395,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "mid-pick, pins setting"
+   }
+  },
+  {
+   "id": "cr_pad",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_security_office.trimmed.mkv",
+    "in": 16.0,
+    "out": 16.2333
+   },
+   "note": "crescendo cut: records cupboard pad, three wrong digits, no-match. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": "three digits at most, not the code",
+    "note": "records cupboard pad, three wrong digits, no-match"
+   }
+  },
+  {
+   "id": "cr_cloner",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_workshop_pads.trimmed.mkv",
+    "in": 13.2,
+    "out": 13.4333
+   },
+   "note": "crescendo cut: cloner: UID rows must be blurred, check the frame. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "cloner: UID rows must be blurred, check the frame"
+   }
+  },
+  {
+   "id": "cr_alarm",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_security_office.trimmed.mkv",
+    "in": 6.0,
+    "out": 6.2667
+   },
+   "note": "crescendo cut: red FORCED lamp; framing guess. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "red FORCED lamp; framing guess"
+   }
+  },
+  {
+   "id": "cr_arakawa2",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_post_faces.trimmed.mkv",
+    "in": 6.2,
+    "out": 6.4333
+   },
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.26,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.27,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "face, bar off"
+   }
+  },
+  {
+   "id": "cr_kowalczyk",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t23_face_kowalczyk.trimmed.mkv",
+    "in": 4.4,
+    "out": 4.6333
+   },
+   "note": "crescendo cut: Kowalczyk face, bar OFF in every aspect (it names her); only here, between team faces, far from the WREN card. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.718,
+     "cy": 0.26,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.718,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.718,
+     "cy": 0.27,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Kowalczyk face, bar OFF in every aspect (it names her); only here, between team faces, far from the WREN card"
+   }
+  },
+  {
+   "id": "cr_imran",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t24_workshop_faces.trimmed.mkv",
+    "in": 10.9,
+    "out": 11.1667
+   },
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.708,
+     "cy": 0.26,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.708,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.708,
+     "cy": 0.27,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "face, bar off"
+   }
+  },
+  {
+   "id": "cr_dust",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_power_dust.trimmed.mkv",
+    "in": 25.0,
+    "out": 25.2333
+   },
+   "note": "crescendo cut: dust brushing. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.499,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.499,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.499,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "dust brushing"
+   }
+  },
+  {
+   "id": "cr_reader",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_workshop_pads.trimmed.mkv",
+    "in": 27.5,
+    "out": 27.7333
+   },
+   "note": "crescendo cut: reader, Access Granted. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reader, Access Granted"
+   }
+  },
+  {
+   "id": "cr_flag",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_post_props.trimmed.mkv",
+    "in": 22.0,
+    "out": 22.2333
+   },
+   "note": "crescendo cut: empty flag station (No flags submitted yet). Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.499,
+     "cy": 0.498,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.499,
+     "cy": 0.498,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.499,
+     "cy": 0.498,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty flag station (No flags submitted yet)"
+   }
+  },
+  {
+   "id": "cr_asante",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_server_hall.trimmed.mkv",
+    "in": 35.9,
+    "out": 36.1667
+   },
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.705,
+     "cy": 0.26,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.705,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.705,
+     "cy": 0.27,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "face, bar off"
+   }
+  },
+  {
+   "id": "cr_pad_core",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_gallery_closeups.trimmed.mkv",
+    "in": 39.4,
+    "out": 39.6333
+   },
+   "note": "crescendo cut: core pad cut BEFORE the 4th digit: check the display shows at most 3. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": "three digits at most, not the code",
+    "note": "core pad cut BEFORE the 4th digit: check the display shows at most 3"
+   }
+  },
+  {
+   "id": "cr_fonoti",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_gallery_closeups.trimmed.mkv",
+    "in": 48.0,
+    "out": 48.2333
+   },
+   "note": "crescendo cut: face, bar off. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.698,
+     "cy": 0.26,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.698,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.698,
+     "cy": 0.27,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "face, bar off"
+   }
+  },
+  {
+   "id": "cr_nightshade",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_post_faces.trimmed.mkv",
+    "in": 41.7,
+    "out": 41.9667
+   },
+   "note": "crescendo cut: face, bar OFF in every aspect (the bar may name the character). Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.708,
+     "cy": 0.26,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.708,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.708,
+     "cy": 0.27,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "face, bar OFF in every aspect (the bar may name the character)"
+   }
+  },
+  {
+   "id": "cr_kettle",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_post_props.trimmed.mkv",
+    "in": 31.0,
+    "out": 31.2333
+   },
+   "note": "crescendo cut: kettle prop. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.499,
+     "cy": 0.499,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "kettle prop"
+   }
+  },
+  {
+   "id": "cr_phone",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_post_props.trimmed.mkv",
+    "in": 36.2,
+    "out": 36.4333
+   },
+   "note": "crescendo cut: Messages list only, before the thread and its reply choices. Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.455,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Messages list only, before the thread and its reply choices"
+   }
+  },
+  {
+   "id": "cr_dust_plate",
+   "type": "gameplay",
+   "duration": 0.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_gallery_closeups.trimmed.mkv",
+    "in": 22.0,
+    "out": 22.3
+   },
+   "note": "crescendo cut: dusted plate: text must not show digits (take closes before the observation). Framing v2 (25 Nov): fitted on the in-point frame per aspect, NPC or panel fully inside, subtitle bar cropped off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.499,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.499,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.499,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "dusted plate: text must not show digits (take closes before the observation)"
+   }
+  },
+  {
+   "id": "ending_wide",
+   "type": "gameplay",
+   "duration": 2.5333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_tesseract_core.trimmed.mkv",
+    "in": 12.9667,
+    "out": 15.5
+   },
+   "note": "Tesseract portrait wide, voice 10.68-15.12 (26 Nov re-take, E glasses); pre 2.3 (audio from 10.6667); bar cropped in 16:9; integer scale 25 Nov: 16:9 at 2x (cy 0.28) so the name bar stays cropped",
+   "framing": {
+    "16:9": {
+     "cx": 0.6,
+     "cy": 0.28,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.73,
+     "cy": 0.4444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.73,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 2.3,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Tesseract",
+     "text": "Your service spent decades hoarding the world's weak points.",
+     "start": -2.3,
+     "end": 2.14
+    }
+   ]
+  },
+  {
+   "id": "ending_close",
+   "type": "gameplay",
+   "duration": 2.9333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_tesseract_core.trimmed.mkv",
+    "in": 15.5,
+    "out": 18.4333
+   },
+   "note": "Tesseract close, voice 15.93-18.20 (26 Nov re-take), cut in the pause after weak points; OUT 18.43, never past 19.2 (the stakes figure line starts 19.39). Bar off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.74,
+     "cy": 0.2,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.73,
+     "cy": 0.3,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.73,
+     "cy": 0.25,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only, out before the stakes figure"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Tesseract",
+     "text": "At six, I give them back.",
+     "start": 0.4,
+     "end": 2.67
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false
+  }
+ ]
+}

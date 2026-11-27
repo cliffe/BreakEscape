@@ -1,0 +1,13 @@
+{
+  "key": "3933cb5d2e08e7bb082e60267f7a7220",
+  "npc": "fatima_begum",
+  "text": "Next year. You said that last year.",
+  "voice": "Vindemiatrix",
+  "style": "Recruitment lead in her thirties, British Bangladeshi, Yorkshire accent. Brisk, friendly, a little rushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:16Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e7ece65b635e1c5391e6b554957b192d",
+  "npc": "closing_debrief",
+  "text": "Dr. James Mercer left that control room on a stretcher and in custody. He has not said a word since he came round.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:56:20Z"
+}

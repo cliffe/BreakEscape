@@ -1,0 +1,13 @@
+{
+  "key": "3e3e3d1fd01d9572b7a30c1c40c3e9a1",
+  "npc": "eleanor_vance",
+  "text": "The NCSC is going to tell us they attribute the post-exploitation activity to GREYMANTLE — a state-sponsored APT group. That's intelligence-level confidence.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:17Z"
+}

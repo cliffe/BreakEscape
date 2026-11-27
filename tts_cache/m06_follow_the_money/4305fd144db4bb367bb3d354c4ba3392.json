@@ -1,0 +1,13 @@
+{
+  "key": "4305fd144db4bb367bb3d354c4ba3392",
+  "npc": "trader_npc",
+  "text": "Bit of both. Satoshi believes it, and it pays.",
+  "voice": "Puck",
+  "style": "Young man, a cryptocurrency trader in his early twenties, British-Nigerian, jittery on caffeine and increasingly frightened by what he has noticed. Speak with a consistent south-east London (Peckham) accent throughout — do not shift to any other accent. Mid-to-high pitch; fast, nervy pace, over-explaining.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:07:17Z"
+}

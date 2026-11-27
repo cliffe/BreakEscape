@@ -1,0 +1,13 @@
+{
+  "key": "ca2eadfff7338fafb9b0b675da3b96cd",
+  "npc": "kit_fatima_begum",
+  "text": "I'll pop it in the lost property box, then.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout \u2014 do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca20_remote_and_mobile_working_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:22:43Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "a32510128d324549b43f55ffe3d3756b",
+  "npc": "agent_nightshade",
+  "text": "I did. The access a little too broad, the hours a little too odd, and the calm of someone who's decided the rules don't apply to them. Now you're listening.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is the mole, not yet unmasked, being interviewed by an agent he once taught: warm, unhurried, helpful to a fault. The only tell is that nothing rattles him -- in a building full of frightened people, he is serene.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:15:57Z"
+}

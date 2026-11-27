@@ -1,0 +1,13 @@
+{
+  "key": "be66770f12a31202fec8de4eb757787d",
+  "npc": "sorensen_door",
+  "text": "You never chose, so take Mr. Lawson's file. It was nearest. The other one's already gone.",
+  "voice": "Vindemiatrix",
+  "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:33:59Z"
+}

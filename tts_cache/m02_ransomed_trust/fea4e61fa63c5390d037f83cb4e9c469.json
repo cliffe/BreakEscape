@@ -1,0 +1,13 @@
+{
+  "key": "fea4e61fa63c5390d037f83cb4e9c469",
+  "npc": "narrator",
+  "text": "Static. Nobody answers.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:56:19Z"
+}

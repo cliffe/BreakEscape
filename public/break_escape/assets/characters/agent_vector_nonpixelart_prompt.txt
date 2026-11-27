@@ -1,0 +1,10 @@
+Make portrait for Agent Vector
+A slim, slightly hunched British-Chinese man of about 32 with light skin, an untidy mop of straight black hair falling over his forehead and ears, thin rectangular wire-framed glasses and a worried, defensive half-frown, a brilliant but socially anxious cryptographer at an intelligence agency who looks as if he expects to be misunderstood. He wears a baggy oatmeal cable-knit jumper with the sleeves too long, the collar of a blue-and-white checked shirt showing at the neck, a lanyard with a blank white ID card, brown corduroy trousers and a brown leather belt. He holds a thick sheaf of printed paper notes pressed flat against his chest with one hand, the other arm hanging at his side. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is agent_vector_concept_2_raw.png.

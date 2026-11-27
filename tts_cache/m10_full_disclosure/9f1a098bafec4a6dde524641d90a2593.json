@@ -1,0 +1,13 @@
+{
+  "key": "9f1a098bafec4a6dde524641d90a2593",
+  "npc": "narrator",
+  "text": "One paragraph: a SAFETYNET agent shot a man in a converted Cold War bunker in Montana tonight. He was not moving. His hands were empty, and in plain sight.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:20:05Z"
+}

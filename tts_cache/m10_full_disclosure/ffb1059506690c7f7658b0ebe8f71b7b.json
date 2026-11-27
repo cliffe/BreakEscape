@@ -1,0 +1,13 @@
+{
+  "key": "ffb1059506690c7f7658b0ebe8f71b7b",
+  "npc": "voltage_van",
+  "text": "A new feed cable-tied onto a board from 1962. It'll hold. Just.",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:03:09Z"
+}

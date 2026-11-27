@@ -1,0 +1,177 @@
+/* The shared console window (css/minigames-framework.css) is the frame and the title bar;
+   the black ransom screen fills its body. */
+.ransomware-display-bg {
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+    background-color: #000000;
+    display: flex;
+    align-items: safe center;
+    justify-content: center;
+    position: relative;
+    overflow: auto;
+}
+
+.ransomware-display-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='8' y='11' width='8' height='7' fill='%23ff4d4d'/%3E%3Crect x='9' y='12' width='6' height='5' fill='%23000000'/%3E%3Crect x='9' y='7' width='6' height='4' fill='%23ff4d4d'/%3E%3Crect x='10' y='8' width='4' height='3' fill='%23000000'/%3E%3C/svg%3E");
+    background-size: 30px 30px;
+    background-repeat: repeat;
+    opacity: 0.10;
+    pointer-events: none;
+}
+
+.ransomware-display-panel {
+    width: 100%;
+    max-width: 1420px;
+    flex: none;
+    background: #3d0000;
+    border: 2px solid #a80000;
+    padding: 30px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+    font-family: 'Press Start 2P', monospace;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.ransomware-display-icon {
+    color: #ff8080;
+    font-size: 32px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 14px;
+}
+
+/* 24x24 pixel-art icons shown at an integer 3x (72px). */
+.ransomware-display-icon-img {
+    width: 72px;
+    height: 72px;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    flex: none;
+}
+
+.ransomware-display-title {
+    margin: 0 0 16px 0;
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+    color: #ff3434;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.ransomware-display-body {
+    margin: 0;
+    padding: 14px;
+    border: 2px solid #6a0000;
+    background: #220000;
+    color: #efefef;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 28px;
+    white-space: pre-wrap;
+    flex: 1 0 auto;
+    overflow: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Per-terminal lines (scenarioData `extraLines`): what this machine says that the others don't. */
+.ransomware-display-extra {
+    flex: none;
+    margin-top: 10px;
+    border-color: #a80000;
+    color: #ffd0d0;
+}
+
+.ransomware-display-timer-row {
+    margin-top: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    color: #ffcf63;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+#ransomware-timer-value {
+    font-size: 24px;
+    line-height: 32px;
+    color: #ffb100;
+}
+
+#ransomware-timer-value.expired {
+    color: #ff4646;
+}
+
+.ransomware-display-note {
+    margin-top: 12px;
+    border: 2px solid #676767;
+    background: #1d1d1d;
+    color: #d9d9d9;
+    padding: 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;   /* K8 B: the status note is readable text; the headline stays a display */
+    line-height: 24px;
+    text-align: center;
+}
+
+.ransomware-display-note.warning {
+    border-color: #ff8b00;
+    color: #ffd8a3;
+}
+
+.ransomware-display-actions {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 840px) {
+    .ransomware-display-panel {
+        padding: 12px;
+    }
+
+    .ransomware-display-title {
+        font-family: 'Press Start 2P', monospace;
+        font-size: 16px;   /* the display face's other grid size; the headline wraps */
+        line-height: 24px;
+        overflow-wrap: anywhere;
+    }
+
+    .ransomware-display-body {
+        font-size: 16px;
+    }
+
+    .ransomware-display-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Phones: the timer wraps under its label at a smaller grid size (critique B RD1) */
+@media (max-width: 600px) {
+    #ransomware-timer-value {
+        font-size: 16px;
+        line-height: 24px;
+    }
+
+    .ransomware-display-timer-row {
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        line-height: 16px;
+    }
+}

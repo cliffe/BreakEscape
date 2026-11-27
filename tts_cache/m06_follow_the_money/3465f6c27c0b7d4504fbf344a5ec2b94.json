@@ -1,0 +1,13 @@
+{
+  "key": "3465f6c27c0b7d4504fbf344a5ec2b94",
+  "npc": "lerato_dlamini",
+  "text": "Politely. That part I can do.",
+  "voice": "Gacrux",
+  "style": "Night floor coordinator at a cryptocurrency exchange, in her 30s, confident and direct. Speak with a consistent South African accent from Durban throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:08:31Z"
+}

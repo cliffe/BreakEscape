@@ -1,0 +1,21 @@
+{
+  "key": "4240ae344be31b8a7daef450580ab697",
+  "npc": "ghost",
+  "text": "Good.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:30:16Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/4240ae344be31b8a7daef450580ab697.mp3",
+    "clean_md5": "8fbe2f4ea16bd1911acbddf44aaba53c",
+    "baked_md5": "8fe3f658443186dc19f3bc1393559f41",
+    "baked": "2026-11-24"
+  }
+}

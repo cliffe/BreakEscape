@@ -1,0 +1,87 @@
+{
+ "steps": [
+  {
+   "note": "06:00 after Wipe both: Netherton suspends the player and the closing moves to the hearing, which sets closing_done and ends the night."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "database_outcome": "both_wiped",
+    "console_choice": "stopped",
+    "ending": "scorched"
+   }
+  },
+  {
+   "talk": "six",
+   "picks": [
+    "Go to Quintero",
+    "Go to Imran",
+    "Go to Wendell",
+    "Put the phone",
+    "What did it cost",
+    "And the database",
+    "Understood, sir"
+   ]
+  },
+  {
+   "said": [
+    "Nobody holds the whole map now.",
+    "As of now you are suspended, pending a hearing.",
+    "That is why you are suspended and I am not."
+   ],
+   "notSaid": [
+    "His copy goes into the vault tonight",
+    "A trial. He will make speeches."
+   ]
+  },
+  {
+   "expect": {
+    "six_done": true,
+    "closing_done": false
+   }
+  },
+  {
+   "talk": "hearing",
+   "picks": [
+    "They'll want to know why",
+    "Wait for them",
+    "Leave it"
+   ]
+  },
+  {
+   "said": [
+    "A hearing room at the Citadel, two days later.",
+    "The map's gone. He's one man with a memory now.",
+    "Tell them. Short, and true. They can count.",
+    "They'll ask me if I'd have stopped you. I'll tell them I wasn't asked."
+   ],
+   "notSaid": [
+    "The Citadel, an hour later."
+   ]
+  },
+  {
+   "expect": {
+    "closing_done": true,
+    "night_closed": true
+   }
+  },
+  {
+   "tasks": {
+    "close_the_night": "completed"
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "AGENT 0x00: Wiped both copies. Suspended.",
+    "DIRECTOR MAGNUS NETHERTON: Director. Still in his chair.",
+    "AGENT HAX: Handler. Gave her evidence at the hearing in one sentence."
+   ],
+   "notSaid": [
+    "Convened the board himself"
+   ]
+  }
+ ]
+}

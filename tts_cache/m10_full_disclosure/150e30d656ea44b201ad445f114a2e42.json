@@ -1,0 +1,13 @@
+{
+  "key": "150e30d656ea44b201ad445f114a2e42",
+  "npc": "vance_phone",
+  "text": "That's it. Shutter's dead. Sixty-year-old kit, and it still does what it's told.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Tonight he is on a phone line from Teesside, talking an agent through 1960s switchgear he has never seen.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:08:35Z"
+}

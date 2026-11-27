@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: NPC local avoidance (route around player and NPCs)",
+  "description": "Tests that a walking NPC routes around the player and other NPCs (waits, detours, then backs off or gently squeezes) instead of shoving into them.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "engine_npc_avoidance",
+  "test_objective": "Verify NPCs wait and detour around the player and each other, with a deterministic head-on tie-break and no sustained shove."
+}

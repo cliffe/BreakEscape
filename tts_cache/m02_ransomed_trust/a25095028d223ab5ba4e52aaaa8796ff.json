@@ -1,0 +1,13 @@
+{
+  "key": "a25095028d223ab5ba4e52aaaa8796ff",
+  "npc": "narrator",
+  "text": "He tilts his head at the wall phone.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:44:40Z"
+}

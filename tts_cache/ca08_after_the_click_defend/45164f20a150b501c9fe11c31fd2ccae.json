@@ -1,0 +1,13 @@
+{
+  "key": "45164f20a150b501c9fe11c31fd2ccae",
+  "npc": "darren_price",
+  "text": "Phones haven't stopped today.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:00:01Z"
+}

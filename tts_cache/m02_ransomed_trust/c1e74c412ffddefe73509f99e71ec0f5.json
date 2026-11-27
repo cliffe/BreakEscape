@@ -1,0 +1,13 @@
+{
+  "key": "c1e74c412ffddefe73509f99e71ec0f5",
+  "npc": "narrator",
+  "text": "You tell her what you know about the man ENTROPY had inside. She listens like she's logging every word.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:13:29Z"
+}

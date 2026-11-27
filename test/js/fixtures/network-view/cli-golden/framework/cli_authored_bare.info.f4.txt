@@ -1,0 +1,7 @@
+[head|Module: ]training/viewline/stock_account
+[head|Title: ]Stream account left at its default
+[head|Target: ]guest_cam01 (10.40.0.4), port 554, viewline
+[head|Finding: ]f4
+[head|Status: ]Unconfirmed
+[head|Risk: ]Default login High
+[head|Summary: ]A factory account may still be accepted.

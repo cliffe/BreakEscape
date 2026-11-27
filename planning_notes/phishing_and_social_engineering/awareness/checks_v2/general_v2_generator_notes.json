@@ -1,0 +1,51 @@
+{
+  "_about": "Paste-ready data for the Sonnet agent who writes gen_checks_v2_shells.py (10_CHECK_FORMS.md). Holds the PERMUTE arrays for general_v2's two forms (disjoint phish slots) and the CHECK_LINES host text for the two Quayholt hosts (Anjali Rao for the AB pair, Darren Price for the BA pair). JSON cannot hold Python tuple keys, so CHECK_LINES is given host-by-host, stage-by-stage; the generator's gen_e6_e7 check() keys CHECK_LINES by a (host_id, stage) tuple, and the 'python' block below shows the exact literal to paste. Hosts and sprite keys come from gen_e3_e5_shells.py HOSTS (anjali -> female_scientist, darren -> male_telecom).",
+  "forms": ["general_v2_form_a", "general_v2_form_b"],
+  "check_hosts": { "ab": "anjali", "ba": "darren" },
+  "PERMUTE": {
+    "_about": "new[i] = old[order[i]]. Forms authored with phish at ordinal slots 2, 4, 6, 8 (0-based indices 1, 3, 5, 7). These two arrays put the phish in DISJOINT output slots: form A phish at 1-based slots {1, 4, 6, 9}, form B phish at 1-based slots {2, 3, 7, 10} (scattered, not alternating, to match the built forms; CHECKFORMS_V2_DESIGN_C1 P1-M1, 2026-10-29). No ordinal slot is a phish in both forms (CHECK_PARITY_AUDIT B1). Verified by hand and by the parity-audit disjointness check; see general_v2_generator_notes verification output in the content agent's report. A pure reorder changes no counts and no flag multiset, so parity holds.",
+    "general_v2_form_a": [1, 0, 2, 3, 4, 5, 6, 8, 7, 9],
+    "general_v2_form_b": [0, 1, 3, 2, 4, 6, 5, 8, 9, 7]
+  },
+  "HOSTS": {
+    "_about": "Copy these two HOSTS entries across to gen_checks_v2_shells.py (they already exist in gen_e3_e5_shells.py HOSTS). Placeholder sprite keys until PixelLab.",
+    "anjali": { "id": "anjali_rao", "displayName": "Anjali Rao", "sprite": "female_scientist", "about": "Quayholt's information security analyst, 30s, Indian, moved from Bengaluru; she receives the reports (BRAND_SET.md). Runs the before-and-after checks. Placeholder sprite until PixelLab." },
+    "darren": { "id": "darren_price", "displayName": "Darren Price", "sprite": "male_telecom", "about": "Quayholt's service desk team lead and owner of the verification script, 40s, white, from Bristol (BRAND_SET.md). Steady, a bit dry. Placeholder sprite until PixelLab." }
+  },
+  "CHECK_LINES": {
+    "_about": "Each entry is [opening, saved, player-thanks, host-reply], the four strings ink_source() reads (before, after, choice, reply). The dialogue reviewer polishes these. anjali_rao is re-keyed to the tuple form from gen_e3_e5_shells.py (its wording is the same before-and-after check script). darren_price is new.",
+    "anjali_rao": {
+      "pre": [
+        "I'm Anjali, I look after security here. There's a short check on the kiosk first: ten items from a Quayholt inbox. Do what you'd normally do.",
+        "That's your first check saved. We'll do another after the training and see how the two compare.",
+        "Thanks, Anjali.",
+        "Any time."
+      ],
+      "post": [
+        "Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+        "Check saved. Thanks for doing it.",
+        "Thanks, Anjali.",
+        "Any time."
+      ]
+    },
+    "darren_price": {
+      "pre": [
+        "Darren here, I run the service desk. Quick check on the kiosk before the training: ten items from a Quayholt inbox. Just do what you'd normally do.",
+        "First check's saved. You'll do another afterwards and we'll see how the two compare.",
+        "Thanks, Darren.",
+        "No problem."
+      ],
+      "post": [
+        "Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+        "Check saved. Thanks for doing it.",
+        "Thanks, Darren.",
+        "No problem."
+      ]
+    }
+  },
+  "python": {
+    "_about": "The literals to paste into gen_checks_v2_shells.py. PERMUTE entries are added to the existing PERMUTE dict; CHECK_LINES is the tuple-keyed form the gen_e6_e7 check() expects. data_conduct's two hosts (Carrholme cast) are authored later in this same shape (10_CHECK_FORMS.md).",
+    "PERMUTE_entries": "    'general_v2_form_a': [1, 0, 2, 3, 4, 5, 6, 8, 7, 9],\n    'general_v2_form_b': [0, 1, 3, 2, 4, 6, 5, 8, 9, 7],",
+    "CHECK_LINES_entries": "    ('anjali_rao', 'pre'): (\n        \"I'm Anjali, I look after security here. There's a short check on the kiosk first: ten items from a Quayholt inbox. Do what you'd normally do.\",\n        \"That's your first check saved. We'll do another after the training and see how the two compare.\",\n        'Thanks, Anjali.', 'Any time.'),\n    ('anjali_rao', 'post'): (\n        \"Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.\",\n        \"Check saved. Thanks for doing it.\",\n        'Thanks, Anjali.', 'Any time.'),\n    ('darren_price', 'pre'): (\n        \"Darren here, I run the service desk. Quick check on the kiosk before the training: ten items from a Quayholt inbox. Just do what you'd normally do.\",\n        \"First check's saved. You'll do another afterwards and we'll see how the two compare.\",\n        'Thanks, Darren.', 'No problem.'),\n    ('darren_price', 'post'): (\n        \"Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.\",\n        \"Check saved. Thanks for doing it.\",\n        'Thanks, Darren.', 'No problem.'),"
+  }
+}

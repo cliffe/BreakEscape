@@ -1,0 +1,114 @@
+Room room_aes_hall2: 640x320 px (20x10 tiles; about 12 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+VIEW: only x=0..320 of the back wall (6 m of it), as in the strips.
+  The room runs on out of sight to the right: tell Gemini the back wall carries on past that edge of the frame, with no side wall or corner there.
+
+## back wall (hung on it)
+  aes_gas_detector2  x=40..58 y=29..56
+  aes_vent_fan1  x=62..84 y=26..48
+  aes_procedures_sign1  x=140..168 y=22..56
+  aes_bank_a_sign1  x=196..247 y=23..34
+  power_panel1  x=256..274 y=30..52
+
+## against the back wall (standing on the floor)
+  ?(collision; look at the render)  x=88..131 y=96..108
+
+## second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)
+  aes_bms_bypass1  x=86..133 y=63..120  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+    on aes_bms_bypass1: aes_bypass_module1  x=92..113 (conditional; see EMPTY below)
+  batrack  x=136..168 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=138..262 y=98..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=168..200 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=200..232 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=232..264 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=296..328 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+
+## left wall
+  aes_clipboard1  x=12..29 y=126..150
+  fire_extinguisher1  x=14..30 y=172..200
+
+## floor, mid centre
+  ?(collision; look at the render)  x=138..262 y=134..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=138..262 y=170..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid right
+  ?(collision; look at the render)  x=272..295 y=180..190  [feet ~2.2 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near centre
+  batrack  x=136..168 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=168..200 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near right
+  batrack  x=200..232 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=232..264 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  aes_cable_drum1  x=270..297 y=176..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=296..328 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+
+## out of sight to the right (outside the span: leave out)
+  aes_bank_b_sign1  x=296..347 y=23..34
+  ?(collision; look at the render)  x=298..422 y=134..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=298..422 y=170..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=298..422 y=98..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=328..360 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=328..360 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  aes_hv_danger1  x=360..386 y=25..52
+  batrack  x=360..392 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=360..392 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  aes_combiner2  x=392..412 y=60..86
+  batrack  x=392..424 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=392..424 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=394..410 y=66..76
+  aes_inverter1  x=440..496 y=64..120  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=442..606 y=88..104
+  aes_inverter2  x=452..483 y=144..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=454..578 y=170..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+  aes_inverter_sign1  x=470..533 y=15..26
+  aes_inverter2  x=484..515 y=144..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  aes_inverter1  x=496..552 y=64..120  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+  aes_inverter2  x=516..547 y=144..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  aes_chiller1  x=522..582 y=199..254  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=524..580 y=226..240  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  aes_inverter2  x=548..579 y=144..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  aes_inverter1  x=552..608 y=64..120  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+  aes_cctv1  x=586..609 y=12..30
+  aes_gas_cylinders1  x=586..606 y=225..250  [feet ~3.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=588..604 y=230..240  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  { "ambient": "#b0b8c8", "emitters": { "batrack": [ { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "ledColor": "#ffb02e", "ledAlpha": 0.8, "color": "#ffb02e", "radius": 30, "intensity": 0.15, "effect": null }, { "condition": "globalVars.attack_prevented === true && globalVars.hydrogen_alarm === true", "ledColor": "#ffb02e", "color": "#ffb02e", "radius": 30, "intensity": 0.15, "effect": null }, { "condition": "globalVars.attack_prevented === true", "ledColor": "#4dff7a" }, { "condition": "globalVars.racks_vented === true", "color": "#ff5a3c", "radius":
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'west': 'battery_hall_1', 'south': 'plant_room'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  operative_relay: operative_relay  at (7, 7) tiles: 35% across, feet 80% of the way from the back wall. Back-wall items behind them: x~192..256
+      suggested --span 0 320 (puts them about 70% across the view)
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       notes "Rack Bank Maintenance Manifest" -> aes_clipboard1 (items) at 12,150
+  ok       notes "BMS Interlock-Bypass Module" -> aes_bypass_module1 (conditional_table_items) at 92,99
+  ok       notes "Emergency Procedures" -> aes_procedures_sign1 (items) at 140,56
+
+## where this background will show
+  !! conversations in this room set their own background, which wins over chatBackground:
+     assets/backgrounds/background1.png  (grep it in the scenario to see which scenes)

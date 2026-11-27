@@ -1,0 +1,13 @@
+{
+  "key": "6985e534d80aa373ecbabd2542cd6d60",
+  "npc": "ama_owusu",
+  "text": "Good idea. Watch who goes, and what they leave on their desks.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:34:54Z"
+}

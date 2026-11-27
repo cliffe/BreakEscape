@@ -1,0 +1,420 @@
+import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+
+// Every label, description and attribute value comes from scenario params: plain text,
+// escaped exactly once on the way into the SVG and the detail panel.
+const txt = (value) => escapeHtml(displayDashes(value));
+
+/**
+ * MG-06 — Network Architecture Diagram (Purdue Model)
+ *
+ * All topology data (nodes, zones, lines, attack paths, external orgs) is driven
+ * by scenarioData fields passed via params. The SVG renderer and interaction model
+ * are scenario-independent.
+ *
+ * Required params:
+ *   title          — header text
+ *   reviewedVar    — global variable written on first open
+ *   viewBox        — SVG viewBox string (default: "0 0 900 572")
+ *   zones[]        — { id, label, y, h, fill, stroke, nodeClass, x?, width? }
+ *                    nodeClass: "it" | "ot" | "safe"
+ *                    x defaults to 8, width defaults to 780
+ *   nodes[]        — { id, label, sublabel?, warn?, zone, x, y, w, h, paths[], desc, vuln }
+ *                    zone: matches a zone id; paths: array of attackPath ids
+ *   lines[]        — { from, to, type, paths[], label? }
+ *                    type: "normal" | "boundary" | "legacy" | "hardwired"
+ *   attackPaths[]  — { id, label, desc, claim, nodes[] }
+ *   externalOrgs[] — { id, label, label2?, x, y, w, h, nodes[] }
+ *                    nodes follow the same shape as main nodes but without zone
+ */
+export class NetworkArchitectureMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
+    // NAD1: the diagram is drawn at a whole-number scale of its viewBox (1x or 2x), so every
+    // label lands on a whole pixel size. The labels are 8 viewBox units of VT323 (16px on
+    // screen) and 4 units of Press Start 2P (8px), which needs 2x: the node boxes are too
+    // small to hold 16px text at 1x. So the diagram is always 2x and a pane smaller than it
+    // pans (pixel scrollbars, or drag with the mouse). The scale is chosen in
+    // diagramScale(), so a scenario with larger boxes could allow 1x by lowering the minimum.
+    static DIAGRAM_MIN_SCALE = 2;
+    static DIAGRAM_MAX_SCALE = 2;
+
+    constructor(container, params = {}) {
+        super(container, {
+            ...params,
+            title: 'Network Architecture',
+            showCancel: true,
+            cancelText: 'Close Diagram'
+        });
+        this._firstOpen  = false;
+        this._activeNode = null;
+        this._activePaths = new Set();
+        this._svgEl = null;
+        this._pathMap = {};
+    }
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────────
+
+    init() {
+        super.init();
+        this.container.classList.add('nad-minigame-container');
+        this.gameContainer.classList.add('nad-game-container');
+
+        (this.params.attackPaths || []).forEach(p => { this._pathMap[p.id] = p; });
+
+        this.renderLayout();
+    }
+
+    consoleTitle() {
+        return this.params.title || 'NETWORK ARCHITECTURE (PURDUE MODEL)';
+    }
+
+    start() {
+        super.start();
+        this._fitDiagramScale();
+        this.addEventListener(window, 'resize', () => this._fitDiagramScale());
+        this._attachPan();
+        const reviewedVar = this.params.reviewedVar || 'network_architecture_reviewed';
+        const alreadySeen = window.gameState?.globalVariables?.[reviewedVar];
+        if (!alreadySeen) {
+            this._firstOpen = true;
+            this.setGlobalAndNotify(reviewedVar, true);
+        }
+    }
+
+    // ── Layout ───────────────────────────────────────────────────────────────────
+
+    renderLayout() {
+        this.gameContainer.innerHTML = `
+<div class="nad-wrap">
+  <div class="nad-header">
+    <div class="nad-legend">
+      <span class="nad-leg-item" title="Intended path"><span class="nad-leg-line nad-leg-normal"></span>Intended<span class="nad-leg-more"> path</span></span>
+      <span class="nad-leg-item" title="IT/OT boundary"><span class="nad-leg-line nad-leg-boundary"></span>IT/OT<span class="nad-leg-more"> boundary</span></span>
+      <span class="nad-leg-item" title="Legacy exception !"><span class="nad-leg-line nad-leg-legacy"></span>Legacy<span class="nad-leg-more"> exception</span> !</span>
+      <span class="nad-leg-item" title="Hardwired interlock"><span class="nad-leg-line nad-leg-hardwired"></span>Hardwired<span class="nad-leg-more"> interlock</span></span>
+      <span class="nad-leg-item" title="Attack path"><span class="nad-leg-line nad-leg-attack"></span>Attack<span class="nad-leg-more"> path</span></span>
+    </div>
+  </div>
+  <div class="nad-body">
+    <div class="nad-svg-wrap pixel-scroll">
+      ${this._buildSVG()}
+    </div>
+    <div class="nad-detail" id="nad-detail">
+      <button type="button" class="nad-detail-toggle" id="nad-detail-toggle" aria-expanded="false" aria-controls="nad-detail-content">
+        <span class="nad-detail-toggle-label">Details</span><span class="nad-detail-toggle-state">[SHOW]</span>
+      </button>
+      <div class="nad-detail-content" id="nad-detail-content">
+        <div class="nad-detail-hint">Click any system node to see details and attack paths</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+        this._svgEl = this.gameContainer.querySelector('.nad-svg');
+        this._attachNodeListeners();
+        this._attachDetailToggle();
+    }
+
+    // Short windows (CSS, max-height 500px): the detail pane folds to one row with a toggle,
+    // so the diagram keeps the height. The toggle is hidden on taller windows.
+    _attachDetailToggle() {
+        const detail = this.gameContainer.querySelector('#nad-detail');
+        const toggle = this.gameContainer.querySelector('#nad-detail-toggle');
+        if (!detail || !toggle) return;
+        this.addEventListener(toggle, 'click', (e) => {
+            e.preventDefault();
+            this._setDetailOpen(!detail.classList.contains('nad-detail-open'));
+        });
+    }
+
+    _setDetailOpen(open) {
+        const detail = this.gameContainer.querySelector('#nad-detail');
+        const toggle = this.gameContainer.querySelector('#nad-detail-toggle');
+        if (!detail || !toggle) return;
+        detail.classList.toggle('nad-detail-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const state = toggle.querySelector('.nad-detail-toggle-state');
+        if (state) state.textContent = open ? '[HIDE]' : '[SHOW]';
+    }
+
+    _viewBoxSize() {
+        const parts = String(this.params.viewBox || '0 0 900 572').trim().split(/[\s,]+/).map(Number);
+        const w = parts[2] > 0 ? parts[2] : 900;
+        const h = parts[3] > 0 ? parts[3] : 572;
+        return { w, h };
+    }
+
+    // Whole-number scale: the largest that fits the pane's width, never under the minimum
+    diagramScale(paneWidth) {
+        const { w } = this._viewBoxSize();
+        const C = this.constructor;
+        const fit = Math.floor((paneWidth || 0) / w);
+        return Math.min(C.DIAGRAM_MAX_SCALE, Math.max(C.DIAGRAM_MIN_SCALE, fit));
+    }
+
+    _fitDiagramScale() {
+        const svg = this._svgEl;
+        const wrap = this.gameContainer?.querySelector?.('.nad-svg-wrap');
+        if (!svg || !wrap) return;
+        const cs = window.getComputedStyle(wrap);
+        const inner = wrap.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+        const s = this.diagramScale(inner);
+        const { w, h } = this._viewBoxSize();
+        svg.setAttribute('width', String(Math.round(w * s)));
+        svg.setAttribute('height', String(Math.round(h * s)));
+        svg.dataset.scale = String(s);
+    }
+
+    // Drag to pan the diagram with the mouse (touch scrolls natively); a click on a node
+    // still selects it unless the pointer moved
+    _attachPan() {
+        const wrap = this.gameContainer?.querySelector?.('.nad-svg-wrap');
+        if (!wrap) return;
+        let drag = null;
+        this.addEventListener(wrap, 'pointerdown', (e) => {
+            if (e.pointerType !== 'mouse' || e.button !== 0) return;
+            drag = { x: e.clientX, y: e.clientY, l: wrap.scrollLeft, t: wrap.scrollTop, moved: false };
+        });
+        this.addEventListener(window, 'pointermove', (e) => {
+            if (!drag) return;
+            const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+            if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+            drag.moved = true;
+            wrap.classList.add('nad-panning');
+            wrap.scrollLeft = drag.l - dx;
+            wrap.scrollTop = drag.t - dy;
+        });
+        this.addEventListener(window, 'pointerup', () => {
+            if (drag?.moved) {
+                // swallow the click that ends a drag so it does not select a node
+                const stop = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+                wrap.addEventListener('click', stop, { capture: true, once: true });
+                setTimeout(() => wrap.removeEventListener('click', stop, { capture: true }), 0);
+            }
+            drag = null;
+            wrap.classList.remove('nad-panning');
+        });
+    }
+
+    _buildSVG() {
+        const nodes       = this.params.nodes || [];
+        const externalOrgs = this.params.externalOrgs || [];
+        const zones       = this.params.zones || [];
+        const lines       = this.params.lines || [];
+        const viewBox     = this.params.viewBox || '0 0 900 572';
+
+        const zoneMap = {};
+        zones.forEach(z => { zoneMap[z.id] = z; });
+
+        const allNodes = this._allNodes();
+        const nodeMap  = Object.fromEntries(allNodes.map(n => [n.id, n]));
+
+        const cx = n => n.x + n.w / 2;
+        const cy = n => n.y + n.h / 2;
+
+        let linesSvg   = '';
+        let attackLines = '';
+
+        lines.forEach(ln => {
+            const a = nodeMap[ln.from];
+            const b = nodeMap[ln.to];
+            if (!a || !b) return;
+
+            const cls = ln.type === 'legacy'    ? 'nad-line-legacy'    :
+                        ln.type === 'boundary'  ? 'nad-line-boundary'  :
+                        ln.type === 'hardwired' ? 'nad-line-hardwired' :
+                                                  'nad-line-normal';
+            const pathAttr = ln.paths?.length ? `data-paths="${escapeHtml(ln.paths.join(','))}"` : '';
+            const dashAttr = ln.type === 'legacy' ? 'stroke-dasharray="7 4"' : '';
+
+            linesSvg += `<line class="nad-line ${cls}" ${pathAttr} x1="${escapeHtml(cx(a))}" y1="${escapeHtml(cy(a))}" x2="${escapeHtml(cx(b))}" y2="${escapeHtml(cy(b))}" ${dashAttr}/>`;
+
+            if (ln.paths?.length) {
+                attackLines += `<line class="nad-line-attack" data-paths="${escapeHtml(ln.paths.join(','))}" x1="${escapeHtml(cx(a))}" y1="${escapeHtml(cy(a))}" x2="${escapeHtml(cx(b))}" y2="${escapeHtml(cy(b))}"/>`;
+            }
+
+            if (ln.label) {
+                const mx = (cx(a) + cx(b)) / 2;
+                const my = (cy(a) + cy(b)) / 2 - 5;
+                linesSvg += `<text class="nad-line-label" x="${escapeHtml(mx)}" y="${escapeHtml(my)}">${txt(ln.label)}</text>`;
+            }
+        });
+
+        let zonesSvg = '';
+        zones.forEach(z => {
+            const zx = z.x !== undefined ? z.x : 8;
+            const zw = z.width !== undefined ? z.width : 780;
+            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(zx)}" y="${escapeHtml(z.y)}" width="${escapeHtml(zw)}" height="${escapeHtml(z.h)}" fill="${escapeHtml(z.fill)}" stroke="${escapeHtml(z.stroke)}" stroke-width="2"/>`;
+            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(zx + 6)}" y="${escapeHtml(z.y + 9)}">${txt(z.label)}</text>`;
+        });
+
+        externalOrgs.forEach(org => {
+            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(org.x)}" y="${escapeHtml(org.y)}" width="${escapeHtml(org.w)}" height="${escapeHtml(org.h)}" fill="#0d1a0d" stroke="#14532d" stroke-width="2"/>`;
+            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 9)}">${txt(org.label)}</text>`;
+            if (org.label2) {
+                zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 17)}">${txt(org.label2)}</text>`;
+            }
+        });
+
+        let nodesSvg = '';
+        allNodes.forEach(n => {
+            const zone = zoneMap[n.zone];
+            const nodeClass = n.nodeClass || zone?.nodeClass || 'ot';
+            const zoneCls = nodeClass === 'safe' ? 'nad-node-safe' :
+                            nodeClass === 'it'   ? 'nad-node-it'   : 'nad-node-ot';
+            const warnBadge = n.warn ? `<text class="nad-node-warn" x="${escapeHtml(n.x + n.w - 6)}" y="${escapeHtml(n.y + 10)}">!</text>` : '';
+
+            nodesSvg += `
+<g class="nad-node ${zoneCls}" id="nad-${escapeHtml(n.id)}" data-id="${escapeHtml(n.id)}" style="cursor:pointer" role="button" tabindex="0">
+  <rect class="nad-node-rect" x="${escapeHtml(n.x)}" y="${escapeHtml(n.y)}" width="${escapeHtml(n.w)}" height="${escapeHtml(n.h)}"/>
+  <text class="nad-node-label" x="${escapeHtml(n.x + n.w / 2)}" y="${escapeHtml(n.y + (n.sublabel ? 14 : 20))}">${txt(n.label)}</text>
+  ${n.sublabel ? `<text class="nad-node-sub" x="${escapeHtml(n.x + n.w / 2)}" y="${escapeHtml(n.y + 26)}">${txt(n.sublabel)}</text>` : ''}
+  ${warnBadge}
+</g>`;
+        });
+
+        return `
+<svg class="nad-svg" viewBox="${escapeHtml(viewBox)}" width="${escapeHtml(this._viewBoxSize().w * this.constructor.DIAGRAM_MIN_SCALE)}" height="${escapeHtml(this._viewBoxSize().h * this.constructor.DIAGRAM_MIN_SCALE)}" data-scale="${escapeHtml(this.constructor.DIAGRAM_MIN_SCALE)}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="nad-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>
+    </marker>
+  </defs>
+  ${zonesSvg}
+  <g class="nad-lines">${linesSvg}</g>
+  <g class="nad-attack-lines">${attackLines}</g>
+  <g class="nad-nodes">${nodesSvg}</g>
+</svg>`;
+    }
+
+    // ── Interaction ──────────────────────────────────────────────────────────────
+
+    _attachNodeListeners() {
+        this._allNodes().forEach(n => {
+            const el = this.gameContainer.querySelector(`#nad-${n.id}`);
+            if (!el) return;
+            this.addEventListener(el, 'click', () => this._onNodeClick(n.id));
+            this.addEventListener(el, 'keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') this._onNodeClick(n.id);
+            });
+        });
+    }
+
+    _onNodeClick(nodeId) {
+        const node = this._allNodes().find(n => n.id === nodeId);
+        if (!node) return;
+
+        if (this._activeNode) {
+            const prev = this.gameContainer.querySelector(`#nad-${this._activeNode}`);
+            if (prev) prev.classList.remove('nad-node-selected');
+        }
+
+        this._activeNode = nodeId;
+        const el = this.gameContainer.querySelector(`#nad-${nodeId}`);
+        if (el) el.classList.add('nad-node-selected');
+
+        this._activePaths = new Set(node.paths || []);
+        this._updateAttackLines();
+        this._renderDetail(node);
+    }
+
+    _updateAttackLines() {
+        const attackLineEls = this.gameContainer.querySelectorAll('.nad-line-attack');
+        attackLineEls.forEach(l => {
+            const linePaths = (l.dataset.paths || '').split(',');
+            l.classList.toggle('nad-path-active', linePaths.some(p => this._activePaths.has(p)));
+        });
+
+        const baseLines = this.gameContainer.querySelectorAll('.nad-line[data-paths]');
+        baseLines.forEach(l => {
+            const linePaths = (l.dataset.paths || '').split(',');
+            l.classList.toggle('nad-line-in-path', linePaths.some(p => this._activePaths.has(p)));
+        });
+
+        const allNodes = this._allNodes();
+        this.gameContainer.querySelectorAll('.nad-node').forEach(el => {
+            const nid = el.dataset.id;
+            const n = allNodes.find(x => x.id === nid);
+            if (!n) return;
+            const inAnyActivePath = (n.paths || []).some(p => this._activePaths.has(p));
+            const isSelected = nid === this._activeNode;
+            el.classList.toggle('nad-node-dim', !inAnyActivePath && !isSelected && this._activePaths.size > 0);
+        });
+    }
+
+    _renderDetail(node) {
+        const detail = this.gameContainer.querySelector('#nad-detail-content') || this.gameContainer.querySelector('#nad-detail');
+        if (!detail) return;
+        const toggleLabel = this.gameContainer.querySelector('.nad-detail-toggle-label');
+        if (toggleLabel) toggleLabel.textContent = `Details: ${node.label}`;
+
+        const pathEntries = (node.paths || [])
+            .map(pid => this._pathMap[pid])
+            .filter(Boolean)
+            .map(p => `<div class="nad-detail-path"><span class="nad-path-label">${txt(p.label)}</span> <span class="nad-path-claim">[${txt(p.claim)}]</span><div class="nad-path-desc">${txt(p.desc)}</div></div>`)
+            .join('');
+
+        const vulnHtml = node.vuln
+            ? `<div class="nad-detail-vuln"><span class="nad-detail-vuln-badge">! VULNERABILITY</span><div class="nad-detail-vuln-text">${txt(node.vuln)}</div></div>`
+            : '';
+
+        detail.innerHTML = `
+<div class="nad-detail-name">${txt(node.label)}${node.sublabel ? ' — ' + txt(node.sublabel) : ''}</div>
+<div class="nad-detail-desc">${txt(node.desc)}</div>
+${vulnHtml}
+${pathEntries
+    ? '<div class="nad-detail-paths-title">ATTACK PATHS THROUGH THIS NODE:</div>' + pathEntries
+    : '<div class="nad-detail-no-paths">No attack paths through this node.</div>'}`;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────────
+
+    _allNodes() {
+        const main = this.params.nodes || [];
+        const ext  = (this.params.externalOrgs || []).flatMap(o => o.nodes || []);
+        return [...main, ...ext];
+    }
+
+    // ── Global state ──────────────────────────────────────────────────────────────
+
+    setGlobalAndNotify(name, value) {
+        if (window.npcManager?.setGlobalVariable) {
+            window.npcManager.setGlobalVariable(name, value);
+            return;
+        }
+        const oldValue = window.gameState?.globalVariables?.[name];
+        if (window.gameState?.globalVariables) {
+            window.gameState.globalVariables[name] = value;
+        }
+        window.npcConversationStateManager?.broadcastGlobalVariableChange(name, value, null);
+        window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value, oldValue });
+    }
+
+    cleanup() {
+        super.cleanup();
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Starter helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function startNetworkArchitectureMinigame(scenarioData = {}, extraParams = {}) {
+    if (!window.MinigameFramework) {
+        console.error('[NAD] MinigameFramework not available');
+        return;
+    }
+    window.MinigameFramework.startMinigame('network-architecture', null, {
+        showCancel: true,
+        ...scenarioData,
+        ...extraParams,
+        onComplete: (success, result) => {
+            console.log('[NAD] Network architecture diagram closed');
+            if (extraParams.onComplete) extraParams.onComplete(success, result);
+        }
+    });
+}

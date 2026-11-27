@@ -1,0 +1,13 @@
+{
+  "key": "d9a0c23d0232315b57aaed4c2aec57b1",
+  "npc": "zainab_hussain",
+  "text": "Stay away from me. I mean it.",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:42:15Z"
+}

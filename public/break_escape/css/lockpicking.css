@@ -1,0 +1,685 @@
+/* Lockpicking Minigame Styles */
+
+/* Lockpicking feedback styling */
+.lockpick-feedback {
+    background: #000;   /* solid: the line can sit over the canvas */
+    color: #00ff00;
+    padding: 10px 15px;
+    border: 2px solid #00ff00;
+    margin: 10px 0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    text-align: center;
+    min-height: 20px;
+    /* The box grows with its text: in the flex column that holds the lock it must not shrink
+       below its content (a wrapped line spilled out of a 20px box at 1280) */
+    flex: 0 0 auto;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 2px border above, no glow (pixel-art UI rule, slice 7 R5 m5) */
+    box-shadow: none;
+    /* Sticky, not relative: a lock taller than its frame (a long observation at 1024 to 1366
+       wide) scrolls inside the game area, and the status line stays in view at its foot
+       instead of being clipped below the fold */
+    position: sticky;
+    bottom: 4px;
+    z-index: 1000;
+    width: 100%;
+    max-width: 600px;
+    box-sizing: border-box;   /* its padding stays inside a phone-width game area */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.lockpick-feedback:empty {
+    display: none;
+}
+
+/* Lockpicking item section styling */
+.lockpicking-item-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+}
+
+.lockpicking-item-image {
+    min-width: 80px;
+    min-height: 80px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.lockpicking-item-info h4 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    line-height: 24px;
+    margin: 0 0 10px 0;
+    color: #3498db;
+}
+
+/* No observations text: no empty paragraph, and no gap left under the heading, so the strip
+   wraps its content instead of showing a blank band */
+.lockpicking-item-info p:empty {
+    display: none;
+}
+
+.lockpicking-item-info h4:last-child {
+    margin-bottom: 0;
+}
+
+.lockpicking-item-info p {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    margin: 0;
+    color: #ecf0f1;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .lockpicking-item-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .lockpicking-item-image {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .lockpicking-item-info h4 {
+        font-size: 16px;
+    }
+    
+    .lockpicking-item-info p {
+        font-size: 20px;
+        font-family: 'VT323', monospace;
+    }
+}
+
+/* Phaser game container styling - prevent margin/padding shifts */
+#phaser-game-container {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+#phaser-game-container canvas {
+    margin: 0 !important;
+    display: block;
+}
+
+/* A whole zoom of 2 or more: Phaser keeps the 600x400 backing store and the browser scales the
+   canvas by CSS, so it needs the nearest-neighbour filter or every edge blurs (R1 M1). The class is
+   set on the box only for z > 1; fractions under 1 and the phone Scale.FIT path keep the default
+   filter, so the 2px leaders and glyphs are not thinned. The labels are canvas text, not DOM. */
+#phaser-game-container.lockpicking-zoomed canvas {
+    image-rendering: pixelated;
+}
+
+/* The lock's game area is capped to the window by the shell (UI shell build): what does not
+   fit (the feedback strip under the canvas on a phone, critique A07) scrolls inside it */
+.minigame-game-container:has(> #phaser-game-container) {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* A big window: the lock is zoomed by a whole number (the minigame sets the box's max-width to
+   600px times the zoom) and centred in the frame instead of sitting in its top third (A09) */
+@media (min-width: 769px) and (min-height: 561px) {
+    .minigame-game-container:has(> #phaser-game-container) {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container) > #phaser-game-container {
+        margin: auto;
+        flex: 0 0 auto;
+    }
+}
+
+/* Short screens (915x412): the 400px lock fits whole with a 4px margin, and the game area
+   scrolls inside the frame, with the local pixel-art scrollbar, to reach the feedback strip
+   below it, instead of running off the window (slice 7 R5, from the final audit) */
+@media (max-height: 560px) {
+    .minigame-game-container:has(> #phaser-game-container) {
+        margin: 0 auto;
+        overflow-y: auto;
+        scrollbar-color: auto;
+        scrollbar-width: auto;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar { width: 12px; }
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar-track { background: #10161c; border-radius: 0; }
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar-thumb { background: #2d3a44; border: 2px solid #6f8a9c; border-radius: 0; }
+    .minigame-game-container:has(> #phaser-game-container)::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+    #phaser-game-container {
+        margin: 4px auto;
+    }
+}
+
+/* Short landscape windows (915x412): a compact item strip, the picture at its own 1x size
+   (48x96 for a door) in a row with the name, so the lock gets about 110px more of the window
+   (coordinator 5c) */
+@media (max-height: 560px) and (min-width: 769px) {
+    .lockpicking-item-section {
+        padding: 8px 16px;
+        margin-bottom: 4px;
+        gap: 16px;
+    }
+
+    .lockpicking-item-image {
+        min-width: 0;
+        min-height: 0;
+        max-height: 96px;
+    }
+
+    .lockpicking-item-info h4 {
+        margin-bottom: 8px;
+    }
+}
+
+/* Phones: the box is the canvas's own shape (580 x 340), so the instructions strip sits right
+   under the lock, not under a box as tall as the game area (UI shell review M4). */
+@media (max-width: 768px) {
+    #phaser-game-container {
+        aspect-ratio: 580 / 340;
+        height: auto;
+        flex: 0 0 auto;
+    }
+}
+
+/* The frame wraps the lock and its feedback line: the shared 100% height left an empty dark
+   band under the feedback box. Spare window height sits outside the frame (the shell centres
+   it, over the dimmed backdrop). Scoped to the lock, so other minigames keep the shared rule.
+   Not in short windows (560px and under): there the frame must shrink and scroll by itself, or
+   the shell scrolls too and two scrollbars nest. */
+@media (max-width: 768px) and (min-height: 561px) {
+    .minigame-game-container:has(> #phaser-game-container) {
+        height: auto;
+        flex: 0 0 auto;
+    }
+}
+
+/* Portrait mobile: let the canvas fill available vertical space */
+@media (max-width: 768px) and (orientation: portrait) {
+    #phaser-game-container {
+        max-width: 100%;
+        width: 100%;
+        /* clear of the X in the top-right corner (R2 m2) */
+        margin: 32px auto 10px;
+    }
+
+    /* Compact the item info strip so more room is given to the canvas */
+    .lockpicking-item-section {
+        padding: 10px;
+        margin-bottom: 10px;
+        gap: 10px;
+    }
+
+    .lockpicking-item-image {
+        /* The box follows the picture's shape (a 48x96 door is 25x50), no side gaps */
+        width: auto;
+        height: 50px;
+        min-width: 0;
+        min-height: 50px;
+    }
+
+    .lockpicking-item-info h4 {
+        font-size: 16px;   /* Press Start 2P on its 8px grid, as .container-info h4 (was 8px) */
+        line-height: 24px;
+    }
+
+    .lockpicking-item-info p {
+        font-size: 20px;
+        font-family: 'VT323', monospace;
+    }
+}
+
+/* The mode-switch row (Switch to Lockpicking / Switch to Key Mode) is its own full-width line
+   under the image and name (except short landscape, below): the strip wraps (flex-wrap) and the row is 100%
+   of the strip's content width, so it never competes with the image and name for width. In key mode with a lockpick in the pack the row also holds "Or pick the lock:".
+   Widths: caption about 160px (16px GNF, 18 characters at 9px) + gap 10 + button about 290px
+   = about 460px. With the shell's margins and border the strip's content is about 790px at
+   844x390 (where the rule below keeps the row on the image's line) and about 350px at 390x844,
+   where caption and button wrap inside the row (caption above the button) and the row grows by one
+   caption line (24px) in a strip that already stacks image, name and button. */
+.lockpicking-item-section {
+    flex-wrap: wrap;
+}
+
+.lockpicking-mode-row {
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Short landscape (844x390): the strip sits outside the lock's scroll area, so a row on its own
+   line would take about 70px from the lock. Keep one line there: the strip does not wrap, the
+   row keeps its natural width (about 460px with the caption, 290 without) and the name block
+   takes what is left of the about 790px (shell margins and border included) and wraps its own
+   text, so "Door: Derek Lawson - Operations" goes to two lines instead of pushing the row down */
+@media (max-height: 560px) and (min-width: 769px) {
+    .lockpicking-item-section {
+        flex-wrap: nowrap;
+    }
+
+    .lockpicking-item-info {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .lockpicking-mode-row {
+        width: auto;
+        flex: 0 0 auto;
+        margin-top: 0;
+        /* The shell's X is fixed in the top-right corner (15px in, 30px wide, plus a 14px hit
+           area), level with this row here: keep the row clear of it, and of the shell's own
+           scrollbar when it shows */
+        margin-right: calc(44px + var(--minigame-shell-bar, 0px));
+    }
+}
+
+.lockpicking-or-caption {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #ecf0f1;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .lockpicking-or-caption {
+        flex: 0 0 100%;
+        text-align: center;
+    }
+}
+
+/* Mode-switch buttons while a key goes in or after a correct key: the real disabled attribute
+   blocks clicks; the fill goes flat, the border dashed and the cursor not-allowed, so the state
+   is not only colour. Plain text on a flat dark fill, no opacity, so the pixel text stays readable.
+   The disabled button keeps exactly the outer box of the enabled one (nothing in the strip
+   shifts): the border keeps the enabled width (4px unthemed, the 9-slice width --ui-button-px
+   themed) in the fill colour, and the 2px dashed line is an outline drawn inside that band. The
+   padding is not overridden. Beats the themed 9-slice (border-image, filter, transform) and the
+   hover ring (utilities.css box-shadow) so a hovered disabled button looks the same. */
+.lockpicking-mode-row .minigame-button:disabled,
+.lockpicking-mode-row .minigame-button:disabled:hover {
+    border-image: none;
+    border: 4px solid #34495e;
+    outline: 2px dashed #bdc3c7;
+    outline-offset: -4px;
+    background: #34495e;
+    box-shadow: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+    cursor: not-allowed;
+}
+
+[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled,
+[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover {
+    border-image: none;
+    border: var(--ui-button-px) solid #34495e;
+    outline: 2px dashed #bdc3c7;
+    outline-offset: -6px;
+    background: #34495e;
+    box-shadow: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+    cursor: not-allowed;
+}
+
+/* The "+ MORE" marker exists only in short windows (shown in the block below) */
+.lockpicking-obs-more {
+    display: none;
+}
+
+/* A desktop window too short for the full-size strip (561 to about 770px tall with a long
+   observation): the JS adds .lockpicking-compact to the strip when the lock would otherwise need
+   a zoom under LOCK_COMPACT_BELOW (0.75; the room measured, not the window height). It is the
+   same compact row the short windows get in the (max-height: 560px) block at the end of this
+   file (picture at 48px, name on one line, observations on two, the mode switch on the row's
+   line), and it gives the lock about 250px. KEEP THE TWO BLOCKS IN STEP: a rule changed in one
+   belongs in the other (a test compares them; the one allowed difference is the observation
+   text, 16px here against 20px there, because the off-grid GNF ceiling test caps this one).
+   Only the strip: the frame and feedback keep their desktop rules. Scoped to 561px and taller
+   so a desktop lock resized short after opening gets the short-window rules, never these
+   (they are more specific and would win). The mode row keeps its caption here: there is room. */
+@media (min-width: 769px) and (min-height: 561px) {
+    .lockpicking-item-section.lockpicking-compact {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        text-align: left;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 4px calc(52px + var(--minigame-shell-bar, 0px)) 4px 8px;
+    }
+
+    .lockpicking-compact .lockpicking-item-image {
+        width: 48px;
+        height: 48px;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        max-height: none;
+        object-fit: none;
+        object-position: center top;
+        image-rendering: pixelated;
+    }
+
+    .lockpicking-compact .lockpicking-item-info {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        position: relative;
+    }
+
+    .lockpicking-compact .lockpicking-item-info h4 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 24px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lockpicking-compact .lockpicking-item-info p {
+        font-size: 16px;
+        line-height: 24px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+    }
+
+    .lockpicking-compact .lockpicking-item-info p[role="button"] {
+        cursor: pointer;
+    }
+
+    .lockpicking-compact .lockpicking-item-info p[role="button"]:focus-visible {
+        outline: 2px solid #ffcc44;
+        outline-offset: 2px;
+    }
+
+    .lockpicking-compact.lockpicking-obs-overflow .lockpicking-obs-more {
+        display: block;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        padding: 0 0 0 4px;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        line-height: 24px;
+        height: 24px;
+        color: #ffcc44;
+        background: #000;
+        pointer-events: none;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-obs-more {
+        bottom: auto;
+        top: 0;
+        right: 0;
+        line-height: 24px;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info h4 {
+        padding-right: 56px;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p {
+        display: block;
+        -webkit-line-clamp: unset;
+        max-height: 96px;
+        overflow-y: auto;
+        scrollbar-color: auto;
+        scrollbar-width: auto;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar { width: 12px; }
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-track { background: #10161c; border-radius: 0; }
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-thumb { background: #2d3a44; border: 2px solid #6f8a9c; border-radius: 0; }
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+    .lockpicking-compact .lockpicking-mode-row {
+        width: auto;
+        flex: 0 0 auto;
+        margin-top: 0;
+        margin-right: calc(44px + var(--minigame-shell-bar, 0px));
+    }
+}
+
+/* Short windows (a landscape phone: 667x375, 740x360, 844x390; 560px tall or less): the lock
+   must be usable without scrolling. The info strip becomes one compact row (picture at 48px,
+   name over one line of observations, the mode switch as an icon button) and the lock's frame
+   takes the rest of the window: the Phaser canvas (cropped to 580x340, Scale.FIT in the
+   lockpicking JS) scales down to the box, and the feedback line sits under it in the same
+   frame. The shell then has nothing to scroll. The frame, box and feedback rules apply only
+   when the lock booted with the crop and Scale.FIT (the JS adds .lockpicking-fit to the box,
+   at any size), so a desktop lock that is resized short after opening keeps its scrolling
+   frame. Last in the file so it wins over the phone and short-landscape rules above; taller
+   windows (561px and up) are untouched. The .lockpicking-compact block above is a copy of the
+   strip rules in this block for tall desktop windows: keep the two in step (a test compares
+   them). */
+@media (max-height: 560px) {
+    .lockpicking-item-section {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        text-align: left;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        /* clear of the shell's fixed X (15px in, 30px wide, plus its hit area) and scrollbar */
+        padding: 4px calc(52px + var(--minigame-shell-bar, 0px)) 4px 8px;
+    }
+
+    .lockpicking-item-image {
+        /* A 48px box at the picture's native pixels (no scaling): a larger image is cropped
+           to its top 48px, a smaller one sits at the top centre */
+        width: 48px;
+        height: 48px;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        max-height: none;
+        object-fit: none;
+        object-position: center top;
+        image-rendering: pixelated;
+    }
+
+    .lockpicking-item-info {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    /* The name is one line, cut with an ellipsis; the observations two lines. A tap, click or
+       Enter/Space on the observations (the JS makes them a button) opens them in full, and the
+       canvas refits through the box's ResizeObserver. Both carry the full text in a title. */
+    .lockpicking-item-info h4 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 24px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lockpicking-item-info p {
+        font-size: 20px;
+        line-height: 24px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+    }
+
+    /* The JS gives the observations role=button only while they overflow or are open */
+    .lockpicking-item-info p[role="button"] {
+        cursor: pointer;
+    }
+
+    .lockpicking-item-info p[role="button"]:focus-visible {
+        outline: 2px solid #ffcc44;
+        outline-offset: 2px;
+    }
+
+    /* "+ MORE" / "- LESS" over the end of the second line, only while the text can be opened */
+    .lockpicking-item-info {
+        position: relative;
+    }
+
+    .lockpicking-item-section.lockpicking-obs-overflow .lockpicking-obs-more {
+        display: block;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        padding: 0 0 0 4px;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        /* a plate over the whole 24px line, or the tops of the glyphs under it show above it.
+           The strip is rgba(0,0,0,0.3) on the shell's rgba(0,0,0,0.95): black to within 9/255 */
+        line-height: 24px;
+        height: 24px;
+        color: #ffcc44;
+        background: #000;
+        pointer-events: none;
+    }
+
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-obs-more {
+        bottom: auto;
+        top: 0;
+        right: 0;
+        line-height: 24px;
+    }
+
+    /* the heading leaves room for "- LESS" on its line */
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info h4 {
+        padding-right: 56px;
+    }
+
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p {
+        display: block;
+        -webkit-line-clamp: unset;
+        max-height: 96px;
+        overflow-y: auto;
+    }
+
+    /* the frame's pixel-art scrollbar (the 12px one above); both properties stay auto, or the
+       browser ignores the ::-webkit-scrollbar rules */
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p {
+        scrollbar-color: auto;
+        scrollbar-width: auto;
+    }
+
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar { width: 12px; }
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-track { background: #10161c; border-radius: 0; }
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-thumb { background: #2d3a44; border: 2px solid #6f8a9c; border-radius: 0; }
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+    /* The instruction line repeats the feedback line under the lock: drop it for the room */
+    .minigame-container:has(#phaser-game-container.lockpicking-fit) .minigame-header p {
+        display: none;
+    }
+
+    /* and the gap under the title shrinks with it (20px in the framework) */
+    .minigame-container:has(#phaser-game-container.lockpicking-fit) .minigame-header {
+        margin-bottom: 8px;
+    }
+
+    /* Mode switch: the icon alone (the label is in aria-label and title), 48px square */
+    .lockpicking-mode-row {
+        flex: 0 0 auto;
+        width: auto;
+        margin: 0;
+        gap: 0;
+    }
+
+    .lockpicking-mode-row .lockpicking-or-caption,
+    .lockpicking-mode-row .lockpicking-mode-label {
+        display: none;
+    }
+
+    .lockpicking-mode-row .minigame-button {
+        min-width: 48px;
+        min-height: 48px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .lockpicking-mode-row .minigame-button .icon-large {
+        width: 32px;
+        height: 32px;   /* the icon's own size: no scaling */
+    }
+
+    /* The frame is the rest of the window, a column: lock box, then the feedback line */
+    .minigame-game-container:has(> #phaser-game-container.lockpicking-fit) {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 0;
+        width: 100%;
+        min-height: 0;
+        margin: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container.lockpicking-fit) > #phaser-game-container.lockpicking-fit {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;   /* centres the fitted canvas: the box is wider than it at 844 */
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: none;
+        height: auto;
+        aspect-ratio: auto;
+        margin: 4px auto 0;
+        overflow: hidden;
+    }
+
+    /* The feedback line keeps its place when empty, so the canvas does not rescale (under a
+       drag) when a message arrives. It is at least one line (24px) plus padding and border
+       (36px); a message that wraps to two lines grows it, and the box's ResizeObserver
+       refreshes Phaser's pointer mapping. Text sits on the 16px GNF grid. */
+    .minigame-game-container:has(> #phaser-game-container.lockpicking-fit) > .lockpick-feedback {
+        min-height: 36px;
+        padding: 4px 8px;
+        margin: 4px auto;
+        line-height: 24px;
+        border-width: 2px;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container.lockpicking-fit) > .lockpick-feedback:empty {
+        display: flex;
+        visibility: hidden;
+    }
+}

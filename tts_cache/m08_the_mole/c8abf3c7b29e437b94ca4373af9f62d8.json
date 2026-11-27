@@ -1,0 +1,13 @@
+{
+  "key": "c8abf3c7b29e437b94ca4373af9f62d8",
+  "npc": "julian_sallow",
+  "text": "Go well. The log will note it, I'm afraid.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:26Z"
+}

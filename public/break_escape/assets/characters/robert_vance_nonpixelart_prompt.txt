@@ -1,0 +1,11 @@
+Make portrait for Robert Vance
+A British Pakistani man in his mid-fifties from Teesside, warm brown skin tone, the operations manager and OT engineer at a grid battery storage site, solid and slightly heavy-set, a firm, careful man worn down by a long night: a broad face with deep lines, a neat greying black moustache and a day of grey stubble, short black hair gone grey at the sides and combed back, thin gold-rimmed reading glasses perched low on his nose. Wearing a charcoal grey quarter-zip work fleece with no lettering over a white collared shirt, a plain white site ID card on a dark green lanyard clearly visible at his chest, a ballpoint pen clipped in the chest pocket, dark grey work trousers with a black belt.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Concept c02 of the m04 pass-5 set (2026-10-13), picked by the user.
+# No reference image (stand-in sprite male_telecom_v2 is pixel art). Background vignette: not cropped by reframe, figure already fills the frame head to hips. Canon: voice style 'Operations manager and OT engineer at a grid battery site, mid-fifties ... Teesside'; m04_npc_robert_vance.ink 'the cloner reads his lanyard'.

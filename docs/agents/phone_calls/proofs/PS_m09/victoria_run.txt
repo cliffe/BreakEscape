@@ -1,0 +1,25 @@
+game 2269 (victoria)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+  room: "restricted_stacks"
+"opened"
+  "took 1. The office door. I'll pick it."
+  "took 1. Who else is inside?"
+  "took 1. On my way."
+  thread closed (dock done); reopen HaX
+  read-out reached: "flag1_submitted=true flag1_read_heard=true flag1_read_done=false nightshade_rang=false"
+  "picked 3. Something else."
+  "picked 2. Can Victoria's people get me through that gate?"
+  after the code: "maintenance_code_used=true cage_opened=true"  "flag1_submitted=true flag1_read_heard=true flag1_read_done=true nightshade_rang=false"
+shot victoria_hub_after_code
+shot victoria_ring
+  ring: {"t":77.2,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+call: {"bar":"ON CALL 0:01","subs":["AGENT 0X47 'NIGHTSHADE': Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line."],"choices":[],"end":true}
+chose: "1. Why help me?"
+chose: "1. Noted."
+no second ring (cage_opened mapping +10 s, room moves):
+  no ring in 12s (good)
+  room: "reading_room"
+  no ring in 6s (good)
+timeline: ["-|toast:true|room:restricted_stacks|heard:false|cage:false|rang:false@0.1","-|toast:true|room:restricted_stacks|heard:true|cage:false|rang:false@21.7","-|toast:true|room:restricted_stacks|heard:true|cage:true|rang:false@34.4","hax_closed@40.2","nightshade_phone:ringing|toast:true|room:restricted_stacks|heard:true|cage:true|rang:true@43.0","nightshade_phone:connected|toast:true|room:restricted_stacks|heard:true|cage:true|rang:true@44.8","-|toast:true|room:restricted_stacks|heard:true|cage:true|rang:true@57.5","-|toast:true|room:reading_room|heard:true|cage:true|rang:true@107.2"]
+  "flag1_submitted=true flag1_read_heard=true flag1_read_done=true nightshade_rang=true"
+/tts requests: ["nightshade_phone","Agent 0x00. I'd ask how the leave was, but HaX would tell me"] ["nightshade_phone","You're past her gate. The plan cabinet was never on her sche"] ["nightshade_phone","I'd rather be useful than watched. Tonight I get to be both."] ["nightshade_phone","Every lock is a promise somebody made years ago. Most of the"] 

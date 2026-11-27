@@ -1,0 +1,105 @@
+
+## R31 (struggling run A, S4, S5, S8): the briefing's 'two payments we've traced so far'; before the checklist is read, the recap and the password tips point at the checkpoint noticeboard; the fund ladder's first rung names the pool config.
+
+--- briefing ---
+      [task: receive_briefing]
+  Narrator: A SAFETYNET briefing room. Netherton drops a financial dossier on the table. Nightshade already has the transaction graph open.
+  Director Magnus Netherton: Agent 0x00. Every cell we have hit is being paid by someone. Tonight we chase the money. HaX.
+  Agent 0x47 'Nightshade': Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them.
+  Agent HaX: Two payments we've traced so far. One came in, one went out, and both went through the same exchange.
+     (2 options)
+ > Which payments?
+  Agent HaX: In: Ransomware Incorporated's wallet. $2.4 million in one payment this summer, hospital ransoms pooled.
+  Agent HaX: Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.
+  Agent HaX: Somebody is keeping the books for all of them.
+  Agent HaX: HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know. The Crypto Anarchists run it.
+  Agent HaX: Their mixer takes Bitcoin in, runs it through Monero, and pays it into one of their own cold wallets.
+  Agent HaX: From outside, the trail stops there. Their own records pick it up again.
+  Agent HaX: Two people matter. The CEO calls himself "Satoshi Nakamoto the Second". True believer. Nobody turns him.
+  Agent HaX: The CTO, Dr Irina Volkova, built the mixer. She might turn.
+     (2 options)
+ > How do I get in?
+  Agent HaX: You go in as the FCA, the Financial Conduct Authority, on a routine supervisory visit.
+  Agent HaX: Regulators ask to see everything, so nobody minds when you do.
+  Agent HaX: The paperwork gets you past reception. It won't survive a phone call to the FCA, so don't give anyone a reason to make one.
+  Agent HaX: Your usual kit: picks, the RFID cloner and the print kit. No PIN cracker this time; R&D still have it on the bench.
+     (2 options)
+ > I'm ready.
+  Agent HaX: And there's a clock. The wallets we watch have gone quiet, the way they do before a big payout.
+  Agent HaX: Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Volkova.
+  Agent HaX: Volkova's on the trading floor, through the checkpoint. Start with her.
+  [end]
+   [PASS] said: "Two payments we've traced so far"
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- phone ---
+     (6 options)
+ > Remind me where we are.
+  Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
+  There's an IT checklist on the checkpoint noticeboard. It has their house rule for door passphrases.
+  Volkova keeps a wordlist of what people here actually pick. Get it from her.
+  Priya Raghavan's write-up, in the lab east off the trading floor. It follows the money into the mixer. Take it.
+     (6 options)
+ > Any tips on their passwords?
+  Crypto shops all do it. A coin name with a year bolted on.
+  Volkova keeps an audit list of the exact words her people pick. Get it. The IT checklist on the checkpoint noticeboard has the rule.
+  And once one account falls, try that password on the rest. Admins reuse.
+     (2 options)
+ > Got it.
+     (5 options)
+ > I'm good for now.
+  Copy that. Call anytime.
+  [chat closes]
+   [PASS] said: "There's an IT checklist on the checkpoint noticeboard"
+   [PASS] said: "The IT checklist on the checkpoint noticeboard has the rule"
+   {set {"server_passphrase_known":true}}
+
+--- phone ---
+     (5 options)
+ > Remind me where we are.
+  Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
+  Volkova keeps a wordlist of what people here actually pick. Get it from her.
+  The server room door takes a crypto term and a year. The checklist at the checkpoint gives the year.
+  The term is whatever tops Volkova's list.
+  Priya Raghavan's write-up, in the lab east off the trading floor. It follows the money into the mixer. Take it.
+     (5 options)
+ > I'm good for now.
+  Copy that. Call anytime.
+  [chat closes]
+   [PASS] not said: "There's an IT checklist on the checkpoint noticeboard"
+   {set {"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true}}
+   {room server_room}
+   {room data_center}
+      [engine: room_entered:data_center mapping -> entered_data_center=true]
+      [HaX text: That console opens one cold slot's file by number. One number per try, and it logs each. The transaction server has the other half of Priya's write-up.]
+      [engine: room_entered:data_center mapping -> at_console=true]
+
+--- phone ---
+     (5 options)
+ > Which cold slot is the fund?
+  Match each of Priya's deposits to a settlement credit: less the mixer's cut, after its hold. The pool config has both numbers.
+     (5 options)
+ > I'm good for now.
+  Copy that. Call anytime.
+  [chat closes]
+   [PASS] said: "The pool config has both numbers"
+
+[stats] spoken/narrated lines 40, choices 13, longest run without a choice 8 (briefing); runs>=6: briefing:8
+[result] all expectations met

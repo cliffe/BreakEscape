@@ -1,0 +1,165 @@
+{
+  "company": "carrholme_services",
+  "_note": "Carrholme Services office kit (WAVE2_BUILD.md D12, P-KC). Tiles are px/32 on the 10x10 Care Laundry map room_aw_carrholme. Yusuf Demir is the only kit colleague (ca11, observed; PLAN 8.3), so there is no pool: _maybePair needs two drinkers at a capacity-2 source and there is never a second (npc-needs.js:4490-4502). The map draws no source for a non-work need, so the kit declares a water_cooler with an explicit position, using the preloaded water_cooler1.png (24x47, game.js). With no drawn cooler to bind to, rooms.js creates the sprite by the fallback (findMatchFor returns null, then createSpriteAtRandomPosition and applyScenarioObjectPosition, ~2447-2510) and moves it to position; the cooler has no collision body (static bodies go only to tables and wheeled chairs, rooms.js ~2805-2834), so click-to-move routes round it (path-avoid.js water_cooler pattern, 47px over the 40px floor). position is tiles, room-relative, the sprite top-left corner; useFrom is from the sprite centre (npc-needs.js describe/approachCell). Cooler at column 8, rows 5-7, below the wall-hung extinguisher and under the kiosk's bottom edge (kiosk covers rows 3-4 of cols 7-8; the linen cart covers rows 8-9); clear of the learner's start (6,6.2) to host (5.5,3.8) and the kiosk. Used from the front (south). Yusuf's home is a chair on the north side of the shared desk (left of the room), well clear of the learner path. The test fixture test_ca_office_kit keeps shortened timings through the override on its episodes.json row.",
+  "scenario": { "npcThoughts": false },
+  "pool": null,
+  "poolExempt": "Yusuf Demir is Carrholme's only kit colleague (ca11, observed), so there is never a second drinker at the cooler for a capacity-2 pool topic to fire (_maybePair needs two). D12.",
+  "sources": [
+    {
+      "type": "water_cooler",
+      "id": "kit_cooler",
+      "name": "Water cooler",
+      "sprite": "water_cooler1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "A water cooler by the shared desk. Staff top up between jobs.",
+      "position": { "x": 8.2, "y": 5.6 },
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": 1.25 } }
+    }
+  ],
+  "staff": {
+    "yusuf_demir": {
+      "displayName": "Yusuf Demir",
+      "spriteSheet": "yusuf_demir",
+      "voice": { "name": "Alnilam", "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 3, "y": 7 },
+      "needsHome": { "room": "training_room", "x": 3, "y": 7, "facing": "south" },
+      "needsSpeed": 90,
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } }
+    }
+  },
+  "setPieces": {
+    "ca11_defend_react": {
+      "_note": "D280: the ca11 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca11_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "yusuf_demir": {
+          "eventMappings": [
+            {
+              "_kitKey": "chg_defend_done_knot_ca11_react",
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca11_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca11_stray_printout": {
+      "globals": {
+        "kit_ca11_at_tray": false,
+        "kit_ca11_done": false
+      },
+      "objects": [
+        {
+          "type": "photocopier",
+          "id": "kit_ca11_printer",
+          "name": "Photocopier",
+          "sprite": "photocopier1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 3.0,
+            "y": 1.6
+          },
+          "observations": "The shared photocopier against the back wall."
+        },
+        {
+          "type": "notes",
+          "id": "kit_ca11_printout",
+          "name": "Misdirected printout",
+          "sprite": "notes1",
+          "takeable": false,
+          "position": {
+            "x": 2.97,
+            "y": 2.0,
+            "elevation": 20
+          },
+          "revealOnGlobal": "kit_ca11_out",
+          "observations": "A care home's resident list, with health notes. Not Carrholme's."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca11_t_done",
+          "startOnGlobal": "kit_ca11_out",
+          "delayMs": 14000,
+          "condition": "!globalVars.kit_ca11_done",
+          "setGlobal": {
+            "kit_ca11_done": true
+          }
+        }
+      ],
+      "staff": {
+        "yusuf_demir": {
+          "eventMappings": [
+            {
+              "_kitKey": "chg_ca11_out",
+              "eventPattern": "global_variable_changed:kit_ca11_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "_kitKey": "chg_ca11_out_2",
+              "eventPattern": "global_variable_changed:kit_ca11_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 3.5,
+                  "y": 3.7
+                },
+                "speed": 90
+              }
+            },
+            {
+              "_kitKey": "npc_arrived_yusuf_demir_sets_ca11_at_tray",
+              "eventPattern": "npc_arrived:kit_yusuf_demir",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca11_at_tray": true
+              },
+              "bark": "This printout isn't ours. It's a care home's resident list, with health notes on it. Someone sent it here by mistake."
+            },
+            {
+              "_kitKey": "chg_ca11_at_tray",
+              "eventPattern": "global_variable_changed:kit_ca11_at_tray",
+              "condition": "value === true && globalVars.kit_ca11_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.0,
+                  "y": 4.2
+                },
+                "speed": 90
+              }
+            },
+            {
+              "_kitKey": "chg_ca11_at_tray_sets_ca11_done",
+              "eventPattern": "global_variable_changed:kit_ca11_at_tray",
+              "condition": "value === true && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca11_done": true
+              },
+              "bark": "You'll want this today. In the wrong hands it's a shortlist of vulnerable people, with their addresses, handed over for free."
+            },
+            {
+              "_kitKey": "chg_ca11_done",
+              "eventPattern": "global_variable_changed:kit_ca11_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

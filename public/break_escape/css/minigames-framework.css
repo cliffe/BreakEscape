@@ -1,0 +1,962 @@
+/* Minigame Framework Styles */
+
+.minigame-container {
+    position: fixed;
+    top: 0px;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;   /* the visible height on phones, where 100vh runs under the browser bar */
+    /* UI shell build (critique B X1, X2): a scene's own border sits inside the window, never
+       4px past it; a frame taller or wider than the window starts at the top-left edge
+       (`safe` centring) instead of spilling past both edges; and the shell scrolls, with
+       the shared pixel-art scrollbar (base-minigame.js adds .pixel-scroll), so nothing is
+       out of reach. */
+    box-sizing: border-box;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.95);
+    /* Raised so minigames appear above other UI (inventory, NPC barks, HUD, etc.) */
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    justify-content: safe center;
+    align-items: safe center;
+    font-family: 'GNF', monospace;
+    color: white;
+    box-shadow: none;   /* pixel-art UI: no soft shadow (slice 7) */
+    font-size: 16px;
+    /* GNF, VT323 and Press Start 2P ship one weight each, so the browser would smear a
+       synthetic bold over any weight of 600 or more (slice 7 R5 M1). font-synthesis is
+       inherited, so this one rule covers every minigame. */
+    font-synthesis: none;
+    font-weight: 400;
+}
+
+/* Crisp pixel-font titles. `font-smooth: never` (no browser supports it) is gone from main.css and
+   player_preferences.css; `-webkit-font-smoothing: none` (player_preferences.css) only works on
+   macOS Safari and Chrome. Chrome and Firefox on Windows and Linux ignore it, so a pixel-font
+   title on an opaque panel (the device frame's face, a paper note, the corkboard) gets LCD subpixel
+   antialiasing: red and blue fringes on every glyph edge. `will-change: transform` turns LCD text
+   off for the element's layer, so Chrome draws it with greyscale antialiasing. Measured on Chrome
+   for Linux (crisp-titles review R2): the fringes go to 0 even where the title paints its own opaque
+   background (.siem-pane-title), so it is the hint itself and not an opacity test that does it. On
+   the pixel grid (Press Start 2P at 8 or 16px, whole-pixel positions) greyscale leaves only the text
+   and background colours. `opacity` and `backface-visibility` do not change the choice.
+   The list is explicit, not a `[class*="-title"]` match: that also caught wrapper bars
+   (.console-titlebar, .desktop-window-titlebar, .device-frame-title) that hold the close button or
+   other controls, which would become stacking contexts and containing blocks for fixed descendants,
+   and non-pixel-font titles. Only leaf text elements whose computed font is a pixel font (Press
+   Start 2P, VT323, GNF) belong here, and a heading inside a class is written as one class plus a
+   tag (`.combination-header h2`). Never add a wrapper bar.
+   Nothing enforces completeness: test/js/minigame-title-crisp-css.test.mjs checks the list's form
+   and that every class in it is emitted by the engine, not that every title is listed. Add a new
+   pixel-font title over an opaque panel by hand, after checking that it shows fringes without the
+   rule and is clean with it. Any listed title whose letter-spacing is not a whole number of pixels
+   at its size sits off the pixel grid, so greyscale gives it grey edge columns, not exact pixels:
+   today .da-title (9px with 1px), .nsm-cons-rule-title (0.5px), .bce-mx-heading (1px),
+   .combination-header h2 and .cryptex-header h2 (0.05em). The dusting kit's title (.dusting-title,
+   the h2 plus the object name) was re-measured on Chrome for Linux at 1280x720 and 390x844: no
+   text-shadow or filter reaches it (computed none). The h2 draws in exactly the text and
+   background colours in all seven UI themes. The object name was measured in the default theme
+   only, where it is greyscale with no colour fringe. Hinting only the h2 leaves the object name
+   at 374 fringe px at 390 wide, so the wrapper stays. */
+.minigame-container :is(
+    .patch-panel-title,
+    .rogue-ap-title-text,
+    .rogue-ap-heading,
+    .vm-launcher-title,
+    .console-title,
+    .pin-minigame-title,
+    .pin-minigame-attempts-title,
+    .notes-minigame-title,
+    .signin-title,
+    .password-prompt-title,
+    .desktop-window-title,
+    .window-title,
+    .share-folder-path,
+    .dusting-title,
+    .dusting-panel h3,
+    .da-title,
+    .er-title,
+    .ib-title,
+    .ib-h,
+    .lpb-title,
+    .lpb-inspect-title,
+    .lpb-pretext-title,
+    .tri-title,
+    .mail-contacts-title,
+    .mail-compose-title,
+    .mail-redflag-title,
+    .mail-create-title,
+    .cms-content-title,
+    .cb-section-title,
+    .bce-mx-tip-title,
+    .bce-mx-mid-title,
+    .bce-mx-heading,
+    .fpr-result-title,
+    .fpr-heading,
+    .nad-detail-paths-title,
+    .nsm-panel-title,
+    .nsm-cons-rule-title,
+    .nsm-modal-title,
+    .ob-title,
+    .siem-pane-title,
+    .siem-queue-section-title,
+    .pretext-title,
+    .pretext-card-title,
+    .pretext-held-title,
+    .wcc-letterhead-title,
+    .wcc-row-title,
+    .wcc-doc-title,
+    .minigame-header h3,
+    .combination-header h2,
+    .cryptex-header h2,
+    .esd-confirm-card h3,
+    .ob-site-title,
+    .ob-page-title
+) {
+    will-change: transform;
+}
+
+/* Crisp pixel-font body text, labels and status lines: the same fix as the titles above, a second
+   explicit list. Measured on Chrome for Linux at 1280x720 and 390x844 (crisp-text-2): each class
+   shows LCD fringes on its opaque panel without the hint and none with it; several only fringe at
+   390 wide (the brief and person-chat text), so check both sizes. Only leaf text elements belong
+   here: a paragraph, a label, a status line, or a short run of such leaves (never more than about
+   twelve on screen). Never a wrapper that holds controls (.siem-alert-row, .combination-header,
+   .tri-panel, .device-frame: a stacking context and fixed-position containing block for everything
+   inside), never a skin-image button or tab (the residual there is the skin, not LCD), never a
+   row of a list (hint a text-only list container once if one measures clean: .rogue-ap-scan
+   holds only spans, headshots and the signal icon, no controls, and clears every row for one
+   layer). The same goes for a text-only list or definition list that sits beside controls:
+   .tri-brief-buttons (dl), .tri-steps (ol), .mail-headers (dl) and .patch-panel-legend each clear
+   their rows for one layer. Rows that interleave text with buttons stay out: .siem-alert-row
+   (21 rows, a button pair in each), .patch-panel-row, and the person cards (.ib-people: the
+   readiness checklist inside each card can hold a details element when a slot has a gapString,
+   so the list is a wrapper with controls). .siem-status-bar is a text-only bar: the clock and the
+   pending and time-remaining counts are three spans with no controls, and it is one layer for
+   all three (measured per span at 1280 and 390: 600 to 1900 fringe px without it, 0 with it).
+   .mail-subject is also on every non-email triage card heading (call, push, notice, browser
+   and the other kinds, via `mail-subject tri-kind-title`), light and dark: measured one light
+   notice, one light browser page and one dark push heading at 390 wide, each 0 with the hint.
+   The triage heading is focusable by script only (tabindex -1, no outline), and .tri-steps
+   scrolls sideways at 767px and below; the hint on the scroller measured clean. A list that
+   holds two text colours (.mail-headers dt and dd, .tri-steps li) is measured per leaf, not as
+   one colour (inside the li's own border for .tri-steps).
+   Each entry is one class, or one class plus a tag, or a parent
+   class plus a child class (`.mail-read-pane .ib-infl-label`: the one influence bar in the mail
+   reader, not the per-card bars on the board). test/js/minigame-text-crisp-css.test.mjs pins the
+   exact list and checks that every class is emitted by the engine, not that every body text is
+   listed. */
+.minigame-container :is(
+    .note-md-text,
+    .rogue-ap-note,
+    .rogue-ap-scan,
+    .lpb-copy,
+    .lpb-address-text,
+    .lpb-not-secure,
+    .lpb-purpose,
+    .lpb-submit,
+    .lpb-field-label,
+    .combination-help,
+    .combination-status-message,
+    .combination-direction-indicator,
+    .combination-dial-label,
+    .combination-dial-display,
+    .cryptex-subtitle,
+    .cryptex-wheel-label,
+    .password-info-name,
+    .password-info-text,
+    .password-field-label,
+    .attempts-counter,
+    .tri-brief-title,
+    .tri-brief-text,
+    .tri-brief-kind,
+    .tri-brief-score,
+    .tri-brief-when,
+    .tri-brief-restart,
+    .tri-brief-note,
+    .tri-brief-buttons,
+    .tri-steps,
+    .siem-queue-count,
+    .siem-status-bar,
+    .patch-panel-footer,
+    .patch-panel-legend,
+    .mail-subject,
+    .mail-headers,
+    .ib-progress,
+    .ib-empty,
+    .mail-read-pane .ib-infl-label,
+    .pin-minigame-attempt-empty,
+    .person-chat-dialogue-text,
+    .person-chat-speaker-name
+) {
+    will-change: transform;
+}
+
+/* Every pixel face in a minigame draws at its only weight. !important so the scene sheets'
+   old `font-weight: bold` and the browser's bold headings, <th>, <b> and <strong> all
+   resolve to 400 (the audit's faux-bold check reads the computed weight). Diegetic pages
+   (an email body, a web page) keep their own weights. */
+.minigame-container *:not([data-diegetic], [data-diegetic] *) {
+    font-weight: 400 !important;
+}
+
+/* Emphasis that used to be bold (<strong>, <b>: the changed row and field in the
+   drug library, the patient outcome) is a 2px pixel underline instead. */
+.minigame-container :is(strong, b):not([data-diegetic] *) {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    text-decoration-skip-ink: none;
+}
+
+/* Field labels, key names and panel headings are not emphasis: the pixel face has one weight
+   and these take no underline (an underline means emphasis above). They stand apart from
+   their values by colour: each scene sets --mg-label-colour and --mg-heading-colour on its
+   own root (there is no global default, as the device panels are not on --ui-surface), and
+   with neither set they inherit. .mg-field-label: "UID:", "Surface:". .mg-section-label: a
+   heading inside a panel. */
+.minigame-container :is(.mg-field-label, .mg-section-label) {
+    text-decoration: none;
+    font-weight: 400;
+}
+.minigame-container .mg-field-label { color: var(--mg-label-colour, inherit); }
+.minigame-container .mg-section-label { color: var(--mg-heading-colour, inherit); }
+
+/* Local copy of the shared `.pixel-scroll` scrollbar (css/utilities.css on build/ux-net,
+   slice 1), as in infusion-pump-minigame.css's .ip-pixel-scroll, for the slice 7 panes that
+   scroll: the fingerprint reader panel, the network architecture diagram and detail pane,
+   the SIEM alert and queue lists, and the biometrics game area (slice 7 R5 m3, m4). When
+   `.pixel-scroll` lands, give these elements that class and drop this copy. Square track
+   and thumb, 2px edges, no arrow buttons. Chrome 121+ ignores the ::-webkit-scrollbar rules
+   once scrollbar-color or scrollbar-width is set, so both stay auto. */
+.mg-pixel-scroll,
+.fpr-panel,
+.nad-svg-wrap,
+.nad-detail,
+.siem-alert-list,
+.siem-queue-list,
+.siem-panel,
+.biometrics-minigame-game-container {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+    --pixel-scroll-track: #10161c;
+    --pixel-scroll-thumb: #2d3a44;
+    --pixel-scroll-edge: #6f8a9c;
+    --pixel-scroll-hover: #9ee6ff;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-radius: 0;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
+    border-radius: 0;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+:is(.mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container)::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .mg-pixel-scroll, .fpr-panel, .nad-svg-wrap, .nad-detail, .siem-alert-list, .siem-queue-list, .siem-panel, .biometrics-minigame-game-container {
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
+}
+
+/* iOS Safari zooms the page when a focused text control computes under 16px, and a control
+   with no size of its own falls back to the browser's 13.33px. :where() keeps this at zero
+   specificity so any deliberate size (VT323 18px or larger, GNF 16, 24, 32) still wins. */
+:where(input, select, textarea) {
+    font-size: 16px;
+}
+
+.minigame-container input, .minigame-container select, .minigame-container textarea, .minigame-container button, .minigame-game-container pre {
+    font-family: 'GNF', monospace;
+}
+
+/* Authored HTML (scenario text with <code>) gets the browser's monospace otherwise
+   (pixel-art UI rule, slice 7) */
+.minigame-container code, .minigame-container kbd, .minigame-container samp {
+    font-family: 'VT323', monospace;
+}
+
+.minigame-header {
+    width: 100%;
+    text-align: center;
+    font-size: 16px;   /* GNF grid: the title and subtitle set their own faces below; this is the floor for any other header text */
+    margin-bottom: 20px;
+    color: #3498db;
+}
+
+.minigame-header h3 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    line-height: 24px;
+    margin: 0 0 10px 0;
+}
+
+.minigame-header p {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    margin: 0;
+}
+
+.minigame-game-container {
+    width: 100%;
+    height: 100%;
+    /* max-width: 600px; */
+    margin: 20px auto;
+    background: #1a1a1a;
+    box-shadow: none;   /* pixel-art UI: no soft inner shade (slice 7) */
+    position: relative;
+    /* Lets the game area shrink to leave room for the Cancel row under it when
+       its content is taller than the screen (a long text file), instead of
+       pushing Cancel off the bottom (minigame sweep, 2026-11-12) */
+    min-height: 0;
+}
+
+/* A frame never grows past the shell: it scrolls inside itself (scenes that hold more than
+   a short window can show set their own overflow) rather than spill out of the window.
+   :where() gives it no specificity, so a scene's own max-width (the PIN plate's 600px) or
+   box-sizing still wins. */
+:where(.minigame-container > .minigame-game-container) {
+    max-width: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+}
+
+.minigame-message-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.minigame-success-message {
+    /* At the top edge, not the middle of the window, where it covered the keypad's 4-6 row
+       and other controls (critique A10). Scenes with a message line of their own use it. */
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    background: rgba(46, 204, 113, 0.9);
+    color: white;
+    padding: 20px;
+    border: 2px solid #27ae60;
+    text-align: center;
+    z-index: 10001;
+    font-size: 16px;
+    box-shadow: none;   /* pixel-art UI: no glow (UX access R2) */
+}
+
+.minigame-failure-message {
+    /* At the top edge, not the middle of the window, where it covered the keypad's 4-6 row
+       and other controls (critique A10). Scenes with a message line of their own use it. */
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    padding: 20px;
+    border: 2px solid #c0392b;
+    text-align: center;
+    z-index: 10001;
+    font-size: 16px;
+    box-shadow: none;   /* pixel-art UI: no glow (UX access R2) */
+}
+
+/* The Cancel/Close row sits in the window's column under the game area, never
+   over it. It used to be absolutely placed at the bottom of the screen, where it
+   covered any footer a minigame draws at the bottom of its own area (the padlock's
+   Reset and Unlock, the cryptex's Submit, the container's Take button). Examine,
+   the forensic platform and the fingerprint reader had each fixed this for
+   themselves; this does it for all (UX pass, 2026-11-12). */
+.minigame-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 0 16px;
+    /* In the flow, but painted above anything a game area lets spill past its
+       bottom, so Cancel can always be seen and clicked */
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+/* The framed tool windows (container, combination, cryptex, flag station) scroll
+   inside their frame when a short screen cannot hold their content, so the frame always
+   wraps it (slice 7 R1; the flag station from critique A29). The VM launcher is a device
+   frame (device-frame.css) and is not in this list. */
+.minigame-container[data-minigame="flag-station"] > .minigame-game-container,
+.minigame-container[data-minigame="container"] > .minigame-game-container,
+.minigame-container[data-minigame="combination"] > .minigame-game-container,
+.minigame-container[data-minigame="cryptex"] > .minigame-game-container {
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* Tool windows wrap their content, at most 960x720, centred over the game (critique A45): on a
+   big screen they no longer stretch to the whole window around a strip of content. Below the
+   cap they still fit the window and scroll inside their frame (rule above). The PC desktop
+   (a container in desktop mode) keeps the full window. */
+.minigame-container[data-minigame="flag-station"] > .minigame-game-container,
+.minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),
+.minigame-container[data-minigame="combination"] > .minigame-game-container,
+.minigame-container[data-minigame="cryptex"] > .minigame-game-container,
+.minigame-container[data-minigame="text-file"] > .minigame-game-container {
+    width: fit-content;
+    min-width: min(480px, 100%);
+    max-width: min(960px, 100%);
+    height: auto;
+    max-height: min(720px, 100%);
+    /* A floor, so a window whose content has not been drawn yet (or has none) still holds
+       its X inside the frame instead of collapsing to its padding (the shell X check) */
+    min-height: min(160px, 100%);
+    margin: auto;
+}
+
+/* No Cancel beside the X any more (slice 7 R1): the row holds only a scene's own
+   footer buttons, such as Add to Notepad, and takes no room when it has none */
+.minigame-controls:empty {
+    display: none;
+}
+
+/* Full-window consoles keep a bar at the bottom of their own frame for Cancel,
+   and their game area fills the screen, so in the flow Cancel would be pushed off
+   the bottom (and the header off the top). They keep the old overlay placement.
+   Found by the minigame sweep (2026-11-12). A scene opts in with
+   `static controlsOverlay = true`, which adds this class (code review R2 m2). */
+.minigame-controls-overlay .minigame-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+}
+
+/* An overlay console's Cancel takes no room in the flow, so its game area keeps its
+   full height (code review R2 n1: the SIEM alert list showed half a row less) */
+.minigame-controls-overlay .minigame-game-container {
+    min-height: auto;
+}
+
+/* A full-window console's game area fills the window exactly. Its 20px top and bottom margins
+   used to spill evenly off both edges of the centred shell; now the shell centres safely and
+   scrolls (UI shell build), they would push the console 20px down and past the bottom. */
+.minigame-controls-overlay > .minigame-game-container {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.minigame-button {
+    background: #3498db;
+    color: white;
+    border: 4px solid #2980b9;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.minigame-button:hover {
+    background: #2980b9;
+}
+
+.minigame-button:active {
+    background: #21618c;
+}
+
+.minigame-progress-container {
+    width: 100%;
+    height: 20px;
+    background: #333;
+    border: 2px solid #333;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.minigame-progress-bar {
+    height: 100%;
+    background: #2ecc71;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.instructions {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 16px;   /* GNF 16 is the floor (GNF grid) */
+    line-height: 24px;
+    color: #ccc;
+}
+
+/* Minigame disabled state */
+.minigame-disabled {
+    pointer-events: none !important;
+}
+
+/* Biometric scanner visual feedback */
+.biometric-scanner-success {
+    border: 2px solid #00ff00 !important;
+}
+
+/* Close button for minigames. The shell scrolls, so the X is fixed to the window: it stays
+   reachable whichever way the shell is scrolled (UI shell review M1, M2). The shell's own
+   scrollbar width comes in as --minigame-shell-bar (base-minigame.js) so the X sits left of
+   it. A scene that moves its X into a frame (a parent other than the shell) keeps absolute. */
+.minigame-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background: #e74c3c;
+    color: white;
+    border: 4px solid #c0392b;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 16px;   /* Press Start 2P on its 8px grid (slice 7 R2 n3) */
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.minigame-container > .minigame-close-button {
+    position: fixed;
+    right: calc(15px + var(--minigame-shell-bar, 0px));
+}
+
+/* Every minigame X keeps its drawn size but gets a hit area of at least 44 px (UX q100). The
+   box is 30 px plus the 4-6 px themed border, so inset -14px from the padding box reaches 44+.
+   Applies at every size, not only under a width query: phone landscape (844x390) is wider than
+   600px, and a larger target with the same glyph is harmless on desktop. Nothing is drawn.
+   The console title bar X is position: relative (below) so the hit area anchors to it. */
+.minigame-close-button::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+}
+
+/* The title-bar X (Crypto Workstation, Lab Sheet) sits beside the 30 px "Open in new tab" button
+   (5 px to its left) in a 46 px bar. The X is a border-box button: 30 px outer, padding box 22 px
+   (4 px border) or 18 px (6 px themed border). Insets are measured from that padding box, so the
+   border width (--ui-small-button-px, 4px unthemed) is added to the side reaches: left starts 1 px
+   outside the X's own edge (the new-tab button is 5 px away), right reaches 14 px past the X,
+   so the target is 45 px wide whichever border is drawn. The unthemed X's reach spills about
+   1.5 px past the bar's edge; nothing is drawn there, so it is cosmetic.
+   Vertical inset -13 gives 56 minus twice the border (44 themed, 48 unthemed), filling the bar
+   without hanging into the iframe. Live proof measures it. */
+.title-bar .minigame-close-button::after {
+    inset: -13px calc(-14px - var(--ui-small-button-px, 4px)) -13px calc(-1px - var(--ui-small-button-px, 4px));
+}
+
+/* Phone on a phone-width screen: the phone sits 44 px down and its header's Notepad button is
+   right under the fixed X, so the X's reach stops at the phone's top edge (border box bottom
+   minus 1 px) and goes upward instead (15 px, to the viewport edge): 44 px tall in all. */
+@media (max-width: 500px) {
+    [data-minigame="phone-chat"] > .minigame-close-button::after {
+        inset: calc(-15px - var(--ui-small-button-px, 4px)) -14px calc(1px - var(--ui-small-button-px, 4px)) -14px;
+    }
+}
+
+.minigame-close-button:hover {
+    background: #c0392b;
+}
+
+.minigame-close-button:active {
+    background: #a93226;
+}
+
+/* Social-overlay / exercise close control (C-X1): the shared pixel ×, one look for every
+   SE and awareness window. X only, no text 'Close'. It sits in the window header row and
+   the header's own flex rules push it to the right; it never overlaps the header text.
+   D216: it wears the same themed X as every other window (ui-themes.css lists it with the
+   other close buttons), no red variant. This rule only sets the geometry and a neutral
+   fallback for when no theme skin applies. */
+.minigame-container.minigame-framed > .minigame-game-container {
+    box-sizing: border-box;
+    width: min(720px, 96vw);
+    margin: 0 auto;
+    height: auto;
+    max-height: calc(100% - 40px);
+    overflow: auto;
+    padding: 16px;
+    color: var(--ui-text, #eef1f8);
+    background-color: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border: 16px solid transparent;
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 fill / 16px stretch;
+    image-rendering: pixelated;
+}
+
+/* The authenticator card is capped at 420px (authenticator-minigame.css), so its frame wraps
+   the card instead of standing 720px wide with empty side bands (sweep A9). */
+.minigame-container.minigame-framed[data-minigame="authenticator"] > .minigame-game-container {
+    width: fit-content;
+    max-width: min(720px, 96vw);
+}
+
+.se-overlay-close {
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    margin: 0;
+    background: var(--ui-surface-raised, #2a3144);
+    color: var(--ui-danger, #ff7a6b);
+    border: 4px solid var(--ui-border, #8a93aa);
+    border-radius: 0;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+}
+.se-overlay-close:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
+/* No themed skin (no data-ui-theme): the X still shows hover feedback, brightness only (D216). */
+.se-overlay-close:hover { filter: brightness(1.3); }
+/* A 44 px touch target on small or touch screens, without changing the drawn 30 px square.
+   The ::after is positioned against the X's padding box, so the border width counts against the
+   inset: 30 - 2*border + 2*reach = 44 needs reach = 7 + border. The border is 4px unthemed and
+   --ui-small-button-px (6px in every theme, D216) themed, so the inset is calc(-7px - border).
+   The reach past the drawn edge is 7px, inside the 8px gap every SE title bar keeps between the
+   X and its neighbours. */
+@media (max-width: 600px), (pointer: coarse) {
+    .se-overlay-close { position: relative; }
+    .se-overlay-close::after { content: ''; position: absolute; inset: calc(-7px - var(--ui-small-button-px, 4px)); }
+}
+
+/* Open in new tab button for workstations */
+.minigame-open-new-tab-button {
+    position: absolute;
+    top: 50%;
+    right: 50px;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: #3498db;
+    color: white;
+    border: 4px solid #2980b9;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.minigame-open-new-tab-button:hover {
+    background: #2980b9;
+}
+
+.minigame-open-new-tab-button:active {
+    background: #21618c;
+}
+
+/* Progress bar styling for minigames */
+.minigame-progress-container {
+    width: 100%;
+    height: 10px;
+    background: #333;
+    border: 2px solid #333;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.minigame-progress-bar {
+    height: 100%;
+    background: #2ecc71;   /* solid fill, no gradient (slice 7) */
+    transition: width 0.3s ease;
+    border: 2px solid #27ae60;
+}
+
+/* ===================================================================
+   Shared console window (UI decision X8; MinigameScene.consoleWindow)
+   Every console, SIS and network scene draws inside this one window: the
+   theme's 9-slice frame, at most 1280x880, centred over the dimmed game; on
+   phones the full width less 8px each side, and the full height only for a fill scene. One title bar holds the title (Press
+   Start 2P 16px), an optional GNF subtitle and the X, laid out in the bar so
+   it never covers the title. The scene fills .console-body under the bar and
+   scrolls there; its own inner panels keep their colours and device look.
+   =================================================================== */
+/* html prefix: a scene sheet's own rule on the shell (`.nad-minigame-container`, set on the
+   same element) never puts its old full-window background or layout back */
+html .minigame-container.minigame-console {
+    padding: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.85);
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+}
+
+.console-window {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(1280px, 100%);
+    max-height: min(880px, 100%);
+    min-height: 0;
+    border-style: solid;
+    border-width: var(--ui-frame-px, 18px);
+    border-image-source: var(--ui-frame-image);
+    border-image-slice: var(--ui-frame-slice, 9);
+    border-image-width: var(--ui-frame-px, 18px);
+    border-image-repeat: var(--ui-frame-repeat, stretch);
+    background-color: var(--ui-surface, #181e30);
+    background-clip: padding-box;
+    image-rendering: pixelated;
+    color: var(--ui-text, #eef1f8);
+    box-shadow: none;
+}
+
+.console-titlebar {
+    flex: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 8px 8px 12px;
+    background: var(--ui-surface-raised, #26304a);
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
+}
+
+.console-titles {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-top: 4px;
+}
+
+.console-window .console-title {
+    margin: 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--ui-accent, #ffcc44);
+    text-align: left;
+    text-transform: none;
+    /* Above 600px: one line, a long title ends in an ellipsis and the bar's title attribute
+       holds the full text. At 600px and below it wraps to up to three lines (see the
+       max-width: 600px block below). */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.console-window .console-subtitle {
+    margin: 4px 0 0 0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--ui-text-dim, #a8b2c8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.console-window .console-subtitle[hidden],
+.console-window .console-subtitle.console-subtitle-nowidth {
+    display: none;
+}
+
+/* The X is a box in the bar, not fixed to the window or placed over the frame */
+.console-titlebar > .minigame-close-button {
+    position: relative;   /* in flow, and the anchor for the hit area */
+    flex: none;
+    top: auto;
+    right: auto;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+}
+
+/* A data console that fills the window (consoleWindowFill: the diagram, logs, dashboards)
+   takes the full size so its own panes scroll; other scenes wrap their content */
+.console-window.console-window-fill {
+    height: min(880px, 100%);
+}
+
+html .minigame-container .console-window > .console-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 0;
+    background: transparent;
+}
+
+/* The scene's root fills the body; a root that sets height:100% scrolls inside it only in a fill window (consoleWindowFill); a wrap scene scrolls in the body or in its own flex:1, min-height:0 scroller */
+html .minigame-container .console-window > .console-body > * {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: none;
+}
+
+.console-window > .minigame-message-container:empty {
+    display: none;
+}
+
+.console-window > .minigame-message-container {
+    flex: none;
+    margin: 0;
+}
+
+/* Phones and short windows: the whole window width less 8px each side. The frame wraps its
+   content and stops at the screen height (the body scrolls past that); only a fill scene
+   (consoleWindowFill) takes the full height so its own panes scroll. */
+@media (max-width: 600px), (max-height: 500px) {
+    .console-window {
+        width: 100%;
+        height: auto;
+        max-height: 100%;
+    }
+    .console-window.console-window-fill {
+        height: 100%;
+    }
+    .console-titlebar {
+        padding: 4px 4px 4px 8px;
+        gap: 8px;
+        align-items: center;
+    }
+    .console-titles {
+        padding-top: 0;
+    }
+}
+
+/* Short windows: the subtitle joins the title's line (the title keeps its width first and
+   the subtitle takes what is left), so the bar is one row */
+@media (max-height: 500px) {
+    .console-titles {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+    }
+    .console-window .console-title {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+    .console-window .console-subtitle {
+        flex: 1 1 0;
+        min-width: 0;
+        margin: 0;
+    }
+    /* Short phone landscape (844x390): the org prefix goes too, as under 600px wide, so the
+       console's own name is not cut with an ellipsis. The full text stays in textContent and
+       the bar's title attribute. */
+    .console-window .console-title-org {
+        display: none;
+    }
+}
+
+/* Narrow phones: no room beside the title, so the subtitle lives in the bar's title
+   attribute only and the bar stays one row */
+@media (max-width: 600px) {
+    .console-window .console-title-org {
+        display: none;
+    }
+    .console-window .console-subtitle {
+        display: none;
+    }
+    /* One look for every console scene: whole words wrap to up to three lines beside the X
+       instead of ending in an ellipsis. The 2px on the right is all the X needs (its hit area
+       reaches 14px minus the border past the X; the bar's gap here is 8px). Pixel font stays
+       16px on a 24px line. */
+    .console-titles {
+        padding-right: 2px;
+    }
+    .console-window .console-title {
+        white-space: normal;
+        overflow-wrap: break-word;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+        text-overflow: clip;
+        line-height: 24px;
+    }
+    /* An essential subtitle (a scene sets static consoleSubtitleEssential) stays, on a
+       second line of the bar: one line with an ellipsis */
+    .console-window.console-subtitle-essential .console-subtitle:not([hidden]) {
+        display: block;
+    }
+    .console-window.console-subtitle-essential .console-titlebar {
+        flex-wrap: wrap;
+        row-gap: 2px;
+    }
+    .console-window.console-subtitle-essential .console-titles {
+        display: contents;
+    }
+    .console-window.console-subtitle-essential .console-title {
+        flex: 1 1 0;
+        min-width: 0;
+        margin-right: 2px; /* .console-titles is display: contents here, so its padding-right is lost */
+    }
+    .console-window.console-subtitle-essential .console-subtitle {
+        order: 3;
+        flex: 0 0 100%;
+        min-width: 0;
+        margin: 0;
+        padding-bottom: 2px;
+    }
+}
+
+/* K4 B: form-like scenes wrap their content instead of spanning 1280px. The rule lives here, with the other
+   .console-window rules (X8), keyed on the scene class the scene JS puts on its container. Phones, in either
+   orientation, keep the full width: the condition only matches desktop-sized windows. Short windows under 1100px
+   wide keep the full width: every landscape phone (widest measured 997x448) and 1000 to 1099px windows 500px or
+   less high, which already get the compact console chrome. 1100px and wider short windows (1280x500) stay capped. */
+@media (min-width: 601px) and (min-height: 500.02px), (min-width: 1100px) {
+    .cf-minigame-container .console-window,
+    .ncsc-minigame-container .console-window { width: min(760px, 100%); }
+    .sis-threshold-minigame-container .console-window { width: min(800px, 100%); }
+}

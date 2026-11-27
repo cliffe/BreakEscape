@@ -1,0 +1,68 @@
+{
+ "steps": [
+  {
+   "note": "Quintero in three bunker rooms after the breach was announced: the security-office door line, then the power-room substation line and the server-hall near-end line, each closed with 'Keep moving'."
+  },
+  {
+   "set": {
+    "security_office_entered": true,
+    "breach_announced": true
+   }
+  },
+  {
+   "talk": "qso",
+   "picks": [
+    "Keep moving"
+   ]
+  },
+  {
+   "said": [
+    "I don't like doors that know your name.",
+    "Moving."
+   ],
+   "notSaid": [
+    "Good likeness.",
+    "Quiet door."
+   ]
+  },
+  {
+   "set": {
+    "power_room_entered": true
+   }
+  },
+  {
+   "talk": "qpr",
+   "picks": [
+    "Keep moving"
+   ]
+  },
+  {
+   "said": [
+    "Smells like a substation. Do what you came for.",
+    "Moving."
+   ],
+   "notSaid": [
+    "I don't like doors that know your name."
+   ]
+  },
+  {
+   "set": {
+    "server_hall_entered": true
+   }
+  },
+  {
+   "talk": "qhall",
+   "picks": [
+    "Keep moving"
+   ]
+  },
+  {
+   "said": [
+    "I've got the near end. Go do your work."
+   ],
+   "notSaid": [
+    "Smells like a substation."
+   ]
+  }
+ ]
+}

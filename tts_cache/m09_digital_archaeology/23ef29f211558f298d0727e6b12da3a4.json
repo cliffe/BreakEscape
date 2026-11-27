@@ -1,0 +1,13 @@
+{
+  "key": "23ef29f211558f298d0727e6b12da3a4",
+  "npc": "agent_0x99",
+  "text": "That's my other line. Withheld. Stay on, and don't say a word.",
+  "voice": "Aoede",
+  "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:17:11Z"
+}

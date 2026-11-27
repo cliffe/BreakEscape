@@ -1,0 +1,13 @@
+{
+  "key": "3cd44e90e0482f24f25d774773e8c936",
+  "npc": "dr_sharma",
+  "text": "And you asked us in directly. I've been following your incident since you called.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

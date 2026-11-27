@@ -1,0 +1,13 @@
+{
+  "key": "a397fde06543eda59573b9ecc94b17b6",
+  "npc": "patient_bed5",
+  "text": "I'm in the same room as them. What else would I do?",
+  "voice": "Autonoe",
+  "style": "Retired schoolteacher, seventy-one, post-operative and fully alert. British-Chinese, raised in Edinburgh -- a clear, precise Scottish accent. Calm, observant, quietly furious on behalf of the sicker patients around her. Speaks in complete sentences because she has always spoken in complete sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

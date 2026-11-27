@@ -1,0 +1,21 @@
+{
+  "key": "85db2ddf22c5e57e111d8b4f39c956af",
+  "npc": "ghost_phone",
+  "text": "Numbers are my department.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:06:56Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/85db2ddf22c5e57e111d8b4f39c956af.mp3",
+    "clean_md5": "ebd4a8d56201ba940901a3f32f0a81fe",
+    "baked_md5": "146a98e0be717891a3d9966b5bf6c544",
+    "baked": "2026-11-24"
+  }
+}

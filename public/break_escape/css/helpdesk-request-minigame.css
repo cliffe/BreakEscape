@@ -1,0 +1,50 @@
+/* IT request form (ops layer S8b): a plain paper form. Text is the pixel font (--se-font-readable);
+   nothing is smaller than 16px; touch targets are at least 44px. */
+
+.hr-root {
+    --hr-ink: var(--ui-text, #eef1f8);
+    --hr-dim: var(--ui-text-dim, #a8b2c8);
+    --hr-surface: var(--ui-surface, #10152a);
+    --hr-raised: var(--ui-surface-raised, #26304a);
+    --hr-line: var(--ui-line, #4c5b80);
+    --hr-accent: var(--ui-accent, #ffcc44);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--hr-ink);
+    background: var(--hr-surface);
+}
+.hr-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 2px solid var(--hr-line); background: var(--hr-raised); }
+.hr-title { flex: 1 1 auto; margin: 0; font-size: 16px; }
+.hr-stage { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.hr-paper { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; max-width: 560px; box-sizing: border-box; }
+.hr-row { display: flex; flex-direction: column; gap: 4px; }
+.hr-label { color: var(--hr-dim); font-size: 16px; }
+.hr-input {
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    min-height: 44px;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    width: 100%;
+    color: var(--hr-ink);
+    background: var(--hr-raised);
+    border: 2px solid var(--hr-line);
+}
+.hr-input:focus { outline: 2px solid var(--hr-accent); outline-offset: 1px; }
+.hr-what { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px; }
+.hr-choice { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.hr-send { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; padding: 8px 18px; align-self: flex-start; }
+.hr-result { flex: none; padding: 8px 16px 14px; border-top: 2px solid var(--hr-line); }
+.hr-result:empty { display: none; }
+.hr-result-line, .hr-note, .hr-password { margin: 0 0 6px; max-width: 60ch; overflow-wrap: anywhere; }
+.hr-password { color: var(--hr-accent); font-size: 24px; user-select: all; }
+.hr-note { color: var(--hr-dim); }
+
+/* Close while a send is waiting for the desk */
+.hr-minigame-container .se-overlay-close[aria-disabled="true"] { opacity: 0.5; cursor: default; }

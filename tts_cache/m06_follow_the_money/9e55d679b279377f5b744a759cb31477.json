@@ -1,0 +1,13 @@
+{
+  "key": "9e55d679b279377f5b744a759cb31477",
+  "npc": "trader_npc",
+  "text": "Is it decaf? Tell me it's not decaf.",
+  "voice": "Puck",
+  "style": "Young man, a cryptocurrency trader in his early twenties, British-Nigerian, jittery on caffeine and increasingly frightened by what he has noticed. Speak with a consistent south-east London (Peckham) accent throughout — do not shift to any other accent. Mid-to-high pitch; fast, nervy pace, over-explaining.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:09:34Z"
+}

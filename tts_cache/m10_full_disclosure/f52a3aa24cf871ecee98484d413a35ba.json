@@ -1,0 +1,13 @@
+{
+  "key": "f52a3aa24cf871ecee98484d413a35ba",
+  "npc": "narrator",
+  "text": "The forward post at a quarter to two. Against the second van, Quintero cuffs Kowalczyk without a word.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:06:51Z"
+}

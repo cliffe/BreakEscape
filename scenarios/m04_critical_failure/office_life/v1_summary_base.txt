@@ -1,0 +1,14 @@
+OFFICE-LIFE SUMMARY (V1): 12 NPC(s)
+  agent_0x99 (main_entrance) class=task,task-mapping,conv,key post=main_entrance leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  agent_0x99_debrief (main_entrance) class=task,conv,attackable post=main_entrance leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  agent_nightshade (main_entrance) class=attackable post=main_entrance leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  director_netherton (main_entrance) class=attackable post=main_entrance leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  opening_briefing_cutscene (main_entrance) class=task,attackable post=main_entrance leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  operative_cipher (battery_hall_1) class=task,conv,fights,patrol,attackable post=battery_hall_1 leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  operative_relay (battery_hall_2) class=conv,key,fights,patrol,attackable post=battery_hall_2 leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  operative_static (plant_room) class=conv,fights,attackable post=plant_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  robert_vance (operations_office) class=task,key,attackable post=operations_office leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  robert_vance_phone (main_entrance) class=task-mapping post=main_entrance leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  security_guard (main_entrance) class=conv,fights,attackable post=main_entrance leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  voltage (plant_room) class=task,fights,attackable post=plant_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+

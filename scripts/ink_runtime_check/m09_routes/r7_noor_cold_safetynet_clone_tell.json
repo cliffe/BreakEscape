@@ -1,0 +1,12 @@
+{
+"steps": [
+{ "note": "R7: Noor, not warned in time. SAFETYNET cover, the card read at her belt, the bonus, then the choice to stop her ringing her father. The clone choice retires once the card is saved." },
+{ "talk": "noor", "picks": ["SAFETYNET. Someone", "Lean in over her list", "How long have you worked", "That bonus wasn't for filing", "Not tonight"] },
+{ "said": ["We're closed. Nobody comes in for a deed", "Recruiting? I file deeds for dead ranchers", "Series R. Forty-eight boxes", "Tell her what that bonus was and she goes home tonight", "She asked after my dad's dialysis", "She's a witness now. She goes tonight", "He waits up for my call"],
+  "notSaid": ["Here, my card", "Somebody called me in October"] },
+{ "expect": { "noor_told": true, "staff_card_cloned": true, "noor_met": true } },
+{ "tasks": { "meet_the_clerk": "completed" } },
+{ "talk": "noor", "picks": ["I'll let you get on"] },
+{ "said": ["Watch the carts"], "notSaid": ["[choice] Lean in over her list", "[choice] That bonus wasn't for filing", "[choice] How long have you worked"] }
+]
+}

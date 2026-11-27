@@ -1,0 +1,13 @@
+{
+  "key": "4c17d9f40cb3a52ddec26d63e99f0e13",
+  "npc": "julian",
+  "text": "Someone's brought a cake in!",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:52:27Z"
+}

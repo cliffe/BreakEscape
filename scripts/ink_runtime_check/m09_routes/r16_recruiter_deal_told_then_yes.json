@@ -1,0 +1,10 @@
+{
+"imports": { "m05_recruiter_deal_accepted": true },
+"steps": [
+{ "note": "R16: m05 deal accepted, never confessed. The player owns up to the October deal, which skips the denial reply and goes to the spine, then takes the name." },
+{ "talk": "recruiter", "knot": "call", "picks": ["She's right", "Go on", "Give me the name"] },
+{ "said": ["Noted. Later", "Margaret's shredding eleven years", "Halina Kowalczyk"],
+  "notSaid": ["Of course. Shall we do business anyway", "Then I'll tidy my own desk"] },
+{ "expect": { "recruiter_secret": "told", "recruiter_offer": "taken" } }
+]
+}

@@ -1,0 +1,14 @@
+{
+  "key": "712cb8e89db30ec4bcd996826b76f4be",
+  "npc": "kit_graham_whitfield",
+  "text": "There we are. Paid.",
+  "delivery": "cheerful, unbothered",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:10:04Z"
+}

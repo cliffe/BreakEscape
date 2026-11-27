@@ -1,0 +1,13 @@
+{
+  "key": "4e0854bd53776e47284e9e50b880c1bd",
+  "npc": "graham_whitfield",
+  "text": "Morale. Budgeted under sundries.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:32Z"
+}

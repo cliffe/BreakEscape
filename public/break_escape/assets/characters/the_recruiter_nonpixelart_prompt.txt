@@ -1,0 +1,10 @@
+Make portrait for The Recruiter
+A full-figured African-American woman of about 56 with deep warm brown skin, high cheekbones, short silver-grey natural curls kept close and neat, small pearl stud earrings, tortoiseshell reading glasses worn slightly low on the nose so she looks over them, a former intelligence-agency recruiter calling from somewhere comfortable. She wears a soft camel cashmere roll-neck under an open tailored dark navy blazer, a slim gold watch on her wrist, dark navy tailored trousers and a dark brown leather belt with a small gold buckle. One hand resting in her trouser pocket. Charming on the surface and ruthless underneath, mouth closed, eyes amused and appraising. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is the_recruiter_concept_3_raw.png.

@@ -1,0 +1,10 @@
+Make portrait for ATHENA
+A holographic AI receptionist, a woman of indeterminate age with flawless, idealised, slightly too-symmetrical features and a calm, too-perfect closed-mouth half-smile, her entire figure made of translucent glowing cyan light: you can faintly see through her body. Strong horizontal scan lines run across her, with a thin bright cyan rim of light along her outline, and her lower edge breaking up into small square digital fragments. Sleek swept-back hair in a tight chignon, a sharply tailored high-collared jacket with a single row of buttons and a pencil skirt, all the same luminous cyan. Arms relaxed at her sides. Unmistakably a projection, not a person. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Already faced right, so reframed with reframe_portrait.py without --flip; original is athena_concept_2_raw.png.

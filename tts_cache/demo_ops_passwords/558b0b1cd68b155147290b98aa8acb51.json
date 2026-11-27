@@ -1,0 +1,13 @@
+{
+  "key": "558b0b1cd68b155147290b98aa8acb51",
+  "npc": "ama_owusu",
+  "text": "There's a cake in your bag. Put it out and watch who wanders over. Free food empties desks too.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:05Z"
+}

@@ -1,0 +1,100 @@
+== scenarios/lab_tesseract_trials/ink/closing_debrief.ink [modified]
+  structure: unchanged
+  prose: 49 -> 49 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_cliffe.ink [modified]
+  structure: unchanged
+  prose: 27 -> 27 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_jordan.ink [modified]
+  structure: unchanged
+  prose: 12 -> 12 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_megan.ink [modified]
+  structure: unchanged
+  prose: 23 -> 23 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_oleg.ink [added]
+  structure: 60 difference(s)
+  var:
+    + L13  VAR met_oleg = false
+    + L14  VAR asked_name = false
+    + L15  VAR explained = false
+    + L16  VAR fixed_claimed = false
+    + L17  VAR asked_cryptosecure = false
+    + L18  VAR asked_colleagues = false
+    + L19  VAR asked_week = false
+    + L20  VAR quiet = false
+    + L23  VAR staff_list_read = false
+  knot:
+    + L25  start
+    + L33  hub
+    + L57  name
+    + L64  explain
+    + L73  fixed
+    + L82  cryptosecure
+    + L89  colleagues
+    + L97  week
+  tag:
+    + L53  [hub] #exit_conversation
+    + L66  [explain] #give_item:notes:fn12_mojibake
+  assign:
+    + L27  [start] met_oleg = true
+    + L30  [start] quiet = true
+    + L36  [hub] quiet = false
+    + L58  [name] asked_name = true
+    + L61  [name] quiet = true
+    + L65  [explain] explained = true
+    + L70  [explain] quiet = true
+    + L74  [fixed] fixed_claimed = true
+    + L79  [fixed] quiet = true
+    + L83  [cryptosecure] asked_cryptosecure = true
+    + L86  [cryptosecure] quiet = true
+    + L90  [colleagues] asked_colleagues = true
+    + L94  [colleagues] quiet = true
+    + L98  [week] asked_week = true
+    + L101  [week] quiet = true
+  divert:
+    + L26  [start] -> hub
+    + L31  [start] -> hub
+    + L41  [hub] -> name
+    + L43  [hub] -> explain
+    + L45  [hub] -> fixed
+    + L47  [hub] -> cryptosecure
+    + L49  [hub] -> colleagues
+    + L51  [hub] -> week
+    + L55  [hub] -> hub
+    + L62  [name] -> hub
+    + L71  [explain] -> hub
+    + L80  [fixed] -> hub
+    + L87  [cryptosecure] -> hub
+    + L95  [colleagues] -> hub
+    + L102  [week] -> hub
+  choice:
+    + L40  [hub] + {not asked_name} -> name
+    + L42  [hub] + {staff_list_read and not explained} -> explain
+    + L44  [hub] + {staff_list_read and not fixed_claimed} -> fixed
+    + L46  [hub] + {not asked_cryptosecure} -> cryptosecure
+    + L48  [hub] + {not asked_colleagues} -> colleagues
+    + L50  [hub] + {not asked_week} -> week
+    + L52  [hub] + -> hub
+  choicecount:
+    + L40  [hub] * x0, + x7
+  condition:
+    + L26  [start] met_oleg
+    + L35  [hub] quiet
+    + L37  [hub] else
+  prose: 0 -> 27 lines, ~27 changed (0 old unmatched, 27 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_sidhu.ink [modified]
+  structure: unchanged
+  prose: 23 -> 23 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_tom.ink [modified]
+  structure: unchanged
+  prose: 27 -> 27 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/opening_briefing.ink [modified]
+  structure: unchanged
+  prose: 33 -> 33 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_agent_0x99.ink [modified]
+  structure: unchanged
+  prose: 65 -> 65 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_ghost.ink [modified]
+  structure: unchanged
+  prose: 55 -> 55 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+
+60 structural differences

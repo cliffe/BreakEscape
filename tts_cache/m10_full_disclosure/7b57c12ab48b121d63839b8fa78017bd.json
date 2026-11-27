@@ -1,0 +1,13 @@
+{
+  "key": "7b57c12ab48b121d63839b8fa78017bd",
+  "npc": "vector_post",
+  "text": "I audited the Citadel annex's locks for a year. Nobody ever changed the master. Apparently not here either.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Tonight he is at the raid table, cleared and still sore about it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:01:04Z"
+}

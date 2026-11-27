@@ -1,0 +1,13 @@
+{
+  "key": "e49c347f0cc57110f5157644a60a28dd",
+  "npc": "ama_owusu",
+  "text": "Ask me to send them for coffee. Sign out from Start first if you're still in as Graham, then use Other user with the name and password the cracker showed.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:35:48Z"
+}

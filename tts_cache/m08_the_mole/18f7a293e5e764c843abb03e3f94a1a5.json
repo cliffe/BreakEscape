@@ -1,0 +1,13 @@
+{
+  "key": "18f7a293e5e764c843abb03e3f94a1a5",
+  "npc": "narrator",
+  "text": "He studies you for a long moment.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:43:32Z"
+}

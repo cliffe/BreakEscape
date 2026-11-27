@@ -1,0 +1,13 @@
+{
+  "key": "ae18b4a714c1c946b3da29a63f9b41b7",
+  "npc": "closing_debrief",
+  "text": "Miss Haddad went home at the end of her shift. She knew what list she was on before you arrived.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:23:46Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "04d2aee8447ba06abde24f6a186206a5",
+  "npc": "derek_lawson",
+  "text": "We've segmented the population: demographic cohorts where tailored lies land hardest, multiplied by everyone else caught when the system buckles.",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:18:02Z"
+}

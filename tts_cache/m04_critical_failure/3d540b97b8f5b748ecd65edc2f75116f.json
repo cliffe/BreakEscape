@@ -1,0 +1,13 @@
+{
+  "key": "3d540b97b8f5b748ecd65edc2f75116f",
+  "npc": "joanne_pell",
+  "text": "Who's moved my mug again, duck?",
+  "voice": "Zephyr",
+  "style": "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:21:26Z"
+}

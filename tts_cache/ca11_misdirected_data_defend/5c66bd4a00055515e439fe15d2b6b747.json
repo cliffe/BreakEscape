@@ -1,0 +1,13 @@
+{
+  "key": "5c66bd4a00055515e439fe15d2b6b747",
+  "npc": "kit_yusuf_demir",
+  "text": "Handovers go out fast when it's busy. One wrong recipient and resident details land where they shouldn't.",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:46Z"
+}

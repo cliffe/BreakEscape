@@ -1,0 +1,13 @@
+{
+  "key": "62a4ba6f5e76b62181a207c6b2e91c4c",
+  "npc": "agnieszka_duda",
+  "text": "Is it for the log?",
+  "voice": "Callirrhoe",
+  "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:42Z"
+}

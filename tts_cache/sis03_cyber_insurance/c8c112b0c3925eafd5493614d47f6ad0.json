@@ -1,0 +1,13 @@
+{
+  "key": "c8c112b0c3925eafd5493614d47f6ad0",
+  "npc": "eleanor_vance",
+  "text": "The exclusion is based on Lloyd's LMA5567A model language. It excludes acts occurring \"in the course of war.\" Peacetime state-sponsored attacks are in a grey zone.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:05Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "8a0f588f5601a1abd7f1b7af05483031",
+  "npc": "ama",
+  "text": "The quick version's about fifteen minutes. The full walk-round is nearer thirty-five, every room and every gadget. Which?",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:45:52Z"
+}

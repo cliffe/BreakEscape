@@ -1,0 +1,13 @@
+{
+  "key": "dd1f11b37cfc27d011e2eee6490fe2b9",
+  "npc": "narrator",
+  "text": "You hold out the projection. She reads all of it, standing.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A building full of machinery that is about to be used against people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:11:32Z"
+}

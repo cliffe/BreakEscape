@@ -1,0 +1,584 @@
+/* ─── Bond Visualiser Overlay ─────────────────────────────────────────────
+   Fullscreen MI6-themed audio visualiser.
+   All selectors are scoped to #bond-vis-overlay to avoid conflicts.
+   Triggered by the music widget's "Visualiser" button, or automatically
+   when the 'victory' playlist is activated (mission complete).
+─────────────────────────────────────────────────────────────────────────── */
+
+/* VT323 and Press Start 2P are self-hosted in fonts.css */
+
+:root {
+  --bv-gold:      #FFD700;
+  --bv-gold-dim:  #997a00;
+  --bv-green:     #00FF41;
+  --bv-green-dim: #003b0f;
+  --bv-red:       #FF003C;
+  --bv-cyan:      #00FFFF;
+  --bv-bg:        #000000;
+}
+
+/* ── Fullscreen overlay wrapper ─────────────────────────────────────────── */
+
+#bond-vis-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--bv-bg);
+  color: var(--bv-green);
+  font-family: 'Press Start 2P', monospace;
+  overflow: hidden;
+  cursor: crosshair;
+  image-rendering: pixelated;
+}
+
+#bond-vis-overlay.bv-open {
+  display: block;
+}
+
+/* CRT scanlines overlay.
+   Recorded exception (D220, 2026-11-20): the credits screen keeps its CRT effects, like the boot
+   screen (title-screen.css): these scanlines, the vignette below and the glitch text-shadow. The
+   no-gradient and no-blur sweeps leave them alone; no other full-screen overlay takes them. The music
+   widget's "Visualiser" button opens this same credits overlay mid-mission, so it is covered too. */
+#bond-vis-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.18) 2px,
+    rgba(0,0,0,0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* CRT vignette (D220 exception: see the scanlines above) */
+#bond-vis-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* hard-edged frame in place of the smooth radial vignette */
+  box-shadow: inset 0 0 0 6px rgba(0,0,0,0.6), inset 0 0 0 12px rgba(0,0,0,0.3);
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* ── Matrix rain canvas ─────────────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-matrix {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.18;
+}
+
+/* ── App layout ─────────────────────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-app {
+  position: relative;
+  z-index: 10;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  /* minmax(0, ...): a wide child (the ticker, the canvas) can't widen the page
+     past the window and push the right-hand panel off it (m06, m07 at 1400 px) */
+  grid-template-columns: minmax(0, 1fr);
+  box-sizing: border-box;
+  padding: 16px;
+  gap: 12px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid var(--bv-gold);
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.9);
+  box-shadow: 2px 2px 0 var(--bv-gold-dim);
+}
+
+#bond-vis-overlay .bv-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* The blocks of the header may shrink (and wrap their text) instead of overflowing:
+   at 900 px and below the heading, badges, status lines and close button drew over
+   each other, and at phone widths the status block and close button ran off screen. */
+#bond-vis-overlay .bv-header { gap: 12px; }
+#bond-vis-overlay .bv-title-block { min-width: 0; }
+
+#bond-vis-overlay .bv-logo-sprite {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+}
+
+#bond-vis-overlay .bv-title-block h1 {
+  font-size: 8px;
+  color: var(--bv-gold);
+  text-shadow: 2px 2px 0 var(--bv-gold-dim);
+  letter-spacing: 2px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  animation: bv-glitch 6s infinite;
+}
+
+#bond-vis-overlay .bv-title-block p {
+  font-size: 8px;
+  color: var(--bv-green);
+  margin-top: 4px;
+  letter-spacing: 1px;
+  /* A long mission name wraps at narrow widths; without a line height of its own the two
+     caption lines drew on top of each other (lab R15 T4). */
+  line-height: 1.6;
+}
+
+#bond-vis-overlay .bv-status-block {
+  text-align: right;
+  font-family: 'GNF', monospace;
+  font-size: 16px;
+  /* a long operation name wraps; give the wrapped lines room of their own */
+  line-height: 1.2;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow-wrap: anywhere;
+}
+
+#bond-vis-overlay .bv-status-line {
+  margin-bottom: 2px;
+}
+
+#bond-vis-overlay .bv-status-line .label { color: var(--bv-gold-dim); margin-right: 6px; }
+#bond-vis-overlay .bv-status-line .val   { color: var(--bv-green); }
+
+#bond-vis-overlay .bv-badge {
+  font-size: 8px;
+  padding: 3px 6px;
+  border: 2px solid currentColor;
+  display: inline-block;
+  white-space: nowrap; /* "● REVIEW" split over two lines at 900 px (lab R15 T4) */
+  line-height: 1.6;
+}
+#bond-vis-overlay .bv-badge.red  { color: var(--bv-red);  border-color: var(--bv-red);  box-shadow: 2px 2px 0 var(--bv-red); }
+#bond-vis-overlay .bv-badge.gold { color: var(--bv-gold); border-color: var(--bv-gold); }
+
+/* Close button — top-right of header */
+#bond-vis-overlay .bv-close-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 6px 10px;
+  border: 2px solid var(--bv-red);
+  background: transparent;
+  color: var(--bv-red);
+  cursor: pointer;
+  transition: all 0.1s;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+#bond-vis-overlay .bv-close-btn:hover {
+  background: var(--bv-red);
+  color: #000;
+  box-shadow: 2px 2px 0 var(--bv-red);
+}
+#bond-vis-overlay .bv-close-btn.bv-exit-btn {
+  border-color: var(--bv-green);
+  color: var(--bv-green);
+}
+#bond-vis-overlay .bv-close-btn.bv-exit-btn:hover {
+  background: var(--bv-green);
+  color: #000;
+  box-shadow: 2px 2px 0 var(--bv-green);
+}
+
+/* ── Stage (3-column) ───────────────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-stage {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 180px;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* ── Side panels ────────────────────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-side-panel {
+  border: 2px solid var(--bv-green-dim);
+  background: rgba(0,10,2,0.92);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 8px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* a short window scrolls the panel instead of cutting the last VIS MODE button */
+  box-shadow: 2px 2px 0 rgba(0,255,65,0.12);
+  scrollbar-width: thin;
+  /* Chrome 121+ uses these and ignores the webkit rules below, so the thumb is the bright green */
+  scrollbar-color: var(--bv-green) var(--bv-green-dim);
+}
+
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar { width: 8px; height: 8px; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-track { background: transparent; border-left: 2px solid var(--bv-green-dim); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-thumb { background: var(--bv-green-dim); border: 2px solid var(--bv-green); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+@media (max-width: 700px) {
+  #bond-vis-overlay .bv-header { flex-wrap: wrap; gap: 8px 12px; }
+  /* logo and close button share the first row; badges and the status block follow,
+     left-aligned and as wide as the window */
+  #bond-vis-overlay .bv-logo { order: 1; flex: 1 1 0; }
+  #bond-vis-overlay .bv-close-btn { order: 2; margin-left: 0; }
+  #bond-vis-overlay .bv-header > div[style] { order: 3; flex: 1 1 100%; flex-wrap: wrap; }
+  #bond-vis-overlay .bv-status-block { order: 4; flex: 1 1 100%; text-align: left; }
+}
+
+@media (max-width: 900px) {
+  #bond-vis-overlay .bv-side-panel  { display: none; }
+  #bond-vis-overlay .bv-stage { grid-template-columns: 1fr !important; }
+}
+
+#bond-vis-overlay .bv-panel-title {
+  font-size: 8px;
+  color: var(--bv-gold);
+  border-bottom: 2px solid var(--bv-gold-dim);
+  padding-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+#bond-vis-overlay .bv-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: var(--bv-green);
+  padding: 1px 0;
+}
+#bond-vis-overlay .bv-stat-row .sk { color: var(--bv-gold-dim); }
+
+#bond-vis-overlay .bv-meter-bar {
+  height: 8px;
+  background: var(--bv-green-dim);
+  image-rendering: pixelated;
+  margin-top: 2px;
+  position: relative;
+  overflow: hidden;
+}
+#bond-vis-overlay .bv-meter-fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--bv-green) 0px, var(--bv-green) 3px, transparent 3px, transparent 5px);
+  transition: width 0.1s;
+  box-shadow: 2px 2px 0 var(--bv-green);
+}
+#bond-vis-overlay .bv-meter-fill.gold-fill {
+  background: repeating-linear-gradient(90deg, var(--bv-gold) 0px, var(--bv-gold) 3px, transparent 3px, transparent 5px);
+  box-shadow: 2px 2px 0 var(--bv-gold);
+}
+
+#bond-vis-overlay .bv-log-scroll {
+  flex: 1;
+  overflow: hidden;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  color: rgba(0,255,65,0.6);
+}
+#bond-vis-overlay .bv-log-line          { padding: 1px 0; }
+#bond-vis-overlay .bv-log-line.warn  { color: var(--bv-gold); }
+#bond-vis-overlay .bv-log-line.alert { color: var(--bv-red); }
+
+/* ── Visualiser centre column ───────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-vis-centre {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+#bond-vis-overlay .bv-vis-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+#bond-vis-overlay .bv-vis-canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  border: 2px solid var(--bv-green-dim);
+  background: #000;
+  display: block;
+  box-shadow: 2px 2px 0 rgba(0,255,65,0.12);
+}
+
+#bond-vis-overlay .bv-classified {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  color: rgba(255,0,60,0.06);
+  letter-spacing: 8px;
+  pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Corner brackets on vis wrapper */
+#bond-vis-overlay .bv-vis-wrapper::before,
+#bond-vis-overlay .bv-vis-wrapper::after {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  z-index: 5;
+  pointer-events: none;
+}
+#bond-vis-overlay .bv-vis-wrapper::before { top: -2px;    left: -2px;  border-top: 3px solid var(--bv-gold); border-left: 3px solid var(--bv-gold); }
+#bond-vis-overlay .bv-vis-wrapper::after  { bottom: -2px; right: -2px; border-bottom: 3px solid var(--bv-gold); border-right: 3px solid var(--bv-gold); }
+
+/* ── Controls bar ───────────────────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-controls {
+  border: 2px solid var(--bv-green-dim);
+  background: rgba(0,10,2,0.95);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+#bond-vis-overlay .bv-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 8px 12px;
+  border: 2px solid var(--bv-green);
+  background: transparent;
+  color: var(--bv-green);
+  cursor: pointer;
+  image-rendering: pixelated;
+  transition: background 0.1s, color 0.1s, box-shadow 0.1s; /* transform is not eased: the press is a crisp step */
+  white-space: nowrap;
+}
+#bond-vis-overlay .bv-btn:hover  { background: var(--bv-green); color: #000; box-shadow: 2px 2px 0 var(--bv-green); }
+#bond-vis-overlay .bv-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+#bond-vis-overlay .bv-btn.gold   { border-color: var(--bv-gold); color: var(--bv-gold); }
+#bond-vis-overlay .bv-btn.gold:hover { background: var(--bv-gold); color: #000; box-shadow: 2px 2px 0 var(--bv-gold); }
+#bond-vis-overlay .bv-btn.gold:active { box-shadow: none; }
+#bond-vis-overlay .bv-btn.active { background: var(--bv-gold); color: #000; border-color: var(--bv-gold); }
+
+#bond-vis-overlay .bv-mode-group {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+#bond-vis-overlay .bv-track-info {
+  font-family: 'GNF', monospace;
+  font-size: 16px;
+  color: var(--bv-gold);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#bond-vis-overlay .bv-track-info span { color: var(--bv-green-dim); font-size: 16px; }
+
+/* ── Mode selector in right panel ──────────────────────────────────────── */
+
+#bond-vis-overlay .bv-mode-group-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+/* three to a row in the 160px panel: 11 buttons take four short rows */
+#bond-vis-overlay .bv-mode-group-panel .bv-btn {
+  padding: 6px 2px;
+  text-align: center;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
+#bond-vis-overlay .bv-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8px;
+  color: var(--bv-gold-dim);
+  padding: 0 4px;
+}
+
+#bond-vis-overlay .bv-ticker {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  overflow: hidden;
+  flex: 1;
+  margin: 0 20px;
+}
+
+#bond-vis-overlay .bv-ticker-inner {
+  display: inline-block;
+  white-space: nowrap;
+  animation: bv-ticker 30s linear infinite;
+  color: rgba(0,255,65,0.5);
+}
+
+/* ── Keyframe animations ────────────────────────────────────────────────── */
+
+@keyframes bv-blink  { 50% { opacity: 0; } }
+@keyframes bv-ticker {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100%); }
+}
+@keyframes bv-glitch {
+  0%,100% { text-shadow: 2px 2px 0 var(--bv-gold-dim); transform: none; }
+  92%     { text-shadow: 2px 0 var(--bv-red), -2px 0 var(--bv-cyan); transform: skewX(-2deg); }
+  94%     { text-shadow: -2px 0 var(--bv-red), 2px 0 var(--bv-cyan); transform: skewX(2deg); }
+  96%     { text-shadow: 2px 2px 0 var(--bv-gold-dim); transform: none; }
+}
+
+.bv-blink { animation: bv-blink 1s step-end infinite; }
+
+/* ── Mission credits scroll ─────────────────────────────────────────────── */
+
+#bv-credits-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  overflow: hidden;
+  background: transparent;  /* the credits run over the visualiser; JS also sets this inline */
+  pointer-events: none;
+  /* Credits sit in the gap between the header band and the controls bar (set by
+     bond-visualiser.js _fitCreditsBand; unset they are 0 and the overlay is the window) */
+  box-sizing: border-box;
+  padding-top: var(--bv-cr-top, 0px);
+  padding-bottom: var(--bv-cr-bottom, 0px);
+}
+
+#bv-credits-overlay.bv-cr-active {
+  display: block;
+}
+
+#bv-credits-scroll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  text-align: center;
+  padding: 0 10%;
+}
+
+.bv-cr-line {
+  font-family: 'GNF', monospace;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+/* The title, subtitle, section-header, entry and warning looks are inline styles (STYLE_MAP in
+   bond-visualiser.js); those govern, so there are no .bv-cr-title and similar rules here. */
+
+/* A "-- HEADING --" line: the dash runs are decoration that stays on one line and drops on a
+   narrow window; the words wrap only between words (sis01 m18) */
+.bv-cr-deco { white-space: nowrap; }
+@media (max-width: 600px) {
+  .bv-cr-deco { display: none; }
+}
+
+.bv-cr-gap {
+  height: 22px;
+}
+
+/* The centred credits label (every single line and the hold line, plus the
+   closing-card block): no wider than the central map panel, so a long line such
+   as m03's "ZERO DAY CATALOGUE: IN SAFETYNET HANDS ..." wraps inside it instead of
+   running over the COMMS INTEL panel. With the side panels hidden (900px and
+   under) it takes the window less a margin. */
+#bv-credits-overlay #bv-cr-label.bv-cr-label {
+  box-sizing: border-box;
+  /* A flat plate behind the credits so the text never sits on busy map pixels: a solid
+     colour (no alpha, blur or gradient) with a 2px border in the visualiser's gold. */
+  background: #000;
+  border: 2px solid var(--bv-gold-dim, #997a00);
+  padding: 8px 16px;
+  /* % of the fixed overlay (the label's containing block), not 100vw, which
+     counts a page scrollbar */
+  max-width: calc(100% - 440px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+  text-wrap: balance;
+  /* the overlay is padded to the gap between the header band and the controls bar, so
+     100% is that gap; a taller card scrolls inside itself instead of covering a bar */
+  max-height: 100%;
+  overflow-y: auto;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+/* Only when the label overflows (bond-visualiser.js adds the class): a square pixel
+   scrollbar with 2px borders, and the label takes the pointer so it can be scrolled. */
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+  pointer-events: auto;
+  scrollbar-width: auto;   /* auto keeps the ::-webkit-scrollbar rules below in force */
+}
+/* Browsers without ::-webkit-scrollbar (Firefox) get the standard colours instead. Chrome
+   121+ ignores the webkit rules once scrollbar-color is set, so it stays out of their way. */
+@supports not selector(::-webkit-scrollbar) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+    scrollbar-color: var(--bv-gold, #FFD700) #000;
+  }
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar { width: 12px; }
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-track {
+  background: #000;
+  border: 2px solid var(--bv-gold-dim, #997a00);
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-thumb {
+  background: var(--bv-gold, #FFD700);
+  border: 2px solid #000;
+}
+
+/* Closing-card lines (bond-visualiser.js _startCredits): no wider than the
+   central map panel (window minus 16px padding, two 180px side panels and two
+   12px gaps, plus a little air), and balanced so a short last word ("out.")
+   does not sit alone. Browsers without text-wrap: balance fall back to pretty,
+   then to normal wrapping inside the same width. A line that already fits is
+   left on one row. */
+.bv-cr-card-line {
+  /* the row's parent is the label, already capped to the centre panel */
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-wrap: pretty;
+  text-wrap: balance;
+}
+
+@media (max-width: 900px) {
+  /* side panels are hidden here, so the centre is the whole width */
+  .bv-cr-card-line { max-width: none; }
+  #bv-credits-overlay #bv-cr-label.bv-cr-label { max-width: calc(100% - 20px); padding: 8px 10%; }
+}
+
+/* Short windows (phone landscape) and narrow ones (phone portrait): the closing card
+   uses the 16px pixel font size so its box fits between the header and the controls bar
+   (844x390 and 390x844 overlapped both at 30px). Larger windows keep the 30px card. */
+@media (max-height: 500px), (max-width: 600px) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label .bv-cr-card-line {
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+  }
+}

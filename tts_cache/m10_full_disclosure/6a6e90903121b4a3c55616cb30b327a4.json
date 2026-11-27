@@ -1,0 +1,13 @@
+{
+  "key": "6a6e90903121b4a3c55616cb30b327a4",
+  "npc": "arakawa_post",
+  "text": "Keep moving. The road's open.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:07Z"
+}

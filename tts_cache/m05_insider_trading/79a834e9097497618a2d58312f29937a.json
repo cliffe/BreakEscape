@@ -1,0 +1,13 @@
+{
+  "key": "79a834e9097497618a2d58312f29937a",
+  "npc": "narrator",
+  "text": "The cloner buzzes once against your hip.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:06:32Z"
+}

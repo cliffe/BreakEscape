@@ -1,0 +1,13 @@
+{
+  "key": "0c665643a2d9a53f54b4df1e497a7884",
+  "npc": "marek",
+  "text": "Strong one today?",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:23:51Z"
+}

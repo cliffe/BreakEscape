@@ -1,0 +1,13 @@
+{
+  "key": "366f2f39e9505aa4e67377b10130709b",
+  "npc": "eleanor_vance",
+  "text": "It's not unreasonable — it's required. IEC 61511 mandates recertification when you modify the safety case. That's the whole point of functional safety.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:22:50Z"
+}

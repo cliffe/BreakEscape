@@ -1,0 +1,13 @@
+{
+  "key": "4f3e43000e5383da0d94615562ec81ab",
+  "npc": "vector_post",
+  "text": "It's over. I'm going to sleep for a week.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Tonight he is at the raid table, cleared and still sore about it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:01:53Z"
+}

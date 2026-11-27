@@ -1,0 +1,13 @@
+{
+  "key": "35bd2b4b07a5fdd31cdcd56be09c545a",
+  "npc": "narrator",
+  "text": "His breathing is ragged, and blood is pooling under his head. The terminal reads 91 per cent.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:35:38Z"
+}

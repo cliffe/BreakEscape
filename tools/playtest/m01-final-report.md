@@ -1,0 +1,21 @@
+# m01 final confirmation run (after ink-variable and global-observer fixes)
+
+Question answered: unexpected behaviour / regression confirmation (flags handed over by `session` policy, so solvability is not claimed; flag rows `<flag:1..4>` are "no", Derek's office and its PINs were skipped, routes used the IT PIN 2468 directly).
+Games and logs (headless):
+- Game 1209 (D): `tools/playtest/m01-final-session.jsonl` (340 lines). Reload at seq 56, `debugKO` at seq 116, second reload at seq 251.
+- Game 1210 (E): `tools/playtest/m01-final-E-session.jsonl` (346 lines). Arrest route, abort, debrief, credits.
+
+verify-run.rb: 1209 exit 0, "progress recorded — 4 rooms beyond the first, 1 objects unlocked, 4 flags submitted", status=in_progress (stuck, see defect). 1210 exit 0, same verdict, status=completed, mission_concluded_at 2026-10-01 07:32:03 UTC.
+
+## Results
+1. KO route, game B order: PASS. Talk to Derek early, `debugKO`, flag 2, archive (entropy reveal), flag 4 (sudo). HaX history contains the phrase "Derek is contained" exactly once ("Derek is contained. You still need to access the ENTROPY encrypted archive..."). Two differently worded messages also arrived, each once and each right after its own real trigger, not at conversation start: "That's the full picture — and Derek's already contained" (after the archive) and "All technical evidence secured. Derek is already contained" (after the sudo flag). Before the fix all three came together on the fight_outcome conversation. If the intent is one message of any wording after a KO-first run, that is still two extra; they are separate mappings, so I take it as intended.
+2. Intro replay after reload: PASS. After reload (seq 56, Resume clicked) Sarah opened "Hey, need anything else?" and Kevin "Hey, what's up? Found anything interesting yet?"; both in hubs, inventory unchanged. DB `npcInkVariables` now holds real variables (`kevin_park: met_kevin true, given_lockpick true, influence 7 ...`, `sarah_martinez: met_sarah true ...`, `agent_0x99: first_contact true ...`).
+3. onceOnly HaX messages after reload: PASS. Three messages were in the phone before reload 1 ("Agent, I'm your handler...", "You're in...", "Lockpick acquired"); none re-delivered after it (8 s wait). Reload 2 (seq 251) came after many more messages, with `derek_confronted` and `entropy_reveal_read` both true; no new message arrived. Observation unchanged: phone history after reload shows only the reply choices, not the earlier messages.
+4. Ordinary mapping fires on first real set: PASS. `linux_flag_submitted` gave "Directory traversal evidence secured", `ssh_flag_submitted` gave "You have SSH access", the archive gave "ENTROPY archive decryption key confirmed", each once, at the time of the real change. (Whiteboard cipher not tested.)
+5. Finish to completed, debrief, credits: PASS in game E (no reload): arrest, flag 3, ABORT, `status=completed`, debrief person-chat (no "End Conversation"), then `creditsShowing:true, closable:false`.
+
+## Defect found (not in the coordinator's list)
+Game 1209 cannot be finished. After the KO (device dropped) and a page reload, Derek is hidden and the launch device is re-spawned on the break room floor (-67,-81, not where Derek stood). Picking it up gives a device whose data has lost its launch props: `scenarioData` and the server inventory entry hold only id, name, type, observations, takeable (no `mode`, `flags`, `flagRewards`, `onAbort`, `onLaunch`). Opening it shows the generic "Enter captured CTF flags" station. `<flag:3>` is accepted but there is no ABORT/EXECUTE, `launch_code_submitted`, `ready_for_debrief` and `player_aborted_attack` stay false, so `deactivate_the_launch` and the debrief are unreachable (soft-lock). The server `room` response for break_room still carries the full `mode:"launch-abort"` itemsHeld for Derek, so the data is lost on the client between load and drop/spawn. Same KO without a reload (game C of the earlier run) gave a working device. Repro: KO Derek, reload, pick up the device. I cannot tell if this predates the current engine changes; the KO-drop-in-later-loaded-room and KO-state-restore changes are the nearest suspects. Not classified.
+
+## Regression
+None observed against the earlier run's two defects; both are fixed. The soft-lock above is new to this run.

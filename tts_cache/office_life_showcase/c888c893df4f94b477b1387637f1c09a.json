@@ -1,0 +1,13 @@
+{
+  "key": "c888c893df4f94b477b1387637f1c09a",
+  "npc": "agnieszka_duda",
+  "text": "If I see dirty mugs, I can't leave them. It's a habit.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:37:31Z"
+}

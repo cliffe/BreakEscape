@@ -1,0 +1,14 @@
+{
+  "key": "5be41dfc258b4b0fa43d554ca72d85cc",
+  "npc": "kit_niamh_doherty",
+  "text": "Ta, you're a star. I'll be quick.",
+  "delivery": "quick, grateful, already turning back to work",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout \u2014 do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:21:54Z"
+}

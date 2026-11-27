@@ -1,0 +1,145 @@
+# ca06 takes (Texts and QR codes, Tarrowby Logistics): scripts and dry-run results, 23 Nov
+
+Scripts in `tools/video/takes/ca06/` (`_ca06.mjs` holds the helpers; kiosk, button, bubble and voice helpers come from `../ca05/_ca05.mjs`). Dry-run only, nothing recorded: headless, own keyless server on :3451 (worktree b-ca-trailers-next), no `BE_SPRITE` (the dry run shows the hood sprite; `checkSprite` guards the real run for `female_office_worker_v2`). Dry-run frames: scratchpad `dry_ca06/`. Run each as `BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca06_texts_and_qr <take> "<flags>" "--hide-hud --zoom-step 1"`.
+
+Seeds (`SEEDS` in `_ca06.mjs`, all dry-run proven):
+- Defend (t05, t05b; kiosk opens on the Defend panel): `--set episode_e6_texts_and_qr_state={"done":["brief","osint","write","flip"]} --set phish_mobile_staff_attempts=1`
+- Chidi (t04): `--set episode_e6_texts_and_qr_state={"done":["brief","osint","write"]} --set phish_mobile_staff_attempts=1`
+- Step-away (t07): `--set episode_e6_texts_and_qr_state={"done":["brief","osint","write","flip","defend"]} --set episode_e6_texts_and_qr_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set kit_quiet=true`
+- t02, t02b: fresh game, no flags.
+
+| take | entry state | actions | marks to log | used by | hides and hazards |
+|---|---|---|---|---|---|
+| t07_notice_beat | step-away seed | open kiosk (opens on the step-away panel), press `Look up`, hold about 12 s; no click, no talk | look_up, bubble (Z1 +1.57 s), audio-start/end:zainab_ (Z1, Z2), end | hook (Z1), office (Z2) | one run feeds both: Z1 audio start +1.57, clip 3.96 s, end +5.56; Z2 start +6.5, clip 4.80, ends +11.3. Gap Z1 end to Z2 start 1.00 s throttled, 0.72 s unthrottled, both over 0.55 s, so no two-run fallback. Z1 speech ends 3.66 s into its clip, so the real silence is about 0.3 s longer. POST /tts 200 audio/mpeg for both. Notice poster is on the left wall beside Zainab in the Z1 frame; check the bubble sits inside 607 px in 9:16. Cut before her choice menu |
+| t02_attack_run | fresh game | Start, `Open the browser` (note Kaylee, Dev, `Depot notices` link, YardPass scheme noted; Friendface never visited), close, `Open the mail client`, Compose, From name and address slots, pretext select, scheme slot, ask select, Send, result panel 3.0 s, close onto "Now it lands on you" | start, browser-open, note-kaylee, note-dev, notices-open, note-scheme, browser-closed, mail-open, compose, slot1, slot2, pretext-set, slot3, ask-set, redflags:n, build-held, send, landed-held, mail-closed, flip-up, flip-held, end | research (2 windows), write, lands, flip | `ATTACK_HIDE` hides the red-flag meter, lines, advice, clean line, result advisory and the flip body. Proven marks (s, throttled): start 3.65, browser-open 5.2, note-kaylee 7.5, note-dev 9.3, notices-open 11.0, note-scheme 12.5, browser-closed 14.7, mail-open 15.7, compose 17.9, slot1 21.6, slot2 26.4, pretext-set 28.6, slot3 32.1, ask-set 34.2, build-held 36.2, send 37.6, flip-up 40.8. The writer is phone-sized and scrolls inside `.mail-compose-panel` (708 px visible of about 910), so the script scrolls each control to mid-panel. Greeting is fixed text "Hi,". Pretext and ask are `<select class="mail-compose-template" data-part=...>`, slots are `button.mail-blank[data-slot=sender_name\|sender_address\|scheme]`. Result panel appears at the instant of Send with three green ticks plus "Their reply is on its way" and the "In real life a reply ... Dev Acharya's own inbox" line (accepted). First Send is final. Never Continue. `CA06_REPLY=1` runs the reply probe (below) |
+| t02b_attack_run_narrow | fresh game | t02 with `NARROW_MAIL` (`.mail-client` 560 px) and `NARROW_BROWSER` (`.osint-browser-game-container` 560 px) | as t02 | 9:16 and 1:1 research, write, lands | Dry run clean: the OSINT frame, the "Depot notices" page and the notice/Noted panels are the same `.osint-browser-game-container` class (no separate frame), text wraps inside 560 px; the writer is phone-sized already and fits; result panel fits, its close X is hidden by the narrow CSS (the take closes via the bridge). Flip panel is about 750 px wide, centred, heading and tab strip only: clean |
+| t04_chidi_flip | Chidi seed; kiosk never opened | `interact chidi_okeke`; C1 plays: "Your message has gone over to Kaylee. Now take the other seat and go through a Tarrowby work phone, the way it would land on your break." (POST /tts 200 audio/mpeg, 66261 bytes); close the chat before the menu; never click in the chat | start-hold, player-sprite, interact:chidi_okeke, npc_portrait_up, c1_start, c1_end (durMs), tts, chat-closed, end | chidi_flip | the take throws if the first line is not C1. Dry run: portrait up 2.3 s, c1_start 2.4, c1_end 10.8 (durMs 8408; expected 8.50 with speech 0.27 to 8.02), chat-closed 11.3. Cut in = c1_start - 0.25, 8.45 s. Chidi frame shows the Tarrowby sign and the caption bar; no menu. The player sprite shows the hood in the dry run only |
+| t05_work_phone | defend seed | open kiosk, `Open the phone`, `Start`. Run A (`CA06_LIST_ONLY=1`): list held 8 s. Run B: list, 1.3 s lead-in hold, hover sweep (mouse move only) down the six rows, click the "How was lunch? Rate this week's menu" row, hold about 6.7 s. Nothing pressed | kiosk-open, defend-panel (buttons), intro, list (rows, progress), sweep-start, sweep-end, row_open (parkingOpen false), card-geometry, card-held, list-held (run A), end | topic (run A), phone_list, phone_card (run B) | Buttons read from the DOM: kiosk `["x", "Open the phone"]`, then `["x", "Start"]`. Six rows by `.mail-row`; header "0 of 6 sorted". `HIDE_PHONE` hides the tally, advisory, `.tri-actions`/`.tri-verdicts`, `.tri-qr-where`, tells and the "Seen:" label (`.tri-kind-qr .tri-kind-label`). The take throws unless the card shows heading and caption and none of "Where does this code go?", "Seen:", Trust, Report, Delete or the parking "clamped" sentence is visible. Measured (1920x1080, wide): card y 152 to 504, x 835 to 1291, heading 168 to 232, caption inside the card, so the whole card is one clean rectangle. Parking notice never opened. Row 1 shows a focus ring at list start (default selection, no verdict) |
+| t05b_work_phone_narrow | defend seed | t05 with `narrowMail(760)` | as t05 | 9:16 and 1:1 topic, phone_list, phone_card | At 760 px the list stacks over the card, the full row subjects show ("Printed on the table cards in the canteen"), the card runs heading to caption (y 502 to 822), verdicts hidden. Inbox with its verdict cards stays at 760; the card is 676 px wide |
+
+## Dry-run results
+
+- t07: proven (handover). Marks above.
+- t02: proven to the flip, flip frame checked clean (heading and tab strip, room dimmed behind; `Now it lands on you`).
+- t02b: ran end to end, frames checked (browser, notices page, result panel, flip).
+- t04: ran end to end, C1 first, frame checked.
+- t05 run A (list held 8 s) and run B (list at 6.84, sweep 8.15 to 12.6, row_open 13.75 = list + 6.91 s, card held to 20.49): ran end to end, geometry asserted, list and card frames checked.
+- t05b: ran end to end, card frame checked.
+
+## The victim's reply (also for ca02)
+
+Kaylee's "Cheers Dev, scanning it now so I'm on the list." is not on the result panel and never was. It is a data-only text job (`mail-bridge.js` `scheduleTextJob`, delay `emailReplyDelay` 6 s on the ca06 target; default 20 s) that the mail scheduler delivers on its once-a-second tick (`mail-scheduler.js` `_deliverText`). The delivery appends an inbox message "Re: New car park permit" from Kaylee Dunford, behind the green checklist panel, so earlier takes (searching the page for the reply text) never saw it: the text is only in the opened message, and the inbox row shows the sender and subject only.
+
+Measured (CA06_REPLY=1, both throttled and `--no-throttle`): the job is queued at Send, and the reply is delivered 6.0 to 7.0 s after Send (polled at 6.56 s and 6.74 s). The panel does not have to close first for it to arrive, but it hides it: after Send, click `Done` on the panel (mark done-clicked at about +4.0 s), then the inbox shows a "New message from Kaylee Dunford: Re: New car park permit" line and the row; clicking the row opens "Cheers Dev, scanning it now so I'm on the list." (frame checked: From Kaylee Dunford, To analyst@tarrowby.example, the line, Inbox badge falls from 2 to 1). Opening the row needs a click.
+
+Verdict: it lands 6.0 to 7.0 s after Send, never within 6 s, and the line is visible only after Done plus a row click (a further 1 to 2 s). Record: **lands variant off** for the 5.0 s two-shot variant; keep the script default (Send, result panel 3.0 s, v5 only). If the owner wants the variant anyway, the take script has it (`CA06_REPLY=1`: Send, 1.8 s on the panel, Done, wait for the row at Send + about 6.5 s, click, hold 1.2 s) but the footage needs Send + about 9 s, so the shot would run 7.5 s, not 5.0 s. For ca02: the same mechanism, so read its reply delay (`emailReplyDelay`, default 20 s) and use the same Done-then-inbox steps; a 20 s default means a longer wait still.
+
+## Script changes needed (docs/video/scripts/ca06_trailer_script.md)
+
+1. **Lands and Kaylee's reply:** variant off, as above. v6 is not used.
+2. **Research windows** (the takes run about 1 s earlier than the script's 8-12.2 and 14-17.6): cut on the marks, not the seconds. Window 1 = note-kaylee - 0.7 for 4.2 s (it ends at the notices-open mark); window 2 = notices-open for 3.6 s (ends 0.1 s before browser-closed). They are contiguous, so the edit may run them as one 7.8 s piece with v3b starting at notices-open.
+3. **Write window** (script 28-33.8 s): two windows from the marks. w1 = slot1 - 0.3 for 3.2 s (From "Dev Acharya"; v4 "Pretend to be Facilities."), w2 = ask-set - 2.0 for 2.6 s (pretext and permit scheme filled, the ask picker; v4b). Total 5.8 s, same as the script.
+4. **Flip** (script 52-54 s): in = flip-up + 0.3, 2.0 s (the heading is held 2.5 s after flip-up).
+5. **topic / phone_list list text:** "kind labels Text, QR notice and Email readable" is wrong. Text and QR notice labels show; the email row (Tarrowby IT Service Desk, "Action needed: scan to keep your work sign-in") shows a paperclip, no "Email" label. Say "Text and QR notice labels readable".
+6. **phone_list** run B: list, then a 1.3 s lead-in, then the sweep; list to row_open is 6.91 s, which covers the 6.8 s shot; use in = list mark, out = row_open - 0.15. **phone_card** in = row_open + 0.3, 5.6 s (held about 6.7 s).
+7. **Chidi flip:** in = c1_start - 0.25, 8.45 s; as scripted.
+8. **9:16 and 1:1:** t05b is 760 px (stacked list over card), t02b is 560 px; both clean. The flip panel is about 750 px wide, centred.
+
+## Left unverified
+
+- Real capture timings (everything above is headless, throttled except where noted; marks must be re-read from the recorded run).
+- Unthrottled t07 gap (0.72 s) was measured once; the Z1 and Z2 slices must be at least 0.2 s apart in the edit (they are).
+- Player sprite `female_office_worker_v2` in the room shots (guarded by `checkSprite` in the real run; the dry run shows the hood sprite).
+- The 9:16 crop of the t07 hook (bubble inside 607 px) has not been framed.
+
+## Recorded marks
+
+| take | length | drop % | key marks (trimmed s) | checked against frames / notes |
+|---|---|---|---|---|
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t08_zainab_to_notice (new, or t07_notice_beat changed) | step-away seed (as t07_notice_beat) | before pressing Look up call `followNpc(kit_zainab_hussain, lerp 0.1)`; press Look up; her `patrolOverride` walks her from (128,192) to (48,160) about 1 s later; Z1 bark 1.5 s after; hold through Z2; `followPlayer` after | look_up, follow-start, walk-start, walk-end, z1-start, z2-start, follow-end | hook (Z1 as she reaches the notice) and office (Z2) | Her walk is only about 80 px (about 1 s): follow-cam adds a glide, not a long walk. Option: `triggerNeed(thirst, 5)` on Zainab first so she is at the machine (about (240,197)) when Look up fires, giving a 2 s crossing; unproven (needs suspend mid-trip). Keep the notice in frame at the end. Never click; she opens a choice at Z2
+
+Dry run 25 Nov (step-away seed with kit_quiet=true, headless, BE_DRY=1): PASS on attempt 1, game 13373. Zainab starts at (140,185). Look up comes 1.6 s before her walk starts from (128,160), and she arrives at (68,132), 34 px from the notice anchor (48,160), 2.0 s after the walk starts. Return marks are n/a, as designed. Camera: 39 samples while following, scroll start (-341,-86), end (-256,-117), range 71 by 52, back on the player at the end. The Z1 bubble-end and the Z2 bubble-start share one timestamp (70.6 s), so the gap between the two lines cannot be read from this run: check it in the real take. Z2 started 3.1 s after she arrived (the header says about 4 s). Frames not looked at.
+
+## Movement shots (25 Nov)
+
+Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/camlib.mjs` (`followNpc`, `stopFollow`, `followPlayer`, `camState`, `triggerNeed`, `waitNpcMoved`), proved headless on keyless :3456: ca13 game 13362, Agnieszka forced to a coffee trip, camera scroll (-109,-104) to (-67,-4) as she walked (192,97) to (244,209), then back on the player at (-108,-2). Survey and scenario proposals: `docs/video/CA_MOVEMENT_B3.md`. All takes below are **proposed scripts, not written or run** (dry-run each; none recorded). Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t10_fatima_drinks (new) | fresh game, any seed with the room loaded | `followNpc(kit_fatima_begum)`; she leaves post (60,186) about 27.5 s after load, or `triggerNeed(thirst, 5)`; follow to the machine (about (240,197)) | follow-start, left-post, at-machine | office-life filler for the research or build beats | Fatima is `kit_fatima_begum`, a different id from ca02 `fatima_begum` |
+
+Dry run 25 Nov (fresh game, natural trip, headless, BE_DRY=1): PASS on attempt 1, game 13374. Fatima starts at (60,186), walks from (64,161) 25.6 s after the take's npc-start mark, reaches the machine at (237,199) 5.0 s later, leaves from (209,170) 22.8 s after arriving and is back at (60,186) 3.2 s after that. Camera: 210 samples while following, scroll start (-421,-85), end (-281,-72), range 166 by 27, back on the player at the end. Frames not looked at.
+
+## Capture 25 Nov
+
+Real captures, 1920x1080 30 fps, display :147, keyless server :3456, `BE_SPRITE=female_office_worker_v2` (every take logged `player-sprite` = that key), flags as in the seeds above. Footage in `~/video-takes-local/ca06/takes/` (not in git), each file `<id>.trimmed.mkv` with `.trimmed.markers.json`, `.check.json`, `.contact.jpg`. All nine passed the check (both slates found, A/V offset corrected as a constant, `fullFrame` true, no problems). Marks are in trimmed seconds. Sidecars (`.take.json`) are still drafts. t05 runs A and B were renamed `_runA` and `_runB` straight after each run, so no id clash.
+
+| take (file) | length s | drop % | A/V offset start/end ms | key marks (trimmed s) | frames checked |
+|---|---|---|---|---|---|
+| t07_notice_beat | 16.67 | 0.53 | -68 / -72 | look_up 3.96, Z1 bubble 5.63, audio Z1 6.15 to 10.12 (3.96 s), Z2 bubble 10.47, audio Z2 10.69 to 15.53 (4.80 s), z1_end_to_z2_start 0.572, end 16.15 | Z1 bubble at 5.9 not at 5.5; Z2 text at 10.6, not at 10.3; room small and centred, notice poster on the left wall |
+| t08_zainab_to_notice | 16.30 | 0.54 | -95 / -112 | follow-on 3.90, look_up 4.52, walk-start 6.15, Z1 bubble 6.20, arrive 8.16 (38 px from the notice), Z1 bubble end and Z2 bubble start 10.99, follow-off 14.49, cam 40 samples, scroll range 65 by 52, back on player | contact sheet: camera glides to Zainab, bubbles as marked, no choice menu |
+| t10_fatima_drinks | 58.04 | 0.17 | -90 / -95 | walk-start 24.68, arrive 29.33 at (241,197), return-start 52.13, back 55.33 at (60,186), cam 215 samples, range 169 by 25, back on player | Fatima beside the machine at 29.5 and 40, back at her post 55.5 |
+| t04_chidi_flip | 19.40 | 0.16 | -32 / -58 | portrait up 8.99, c1_start 9.18, c1_end 17.63 (durMs 8450), tts 200 audio/mpeg 66261, chat-closed 18.12, end 18.92 | marks only plus first-frame run; C1 was the first line |
+| t02_attack_run | 43.00 | 0.22 | -87 / -50 | start 4.05, browser-open 5.57, note-kaylee 7.73, note-dev 9.49, notices-open 11.14, note-scheme 12.71, browser-closed 14.88, mail-open 15.89, compose 18.01, slot1 22.24, slot2 25.88, pretext-set 28.04, slot3 31.44, ask-set 33.58, send 36.93, landed-held 38.43, flip-up 40.09, end 42.59 | contact sheet: browser 6 to 14 s, mail 16 to 36, result panel 37 to 39, flip heading from 40 |
+| t02b_attack_run_narrow | 42.94 | 0.07 | -30 / -50 | as t02: note-kaylee 7.62, notices-open 11.02, browser-closed 14.73, slot1 22.10, ask-set 33.45, send 36.80, flip-up 39.96 | marks only |
+| t05_work_phone_runA | 16.20 | 0.55 | -73 / -73 | kiosk-open 2.91, intro 6.33, list 7.74, list-held end 15.74 (8.0 s) | marks only |
+| t05_work_phone_runB | 22.50 | 0.40 | -55 / -85 | list 7.75, sweep 9.05 to 13.84, row_open 15.16 (list + 7.41 s), card-geometry 16.49 (card y 152 to 504, x 835 to 1291), card-held 22.02 | list at 7.9 and 14.9 (no card), card with QR at 17.5 and 21.0; tally and verdict row hidden |
+| t05b_work_phone_narrow | 21.47 | 0.14 | -30 / -33 | list 7.31, sweep 8.61 to 13.11, row_open 14.27 (list + 6.96 s), card y 502 to 822, x 622 to 1298, card-held 21.01 | frames at 7.4, 14.0, 17.5, 20.5: stacked list over card, no verdicts |
+
+### Findings
+
+- **t08 gap.** The bubble end and the next bubble start share one timestamp again (10.99), so the bubbles chain with no gap. The real gap is in the audio: speech stops at 10.04 (Z1) and starts at 11.54 (Z2), a 1.50 s silence, with the bubble handover 0.95 s after Z1 speech ends and 0.55 s before Z2 speech (silencedetect at -45 dB on the trimmed take; Z1 speech 6.61 to 10.04, Z2 from 11.54). In t07 the audio-to-audio gap (clip end to next clip start) is 0.57 s. Plan the edit on 1.5 s speech gap in t08, 0.57 s clip gap in t07 (the clips carry some leading and trailing silence, so t07's speech gap is also longer than 0.57).
+- **t10 first attempt failed** (kept in `tmp/delete/ca06_t10_fail1/`): the script's `settle` read a 1 s pause at (169,197), mid-route, as arrival, then took her next stop at the machine as "back" and threw "did not get back to her post". The retake ran the same script and passed: she walked from 24.68 s straight to the machine at 29.33 s. So Fatima can pause mid-route on the way to the machine; the arrival check in `t10_fatima_drinks.mjs` should require x above 225 or so. Not changed.
+- **t04**: the first `interact:chidi_okeke` reported `no-effect-confirmed` at 8.00 yet the portrait was up at 8.99 and C1 played once (line-start 9.18); a second interact at 10.37 reported ok with no second line. Harmless, but cut on c1_start.
+- Marks versus pictures agree to within a frame in every take checked. The 9:16 bubble crop for t07 and t08 has not been framed.
+- Zainab's Z2 started 4.2 s after arrival in t08 (about 3.5 s in t07).
+
+## Render queue
+
+Edit lists from the 25 Nov takes (round 1, 73.0 s, 16 shots, lint 0 errors): `tools/video/edits/ca06_trailer_r1.json` (16:9) and `ca06_trailer_r1_narrow.json` (9:16 and 1:1). Not rendered. Takes are read from `video_out/ca06/takes`, a symlink to `~/video-takes-local/ca06/takes` (git-ignored; recreate it on a fresh checkout). Run one at a time, nothing else rendering or capturing (`pgrep -af 'remotion|render.mjs|render.sh'`, `free -g`). About 35 min per aspect at one thread (about 1 h 50 min for all three):
+
+```bash
+cd <worktree>
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1-16x9     # dedicated empty folder, deleted on success
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1.json 16:9
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1_narrow-9x16
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1_narrow.json 9:16
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1_narrow-1x1
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1_narrow.json 1:1
+```
+
+No `--final` (spoiler blocks are unreviewed). Output: `video_out/ca06/renders/`.
+
+Window table (output s, take, in-out in trimmed-take s; narrow file in the second column where it differs):
+
+| shot | out s | take (wide / narrow) | in-out (wide / narrow) | note |
+|---|---|---|---|---|
+| hook | 0-3.9 | t08_zainab_to_notice | 6.465-10.365 | Z1 speech 6.615-10.049; background drifts for about 1 s while Zainab stays at x 0.50 |
+| topic | 9.0-15.8 | t05 run A | 8.0-14.8 | narrow file uses the same wide run, zoomed out |
+| research | 18.8-23.0 | t02 / t02b | 6.35-10.55 / 6.25-10.45 | Kaylee and Dev noted |
+| notices | 23.0-26.5 | t02 / t02b | 11.17-14.67 / 11.05-14.55 | 3.5 s; browser closes just after the out |
+| write | 26.5-32.3 | t02 / t02b | 29.4-35.2 / 29.27-35.07 | ask set about 3.0-3.6 s in |
+| lands | 32.3-35.3 | t02 / t02b | 36.4-39.4 / 36.27-39.27 | flip panel not in |
+| flip | 35.3-37.3 | t02 / t02b | 40.0-42.0 / 39.87-41.87 | heading and tab strip only |
+| chidi_flip | 37.3-45.7 | t04_chidi_flip | 9.0-17.4 | portrait first shows at 9.0; speech about 9.45-17.2 |
+| phone_list | 47.7-54.5 | t05 run B / t05b | 8.0-14.8 / 7.35-14.15 | card not up yet |
+| phone_card | 54.5-60.1 | t05 run B / t05b | 16.0-21.6 / 15.0-20.6 | canteen notice, no verdict row |
+| office_life (PROPOSED) | 60.1-62.5 | t10_fatima_drinks | 24.5-26.9 | silent, +2.4 s |
+| office | 62.5-67.5 | t07_notice_beat | 10.59-15.59 | Z2 speech 10.938-15.187 |
+
+Edit notes (defaults the owner can change):
+- Music: PeaceFolk Guitar Motif from 95.545 s, as ca02 (alternatives are listed in the edit's `music` block). The script names no track.
+- Office-life slot: `office_life` uses t10_fatima_drinks (24.5-26.9, silent) between phone_card and office. It is not in the script; delete the shot for 70.6 s.
+- The office shot uses t07_notice_beat, not t08. Reason: t08's camera pans back to the player from 14.49 inside Z2's last sentence, so a fixed crop would go half black. t07 has a fixed camera (room x 0.155-0.65, Zainab at 0.27). The hook is t08.
+- Notices window is 3.5 s, not the script's 3.6 s (the browser closes between 14.70 and 14.73 in the wide take). Research and notices are two cut shots.
+- chidi_flip is 8.4 s from 9.0 (the script's 8.45 s starts before the portrait is up).
+- VO: Sulafat_v2 clips, no trims.
+
+Checks still to do before a render (crop simulations on one frame per shot, no render needed): 9:16 and 1:1 for the hook (bubble inside 607 px, notice in frame), office (bubble 0.16-0.39), chidi_flip (Chidi in frame, game text bar cropped out), and t10 (Fatima centred as the camera follows). Also check the t05b phone_list out (14.15) has no card, and read the written 9:16 and 1:1 framings of the wide file as untested (the wide file mirrors the narrow values for shots that have a narrow take). Lint warnings: unreviewed spoiler blocks on every gameplay and card shot; VO v5 is 3.0 words/s and v10 is 3.2 words/s (the voiced files).

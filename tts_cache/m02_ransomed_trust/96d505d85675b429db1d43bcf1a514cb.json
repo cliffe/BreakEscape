@@ -1,0 +1,14 @@
+{
+  "key": "96d505d85675b429db1d43bcf1a514cb",
+  "npc": "ward_nurse",
+  "text": "Go on, then.",
+  "delivery": "distracted, eyes already back on bed two",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:46:55Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "08a4fefdfc9ad455f1fedcdab5171b83",
+  "npc": "ama_owusu",
+  "text": "Crack one of the records you collected. A weak one falls at once. Then tell me.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:33:20Z"
+}

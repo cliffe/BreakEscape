@@ -1,0 +1,13 @@
+{
+  "key": "dc31a0438ec59430fc1c6aafbf5b4eb9",
+  "npc": "narrator",
+  "text": "A SAFETYNET briefing room. Netherton drops a financial dossier on the table. Nightshade already has the transaction graph open.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:22:24Z"
+}

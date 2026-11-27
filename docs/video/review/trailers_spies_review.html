@@ -1,0 +1,786 @@
+<title>SAFETYNET Trailer Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a dossier — one tab per mission cut, the player on top, the questions as a numbered case sheet below. */
+:root{
+  --bg:#f3f1ee; --panel:#ffffff; --fg:#1d1a1c; --muted:#5e5658; --line:#d9d2d0;
+  --accent:#b3122e; --accent-fg:#ffffff; --cyan:#0f7f8c; --chip:#efe7e5;
+  --display:"Press Start 2P", ui-monospace, monospace;
+  --body:"IBM Plex Sans", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141113; --panel:#1e1a1c; --fg:#eee8e6; --muted:#a69c9e; --line:#3a3234;
+  --accent:#e0324f; --accent-fg:#ffffff; --cyan:#4fd0dc; --chip:#2a2326; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141113; --panel:#1e1a1c; --fg:#eee8e6; --muted:#a69c9e; --line:#3a3234;
+  --accent:#e0324f; --accent-fg:#ffffff; --cyan:#4fd0dc; --chip:#2a2326; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+h1{font-family:var(--display);font-size:clamp(15px,3vw,20px);line-height:1.5;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:13px;line-height:1.6;margin:0 0 8px;letter-spacing:.02em}
+.kicker{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font-family:var(--display);font-size:11px;padding:10px 14px;border:2px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.tab[aria-selected="false"]{border-color:var(--accent);background:var(--accent);color:var(--accent-fg)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.card{background:var(--panel);border:2px solid var(--line);padding:16px;display:grid;gap:12px;min-width:0}
+video{width:100%;max-width:100%;aspect-ratio:16/9;background:#000;display:block}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-items:start}
+.vgrid video.p916{aspect-ratio:9/16;max-height:75vh;width:auto;margin:0 auto}
+.vgrid video.p11{aspect-ratio:1/1}
+.empty{aspect-ratio:16/9;max-width:100%;display:grid;place-items:center;background:var(--chip);color:var(--muted);font-family:var(--mono);text-align:center;padding:16px}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:12px;background:var(--chip);padding:3px 8px;font-variant-numeric:tabular-nums}
+ul{margin:0;padding-left:20px}
+li{margin:2px 0}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.earlier{border:2px solid var(--line);padding:10px 12px;background:var(--panel)}
+.earlier summary{font-family:var(--display);font-size:11px;color:var(--fg)}
+.earlier[open] summary{margin-bottom:10px}
+pre{font-family:var(--mono);font-size:12px;white-space:pre-wrap;margin:8px 0 0;overflow-x:auto}
+.q{display:grid;gap:8px;border-top:2px solid var(--line);padding-top:14px}
+.q:first-child{border-top:0;padding-top:0}
+.q h3{margin:0;font-size:15px;font-weight:600}
+.q .why{margin:0;color:var(--muted);font-size:13px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.opt{display:flex;gap:8px;align-items:flex-start;border:2px solid var(--line);padding:10px;cursor:pointer;min-width:0}
+.opt:has(input:checked){border-color:var(--accent)}
+.opt input{margin-top:3px;accent-color:var(--accent)}
+.opt b{display:block;font-size:14px}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.sug{font-family:var(--mono);font-size:10px;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em}
+textarea{width:100%;box-sizing:border-box;min-height:56px;font:inherit;font-size:14px;padding:8px;border:2px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.primary{font-family:var(--display);font-size:11px;padding:12px 16px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer}
+button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:2px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#copybox{width:100%;min-height:140px;font-family:var(--mono);font-size:12px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:6px">
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 24 Nov 2026 (evening)</div>
+    <h1>Mission trailers with the new spy avatars</h1>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Current round per mission">
+    <button class="tab" role="tab" id="tab-m01mus" aria-selected="false" data-cut="m01mus">m01 · v14 music</button>
+    <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
+    <button class="tab" role="tab" id="tab-m03v4" aria-selected="false" data-cut="m03v4">m03 · v4 · final</button>
+    <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3 · final</button>
+    <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5 · final</button>
+    <button class="tab" role="tab" id="tab-m06v2" aria-selected="false" data-cut="m06v2">m06 · v2 · final</button>
+    <button class="tab" role="tab" id="tab-m07v2" aria-selected="false" data-cut="m07v2">m07 · v2 · final</button>
+    <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1 · final</button>
+    <button class="tab" role="tab" id="tab-m09v1" aria-selected="false" data-cut="m09v1">m09 · v1</button>
+    <button class="tab" role="tab" id="tab-m10v1" aria-selected="false" data-cut="m10v1">m10 · v1</button>
+  </nav>
+  <details class="earlier" id="earlier">
+    <summary>Earlier rounds (18)</summary>
+    <nav class="tabs" role="tablist" aria-label="Earlier rounds">
+      <button class="tab" role="tab" id="tab-m01v13" aria-selected="false" data-cut="m01v13">m01 · v13</button>
+      <button class="tab" role="tab" id="tab-m01v12" aria-selected="false" data-cut="m01v12">m01 · v12</button>
+      <button class="tab" role="tab" id="tab-m01v11" aria-selected="false" data-cut="m01v11">m01 · v11</button>
+      <button class="tab" role="tab" id="tab-m01v10" aria-selected="false" data-cut="m01v10">m01 · v10</button>
+      <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
+      <button class="tab" role="tab" id="tab-m03v3" aria-selected="false" data-cut="m03v3">m03 · v3</button>
+      <button class="tab" role="tab" id="tab-m04v2" aria-selected="false" data-cut="m04v2">m04 · v2</button>
+      <button class="tab" role="tab" id="tab-m04v1" aria-selected="false" data-cut="m04v1">m04 · v1</button>
+      <button class="tab" role="tab" id="tab-m05v4" aria-selected="false" data-cut="m05v4">m05 · v4</button>
+      <button class="tab" role="tab" id="tab-m05v3" aria-selected="false" data-cut="m05v3">m05 · v3</button>
+      <button class="tab" role="tab" id="tab-m05v2" aria-selected="false" data-cut="m05v2">m05 · v2</button>
+      <button class="tab" role="tab" id="tab-m05v1" aria-selected="false" data-cut="m05v1">m05 · v1</button>
+      <button class="tab" role="tab" id="tab-m06v1" aria-selected="false" data-cut="m06v1">m06 · v1</button>
+      <button class="tab" role="tab" id="tab-m07v1" aria-selected="false" data-cut="m07v1">m07 · v1</button>
+      <button class="tab" role="tab" id="tab-social" aria-selected="false" data-cut="social">Social cuts · 9:16 and 1:1</button>
+      <button class="tab" role="tab" id="tab-voiced" aria-selected="false" data-cut="voiced">New lines · audio</button>
+      <button class="tab" role="tab" id="tab-lines2" aria-selected="false" data-cut="lines2">Lines · round 2</button>
+      <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
+    </nav>
+  </details>
+
+  <main id="cut"></main>
+
+  <section class="card" aria-labelledby="copyh">
+    <h2 id="copyh">Copy answers</h2>
+    <p class="why" style="margin:0;color:var(--muted);font-size:13px">Your answers save to this page as you go. This box holds the same answers as text, if you would rather paste them into chat.</p>
+    <textarea id="copybox" readonly></textarea>
+    <div class="bar"><button class="ghost" id="copybtn" type="button">Copy</button><span class="status" id="copystatus"></span></div>
+  </section>
+</div>
+
+<script>
+const CUTS = {
+  m01mus: {
+    doc: "feedback/m01_trailer_v14_music",
+    title: "m01 First Contact · v14 music pick (three previews)",
+    videoLabel: "Midnight Trigger from 93.0 s (suggested)",
+    video: "/_blob/ca4729791002d3691e445e3e03147f77",
+    videos: [["Emerald Trigger from its start (0.8 s), with the jazz hits", "/_blob/2cffcdbd7a356bf2fce74adf2495520a", ""], ["Cold Bond Circuit from 53.8 s", "/_blob/5b79ed677e056ccddf254173dfc60636", ""]],
+    stats: ["60.0 s each, 16:9 only (the other aspects follow your pick)", "−13.9 to −14.0 LUFS, true peak under −1.4 dB", "same v14 cut under each track", "Midnight Cipher Chase (your v12 music) is on the m01 · v12 tab under Earlier rounds"],
+    changedLabel: "What changed since v13",
+    changed: ["Your note 1: Derek's \"Sixty deaths ... That's optimisation.\" re-voiced darker and quieter (cold, low and slow, no shouting; the last line slowest). The game takes the same read: the five lines of his monologue carry the new delivery, so it is not out of place in play.", "His scene re-filmed with the new voice; the cut to the close-up still lands in the pause before \"That's optimisation.\"", "Your note 2: three music previews of the same cut. Midnight Trigger and Cold Bond Circuit are spy-action tracks no trailer has used yet. Not offered: Shadow Tide (it is m07's music, so the two trailers would sound alike).", "Card and shot times are the v13 grid; after your pick I re-fit the cuts to that track's beats and render all three aspects."],
+    standinLabel: "How the previews were made",
+    standin: ["Each window was picked from the track's beat and energy analysis, not by ear, and the cuts are not yet fitted to the new tracks' beats. Judge the feel of the music, not the sync.", "Suggested: Midnight Trigger. It is new to the series, and keeps the spy-action sound of the other trailers. I picked it from the analysis: I have checked the numbers and Derek's frames, not listened."],
+    srt: "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,941 --> 00:00:49,311\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,050 --> 00:00:51,870\nDerek Lawson: That's optimisation.\n",
+    questions: [{k:"music", t:"Which music for m01?", o:[["midtrig", "Midnight Trigger", "New to the series", 1], ["emstart", "Emerald Trigger from its start", "The jazz hits"], ["coldbond", "Cold Bond Circuit", "New to the series"], ["cipher", "Back to Midnight Cipher Chase (v12)", ""], ["other", "Something else", "Say which"]]}, {k:"derek", t:"Derek's darker read", o:[["ok", "Right", "", 1], ["more", "Darker still", "One more pass with your note"], ["back", "Prefer the v13 read", ""]]}, {k:"pace", t:"Anything else for v14?", o:null}]
+  },
+  m01v13: {
+    doc: "feedback/m01_trailer_v13",
+    title: "m01 First Contact · 60 s trailer · v13 (Emerald Trigger)",
+    videoLabel: "16:9",
+    video: "/_blob/fae92c352333d08d0225171dbdfd9383",
+    videos: [["9:16", "/_blob/c7c2653f995575f40cde89013011a443", "p916"], ["1:1", "/_blob/89c7271add2e598e6c917913594fb13e", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −2.4 dB", "music: Emerald Trigger from 85.6 s", "31 shots"],
+    changedLabel: "What changed since v12",
+    changed: ["Your note 6: music is Emerald Trigger, re-cut to its beat grid. Quiet bars under the title; the lift lands as HaX starts; \"Real Hacking\" on the track's peak bar (16.0 s); \"Before the Sunday Launch\" on the lift after a dip (41.6 s); Derek's hard cut to the close-up on a hit at 50.0 s; the closing shot on a hit at 52.0 s.", "To fit, montage shots lost 0.2-0.3 s each and the crescendo one frame; no spoken line was cut.", "Card \"Uncover the Plan. / Stop It.\" kept from v12. Hydra console shot kept (m01's beat stays the brute force)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, Derek's cut, loudness and captions checked in all three aspects."],
+    srt: "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:43,090 --> 00:00:49,450\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,190 --> 00:00:51,850\nDerek Lawson: That's optimisation.\n",
+    questions: [{k:"music", t:"Emerald Trigger on m01", o:[["ok", "Keep", "", 1], ["back", "Back to Midnight Cipher Chase (v12)", ""]]}, {k:"cuts", t:"Cards and Derek's cut on the beat", o:[["ok", "Right", "", 1], ["fix", "Off", "Say which"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m10v1: {
+    doc: "feedback/m10_trailer_v1",
+    title: "m10 Full Disclosure · 60 s trailer · v1",
+    videoLabel: "16:9",
+    video: "/_blob/a95278ce18fdf798548a5379c133f853",
+    videos: [["9:16", "/_blob/41d4da93033c8a6ef1c32d16523b33a8", "p916"], ["1:1", "/_blob/8df89124a3635a3449031abdc16f921c", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.6 dB", "music: SpyAgro Hybrid Attack 1 from 98.6 s, 1 s fade-out", "44 shots"],
+    changedLabel: "What this first cut does",
+    changed: ["Netherton's hook, first sentence only (\"At six he publishes everything we ever catalogued.\"), then a flash of four team faces.", "Cards: \"Mission 10 / Full Disclosure\", \"WREN Is on / the Team\", \"Disable the / Security\", \"Real / Hacking\", \"It Goes / at Six\".", "Quintero at security, Netherton's \"It puts WREN on this team.\", the power cut, HaX's breaker call, the gallery guard's bark, CyberChef, the release console's clock (times only), the tunnel guard, a 17-cut crescendo, and the Tesseract's ending: \"Your service spent decades hoarding the world's weak points. At six, I give them back.\"", "\"Now it's my turn.\" (the Tesseract, from the ending take) plays as a voice-over across the release clock.", "Real Hacking is m10's console reading the release configuration (no casualty figure, no secret values)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["HaX's call names the breaker (\"Top row. The third breaker from the left\"). She tells every player this in the game, so it is not a deduction the trailer gives away; see the question.", "The voice-over caption is a plain white box with no name, unlike the dialogue boxes.", "CyberChef shows ROT13, as m03's trailer does.", "Fixed after my first check: the face flashes were framed off the faces in every aspect, and the console, the clock and the guard's toast were clipped in 9:16 and 1:1.", "Checked by me: contact sheets in all three aspects, the fixed crops frame by frame, loudness and captions. Not watched end to end."],
+    srt: "1\n00:00:05,000 --> 00:00:09,170\nDirector Magnus Netherton: At six he publishes everything we ever catalogued.\n\n2\n00:00:11,937 --> 00:00:14,077\nQuintero: I don't like doors that know your name.\n\n3\n00:00:14,767 --> 00:00:17,127\nDirector Magnus Netherton: It puts WREN on this team.\n\n4\n00:00:20,010 --> 00:00:22,980\nAgent 0x00 HaX: Top row. The third breaker from the left feeds the shutter.\n\n5\n00:00:24,813 --> 00:00:27,843\nGallery guard: Camera's dead again. I'll go and look.\n\n6\n00:00:34,650 --> 00:00:36,500\nNow it's my turn.\n\n7\n00:00:37,903 --> 00:00:39,703\nTunnel guard: Nobody said let you through armed.\n\n8\n00:00:44,233 --> 00:00:48,673\nTesseract: Your service spent decades hoarding the world's weak points.\n\n9\n00:00:49,467 --> 00:00:51,737\nTesseract: At six, I give them back.\n",
+    questions: [{k:"hook", t:"Hook: Netherton's first sentence only, over the team-face flash", o:[["ok", "Keep", "", 1], ["long", "Use his full line", "Longer open"]]}, {k:"vo", t:"\"Now it's my turn.\" as a voice-over over the release clock", o:[["ok", "Keep", "", 1], ["name", "Keep, but caption it as Tesseract", ""], ["cut", "Drop it", ""]]}, {k:"breaker", t:"HaX's breaker line (she gives it to every player)", o:[["ok", "Keep", "", 1], ["swap", "Use another HaX line", ""]]}, {k:"music", t:"Hybrid Attack 1", o:[["ok", "Keep", "", 1], ["alt", "Try another", "Say which mood"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m09v1: {
+    doc: "feedback/m09_trailer_v1",
+    title: "m09 Digital Archaeology · 60 s trailer · v1",
+    videoLabel: "16:9",
+    video: "/_blob/7f5d513a334bc1dac418da27feb188a6",
+    videos: [["9:16", "/_blob/de079b39392fdb264abe0b8322be09a7", "p916"], ["1:1", "/_blob/dab9c73d97fcb8effe3ec458d2e06200", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.1 LUFS, true peak −1.5 dB", "music: SpyAgro Action Dub from 0.0 s, 2 s fade-out", "36 shots"],
+    changedLabel: "What this first cut does",
+    changed: ["Netherton's hook (\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\") opens under the title, with a 1 s flash of four team faces.", "Cards: \"Mission 9 / Digital Archaeology\", \"Stop the / Wipe\", \"Vigenère / Cipher\", \"Real / Hacking\", \"Burn Helena\", \"Before It's / All Ash\".", "Noor at the front desk, Jesse at the wipe console (WIPE IN PROGRESS, then WIPE HALTED), the salvage password screen with its hint, CyberChef on a textbook example, Dillard's challenge in the stacks, a 12-cut crescendo, and Sorensen's ending: \"Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.\"", "Real Hacking is m09's own console footage: the attack script running in Metasploit (module, target and port, no secret values).", "Music is a track no trailer has used, so m01's options stay free."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The Shelf Marks chart never appears (it shows the cipher key word). The crate contents panel, the team names in subtitles and typed codes are cut.", "Not filmed: the walk to the VM, the phone contact list (only HaX is in it at that point) and Gary's call (it did not ring in two runs). The picks' safe dial does not exist in m09.", "The console clip is two strips of the run spliced together; see the question.", "Checked by me: contact sheets in all three aspects, the fixed crops frame by frame, loudness and captions. Not watched end to end."],
+    srt: "1\n00:00:03,220 --> 00:00:10,320\nDirector Magnus Netherton: We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\n\n2\n00:00:13,670 --> 00:00:17,370\nNoor Haddad: We're closed. Nobody comes in for a deed at this hour.\n\n3\n00:00:20,400 --> 00:00:24,660\nJesse Tran: Paper. You people break into buildings at night for paper.\n\n4\n00:00:36,180 --> 00:00:40,500\nLyle Dillard: Dillard, Statewide Security. Stay where you are.\n\n5\n00:00:42,950 --> 00:00:47,800\nMargaret Sorensen: Everyone ENTROPY ever placed is filed in this room, dear.\n\n6\n00:00:48,700 --> 00:00:51,650\nMargaret Sorensen: By morning, I'll be the only index you can ask.\n",
+    questions: [{k:"console", t:"Real Hacking: the console clip is two spliced strips of the run", o:[["ok", "Fine, reads as one scroll", "", 1], ["one", "Use one continuous strip", "Shorter, less shown"]]}, {k:"music", t:"Action Dub (quiet start, lift on the Mission card)", o:[["ok", "Keep", "", 1], ["alt", "Try another", "Say which mood"]]}, {k:"faces", t:"Netherton's hook running over the team-face flash", o:[["ok", "Keep", "", 1], ["cut", "Hook on Netherton only", ""]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m08v1: {
+    doc: "feedback/m08_trailer_v1",
+    title: "m08 The Mole · 60 s trailer · v1 · final",
+    videoLabel: "16:9",
+    video: "/_blob/6d538e8064408f84ae77317e3756f80d",
+    videos: [["9:16", "/_blob/8cb8ba38f97ce713ea605904c824a289", "p916"], ["1:1", "/_blob/613e89e121a86ecc3c7b518f790dac1c", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.9 dB", "music: Shadowline Protocol from 109.4 s", "31 shots"],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (the drop under ATHENA is fine; whoami shell and Shadowline Protocol kept). Exported to hacktivity-videos; no questions left on this tab.", "ATHENA opens on the leak and Netherton's three names; then the three suspects (Nightshade, Vector, Phantom) each get a line.", "Cards: \"Mission 8 / The Mole\", \"Interview / Suspects\", \"Real / Hacking\", \"Before They / Vanish\".", "Real Hacking is a shell landing on the target (whoami), not the nmap scan, so no neighbouring trailer repeats it.", "Netherton closes: \"There is a mole in SAFETYNET\" (your round-1 pick: the existing line)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The track's drop lands at about 0:12.9, inside ATHENA's \"Director Netherton has three names\". It may crowd her line; see the question.", "The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, crescendo, ending, console readability, loudness and captions checked in all three aspects."],
+    srt: "1\n00:00:06,950 --> 00:00:09,500\nATHENA: The leak came from inside this building.\n\n2\n00:00:12,363 --> 00:00:14,283\nATHENA: Director Netherton has three names,\n\n3\n00:00:14,783 --> 00:00:17,263\nATHENA: and one of them got two of your colleagues killed.\n\n4\n00:00:18,700 --> 00:00:21,200\nAgent 0x47 'Nightshade': There you are. I wondered when they'd send you.\n\n5\n00:00:22,567 --> 00:00:27,517\nAgent 0x23 'Vector': Eight minutes. I went in for a hardware token from the token cabinet, and I came out again.\n\n6\n00:00:27,783 --> 00:00:31,253\nAgent 0x88 'Phantom': Accuse me properly, or get out of my way and let one of us catch him.\n\n7\n00:00:44,000 --> 00:00:46,120\nDirector Magnus Netherton: There is a mole in SAFETYNET.\n\n8\n00:00:47,017 --> 00:00:51,917\nDirector Magnus Netherton: I am reasonably certain they are within a hundred metres of where you are standing.\n",
+    questions: []
+  },
+  m03v4: {
+    doc: "feedback/m03_trailer_v4",
+    title: "m03 Ghost in the Machine · 60 s trailer · v4 (console beat) · final",
+    videoLabel: "16:9",
+    video: "/_blob/a5f472f66699cdf983683c94d90d9ace",
+    videos: [["9:16", "/_blob/c7423a7d087f21029ca96917986e72f5", "p916"], ["1:1", "/_blob/ec7dec17625e4bfb2fbbc689870d1306", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Shadow Code 1 from 51.6 s", "34 shots"],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (Metasploit setup console kept). Exported to hacktivity-videos; no questions left on this tab.", "Your note 7 (vary the console beats): Real Hacking is no longer the nmap scan. It is m03's attack script starting up in Metasploit: the module chosen and its target and port set (no secret values). Nothing else changed."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["In 9:16 and 1:1 the left-anchored crop cuts off the module name; 16:9 shows it (the module-name question is on the m07 v2 tab).", "Not watched end to end by me: the console shot in all three aspects, loudness and captions checked."],
+    srt: "1\n00:00:04,800 --> 00:00:08,550\nAgent HaX: Every life St. Catherine's lost, it lost to something Zero Day sold.\n\n2\n00:00:12,043 --> 00:00:15,883\nZainab Hussain: Hiya. Here to see Sterling? Good luck.\n\n3\n00:00:16,113 --> 00:00:21,293\nVictoria Sterling: We find it, we price it, and we find the somebody.\n\n4\n00:00:31,600 --> 00:00:34,970\nFfion Rees: Is Ms. Sterling expecting you this late?\n\n5\n00:00:37,067 --> 00:00:40,107\nTerry Mott: Picks. Right. We're done talking.\n\n6\n00:00:46,800 --> 00:00:48,290\nVictoria Sterling: I sleep perfectly.\n\n7\n00:00:48,783 --> 00:00:51,833\nVictoria Sterling: That's the part people like you can never forgive.\n",
+    questions: []
+  },
+  m05v5: {
+    doc: "feedback/m05_trailer_v5",
+    title: "m05 Insider Trading · 60 s trailer · v5 (owner notes) · final",
+    videoLabel: "16:9",
+    video: "/_blob/1898a071cd4a93f0ee0327d30e49141d",
+    videos: [["9:16", "/_blob/9968b879d276ab0747a16345d52fe55c", "p916"], ["1:1", "/_blob/99f6bfd253e4861480bdcee24d069d87", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (door fixed, script read kept). Exported to hacktivity-videos; no questions left on this tab.", "Your 0:40 note: the \"999 ROLLOUT\" screen covered the lobby's north door. Fixed in the room data (landed on main; it also cleared a camera off a door in the m05 server hallway and a sanitiser in m02), and the two night-corridor shots re-filmed.", "Real Hacking is no longer the nmap scan: the attack script is read, showing the Metasploit module name and its settings (variables only, no values)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["Not watched end to end by me: loudness, captions and the changed shots in all three aspects checked."],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,660 --> 00:00:44,090\nThe Recruiter: Fanaticism is somebody else's department. I just staff the operation.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.\n",
+    questions: []
+  },
+  m07v2: {
+    doc: "feedback/m07_trailer_v2",
+    title: "m07 Architect's Gambit · 60 s trailer · v2 (owner notes) · final",
+    videoLabel: "16:9",
+    video: "/_blob/e9cf23a73c5f5916d1d1ba8f764bfb7c",
+    videos: [["9:16", "/_blob/d33625c284d2556e47f8d7a9b13a5c3e", "p916"], ["1:1", "/_blob/3d768cf34380cbadceaa0fb80c2bc5a8", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−13.9 LUFS, true peak −1.5 dB", "music: Shadow Tide from 0.05 s", "34 shots"],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (whole script kept as is, module names fine, still faces, Hollis and the Architect's voice right). Exported to hacktivity-videos; no questions left on this tab.", "Crescendo faces are still frames now (Mercer, Elena, Park, Hollis, Netherton), each on a closed or near-closed mouth. A new renderer option; frame diffs confirm nothing moves.", "The Architect's call and his ending lines carry Ghost's two-layer voice (same recipe), level-matched. The same voice is now baked into the game for him and Ghost (landed on main).", "Hollis re-filmed with new mouth shapes made the Netherton way: PixelLab edits of his rest frame, masked to the mouth. Only the mouth moves.", "Real Hacking is no longer the nmap scan: it is m07's attack script being read (cat s5sudo.sh). See the question below."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The console shot comes from the older full-solution take (the current one shows an account name and a flag in its first output frame).", "Elena's frozen frame is near-closed: she is mid-line in every nearby frame.", "Not watched end to end by me: loudness, captions, frozen-frame diffs and the changed shots in all three aspects checked."],
+    srt: "1\n00:00:05,830 --> 00:00:09,340\nDirector Magnus Netherton: We are faced with an impossible decision, Agent.\n\n2\n00:00:11,420 --> 00:00:13,880\nDirector Magnus Netherton: Eight point four million people, Agent.\n\n3\n00:00:14,037 --> 00:00:17,947\nRay Hollis: So you're lost, or you're the other thing.\n\n4\n00:00:18,183 --> 00:00:19,883\nGwen Pritchard: At least the water is cold.\n\n5\n00:00:23,173 --> 00:00:26,083\nThe Architect: Don't look for the trace. It isn't there.\n\n6\n00:00:26,343 --> 00:00:29,863\nElena Rodriguez: Forty minutes I've been at it. It's read-only. Of course it is.\n\n7\n00:00:38,247 --> 00:00:41,157\nThomas Park: Four minutes and I'd have been out. Four.\n\n8\n00:00:45,430 --> 00:00:48,640\nThe Architect: Four fires tonight, and only one of you.\n\n9\n00:00:49,340 --> 00:00:51,940\nThe Architect: I set them so you'd have to choose.\n",
+    questions: []
+  },
+  m01v12: {
+    doc: "feedback/m01_trailer_v12",
+    title: "m01 First Contact · 60 s trailer · v12 (new card)",
+    videoLabel: "16:9",
+    video: "/_blob/1d6d7895d9a5145fc6fa4c28ccd572a1",
+    videos: [["9:16", "/_blob/cb65f9bf4bf94bed3e08c2d4807cd206", "p916"], ["1:1", "/_blob/bd659afe3767e9f52b6fbbce5704d22b", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.1 LUFS, true peak −1.5 dB", "music: Midnight Cipher Chase from 109.0 s", "31 shots"],
+    changedLabel: "What changed since v11",
+    changed: ["Your card: \"Stay in Character\" is now \"Uncover the Plan. / Stop It.\" (checked in all three crops).", "Nothing else changed."],
+    standinLabel: "Coming next",
+    standin: ["v13 moves m01 to Emerald Trigger, re-cut to its beat (your note 6), and swaps in the new console beat; m08 moves to Shadowline Protocol. This tab is only the card."],
+    srt: "1\n00:00:04,800 --> 00:00:08,520\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,930 --> 00:00:49,290\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,023 --> 00:00:51,683\nDerek Lawson: That's optimisation.\n",
+    questions: [{k:"card", t:"\"Uncover the Plan. / Stop It.\"", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say what"]]}]
+  },
+  m07v1: {
+    doc: "feedback/m07_trailer_v1",
+    title: "m07 Architect's Gambit · 60 s trailer · v1 (first cut)",
+    videoLabel: "16:9",
+    video: "/_blob/0970a277eba26a59c912f6261163ae87",
+    videos: [["9:16", "/_blob/58cbad67af005b2a08ea0b6cc1f6be07", "p916"], ["1:1", "/_blob/6eb9f74f88abc7ca8031e325f23d7550", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−13.9 LUFS, true peak under −1 dB", "music: Shadow Tide from 0.05 s", "34 shots"],
+    changedLabel: "What this cut is",
+    changed: ["First cut. Hook and stakes: Netherton's \"We are faced with an impossible decision, Agent.\" and \"Eight point four million people, Agent.\" (your round-2 lines).", "Hollis challenges you at the checkpoint, then Gwen's dry \"At least the water is cold.\" from the ops-floor exchange.", "\"Withheld Caller\" card, the ring with no caller ID, and the Architect: \"Don't look for the trace. It isn't there.\"", "Elena's line, then Real Hacking with m07's own console footage (the nmap scan), the armed clock and \"Down into the Dark\" with Park's line.", "Ending: the Architect's \"Four fires tonight, and only one of you. I set them so you'd have to choose.\" as a tight crop on his text."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The Architect's call is the game's green text view, not a portrait, so the ending close-up is a crop on his words.", "No walk down the generator hall: both takes dropped too many frames.", "9:16 shows the game's \"Space, Enter or click to skip\" hint under the Architect's first line for about 3 s.", "Music window and crescendo order were chosen by analysis and take availability, not by ear. Not watched end to end by me: contact sheets, loudness and frames at every changed crop checked."],
+    srt: "1\n00:00:05,830 --> 00:00:09,340\nDirector Magnus Netherton: We are faced with an impossible decision, Agent.\n\n2\n00:00:11,420 --> 00:00:13,880\nDirector Magnus Netherton: Eight point four million people, Agent.\n\n3\n00:00:14,037 --> 00:00:17,947\nRay Hollis: So you're lost, or you're the other thing.\n\n4\n00:00:18,183 --> 00:00:19,883\nGwen Pritchard: At least the water is cold.\n\n5\n00:00:23,173 --> 00:00:26,083\nThe Architect: Don't look for the trace. It isn't there.\n\n6\n00:00:26,343 --> 00:00:29,863\nElena Rodriguez: Forty minutes I've been at it. It's read-only. Of course it is.\n\n7\n00:00:38,247 --> 00:00:41,157\nThomas Park: Four minutes and I'd have been out. Four.\n\n8\n00:00:45,430 --> 00:00:48,640\nThe Architect: Four fires tonight, and only one of you.\n\n9\n00:00:49,340 --> 00:00:51,940\nThe Architect: I set them so you'd have to choose.",
+    questions: [{k:"music", t:"Music: Shadow Tide from its quiet intro (0.05 s)", o:[["ok", "Keep", "", 1], ["alt", "Try the window that ends on a drop (92.1 s)", "Loud from the start"]]}, {k:"ring", t:"The incoming-call ring shown on its own for 1.3 s", o:[["ok", "Keep", "", 1], ["cut", "Cut it", "Gives the time to the call"]]}, {k:"hollis", t:"Hollis: second sentence only (\"So you're lost, or you're the other thing.\")", o:[["ok", "Keep", "", 1], ["both", "Add \"Building's evacuating.\"", "Costs Gwen's line"]]}, {k:"gwen", t:"Gwen's \"At least the water is cold.\" as the one light beat", o:[["ok", "Keep", "", 1], ["cut", "Cut it", "Back to a silent ops-floor walk"]]}, {k:"order", t:"Crescendo face order (by take availability, not story order)", o:[["ok", "Fine as is", "", 1], ["story", "Re-order to story order", ""]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m02v5: {
+    doc: "feedback/m02_trailer_v5",
+    title: "m02 Ransomed Trust · 60 s trailer · v5 · final",
+    videoLabel: "16:9",
+    video: "/_blob/38b556b1de66c37974ca87aeb9d86cbd",
+    videos: [["9:16", "/_blob/28c8338d9d67f985a3f09562062d3e75", "p916"], ["1:1", "/_blob/1b6747d182bd816bd4550b643faee7cf", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Steel Shadows in E Minor from 50.2 s", "34 shots"],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov. It is exported to hacktivity-videos (full renders, captions and manifest); no questions left on this tab.", "Crescendo crops made consistent: every flash shows the game's pixels at 2× in every aspect, subject centred (3× for three faces in 9:16, 4× for CyberChef, so the subtitle bar and the sticky note stay clear).", "Ghost's Money line rebuilt with your recipe: main voice −2.5 st, a −12 st sub layer (formant −3) 12 dB under it, 20% saturation, 12% slow chorus, one 55 ms slapback. Money tail kept as before.", "Fixed a leak from v4: the 9:16 and 1:1 cuts showed CyberChef's decoded output. All CyberChef shots now show the encoded input only (checked frame by frame).", "Real console footage (m02's own nmap clip) as before."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["Ghost's voice chain was chosen by measurement (darkness and an intelligibility score), not by ear; two other variants (clearer, darker) are ready if this one is wrong.", "9:16 shows a narrower slice of the wide ransom and recovery panels, so some of their text is cut."],
+    srt: "1\n00:00:05,250 --> 00:00:09,030\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:11,267 --> 00:00:16,667\nBernie Nwosu: The cardiac ward's monitoring is down. Nobody's watching those hearts but us.\n\n3\n00:00:31,850 --> 00:00:35,350\nVal Okonkwo: So. Who are you and who says you're allowed?\n\n4\n00:00:47,990 --> 00:00:52,770\nGhost: Money is simply a means to hasten your inevitable end.",
+    questions: []
+  },
+  m01v11: {
+    doc: "feedback/m01_trailer_v11",
+    title: "m01 First Contact · 60 s trailer · v11 (owner notes)",
+    videoLabel: "16:9",
+    video: "/_blob/574faa34cc073a729cc11245d3e828fa",
+    videos: [["9:16", "/_blob/416b34df8927bd108531b5e8f8be59c9", "p916"], ["1:1", "/_blob/a1a937d4dda0a2117c5189b59bc70d0b", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Midnight Cipher Chase from 109.0 s", "31 shots"],
+    changedLabel: "What changed since the last round",
+    changed: ["Cards in m01's own words: \"People Keep Vanishing\", \"Stay in Character\", \"Before the Sunday Launch\".", "Kevin re-filmed with new mouth shapes that show teeth (PixelLab edits of his rest frame, mouth only).", "Hydra console shot kept and now marked final (your call).", "Derek, the volume, CyberChef, the closet, the toast and the avatar rotation unchanged."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["Not watched end to end by me: contact sheets and loudness checked."],
+    srt: "1\n00:00:04,800 --> 00:00:08,520\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,930 --> 00:00:49,290\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,023 --> 00:00:51,683\nDerek Lawson: That's optimisation.",
+    questions: [{k:"cards", t:"The three cards in m01's words", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say which"]]}, {k:"kevin", t:"Kevin's mouth with teeth", o:[["ok", "Right", "", 1], ["fix", "Still wrong", "Say what you see"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m04v3: {
+    doc: "feedback/m04_trailer_v3",
+    title: "m04 Critical Failure · 60 s trailer · v3 · final",
+    videoLabel: "16:9",
+    video: "/_blob/165addddfd33c8f748263958c76b65fe",
+    videos: [["9:16", "/_blob/19671e164ef3211f628d1215375faea5", "p916"], ["1:1", "/_blob/b766f893d2be19a91b25b80c7db0a811", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Shadow Protocol (Remastered) from 26.6 s", "37 shots"],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov. It is exported to hacktivity-videos (full renders, captions and manifest); no questions left on this tab.", "Netherton re-filmed with new mouth shapes made the way you asked: PixelLab edits of his rest frame, masked to the mouth. Frame diffs show nothing else moves.", "Ending is Voltage: \"I didn't bring a bomb, agent. I brought a maintenance schedule.\"", "Real Hacking is now m04's own console footage: the nmap scan from the rebuilt release (set 958), clean recon take, no masking needed."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The scan shows service versions (as m03 shipped), which you approved."],
+    srt: "1\n00:00:04,900 --> 00:00:10,340\nDirector Magnus Netherton: ENTROPY used to steal. Now they break the things people can't live without.\n\n2\n00:00:13,590 --> 00:00:18,730\nAgent 0x47 'Nightshade': If they reach the safety interlocks, this stops being a hack and starts being a body count.\n\n3\n00:00:20,067 --> 00:00:21,277\nSecurity Guard: Regulator, is it.\n\n4\n00:00:44,433 --> 00:00:47,203\nVoltage: Look at my hand. Then look at the clock.\n\n5\n00:00:47,433 --> 00:00:49,423\nVoltage: I didn't bring a bomb, agent.\n\n6\n00:00:49,843 --> 00:00:51,313\nVoltage: I brought a maintenance schedule.",
+    questions: []
+  },
+  m05v4: {
+    doc: "feedback/m05_trailer_v4",
+    title: "m05 Insider Trading · 60 s trailer · v4 (owner notes)",
+    videoLabel: "16:9",
+    video: "/_blob/c08fe6369bb99d59c464db6f8f251f24",
+    videos: [["9:16", "/_blob/90ee94f9039458e5d69a6f95db918c96", "p916"], ["1:1", "/_blob/723721120fa78ac90dba27b09acb6821", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Midnight Double Agent from 48.0 s", "30 shots"],
+    changedLabel: "What changed since the last round",
+    changed: ["Netherton re-filmed with the new PixelLab mouth-only shapes (hook) and HaX's stakes line from the same re-take.", "Niamh's new closer bust in her crescendo flash.", "Real Hacking is now m05's own console footage (rebuilt release, set 959): a clean recon scan, no masking needed. Answers your question: the m05 console take exists and is in.", "Torres stays hidden."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["Not watched end to end by me: contact sheets and loudness checked."],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,660 --> 00:00:44,090\nThe Recruiter: Fanaticism is somebody else's department. I just staff the operation.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.",
+    questions: [{k:"netherton", t:"Netherton's mouth now", o:[["ok", "Fixed", "", 1], ["fix", "Still glitchy", "Say what you see"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m06v2: {
+    doc: "feedback/m06_trailer_v2",
+    title: "m06 Follow the Money · 60 s trailer · v2 · final",
+    videoLabel: "16:9",
+    video: "/_blob/aa8bc6e05c01da6f7f3de3bb52ce52b7",
+    videos: [["9:16", "/_blob/33a554323e6b84fd14a3222ed6c58519", "p916"], ["1:1", "/_blob/f0f4520fff3f4a4c10f0414de253a080", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Shadow Cipher from 116.6 s", "30 shots"],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov. It is exported to hacktivity-videos (full renders, captions and manifest); no questions left on this tab.", "Real Hacking is m06's own console footage: a full-port scan from the s960 recon take.", "Netherton re-filmed with the new PixelLab mouth-only shapes.", "9:16 and 1:1: the tracer is centred on the deposit and the matched payout; the checkpoint walk fills the 9:16 frame at 2×.", "If you have v1 answers, they still apply; this round only fixes the known v1 gaps."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The console clip's scan results arrive in the last half of its shot."],
+    srt: "1\n00:00:04,570 --> 00:00:10,300\nDirector Magnus Netherton: Every cell we have hit is being paid by someone. Tonight we chase the money.\n\n2\n00:00:12,070 --> 00:00:18,130\nAgent HaX: HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know.\n\n3\n00:00:19,137 --> 00:00:24,557\nDr Irina Volkova: Satoshi is paranoid about doors and careless about passwords.\n\n4\n00:00:24,697 --> 00:00:29,437\nPriya Raghavan: You can't see through Monero. You don't need to. Watch what goes in and what comes out.\n\n5\n00:00:40,787 --> 00:00:41,187\nKemal Aydin: No.\n\n6\n00:00:41,477 --> 00:00:43,397\nKemal Aydin: Then come and move me.\n\n7\n00:00:47,567 --> 00:00:49,587\nSatoshi Nakamoto II: Murder's what they call it when you lose.\n\n8\n00:00:50,200 --> 00:00:51,510\nSatoshi Nakamoto II: The winners get statues.",
+    questions: []
+  },
+  m06v1: {
+    doc: "feedback/m06_trailer_v1",
+    title: "m06 Follow the Money · 60 s trailer · v1 (first cut)",
+    videoLabel: "16:9",
+    video: "/_blob/749a3fccdcbfbcbb5741097f0783a23c",
+    videos: [["9:16", "/_blob/b2498f6a4f40ad3f452141abaaea2173", "p916"], ["1:1", "/_blob/54fd562fa10ba76aaa8bf6f123e66b9b", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Shadow Cipher from 116.6 s", "32 shots"],
+    changedLabel: "What this cut is",
+    changed: ["First cut. Hook: Netherton's \"Every cell we have hit is being paid by someone. Tonight we chase the money.\" (re-take t10b, his own art). Stakes: HaX on HashChain Exchange.", "Volkova and Priya set up the tracer; the transaction tracer gets the one new-mechanic card. The desk-phone decoy and the pizza bait are crescendo flashes, not cards (recommended placeholder).", "\"Get Past the Minder\" card, then Kemal Aydin's \"No.\" / \"Then come and move me.\"", "Ending: Satoshi's round-2 line, \"Murder's what they call it when you lose. The winners get statues.\"", "16:9 has no burned captions; the crops keep theirs."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["Real Hacking is still the m02 slate here. m06's own console clip (full-port scan from the s960 recon take) is already in the edit and comes in v2.", "Netherton's mouth shapes in this cut are the older ones; the new PixelLab mouth-only set lands with the next re-take.", "9:16: the tracer panel is cut at its left edge, and the lobby walk sits small with black above and below. Both get reframed in v2.", "Not watched end to end by me: contact sheets and loudness checked."],
+    srt: "1\n00:00:04,570 --> 00:00:10,300\nDirector Magnus Netherton: Every cell we have hit is being paid by someone. Tonight we chase the money.\n\n2\n00:00:12,070 --> 00:00:18,130\nAgent HaX: HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know.\n\n3\n00:00:19,137 --> 00:00:24,557\nDr Irina Volkova: Satoshi is paranoid about doors and careless about passwords.\n\n4\n00:00:24,697 --> 00:00:29,437\nPriya Raghavan: You can't see through Monero. You don't need to. Watch what goes in and what comes out.\n\n5\n00:00:40,787 --> 00:00:41,187\nKemal Aydin: No.\n\n6\n00:00:41,477 --> 00:00:43,397\nKemal Aydin: Then come and move me.\n\n7\n00:00:47,567 --> 00:00:49,587\nSatoshi Nakamoto II: Murder's what they call it when you lose.\n\n8\n00:00:50,200 --> 00:00:51,510\nSatoshi Nakamoto II: The winners get statues.",
+    questions: [{k:"hook", t:"Netherton's hook and HaX's stakes: right lines?", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say which"]]}, {k:"mechanics", t:"Tracer as the one mechanic card, decoy and pizza as flashes", o:[["ok", "Keep", "", 1], ["card", "Give the desk-phone decoy its own card", "Costs Priya's line"]]}, {k:"music", t:"Music: Shadow Cipher", o:[["ok", "Keep", "", 1], ["alt", "Try Encrypted Shadows", "Calmer"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m05v3: {
+    doc: "feedback/m05_trailer_v3",
+    title: "m05 Insider Trading · 60 s trailer · v3 (owner notes)",
+    videoLabel: "16:9",
+    video: "/_blob/a71fed0fbb927f7b417d7adc97bf3dad",
+    videos: [["9:16", "/_blob/9da3e3d93c15eae2ea173a8e9a4aa338", "p916"], ["1:1", "/_blob/1066a056ae3495a40fe18f0011274f38", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
+    changedLabel: "What changed since the last round",
+    changed: [
+      "No burned captions in 16:9 any more (owner note). The 9:16 and 1:1 cuts keep theirs; 16:9 relies on the .srt, as m01 to m03 do.",
+      "Netherton re-filmed (t01b): his own portrait and talk art (the game had him on the generic male spy in m02, m05 and m06, now fixed in the game), and re-registered mouth shapes so only his mouth moves.",
+      "HaX's stakes line comes from the same re-take; the night-turn swap from v2 stays.",
+      "Still to come: Niamh's new closer bust in her 8-frame crescendo flash, once it is on main."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder until an m05 console take exists.",
+      "No walks: a short walk inside Patricia's office stands in for the walk to her office; no walk to the server-room VM.",
+      "No face flash for Bernadette Lyons and no espresso exchange.",
+      "The RFID reader appears only in the crescendo.",
+      "Last shot: our caption sits over the call screen's dimmed company name, which peeks out at the sides in 9:16."
+    ],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,660 --> 00:00:44,090\nThe Recruiter: Fanaticism is somebody else's department. I just staff the operation.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.",
+    questions: [
+      {k:"captions", t:"16:9 with no burned captions, crops with captions", o:[["ok","Right","",1],["fix","Not quite","Say which shot"]]},
+      {k:"netherton", t:"Netherton's face and mouth in the hook", o:[["ok","Fixed","",1],["fix","Still wrong","Say what you see"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m04v2: {
+    doc: "feedback/m04_trailer_v2",
+    title: "m04 Critical Failure · 60 s trailer · v2 (owner notes)",
+    videoLabel: "16:9",
+    video: "/_blob/6d8bcadad506a44e834b8528a371deb7",
+    videos: [["9:16", "/_blob/1281e14a8dcaf2adaa43518bc51a6d59", "p916"], ["1:1", "/_blob/d6acedbf555c13afd9e4c9d0e1a06b04", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −2.7 dB", "music: Shadow Protocol (Remastered) from 26.6 s", "39 shots"],
+    changedLabel: "What changed since the last round",
+    changed: [
+      "No burned captions in 16:9 any more (owner note). The 9:16 and 1:1 cuts keep theirs; 16:9 relies on the .srt, as m01 to m03 do.",
+      "Netherton re-filmed (t01b): his own portrait and talk art (the game had him on the generic male spy in m02, m05 and m06, now fixed in the game), and re-registered mouth shapes so only his mouth moves.",
+      "Nightshade's stakes line comes from the same re-take; nothing else moved."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder (the m02 server room behind \"footage in capture\") until an m04 console take exists.",
+      "No Relay line or fight: Relay appears as a walk-in and a portrait.",
+      "No face flashes for Diallo, Pell or HaX (no takes yet).",
+      "The battery panel shows its digital readings (normal values, no answer); the rack dial's value, which is an answer, is never on screen."
+    ],
+    srt: "1\n00:00:04,900 --> 00:00:10,340\nDirector Magnus Netherton: ENTROPY used to steal. Now they break the things people can't live without.\n\n2\n00:00:13,590 --> 00:00:18,730\nAgent 0x47 'Nightshade': If they reach the safety interlocks, this stops being a hack and starts being a body count.\n\n3\n00:00:20,067 --> 00:00:21,277\nSecurity Guard: Regulator, is it.\n\n4\n00:00:44,433 --> 00:00:47,203\nVoltage: Look at my hand. Then look at the clock.\n\n5\n00:00:47,433 --> 00:00:49,423\nVoltage: I didn't bring a bomb, agent.\n\n6\n00:00:49,843 --> 00:00:51,313\nVoltage: I brought a maintenance schedule.",
+    questions: [
+      {k:"captions", t:"16:9 with no burned captions, crops with captions", o:[["ok","Right","",1],["fix","Not quite","Say which shot"]]},
+      {k:"netherton", t:"Netherton's face and mouth in the hook", o:[["ok","Fixed","",1],["fix","Still wrong","Say what you see"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m05v2: {
+    doc: "feedback/m05_trailer_v2",
+    title: "m05 Insider Trading · 60 s trailer · v2 (night-turn line swapped)",
+    videoLabel: "16:9",
+    video: "/_blob/3f32c64358a07e28d3798d2a27850488",
+    videos: [["9:16", "/_blob/f328e586cd59dbcf0a41a0a06739575f", "p916"], ["1:1", "/_blob/14662292a077ff33212a5c43f15efe04", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
+    changedLabel: "What changed since v1",
+    changed: [
+      "Line swap (D356): \"I find people the week before they break...\" was added for the trailer and is now out of the game, so v2 uses a line the game already had. Over the night turn the Recruiter now says \"Fanaticism is somebody else's department. I just staff the operation.\" (from the phone call, voiced, 4.4 s).",
+      "The night-turn shot is now the Recruiter's call screen with that line's subtitle, cut in on the lights striking back on.",
+      "Everything else as v1: hook, stakes, suspects, cards, crescendo, and the price line as the ending.",
+      "Every owner question (D363) now uses the decided option."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder until an m05 console take exists.",
+      "No walks: a short walk inside Patricia's office stands in for the walk to her office; no walk to the server-room VM.",
+      "No face flash for Bernadette Lyons and no espresso exchange.",
+      "The RFID reader appears only in the crescendo.",
+      "Last shot: our caption sits over the call screen's dimmed company name, which peeks out at the sides in 9:16."
+    ],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,660 --> 00:00:44,090\nThe Recruiter: Fanaticism is somebody else's department. I just staff the operation.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.",
+    questions: [
+      {k:"night", t:"The swapped night-turn line: \"Fanaticism is somebody else's department. I just staff the operation.\"", o:[["keep","Keep","",1],["drop","Drop it","The night turn plays with music only"]]},
+      {k:"crops", t:"9:16 and 1:1 crops", o:[["ok","Fine","",1],["fix","Some shots need another look","Name them in the note"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m05v1: {
+    doc: "feedback/m05_trailer_v1",
+    title: "m05 Insider Trading · 60 s trailer · first draft (v1)",
+    videoLabel: "16:9",
+    video: "/_blob/b9f834d8d90bb121bffc03f612c95052",
+    videos: [["9:16", "/_blob/07cae806e0335f7118ed52e3f06a7f70", "p916"], ["1:1", "/_blob/ebe45b2537f0a9b2ae158f20b0f18c8b", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
+    changedLabel: "What's in it",
+    changed: [
+      "Hook: Netherton, cut to \"Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\" (the third sentence only, as recommended).",
+      "Stakes: HaX, \"Every ambulance, fire and police call through it runs six to eleven minutes slower.\"",
+      "Suspects: Patricia \"All vetted. All trusted. One of them shouldn't be.\", then after the \"Name the / Insider\" card Owen (Halloran's spare badge), Halloran (\"I hope to God you're wrong\") and Patricia's \"Go on, then. Who?\", cut before the menu. The evidence points at Halloran; Torres is never named or shown.",
+      "Night turn: the corridor lights go out and strike back on, under the Recruiter's \"I find people the week before they break, agent. Then I make them an offer.\"",
+      "Cards: \"Name the / Insider\", \"Real / Hacking\", \"Before the / Final Upload\". Crescendo: password panel, lockbox (wrong digits), dusting, biometric reader, RFID, phone, flag station, staff face flashes.",
+      "Ending: the Recruiter's price line, \"Everyone has a price, agent. I'm asking what yours is.\"",
+      "Every owner question (D363) uses its recommended option until you answer."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder until an m05 console take exists.",
+      "No walks: a short walk inside Patricia's office stands in for the walk to her office; no walk to the server-room VM.",
+      "No face flash for Bernadette Lyons (the take couldn't reach her) and no espresso exchange.",
+      "The RFID reader appears only in the crescendo.",
+      "Last shot: our caption sits over the call screen's dimmed company name, which peeks out at the sides in 9:16."
+    ],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,430 --> 00:00:44,140\nThe Recruiter: I find people the week before they break, agent. Then I make them an offer.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.",
+    questions: [
+      {k:"night", t:"The Recruiter's \"I find people...\" over the night turn, with the price line as the ending", o:[["keep","Keep both","",1],["drop","Drop \"I find people...\"","The night turn plays with music only"]]},
+      {k:"halloran", t:"The suspect beat points at Halloran (a red herring), without the badge-log screen", o:[["keep","Portraits only","As cut",1],["log","Add a 1 s badge-log insert","Masked to the spare-badge rows, frame by frame"]]},
+      {k:"music", t:"Music: Midnight Double Agent", o:[["keep","Keep","",1],["noir","Encrypted Shadows",""]]},
+      {k:"crops", t:"9:16 and 1:1 crops", o:[["ok","Fine","",1],["fix","Some shots need another look","Name them in the note"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m04v1: {
+    doc: "feedback/m04_trailer_v1",
+    title: "m04 Critical Failure · 60 s trailer · first draft (v1)",
+    videoLabel: "16:9",
+    video: "/_blob/04a1443d682ab0d8a9253813ce392aa6",
+    videos: [["9:16", "/_blob/90cd720ff4e3a0645b4d1d112c5ab91f", "p916"], ["1:1", "/_blob/0f65d5ac44774eb9557bb4267cd0c49e", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −2.7 dB", "music: Shadow Protocol (Remastered) from 26.6 s", "39 shots"],
+    changedLabel: "What's in it",
+    changed: [
+      "Hook: Netherton, \"ENTROPY used to steal. Now they break the things people can't live without.\" (\"Agent 0x00.\" dropped, as recommended in the owner questions.)",
+      "Stakes: Nightshade, \"If they reach the safety interlocks, this stops being a hack and starts being a body count.\"",
+      "Cards: \"Mission 4 / Critical Failure\", \"Screens / Lie\", \"Fingerprint / Dusting\", \"Real / Hacking\", \"Before / 0800\".",
+      "Ending: Voltage, \"Look at my hand. Then look at the clock.\" then your pick, \"I didn't bring a bomb, agent. I brought a maintenance schedule.\"",
+      "Every owner question (D363) uses its recommended option until you answer. Vance gets a face flash, not his line."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder (the m02 server room behind \"footage in capture\") until an m04 console take exists.",
+      "No Relay line or fight: Relay appears as a walk-in and a portrait.",
+      "No face flashes for Diallo, Pell or HaX (no takes yet).",
+      "The battery panel shows its digital readings (normal values, no answer); the rack dial's value, which is an answer, is never on screen."
+    ],
+    srt: "1\n00:00:04,900 --> 00:00:10,340\nDirector Magnus Netherton: ENTROPY used to steal. Now they break the things people can't live without.\n\n2\n00:00:13,590 --> 00:00:18,730\nAgent 0x47 'Nightshade': If they reach the safety interlocks, this stops being a hack and starts being a body count.\n\n3\n00:00:20,067 --> 00:00:21,277\nSecurity Guard: Regulator, is it.\n\n4\n00:00:44,433 --> 00:00:47,203\nVoltage: Look at my hand. Then look at the clock.\n\n5\n00:00:47,433 --> 00:00:49,423\nVoltage: I didn't bring a bomb, agent.\n\n6\n00:00:49,843 --> 00:00:51,313\nVoltage: I brought a maintenance schedule.",
+    questions: [
+      {k:"ending", t:"Ending: Voltage's two lines back to back (\"Look at my hand...\" then \"I didn't bring a bomb...\")", o:[["both","Keep both","The hand line sets the timer, the schedule line lands it",1],["schedule","Only the maintenance schedule line","About 3 s more for the crescendo"]]},
+      {k:"music", t:"Music: Shadow Protocol (Remastered)", o:[["keep","Keep","",1],["hybrid","Hybrid Attack 1",""],["emerald","Emerald Trigger",""]]},
+      {k:"crops", t:"9:16 and 1:1 crops", o:[["ok","Fine","",1],["fix","Some shots need another look","Name them in the note"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  social: {
+    doc: "feedback/trailers_social_v1",
+    title: "Social cuts: m01 v10, m02 v4 and m03 v3 in portrait (9:16) and square (1:1)",
+    intro: "The same cuts as the 16:9 trailers, reframed for phones and feeds, with captions burned in. Each shot is reframed by hand: the speaker is centred, and the game's own subtitle bar is either out of frame (our caption replaces it) or fully in frame with no caption. Some wide panels are letterboxed in 9:16 so they show whole.",
+    noVerdict: true, noVideo: true,
+    videos: [
+      ["m01 · 9:16", "/_blob/13aed06351cca17400caa4b0b316059d", "p916"],
+      ["m01 · 1:1", "/_blob/17dda92cd30d33ffd8ca23c45935050f", "p11"],
+      ["m02 · 9:16", "/_blob/c3167f66e9de891daa8bcb9e014cb3e1", "p916"],
+      ["m02 · 1:1", "/_blob/c14fe7f5685ddb0c17c8353db0c04f25", "p11"],
+      ["m03 · 9:16", "/_blob/bacf63a94a422c7c4c76cf498aaa68ae", "p916"],
+      ["m03 · 1:1", "/_blob/772ca3e7da3b762dcb578573af5eb544", "p11"]
+    ],
+    stats: ["60.0 s each", "1080×1920 and 1080×1080, 30 fps", "−14.0 / −13.8 / −13.9 LUFS (m01 / m02 / m03), the same mix as the 16:9", "review copies 720 wide"],
+    changed: [
+      "The first attempt at these crops was not published: speakers were cut at the right edge in 1:1, and some captions sat on the game's subtitle bar. Every shot was reframed, and both aspects were checked frame by frame.",
+      "Captions of three or four lines ran off the bottom of the square cuts; they are now lifted to fit (Bernie and HaX lost a line before)."
+    ],
+    standinLabel: "Compromises (a wide panel can't fit a narrow frame)",
+    standin: [
+      "m02 recovery console: the right-hand column is cut in both aspects.",
+      "m02 ransom screen: the headline loses a couple of letters at each end in 9:16.",
+      "m02 Ghost reveal: the on-screen subtitle is lost (that line isn't voiced).",
+      "m02 opening room: small in 9:16.",
+      "m03 console: the end of the nmap command and the version column are cut.",
+      "m01 Hydra console and Derek's password panel: the right edge is cut in 9:16.",
+      "m01 shot 23: a few pixels of the window title; m03 shot 3: a thin black band in 9:16."
+    ],
+    questions: [
+      {k:"crops", t:"Do the crops work?", o:[["ok","Yes","",1],["fix","Some shots need another look","Name them in the note"]]},
+      {k:"captions", t:"Burned captions: size and position", o:[["ok","Right","",1],["bigger","Bigger","They're small on a phone"],["move","Move them","Say where"]]},
+      {k:"compromises", t:"The cut-off panels listed above", o:[["accept","Accept them","",1],["swap","Swap those shots for others","Narrow panels or faces instead"]]},
+      {k:"platform", t:"Which platform first?", o:[["shorts","YouTube Shorts / Reels / TikTok (9:16)",""],["linkedin","LinkedIn (1:1)",""],["both","Both",""]]},
+      {k:"other", t:"Anything else?", o:null}
+    ]
+  },
+  lines2: {
+    doc: "feedback/trailer_lines_round2",
+    title: "New lines, round 2: m04 Voltage, m07 hook, m09 Sorensen",
+    noVideo: true, noVerdict: true,
+    intro: "Updated 23 November: your round 2 picks are in (m04 \"maintenance schedule\", m07 \"We are faced with an impossible decision, Agent.\", m09 \"the only index you can ask\"). They're being reviewed as inked, then voiced. Two questions are still open, both on m09, below (the m04 and m07 picks are voiced). The old m09 \"Yours is in tonight's run\" line is withdrawn, because the player's file is in Sorensen's safe and not in tonight's run. Your other round-1 picks are recorded (m05, m06 and m08 are the existing lines) and your m10 ending is in the game and voiced. You asked for alternatives on these three. I drafted four for each and had them reviewed against each mission's ink. Five were dropped as off-canon or spoilers, for example a \"one team, four targets\" hook (the team goes to one of three, and none is a blackout) and a \"no right answer\" line (that is HaX's debrief reveal). Three were fixed. Each line goes into the game where it plays naturally. Your pick gets voiced under the standing TTS yes. Pick one per mission, or write your own in the box. Full notes: docs/video/edits/TRAILER_LINES_ROUND2.md.",
+    changedLabel: "Where each line plays",
+    changed: [
+      "m04: Voltage's confrontation in the battery hall. The fake maintenance firm (OptiGrid) got his crew in, the overcharge runs on a timer, and the Architect has six cities lined up.",
+      "m07: Netherton's briefing at 2:41 am, just after \"The other two go unanswered.\" The player hasn't chosen where the one team goes yet, so the line is not an outcome.",
+      "m09: Sorensen at the shredder (the cage), or at the hatch when she recognises you. ENTROPY's \"placed\" people are filed in her boxes."
+    ],
+    questions: [
+      {k:"m04", t:"m04 ending: Voltage, cleverer menace", o:[
+        ["clock","\"Take me in, if you like. The racks don't need me. They have the clock.\"","New, replaces the \"sums\" line. Level and certain. Reviewer's pick",1],
+        ["schedule","\"I didn't bring a bomb, agent. I brought a maintenance schedule.\"","New, after \"...we walked in the front.\" Dry, proud of the craft"],
+        ["contract","\"Every city has a hall like this. And every one of them has a maintenance contract.\"","New, after \"six cities lined up\". Widens the threat"],
+        ["hand","\"Look at my hand. Then look at the clock.\"","Existing, no voicing"],
+        ["sums","\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\"","Voiced in round 1"]]},
+      {k:"m07hook", t:"m07 hook: Netherton's briefing, before the choice", o:[
+        ["impossible","\"We are faced with an impossible decision, Agent, and it is yours.\"","Your wording. Grave and quiet",1],
+        ["onedecision","\"ENTROPY did not plan four attacks tonight, Agent. It planned one decision.\"","Names the gambit without saying who set it"],
+        ["notthere","\"Whichever you choose, two cities wake up tomorrow knowing we were not there.\"","The cost of the choice, with no numbers"]]},
+      {k:"m09", t:"m09 ending: Margaret Sorensen, more narrative weight", o:[
+        ["lies","\"Every lie they ever lived went through my hands, dear. I'm the last one who can tell you which were lies.\"","New, at the shredder. Quietly wistful; sets up her \"give me a pencil\" path. Reviewer's pick",1],
+        ["index","\"Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.\"","New, replaces \"It's only paper...\". Gentle, without looking up"]]},
+      {k:"m09hookfix", t:"m09 hook: your pick has a story problem. Reword it?", o:[
+        ["reword","\"Whatever ENTROPY cannot afford to keep is on paper in that building. Tonight they are burning it.\"","Reviewer's rewrite. The briefing doesn't yet know what the archive holds; HaX works that out at the dock, and Sorensen says it in the cage. Re-voices one line",1],
+        ["keep","\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\"","Your pick, in the game now. Says the archive's secret early"]]},
+      {k:"m09cage", t:"m09 ending: your pick clashes with what the player finds. Change two words?", o:[
+        ["was","\"Everyone ENTROPY ever placed was filed in this building, dear. By morning, I'll be the only index you can ask.\"","Reviewer's fix. \"Is filed in this room\" isn't true when she says it: one record is in the Harwick & Lowe box in the open stacks, Series R is already shredded, and the ledger copy is in her office. It also points the player at the wrong room"],
+        ["is","\"Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.\"","Your pick as written. Out of the game and not voiced until you say"]]},
+      {k:"other", t:"Anything else, or a line of your own?", o:null}
+    ]
+  },
+  voiced: {
+    doc: "feedback/trailer_lines_voiced",
+    title: "The 8 new lines, voiced (ear check)",
+    noVideo: true, noVerdict: true,
+    intro: "AC0 relayed that you want the trailers moving, so I took the suggested picks from the Lines tab and the standing TTS yes. The 8 lines went into the game's ink at the points in the table and were voiced once each with the character's usual voice. Correction, 23 November: before voicing, only the agent that inserted them had reviewed them. An independent review has now run. As a result the m08 line (not your pick), the m09 ending line (wrong in the story) and the m10 blast-door line (replaced by your pick) are out of the game, and m05's has moved up one place. Branch video/trailer-lines-m04-m10, sent to AC0 for a train. Under your standing TTS yes they count as accepted, and their levels match the rest of the cache, so listening is optional. A line you mark \"redo\" gets one more TTS pass with your note as direction.",
+    clips: [
+      ["m04 · Voltage (replaces the \"blink\" line)", "/_blob/da8fff7e2e395b9c1d7e6ccf18a72ec5", "\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\" Direction: quiet and level, a man reading out a sum he has already checked."],
+      ["m05 · the Recruiter (phone)", "/_blob/9e50ce257907d402a66265ac2bd485be", "\"I find people the week before they break, agent. Then I make them an offer.\" Direction: warm and confiding, a headhunter's smile in the voice."],
+      ["m06 · Satoshi Nakamoto II", "/_blob/6861aaa13b104e4694d316597b4d6e6c", "\"Take me in if you like. The money already knows where it's going.\" Direction: relaxed, a little amused, entirely sure."],
+      ["m07 · the Architect (withheld call)", "/_blob/8d68e67840a46a4624865a4b55da6799", "\"Four fires tonight, and only one of you. I set them so you'd have to choose.\" Direction: soft and measured, faintly pleased. Same voice as m10's Tesseract (the scenarios already share it)."],
+      ["m08 · Director Netherton (opening)", "/_blob/e1e28a84e54faab551c08380e688f73c", "\"They have read our plans for months, Agent. Tonight they will be reading you.\" Direction: low and grave, each word placed."],
+      ["m09 · Margaret Sorensen", "/_blob/357f6dc6ff75a6924960c33b0866e8f6", "\"Yours is in tonight's run, dear. I saved it for last.\" Direction: mild and pleasant, like a librarian mentioning an overdue book."],
+      ["m09 hook · Director Netherton (briefing)", "/_blob/e6a5463b209f113c5350aa384e96ed05", "\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\" Direction: level and grave."],
+      ["m10 · Dr Adrian Tesseract (arrival)", "/_blob/c0545bb6c043c5c316755643eec34b8e", "\"I had the blast door read one badge tonight. Yours.\" Direction: quiet and matter-of-fact, a host who has gone to some trouble. It plays just after his \"Take your time...\" line."]
+    ],
+    questions: [
+      {k:"m04", t:"m04 Voltage", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m05", t:"m05 Recruiter", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m06", t:"m06 Satoshi", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m07", t:"m07 Architect", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m08", t:"m08 Netherton", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m09", t:"m09 Sorensen", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m09hook", t:"m09 Netherton hook", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m10", t:"m10 Tesseract", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"other", t:"Anything else on these lines?", o:null}
+    ]
+  },
+  m03v3: {
+    doc: "feedback/m03_trailer_v3",
+    title: "m03 Ghost in the Machine · 60 s trailer · round v3 (new cut)",
+    videoLabel: "Main cut: ends on \"I sleep perfectly\"",
+    video: "/_blob/ef1c12a85fb189fde489590213edc754", poster: "/_blob/2fff5f87c8caf5a47cef39e26074e5c9",
+    video2Label: "Alternative ending: the Ghost line (only the last 6 s differ)",
+    video2: "/_blob/feade6d3530fe7008c475f59f3d484a4",
+    stats: ["60.000 s each", "1920×1080 30 fps", "−14.0 LUFS", "true peak −1.4 / −1.1 dB", "16:9 only"],
+    changed: [
+      "A new cut built on your v2 notes: day first (Zainab, then Victoria's pitch), then the night (the lights strike, Ffion, the guard), then the crescendo and Victoria at night.",
+      "New hook from HaX: \"Every life St. Catherine's lost, it lost to something Zero Day sold.\"",
+      "RFID gets its own card, named for the mechanic (\"RFID / Cloning\"), and about 4 s of its own: read the badge, save it, emulate it at the reader, the door opens, walk through. No phone or PIN flashes in that section.",
+      "Cards in m03's own words: \"RFID / Cloning\", \"Real / Hacking\", \"Don't Get / Caught\", \"Before the / Next Sale\". \"Uncover the Mystery\" and \"Choices with Consequences\" are gone.",
+      "Straight walks only. Zainab is filmed away from her desk (no jitter), and her blink now uses both eyes (game fix).",
+      "Guard beat in order: Terry's torch (now brighter) sweeps the wing with the player at the door, the lockpick, Terry's re-voiced angry line, then he comes after the player.",
+      "Crescendo flashes include Danny's desktop with content (a \"GHOST - Hospital\" folder) in place of the empty one.",
+      "Ending: Victoria at night, unrepentant. Two endings to pick from (below)."
+    ],
+    standin: ["None. Real Hacking is the m03 console clip. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
+    srt: "1\n00:00:04,800 --> 00:00:08,550\nAgent HaX: Every life St. Catherine's lost, it lost to something Zero Day sold.\n\n2\n00:00:12,043 --> 00:00:15,883\nZainab Hussain: Hiya. Here to see Sterling? Good luck.\n\n3\n00:00:16,113 --> 00:00:21,293\nVictoria Sterling: We find it, we price it, and we find the somebody.\n\n4\n00:00:31,600 --> 00:00:34,970\nFfion Rees: Is Ms. Sterling expecting you this late?\n\n5\n00:00:37,067 --> 00:00:40,107\nTerry Mott: Picks. Right. We're done talking.\n\n6\n00:00:46,800 --> 00:00:48,290\nVictoria Sterling: I sleep perfectly.\n\n7\n00:00:48,783 --> 00:00:51,833\nVictoria Sterling: That's the part people like you can never forgive.",
+    questions: [
+      {k:"ending", t:"Ending line", o:[["sleep","\"I sleep perfectly. That's the part people like you can never forgive.\"","Main cut. Menace without explaining the plot",1],["ghost","\"Ghost wanted somewhere that would pay. I told them where. That's consultancy.\"","Alternative cut. Reveals she picked the hospital, the mission's payoff"]]},
+      {k:"cards", t:"Cards: \"RFID / Cloning\", \"Real / Hacking\", \"Don't Get / Caught\", \"Before the / Next Sale\"", o:[["keep","Keep all four","As in both cuts",1],["other","Change one","Say which and the wording in the note"]]},
+      {k:"hook", t:"HaX's hook: \"Every life St. Catherine's lost, it lost to something Zero Day sold.\"", o:[["keep","Keep","Ties m03 to m02's hospital and names the target",1],["cells","Back to \"They don't run the attacks. They arm the cells that do.\"","The v2 hook"]]},
+      {k:"terry", t:"Terry's re-voiced line (\"Picks. Right. We're done talking.\") in the cut", o:[["keep","Angry enough","You approved the read in the game",1],["more","Still too flat","Another re-voice pass"]]},
+      {k:"rfid", t:"The RFID beat (about 4 s, from 22.8 s)", o:[["keep","Long and clear enough","Read, save, emulate, door, walk",1],["longer","Longer still","Take time from the Real Hacking walk"]]},
+      {k:"ffion", t:"Ffion says \"this late\" in front of a bright reception (the conversation backgrounds have no night version)", o:[["keep","Fine","The shots either side are dark",1],["night","Make a night background for reception","Art work in the game, then a re-take"],["drop","Drop Ffion","Give the time to the guard beat"]]},
+      {k:"music", t:"Music: \"Shadow Code 1\" again. Its drop lands at 12.1 s (on Zainab), not on the night turn at 30.5 s, because the track has no lift between 14 and 44 s", o:[["keep","Keep","Works with the day/night order",1],["track","Try another track","Pick one whose lift lands on the night turn"]]},
+      {k:"close", t:"The last half of the ending line is about 1.5 dB quieter than the other voices (the mix compresses it; raising the gain moved it 0.2 dB)", o:[["ok","Fine by ear","",1],["louder","Louder","I'll duck the music under it instead"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  lines: {
+    doc: "feedback/trailer_lines_m04_m10",
+    title: "New trailer lines for m04 to m10 (proposals)",
+    noVideo: true, noVerdict: true,
+    intro: "You said authoring new lines to make the trailers \"trailer perfect\" is in scope. Each proposal goes into the ink at a point where it plays naturally in the game, never as a trailer-only line. Nothing is in the ink or voiced yet. After your picks: a dialogue review of the new lines, then I ask AC0 for your TTS yes with the count. The suggested picks would need 8 new lines voiced (at most 11 with optional matching re-voices). Full details, with the lines either side of each one, are in docs/video/edits/TRAILER_LINES_PROPOSED.md.",
+    changedLabel: "What the outlines found (one per mission, in docs/video/edits/M0X_TRAILER60_OUTLINE.md)",
+    changed: [
+      "m04 Critical Failure: new mechanic fingerprint dusting and the biometric door, card \"Fingerprint / Dusting\".",
+      "m05 Insider Trading: no new minigame; the card is \"Name the / Insider\" (fallback \"Fingerprint / Matching\").",
+      "m06 Follow the Money: the Settlement Tracer, card \"Blockchain / Tracing\".",
+      "m07 Architect's Gambit: the Architect calls from a withheld number, card \"Withheld / Caller\".",
+      "m08 The Mole: interviewing the three suspects, card \"Interview / Suspects\".",
+      "m09 Digital Archaeology: stopping the tape wipe, card \"Stop the / Wipe\".",
+      "m10 Full Disclosure: cutting the bunker's security by hand, card \"Disable the / Security\"."
+    ],
+    questions: [
+      {k:"m04", t:"m04 ending (Voltage)", o:[["sums","\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\"","New, replaces the \"blink\" line in his confrontation. Quiet and level",1],["late","\"But you're late. Three days we've had this hall, and every light in the city with it.\"","New, replaces a line earlier in the confrontation"],["hand","\"Look at my hand. Then look at the clock.\"","Existing line, needs only a cache check"],["blink","\"There's no version of this where I blink...\"","Current; you called it weak"]]},
+      {k:"m05", t:"m05 ending (the Recruiter, on the phone)", o:[["week","\"I find people the week before they break, agent. Then I make them an offer.\"","New, added to his introduction. Warm and confiding",1],["shame","\"Shame. I'd have placed you somewhere nobody would ever think to look.\"","New, after you refuse his deal"],["price","\"Everyone has a price, agent. I'm asking what yours is.\"","Existing"]]},
+      {k:"m06", t:"m06 ending (Satoshi Nakamoto II)", o:[["money","\"Take me in if you like. The money already knows where it's going.\"","New, cheap route to film",1],["signature","\"Every ransom, every blackout, every riot. It all clears through my signature.\"","New, in the evidence reveal"],["invoices","\"The Architect calls them lessons. I just pay the invoices.\"","Existing"],["statues","\"Murder's what they call it when you lose. The winners get statues.\"","Existing, but needs the arrest route filmed around its menus"]]},
+      {k:"m07", t:"m07 ending (the Architect, withheld call)", o:[["fires","\"Four fires tonight, and only one of you. I set them so you'd have to choose.\"","New. HaX's own call already says \"four fires tonight\"",1],["fifteen","\"Fifteen minutes on your wall. I had rather longer to plan them.\"","New"],["wait","\"The beauty of entropy is that it doesn't require me to win. It only requires you to wait.\"","Existing"],["trace","\"Don't look for the trace. It isn't there.\"","Existing, the outline's pick"]]},
+      {k:"m07hook", t:"m07: the outline's HaX line \"One team, three fires. ENTROPY built that arithmetic on purpose.\" comes after two fires went unanswered, so it may read as an outcome", o:[["swap","Use it only as a mid-trailer line, not the hook","Outcome lines stay off",1],["keep","Fine as the hook",""]]},
+      {k:"m08", t:"m08 ending (the mole stays hidden, so the menace goes to Netherton or ATHENA)", o:[["read","Netherton: \"They have read our plans for months, Agent. Tonight they will be reading you.\"","New, in his opening briefing",1],["athena","ATHENA: \"Whoever it is, Agent, they are still in the building. So are you.\"","New"],["mole","Netherton: \"There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.\"","Existing, the outline's pick"]]},
+      {k:"m09", t:"m09 ending (Margaret Sorensen)", o:[["saved","\"Yours is in tonight's run, dear. I saved it for last.\"","New, at her recognition beat. Mild, like a librarian",1],["desks","\"They're all still at their desks, dear. By morning, nobody will know which ones.\"","New, replaces \"It's only paper...\""],["paper","\"It's only paper...\"","Current; you called it weak"]]},
+      {k:"m09hook", t:"m09 hook (Netherton)", o:[["burning","\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\"","New, in his briefing",1],["current","Keep the outline's current hook",""]]},
+      {k:"m10", t:"m10 ending (Dr Adrian Tesseract, named in m10's opening)", o:[["badge","\"I had the blast door read one badge tonight. Yours.\"","New, on arrival",1],["weak","\"Your service spent decades hoarding the world's weak points. At six, I give them back.\"","New; repeats the hook's idea, so pair it with the HaX hook"],["confession","\"It has to be one of you. If I press it, it's a crime. If you press it, it's a confession.\"","Existing, late in the mission"],["six","\"Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you.\"","Existing, plays on arrival"]]},
+      {k:"m10hook", t:"m10 hook", o:[["catalogued","Netherton: \"At six he publishes everything we ever catalogued. Every flaw, with working detail, free, to anyone.\"","Existing, no voicing",1],["place","HaX: \"Well enough to know he's set a place for each of us.\"","New, replaces \"...expecting us.\""]]},
+      {k:"casualty", t:"The recipes still bar casualty figures (lines like Voltage's \"forty-odd\" were left out). Keep that rule?", o:[["keep","Keep it","Threat without numbers",1],["relax","Relax it","Figures allowed when they are the stakes"]]},
+      {k:"m05twist", t:"m05: the outline keeps the insider (Torres) off screen as the mission's twist", o:[["keep","Keep him hidden","",1],["show","Show him","He is fair game"]]},
+      {k:"voice", t:"Once you've picked: voice the new lines? (8 with the suggested picks, about 16 s of audio)", o:[["yes","Yes, after the dialogue review","I send the count to AC0 for the go",1],["later","Not yet","Hold until each mission's trailer starts"]]},
+      {k:"other", t:"Anything else on these lines, or a line of your own?", o:null}
+    ]
+  },
+  m02: {
+    doc: "feedback/m02_trailer_v4",
+    title: "m02 Ransomed Trust · 60 s trailer · round v4",
+    video: "/_blob/1b26eadfb6ca17acea6691e42e8de30c", poster: "/_blob/8ee2d9b7a5a82bfe795e6c04796c5429",
+    stats: ["60.000 s", "1920×1080 30 fps", "−13.8 LUFS", "true peak −1.49 dB", "16:9 only"],
+    changed: [
+      "Ghost's call re-recorded on today's build with the deeper voice (an octave-down layer, as you asked).",
+      "The whole Money line plays: \"Money is simply a means to hasten your inevitable end.\" Its last word runs 0.8 s into the end bumper. The muted reveal shot before it is 0.8 s shorter to make room.",
+      "Ghost now peaks within 1 dB of HaX.",
+      "Lip sync: the game now reads the mouth shapes ahead by the audio output delay (engine fix), and the take pipeline no longer shifts the picture by one frame. New takes measure within about one frame. The other m02 takes are unchanged from v3, whose renders already measured within 5 to 10 ms."
+    ],
+    standin: ["None. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
+    srt: "1\n00:00:05,250 --> 00:00:09,030\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:11,267 --> 00:00:16,667\nBernie Nwosu: The cardiac ward's monitoring is down. Nobody's watching those hearts but us.\n\n3\n00:00:31,850 --> 00:00:35,350\nVal Okonkwo: So. Who are you and who says you're allowed?\n\n4\n00:00:47,990 --> 00:00:52,770\nGhost: Money is simply a means to hasten your inevitable end.",
+    questions: [
+      {k:"ghostvoice", t:"Ghost's new deeper voice", o:[["keep","Keep","As in this cut",1],["more","Deeper or darker still","Another pass on the game's voice effect"],["less","Too much","Pull it back towards v3"]]},
+      {k:"tail", t:"The Money line's last word runs 0.8 s over the Hacktivity bumper", o:[["keep","Keep","Ends the trailer on his line",1],["trim","Fit it before the bumper","Take 0.8 s from an earlier shot"]]},
+      {k:"lipsync", t:"Lip sync: does any character's mouth still look off?", o:null},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m01v10: {
+    doc: "feedback/m01_trailer_v10",
+    title: "m01 First Contact · 60 s trailer · round v10",
+    video: "/_blob/9b69be9e6b7ee1417429942fedbc2fdc", poster: "/_blob/53b8b9ee10fc798ca73d454f9bcc1d17",
+    stats: ["60.000 s", "1920×1080 30 fps", "−14.1 LUFS", "true peak −1.4 dB", "16:9 only"],
+    changed: [
+      "Derek now ends on the line you asked for, whole: \"Sixty deaths to save tens of thousands per year. That's not murder.\" on the wide shot, then a hard cut to the close-up on \"That's optimisation.\" (as in the old trailer). New take, same build; the audio was already cached, so no TTS cost.",
+      "His line starts 2.6 s early under the minigame crescendo, as before. The wide shot stays cropped so his name bar is out.",
+      "Everything else is v9 (today's build, a different spy in each map shot). v9's questions are carried over below, since v9 had no answers yet."
+    ],
+    standin: ["Real hacking console clips are the same as v8.5. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
+    srt: "1\n00:00:04,800 --> 00:00:08,520\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,930 --> 00:00:49,290\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,023 --> 00:00:51,683\nDerek Lawson: That's optimisation.",
+    questions: [
+      {k:"derek", t:"Derek's ending: the whole \"optimisation\" line, wide then close-up", o:[["keep","Keep","As in this cut",1],["cut","Cut on \"That's not murder\" too","Close-up earlier, for both short sentences"]]},
+      {k:"derekvol", t:"\"That's optimisation\" is delivered softer than the rest of his line; raised in the mix, it now matches HaX and Sarah but sits below the first half", o:[["ok","Fine by ear","",1],["louder","Louder","I'll duck the music under it instead"]]},
+      {k:"cards", t:"m01 still uses the generic cards \"Uncover the Mystery\" and \"Choices with Consequences\", which the new card rule retires", o:[["keep","Keep them on m01","It shipped with them",1],["new","Rewrite in m01's own words","For example a card naming its mechanic; I'll propose wording"]]},
+      {k:"cyberchef", t:"The crescendo's CyberChef flash (about 45.0 s) is mostly white page: the \"no empty screens\" rule", o:[["keep","Fine at that speed","It is a quarter of a second",1],["swap","Swap it for a fuller frame","Another minigame or CyberChef with output"]]},
+      {k:"lights", t:"Lights-on beat now in the storage closet (the main office starts lit since office life)", o:[["keep","Keep the closet","Same beat, a smaller room",1],["office","Make the main office start dark","Needs a scenario change, then a re-record"],["drop","Drop the lights beat","Give its time to another shot"]]},
+      {k:"toast", t:"Sarah's shot keeps a small green \"Influence\" toast for about half a second", o:[["keep","Keep","Hard to notice at speed",1],["trim","Trim it out","The shot then runs 3.5 s and the grid shifts"]]},
+      {k:"avatars", t:"Avatar mix: a different spy in each map shot", o:[["keep","Keep the rotation","Shows the cast of starters",1],["one","One spy throughout","Reads as one agent's story"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  }
+};
+const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
+
+let current = "m01mus";
+let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
+let db = null;
+const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
+try { const s = JSON.parse(localStorage.getItem(LS) || "null"); if (s) answers = Object.assign(answers, s); } catch (_) {}
+
+function el(tag, attrs, ...kids){ const e=document.createElement(tag); for (const [k,v] of Object.entries(attrs||{})) { if (k==="class") e.className=v; else if (k==="text") e.textContent=v; else e.setAttribute(k,v);} for (const c of kids) if (c) e.append(c); return e; }
+
+function render(){
+  const c = CUTS[current], a = answers[current] || (answers[current] = {});
+  const main = document.getElementById("cut"); main.replaceChildren();
+  const top = el("section",{class:"card"});
+  top.append(el("h2",{text:c.title}));
+  if (c.intro) top.append(el("p",{class:"why",text:c.intro}));
+  if (c.video){ if (c.videoLabel) top.append(el("div",{class:"kicker",text:c.videoLabel})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.src=c.video; if (c.poster) v.poster=c.poster; top.append(v); }
+  else if (!c.noVideo) top.append(el("div",{class:"empty",text:"Render in progress: the video appears here when it is ready."}));
+  if (c.clips){ c.clips.forEach(([lab,src,txt])=>{ const b=el("div",{class:"q"}); b.append(el("h3",{text:lab}), el("p",{class:"why",text:txt})); const au=el("audio",{controls:"",preload:"metadata"}); au.src=src; au.style.width="100%"; b.append(au); top.append(b); }); }
+  if (c.videos){ const g=el("div",{class:"vgrid"}); c.videos.forEach(([lab,src,cls])=>{ const b=el("div",{}); b.append(el("div",{class:"kicker",text:lab})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.className=cls; v.src=src; b.append(v); g.append(b); }); top.append(g); }
+  if (c.video2){ top.append(el("div",{class:"kicker",text:c.video2Label||"Alternative"})); const v2=el("video",{controls:"",preload:"metadata",playsinline:""}); v2.src=c.video2; top.append(v2); }
+  if (c.stats && c.stats.length){ const s=el("div",{class:"stats"}); c.stats.forEach(x=>s.append(el("span",{class:"chip",text:x}))); top.append(s); }
+  if (c.changed){ const ch=el("div",{}, el("div",{class:"kicker",text:c.changedLabel||"What changed"})); const ul=el("ul"); c.changed.forEach(x=>ul.append(el("li",{text:x}))); ch.append(ul); top.append(ch); }
+  if (c.standin){ const sd=el("div",{}, el("div",{class:"kicker",text:c.standinLabel||"Stand-in or missing"})); const ul2=el("ul"); c.standin.forEach(x=>ul2.append(el("li",{text:x}))); sd.append(ul2); top.append(sd); }
+  if (c.srt){ const d=el("details"); d.append(el("summary",{text:"Captions (.srt)"}), el("pre",{text:c.srt})); top.append(d); }
+  main.append(top);
+
+  const form=el("section",{class:"card"}); form.append(el("h2",{text:"Questions"}));
+  const qs=(c.noVerdict?[]:[{k:"verdict",t:"Verdict",o:VERDICT.map(([v,l,d])=>[v,l,d])}]).concat(c.questions);
+  qs.forEach((q,i)=>{
+    const box=el("div",{class:"q"}); box.append(el("h3",{text:(i+1)+". "+q.t}));
+    if (q.o){ const opts=el("div",{class:"opts",role:"radiogroup","aria-label":q.t});
+      q.o.forEach(([v,l,d,sug])=>{ const id=current+"_"+q.k+"_"+v; const inp=el("input",{type:"radio",name:current+"_"+q.k,id,value:v}); if (a[q.k]===v) inp.checked=true;
+        inp.addEventListener("change",()=>{a[q.k]=v; changed();});
+        const lab=el("label",{class:"opt",for:id}); const txt=el("span"); txt.append(el("b",{text:l})); if (d) txt.append(el("small",{text:d})); if (sug) txt.append(el("span",{class:"sug",text:"suggested"})); lab.append(inp,txt); opts.append(lab); });
+      box.append(opts); }
+    const ta=el("textarea",{id:current+"_"+q.k+"_note",placeholder:q.o?"Note (optional)":"Your answer","aria-label":q.t+" note"}); ta.value=a[q.k+"_note"]||"";
+    ta.addEventListener("input",()=>{a[q.k+"_note"]=ta.value; changed();}); box.append(ta); form.append(box);
+  });
+  const bar=el("div",{class:"bar"}); const save=el("button",{class:"primary",type:"button",id:"savebtn",text:"Save answers"}); const st=el("span",{class:"status",id:"savestatus"});
+  save.addEventListener("click",()=>persist(true)); bar.append(save,st); form.append(bar);
+  main.append(form);
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected", String(t.dataset.cut===current)));
+  fillCopy(); showSaved();
+}
+
+function fillCopy(){
+  const lines=[];
+  for (const key of Object.keys(CUTS)){ const c=CUTS[key], a=answers[key]||{}; const qs=(c.noVerdict?[]:[{k:"verdict",t:"Verdict",o:VERDICT}]).concat(c.questions);
+    const got=qs.filter(q=>a[q.k]||a[q.k+"_note"]); if (!got.length) continue; lines.push("["+c.title+"]");
+    got.forEach(q=>{ const opt=q.o&&q.o.find(o=>o[0]===a[q.k]); lines.push(q.k+" ("+q.t+"): "+(opt?opt[1]:"-")+(a[q.k+"_note"]?" - "+a[q.k+"_note"]:"")); }); }
+  document.getElementById("copybox").value=lines.join("\n");
+}
+let timer=null;
+function changed(){ try{localStorage.setItem(LS,JSON.stringify(answers));}catch(_){} fillCopy(); clearTimeout(timer); timer=setTimeout(()=>persist(false),1200); }
+async function persist(manual){
+  const st=document.getElementById("savestatus");
+  if (!db){ if (st) st.textContent = manual ? "Saved in this browser only (sign in to save to the page)." : "Saved in this browser."; return; }
+  try { await db.doc(CUTS[current].doc).set(Object.assign({}, answers[current], {updated: new Date().toISOString()})); if (st) st.textContent="Saved to the page."; }
+  catch(e){ if (st) st.textContent="Could not save to the page ("+(e&&e.code||"error")+"); kept in this browser."; }
+}
+function showSaved(){ const st=document.getElementById("savestatus"); if (st && !st.textContent) st.textContent = db ? "" : "Answers keep in this browser until the page connects."; }
+
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab",current);}catch(_){} }));
+try { const t=localStorage.getItem(LS+"_tab"); if (t && CUTS[t]) current=t; } catch(_){}
+const EARLIER = new Set([...document.querySelectorAll("#earlier .tab")].map(t=>t.dataset.cut));
+if (EARLIER.has(current)) document.getElementById("earlier").open = true;
+document.getElementById("copybtn").addEventListener("click",async()=>{ const box=document.getElementById("copybox"), s=document.getElementById("copystatus");
+  try{ await navigator.clipboard.writeText(box.value); s.textContent="Copied."; } catch(_){ box.select(); s.textContent="Selected: press Ctrl+C."; } });
+render();
+
+(async()=>{ try{ if (!window.claude || !window.claude.use) return; db = await window.claude.use("db"); if (!db) return;
+  for (const key of Object.keys(CUTS)){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
+  render(); } catch(_){} })();
+</script>

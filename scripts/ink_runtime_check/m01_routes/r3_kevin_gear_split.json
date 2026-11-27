@@ -1,0 +1,12 @@
+{
+ "steps": [
+  {"note": "R3: Kevin's stress branch, the keycard alone, then the lockpicks asked for separately: kevin_gear_all stays false."},
+  {"talk": "kevin", "picks": ["You seem stressed", "What was she investigating", "Just the keycard for now"]},
+  {"said": ["Ever since Patricia got fired, things have felt... off", "She kept her notes in her briefcase", "Sure. Let me know if you need anything else", "[choice] About those lockpicks"],
+   "notSaid": ["[choice] I need the server room keycard", "Here you go. The lockpicks work"]},
+  {"expect": {"kevin_gear_all": false}},
+  {"talk": "kevin", "picks": ["About those lockpicks", "I'll keep investigating"]},
+  {"said": ["Here's the lockpick set. It's professional grade"], "notSaid": ["Here's my server room keycard"]},
+  {"expect": {"kevin_gear_all": false}}
+ ]
+}

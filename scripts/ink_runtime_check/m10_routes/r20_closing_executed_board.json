@@ -1,0 +1,56 @@
+{
+ "steps": [
+  {
+   "note": "06:00 after the executed ending: no walkabout, the screen's story, Netherton will not sign, the credits say the hands were empty."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "database_outcome": "secured",
+    "console_choice": "stopped",
+    "ending": "executed"
+   }
+  },
+  {
+   "talk": "six",
+   "picks": [
+    "Look at the screen",
+    "Say nothing",
+    "Say nothing"
+   ]
+  },
+  {
+   "said": [
+    "I will not put my name under this one. You will be held until the board sits.",
+    "SAFETYNET agent shoots unarmed man in Montana bunker",
+    "His hands were empty, and in plain sight.",
+    "Take 0x00 to the second van.",
+    "I'll be at the board. I don't know what I'll say."
+   ],
+   "notSaid": [
+    "Floodlights, engines running",
+    "Go to Quintero"
+   ]
+  },
+  {
+   "expect": {
+    "six_done": true,
+    "closing_done": true,
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "AGENT 0x00: Fired when his hands were empty.",
+    "DIRECTOR MAGNUS NETHERTON: Director. Convened the board himself.",
+    "Social Fabric's story ran at six."
+   ],
+   "notSaid": [
+    "Ran the raid from the forward post"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+"globals": { "identity_scene_started": true, "identity_name_said": true },
+"steps": [
+{ "note": "R38: the call dropped after Netherton said the name but before HaX's wall line. The re-ring says Still here and plays the confession again (so the buttons never quote a confession the player has not heard), without the opening or the name." },
+{ "talk": "phone", "knot": "identity_resume", "picks": ["You should have told me", "Understood"] },
+{ "said": ["Still here. Netherton too", "There was a file on a crypto fund", "I didn't say it", "Yes. I should have"],
+  "notSaid": ["Tomb Beta's owner", "I said we would not name him", "Same hand"] },
+{ "expect": { "hax_confession_answer": "should_have_told", "identity_scene_done": true } }
+]
+}

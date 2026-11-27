@@ -1,0 +1,13 @@
+{
+  "key": "5e5dfaf46ce84b63d285511c0e0fe202",
+  "npc": "kit_fatima_begum",
+  "text": "Those parking-permit texts keep doing the rounds. Everyone scans a code without a second thought these days.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:48Z"
+}

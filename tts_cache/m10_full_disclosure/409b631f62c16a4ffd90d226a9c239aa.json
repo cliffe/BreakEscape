@@ -1,0 +1,13 @@
+{
+  "key": "409b631f62c16a4ffd90d226a9c239aa",
+  "npc": "minder_blast",
+  "text": "We're done. Van's warm.",
+  "voice": "Sulafat",
+  "style": "SAFETYNET van-team minder. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, low, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:44Z"
+}

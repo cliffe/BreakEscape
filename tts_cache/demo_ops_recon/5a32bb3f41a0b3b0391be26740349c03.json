@@ -1,0 +1,13 @@
+{
+  "key": "5a32bb3f41a0b3b0391be26740349c03",
+  "npc": "chidi_okeke",
+  "text": "Any plans for lunch?",
+  "voice": "Zubenelgenubi",
+  "style": "Merrin & Sallow's office manager, in his 40s, easy-going and knows everyone in the office. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_recon",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:47:16Z"
+}

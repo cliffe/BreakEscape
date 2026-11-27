@@ -1,0 +1,13 @@
+{
+  "key": "a70f3e6b372192916f78332cb376d3ec",
+  "npc": "narrator",
+  "text": "She walks back to the table. The cloner's read stalls halfway, then drops. Out of range.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:19:50Z"
+}

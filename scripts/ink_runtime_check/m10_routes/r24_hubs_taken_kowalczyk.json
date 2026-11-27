@@ -1,0 +1,100 @@
+{
+ "imports": {
+  "m09_recruiter_offer": "taken"
+ },
+ "steps": [
+  {
+   "note": "Hubs after Kowalczyk was taken in m09: her post copy opens in the van with the aside question; Quintero at the open outer lock explains twice the people. Arakawa's gate call plays once at the split."
+  },
+  {
+   "talk": "kowalczyk",
+   "picks": [
+    "In Helena",
+    "I'll see you at six"
+   ]
+  },
+  {
+   "said": [
+    "When did you know?",
+    "She turns back to the window.",
+    "I'll be in this van. Where else."
+   ],
+   "notSaid": [
+    "Kit check. If it opens a door"
+   ]
+  },
+  {
+   "expect": {
+    "kowalczyk_answer": "bench"
+   }
+  },
+  {
+   "talk": "kowalczyk",
+   "picks": []
+  },
+  {
+   "said": [
+    "Go on. He's expecting you."
+   ]
+  },
+  {
+   "set": {
+    "split_started": true
+   }
+  },
+  {
+   "talk": "arakawa",
+   "picks": []
+  },
+  {
+   "said": [
+    "Arakawa steps up beside you at the gate and dials.",
+    "She wants a telescope. I'm getting her a telescope.",
+    "Arakawa, you're off the net."
+   ],
+   "notSaid": [
+    "Case is packed."
+   ]
+  },
+  {
+   "expect": {
+    "arakawa_call_done": true
+   }
+  },
+  {
+   "set": {
+    "outer_lock_open": true
+   }
+  },
+  {
+   "talk": "quintero",
+   "picks": [
+    "Why twice the people",
+    "Hold the door"
+   ]
+  },
+  {
+   "said": [
+    "He wants you on your own. I'll be on this side of the door.",
+    "I asked the Council for a second team. They said no.",
+    "Two of ours died at the sites nobody covered. Fraser and Ferreira.",
+    "Holding it."
+   ],
+   "notSaid": [
+    "Fence plan."
+   ]
+  },
+  {
+   "talk": "quintero",
+   "picks": []
+  },
+  {
+   "said": [
+    "Go on. I've got this side."
+   ],
+   "notSaid": [
+    "Fraser and Ferreira"
+   ]
+  }
+ ]
+}

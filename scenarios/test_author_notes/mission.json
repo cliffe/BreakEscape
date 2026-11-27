@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Author notes are not live",
+  "description": "Test of step 2b: a \"_\"-prefixed author note never ships to the browser. A unique \"SENTINEL-\" note sits in every note-capable block a player route can ship (rooms, objects, contents, NPCs, intel facts, feed posts, objectives, tasks, the command board, items held, start items, phone, networks, social/mail, policies, resources), while a room whose id starts with \"_\" (_annex), a \"_\" global name and free data (object-valued globals) ship as authored. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "scenario_format",
+  "test_objective": "Prove the client payload strips every author note (including the feed intel-fact and GET /objectives routes, which deep_dup a sub-object) while free data and \"_\" ids ship, through the real player routes"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "c664e39e29f3bf6a8791ae4e578dcace",
+  "npc": "helen_carver",
+  "text": "Mr Ahmed? I'll have to tell the Board.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-10-11",
+  "recorded_at": "2026-10-11T00:25:49Z"
+}

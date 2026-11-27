@@ -1,0 +1,13 @@
+{
+  "key": "d6eeb89220c164aba87d1a7f1a656107",
+  "npc": "graham_whitfield",
+  "text": "Nobody reads the expenses policy.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:31:13Z"
+}

@@ -1,0 +1,15 @@
+{
+"steps": [
+{ "note": "R37: the identity scene is cut off at the answer buttons (the call closed before a pick). The forced re-ring (identity_resume) says Still here and goes straight back to the buttons, with no opening and no confession again. Answering then finishes the scene, and a third ring after it does nothing." },
+{ "talk": "phone", "knot": "identity_scene" },
+{ "said": ["Tomb Beta's owner. It's one of ours", "I said we would not name him until we could prove it", "I didn't say it", "[choice] You should have told me", "[choice] I'd have done the same in your place"],
+  "notSaid": ["[choice] Afterwards. Not during"] },
+{ "expect": { "identity_name_said": true, "identity_scene_done": false } },
+{ "talk": "phone", "knot": "identity_resume", "reload": true, "picks": ["I'd have done the same", "Understood"] },
+{ "said": ["Still here. Netherton too", "[choice] You should have told me", "Don't be kind about it", "Seven years, and nobody turned it off"],
+  "notSaid": ["Tomb Beta's owner", "I said we would not name him", "I didn't say it", "Yes. I should have"] },
+{ "expect": { "hax_confession_answer": "same_in_your_place", "identity_scene_done": true } },
+{ "talk": "phone", "knot": "identity_resume", "reload": true },
+{ "notSaid": ["Still here. Netherton too", "[choice] You should have told me"] }
+]
+}

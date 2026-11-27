@@ -1,0 +1,13 @@
+{
+  "key": "f6bea26e2195e50d3f7fddbde01d9e9f",
+  "npc": "thandiwe_moyo",
+  "text": "Thanks. These parcels won't chase themselves.",
+  "voice": "Pulcherrima",
+  "style": "Quantum Dynamics' office manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T18:07:06Z"
+}

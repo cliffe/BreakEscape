@@ -1,0 +1,13 @@
+{
+  "key": "90c5e9070efcebead43f7122a166f555",
+  "npc": "security_guard_patrol",
+  "text": "Whitlock, IT. You give a contractor pass out tonight?",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:55:19Z"
+}

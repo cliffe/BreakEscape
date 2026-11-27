@@ -1,0 +1,62 @@
+{
+ "imports": {
+  "m03_victoria_fate": "recruited"
+ },
+ "steps": [
+  {
+   "note": "Victoria recruited, but the player opened the outer lock without her: one line about the offer walked past, then 'refused', and the credits say she was never handed anything."
+  },
+  {
+   "set": {
+    "outer_lock_open": true
+   }
+  },
+  {
+   "talk": "victoria",
+   "picks": []
+  },
+  {
+   "said": [
+    "There you are. I could have opened that lock for you, or for them. Nobody asked me."
+   ],
+   "notSaid": [
+    "I can open that lock for you."
+   ]
+  },
+  {
+   "expect": {
+    "victoria_gallery": "refused"
+   }
+  },
+  {
+   "talk": "victoria",
+   "picks": []
+  },
+  {
+   "said": [
+    "You found your own way in. I'll remember that."
+   ],
+   "notSaid": [
+    "Go on. It's open"
+   ]
+  },
+  {
+   "set": {
+    "ending": "arrest",
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "VICTORIA STERLING: Never handed anything. Still ours, for now."
+   ],
+   "notSaid": [
+    "Sold the raid.",
+    "Held, and opened the lock."
+   ]
+  }
+ ]
+}

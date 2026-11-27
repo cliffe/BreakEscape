@@ -1,0 +1,13 @@
+{
+  "key": "54a5f94f3f9d134afb89ded53d7f7402",
+  "npc": "agent_nightshade",
+  "text": "I'll write it up properly. Short version: the people you're chasing have a supply chain.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent, quietly pleased by an interesting device; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

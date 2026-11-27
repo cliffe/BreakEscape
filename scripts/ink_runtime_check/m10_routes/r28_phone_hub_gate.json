@@ -1,0 +1,62 @@
+{
+ "imports": {
+  "m06_assets_seized": true
+ },
+ "steps": [
+  {
+   "note": "HaX on the phone, support hub at the gate: the briefing questions (why me, the hour, the head start), the flag-1 steer, then after flag 1 the power room and the fence. Each topic drops from the hub once asked."
+  },
+  {
+   "set": {
+    "briefing_played": true,
+    "door_scene_done": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Why does he want me",
+    "Why would he think that",
+    "The hour",
+    "The head start",
+    "Their monitoring"
+   ]
+  },
+  {
+   "said": [
+    "He wants it to be one of ours. Ask him why. He'll enjoy telling you.",
+    "Because he's read everything you've ever signed. Most of it twice.",
+    "Six o'clock UTC, city by city. Hospitals first, in his own order.",
+    "The cells get the database at four. Two hours early, as pay for the theft."
+   ],
+   "notSaid": [
+    "Two posts empty. That's your freeze.",
+    "Your lights and the gallery's blast shutter both run off that room."
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "The power room",
+    "The fence",
+    "That's all"
+   ]
+  },
+  {
+   "said": [
+    "Your lights and the gallery's blast shutter both run off that room.",
+    "The shutter has to be dead before you reach him.",
+    "Two posts empty. That's your freeze. He couldn't make payroll.",
+    "Line stays open."
+   ],
+   "notSaid": [
+    "Six o'clock UTC, city by city."
+   ]
+  }
+ ]
+}

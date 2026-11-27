@@ -1,0 +1,13 @@
+{
+  "key": "868b36d9ec13d875ec33342abd721603",
+  "npc": "kit_fatima_begum",
+  "text": "Need some water.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:02:43Z"
+}

@@ -1,0 +1,49 @@
+{
+ "imports": {
+  "m08_nightshade_triple_agent": true,
+  "m09_recruiter_offer": "named",
+  "m09_sleeper_shortlist": true,
+  "m08_named_on_evidence": true
+ },
+ "steps": [
+  {
+   "note": "Aside with Nightshade a triple agent who was never shown the file, the Recruiter's tape naming people by codename, a shortlist from Helena and the last sleeper caught on paper: HaX says he asked for you, and adds the shortlist and 'on paper' lines."
+  },
+  {
+   "set": {
+    "briefing_done": true
+   }
+  },
+  {
+   "set": {
+    "whodunit_live": true
+   }
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "Do we know who"
+   ]
+  },
+  {
+   "said": [
+    "No. And if I bench four agents to find out, WREN knows we know.",
+    "The Recruiter's tape gives our people by codename.",
+    "The arrests start at six, and no sooner.",
+    "Two faces from Helena. Watch both.",
+    "You caught the last one on paper. Do it again.",
+    "Nightshade's at the table. He asked for you."
+   ],
+   "notSaid": [
+    "brought his payment",
+    "in cuffs",
+    "Nightshade's in the van."
+   ]
+  },
+  {
+   "expect": {
+    "aside_done": true
+   }
+  }
+ ]
+}

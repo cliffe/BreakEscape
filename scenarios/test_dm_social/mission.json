@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: direct messages (social theme)",
+  "description": "Fixture for direct messages on phone-chat with the social theme (README_scenario_design.md \"Direct messages (social theme)\"). A Friendface messaging app in inventory and on a desk laptop, with an app title, accent, no status bar, and two contacts: Priya the neighbour (an ordinary ink chat with a timed follow-up) and Dom the club secretary (a judged guest-list chat via the pretext mechanic). Both contacts show a handle and a View profile link into an OSINT social profile. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

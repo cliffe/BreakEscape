@@ -1,0 +1,21 @@
+{
+  "key": "9fff5f45f5131f0c30a0421ca44f8dd1",
+  "npc": "ghost_phone",
+  "text": "Unsigned. Then somebody was ashamed, which is a start.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:05:52Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/9fff5f45f5131f0c30a0421ca44f8dd1.mp3",
+    "clean_md5": "e33c4510262de18ef00ddca3740328ff",
+    "baked_md5": "5bc83209fa44b1898ca0d10c426768c9",
+    "baked": "2026-11-24"
+  }
+}

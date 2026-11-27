@@ -1,0 +1,35 @@
+{
+  "scenario_brief": "Fixture: lint edge cases (P0-R R-09, R-11).",
+  "startRoom": "office",
+  "globalVariables": {
+    "lena_influence": -20, "lena_latched": "", "lena_wary": false,
+    "lena_lockout_until": 0, "lena_lockout_channel": "", "lena_cleared": false
+  },
+  "objectives": [
+    { "aimId": "a1", "title": "One", "status": "active", "order": 0, "tasks": [] },
+    { "aimId": "a2", "title": "Two", "status": "locked", "order": 1, "unlockCondition": { "_comment": "opens after a1", "aimCompleted": "a1" }, "tasks": [] },
+    { "aimId": "a3", "title": "Three", "status": "locked", "order": 2, "unlockCondition": { "equals": true }, "tasks": [] }
+  ],
+  "rooms": {
+    "office": { "type": "room_office", "connections": {}, "objects": [ { "type": "notes", "id": "desk_note", "name": "Note" } ],
+      "npcs": [ { "id": "lena_phone", "displayName": "Lena", "npcType": "phone", "phoneId": "player_phone",
+                  "storyPath": "test/js/fixtures/social_framework/scenarios/sf_edges/ink/lena_phone.json" } ] }
+  },
+  "social": {
+    "characters": {
+      "lena": {
+        "displayName": "Lena Ortiz",
+        "channels": { "phone": "lena_phone" },
+        "influence": { "global": "lena_influence", "min": -100, "max": 100 },
+        "syncedVars": ["lena_influence"],
+        "thresholds": [
+          { "id": "wary", "at": -40, "icon": "wary", "effects": [ { "type": "setGlobal", "global": "lena_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "lockout", "at": -60, "icon": "hostile", "effects": [ { "type": "lockout", "scope": "character", "until": { "global": "lena_cleared" } } ] },
+          { "id": "burned", "at": -80, "icon": "hostile", "effects": [ { "type": "lockout", "scope": "channel", "until": { "global": "lena_undeclared" } } ] },
+          { "id": "fond", "at": 20, "when": "above", "icon": "trusts", "effects": [] },
+          { "id": "trusts", "at": 10, "when": "above", "icon": "trusts", "effects": [] }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Realism catalog file",
+  "description": "One file of config/break_escape/realism_catalog/. Read by scripts/validate_realism_catalog.rb and, for the shape only, by lib/break_escape/realism_catalog.rb. Entries carry display text for the network view's command-line look: no kind (a scenario decides weakness or decoy), no address, option or banner.",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": { "^_": {} },
+  "properties": {
+    "entries": {
+      "type": "object",
+      "description": "A map from catalog id to entry. Ids are append-only once they are in docs/REALISM_CATALOG_INDEX.md.",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]{2,47}$": { "$ref": "#/definitions/entry" }
+      }
+    }
+  },
+  "required": ["entries"],
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 80, "description": "The finding's title line." },
+        "module": { "type": "string", "maxLength": 80, "pattern": "^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$", "description": "The framework console's module path. Unique across the catalog; the first segment is checked by the validator." },
+        "script": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,39}$", "description": "The scanner's script name." },
+        "advisories": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": { "type": "string", "pattern": "^(CVE-\\d{4}-\\d{4,7}|MS\\d\\d-\\d{3}|GHSA(-[2-9cfghjmpqrvwx]{4}){3}|ZDI-\\d\\d-\\d{3,5})$" }
+        },
+        "output": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "description": "What a scanner reports: the state, a one-line description and a disclosure date. Never a step, a request form or a trigger.",
+          "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+        }
+      },
+      "required": ["title", "module", "script"]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "key": "19eda87130dc7018c6b5bf806a1c0409",
+  "npc": "graham_whitfield",
+  "text": "Any time.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_annual_2027_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:10Z"
+}

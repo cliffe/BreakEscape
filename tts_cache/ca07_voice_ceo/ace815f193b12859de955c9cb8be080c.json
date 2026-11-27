@@ -1,0 +1,14 @@
+{
+  "key": "ace815f193b12859de955c9cb8be080c",
+  "npc": "kit_gwen_pritchard",
+  "text": "A changed bank detail sails through if nobody checks. One call on the number you already hold stops it dead.",
+  "delivery": "practical, matter-of-fact",
+  "voice": "Sulafat",
+  "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:43:29Z"
+}

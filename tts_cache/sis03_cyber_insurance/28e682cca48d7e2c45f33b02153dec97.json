@@ -1,0 +1,13 @@
+{
+  "key": "28e682cca48d7e2c45f33b02153dec97",
+  "npc": "eleanor_vance",
+  "text": "When you can answer all three, and connect them to a cyber event as defined in our policy, the coverage question shifts from \"Did this happen?\" to \"What were the conditions Albion was supposed to maintain?\"",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:19:47Z"
+}

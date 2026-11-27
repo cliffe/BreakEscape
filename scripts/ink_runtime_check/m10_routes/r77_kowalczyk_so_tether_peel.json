@@ -1,0 +1,50 @@
+{
+ "steps": [
+  {
+   "note": "Kowalczyk's security-office copy on the tether: the photo line runs straight into the peel-off, 'See you at the lock' sets kowalczyk_gone_ahead, and a re-talk only says 'Service side'. No menu line plays."
+  },
+  {
+   "set": {
+    "security_office_entered": true,
+    "nightshade_tethered": true
+   }
+  },
+  {
+   "talk": "kso",
+   "picks": [
+    "See you at the lock"
+   ]
+  },
+  {
+   "said": [
+    "Nice photo. They've got your good side.",
+    "I'll take the service side and meet you at the lock.",
+    "Don't be late."
+   ],
+   "notSaid": [
+    "What do you need? Quick."
+   ]
+  },
+  {
+   "expect": {
+    "kowalczyk_gone_ahead": true
+   }
+  },
+  {
+   "talk": "kso",
+   "picks": [
+    "Go."
+   ]
+  },
+  {
+   "said": [
+    "Service side. Go on.",
+    "Going."
+   ],
+   "notSaid": [
+    "Nice photo.",
+    "I'll take the service side and meet you at the lock."
+   ]
+  }
+ ]
+}

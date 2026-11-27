@@ -1,0 +1,3 @@
+seed 17: indep=ALL PASS cyberchef=ALL PASS
+seed 404: indep=ALL PASS cyberchef=ALL PASS
+seed 8080: indep=ALL PASS cyberchef=ALL PASS

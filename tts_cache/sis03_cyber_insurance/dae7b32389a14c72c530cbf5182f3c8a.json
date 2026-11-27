@@ -1,0 +1,13 @@
+{
+  "key": "dae7b32389a14c72c530cbf5182f3c8a",
+  "npc": "eleanor_vance",
+  "text": "The Forensic Data Platform terminal — the laptop on the left — has the attack timeline, access logs, and evidence from the on-site investigation.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:19:27Z"
+}

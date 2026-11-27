@@ -1,0 +1,14 @@
+{
+  "key": "193bab3bb5a5af1ff5891d42e2d8cb3f",
+  "npc": "graham_whitfield",
+  "text": "Graham, finance. If it's about expenses, I'm not in.",
+  "delivery": "dry, deadpan",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:39Z"
+}

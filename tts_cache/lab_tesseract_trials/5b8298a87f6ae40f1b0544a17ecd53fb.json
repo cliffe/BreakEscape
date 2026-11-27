@@ -1,0 +1,13 @@
+{
+  "key": "5b8298a87f6ae40f1b0544a17ecd53fb",
+  "npc": "jordan_pike",
+  "text": "Two of us work for them now. Placements, then jobs. They ask some odd questions, though. I don't ask back.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "9d81c5ddb874953617f710e1aac8757a",
+  "npc": "lerato_dlamini",
+  "text": "Evening. I'm on the phones and the rota tonight.",
+  "voice": "Gacrux",
+  "style": "Night floor coordinator at a cryptocurrency exchange, in her 30s, confident and direct. Speak with a consistent South African accent from Durban throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:07:33Z"
+}

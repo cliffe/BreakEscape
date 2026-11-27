@@ -1,0 +1,10 @@
+# m02 trailer v3 handover (2026-11-20)
+
+Done and committed: edit `tools/video/edits/m02_trailer60.json` (id m02_trailer60_v3, lint 0 errors), `audio.post` support in `tools/video/remotion/scripts/mix-audio.mjs` and `make-srt.mjs`, v3 entry in `m02_VIDEO_LOG.md` (all six notes, numbers, Ghost FX finding). The agent hit its context limit before rendering.
+
+To do:
+1. Check nothing else is rendering (`pgrep -af 'render.sh|remotion'`; the chrome processes seen were unrelated).
+2. Render (worktree root): `FOOTAGE_ROOT=$HOME/video-takes-local BE_CLIPS_DIR=$HOME/video-takes-local/m02/clips BE_TAKES_DIR=$HOME/video-takes-local/m02/takes BE_RENDER_DIR=$HOME/video-takes-local/m02/renders BE_VIDEO_SCRATCH=$HOME/video-takes-local/m02/render-scratch-v3-16x9 nice -n 19 tools/video/remotion/render.sh tools/video/edits/m02_trailer60.json 16:9` (about 4 min). Output `renders/m02_trailer60_v3_16x9.{mp4,srt}`.
+3. Check: duration 60.000; `ffmpeg -i f -af ebur128=peak=true -f null -` gives -14 LUFS +-0.1, true peak under -1; .srt has HaX (about 5.1-8.9 s), Bernie (about 11.2-17.1 s), Val and Ghost (2) cues; frame strips (ffmpeg select+tile at 10 fps) over every changed shot: HaX 6.0-8.9, Bernie 11.9-15.2 (portrait to 15.1), ward 15.2-16.9 (no wall bump), ghost 24.6-30, Val walk then Val 30.0-35.2 (order), ward crowd 35.2-38.3, lights 38.3-39.7, kitchen 39.7-41.5, ghost 47.2-52.0 (line ends before cut, map not shown). Voice level per dialogue shot with volumedetect against the HaX hook (targets: Bernie -3.5, Val -2, Ghost 0 dB, all measured from takes at about -15.5 LUFS HaX/Ghost, -11.6 Bernie, -13.0 Val; adjust gain_db if the mix differs by more than 1.5 dB). Listen for a click where the pre/post audio starts and stops (8 ms fades).
+4. Fill render numbers into the v3 log entry (remove "Not rendered yet"), commit by explicit path.
+Gotchas: lint warns that dialogue should sit at full level for Bernie and Val (intended). Sub-selection of the Val cut (6.85) and Bernie (14.2) in-points assume the portrait and subtitle are already up; confirm on frames.

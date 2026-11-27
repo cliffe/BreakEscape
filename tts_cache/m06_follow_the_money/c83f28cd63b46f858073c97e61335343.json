@@ -1,0 +1,13 @@
+{
+  "key": "c83f28cd63b46f858073c97e61335343",
+  "npc": "narrator",
+  "text": "A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:50:41Z"
+}

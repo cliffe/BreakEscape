@@ -1,0 +1,1226 @@
+<%
+# demo_ops_second_step (wave 1, unit S-S): SHOWCASE_PLAN.md sections 4, 7.1 to 7.4, 7.7 to 7.9 and
+# contract 8.3.1. S8b appended (7.5, helpdesk); S8c appended (7.6, second step on locks).
+# Each password is one literal, written once here and interpolated where the clue shows it
+# (an NPC's creds are server-only). None appears in any ink or chatter line.
+lorna_pw  = "Easton-Fenlow-26"
+darren_pw = "Pricewell-Dar-58"
+anjali_pw = "Raobank-Anj-73"
+yusuf_pw  = "Demirgate-Yus-39"
+niamh_pw  = "Dohertree-Nia-14"
+# S8b: the one password the helpdesk issues (Darren's), and each account's two recovery answers.
+# Each is one literal here, interpolated only into creds.recovery and the clue texts (Darren's badge, the kitchen board).
+darren_reset = "Pricesafe-Rst-81"
+# S8c: the three PINs. Each is one literal here, interpolated into the lock's own requires and its one clue
+# (the facilities notice in the kitchen for the two doors, Gwen's drawer note for the safe). None is in any ink or chatter line.
+records_pin = "5821"
+archive_pin = "3074"
+safe_pin    = "6419"
+rec = {
+  lorna:  { staff_no: "40118", manager: "Eleanor Marsh" },
+  darren: { staff_no: "40371", manager: "Marcus Hale" },
+  anjali: { staff_no: "40226", manager: "Eleanor Marsh" },
+  yusuf:  { staff_no: "40459", manager: "Marcus Hale" }
+}
+%>
+{
+  "scenario_brief": "DEMO: Ops second steps\n\nMerrin & Sallow turned on a second sign-in step last month. Ama Owusu of Fenlow Managed IT wants to show the staff what it does and what it does not stop. Over one working day you will see passwords escape through ordinary habits, then see the second step hold, give way and be skipped.",
+  "endGoal": "Demo only: see what a second step stops and what it does not.",
+  "startRoom": "reception",
+  "startPosition": { "x": 4.5, "y": 8 },
+  "npcNeedsSeed": "demo_ops_second_step",
+  "npcWindupMs": 700,
+  "showPressingNeeds": true,
+  "officePresets": true,
+  "roomTone": true,
+  "ttsPregenerateChatter": true,
+  "disableAttacks": true,
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "chatter": {
+    "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Busy morning?"],
+    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Quiet one today, isn't it?"],
+    "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
+    "grumble_gone": ["Missed it."],
+    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."]
+  },
+
+  "actionIcons": {
+    "upkeep": "icon:npc-upkeep"
+  },
+
+  "policies": {
+    "front": { "mfa": "push" },
+    "floor": { "mfa": "push" },
+    "finance": { "mfa": "code" },
+    "ops": { "mfa": "push_number_match" },
+    "kiosk": { "mfa": "push" }
+  },
+
+  "credentials": {
+    "lorna_login": {
+      "kind": "password",
+      "account": "lorna_easton",
+      "label": "Lorna's sign-in",
+      "proof": { "held": "lorna_login_card" },
+      "foundIn": "lorna_login_card"
+    }
+  },
+
+  "resources": {
+    "print_service": {
+      "name": "Print service",
+      "kind": "printer",
+      "object": "office_printer",
+      "offWhen": "printer_off"
+    },
+    "index_service": {
+      "name": "Index service",
+      "kind": "records",
+      "object": "fatima_desk",
+      "offWhen": "records_index_off"
+    }
+  },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "logSources": {
+    "mfa_log": {
+      "title": "Sign-in and approvals",
+      "events": ["signin_ok", "signin_fail", "mfa_challenge", "mfa_code_ok", "mfa_code_wrong", "mfa_code_locked", "mfa_expired", "mfa_prompt_sent", "mfa_prompt_approved", "mfa_prompt_denied", "helpdesk_request", "account_password_reset", "account_mfa_reenrolled"],
+      "seedRows": [
+        { "id": "s1", "at": "Mon 08:41", "event": "mfa_challenge", "as": "anjali_rao", "where": { "kind": "pc", "id": "anjali_pc" }, "result": "ok" },
+        { "id": "s2", "at": "Mon 08:42", "event": "mfa_code_ok", "as": "anjali_rao", "where": { "kind": "pc", "id": "anjali_pc" }, "result": "ok" },
+        { "id": "s3", "at": "Mon 09:05", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s4", "at": "Mon 09:05", "event": "mfa_prompt_approved", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok", "detail": { "approver": "owner" } },
+        { "id": "s5", "at": "Tue 01:40", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s6", "at": "Tue 01:41", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s7", "at": "Tue 01:42", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s8", "at": "Tue 01:43", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s9", "at": "Tue 01:44", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s10", "at": "Tue 01:45", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s11", "at": "Tue 01:46", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s12", "at": "Tue 01:47", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s13", "at": "Tue 01:48", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s14", "at": "Tue 01:49", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s15", "at": "Tue 01:50", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" },
+        { "id": "s16", "at": "Tue 01:51", "event": "mfa_prompt_sent", "as": "darren_price", "where": { "kind": "pc", "id": "darren_pc" }, "result": "ok" }
+      ]
+    }
+  },
+
+  "helpdesks": {
+    "it_desk": {
+      "npc": "thandiwe_moyo",
+      "verify": "questions",
+      "questions": ["staff_no", "manager"],
+      "minCorrect": 2,
+      "maxTries": 3,
+      "resets": ["password", "mfa"],
+      "questionLabels": { "staff_no": "Staff number", "manager": "Line manager" }
+    },
+    "call_desk": {
+      "npc": "priya_nair",
+      "verify": "callback",
+      "resets": ["mfa"]
+    }
+  },
+
+  "social": {
+    "characters": {
+      "it_line": {
+        "displayName": "IT service line",
+        "channels": { "person": "it_line", "phone": "it_line" },
+        "influence": { "global": "it_line_influence", "min": -100, "max": 100, "start": 0 },
+        "syncedVars": ["it_line_influence"],
+        "thresholds": [
+          { "id": "reports", "at": -70, "icon": "reports", "effects": [ { "type": "setGlobal", "global": "it_line_reported", "value": true } ] }
+        ]
+      }
+    },
+    "pretextNpcs": [
+      {
+        "character": "it_line",
+        "callId": "it_line_call",
+        "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+        "asks": {
+          "reset_request": { "pressure": 0, "floor": -30, "verification": [], "helpdesk": "call_desk" }
+        },
+        "outcomes": { "got_it": {}, "reported": {}, "walked_away": {} },
+        "tells": {
+          "ask": { "accepted": "The desk put the form through.", "pending": "The desk wants one more check.", "refused": "The desk will not do that on this line." },
+          "bands": { "calm": "The desk is relaxed.", "wary": "The desk has slowed down.", "refusing": "The desk has stopped helping." }
+        }
+      }
+    ],
+    "osint": {
+      "sites": [
+        {
+          "id": "friendface",
+          "type": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "profiles": [
+            { "person": "yusuf_demir", "name": "Yusuf Demir", "bio": "Operations.", "posts": [ { "id": "yusuf_authored", "text": "Another week, another rota." } ] },
+            { "person": "anjali_rao", "name": "Anjali Rao", "bio": "Finance.", "posts": [ { "id": "anjali_authored", "text": "Month end again. Send tea." } ] }
+          ]
+        }
+      ]
+    }
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "cake1",
+      "id": "cake",
+      "name": "Cake",
+      "takeable": true,
+      "droppable": true,
+      "observations": "A cake for the office. Choose Drop here in your inventory and staff will leave their desks for a slice. Save it until Darren has gone to lunch.",
+      "affordance": {
+        "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 45, "servings": 2, "perPerson": 1 }
+      }
+    },
+    {
+      "type": "phone",
+      "id": "work_phone",
+      "name": "Your work phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["it_line"],
+      "observations": "Your own work phone. One contact saved: the IT service line."
+    }
+  ],
+
+  "globalVariables": {
+    "se_osint_state": {},
+    "coffee_call": 0,
+    "kitchen_seen": false,
+    "printer_off": false,
+    "office_coffee_off": false,
+    "act_midday": false,
+    "act_evening": false,
+    "lorna_card_given": false,
+    "anjali_fob_left": false,
+    "yusuf_phone_left": false,
+    "cake_servings": 2,
+    "see_note_done": false,
+    "see_temper_note_done": false,
+    "overhear_done": false,
+    "step_holds_done": false,
+    "open_screen_done": false,
+    "fob_done": false,
+    "number_match_done": false,
+    "pestered_done": false,
+    "exempt_done": false,
+    "read_log_done": false,
+    "darren_badge_left": false,
+    "helpdesk_it_desk_result": "",
+    "reset_password_done": false,
+    "reenrol_done": false,
+    "desk_refuses_done": false,
+    "archive_door_propped": false,
+    "records_index_off": false,
+    "gwen_phone_left": false,
+    "door_step_done": false,
+    "propped_done": false,
+    "safe_step_done": false,
+    "case_step_done": false,
+    "darren_pc_screen_locked": false,
+    "desk_call_done": false,
+    "helpdesk_call_desk_result": "",
+    "it_line_influence": 0,
+    "pretext_it_line_call_state": {},
+    "pretext_it_line_call_outcome": "",
+    "pretext_it_line_call_lowest": 0,
+    "pretext_it_line_call_reports": 0,
+    "it_line_latched": "",
+    "it_line_reported": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "morning",
+      "title": "Morning: passwords escape",
+      "description": "Passwords get out through ordinary habits, and a second step has to cope. Each task ticks when you have seen it happen.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_note", "title": "Find a password written on a note at a desk", "type": "custom", "status": "active" },
+        { "taskId": "open_screen", "title": "Use a screen its owner left open", "type": "custom", "status": "active" },
+        { "taskId": "see_temper_note", "title": "See a password written down in a temper", "type": "custom", "status": "active" },
+        { "taskId": "overhear", "title": "Overhear a login said aloud", "type": "custom", "status": "active" },
+        { "taskId": "step_holds", "title": "Watch the second step hold when nobody answers", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "midday",
+      "title": "Midday: the second step",
+      "description": "The second step holds against some things and gives way to others. Each task ticks when you have seen it happen.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "fob", "title": "Sign in with a code fob left on a desk", "type": "custom", "status": "active" },
+        { "taskId": "number_match", "title": "Sign in with a phone left by the coffee", "type": "custom", "status": "active" },
+        { "taskId": "pestered", "title": "Wear someone down until they approve a sign-in", "type": "custom", "status": "active" },
+        { "taskId": "exempt", "title": "Sign in where no second step is asked", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "evening",
+      "title": "Evening: the trail",
+      "description": "Everything you did left rows in the approvals log. Finish the earlier tasks first: most of the staff go home at the end of the day.",
+      "status": "active",
+      "order": 4,
+      "tasks": [
+        { "taskId": "read_log", "title": "Read the approvals log and flag the odd burst", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "afternoon_helpdesk",
+      "title": "Afternoon: the helpdesk",
+      "description": "Thandiwe's desk can reset a password or move a second step to your own phone, for anyone who can answer two questions about the person. Each task ticks when you have seen it happen.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "reset_password", "title": "Get a password reset at the IT desk", "type": "custom", "status": "active" },
+        { "taskId": "reenrol", "title": "Move someone's sign-in approvals to your own phone", "type": "custom", "status": "active" },
+        { "taskId": "desk_refuses", "title": "Get refused by the desk until it stops listening", "type": "custom", "status": "active" },
+        { "taskId": "desk_call", "title": "Reset an account over the phone, holding its owner's phone", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "late_locks",
+      "title": "Late: doors, safes and cases",
+      "description": "A second step can sit on a locked door, a safe or a case, not only on a sign-in. Each task ticks when you have seen it happen.",
+      "status": "active",
+      "order": 3,
+      "tasks": [
+        { "taskId": "propped", "title": "Walk into the archive store through a door someone propped", "type": "custom", "status": "active" },
+        { "taskId": "door_step", "title": "Open the records room with its code and Gwen's approval", "type": "custom", "status": "active" },
+        { "taskId": "safe_step", "title": "Open the records safe with its code and Anjali's fob", "type": "custom", "status": "active" },
+        { "taskId": "case_step", "title": "Carry Darren's case away until he approves opening it", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "door_sign": "Reception",
+      "connections": { "north": "office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "lorna_pc",
+          "workstation": true,
+          "name": "Lorna's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 2.5, "y": 3.5 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "owner": "lorna_easton",
+          "access": { "people": ["lorna_easton"] },
+          "policy": "front",
+          "observations": "Lorna's PC at the front desk."
+        },
+        {
+          "type": "pc",
+          "id": "visitor_kiosk",
+          "name": "Visitor kiosk",
+          "sprite": "pc_desktop",
+          "position": { "x": 8, "y": 3.5 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "people": ["niamh_doherty"] },
+          "policy": "kiosk",
+          "observations": "The visitor sign-in kiosk. The temp's login is on a card beside it."
+        },
+        {
+          "type": "notes1",
+          "id": "kiosk_card",
+          "name": "Kiosk login card",
+          "position": { "x": 8.3, "y": 5.4 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Visitor kiosk. User: ndoherty. Password: <%= niamh_pw %>.",
+          "observations": "A card propped beside the kiosk."
+        },
+        {
+          "type": "chair",
+          "id": "kiosk_stool",
+          "name": "Stool by the kiosk",
+          "sprite": "aw_studio_chair_n1",
+          "position": { "x": 7.2, "y": 4.8 },
+          "takeable": false,
+          "observations": "A stool beside the visitor kiosk."
+        },
+        {
+          "type": "briefcase",
+          "id": "darren_case",
+          "name": "Darren's case",
+          "position": { "x": 5.3, "y": 3.5 },
+          "takeable": true,
+          "droppable": true,
+          "locked": true,
+          "lockType": "key",
+          "requires": "darren_case_key",
+          "keyPins": [45, 30, 55, 40],
+          "difficulty": "easy",
+          "secondStep": { "kind": "push", "owner": "darren_price" },
+          "observations": "Darren's briefcase, left at the front desk for the courier. It has a key lock.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "case_papers",
+              "name": "Case papers",
+              "takeable": true,
+              "readable": true,
+              "readDisplay": "gameDisplay",
+              "addToNotes": false,
+              "text": "Rota drafts and a lunch order for the fifth floor. Nothing important.",
+              "observations": "A folded sheaf of papers."
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ama_owusu",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": { "x": 5.5, "y": 6.5 },
+          "spriteSheet": "ama_owusu",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/ama_owusu.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Autonoe", "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "immovable": true },
+          "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "lorna_login_card",
+              "name": "Lorna's sign-in card",
+              "credential": "lorna_login",
+              "takeable": true,
+              "readable": true,
+              "text": "Lorna agreed to be the test. Her sign-in for today. User: leaston. Password: <%= lorna_pw %>.",
+              "observations": "A card Ama wrote out for the test."
+            }
+          ],
+          "eventMappings": [
+            { "eventPattern": "room_entered:reception", "onceOnly": true, "cooldown": 0, "bark": "Morning. Come and find me when you're ready." },
+            { "eventPattern": "room_entered:kitchen", "onceOnly": true, "cooldown": 0, "setGlobal": { "kitchen_seen": true }, "bark": "That's the kitchen. Come back to me and I can send them for coffee." },
+            { "eventPattern": "pc_signin_shown:anjali_pc", "condition": "data.hasPostit === true", "cooldown": 0, "completeTask": "see_note", "setGlobal": { "see_note_done": true } },
+            { "eventPattern": "npc_workaround:darren_price", "condition": "data.do === 'writes_down' && data.phase === 'done'", "cooldown": 0, "completeTask": "see_temper_note", "setGlobal": { "see_temper_note_done": true } },
+            { "eventPattern": "npc_workaround:yusuf_demir", "condition": "data.phase === 'started'", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's off to find Anjali. Stand right next to them to hear." },
+            { "eventPattern": "npc_overheard_login:*", "cooldown": 0, "completeTask": "overhear", "setGlobal": { "overhear_done": true } },
+            { "eventPattern": "mfa_prompt_sent:lorna_easton", "condition": "data.n >= 2", "cooldown": 0, "completeTask": "step_holds", "setGlobal": { "step_holds_done": true } },
+            { "eventPattern": "workstation_accessed:darren_pc", "cooldown": 0, "completeTask": "open_screen", "setGlobal": { "open_screen_done": true } },
+            { "eventPattern": "pc_signed_in:anjali_pc", "cooldown": 0, "completeTask": "fob", "setGlobal": { "fob_done": true } },
+            { "eventPattern": "pc_signed_in:yusuf_pc", "cooldown": 0, "completeTask": "number_match", "setGlobal": { "number_match_done": true } },
+            { "eventPattern": "mfa_approved:darren_price", "condition": "data.pcId === 'darren_pc'", "onceOnly": true, "cooldown": 0, "completeTask": "pestered", "setGlobal": { "pestered_done": true }, "bark": "He approved just to make it stop." },
+            { "eventPattern": "pc_signed_in:visitor_kiosk", "cooldown": 0, "completeTask": "exempt", "setGlobal": { "exempt_done": true } },
+            { "eventPattern": "npc_left_post:anjali_rao", "onceOnly": true, "cooldown": 0, "bark": "Anjali's left her code fob on her desk." },
+            { "eventPattern": "npc_left_post:yusuf_demir", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's phone is by the coffee machine." },
+            { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's popped out. If it's a quick coffee, his screen stays open. Longer than that, it locks itself." },
+            { "eventPattern": "npc_left_post:darren_price", "condition": "globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Darren's gone to lunch, and he'll be a while." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } },
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'blocked'", "cooldown": 0, "completeTask": "desk_refuses", "setGlobal": { "desk_refuses_done": true } },
+            { "eventPattern": "mfa_approved:gwen_pritchard", "condition": "data.targetType === 'door' && data.targetId === 'records_room'", "cooldown": 0, "completeTask": "door_step", "setGlobal": { "door_step_done": true } },
+            { "eventPattern": "door_propped:archive_store", "cooldown": 0, "completeTask": "propped", "setGlobal": { "propped_done": true } },
+            { "eventPattern": "mfa_approved:anjali_rao", "condition": "data.targetType === 'object' && data.targetId === 'records_safe'", "cooldown": 0, "completeTask": "safe_step", "setGlobal": { "safe_step_done": true } },
+            { "eventPattern": "mfa_approved:darren_price", "condition": "data.targetType === 'object' && data.targetId === 'darren_case'", "cooldown": 0, "completeTask": "case_step", "setGlobal": { "case_step_done": true } },
+            { "eventPattern": "pc_in_use:lorna_pc", "condition": "globalVars.step_holds_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Nobody signs in at a PC while its owner is sitting there. Everything today waits until people step away." },
+            { "eventPattern": "global_variable_changed:see_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "A password under a keyboard. The second step is what stands between that note and her desktop." },
+            { "eventPattern": "global_variable_changed:see_temper_note_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Frustrated people write things down. You'll see it on his sign-in screen at lunch." },
+            { "eventPattern": "global_variable_changed:overhear_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "He said his login out loud to help a colleague. Now you have it too." },
+            { "eventPattern": "global_variable_changed:step_holds_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Right password, and still no way in. The request went to Lorna's phone, and she didn't answer." },
+            { "eventPattern": "global_variable_changed:open_screen_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "His screen was open, so no password and no second step. He should have used Lock or Sign out from Start. The X only hides a desktop." },
+            { "eventPattern": "global_variable_changed:fob_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The fob's six digits change every minute. Whoever holds the fob holds the second step." },
+            { "eventPattern": "global_variable_changed:number_match_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The number on screen had to match his phone, and a wrong pick cancels. With his phone in your hand, you could match it." },
+            { "eventPattern": "global_variable_changed:exempt_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "This account has no second step at all. One gap like that undoes the rest." },
+            { "eventPattern": "global_variable_changed:reset_password_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile. Your keyring holds every sign-in you've earned." },
+            { "eventPattern": "global_variable_changed:reenrol_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Yusuf's approvals come to your phone now, and his own phone shows nothing. The desk never checked who was asking." },
+            { "eventPattern": "global_variable_changed:desk_refuses_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Three wrong tries and the desk stopped listening. It never said whether the name was real." },
+            { "eventPattern": "global_variable_changed:door_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The door's second step went to Gwen's phone. With her phone in your hand, you approved it yourself." },
+            { "eventPattern": "global_variable_changed:propped_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "Nobody approved anything. Fatima propped the door, and the step never came into it." },
+            { "eventPattern": "global_variable_changed:safe_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time." },
+            { "eventPattern": "global_variable_changed:case_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "You carried the case off and kept asking. His phone couldn't tell where the case was, so he gave in." },
+            { "eventPattern": "global_variable_changed:darren_pc_screen_locked", "condition": "data.value === true && data.oldValue !== true && globalVars.act_midday === true && globalVars.pestered_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's screen has locked itself while he's away. Now try his PC." },
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && data.what === 'mfa' && globalVars.reset_password_done === true && globalVars.reenrol_done !== true", "cooldown": 0, "completeTask": "reenrol", "setGlobal": { "reenrol_done": true } },
+            { "eventPattern": "helpdesk_answered:call_desk", "condition": "data.result === 'granted'", "cooldown": 0, "completeTask": "desk_call", "setGlobal": { "desk_call_done": true } },
+            { "eventPattern": "global_variable_changed:desk_call_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it." },
+            { "eventPattern": "global_variable_changed:read_log_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "That's the day done. Come back to reception and ask me for the short version." },
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && data.what === 'password' && globalVars.reset_password_done !== true", "cooldown": 0, "completeTask": "reset_password", "setGlobal": { "reset_password_done": true } }
+          ]
+        },
+        {
+          "id": "lorna_easton",
+          "displayName": "Lorna Easton",
+          "npcType": "person",
+          "position": { "x": 2.5, "y": 4.8 },
+          "spriteSheet": "lorna_easton",
+          "spriteTalk": "assets/characters/lorna_easton_talk.png",
+          "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/lorna_easton.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Erinome", "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "reception",
+          "awareness": "high",
+          "habits": { "approvesPrompts": "never" },
+          "creds": { "username": "leaston", "password": "<%= lorna_pw %>", "recovery": { "staff_no": "<%= rec[:lorna][:staff_no] %>", "manager": "<%= rec[:lorna][:manager] %>" } },
+          "needsHome": "lorna_pc",
+          "needsSpeed": 85,
+          "needs": {
+            "caffeine": { "decayPerMin": 12, "urgentAt": 40, "initial": 70 },
+            "social": { "decayPerMin": 8, "urgentAt": 40, "initial": 80 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
+          },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:coffee_call", "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "npc_returned_post:lorna_easton", "condition": "globalVars.step_holds_done === true", "onceOnly": true, "cooldown": 0, "bark": "Sign-in requests on my phone and I wasn't even at my desk. I'm telling IT." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "npcType": "person",
+          "position": { "x": 7.2, "y": 5.4 },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/niamh_doherty.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Kore", "style": "Merrin & Sallow's accounts assistant, in her 30s, dry and friendly, covering reception today. Speak with a consistent Dublin Irish accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "reception",
+          "creds": { "username": "ndoherty", "password": "<%= niamh_pw %>", "mfa": false },
+          "needsHome": "kiosk_stool",
+          "needsSpeed": 80,
+          "needs": {
+            "thirst": { "decayPerMin": 6, "urgentAt": 30, "initial": 80 }
+          },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        }
+      ]
+    },
+
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "connections": { "south": "reception", "west": "kitchen", "east": "it_room", "north": ["records_room", "archive_store"] },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "darren_pc",
+          "workstation": true,
+          "name": "Darren's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "owner": "darren_price",
+          "access": { "people": ["darren_price"] },
+          "policy": "floor",
+          "autoLockSeconds": 50,
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "observations": "Darren's desk PC. A tag on the monitor reads Darren.",
+          "contents": [
+            { "type": "helpdesk_form", "id": "darren_form", "name": "IT request form", "desk": "it_desk" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "anjali_pc",
+          "workstation": true,
+          "name": "Anjali's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "owner": "anjali_rao",
+          "access": { "people": ["anjali_rao"] },
+          "policy": "finance",
+          "observations": "Anjali's desk PC. A tag on the monitor reads Anjali."
+        },
+        {
+          "type": "pc",
+          "id": "yusuf_pc",
+          "workstation": true,
+          "name": "Yusuf's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 7, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "owner": "yusuf_demir",
+          "access": { "people": ["yusuf_demir"] },
+          "policy": "ops",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "observations": "Yusuf's desk PC. A tag on the monitor reads Yusuf."
+        },
+        {
+          "type": "code_device",
+          "id": "anjali_fob",
+          "name": "Anjali's code fob",
+          "owner": "anjali_rao",
+          "position": { "x": 5.9, "y": 3.5 },
+          "takeable": true,
+          "leftBehindChance": 1,
+          "revealOnGlobal": "anjali_fob_left",
+          "observations": "A small code fob with a name label on the back."
+        },
+        {
+          "type": "phone_friendface",
+          "id": "yusuf_phone",
+          "name": "Yusuf's phone",
+          "owner": "yusuf_demir",
+          "position": { "x": 8.6, "y": 8.2 },
+          "takeable": true,
+          "leftBehindChance": 1,
+          "revealOnGlobal": "yusuf_phone_left",
+          "observations": "Yusuf's mobile, left on the side by the coffee machine. Take it to use it for his sign-ins; its browser is open on Friendface, a social site."
+        },
+        {
+          "type": "id_badge",
+          "id": "darren_badge",
+          "name": "Darren's ID badge",
+          "owner": "darren_price",
+          "position": { "x": 2.9, "y": 3.5 },
+          "takeable": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "leftBehindChance": 1,
+          "revealOnGlobal": "darren_badge_left",
+          "text": "Merrin & Sallow. Darren Price, Operations. Staff no. <%= rec[:darren][:staff_no] %>.",
+          "observations": "Darren's staff ID on a lanyard, left on his desk."
+        },
+        {
+          "type": "photocopier1",
+          "id": "office_printer",
+          "name": "Office printer",
+          "position": { "x": 2.5, "y": 6.5 },
+          "takeable": false,
+          "observations": "The office printer. Darren and Yusuf both depend on it."
+        },
+        {
+          "type": "power_socket2",
+          "id": "office_printer_socket",
+          "name": "Printer wall socket",
+          "position": { "x": 3.15625, "y": 5.5625 },
+          "spriteVariants": [{ "condition": "globalVars.printer_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.printer_off",
+              "text": "Switch off the printer at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "printer_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "The printer is switched off at the wall. Anyone who needs to print will find it dead." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.printer_off",
+              "text": "Switch the printer back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "printer_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The printer is switched on at the wall." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 8, "y": 7 },
+          "takeable": false,
+          "observations": "The office coffee station. One person at a time; anyone else waits in line.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee", "overhearRadius": 200 },
+          "offWhen": "office_coffee_off"
+        },
+        {
+          "type": "power_socket2",
+          "id": "office_coffee_socket",
+          "name": "Wall socket",
+          "position": { "x": 8.65625, "y": 6.0625 },
+          "spriteVariants": [{ "condition": "globalVars.office_coffee_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.office_coffee_off",
+              "text": "Switch off the coffee machine at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall. Anyone on their way to it turns back." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.office_coffee_off",
+              "text": "Switch the coffee machine back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched on at the wall. The next coffee run comes here again." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "notice_board1",
+          "id": "tour_notice",
+          "name": "Things to try",
+          "position": { "x": 5.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Morning:\n- Look in the kitchen first: that is where the water and lunch are.\n- While Anjali is away, click her PC: her note shows on the sign-in screen.\n- Use Darren's screen while he is out for coffee.\n- Switch the printer off and watch what Darren and Yusuf do about it.\n- Stand right next to Anjali when Yusuf comes to find her.\n- Sign in at Lorna's PC while she is away. Her phone gets a request to approve: press Send again once.\nMidday:\n- Take Anjali's fob from her desk and sign in at her PC.\n- Take Yusuf's phone from beside the coffee and sign in at his PC.\n- Ask Ama to send everyone to lunch, then keep asking for Darren's approval.\n- Sign in at the visitor kiosk.\nAfternoon:\n- Ask Thandiwe for a password reset for Darren.\n- Ask Thandiwe to move Yusuf's approvals to your phone. The same form is on Darren's desktop, but it only sends while his screen is open.\n- Ask for a reset for Lorna with wrong answers until the desk stops listening.\n- Meet Priya in the IT room, then ring the IT line on your work phone while holding Yusuf's phone.\nLate:\n- Read the facilities notice in the kitchen and try the archive store door. Then ask Ama to switch the records index off and watch Fatima.\n- Try the records room door while Gwen is away, with her phone from the side table.\n- Gwen's drawer holds a note for the records safe. Anjali's fob gives its code.\n- Darren's case, by the front desk: carry it off, put it down, pick it up, and keep asking.\nEvening:\n- Ask Ama to call it a day, then read the approvals log in the IT room. Do this last: staff go home."
+        },
+        {
+          "type": "exec_desk1",
+          "id": "gwen_desk",
+          "name": "Gwen's desk",
+          "position": { "x": 4.4, "y": 6.0 },
+          "takeable": false,
+          "observations": "Gwen Pritchard's desk. Records manager."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "gwen_drawer",
+          "name": "Gwen's desk drawer",
+          "position": { "x": 5.6, "y": 6.0 },
+          "takeable": false,
+          "locked": false,
+          "observations": "The drawer by Gwen's desk. It is not locked.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "safe_note",
+              "name": "Note: records safe",
+              "takeable": true,
+              "readable": true,
+              "readDisplay": "gameDisplay",
+              "text": "Records safe keypad: <%= safe_pin %>. It also wants the code from Anjali's fob. Keep it in here.",
+              "observations": "A sticky note in Gwen's handwriting."
+            }
+          ]
+        },
+        {
+          "type": "hce_console_table1",
+          "id": "side_table",
+          "name": "Side table",
+          "position": { "x": 9.0, "y": 4.3 },
+          "takeable": false,
+          "observations": "A side table by the east wall with a phone charger on it."
+        },
+        {
+          "type": "phone_friendface",
+          "id": "gwen_phone",
+          "name": "Gwen's phone",
+          "owner": "gwen_pritchard",
+          "position": { "x": 9.0, "y": 3.9 },
+          "takeable": true,
+          "leftBehindChance": 1,
+          "revealOnGlobal": "gwen_phone_left",
+          "observations": "Gwen's mobile, on the charger on the side table."
+        },
+        {
+          "type": "exec_desk1",
+          "id": "fatima_desk",
+          "name": "Fatima's desk",
+          "position": { "x": 4.2, "y": 8.4 },
+          "takeable": false,
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "observations": "Fatima Begum's desk. She keeps the records index here."
+        },
+        {
+          "type": "power_socket2",
+          "id": "records_index_socket",
+          "name": "Records index wall switch",
+          "position": { "x": 1.15625, "y": 6.0625 },
+          "spriteVariants": [{ "condition": "globalVars.records_index_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.records_index_off",
+              "text": "Switch the records index off at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "records_index_off", "value": true },
+                { "type": "hint", "title": "Wall switch", "message": "The records index is switched off. Anyone who needs it will find it down." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.records_index_off",
+              "text": "Switch the records index back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "records_index_off", "value": false },
+                { "type": "hint", "title": "Wall switch", "message": "The records index is switched on." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "fire_extinguisher1",
+          "id": "archive_wedge",
+          "name": "Fire extinguisher, propping the archive store door",
+          "position": { "x": 9.0, "y": 2.2 },
+          "takeable": false,
+          "revealOnGlobal": "archive_door_propped",
+          "observations": "A fire extinguisher wedged against the archive store door to hold it open."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "darren_drawer",
+          "name": "Darren's desk drawer",
+          "position": { "x": 3.9, "y": 4.0 },
+          "takeable": false,
+          "locked": false,
+          "observations": "The drawer by Darren's desk. It is not locked.",
+          "contents": [
+            {
+              "type": "key",
+              "id": "darren_case_key",
+              "name": "Darren's case key",
+              "takeable": true,
+              "opens_lock": "darren_case_key",
+              "keyPins": [45, 30, 55, 40],
+              "observations": "A small key on a ring with a plastic tag marked Case."
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "darren_price",
+          "displayName": "Darren Price",
+          "npcType": "person",
+          "position": { "x": 2, "y": 4.2 },
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/darren_price.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Orus", "style": "Operations coordinator at Merrin & Sallow, in his 40s, easily flustered and quick to give in. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "dprice", "password": "<%= darren_pw %>", "resetPassword": "<%= darren_reset %>", "recovery": { "staff_no": "<%= rec[:darren][:staff_no] %>", "manager": "<%= rec[:darren][:manager] %>" } },
+          "habits": { "approvesPrompts": "pestered", "promptPatience": 3, "screen": { "lockIfAwayOverSeconds": 90 } },
+          "needsHome": "darren_pc",
+          "needsSpeed": 85,
+          "needsDeferMin": 0.5,
+          "workNeeds": ["+print_service"],
+          "frustration": { "perFail": 35 },
+          "workarounds": [{ "at": 60, "do": "writes_down" }],
+          "needs": {
+            "work": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 },
+            "caffeine": { "decayPerMin": 12, "urgentAt": 40, "initial": 70 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 },
+            "social": { "decayPerMin": 6, "urgentAt": 40, "initial": 80 }
+          },
+          "chatter": {
+            "wk_writes_down": ["That's it. I'm writing it down."],
+            "work_fail_printer": ["Printer's dead. Again."]
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "condition": "globalVars.coffee_call > 0", "cooldown": 300000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "room_entered:office", "condition": "globalVars.act_midday === true", "cooldown": 300000, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "room_entered:office", "condition": "globalVars.act_evening === true", "cooldown": 0, "setVisible": false },
+            { "eventPattern": "global_variable_changed:coffee_call", "fireOnlyWhenLoaded": true, "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "fireOnlyWhenLoaded": true, "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "fireOnlyWhenLoaded": true, "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "anjali_rao",
+          "displayName": "Anjali Rao",
+          "npcType": "person",
+          "position": { "x": 5, "y": 4.2 },
+          "spriteSheet": "anjali_rao",
+          "spriteTalk": "assets/characters/anjali_rao_talk.png",
+          "spriteVisemes": "assets/characters/anjali_rao_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/anjali_rao.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Aoede", "style": "Finance officer at Merrin & Sallow, in her mid 30s, calm and precise. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "arao", "password": "<%= anjali_pw %>", "recovery": { "staff_no": "<%= rec[:anjali][:staff_no] %>", "manager": "<%= rec[:anjali][:manager] %>" } },
+          "habits": { "writesDown": true },
+          "needsHome": "anjali_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "thirst": { "decayPerMin": 15, "urgentAt": 40, "initial": 75 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "condition": "globalVars.coffee_call > 0", "cooldown": 300000, "needs": { "set": { "thirst": 10 } } },
+            { "eventPattern": "room_entered:office", "condition": "globalVars.act_evening === true", "cooldown": 0, "setVisible": false },
+            { "eventPattern": "global_variable_changed:coffee_call", "fireOnlyWhenLoaded": true, "cooldown": 0, "needs": { "set": { "thirst": 10 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "fireOnlyWhenLoaded": true, "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "yusuf_demir",
+          "displayName": "Yusuf Demir",
+          "npcType": "person",
+          "position": { "x": 7, "y": 4.2 },
+          "spriteSheet": "yusuf_demir",
+          "spriteTalk": "assets/characters/yusuf_demir_talk.png",
+          "spriteVisemes": "assets/characters/yusuf_demir_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/yusuf_demir.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Iapetus", "style": "Operations analyst at Merrin & Sallow, in his 30s, friendly and a little scatty. Speak with a consistent London accent with a light Turkish inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "ydemir", "password": "<%= yusuf_pw %>", "recovery": { "staff_no": "<%= rec[:yusuf][:staff_no] %>", "manager": "<%= rec[:yusuf][:manager] %>" } },
+          "habits": { "approvesPrompts": "never" },
+          "needsHome": "yusuf_pc",
+          "needsSpeed": 85,
+          "needsDeferMin": 0.5,
+          "workNeeds": ["+print_service"],
+          "frustration": { "perFail": 30 },
+          "workarounds": [{ "at": 50, "do": "share_login", "with": "anjali_rao" }],
+          "needs": {
+            "work": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 },
+            "caffeine": { "decayPerMin": 10, "urgentAt": 40, "initial": 70 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": {
+            "wk_share_login": ["Printer's dead. I'll ask Anjali."],
+            "login_aloud": ["Use my login, Anjali. Here it is."],
+            "work_fail_printer": ["Print job failed. Again."]
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "condition": "globalVars.coffee_call > 0", "cooldown": 300000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "room_entered:office", "condition": "globalVars.act_evening === true", "cooldown": 0, "setVisible": false },
+            { "eventPattern": "global_variable_changed:coffee_call", "fireOnlyWhenLoaded": true, "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "fireOnlyWhenLoaded": true, "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "gwen_pritchard",
+          "displayName": "Gwen Pritchard",
+          "npcType": "person",
+          "position": { "x": 4.4, "y": 7.0 },
+          "spriteSheet": "gwen_pritchard",
+          "spriteTalk": "assets/characters/gwen_pritchard_talk.png",
+          "spriteVisemes": "assets/characters/gwen_pritchard_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/gwen_pritchard.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Vindemiatrix", "style": "Records manager at Merrin & Sallow, in her 50s, dry and exact, fond of a tidy filing system. Speak with a consistent Welsh-influenced British accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "habits": { "approvesPrompts": "never" },
+          "needsHome": "gwen_desk",
+          "needsSpeed": 80,
+          "needsDeferMin": 0.5,
+          "needs": {
+            "caffeine": { "decayPerMin": 12, "urgentAt": 40, "initial": 70 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "condition": "globalVars.coffee_call > 0", "cooldown": 300000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:coffee_call", "fireOnlyWhenLoaded": true, "cooldown": 0, "needs": { "set": { "caffeine": 10 } } }
+          ]
+        },
+        {
+          "id": "fatima_begum",
+          "displayName": "Fatima Begum",
+          "npcType": "person",
+          "position": { "x": 4.2, "y": 9.2 },
+          "spriteSheet": "fatima_begum",
+          "spriteTalk": "assets/characters/fatima_begum_talk.png",
+          "spriteVisemes": "assets/characters/fatima_begum_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/fatima_begum.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Zephyr", "style": "Records clerk at Merrin & Sallow, in her late 20s, quick and cheerful, always carrying something. Speak with a consistent northern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "needsHome": "fatima_desk",
+          "needsSpeed": 85,
+          "needsDeferMin": 0.5,
+          "workNeeds": ["+index_service"],
+          "frustration": { "perFail": 35 },
+          "workarounds": [{ "at": 60, "do": "prop_door", "door": "archive_store", "prop": "archive_wedge", "setGlobal": "archive_door_propped" }],
+          "needs": {
+            "work": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 }
+          },
+          "chatter": {
+            "work_fail": ["Index is down. Again."],
+            "wk_prop_door": ["Not tapping that code all day."]
+          }
+        }
+      ]
+    },
+
+    "kitchen": {
+      "type": "room_break",
+      "door_sign": "Kitchen",
+      "connections": { "east": "office" },
+      "objects": [
+        {
+          "type": "qdc_fridge1",
+          "id": "fridge",
+          "name": "Fridge",
+          "position": { "x": 1, "y": 2 },
+          "takeable": false,
+          "observations": "The office fridge. Mostly yoghurts with names on.",
+          "affordance": { "useSeconds": 100 }
+        },
+        {
+          "type": "microwave1",
+          "id": "microwave",
+          "name": "Microwave",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "observations": "A microwave on the kitchen table.",
+          "affordance": { "useSeconds": 100, "capacity": 2 }
+        },
+        {
+          "type": "coffee_station1",
+          "id": "kitchen_coffee",
+          "name": "Kitchen Coffee Station",
+          "position": { "x": 3, "y": 8 },
+          "takeable": false,
+          "observations": "The kitchen coffee machine. It shares a fuse with the office one, so only one of them runs at a time.",
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "queue": { "cells": [{ "dx": 1, "dy": -1 }, { "dx": 2, "dy": -1 }] } },
+          "offWhen": { "office_coffee_off": false }
+        },
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 1, "y": 7 },
+          "takeable": false,
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "affordance": { "useSeconds": 40, "overhearRadius": 360 }
+        },
+        {
+          "type": "mugs_tray1",
+          "id": "washing_up_tray",
+          "name": "Washing-up Tray",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
+          "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        },
+        {
+          "type": "notice_board1",
+          "id": "staff_board",
+          "name": "Staff board",
+          "position": { "x": 7.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Staff board.\nOperations (Darren Price, Yusuf Demir) report to Marcus Hale.\nFire marshals this month: Yusuf Demir, staff no. <%= rec[:yusuf][:staff_no] %>. Print jobs over twenty pages go through Operations."
+        },
+        {
+          "type": "notice_board1",
+          "id": "facilities_notice",
+          "name": "Facilities notice",
+          "position": { "x": 4.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Facilities. New keypad codes. Records room: <%= records_pin %>. Archive store: <%= archive_pin %>. Both doors also ask for Gwen's approval on her phone. Please do not copy these onto the doors."
+        }
+      ],
+      "npcs": []
+    },
+
+    "it_room": {
+      "type": "room_it",
+      "door_sign": "IT room",
+      "connections": { "west": "office" },
+      "objects": [
+        {
+          "type": "ops_log_terminal",
+          "id": "mfa_log_pc",
+          "name": "Approvals log terminal",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the building's sign-in and approvals log. One burst of requests overnight looks wrong. Select its row and flag it: that tells Ama you have found the odd one out.",
+          "minigameData": {
+            "logSource": "mfa_log",
+            "anomaly": { "rowId": "s5" },
+            "flagActionLabel": "Flag the odd burst",
+            "flagActions": [{ "type": "set_global", "key": "read_log_done", "value": true }],
+            "completionActions": [
+              { "type": "set_global", "key": "read_log_done", "value": true },
+              { "type": "complete_task", "taskId": "read_log" }
+            ]
+          }
+        },
+        {
+          "type": "laptop",
+          "id": "thandiwe_laptop",
+          "name": "Thandiwe's laptop",
+          "position": { "x": 7, "y": 3 },
+          "takeable": false,
+          "observations": "Thandiwe's laptop, open on a ticket queue."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "thandiwe_moyo",
+          "displayName": "Thandiwe Moyo",
+          "npcType": "person",
+          "position": { "x": 6.5, "y": 5 },
+          "spriteSheet": "thandiwe_moyo",
+          "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
+          "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/thandiwe_moyo.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Pulcherrima", "style": "IT support at Merrin & Sallow, in her 30s, patient and dry. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "needsHome": "thandiwe_laptop",
+          "needsSpeed": 80
+        },
+        {
+          "id": "priya_nair",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": { "x": 4, "y": 5.5 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/priya_nair.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Leda", "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it"
+        },
+        {
+          "id": "it_line",
+          "displayName": "IT service line",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "callId": "it_line_call",
+          "storyPath": "scenarios/demo_ops_second_step/ink/it_line.json",
+          "currentKnot": "start",
+          "voiced": true,
+          "voice": { "name": "Charon", "style": "IT service desk phone agent at Merrin & Sallow, in his 30s, even and procedural. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" }
+        }
+      ]
+    },
+
+    "records_room": {
+      "type": "room_lw_records",
+      "door_sign": "Records room",
+      "connections": { "south": "office" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "<%= records_pin %>",
+      "secondStep": { "kind": "push", "owner": "gwen_pritchard" },
+      "objects": [
+        {
+          "type": "safe",
+          "id": "records_safe",
+          "name": "Records safe",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "<%= safe_pin %>",
+          "secondStep": { "kind": "code", "owner": "anjali_rao" },
+          "observations": "A wall safe with a keypad. It also wants a code from a fob.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "safe_papers",
+              "name": "Safe papers",
+              "takeable": true,
+              "readable": true,
+              "readDisplay": "gameDisplay",
+              "addToNotes": false,
+              "text": "Share certificates and a spare set of building plans.",
+              "observations": "A bundle of papers from the safe."
+            }
+          ]
+        }
+      ],
+      "npcs": []
+    },
+
+    "archive_store": {
+      "type": "room_office",
+      "door_sign": "Archive store",
+      "connections": { "south": "office" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "<%= archive_pin %>",
+      "secondStep": { "kind": "push", "owner": "gwen_pritchard" },
+      "objects": [
+        {
+          "type": "lw_deed_boxes",
+          "id": "archive_boxes",
+          "name": "Archive boxes",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Archive boxes, 2009 to 2019. Fatima's labels: invoices, leases, old rotas.",
+          "observations": "Rows of archive boxes with Fatima's labels."
+        }
+      ],
+      "npcs": []
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+"globals": { "salvage_opened": true, "hl_box_opened": true },
+"steps": [
+{ "note": "R35: the same two calls when the player is ahead. Gary finds the keypad already open and gives no hint. Torres, with the H&L box opened but no shortlist, points at the placing sheet rather than the box number." },
+{ "talk": "gary", "knot": "call", "picks": ["Thanks, Gary"] },
+{ "said": ["HaX says you're through that keypad already. Didn't need me, then", "Somebody should read an archive properly for once"],
+  "notSaid": ["Vigenère", "There'll be a chart near the keypad"] },
+{ "talk": "torres", "knot": "call", "picks": ["Thank you, David"] },
+{ "said": ["Read the placing sheet in the firm's box", "Do not thank me. I was one of them"],
+  "notSaid": ["Their boxes take the ledger's file number", "Two names from the firm's sheet"] },
+{ "set": { "sleeper_shortlist": true } },
+{ "talk": "torres", "knot": "call", "picks": ["Are you safe"] },
+{ "said": ["Two names from the firm's sheet, I think. Read the next of kin on each"],
+  "notSaid": ["Read the placing sheet in the firm's box", "sick parent"] }
+]
+}

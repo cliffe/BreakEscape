@@ -1,0 +1,41 @@
+game 2338 (bring_optional)
+  close_brief: "closed briefing"
+  close_brief: "closed NotesMinigame"
+  close_brief: "none"
+"declined tutorial"
+optional open: ["danny_choice_made"]
+tasks: ["copy_staff_badge:completed","submit_distcc_flag:active","find_operational_logs:active","danny_choice_made:active","decode_directive:locked","zero_detection:active","call_in_after_sweep:locked"]
+"opened agent_0x99"
+hub: {"choices":["1. I'm done in here. Bring me in.","2. Send me a field guide.","3. Where do I stand?","4. Nothing right now"],"header":null}
+shot bring_optional_hub
+dialling: {"bar":"CALLING"}
+shot bring_optional_calling
+call: {"bar":"ON CALL | 0:03","subs":["AGENT HAX: Last look. Once you're out, the search team has that building.","AGENT HAX: The server room safe's still shut, for one."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot bring_optional_call
+after Not yet: mg="PhoneChatMinigame phone-chat" call-open=false debrief={"ok":true,"cmd":"eval"} task=["call_in_after_sweep:locked"]
+shot bring_optional_not_yet
+"no contact agent_0x99"
+hub again: {"choices":["1. I'm done in here. Bring me in.","2. Send me a field guide.","3. Where do I stand?","4. Nothing right now"]}
+redial: {"subs":["AGENT HAX: Still in there. That search team's getting restless.","AGENT HAX: The server room safe's still shut, for one."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot bring_optional_redial
+confirm: {"subs":["Agent HaX: Still in there. That search team's getting restless.","Agent HaX: The server room safe's still shut, for one.","YOU: Bring me in.","AGENT HAX: Side door, two minutes. Don't use the lobby."],"choices":["1. On my way."]}
+shot bring_optional_confirm
+task now: ["call_in_after_sweep:completed"]
+overlay: "BEFORE THE MISSION ENDS | You have done what the mission needs. 1 optional objective is still open: | Talk to the consultant, Danny Foster | End the mission now, or keep going? | Keep going | End the mission now"
+shot bring_optional_after_on_my_way
+handler /tts before Keep going: "Last look. Once you're out, the search team has that building." "The server room safe's still shut, for one." "Go on, then. She's not leaving her desk tonight." "Still in there. That search team's getting restless." "The server room safe's still shut, for one." "Side door, two minutes. Don't use the lobby." 
+after Keep going: call-open=true choices=["1. On my way."] debrief={"ok":true,"cmd":"eval"} mission_complete={"ok":true,"cmd":"eval"}
+shot bring_optional_kept_going
+handler /tts after Keep going: "Last look. Once you're out, the search team has that building." "The server room safe's still shut, for one." "Go on, then. She's not leaving her desk tonight." "Still in there. That search team's getting restless." "The server room safe's still shut, for one." "Side door, two minutes. Don't use the lobby." 
+after End: mg="PhoneChatMinigame phone-chat" debrief={"ok":true,"cmd":"eval"}
+thread: {"choices":["1. I'm done in here. Bring me in.","2. Send me a field guide.","3. Where do I stand?","4. Nothing right now"]}
+shot bring_optional_after_end
+"no contact agent_0x99"
+second redial: {"subs":["AGENT HAX: Still in there. That search team's getting restless.","AGENT HAX: The server room safe's still shut, for one."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+overlay again: "BEFORE THE MISSION ENDS | You have done what the mission needs. 1 optional objective is still open: | Talk to the consultant, Danny Foster | End the mission now, or keep going? | Keep going | End the mission now"
+shot bring_optional_overlay_again
+after End the mission: {"subs":[]} debrief={"ok":true,"cmd":"eval"}
+after call: debrief={"ok":true,"cmd":"eval"} mg="PersonChatMinigame person-chat"
+shot bring_optional_debrief
+handler /tts: "Last look. Once you're out, the search team has that building." "The server room safe's still shut, for one." "Go on, then. She's not leaving her desk tonight." "Still in there. That search team's getting restless." "The server room safe's still shut, for one." "Side door, two minutes. Don't use the lobby." "Still in there. That search team's getting restless." "The server room safe's still shut, for one." "Side door, two minutes. Don't use the lobby." "Leave her to us." 
+["minigame_completed@126.2","conversation_closed:agent_0x99@126.2","objective_task_completed:call_in_after_sweep@151.5","conversation_closed:agent_0x99@159.7","minigame_completed@160.6","global_variable_changed:victoria_choice_made@189.9","global_variable_changed:victoria_choice_made@189.9","minigame_completed@191.8","conversation_closed:agent_0x99@191.8"]

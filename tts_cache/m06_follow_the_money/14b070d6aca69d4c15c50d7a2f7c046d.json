@@ -1,0 +1,13 @@
+{
+  "key": "14b070d6aca69d4c15c50d7a2f7c046d",
+  "npc": "irina_volkova",
+  "text": "I said I'd think. I'm thinking. It's slower than you'd like.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:00:37Z"
+}

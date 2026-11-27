@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>scenarios — Dungeon Graph</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body       { background: #0a0f0f; color: #ccc; font-family: monospace; margin: 0; padding: 16px; }
+    h1         { font-size: 13px; color: #22ddcc; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 1px; }
+    p.sub      { font-size: 11px; color: #555; margin: 0 0 12px; }
+    .tab-bar   { display: flex; gap: 3px; margin-bottom: 0; border-bottom: 2px solid #1a3030; }
+    .tab-bar button {
+      background: #111e1e; color: #557; border: 1px solid #1a3030; border-bottom: none;
+      padding: 6px 16px; font-family: monospace; font-size: 11px; cursor: pointer;
+      text-transform: uppercase; letter-spacing: 1px; position: relative; top: 2px;
+    }
+    .tab-bar button.active  { background: #0a1a1a; color: #22ddcc; border-color: #22ddcc; border-bottom: 2px solid #0a1a1a; }
+    .tab-bar button:hover:not(.active) { background: #141f1f; color: #aaa; }
+    .wrap      { overflow: auto; background: #0a1a1a; padding: 12px; min-height: 200px; border: 1px solid #1a3030; border-top: none; }
+    .stats     { margin-top: 20px; border-top: 2px solid #1a3030; padding-top: 14px; }
+    .stats h2  { font-size: 12px; color: #22ddcc; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px; }
+    .crit-path { font-size: 11px; color: #ffdd88; background: #111; border: 1px solid #333; padding: 8px 12px; margin-bottom: 10px; overflow-x: auto; white-space: nowrap; }
+    .note-oos  { font-size: 11px; color: #a0a040; border-left: 2px solid #555; padding: 4px 8px; margin-bottom: 12px; }
+    table      { border-collapse: collapse; font-size: 11px; }
+    td, th     { padding: 3px 14px 3px 0; text-align: left; }
+    th         { color: #22ddcc; font-weight: normal; }
+    td.val     { color: #ffcc80; }
+  </style>
+</head>
+<body>
+  <h1>scenarios — dependency graph</h1>
+  <p class="sub">EVENT CASCADE TEST (Phase 1-2)
+
+This scenario tests event-driven NPC state transitions and multi-NPC reactions to global</p>
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="puzzle"     onclick="showTab('puzzle',this)">Puzzle Graph</button>
+    <button class="tab-btn"        data-tab="story"      onclick="showTab('story',this)">Story Aims</button>
+    <button class="tab-btn"        data-tab="integrated" onclick="showTab('integrated',this)">Story + Puzzle</button>
+  </div>
+  <div class="wrap" id="diagram-wrap">
+    <p style="color:#555;font-size:11px">Loading…</p>
+  </div>
+
+  <div class="stats">
+    <h2>Critical Path — 0 hops</h2>
+    <div class="crit-path"></div>
+    <div class="note-oos">
+      ⚠️&nbsp; Dashed aim arrows = narrative unlock only. A player with physical access to a room may complete an
+      objective before the system unlocks that aim. Solid arrows indicate hard dependencies (AND gates, physical
+      puzzle-lock chains). The critical path above shows the minimum mandatory sequence to reach mission completion.
+    </div>
+    <table>
+      <tr><th>Aims (story objectives)</th><td class="val">1</td></tr>
+      <tr><th>Total tasks</th><td class="val">5</td></tr>
+      <tr><th>Optional tasks</th><td class="val">0 / 5</td></tr>
+      <tr><th>VM flag challenges</th><td class="val">0</td></tr>
+      <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
+      <tr><th>Physical locks (puzzle)</th><td class="val">0</td></tr>
+      <tr><th>Rooms</th><td class="val">0</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">0 / 0</td></tr>
+      <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
+    </table>
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', flowchart: { curve: 'basis', htmlLabels: true } });
+
+    const diagrams = {
+      puzzle:     `flowchart TD
+
+  classDef room      fill:#0f2d2d,stroke:#22ddcc,color:#a0ffee
+  classDef lock      fill:#2d0f0f,stroke:#e66060,color:#ffa0a0
+  classDef key       fill:#2d0812,stroke:#e66060,color:#ffa0a0
+  classDef item      fill:#2d1200,stroke:#e89030,color:#ffcc80
+  classDef gate      fill:#111,stroke:#666,color:#eee
+  classDef vm        fill:#0c1f40,stroke:#4a90d9,color:#a0c8ff
+  classDef flag      fill:#1a0c2d,stroke:#9060d0,color:#cc99ff
+  classDef aim       fill:#0d2a0d,stroke:#44cc44,color:#88ff88
+  classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
+  classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
+
+
+`,
+      story:      `flowchart TD
+
+  classDef room      fill:#0f2d2d,stroke:#22ddcc,color:#a0ffee
+  classDef lock      fill:#2d0f0f,stroke:#e66060,color:#ffa0a0
+  classDef key       fill:#2d0812,stroke:#e66060,color:#ffa0a0
+  classDef item      fill:#2d1200,stroke:#e89030,color:#ffcc80
+  classDef gate      fill:#111,stroke:#666,color:#eee
+  classDef vm        fill:#0c1f40,stroke:#4a90d9,color:#a0c8ff
+  classDef flag      fill:#1a0c2d,stroke:#9060d0,color:#cc99ff
+  classDef aim       fill:#0d2a0d,stroke:#44cc44,color:#88ff88
+  classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
+  classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
+
+  aim_obj_cascade_test{{"Test Event Cascades"}}
+
+
+  class aim_obj_cascade_test aim`,
+      integrated: `flowchart TD
+
+  classDef room      fill:#0f2d2d,stroke:#22ddcc,color:#a0ffee
+  classDef lock      fill:#2d0f0f,stroke:#e66060,color:#ffa0a0
+  classDef key       fill:#2d0812,stroke:#e66060,color:#ffa0a0
+  classDef item      fill:#2d1200,stroke:#e89030,color:#ffcc80
+  classDef gate      fill:#111,stroke:#666,color:#eee
+  classDef vm        fill:#0c1f40,stroke:#4a90d9,color:#a0c8ff
+  classDef flag      fill:#1a0c2d,stroke:#9060d0,color:#cc99ff
+  classDef aim       fill:#0d2a0d,stroke:#44cc44,color:#88ff88
+  classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
+  classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
+
+  aim_obj_cascade_test{{"Test Event Cascades"}}
+
+
+  class aim_obj_cascade_test aim`
+    };
+    const rendered = {};
+    let seq = 0;
+
+    async function showTab(name, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      (btn || document.querySelector('.tab-btn[data-tab="' + name + '"]')).classList.add('active');
+      const wrap = document.getElementById('diagram-wrap');
+      if (!rendered[name]) {
+        wrap.innerHTML = '<p style="color:#555;font-size:11px">Rendering…</p>';
+        try {
+          const { svg } = await mermaid.render('diag_' + name + '_' + (++seq), diagrams[name]);
+          rendered[name] = svg;
+        } catch(e) {
+          rendered[name] = '<pre style="color:#f66;font-size:10px">Render error: ' + e.message + '</pre>';
+        }
+      }
+      wrap.innerHTML = rendered[name];
+    }
+    showTab('puzzle');
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+Make portrait for Joanne Pell
+A white British woman in her late forties from Leicester, fair skin with light freckles, the learning and development coordinator at a food company. Brisk and friendly. Short, neatly cut greying blonde hair with a side parting, thin-framed reading glasses on a beaded cord around her neck, no hijab. She wears a sage-green knitted cardigan over a white blouse with a soft collar, charcoal grey trousers with a thin black belt, and a staff lanyard with an ID card. Holding nothing, hands relaxed.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini via agy (tools/agy_image.sh), 2026-10-27, no reference images, variant c of three rolls. Reframed with reframe_portrait.py --flip. Awareness check-mission host (Brightwell finance checks), replaces the Farah Qureshi concept (name clash with m10, look too close to Fatima Begum). Age and ethnicity chosen by the orchestrator, recorded in BRAND_SET.md. Old concept kept as joanne_pell_old_concept_*.

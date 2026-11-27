@@ -1,0 +1,32 @@
+{
+ "steps": [
+  {
+   "note": "R27 (carry-over, 2026-10-17): m02 never finished, so every import is at its default. No extra line after \"You worked St. Catherine's last month\"; the original lines play word for word."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Remind me what their deal",
+    "Which cells buy",
+    "Walk me through St. Catherine's",
+    "Then we take the supplier"
+   ]
+  },
+  {
+   "said": [
+    "You worked St. Catherine's last month",
+    "How many died came down to a recovery call"
+   ],
+   "notSaid": [
+    "You paid the ransom and had the wards back",
+    "You took Ghost's keys",
+    "You ran the combined restore",
+    "bagged Mr Pryce by hand",
+    "Eleven and a half hours, and six people died"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

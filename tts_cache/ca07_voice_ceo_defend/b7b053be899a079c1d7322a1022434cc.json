@@ -1,0 +1,13 @@
+{
+  "key": "b7b053be899a079c1d7322a1022434cc",
+  "npc": "agnieszka_duda",
+  "text": "That email in the boss's name, with a voicemail in his voice to back it, was the one to stop.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:51:26Z"
+}

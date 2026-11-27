@@ -1,0 +1,13 @@
+{
+  "key": "3db2b3340c730ea568bf99ce9f6b1916",
+  "npc": "arakawa_post",
+  "text": "I'll open the road at seven. Go and sit down.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:11Z"
+}

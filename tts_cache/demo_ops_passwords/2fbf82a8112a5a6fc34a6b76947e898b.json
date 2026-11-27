@@ -1,0 +1,13 @@
+{
+  "key": "2fbf82a8112a5a6fc34a6b76947e898b",
+  "npc": "julian_sallow",
+  "text": "Ah, the visitor. Keep it brief, I've a client lunch later.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:43:27Z"
+}

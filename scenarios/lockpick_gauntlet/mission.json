@@ -1,0 +1,19 @@
+{
+  "display_name": "The Lockpick Gauntlet",
+  "description": "A SAFETYNET physical-entry training range in two phases. Phase 1: a long sequence of pin-tumbler doors of slowly increasing lockpicking difficulty (pin counts climb 3 to 8, tolerances tighten tutorial to hard). Phase 2: three key rooms, each holding three candidate keys where only the correctly bitted key opens the forward door, ending at the trophy vault.",
+  "difficulty_level": 1,
+  "collection": "training",
+  "estimated_duration_minutes": 20,
+  "cybok": [
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Pin-tumbler locks", "Lockpicking", "Physical access control"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Physical access control"]
+    }
+  ]
+}

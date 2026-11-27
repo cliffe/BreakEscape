@@ -1,0 +1,11 @@
+{
+"imports": { "m07_architect_echo_heard": true },
+"steps": [
+{ "note": "R40: the Afterwards answer. It only shows for a player who heard the Architect's line in m07, who also gets HaX's recognition line (My line. His line). The player takes it, and HaX's reply is the sharp one, not the Same-in-your-place thanks." },
+{ "talk": "phone", "knot": "identity_scene", "picks": ["Afterwards. Not during", "Understood"] },
+{ "said": ["You heard him say it in Portland. My line. His line", "[choice] Afterwards. Not during", "That's mine. You don't get to use it on me", "Seven years, and nobody turned it off"],
+  "notSaid": ["Don't be kind about it", "Yes. I should have"] },
+{ "expect": { "hax_confession_answer": "afterwards", "identity_scene_done": true } },
+{ "tasks": { "hear_the_name": "completed", "send_the_notice": "unlocked" } }
+]
+}

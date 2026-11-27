@@ -1,0 +1,10 @@
+Make portrait for Lisa Park
+A petite British-Korean woman of about 32 from south-west London, light skin, a round friendly face, glossy shoulder-length black hair with a soft wispy fringe, the back twisted up into a tortoiseshell claw clip, small gold hoop earrings, a marketing coordinator who notices everything. She wears a chunky-knit mustard-yellow cardigan, open, over a fitted white crew-neck t-shirt, a staff lanyard with a blank white card, high-waisted dark indigo jeans and a tan leather belt with a gold buckle. Arms relaxed, mouth closed, bright observant eyes. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain dark background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Already faced right, so reframed with reframe_portrait.py without --flip; original is lisa_park_concept_2_raw.png.

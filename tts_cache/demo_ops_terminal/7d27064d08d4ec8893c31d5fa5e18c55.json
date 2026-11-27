@@ -1,0 +1,13 @@
+{
+  "key": "7d27064d08d4ec8893c31d5fa5e18c55",
+  "npc": "ama_owusu",
+  "text": "The first real finding gave a user session. The second needed it, and gave an administrator's.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:33:34Z"
+}

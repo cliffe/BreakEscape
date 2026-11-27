@@ -1,0 +1,13 @@
+{
+  "key": "b3f581c7b2f103a786a045f2e614aa2c",
+  "npc": "patrol_nurse",
+  "text": "She's breathing better. What is it?",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

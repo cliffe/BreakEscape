@@ -1,0 +1,11 @@
+{
+ "steps": [
+  {"note": "R15: the full evil monologue, then arrest. final_choice arrest, derek_confronted set, launch device handed over, Derek removed; no fight or surrender flag."},
+  {"set": {"entropy_reveal_read": true, "found_casualty_projections": true}},
+  {"talk": "derek", "picks": ["I know what you're planning", "You're planning to kill people", "How can you be so calm", "By killing innocent people", "Some of them WILL die", "The Architect taught you this", "You're going to prison", "I'm calling in SAFETYNET"]},
+  {"said": ["We're not planning an attack. We're planning an education", "I calculated every one of them", "Think of it as... forced education", "They're not innocent. They're negligent", "Sixty deaths to save tens of thousands per year", "The Architect opened my eyes", "I'm a prophet", "You'll be a case study in how not to become a terrorist", "Derek doesn't resist", "Derek Lawson is in custody"],
+   "notSaid": ["Derek sets down the launch device", "If you want a fight, you'll get one", "You will never betray ENTROPY", "ENTROPY will remember this"]},
+  {"expect": {"final_choice": "arrest", "derek_confronted": true, "derek_surrendered": false, "derek_fight_triggered": false, "confrontation_approach": "aggressive"}},
+  {"tasks": {"confront_derek": "completed"}}
+ ]
+}

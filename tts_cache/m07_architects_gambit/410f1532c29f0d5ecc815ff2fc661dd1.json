@@ -1,0 +1,22 @@
+{
+  "key": "410f1532c29f0d5ecc815ff2fc661dd1",
+  "npc": "the_architect",
+  "text": "Four fires tonight, and only one of you. I set them so you'd have to choose.",
+  "delivery": "soft and measured, faintly pleased, in no hurry at all",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T23:38:46Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/410f1532c29f0d5ecc815ff2fc661dd1.mp3",
+    "clean_md5": "7ec24c0b04f2d1db083b8a12dd2a0f8f",
+    "baked_md5": "0a9243cfb1c6e4b6e50f5f5bf7a36221",
+    "baked": "2026-11-24"
+  }
+}

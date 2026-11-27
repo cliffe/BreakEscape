@@ -1,0 +1,13 @@
+{
+  "key": "47fd536fc778afdbe6c0545901545e2e",
+  "npc": "ama",
+  "text": "And there's a cake in your bag. Put it down in the open plan and see if it gets anyone away from their desk.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:45:44Z"
+}

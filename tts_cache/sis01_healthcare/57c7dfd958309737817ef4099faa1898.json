@@ -1,0 +1,13 @@
+{
+  "key": "57c7dfd958309737817ef4099faa1898",
+  "npc": "helen_carver",
+  "text": "Two different questions. How much we lose is the RPO. How long it takes is the RTO.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

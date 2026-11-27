@@ -1,0 +1,21 @@
+{
+ "id": "ca_close",
+ "type": "ca_close",
+ "duration": 3.0,
+ "join": {
+  "type": "seam"
+ },
+ "ca": {
+  "name": "",
+  "tagline": "15 minutes, in your browser · No installs",
+  "hacktivity": "Hacktivity"
+ },
+ "spoiler": {
+  "reviewed": true,
+  "shows_code": false,
+  "shows_identity": false,
+  "shows_ending": false,
+  "keypad_partial": null,
+  "note": "Cyber Aware end card: halves close into the mark, Hacktivity line, tagline; no footage"
+ }
+}

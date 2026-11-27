@@ -1,0 +1,13 @@
+{
+  "key": "be0506a2dad653192e7879986e7bc8bf",
+  "npc": "gwen_pritchard",
+  "text": "He's been strange since the contractor renewals in the summer.",
+  "voice": "Sulafat",
+  "style": "The facility's operations floor systems support lead, in her late 30s, friendly and practical. Speak with a consistent General American accent, Pacific Northwest, throughout, do not shift to any other accent.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:06:10Z"
+}

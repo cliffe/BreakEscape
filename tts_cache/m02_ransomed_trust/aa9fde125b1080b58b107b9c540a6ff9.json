@@ -1,0 +1,21 @@
+{
+  "key": "aa9fde125b1080b58b107b9c540a6ff9",
+  "npc": "ghost",
+  "text": "Public record. Journalist distribution. Permanent.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:28:40Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/aa9fde125b1080b58b107b9c540a6ff9.mp3",
+    "clean_md5": "7e6c2cd95a84022ef6cce271074a7a38",
+    "baked_md5": "8e6c5da498f95a88085f5c5d925cf709",
+    "baked": "2026-11-24"
+  }
+}

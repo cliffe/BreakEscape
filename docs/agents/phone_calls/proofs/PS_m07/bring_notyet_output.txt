@@ -1,0 +1,13 @@
+game 2235 (bring_notyet)
+"opened agent_0x99"
+hub: {"choices":["1. Bring me in.","2. I'm stuck on something.","3. Where do I stand?","4. Remind me of the layout and the clock.","5. I'll check back in."],"header":null}
+shot bring_notyet_hub
+dialling: {"bar":"CALLING"}
+shot bring_notyet_calling
+call: {"bar":"ON CALL | 0:01","subs":["AGENT HAX: Not yet. Put the rest of the flags through the relay and he's on straight after."],"choices":[],"thread":"AGENT HAX: Not yet. Put the rest of the flags through the relay and he's on straight after."}
+shot bring_notyet_call
+after call: debrief_requested=true start_debrief=false mg="PhoneChatMinigame phone-chat"
+shot bring_notyet_after
+HaX rows: ["Outgoing call, 0:02"]
+HaX /tts: "Not yet. Put the rest of the flags through the relay and he's on straight after." 
+armed ending: null

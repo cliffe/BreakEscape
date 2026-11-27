@@ -1,0 +1,11 @@
+  Dr Oleg Illiashenko / Something else?
+  CHOICES(1): I fixed your name. It reads properly in CyberChef now.;I'll leave you to it.
+  > I fixed your name
+  Dr Oleg Illiashenko / Show me.
+  He reads it off your screen and, for once today, smiles at a computer.
+  Dr Oleg Illiashenko / There it is. Thank you. I'll send your recipe to the people who built the system.
+  Dr Oleg Illiashenko / They'll tell me it works on their machine.
+  CHOICES(2): I'll leave you to it.
+  > leave you to it
+  Dr Oleg Illiashenko / Close the door properly on your way out. It sticks.
+[closed: None]

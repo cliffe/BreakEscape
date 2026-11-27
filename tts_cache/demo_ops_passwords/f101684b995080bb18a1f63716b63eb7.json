@@ -1,0 +1,13 @@
+{
+  "key": "f101684b995080bb18a1f63716b63eb7",
+  "npc": "ama_owusu",
+  "text": "The log kept all of it, including the night someone tried Graham's PC.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:38:30Z"
+}

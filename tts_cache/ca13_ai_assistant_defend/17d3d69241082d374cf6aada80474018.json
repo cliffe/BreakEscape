@@ -1,0 +1,13 @@
+{
+  "key": "17d3d69241082d374cf6aada80474018",
+  "npc": "kit_agnieszka_duda",
+  "text": "Busy one on the payments inbox today. Those bank-change emails keep coming.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:25Z"
+}

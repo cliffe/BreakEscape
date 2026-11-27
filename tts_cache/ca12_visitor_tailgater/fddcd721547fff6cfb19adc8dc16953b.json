@@ -1,0 +1,13 @@
+{
+  "key": "fddcd721547fff6cfb19adc8dc16953b",
+  "npc": "delphine_reception",
+  "text": "Printer's warm again.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:47:57Z"
+}

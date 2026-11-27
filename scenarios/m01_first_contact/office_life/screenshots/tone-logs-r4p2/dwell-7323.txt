@@ -1,0 +1,2 @@
+sounds loaded {"office_ambient":true,"typing_loop":true,"count":63,"tone":true}
+dwell {"room":"main_office_area","realSecs":60,"needsSecsAdvanced":60,"slotAdvance":3,"amb":{"room":"main_office_area","current":"office_ambient","choice":{"room":"main_office_area","key":"office_ambient","level":0.8,"step":2}},"spotsInRoom":[],"typingInRoom":[{"what":"typing","count":1,"level":0.4,"room":"main_office_area"},{"what":"typing","count":2,"level":0.6,"room":"main_office_area"},{"what":"typing","count":0,"level":0,"room":"main_office_area"}]}

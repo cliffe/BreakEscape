@@ -1,0 +1,14 @@
+{
+  "display_name": "Test SIEM Dashboard",
+  "description": "Quick test scenario for the SIEM Dashboard minigame. Review security alerts and identify critical indicators of compromise.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Network Security",
+      "keywords": ["SIEM", "Alert triage", "Security monitoring", "Incident response"]
+    }
+  ]
+}

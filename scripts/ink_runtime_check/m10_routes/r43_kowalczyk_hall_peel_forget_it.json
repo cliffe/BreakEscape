@@ -1,0 +1,43 @@
+{
+ "steps": [
+  {
+   "note": "Kowalczyk's server-hall copy is the default peel-off and the last face-to-face chance. The player starts the accusation, takes it back ('Said what?'), and lets her go ahead. Nothing is recorded against her."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "cracker_rack_seen": true,
+    "server_hall_entered": true
+   }
+  },
+  {
+   "talk": "khall",
+   "picks": [
+    "Before you go",
+    "Forget I said it",
+    "See you at the lock"
+   ]
+  },
+  {
+   "said": [
+    "I'll take the service side and meet you at the lock.",
+    "If that's wrong, Kowalczyk's off the raid till you can clear her. Sure?",
+    "Said what?",
+    "Don't be late."
+   ],
+   "notSaid": [
+    "Me? Go on, then. Show me.",
+    "Hold her there."
+   ]
+  },
+  {
+   "expect": {
+    "kowalczyk_gone_ahead": true,
+    "accused": "",
+    "wren_held": false
+   }
+  }
+ ]
+}

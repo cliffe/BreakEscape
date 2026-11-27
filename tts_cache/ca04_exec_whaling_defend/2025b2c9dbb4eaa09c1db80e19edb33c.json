@@ -1,0 +1,14 @@
+{
+  "key": "2025b2c9dbb4eaa09c1db80e19edb33c",
+  "npc": "kit_julian_sallow",
+  "text": "\"Pay before I land, keep it quiet\" is the whole trick. A genuine request survives a quick call to confirm.",
+  "delivery": "measured, wry",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:37Z"
+}

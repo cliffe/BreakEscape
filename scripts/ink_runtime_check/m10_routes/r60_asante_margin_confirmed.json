@@ -1,0 +1,47 @@
+{
+ "steps": [
+  {
+   "note": "Asante at the release console after the player read the casualty sheet: the A.A. in the margin is hers. The pick sets asante_confirmed_sheet and 'talked', and the entry is gone from the menu on a re-talk."
+  },
+  {
+   "set": {
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "asante",
+   "picks": [
+    "A.A. in the margin"
+   ]
+  },
+  {
+   "said": [
+    "You're the one off the office wall.",
+    "I corrected his sums. He thanked me."
+   ],
+   "notSaid": [
+    "Somebody rang out through the switchboard"
+   ]
+  },
+  {
+   "expect": {
+    "asante_confirmed_sheet": true,
+    "asante_outcome": "talked"
+   }
+  },
+  {
+   "talk": "asante",
+   "picks": [
+    "That's all"
+   ]
+  },
+  {
+   "said": [
+    "Good. Mind the cables on your way out."
+   ],
+   "notSaid": [
+    "I corrected his sums."
+   ]
+  }
+ ]
+}

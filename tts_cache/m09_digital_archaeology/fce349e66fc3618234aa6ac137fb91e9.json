@@ -1,0 +1,13 @@
+{
+  "key": "fce349e66fc3618234aa6ac137fb91e9",
+  "npc": "alpha_recording",
+  "text": "And build your own way out first. Always. Then let them build their way in.",
+  "voice": "Sadaltager",
+  "style": "A SAFETYNET strategy lecturer in his fifties, recorded on reel tape in a lecture hall. Educated, unplaceable English. Low, unhurried, a lecturer's precision; patient with a room of students. Faintly amused.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:34:21Z"
+}

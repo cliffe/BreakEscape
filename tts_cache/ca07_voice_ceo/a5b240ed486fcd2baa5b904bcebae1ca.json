@@ -1,0 +1,13 @@
+{
+  "key": "a5b240ed486fcd2baa5b904bcebae1ca",
+  "npc": "agnieszka_duda",
+  "text": "To whoever cloned that voice, that release is money moved straight on, and the plea to keep it quiet is what buys them the time.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:08Z"
+}

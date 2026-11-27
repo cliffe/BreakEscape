@@ -1,0 +1,13 @@
+{
+  "key": "dc1ff0ba26e227ef3787b039ceb90435",
+  "npc": "narrator",
+  "text": "The TalentStack envelope is still in your pocket. He looks at it, then away.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:38:13Z"
+}

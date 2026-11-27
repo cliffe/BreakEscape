@@ -1,0 +1,13 @@
+{
+  "key": "9c620bbaa6e260cb6e13da747eee27f4",
+  "npc": "chidi_okeke",
+  "text": "To the people who send these, one scan is a card to drain or a sign-in to walk in behind, and you handed them neither.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:04Z"
+}

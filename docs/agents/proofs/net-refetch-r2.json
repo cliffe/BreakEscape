@@ -1,0 +1,284 @@
+{
+  "mode": "r2",
+  "gameId": 9015,
+  "base": "http://127.0.0.1:3186",
+  "startedAt": "2026-11-18T11:38:43.694Z",
+  "steps": [
+    {
+      "t": 18357,
+      "step": "enter comms_room",
+      "ok": true
+    },
+    {
+      "t": 19540,
+      "step": "interact comms_port (plant)",
+      "confirmed": true,
+      "via": "engine-record"
+    },
+    {
+      "t": 20407,
+      "step": "confirm \"Plug it in\"",
+      "ok": true
+    },
+    {
+      "t": 22412,
+      "step": "view open",
+      "minigame": "network-view"
+    },
+    {
+      "t": 22550,
+      "step": "signed in to lena_pc through the box",
+      "ok": true
+    }
+  ],
+  "checks": {
+    "viewOpened": true,
+    "serverHostsBefore": false,
+    "rowsBefore": [
+      "sam_pc",
+      "door_box",
+      "lena_pc",
+      "it_pc",
+      "kiosk_pc",
+      "ops_pc",
+      "ledger_archive",
+      "scanned_inbox",
+      "print_queue"
+    ],
+    "rowsAfter": [
+      "sam_pc",
+      "door_box",
+      "lena_pc",
+      "it_pc",
+      "kiosk_pc",
+      "ops_pc",
+      "ledger_archive",
+      "scanned_inbox",
+      "print_queue",
+      "sv_fs02",
+      "backup_vault"
+    ],
+    "hostAppeared": {
+      "appeared": true,
+      "msAfterUnlock": 3118,
+      "viewStillOpen": true,
+      "networkViewedEmitsDuring": 1
+    },
+    "getNetworkTimesAfterAppear": [
+      30655,
+      35688,
+      40715,
+      55734
+    ],
+    "getNetworkGapsMs": [
+      5033,
+      5027,
+      15019
+    ],
+    "gapReached15s": true,
+    "gapsBefore15Short": true,
+    "unplug": {
+      "sameButtonAfterRefetches": true,
+      "clicked": true,
+      "viewClosed": true,
+      "unplugStatus": 200
+    },
+    "pass": true
+  },
+  "requestLog": [
+    {
+      "t": 20349,
+      "who": "A",
+      "phase": "request",
+      "method": "POST",
+      "path": "/network/plant",
+      "body": "{\"jack_id\":\"comms_port\",\"delta\":true,\"device_id\":\"kit_dropbox\"}"
+    },
+    {
+      "t": 20429,
+      "who": "A",
+      "phase": "response",
+      "method": "POST",
+      "path": "/network/plant",
+      "status": 200
+    },
+    {
+      "t": 20441,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"globalVariables\":{\"n7_armed\":false,\"bench_pc_off\":true,\"n14_seen_off\":false,\"p5_lena_remote\":false,\"servers_offline\":false,\"capture_card_ian\":false,\"capture_card_lena\":false,\"bench_port_planted\":false,\"comms_port_planted\":true},\"notes\":[{\"id\":1795001936661001,\"title\":\"Notepad\",\"text\":\"Use this notepad to review your collected notes and observations.\\n\\nObservation: A handy notepad for keeping tr"
+    },
+    {
+      "t": 20521,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 20526,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 20548,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 22507,
+      "who": "A",
+      "phase": "request",
+      "method": "POST",
+      "path": "/login",
+      "body": "{\"username\":\"lfox\",\"password\":\"<redacted>\",\"foothold\":\"jack_comms_port\",\"pc_id\":\"lena_pc\"}"
+    },
+    {
+      "t": 22548,
+      "who": "A",
+      "phase": "response",
+      "method": "POST",
+      "path": "/login",
+      "status": 200,
+      "answer": "{\"success\":true,\"npcId\":\"lena\",\"username\":\"lfox\",\"displayName\":\"Lena Fox\",\"via\":\"password\",\"portrait\":\"assets/characters/female_blowse_talk.png\",\"remote\":true,\"footholdId\":\"jack_comms_port\",\"host\":\"HB-FIN-02\"}"
+    },
+    {
+      "t": 25553,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"triggeredEvents\":{\"sam:network_viewed:1\":1},\"scenarioClock\":{\"elapsedMs\":13255},\"timedMessages\":{\"pending\":[],\"delivered\":[]},\"clientTs\":1795001949244}"
+    },
+    {
+      "t": 25584,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 25586,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 25615,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 30619,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"triggeredEvents\":{\"sam:network_viewed:11\":1},\"scenarioClock\":{\"elapsedMs\":18322},\"timedMessages\":{\"pending\":[],\"delivered\":[]},\"clientTs\":1795001954311}"
+    },
+    {
+      "t": 30654,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 30655,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 30676,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 35688,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 35710,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 40715,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 40733,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 55734,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 55755,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 63809,
+      "who": "A",
+      "phase": "request",
+      "method": "POST",
+      "path": "/network/unplug",
+      "body": "{\"jack_id\":\"comms_port\",\"delta\":true}"
+    },
+    {
+      "t": 63850,
+      "who": "A",
+      "phase": "response",
+      "method": "POST",
+      "path": "/network/unplug",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-11-18T11:39:48.549Z"
+}

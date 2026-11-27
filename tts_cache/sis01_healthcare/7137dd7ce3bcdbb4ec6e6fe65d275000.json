@@ -1,0 +1,13 @@
+{
+  "key": "7137dd7ce3bcdbb4ec6e6fe65d275000",
+  "npc": "dr_hartley",
+  "text": "For a public body the ICO is more likely to issue a reprimand, and publish it. That's what the Board fears.",
+  "voice": "Gacrux",
+  "style": "Consultant and Caldicott Guardian in her late fifties, cautious, precise, slightly formal. Speak with a consistent Edinburgh, Scottish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

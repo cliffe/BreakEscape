@@ -1,0 +1,13 @@
+{
+  "key": "530516f3ec3d1d1ca38069baed1fa1c6",
+  "npc": "graham_whitfield",
+  "text": "Back again. Ten fresh ones on the kiosk, same sort of thing.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_finance_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:13Z"
+}

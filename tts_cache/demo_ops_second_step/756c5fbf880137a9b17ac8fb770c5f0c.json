@@ -1,0 +1,13 @@
+{
+  "key": "756c5fbf880137a9b17ac8fb770c5f0c",
+  "npc": "ama_owusu",
+  "text": "Try Lorna's username at the desk, and answer wrongly until it stops listening. Watch what it tells you, and what it doesn't.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T09:00:02Z"
+}

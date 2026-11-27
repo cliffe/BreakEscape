@@ -1,0 +1,59 @@
+PASS K1: waiting [Who are you? | Close the device.]
+PASS K2: waiting [Who are you? | Close the device.]
+PASS K3: offer_hub [What's in it? | Could I change it first? | I'll think about it. | No. Find another student.]
+PASS K4: offer_hub [What's in it? | Could I change it first? | I'll think about it. | No. Find another student.]
+PASS K5: the_offer_again [Sending it now. | No. Find another student. | Still thinking.]
+PASS K6: closed [Close the device.]
+PASS K7: closed [Close the device.]
+PASS K8: closed [Close the device.]
+PASS K9: the_offer_again [Sending it now. | No. Find another student. | Still thinking.]
+PASS K10a: the_offer_again [Sending it now. | No. Find another student. | Still thinking.]
+PASS K10b: closed [Close the device.]
+PASS K11: offer_hub [What's in it? | Could I change it first? | I'll think about it. | No. Find another student.]
+PASS K12: offer_hub [What's in it? | Could I change it first? | I'll think about it. | No. Find another student.]
+PASS K12b: offer_hub [What's in it? | Could I change it first? | I'll think about it. | No. Find another student.]
+PASS K13: waiting [Who are you? | Close the device.]
+PASS K14: the_offer_again [Sending it now. | No. Find another student. | Still thinking.]
+PASS K15: closed [Close the device.]
+PASS K16: offer_hub [What's in it? | Could I change it first? | I'll think about it. | No. Find another student.]
+PASS K17: offer_hub [What's in it? | Could I change it first? | I'll think about it. | No. Find another student.]
+PASS K18: the_offer_again [Sending it now. | No. Find another student. | Still thinking.]
+PASS K19: closed [Close the device.]
+PASS K20: closed [Close the device.]
+PASS H10: hub [I'm stuck. | That's all for now.]
+PASS H11: hub [Megan Oyelaran is on their list. Can we help her? | I'm stuck. | That's all for now.]
+PASS H12: hub [Sending you my report now. | It's a trap. Don't open anything from me. | I'm stuck. | That's all for now.]
+PASS H1: hub [Remind me how I reach you if this phone's no good. | I'm stuck. | That's all for now.]
+PASS H2: hub [Send me that field note. | I'm stuck. | That's all for now.]
+PASS H3: hub [Sending you my report now. | It's a trap. Don't open anything from me. | I'm stuck. | That's all for now.]
+PASS H4: hub [I'm clear. Debrief me. | I turned the Keyholder down. | That's all for now.]
+PASS H5: hub [I'm clear. Debrief me. | That's all for now.]
+PASS H6: hub [I'm clear. Debrief me. | That's all for now.]
+PASS H7: hub [Send me that field note. | I'm stuck. | That's all for now.]
+PASS H8: hub [I'm clear. Debrief me. | That's all for now.]
+PASS H9: hub [I'm stuck. | That's all for now.]
+PASS D-sent-dev
+PASS D-sent-dev-token-late
+PASS D-sent-nodev
+PASS D-sent-nodev-token-late
+PASS D-double-dev-token
+PASS D-double-nodev-token
+PASS D-refused-dev
+PASS D-refused-dev-token
+PASS D-refused-nodev
+PASS D-refused-nodev-token
+PASS D-blown-dev
+PASS D-blown-dev-token
+PASS D-blown-nodev
+PASS D-blown-nodev-token
+PASS Q-sidhu-signed
+PASS Q-sidhu-intro
+PASS Q-tom-terminal
+PASS Q-tom-magic-keys
+PASS Q-megan-warn
+PASS Q-oleg-intro
+PASS Q-oleg-name
+PASS Q-oleg-explain
+PASS Q-oleg-fixed
+PASS Q-cliffe-build
+ALL PASS

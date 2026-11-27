@@ -1,0 +1,13 @@
+{
+  "key": "c62383e965b845193d09aa24c42a845f",
+  "npc": "operative_cipher",
+  "text": "There's no survey tonight. And you came in the wrong door for one.",
+  "voice": "Fenrir",
+  "style": "ENTROPY operative posing as a maintenance contractor, late twenties. Speak with a consistent Dutch-accented English (Rotterdam) throughout, fluent with slightly clipped consonants -- do not shift to any other accent. Mid-to-high pitch; fast, sharp pace. Jumpy and aggressive, covering nerves with bluster.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:47:24Z"
+}

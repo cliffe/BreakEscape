@@ -1,0 +1,13 @@
+{
+  "key": "6565da14bbd908ebb74277548af6ed12",
+  "npc": "eleanor_vance",
+  "text": "But the court of reputation is not the Court of Appeal. I'll leave it at that.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:49Z"
+}

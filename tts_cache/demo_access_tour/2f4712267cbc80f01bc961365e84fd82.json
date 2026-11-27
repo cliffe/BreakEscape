@@ -1,0 +1,13 @@
+{
+  "key": "2f4712267cbc80f01bc961365e84fd82",
+  "npc": "yasmin",
+  "text": "Go on, after you.",
+  "voice": "Laomedeia",
+  "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:50:35Z"
+}

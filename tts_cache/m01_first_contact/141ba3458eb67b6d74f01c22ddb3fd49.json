@@ -1,0 +1,13 @@
+{
+  "key": "141ba3458eb67b6d74f01c22ddb3fd49",
+  "npc": "graham_whitfield",
+  "text": "I asked Derek for the paperwork once. He asked who I'd been talking to. I haven't asked since.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:57:58Z"
+}

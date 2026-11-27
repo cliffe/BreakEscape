@@ -1,0 +1,590 @@
+{
+  "scenario_id": "ca05_signin_pages_defend",
+  "scenario_name": "Sign-in pages: check before you type",
+  "titleScreenName": "Fake sign-in pages",
+  "scenario_brief": "Awareness episode E5, pages only. Five web pages are open, each one reached from a link in an inbox at Quayholt Insurance, a fictional insurer. Some are real and some were built to collect your password: decide whether you'd sign in, and report anything that doesn't sit right.",
+  "endGoal": "Check the five pages at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "npcThoughts": false,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "signin_pages_aim",
+      "title": "Check the sign-in pages",
+      "description": "Check the five pages at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e5_signin_pages_defend_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Sign-in pages checked",
+        "body": "That's all five pages finished. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "check_signin_pages",
+          "title": "Check the sign-in pages",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e5_signin_pages_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e5_signin_pages_defend_defend_percent": 0,
+    "episode_e5_signin_pages_defend_defend_reportRate": 0,
+    "episode_e5_signin_pages_defend_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca05",
+    "kit_ca05_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_quayholt": {
+      "lines": [
+        "Phones haven't stopped today.",
+        "Claims backlog's easing off.",
+        "Cooler's cold for once."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
+  },
+  "ttsPregenerateChatter": true,
+  "social": {
+    "triageSets": [
+      {
+        "id": "e5_links_inbox",
+        "title": "Quayholt sign-in pages",
+        "brief": "Five pages are open in your browser, each one reached from a link in your Quayholt inbox this morning. For each one, choose Trust (you'd sign in), Report or Delete (you'd close it), then tick what you noticed. Press the address bar, the padlock and the certificate to look closer. Quayholt's own sites all end in .quayholt.example, such as sso.quayholt.example. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": false,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "padlock_myth",
+          "secrecy_or_bypass"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e5_signin_pages_defend_defend_",
+          "passPercent": 0,
+          "messageGlobals": {
+            "e5_sso_lookalike": "kit_key_caught"
+          }
+        },
+        "messages": [
+          {
+            "id": "e5_sso_lookalike",
+            "kind": "page",
+            "subject": "From an email: 'Your session has expired'",
+            "time": "08:47",
+            "body": "Your session has expired for security reasons. Sign in again to carry on. This is a secure page: look for the padlock in your address bar.",
+            "page": {
+              "url": "https://quayholt-sso.example/login?return=mail",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "quayholt-sso.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "none",
+              "heading": "Quayholt Single Sign-On",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "padlock_myth"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Quayholt's sign-in page is sso.quayholt.example. This is quayholt-sso.example, a different site with the words joined by a hyphen, which is also why your password manager would offer nothing",
+                "padlock_myth": "The padlock and the certificate are real, but they were issued to quayholt-sso.example. They show the connection is private to whoever runs that site, not that the site is Quayholt's"
+              },
+              "ifTrusted": "Your Quayholt email address and password would go to whoever runs quayholt-sso.example, who could then sign in as you and read your mail.",
+              "reportReply": "Thanks. That isn't our sign-in page. We've blocked quayholt-sso.example and pulled the email that linked to it from everyone's inbox."
+            }
+          },
+          {
+            "id": "e5_sso_real",
+            "kind": "page",
+            "subject": "From your bookmark: Quayholt sign-in",
+            "time": "09:02",
+            "body": "Sign in with your Quayholt account.",
+            "page": {
+              "url": "https://sso.quayholt.example/login",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "sso.quayholt.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "filled",
+              "heading": "Quayholt Single Sign-On",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "The address ends in quayholt.example, Quayholt's own domain. The 'sso.' in front is one of Quayholt's own services, just as 'hr.' or 'mail.' would be.",
+                "padlock_myth": "It has a padlock, as almost every site does. The reason to trust it is the address, not the padlock.",
+                "default": "You opened it from your own bookmark, the address is Quayholt's, and your password manager would fill it in because it recognises the site."
+              }
+            }
+          },
+          {
+            "id": "e5_calendar_misspelt",
+            "kind": "page",
+            "subject": "From an email: 'Gordon McLeish shared a calendar with you'",
+            "time": "10:15",
+            "body": "Gordon McLeish has shared the calendar 'Claims team rota' with you. Sign in to view it.",
+            "page": {
+              "url": "https://calendar.quayho1t.example/invite/8812",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "calendar.quayho1t.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "none",
+              "heading": "Quayholt Calendar",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "View calendar"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Read the address slowly: quayho1t has a digit 1 where the l should be. 'calendar.' in front makes it look like one of Quayholt's own services, but the site is quayho1t.example, and your password manager would stay quiet for the same reason"
+              },
+              "ifTrusted": "Your password would go to whoever runs quayho1t.example. Gordon never shared a calendar.",
+              "reportReply": "Thanks. Gordon didn't send that invitation, and quayho1t.example isn't ours. We've blocked it."
+            }
+          },
+          {
+            "id": "e5_mailbox_support",
+            "kind": "page",
+            "subject": "From an email: 'Your mailbox is 98% full'",
+            "time": "11:30",
+            "body": "Your mailbox is almost full, and new email will be turned away from 5pm today. Sign in below to keep your mail. Our phone lines are very busy, so please use this page rather than ringing the service desk.",
+            "page": {
+              "url": "https://quayholt-support.example/mailbox",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "quayholt-support.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "none",
+              "heading": "Quayholt IT Support",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Keep my mail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The IT service desk is on servicedesk.quayholt.example. quayholt-support.example adds a word with a hyphen, so it's someone else's site, and your password manager would not fill it in",
+                "secrecy_or_bypass": "'Please use this page rather than ringing the service desk' steers you away from the one check that would show this up"
+              },
+              "ifTrusted": "Your password would go to whoever runs quayholt-support.example. Your mailbox was never full.",
+              "reportReply": "Thanks. Your mailbox is fine, and that page isn't ours. We've blocked it, and we're helping anyone who signed in to change their password."
+            }
+          },
+          {
+            "id": "e5_password_real",
+            "kind": "page",
+            "subject": "From the intranet: Change your password",
+            "time": "13:05",
+            "body": "Your password expires in 5 days. Choose a new one below. The service desk will never ask for your password by email or over the phone.",
+            "page": {
+              "url": "https://servicedesk.quayholt.example/password",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "servicedesk.quayholt.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "filled",
+              "heading": "Quayholt IT Service Desk: change your password",
+              "fields": [
+                "Current password",
+                "New password",
+                "Confirm new password"
+              ],
+              "button": "Change password"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "servicedesk.quayholt.example ends in quayholt.example, Quayholt's own domain.",
+                "secrecy_or_bypass": "It points you towards the service desk, not away from it.",
+                "default": "You reached it from the intranet, the address is Quayholt's, your password manager would fill in your current password, and five days' notice is the usual reminder, not a rush."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e5_signin_pages_defend",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: five pages opened from a Quayholt inbox.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "check_signin_pages",
+      "defend": {
+        "setId": "e5_links_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. Five web pages are open, each one reached from a link in a Quayholt inbox. Some are real and some were built to collect your password. For each one, decide whether you'd sign in, and report anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "The page passed without a slip this time, nothing in it to pull apart. Next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
+        "noBlameLine": "A miss here is no reflection on you. Every one of these pages was built to pass for the real thing, and signing in to one says nothing about how careful a person is.",
+        "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link using the route in the box below.",
+        "defendOnly": "These pages were built to pass for the real sign-in, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "defendIntro": "Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed.",
+        "conceptPanel": {
+          "heading": "If a password goes in",
+          "text": "When a password is typed into a lookalike page, the real account is taken, and IT spend the day on a forced reset, a mailbox-rule review and a check of which claimant records were reached. A claims account holds health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "playlist": "peacefolk",
+        "fade": false,
+        "_comment": "Cyber Aware score: the PeaceFolk tracks (D331)"
+      }
+    ]
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "niamh_doherty",
+          "voice": {
+            "name": "Leda",
+            "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "displayName": "Niamh Doherty",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "storyPath": "scenarios/ca05_signin_pages_defend/ink/niamh_doherty.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "check_signin_pages"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_defend_complete",
+              "condition": "value === true && globalVars.episode_e5_signin_pages_defend_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            }
+          ]
+        },
+        {
+          "id": "kit_anjali_rao",
+          "displayName": "Anjali Rao",
+          "person": "anjali_rao",
+          "npcType": "person",
+          "position": {
+            "x": 7.4,
+            "y": 8.3
+          },
+          "spriteSheet": "anjali_rao",
+          "spriteTalk": "assets/characters/anjali_rao_talk.png",
+          "spriteVisemes": "assets/characters/anjali_rao_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/anjali_rao_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.4,
+            "y": 8.3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Kore",
+            "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Queue's moving along.",
+                "Need a proper break."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_darren_price",
+          "displayName": "Darren Price",
+          "person": "darren_price",
+          "npcType": "person",
+          "position": {
+            "x": 2.5,
+            "y": 7.0
+          },
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/darren_price_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2.5,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Orus",
+            "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Busy on the awareness side.",
+                "Just grabbing some water."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca05_react"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e5_signin_pages_defend_defend_complete",
+              "value": "A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox. You have checked them all."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e5_signin_pages_defend"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_quayholt"
+          }
+        }
+      ]
+    }
+  }
+}

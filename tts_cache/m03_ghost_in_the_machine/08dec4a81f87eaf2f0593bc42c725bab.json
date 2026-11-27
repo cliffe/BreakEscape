@@ -1,0 +1,14 @@
+{
+  "key": "08dec4a81f87eaf2f0593bc42c725bab",
+  "npc": "terry_mott",
+  "text": "I told you to leave. I'm calling the police.",
+  "delivery": "hard and frustrated, his patience gone, clipped and aggressive but not shouting Every word clearly enunciated, his South London accent and age kept.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T01:53:45Z"
+}

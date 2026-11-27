@@ -1,0 +1,13 @@
+{
+  "key": "4425f815290f6bdb0d57a6bfe6b77c28",
+  "npc": "narrator",
+  "text": "Static peels off the wall and goes with him without a word.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:15:50Z"
+}

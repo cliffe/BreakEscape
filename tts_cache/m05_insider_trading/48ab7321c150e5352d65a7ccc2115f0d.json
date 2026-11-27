@@ -1,0 +1,13 @@
+{
+  "key": "48ab7321c150e5352d65a7ccc2115f0d",
+  "npc": "david_torres",
+  "text": "You can't. Somebody always finds the name.",
+  "voice": "Schedar",
+  "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:37:03Z"
+}

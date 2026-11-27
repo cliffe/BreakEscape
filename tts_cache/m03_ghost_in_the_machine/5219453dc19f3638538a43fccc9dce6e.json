@@ -1,0 +1,13 @@
+{
+  "key": "5219453dc19f3638538a43fccc9dce6e",
+  "npc": "zainab_hussain",
+  "text": "Milk's off again. Who buys the milk?",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:45:47Z"
+}

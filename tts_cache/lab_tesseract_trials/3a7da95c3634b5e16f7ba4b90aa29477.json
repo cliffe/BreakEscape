@@ -1,0 +1,13 @@
+{
+  "key": "3a7da95c3634b5e16f7ba4b90aa29477",
+  "npc": "megan_oyelaran",
+  "text": "Binned the leaflet. Still skint, mind. Worth it.",
+  "voice": "Leda",
+  "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

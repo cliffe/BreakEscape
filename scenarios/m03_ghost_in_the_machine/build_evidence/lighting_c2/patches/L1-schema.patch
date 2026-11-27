@@ -1,0 +1,50 @@
+--- a/scripts/scenario-schema.json
++++ b/scripts/scenario-schema.json
+@@ -436,6 +436,47 @@
+                   { "type": "array", "items": { "$ref": "#/definitions/emitterVariant" } }
+                 ]
+               }
++            },
++            "variants": {
++              "type": "array",
++              "description": "The room's lighting by game state (e.g. day and night). Each is a partial lighting block with an optional condition (globalVars syntax); the first that holds is merged over this block (emitters merge by key, the rest replaces). Re-checked as globals change and at load, and applied at once without a strike.",
++              "items": {
++                "type": "object",
++                "properties": {
++                  "condition": { "type": "string" },
++                  "mode": { "type": "string", "enum": ["on", "motion", "dark"] },
++                  "offAfter": { "type": "number", "minimum": 0 },
++                  "flicker": { "type": "boolean" },
++                  "panels": { "type": "boolean" },
++                  "ambient": { "type": "string" },
++                  "darkAmbient": { "type": "string" },
++                  "lights": {
++                    "type": "array",
++                    "items": {
++                      "type": "object",
++                      "properties": {
++                        "x": { "type": "number" },
++                        "y": { "type": "number" },
++                        "color": { "type": "string" },
++                        "radius": { "type": "number" },
++                        "intensity": { "type": "number", "minimum": 0, "maximum": 1 }
++                      },
++                      "required": ["x", "y"],
++                      "additionalProperties": false
++                    }
++                  },
++                  "emitters": {
++                    "type": "object",
++                    "additionalProperties": {
++                      "anyOf": [
++                        { "$ref": "#/definitions/emitterVariant" },
++                        { "type": "array", "items": { "$ref": "#/definitions/emitterVariant" } }
++                      ]
++                    }
++                  }
++                },
++                "additionalProperties": false
++              }
+             }
+           },
+           "additionalProperties": false

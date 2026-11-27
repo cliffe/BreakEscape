@@ -1,0 +1,13 @@
+{
+ "id": "cc_open",
+ "type": "cc_open",
+ "duration": 4.0,
+ "spoiler": {
+  "reviewed": true,
+  "shows_code": false,
+  "shows_identity": false,
+  "shows_ending": false,
+  "keypad_partial": null,
+  "note": "Critical Cases title card: tile art, series logo, then the case title; no footage"
+ }
+}

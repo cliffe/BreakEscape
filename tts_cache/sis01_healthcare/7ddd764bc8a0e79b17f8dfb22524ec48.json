@@ -1,0 +1,13 @@
+{
+  "key": "7ddd764bc8a0e79b17f8dfb22524ec48",
+  "npc": "sarah_mitchell",
+  "text": "Mr Ahmed in Bed 4 is two days after heart surgery. He should be on continuous monitoring. He isn't.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

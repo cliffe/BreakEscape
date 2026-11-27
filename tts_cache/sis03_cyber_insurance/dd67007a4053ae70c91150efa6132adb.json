@@ -1,0 +1,13 @@
+{
+  "key": "dd67007a4053ae70c91150efa6132adb",
+  "npc": "eleanor_vance",
+  "text": "The clause only reaches peacetime state-backed operations with a major detrimental impact on how a state functions.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:26Z"
+}

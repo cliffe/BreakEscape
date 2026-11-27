@@ -1,0 +1,13 @@
+{
+  "key": "9191fadc6a050a1a4d630e2eceb4dad3",
+  "npc": "narrator",
+  "text": "You keep her talking about lattices and bring the cloner in your pocket within range of her lanyard.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:57:57Z"
+}

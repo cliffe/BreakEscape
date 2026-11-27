@@ -1,0 +1,13 @@
+{
+  "key": "5813f5148da68342c04d2003efc266dd",
+  "npc": "gwen_pritchard",
+  "text": "You stopped the request that rode on the assistant's summary, so the attacker's staged call walked away with nothing.",
+  "voice": "Sulafat",
+  "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:08Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "06aed04b1ed627462895e43e61a266b6",
+  "npc": "sorensen_hatch",
+  "text": "Eleven years of other people's paper. Nobody asks the clerk what she kept.",
+  "voice": "Vindemiatrix",
+  "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:15:51Z"
+}

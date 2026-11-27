@@ -1,0 +1,330 @@
+/* ── Combination Padlock Minigame — MG-C ────────────────────────────────── */
+
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.combination-wrapper {
+    font-synthesis: none;
+    font-weight: normal;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'VT323', 'GNF', monospace;
+    font-size: 18px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.combination-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #1a233a;
+    padding: 16px 20px;
+    border-bottom: 2px solid #334466;
+    flex-shrink: 0;
+}
+
+.combination-header h2 {
+    font-family: var(--ui-heading-font, 'Press Start 2P'), monospace;
+    margin: 0 0 8px;
+    font-size: 16px;   /* Press Start 2P on its 8px grid */
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.combination-direction-indicator {
+    font-size: 18px;
+    color: #f5a623;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    min-height: 20px;
+}
+
+/* How the dials work, always on screen (UX pass, 2026-11-12) */
+.combination-help {
+    margin-top: 8px;
+    font-size: 18px;
+    color: #c9d1d9;
+    text-align: center;
+    max-width: 640px;
+}
+
+/* ── Main dial container ──────────────────────────────────────────────────── */
+.combination-dials {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    padding: 40px 20px;
+    overflow: hidden;
+}
+
+/* ── Single dial group ────────────────────────────────────────────────────── */
+.combination-dial-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.combination-dial-label {
+    font-size: 18px;
+    color: #8899bb;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+}
+
+/* ── Dial buttons and display ─────────────────────────────────────────────── */
+.combination-dial-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.combination-dial-arrow {
+    background: #1a233a;
+    border: 2px solid #445566;
+    color: #8899bb;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 10px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.combination-dial-arrow:hover:not(:disabled) {
+    background: #223355;
+    color: #aabbdd;
+    border-color: #556688;
+}
+
+.combination-dial-arrow:active:not(:disabled) {
+    background: #0a1420;
+    border-color: #f5a623;
+}
+
+.combination-dial-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.combination-dial-display {
+    /* Press Start 2P: chunky square digits, like a padlock's stamped number wheels
+       (the user asked for a different pixel face here, slice 7 R1). 48px is 6x its
+       8px grid, so every pixel lands whole. */
+    font-size: 48px;
+    font-weight: normal;
+    color: #ffffff;
+    background: #0f1826;
+    border: 2px solid #334466;
+    padding: 10px 12px;
+    width: 120px;   /* two 48px digits */
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 0;
+    flex-shrink: 0;
+}
+
+.combination-dial-display.set {
+    border-color: #44aa44;
+    color: #88ee88;
+}
+
+/* The dial the arrows turn now */
+.combination-dial-display.active {
+    border-color: #f5a623;
+    outline: 2px solid #f5a623;
+    outline-offset: 2px;
+}
+
+.combination-dial-group.active .combination-dial-label {
+    color: #f5a623;
+}
+
+.combination-dial-group.set .combination-dial-label {
+    color: #88ee88;
+}
+
+.combination-dial-group.active .combination-dial-arrow {
+    border-color: #f5a623;
+    color: #ffd27a;
+}
+
+.combination-wrapper.opened .combination-direction-indicator {
+    color: #88ee88;
+}
+
+.combination-wrapper.opened .combination-dial-display {
+    background: #12301a;
+}
+
+/* ── Status message area ──────────────────────────────────────────────────── */
+.combination-status {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    background: #0f1826;
+    border-top: 2px solid #334466;
+    border-bottom: 2px solid #334466;
+}
+
+.combination-status-message {
+    font-size: 20px;
+    color: #c9d1d9;
+    text-align: center;
+    letter-spacing: 0.03em;
+}
+
+.combination-status-message.wrong {
+    color: #ff8888;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+}
+
+.combination-status-message.set {
+    color: #88ee88;
+}
+
+.combination-status-message.success {
+    color: #88ee88;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+}
+
+/* ── Footer with buttons ──────────────────────────────────────────────────── */
+.combination-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #0f1826;
+    padding: 12px 20px;
+    border-top: 2px solid #334466;
+    flex-shrink: 0;
+}
+
+.combination-reset-btn,
+.combination-unlock-btn {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 8px 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 2px solid #445566;
+}
+
+.combination-reset-btn {
+    background: #1a233a;
+    color: #8899bb;
+}
+
+.combination-reset-btn:hover {
+    background: #223355;
+    color: #aabbdd;
+    border-color: #556688;
+}
+
+.combination-unlock-btn {
+    background: #1a1a1a;
+    color: #555555;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.combination-unlock-btn.ready {
+    background: #1a2e1a;
+    color: #88ee88;
+    border-color: #44aa44;
+    cursor: pointer;
+    opacity: 1;
+}
+
+.combination-unlock-btn.ready:hover {
+    background: #224422;
+    color: #ffffff;
+    border-color: #66cc66;
+}
+
+.combination-unlock-btn.locked {
+    background: #2e1a1a;
+    color: #ff8888;
+    border-color: #664444;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Short screens (a 412px-high landscape phone): tighter rows so the frame wraps the
+   header, the dials, the status and Reset/Unlock (slice 7 R1, the frame wraps all its
+   content at every size); anything still taller scrolls inside the frame */
+@media (max-height: 560px) {
+    .combination-wrapper { min-height: 0; }
+    .combination-header { padding: 6px 16px; }
+    .combination-header h2 { margin: 0 0 4px; }
+    .combination-help { margin-top: 4px; font-size: 16px; }
+    .combination-dials { padding: 8px 16px; gap: 24px; }
+    .combination-dial-group { gap: 6px; }
+    .combination-dial-display { height: 64px; padding: 6px 16px; }
+    .combination-status { min-height: 0; padding: 4px 16px; }
+    .combination-footer { padding: 6px 16px; }
+}
+
+/* Narrow windows: the 48px digits make each dial wider, so the three dials sit closer
+   together to stay inside the frame (slice 7 R1) */
+@media (max-width: 960px) {
+    .combination-dials { gap: 12px; padding-left: 8px; padding-right: 8px; }
+}
+
+/* Phone portrait (critique A01): three dials in a row are ~740px wide, so on a narrow window
+   the row cropped dials 1 and 3 off both sides. Below 600px the dials stack, one per line,
+   with the label beside the arrows; the wrapper grows with them and the frame scrolls, and
+   the dial the arrows turn now keeps its orange outline (combination-minigame.js scrolls it
+   into view). Nothing in the row is centred past the frame's edge (`safe center`). */
+@media (max-width: 600px) {
+    .combination-wrapper { height: auto; min-height: 100%; overflow: visible; }
+    .combination-header { padding: 8px 12px; }
+    .combination-help { font-size: 16px; }
+    .combination-dials {
+        flex: 0 0 auto;
+        flex-direction: column;
+        justify-content: safe center;
+        gap: 12px;
+        padding: 12px 8px;
+        overflow: visible;
+    }
+    .combination-dial-group { flex-direction: row; gap: 8px; }
+    /* One line at every row state: "DIAL 1 · TURN" is the widest text the label shows, so the
+       label is wide enough for it and never wraps. A wrapped active row was taller than the
+       others, so the three rows had unequal pitch. The TURN/SET words stay: they are what
+       tells the dials apart without colour. The label inherits VT323 (400 units an em advance):
+       13 characters at 16px is 13 x (6.4 + 0.96) = about 96px (measured live: 90.5px), so 104px.
+       The display is content-box: 80px plus a 2px border each side, with no side padding here
+       (the two 32px digits are 64px, centred in the 80px box). The row is then 104 + 84 + 2 x 36
+       + 3 x 8 = 284px, 4px spare on a 360px screen inside the widest (28px) frame; with 8px side
+       padding the live row was 300px and spilled into the dials' padding. */
+    .combination-dial-label { width: 104px; flex: 0 0 auto; white-space: nowrap; text-align: right; font-size: 16px; }
+    /* 32px is 4x Press Start 2P's 8px grid: two digits fit 64px */
+    .combination-dial-display { font-size: 32px; width: 80px; height: 56px; padding: 6px 0; }
+    .combination-status { padding: 6px 12px; }
+    .combination-footer { padding: 8px 12px; }
+}

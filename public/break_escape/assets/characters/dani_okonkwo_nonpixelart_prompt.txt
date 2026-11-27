@@ -1,0 +1,10 @@
+Make portrait for Dani Okonkwo
+A lean British-Nigerian young man of about 23 with deep brown skin, short black twists on top with a sharp skin fade at the sides, a thin moustache, a youthful face and wide, watchful eyes, mouth closed, a young crypto trader running on caffeine and quietly frightened. He wears a slim navy quilted padded gilet, zipped open, over a pale grey button-down Oxford shirt with the top button undone and the sleeves rolled to the forearm, a black smartwatch, a lanyard with a blank white card, black slim trousers and a black belt, and holds a plain silver unlabelled energy-drink can low at his side. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is dani_okonkwo_concept_2_raw.png.

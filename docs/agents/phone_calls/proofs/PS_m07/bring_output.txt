@@ -1,0 +1,13 @@
+game 2231 (bring)
+"opened agent_0x99"
+hub: {"choices":["1. Bring me in.","2. Where do I stand?","3. Remind me of the layout and the clock.","4. I'll check back in."],"header":null}
+shot bring_hub
+dialling: {"bar":"CALLING"}
+shot bring_calling
+call: {"bar":"CALL ENDED | 0:01","subs":["AGENT HAX: Putting you through. He's waiting."],"choices":[],"thread":"AGENT HAX: Putting you through. He's waiting."}
+shot bring_call
+after call: debrief_requested=true start_debrief=false mg="PhoneChatMinigame phone-chat"
+shot bring_after
+HaX rows: ["Outgoing call, 0:02"]
+HaX /tts: "Putting you through. He's waiting." 
+armed ending: {"reason":"mapping","npcId":"closing_debrief","eventPattern":"minigame_completed","handlerIndex":0}

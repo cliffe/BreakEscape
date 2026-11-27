@@ -1,0 +1,13 @@
+{
+  "key": "6ff939d9306d58b008181b6ac5390cc4",
+  "npc": "eleanor_vance",
+  "text": "That's a conversation for after we determine our coverage position. If we're paying this claim, the subrogation team will want to investigate whether CastleTech's SOC contract failure contributed to the damages.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:24:47Z"
+}

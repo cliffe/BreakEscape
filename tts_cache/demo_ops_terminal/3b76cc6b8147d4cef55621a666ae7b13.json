@@ -1,0 +1,13 @@
+{
+  "key": "3b76cc6b8147d4cef55621a666ae7b13",
+  "npc": "ama_owusu",
+  "text": "A user session first, then an administrator's on top of it. A user can do what one member of staff can; an administrator can change the whole server. One weakness led to the next. Fixing either one breaks the chain.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T08:59:49Z"
+}

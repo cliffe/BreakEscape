@@ -1,0 +1,13 @@
+{
+  "key": "a598aecb8d45bab90ee25028f49e3064",
+  "npc": "eleanor_vance",
+  "text": "But they told us they'd implement compensating controls. And they didn't. That's where the breach is clear.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:22:44Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "91b64e10120ef8e4522fd5fdee57885b",
+  "npc": "agent_nightshade",
+  "text": "And the calm of someone who's decided the rules don't apply to them. Find whose behaviour stopped matching their story.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:23:30Z"
+}

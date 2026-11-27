@@ -1,0 +1,13 @@
+{
+  "key": "eefa9a6f92c8529f95f691c0a652e5ea",
+  "npc": "eleanor_vance",
+  "text": "Any other warranties you want to discuss?",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:29Z"
+}

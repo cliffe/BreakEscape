@@ -1,0 +1,13 @@
+{
+  "key": "4b3dcdebdaa666f895f33afc659e2210",
+  "npc": "kit_darren_price",
+  "text": "Well spotted. Those fake device-check prompts catch people out all the time.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:28Z"
+}

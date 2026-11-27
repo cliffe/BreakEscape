@@ -1,0 +1,13 @@
+{
+  "key": "df94315ba36f9ebed6fe8dd42d26f7e6",
+  "npc": "ward_nurse",
+  "text": "If a doctor changes a dose tonight, it changes on my bit of paper and nowhere else. God help whoever's on at seven.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

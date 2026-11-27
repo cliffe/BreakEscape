@@ -1,0 +1,22 @@
+=== rec_decline
+game 2291 (rec_decline)
+"opened patricia_phone"
+patricia header="☎\nCall"
+patricia call: {"bar":"ON CALL | 0:01","choices":["1. I know who it is.","2. Just checking in."]}
+after naming: torres_identified=true {"subs":["Patricia Morgan: Morgan.","You: I know who it is.","Patricia Morgan: Go on, then. Who?","You: David Torres.","Patricia Morgan: David. Why?","You: Money. His wife's treatment isn't covered, and he's borrowed against the house.","Patricia Morgan: Money. All right. And the proof it's leaving?","YOU: The upload schedule. He's the operator, on site, tonight.","PATRICIA MORGAN: ...Damn. His kids drew on the tablecloth at our Christmas party."],"choices":[]}
+shot rec_decline_named
+naming call closed; mg="PhoneChatMinigame phone-chat" recruiter_texted=false
+ring after close: +7.4s banner: "The Recruiter | TalentStack Executive Recruiting | Incoming call | Answer | Decline" ringer={"npc":"recruiter","state":"ringing","knot":"first_call"}
+shot rec_decline_ringing
+after decline: ringer=null recruiter_texted=true
+rings in 12s: 0
+"opened recruiter"
+recruiter thread: {"header":"☎\nCall back","thread":"☎ | Missed call | Call back | TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R. | 19:51"}
+shot rec_decline_thread_after_decline
+rows=["Missed call"]
+dialling: {"bar":"CALLING"}
+shot rec_decline_callback_dialling
+callback call: {"bar":"ON CALL | 0:04","subs":["The Recruiter: You rang back. Manners, or curiosity?","THE RECRUITER: Agent. Or whatever they're calling you this week.","THE RECRUITER: I run TalentStack. You've spent tonight putting a name to one of my placements. David Torres."],"choices":["1. You radicalised a man whose wife is dying.","2. How many more \"placements\" do you have?","3. Say nothing. Let her fill the silence."]} contacted=true
+shot rec_decline_callback_call
+/tts requests: ["narrator","A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open."] ["director_netherton","Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels."] ["director_netherton","I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground."] ["director_netherton","Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how."] ["director_netherton","That is what you are going to tell me."] ["agent_nightshade","Insiders are hard to catch because they never have to break in. They're already trusted."] ["agent_nightshade","So you hunt the pattern. Access a little too bro
+["conversation_closed:patricia_phone@72.6","conversation_closed:patricia_phone@74.1","phone_call_declined:recruiter@81.7","phone_call_answered:recruiter@106.7 callback as=0"]

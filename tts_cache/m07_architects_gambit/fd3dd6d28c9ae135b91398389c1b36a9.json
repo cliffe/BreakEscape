@@ -1,0 +1,21 @@
+{
+  "key": "fd3dd6d28c9ae135b91398389c1b36a9",
+  "npc": "the_architect",
+  "text": "Did you decide with a number, or with your stomach?",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:16:51Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/fd3dd6d28c9ae135b91398389c1b36a9.mp3",
+    "clean_md5": "fab820c07eed50c253c899090f7d7cd1",
+    "baked_md5": "2434b4ecf0b1b1db05b122a775faf3e4",
+    "baked": "2026-11-24"
+  }
+}

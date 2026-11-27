@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: the last real and first falsified readings are the drawn points either side of the injection
+ok 1 - the last real and first falsified readings are the drawn points either side of the injection
+  ---
+  duration_ms: 4.945106
+  ...
+# Subtest: tooltip and report quote the same values, and those are the chart values
+ok 2 - tooltip and report quote the same values, and those are the chart values
+  ---
+  duration_ms: 3.211632
+  ...
+# Subtest: the compare banner names the rack count and injection time
+ok 3 - the compare banner names the rack count and injection time
+  ---
+  duration_ms: 1.203348
+  ...
+# Subtest: reportVariable from minigameData is used, else a plain default
+ok 4 - reportVariable from minigameData is used, else a plain default
+  ---
+  duration_ms: 1.591361
+  ...
+# Subtest: the default range shows the injection unless minigameData sets one
+ok 5 - the default range shows the injection unless minigameData sets one
+  ---
+  duration_ms: 0.233339
+  ...
+# Subtest: an off-grid injection time becomes a real point; without lastRealTimestamp the previous sample is used
+ok 6 - an off-grid injection time becomes a real point; without lastRealTimestamp the previous sample is used
+  ---
+  duration_ms: 1.909689
+  ...
+# Subtest: fallback without minigameData still gives a coherent trend and report
+ok 7 - fallback without minigameData still gives a coherent trend and report
+  ---
+  duration_ms: 1.433761
+  ...
+# Subtest: values do not depend on the browser time zone
+ok 8 - values do not depend on the browser time zone
+  ---
+  duration_ms: 8.458279
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180.587916

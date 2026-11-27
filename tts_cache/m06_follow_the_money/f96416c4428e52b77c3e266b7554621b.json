@@ -1,0 +1,13 @@
+{
+  "key": "f96416c4428e52b77c3e266b7554621b",
+  "npc": "lerato_dlamini",
+  "text": "Same. The floor won't run itself.",
+  "voice": "Gacrux",
+  "style": "Night floor coordinator at a cryptocurrency exchange, in her 30s, confident and direct. Speak with a consistent South African accent from Durban throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:08:12Z"
+}

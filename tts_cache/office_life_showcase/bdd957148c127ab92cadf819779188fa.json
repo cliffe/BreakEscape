@@ -1,0 +1,13 @@
+{
+  "key": "bdd957148c127ab92cadf819779188fa",
+  "npc": "zainab_hussain",
+  "text": "This is really good.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:47:46Z"
+}

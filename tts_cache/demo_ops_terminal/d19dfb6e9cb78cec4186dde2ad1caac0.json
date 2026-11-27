@@ -1,0 +1,13 @@
+{
+  "key": "d19dfb6e9cb78cec4186dde2ad1caac0",
+  "npc": "graham_whitfield",
+  "text": "Aye, go on. That's my assist code. Connect it from your inventory.",
+  "voice": "Umbriel",
+  "style": "Merrin & Sallow's in-house IT administrator, in his early 60s, unhurried and kind, a little tired of the same password questions. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:36:25Z"
+}

@@ -1,0 +1,49 @@
+{
+ "imports": {
+  "m09_recruiter_offer": "taken"
+ },
+ "steps": [
+  {
+   "note": "Carry-over: Kowalczyk taken in m09. Cuffed at the second van; the aside answer 'In Helena' is stored as bench."
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "What are the two times",
+    "You knew him well",
+    "How many will it kill",
+    "He wants us there",
+    "She's right",
+    "How long have we got",
+    "In Helena",
+    "Leave him in the van"
+   ]
+  },
+  {
+   "said": [
+    "Quintero cuffs Kowalczyk without a word.",
+    "That was your work in Helena. It held.",
+    "Kowalczyk looks at you once.",
+    "Kowalczyk sits in the back of the second van, cuffed.",
+    "She was the one the ledger meant.",
+    "When did you know?",
+    "She turns back to the window. Quintero shuts the van door.",
+    "Quintero breaches alone"
+   ],
+   "notSaid": [
+    "One place at the table is empty.",
+    "Kowalczyk walked off the apron",
+    "Kowalczyk hands you a PIN cracker",
+    "Their ledger calls that person WREN",
+    "Kowalczyk goes ahead on her own"
+   ]
+  },
+  {
+   "expect": {
+    "kowalczyk_answer": "bench",
+    "aside_done": true,
+    "door_scene_done": true
+   }
+  }
+ ]
+}

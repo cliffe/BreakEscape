@@ -1,0 +1,13 @@
+{
+  "key": "df1328e8df113a8fda8945fb846f7629",
+  "npc": "yusuf_demir",
+  "text": "This cooler wants a service.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:46:26Z"
+}

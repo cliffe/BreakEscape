@@ -1,0 +1,13 @@
+{
+  "key": "2a5c594982d1551e62f589bdcf1dcc1f",
+  "npc": "receptionist_ai",
+  "text": "I see everything and I judge nothing, Agent.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI at reception. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, unnervingly helpful.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:17:42Z"
+}

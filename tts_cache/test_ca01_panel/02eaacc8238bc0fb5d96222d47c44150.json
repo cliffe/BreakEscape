@@ -1,0 +1,13 @@
+{
+  "key": "02eaacc8238bc0fb5d96222d47c44150",
+  "npc": "adaeze_okafor",
+  "text": "One call to confirm the new details, and the money never moves. Saves a lot of phoning round afterwards.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_ca01_panel",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:53:24Z"
+}

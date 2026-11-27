@@ -1,0 +1,13 @@
+{
+  "key": "4e27e817a3b83d2558915cd2f501fe2e",
+  "npc": "niamh_doherty",
+  "text": "That page dressed as a routine check, asking you to run a step to continue, was the one to stop.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:52:24Z"
+}

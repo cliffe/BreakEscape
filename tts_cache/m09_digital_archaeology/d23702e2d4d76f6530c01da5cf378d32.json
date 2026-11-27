@@ -1,0 +1,13 @@
+{
+  "key": "d23702e2d4d76f6530c01da5cf378d32",
+  "npc": "narrator",
+  "text": "Netherton takes the chair furthest from yours. Nobody mentions why.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:18:33Z"
+}

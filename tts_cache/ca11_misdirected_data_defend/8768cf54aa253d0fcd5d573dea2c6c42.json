@@ -1,0 +1,14 @@
+{
+  "key": "8768cf54aa253d0fcd5d573dea2c6c42",
+  "npc": "kit_yusuf_demir",
+  "text": "One wrong recipient and people's details are out, and that's a breach to report. The quicker it's flagged, the less the harm.",
+  "delivery": "steady, matter-of-fact",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:45:14Z"
+}

@@ -1,0 +1,81 @@
+
+## R11 (round 2): Voltage fought before the dial is read. No button stance, no crew offer anywhere (anomaly not detected), the trigger race is lost after 25 s and bank B vents with the crew in Hall 2.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_provided_keycard":true,"vance_card_cloned":true,"vance_is_ally":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"plant_room_entered":true,"vance_spoken":true}}
+
+--- phone ---
+  Agent, status check. Are you inside the facility?
+     (3 options)
+ > Inside the facility. Beginning investigation now.
+  Copy. Find how they're driving the attack, then kill it. Take Voltage alive if you can.
+  First, prove the screens are lying. Something in Battery Hall 1 that isn't on their feed.
+  Then the engineering workshop, off the same hall. That's how they got onto the SCADA network.
+  Vance can point you to the right systems.
+ > On it.
+  Call me when you've got a real reading.
+  [chat closes]
+   [PASS] not said: "night crew"
+
+--- static ---
+  Narrator: He steps out from behind the plant-room door frame, putting himself squarely between you and the man at the laptop.
+  ENTROPY Operative 'Static': Voltage. Company.
+  Narrator: Behind him, Voltage does not look up from the screen.
+  ENTROPY Operative 'Static': He doesn't need long. I just need you to be slow.
+     (4 options)
+ > I'm not here for you. I'm here to talk to him.
+      [set_global static_stood_aside=true]
+  Narrator: He weighs you for a long second, then takes one step to the side. One step, no more.
+  ENTROPY Operative 'Static': Talk, then. From there.
+  [chat closes]
+
+--- voltage ---
+  One of you. I'd budgeted for more.
+  And Static let you walk up to my bench. He'll explain that later.
+  But you're late. This place has no security worth the name, and we've had three days in it.
+     (2 options)
+ > You're not burning this hall down.
+  Ja. They all say that on the way in.
+  Look at my hand. Then look at the clock.
+  One keystroke and it's now, not eight o'clock. The racks go critical, the hall burns, and the grid drops.
+  Your move.
+     (2 options)
+ > Then I take that laptop off you.
+  Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown.
+  Voltage: The button? Press it. Grid control won't shed a megawatt on what you've got.
+  Voltage: And Static's still in this room. I'd decide quickly.
+     (2 options)
+ > I'm taking you down. Now.
+      [task: confront_voltage]
+  Voltage: Then you'll have to be faster than one keystroke.
+  Narrator: He moves for the bench, Static comes off the wall at you, and the plant room stops being a place where anyone is talking.
+      [engine: operative_static hostile]
+      [engine: voltage hostile]
+      [clock: trigger_race started at 0 min]
+  [end]
+   [PASS] said: "The button? Press it."
+   [PASS] said: "And Static's still in this room"
+   [PASS] said: "Static comes off the wall"
+   [PASS] not said: "Go for the button"
+   [PASS] not said: "You don't get to have both"
+   [PASS] voltage_fight_started = true (expected true)
+   [PASS] static_engaged = true (expected true)
+   {advance 1 min}
+      [clock 0 min: trigger_race FIRES {"racks_vented":true,"casualties_occurred":true,"vented_by_trigger":true,"urgency_stage":4}]
+      [engine: racks_vented with the crew in Hall 2 -> crew_lost]
+   [PASS] racks_vented = true (expected true)
+   [PASS] vented_by_trigger = true (expected true)
+   [PASS] crew_lost = true (expected true)
+
+--- vance @vance_hub ---
+  Robert Vance: What do you need?
+     (3 options)
+ > What should I be doing right now?
+  Robert Vance: My screens all read the same feed. Check the racks against something that isn't on it. There's an old dial on the Rack Bank C wall in Hall 1.
+  Robert Vance: Go on.
+     (3 options)
+ > Stay on the ops desk. I'll call if I need the engineering side.
+  Robert Vance: I'm not going anywhere. Call the moment you're moving.
+  [chat closes]
+   [PASS] not said: "Is anyone working"
+
+[stats] spoken/narrated lines 28, choices 8, longest run without a choice 4 (phone); runs>=6: 
+[result] all expectations met

@@ -1,0 +1,13 @@
+{
+  "key": "a437a54b45abf9237c2f536760fc98a1",
+  "npc": "closing_debrief_trigger",
+  "text": "Ghost built that choice so that it couldn't be got right. You found the way through it Ghost had bet nobody would.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-12",
+  "recorded_at": "2026-11-12T00:00:37Z"
+}

@@ -1,0 +1,11 @@
+scenarios/lab_tesseract_trials/scenario.json.erb
+  OK  foyer(10x10) west->teaching_lab(10x10): door (16, 80) vs (-16, 80)
+  OK  foyer(10x10) south->lecture_theatre(20x10): door (48, 288) vs (48, 288)
+  OK  common_room(10x10) west->foyer(10x10): door (336, 80) vs (304, 80)
+  OK  common_room(10x10) east->staff_office(20x10): door (624, 80) vs (656, 80)
+  OK  corridor(10x6) south->foyer(10x10): door (48, 32) vs (48, 32)
+  OK  corridor(10x6) north->workshop(10x10): door (272, -96) vs (272, -96)
+  OK  corridor(10x6) west->library(10x6): door (16, -48) vs (-16, -48)
+  OK  corridor(10x6) east->sidhu_office(10x6): door (304, -48) vs (336, -48)
+  OK  library(10x6) north->special_collections(10x10): door (-48, -96) vs (-48, -96)
+  OK  seminar_room(10x10) south->sidhu_office(10x6): door (592, -96) vs (592, -96)

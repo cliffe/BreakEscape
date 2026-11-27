@@ -1,0 +1,10 @@
+{
+  "scenario": "test-siem",
+  "start_room": "soc",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

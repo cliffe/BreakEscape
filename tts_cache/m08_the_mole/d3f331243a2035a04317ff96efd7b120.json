@@ -1,0 +1,13 @@
+{
+  "key": "d3f331243a2035a04317ff96efd7b120",
+  "npc": "narrator",
+  "text": "Netherton finds you in the corridor. He looks older than he did at the briefing a few hours ago. Your phone buzzes once: a voice note from HaX.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:17:57Z"
+}

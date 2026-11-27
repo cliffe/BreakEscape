@@ -1,0 +1,13 @@
+{
+  "key": "a400d36756f0dfa44beafa10692e142f",
+  "npc": "rosa",
+  "text": "Is there any milk left?",
+  "voice": "Leda",
+  "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:25:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "83fc93b94c5be8818a3cdeae3c36b3e8",
+  "npc": "adaeze_okafor",
+  "text": "That's the inbox sorted, thank you.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T23:42:59Z"
+}

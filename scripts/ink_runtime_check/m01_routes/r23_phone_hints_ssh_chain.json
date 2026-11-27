@@ -1,0 +1,20 @@
+{
+ "steps": [
+  {"note": "R23: the phone hub's hint tiers for the VM chain. With no progress only general advice shows; each tier opens on its gate (server room, SSH flag, Linux flag) and the later tier stays hidden until then."},
+  {"talk": "phone", "knot": "support_hub", "picks": ["I'm good for now"]},
+  {"said": ["[choice] Got any general advice", "Copy that. I'm a message away"],
+   "notSaid": ["[choice] SSH brute force help", "[choice] Linux navigation tips", "[choice] Privilege escalation guidance", "[choice] Lockpicking guidance", "[choice] I'd like that ops manual"]},
+  {"enter": "server_room"},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["SSH brute force help", "username", "I'm good for now"]},
+  {"said": ["[choice] SSH brute force help", "SSH brute force uses Hydra", "The login name is derek, all lower case", "Copy that. I'm a message away"],
+   "notSaid": ["[choice] Linux navigation tips", "Linux navigation basics"]},
+  {"set": {"ssh_flag_submitted": true}},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["Linux navigation tips", "Where should I look for flags", "I need the privilege escalation guide", "Understood", "I'm good for now"]},
+  {"said": ["[choice] Linux navigation tips", "Linux navigation basics: ls lists files", "Hidden files start with a dot", "Home directories, user documents, sometimes hidden in config files", "I've uploaded the privilege escalation guide to your secure terminal", "Stay sharp. The next step is always the one that gets you closer to the archive"],
+   "notSaid": ["[choice] Privilege escalation guidance", "Try \"sudo -l\" to see what sudo permissions", "[choice] SSH brute force help"]},
+  {"set": {"linux_flag_submitted": true}},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["Privilege escalation guidance", "What if I don't have sudo access", "I'm good for now"]},
+  {"said": ["[choice] Privilege escalation guidance", "Try \"sudo -l\" to see what sudo permissions you have", "But for this mission, sudo works"],
+   "notSaid": ["[choice] Linux navigation tips", "[choice] I need the privilege escalation guide"]}
+ ]
+}

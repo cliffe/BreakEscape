@@ -1,0 +1,21 @@
+{
+  "key": "2ec21e5e4bc9e7e69f68f91f2ed8a19f",
+  "npc": "ghost_phone",
+  "text": "I might. I've the time now.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:05:55Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/2ec21e5e4bc9e7e69f68f91f2ed8a19f.mp3",
+    "clean_md5": "910a4d7b16bd2c74080fb31853a83f55",
+    "baked_md5": "a1bf90eee1fc055848b415c16d3a96cd",
+    "baked": "2026-11-24"
+  }
+}

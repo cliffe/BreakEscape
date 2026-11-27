@@ -1,0 +1,6 @@
+{
+  "_comment": "Speakers whose cached TTS clips carry a baked voice FX (tools/voice_fx/bake.py). Keyed by tts_cache scenario folder, then NPC id as the sidecars name it. Ghost (m02 and the m10 phone call) and the Architect (m07, comms only) get the trailer's 'entropy-comms' chain. Not here on purpose: m10 'tesseract'/'tesseract_voice' (the Architect in person, no FX in the game), m09 'alpha_recording' (his old lecture tape, 'radio' FX), lab_tesseract_trials 'ghost' (the Keyholder, a different character).",
+  "m02_ransomed_trust": { "ghost": "entropy-comms" },
+  "m07_architects_gambit": { "the_architect": "entropy-comms" },
+  "m10_full_disclosure": { "ghost_phone": "entropy-comms" }
+}

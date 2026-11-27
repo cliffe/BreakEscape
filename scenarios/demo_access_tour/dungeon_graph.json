@@ -1,0 +1,645 @@
+{
+  "scenario": "demo_access_tour",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_server_room",
+      "label": "Server room<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_partner_office",
+      "label": "Partner's office<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "partner_office",
+      "label": "Partner's office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_meeting_room",
+      "label": "Meeting room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "meeting_room",
+      "label": "Meeting room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_comms_cupboard",
+      "label": "Comms cupboard<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "comms_cupboard",
+      "label": "Comms cupboard",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_reception_pc",
+      "label": "Front desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_thandiwe_laptop",
+      "label": "Thandiwe's laptop<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_yasmin_pc",
+      "label": "Yasmin's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_door_controller",
+      "label": "Door controller<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_julian_pc",
+      "label": "Julian's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "card_fac_lorna_01",
+      "label": "Lorna Easton FAC card<br/>(Lorna Easton)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "open_plan",
+      "label": "Open plan",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_delphine",
+      "label": "Delphine Arvanitis sign-in<br/>(darvanitis)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "reception",
+      "label": "Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_thandiwe",
+      "label": "Thandiwe Moyo sign-in<br/>(tmoyo)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_yasmin",
+      "label": "Yasmin Chaudhry sign-in<br/>(ychaudhry)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_lorna",
+      "label": "Lorna Easton sign-in<br/>(leaston)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_julian",
+      "label": "Julian Sallow sign-in<br/>(jsallow)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_meeting_jack",
+      "label": "Live wall network port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Merrin & Sallow office LAN<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_managed_port",
+      "label": "Managed wall network port<br/>Network jack<br/>(port security: refuses the device)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "jack_guest_vlan_port",
+      "label": "Guest VLAN port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_guest",
+      "label": "Merrin & Sallow guest network<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "resource_client_letters",
+      "label": "Client-Letters<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "resource_finance_share",
+      "label": "Finance<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "net_server_lan",
+      "label": "Server network<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "wifiap_staff_ap",
+      "label": "MerrinSallow-Staff access point<br/>Wi-Fi access point",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "wifikey_office_lan",
+      "label": "Wi-Fi key<br/>(MerrinSallow-Staff)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "wifiap_guest_ap",
+      "label": "MerrinSallow-Guest access point<br/>Wi-Fi access point",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "implant_reception_pc",
+      "label": "Implant: reception_pc<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "device_kit_injector",
+      "label": "Keystroke injector<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "pivot_julian_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_reception_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_thandiwe_laptop",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_yasmin_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_door_controller",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "cred_julian_rdp",
+      "label": "Julian Sallow saved connection<br/>(jsallow)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_julian_rdp_file",
+      "label": "julian.rdp",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_lorna_door_pw",
+      "label": "Lorna Easton password<br/>(leaston)",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_partner_office",
+      "to": "partner_office",
+      "soft": false
+    },
+    {
+      "from": "door_meeting_room",
+      "to": "meeting_room",
+      "soft": false
+    },
+    {
+      "from": "door_comms_cupboard",
+      "to": "comms_cupboard",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "lock_reception_pc",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "lock_thandiwe_laptop",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "lock_yasmin_pc",
+      "soft": false
+    },
+    {
+      "from": "partner_office",
+      "to": "lock_julian_pc",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "card_fac_lorna_01",
+      "soft": false
+    },
+    {
+      "from": "card_fac_lorna_01",
+      "to": "door_comms_cupboard",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "signin_delphine",
+      "soft": false
+    },
+    {
+      "from": "signin_delphine",
+      "to": "lock_reception_pc",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "signin_thandiwe",
+      "soft": false
+    },
+    {
+      "from": "signin_thandiwe",
+      "to": "lock_thandiwe_laptop",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "signin_yasmin",
+      "soft": false
+    },
+    {
+      "from": "signin_yasmin",
+      "to": "lock_yasmin_pc",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "signin_lorna",
+      "soft": false
+    },
+    {
+      "from": "signin_lorna",
+      "to": "lock_door_controller",
+      "soft": false
+    },
+    {
+      "from": "kitchen",
+      "to": "signin_julian",
+      "soft": false
+    },
+    {
+      "from": "signin_julian",
+      "to": "lock_julian_pc",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "signin_delphine",
+      "soft": false,
+      "label": "sticky note at reception_pc"
+    },
+    {
+      "from": "open_plan",
+      "to": "signin_yasmin",
+      "soft": false,
+      "label": "sticky note at yasmin_pc"
+    },
+    {
+      "from": "meeting_room",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "meeting_room",
+      "to": "jack_meeting_jack",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_meeting_jack",
+      "soft": false
+    },
+    {
+      "from": "jack_meeting_jack",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "comms_cupboard",
+      "to": "jack_managed_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_managed_port",
+      "soft": false
+    },
+    {
+      "from": "comms_cupboard",
+      "to": "jack_guest_vlan_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_guest_vlan_port",
+      "soft": false
+    },
+    {
+      "from": "jack_guest_vlan_port",
+      "to": "net_guest",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_julian_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_reception_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_thandiwe_laptop",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_yasmin_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "resource_client_letters",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "signin_yasmin",
+      "to": "resource_finance_share",
+      "soft": false
+    },
+    {
+      "from": "signin_julian",
+      "to": "resource_finance_share",
+      "soft": false
+    },
+    {
+      "from": "net_server_lan",
+      "to": "lock_door_controller",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "net_server_lan",
+      "soft": true,
+      "label": "link",
+      "undirected": true
+    },
+    {
+      "from": "reception",
+      "to": "wifiap_staff_ap",
+      "soft": false
+    },
+    {
+      "from": "wifiap_staff_ap",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "wifikey_office_lan",
+      "to": "wifiap_staff_ap",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "wifiap_guest_ap",
+      "soft": false
+    },
+    {
+      "from": "wifiap_guest_ap",
+      "to": "net_guest",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "implant_reception_pc",
+      "soft": false,
+      "label": "at USB socket by the front desk PC"
+    },
+    {
+      "from": "meeting_room",
+      "to": "device_kit_injector",
+      "soft": false
+    },
+    {
+      "from": "device_kit_injector",
+      "to": "implant_reception_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_reception_pc",
+      "to": "implant_reception_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_reception_pc",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_julian_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_julian_pc",
+      "to": "pivot_julian_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_julian_pc",
+      "to": "net_server_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_reception_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_reception_pc",
+      "to": "pivot_reception_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_reception_pc",
+      "to": "net_server_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_thandiwe_laptop",
+      "soft": false
+    },
+    {
+      "from": "lock_thandiwe_laptop",
+      "to": "pivot_thandiwe_laptop",
+      "soft": false
+    },
+    {
+      "from": "pivot_thandiwe_laptop",
+      "to": "net_server_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_yasmin_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_yasmin_pc",
+      "to": "pivot_yasmin_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_yasmin_pc",
+      "to": "net_server_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_server_lan",
+      "to": "pivot_door_controller",
+      "soft": false
+    },
+    {
+      "from": "lock_door_controller",
+      "to": "pivot_door_controller",
+      "soft": false
+    },
+    {
+      "from": "pivot_door_controller",
+      "to": "net_office_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "reception",
+      "to": "open_plan",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "kitchen",
+      "soft": false
+    },
+    {
+      "from": "cred_src_julian_rdp_file",
+      "to": "cred_julian_rdp",
+      "soft": false
+    },
+    {
+      "from": "cred_julian_rdp",
+      "to": "lock_julian_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_reception_pc",
+      "to": "cred_lorna_door_pw",
+      "soft": false
+    },
+    {
+      "from": "cred_lorna_door_pw",
+      "to": "lock_door_controller",
+      "soft": false
+    }
+  ]
+}

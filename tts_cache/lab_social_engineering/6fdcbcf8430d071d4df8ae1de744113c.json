@@ -1,0 +1,13 @@
+{
+  "key": "6fdcbcf8430d071d4df8ae1de744113c",
+  "npc": "fairbairn",
+  "text": "Before you start. This test of yours. Is it going to make my people look stupid?",
+  "voice": "Sadaltager",
+  "style": "Managing director who founded a small British firm, early sixties, white Scottish. Speak with a consistent soft Edinburgh Scottish accent throughout — do not shift to any other accent. Lower-mid pitch; unhurried, careful pace. Courteous and a little formal: a client who has agreed to the test and wants it done properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:33:47Z"
+}

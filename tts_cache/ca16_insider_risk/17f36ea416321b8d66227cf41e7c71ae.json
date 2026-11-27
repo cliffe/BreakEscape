@@ -1,0 +1,13 @@
+{
+  "key": "17f36ea416321b8d66227cf41e7c71ae",
+  "npc": "anjali_rao",
+  "text": "Lending a login feels kind, but then an audit shows your name on things you never touched, and there's no untangling it.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:06Z"
+}

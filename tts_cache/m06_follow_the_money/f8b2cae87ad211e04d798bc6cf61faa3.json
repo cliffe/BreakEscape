@@ -1,0 +1,13 @@
+{
+  "key": "f8b2cae87ad211e04d798bc6cf61faa3",
+  "npc": "irina_volkova",
+  "text": "Every flagged transaction comes to me personally. I review it, I decide, I sign it off. That part I do by the book.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:56:44Z"
+}

@@ -1,0 +1,208 @@
+{
+ "probe": "tools/playtest/showcase-bc1-cake-reload.mjs",
+ "scenario": "office_life_showcase",
+ "room": "office",
+ "cake": "cake",
+ "port": 3094,
+ "branch_head": "fc9b3d5c8 plus main 69d8bf05a (magnet perPerson fix)",
+ "notes": [
+  "Case 3 run 1 (game 7705) stopped with \"Target page, context or browser has been closed\" at the wait after the first slice and wrote no JSON; retried once as case 3 only (game 7721)."
+ ],
+ "cases": [
+  {
+   "case": 1,
+   "game": 7695,
+   "run": "run 1",
+   "pass": true,
+   "before": {
+    "found": [],
+    "inv": true,
+    "loaded": [
+     "office",
+     "kitchen"
+    ],
+    "servings": 2,
+    "magnet": false
+   },
+   "after": {
+    "found": [],
+    "inv": true,
+    "loaded": [
+     "office",
+     "kitchen"
+    ],
+    "servings": 2,
+    "magnet": false
+   },
+   "errs": [
+    "console: Failed to load resource: net::ERR_FAILED"
+   ],
+   "playerState": {
+    "before": 3266,
+    "after": 3339,
+    "grew": 73,
+    "growKeys": {
+     "notes": -2,
+     "syncWrites": 75
+    },
+    "ok": true
+   }
+  },
+  {
+   "case": 2,
+   "game": 7701,
+   "run": "run 1",
+   "pass": false,
+   "placed": true,
+   "kept": false,
+   "eat": {
+    "npc": "chidi_okeke",
+    "walked": true,
+    "ate": true
+   },
+   "dropEvents": [
+    "item_dropped:cake"
+   ],
+   "before": {
+    "found": [
+     {
+      "room": "office",
+      "x": 152,
+      "y": 215,
+      "elevation": 0
+     }
+    ],
+    "inv": false,
+    "loaded": [
+     "office"
+    ],
+    "servings": 2,
+    "magnet": true,
+    "magnetServings": 2
+   },
+   "after": {
+    "found": [
+     {
+      "room": "office",
+      "x": 152,
+      "y": 215,
+      "elevation": 0
+     }
+    ],
+    "inv": false,
+    "loaded": [
+     "office",
+     "kitchen"
+    ],
+    "servings": 1,
+    "magnet": true,
+    "magnetServings": 1
+   },
+   "events": [
+    {
+     "c": 38,
+     "n": "magnet_serving:cake",
+     "d": "{\"npcId\":\"chidi_okeke\",\"magnetId\":\"cake\",\"left\":0}"
+    }
+   ],
+   "errs": [
+    "console: Failed to load resource: net::ERR_FAILED"
+   ],
+   "playerState": {
+    "before": 3231,
+    "after": 3450,
+    "grew": 219,
+    "growKeys": {
+     "notes": -2,
+     "syncWrites": 160,
+     "globalVariables": 61
+    },
+    "ok": true
+   }
+  },
+  {
+   "case": 3,
+   "game": 7721,
+   "run": "run 2, retry of case 3 only",
+   "pass": false,
+   "first": {
+    "npc": "chidi_okeke",
+    "walked": true,
+    "ate": true
+   },
+   "kept": false,
+   "second": {
+    "npc": "jun_watanabe",
+    "walked": false,
+    "ate": false
+   },
+   "gone": true,
+   "finishedEvent": false,
+   "task": "completed",
+   "before": {
+    "found": [
+     {
+      "room": "office",
+      "x": 152,
+      "y": 215,
+      "elevation": 0
+     }
+    ],
+    "inv": false,
+    "loaded": [
+     "office"
+    ],
+    "servings": 2,
+    "magnet": true,
+    "magnetServings": 2
+   },
+   "mid": {
+    "found": [
+     {
+      "room": "office",
+      "x": 152,
+      "y": 215,
+      "elevation": 0
+     }
+    ],
+    "inv": false,
+    "loaded": [
+     "office"
+    ],
+    "servings": 1,
+    "magnet": true,
+    "magnetServings": 1
+   },
+   "after": {
+    "found": [],
+    "inv": false,
+    "loaded": [
+     "office",
+     "kitchen"
+    ],
+    "servings": 0,
+    "magnet": false
+   },
+   "events": [],
+   "errs": [
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED"
+   ],
+   "playerState": {
+    "before": 3285,
+    "after": 3305,
+    "grew": 20,
+    "growKeys": {
+     "notes": -2,
+     "syncWrites": 254,
+     "room_states": -466,
+     "globalVariables": 63,
+     "objectivesState": 114,
+     "triggeredEvents": 38
+    },
+    "ok": true
+   }
+  }
+ ]
+}

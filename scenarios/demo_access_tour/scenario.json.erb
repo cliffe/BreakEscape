@@ -1,0 +1,1129 @@
+<%
+# demo_access_tour, slice 1 (DEMO_ACCESS_TOUR_PLAN.md section 5, item 1): the seven rooms, their
+# doors and locks, the cast placed static, the player's phone and the signs. Slice 2 (item 2)
+# adds accounts, the kit, the networks, the sign-in PCs' owners and contents and Lorna's card.
+# Slice 3 (item 3) adds the devices (injector, USB stick, rogue AP, capture tablet, the USB hub and
+# implant socket, the comms cupboard's ports) and the Staff Wi-Fi capture. Office life and the real
+# ink come in later slices.
+# The keypad PIN is rendered per game; it is not written anywhere else in this slice.
+server_room_pin = @random_pin
+# Staff passwords. Each is one literal, written once here and interpolated where it is shown
+# (an NPC's creds are server-only; facilities.txt on reception_pc repeats Lorna's).
+delphine_pw = "Merrin-Desk-4417"
+thandiwe_pw = "Kestrel-Loom-82"
+yasmin_pw   = "Saffron-Ledger-31"
+lorna_pw    = "Faclab-Tarn-905"
+julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
+%>
+{
+  "scenario_brief": "DEMO: Access tour\n\nMerrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT. The partners want a walk-round access test of the office. Ama stays at reception; you do the walking.",
+  "endGoal": "Demo only: walk the access tour.",
+  "startRoom": "reception",
+  "show_scenario_brief": "on_resume",
+  "startPosition": { "x": 5.4, "y": 7 },
+  "npcNeedsSeed": "demo_access_tour",
+  "npcWindupMs": 0,
+
+  <%# Lights on everywhere (the default look), so the planted rogue AP can show its status LED. %>
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "startItemsInInventory": [
+    { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone",
+      "npcIds": ["ama_phone"], "observations": "Your work phone, with Ama a message away." },
+    <%# The cake lever (office-life cake spec, minimal variant): held from the start, so nobody
+        knows of it until the player drops it. Dropped in the open plan it empties both desks.
+        servings 2 / perPerson 1; cake_servings below must equal servings. %>
+    { "type": "cake1", "id": "cake", "name": "Cake", "takeable": true, "droppable": true,
+      "observations": "A cake for the office. Choose Drop here in your inventory to put it out where people will see it.",
+      "affordance": {
+        "satisfies": ["hunger"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 30, "servings": 2, "perPerson": 1, "announce": "news_cake", "newsRadius": 5 }
+      } }
+  ],
+
+  <%# Spoken pools. Bark text lives in these pools and in NPC JSON, never in engine text. %>
+  "ttsPregenerateChatter": true,
+  "chatter": {
+    "coffee": ["Go on, after you.", "Is there any milk left?", "Strong one today?"],
+    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."],
+    "news_cake": ["Someone's brought a cake in!", "There's cake going, if you're quick.", "Cake! It's somebody's birthday."],
+    "grumble_gone": ["Missed it."]
+  },
+
+  "defaultPolicy": "desk",
+
+  "policies": {
+    <%# No autoLockMin anywhere: a policy without it never auto-locks a password or credential
+        session (plan C5). A screen locks only when Yasmin leaves or the presenter presses Lock. %>
+    "desk": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" },
+    "partner": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" },
+    "infra": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" }
+  },
+
+  <%# The Staff psk is @random_password. The capture mapping on ama_phone renders @random_password
+      again in the same binding (never a pasted copy of the value). Guest has an SSID and no psk: an open network. %>
+  "networks": {
+    "office_lan": { "name": "Merrin & Sallow office LAN", "wifi": { "ssid": "MerrinSallow-Staff", "psk": "<%= @random_password %>" } },
+    "server_lan": { "name": "Server network" },
+    "guest": { "name": "Merrin & Sallow guest network", "wifi": { "ssid": "MerrinSallow-Guest" } }
+  },
+
+  "networkLinks": [
+    ["office_lan", "server_lan"]
+  ],
+
+  "social": { "captures": { "revealSecret": true } },
+
+  <%# Shares are resources. client_letters is open to anyone on office_lan. finance_share admits
+      the roles finance and partner: a session at yasmin_pc or julian_pc, not the bare foothold. %>
+  "resources": {
+    "client_letters": {
+      "kind": "file_share",
+      "name": "Client-Letters",
+      "host": "MS-FS01",
+      "network": "office_lan",
+      "observations": "The firm's outgoing client letters. Any device on the network can list the folder.",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "letter_template",
+          "name": "letter_template.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Merrin & Sallow\n\nDear [client],\n\nThank you for your instructions. We will be in touch shortly.\n\nYours sincerely,",
+          "observations": "The firm's standard client letter."
+        }
+      ]
+    },
+    "finance_share": {
+      "kind": "file_share",
+      "name": "Finance",
+      "host": "MS-FS01",
+      "network": "office_lan",
+      "access": { "roles": ["finance", "partner"] },
+      "observations": "The firm's finance folder. It lists only to finance and the partners.",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "q3_accounts",
+          "name": "q3_accounts.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Quarter 3 management accounts (draft).\n\nFees billed ahead of plan. Two clients late paying; Julian to chase.",
+          "observations": "A draft of the quarter's accounts."
+        }
+      ]
+    }
+  },
+
+  "credentials": {
+    "lorna_door_pw": {
+      "kind": "password",
+      "account": "lorna",
+      "label": "Lorna's door controller password",
+      "proof": { "session": "reception_pc" },
+      "foundIn": "facilities_txt"
+    },
+    "julian_rdp": {
+      "kind": "saved_connection",
+      "account": "julian",
+      "connectsTo": "julian_pc",
+      "label": "julian.rdp",
+      "proof": { "held": "julian_rdp_file" }
+    }
+  },
+
+  "globalVariables": {
+    "cake_servings": 2,
+    "hub_stick_accepted": false,
+    "cloner_held": false,
+    "seen_julian_rdp": false,
+    "has_julian_rdp": false,
+    "staff_twin_up": false,
+    "ap_planted": false,
+    "julian_lost_with_desk": false,
+    "julian_back": false,
+    "tour_full": false,
+    "front_desk_signed_out": false,
+    "saw_in_use": false,
+    "julian_ended_by_unplug": false,
+    "tour_debriefed": false,
+    "done_t_meet_ama": false,
+    "done_t_kit": false,
+    "done_t_front_desk": false,
+    "done_t_copy_badge": false,
+    "done_t_comms": false,
+    "done_t_drop_box": false,
+    "done_t_julian_pc": false,
+    "done_t_unplug": false,
+    "done_t_server_room": false,
+    "done_t_open_session": false,
+    "done_t_yasmin_pc": false,
+    "done_t_door_controller": false,
+    "done_t_implant": false,
+    "done_t_capture_key": false,
+    "done_t_staff_wifi": false,
+    "done_t_guest_port": false,
+    "done_t_debrief": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "aim_office",
+      "title": "Test the office",
+      "description": "Get past the doors: the meeting room, the front desk, a copied staff badge and the comms cupboard.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "t_meet_ama", "title": "Talk to Ama at reception", "type": "npc_conversation", "targetNPC": "ama", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_meet_ama": true } } },
+        { "taskId": "t_kit", "title": "Get into the meeting room", "type": "unlock_room", "targetRoom": "meeting_room", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_kit": true } } },
+        { "taskId": "t_front_desk", "title": "Sign in at the front desk", "type": "unlock_object", "targetObject": "reception_pc", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_front_desk": true } } },
+        { "taskId": "t_copy_badge", "title": "Copy a staff badge", "type": "manual", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_copy_badge": true } } },
+        { "taskId": "t_comms", "title": "Get into the comms cupboard", "type": "unlock_room", "targetRoom": "comms_cupboard", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_comms": true } } }
+      ]
+    },
+    {
+      "aimId": "aim_network",
+      "title": "Test the network",
+      "description": "Plug the drop box in, reach the partner's PC through it, and pull the box out to see what drops.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "t_drop_box", "title": "Plug the drop box into a live port", "type": "unlock_object", "targetObject": "meeting_jack", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_drop_box": true } } },
+        { "taskId": "t_julian_pc", "title": "Connect to the partner's PC", "type": "unlock_object", "targetObject": "julian_pc", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_julian_pc": true } } },
+        { "taskId": "t_unplug", "title": "Unplug the drop box", "type": "manual", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_unplug": true } } }
+      ]
+    },
+    {
+      "aimId": "aim_around",
+      "title": "Look around (optional)",
+      "optional": true,
+      "description": "Optional. The server room, a laptop left signed in, and a locked screen.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "t_server_room", "title": "Get into the server room", "type": "unlock_room", "targetRoom": "server_room", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_server_room": true } } },
+        { "taskId": "t_open_session", "title": "Use a laptop its owner left signed in", "type": "unlock_object", "targetObject": "thandiwe_laptop", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_open_session": true } } },
+        { "taskId": "t_yasmin_pc", "title": "Get past a locked screen", "type": "unlock_object", "targetObject": "yasmin_pc", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_yasmin_pc": true } } }
+      ]
+    },
+    {
+      "aimId": "aim_deeper",
+      "title": "Go deeper (optional)",
+      "optional": true,
+      "description": "Optional. The door controller, the front desk implant, the rogue access point and the comms cupboard's ports.",
+      "status": "active",
+      "order": 3,
+      "tasks": [
+        { "taskId": "t_door_controller", "title": "Sign in to the door controller", "type": "unlock_object", "targetObject": "door_controller", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_door_controller": true } } },
+        { "taskId": "t_implant", "title": "Get a foothold through the front desk PC", "type": "manual", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_implant": true } } },
+        { "taskId": "t_capture_key", "title": "Capture the Staff Wi-Fi key", "type": "manual", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_capture_key": true } } },
+        { "taskId": "t_staff_wifi", "title": "Join Staff Wi-Fi", "type": "unlock_object", "targetObject": "staff_ap", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_staff_wifi": true } } },
+        { "taskId": "t_guest_port", "title": "Find where the patch panel's spare port goes", "type": "unlock_object", "targetObject": "guest_vlan_port", "optional": true, "status": "active",
+          "onComplete": { "setGlobal": { "done_t_guest_port": true } } }
+      ]
+    },
+    {
+      "aimId": "aim_wrap",
+      "title": "Report back",
+      "description": "Find Ama at reception once the office and network aims are done.",
+      "status": "locked",
+      "unlockCondition": { "aimsCompleted": ["aim_office", "aim_network"] },
+      "order": 4,
+      "missionConclusion": true,
+      "concludeRequires": {},
+      "conclusionScreen": { "type": "bond_visualiser" },
+      "tasks": [
+        { "taskId": "t_debrief", "title": "Report back to Ama", "type": "npc_conversation", "targetNPC": "ama", "status": "active",
+          "onComplete": { "setGlobal": { "done_t_debrief": true } } }
+      ]
+    }
+  ],
+
+  "music": {
+    "events": [
+      {
+        "trigger": "conversation_closed:ama",
+        "condition": "globalVars.tour_debriefed === true",
+        "playlist": "victory",
+        "track": "Ghost in the Wire",
+        "fade": true,
+        "statusText": "TOUR DONE",
+        "closingCard": {
+          "lines": [
+            "Merrin & Sallow: access tour complete."
+          ]
+        },
+        "credits": [
+          { "text": "ACCESS TOUR COMPLETE", "style": "title" },
+          { "text": "MERRIN & SALLOW", "style": "subtitle" },
+          { "text": "" },
+          { "section": "WHAT THE TOUR SHOWED", "lines": [
+            { "text": "Doors: the visitor card opened the meeting room and nothing else", "condition": "globalVars.done_t_kit === true" },
+            { "text": "Front desk: a sticky note signed in to the reception PC", "condition": "globalVars.done_t_front_desk === true" },
+            { "text": "Drop box: a live wall port put the box on the office network", "condition": "globalVars.done_t_drop_box === true" },
+            { "text": "Saved connection: the partner's PC opened from a file on the front desk", "condition": "globalVars.done_t_julian_pc === true" },
+            { "text": "Badge cloning: the facilities card copied and used on the comms cupboard", "condition": "globalVars.done_t_copy_badge === true && globalVars.done_t_comms === true" },
+            { "text": "Door controller: reached through the partner's PC, signed in with the password from facilities.txt", "condition": "globalVars.done_t_door_controller === true" },
+            { "text": "Open session: a laptop left signed in while its owner was away", "condition": "globalVars.done_t_open_session === true" },
+            { "text": "Locked screen: a note on the desk got past it", "condition": "globalVars.done_t_yasmin_pc === true" },
+            { "text": "Implant: a keystroke injector gave a foothold through the front desk PC", "condition": "globalVars.done_t_implant === true" },
+            { "text": "Rogue access point: the Staff Wi-Fi key captured from a copy of the network", "condition": "globalVars.done_t_capture_key === true" },
+            { "text": "Staff Wi-Fi: joined with the captured key", "condition": "globalVars.done_t_staff_wifi === true" },
+            { "text": "Port security: the managed port refused the box, the patch panel's guest port took it", "condition": "globalVars.done_t_guest_port === true" },
+            { "text": "Clean-up: the box came out and the sessions through it went with it", "condition": "globalVars.done_t_unplug === true" }
+          ] }
+        ]
+      }
+    ]
+  },
+
+  "rooms": {
+
+    "reception": {
+      "type": "room_aw_merrin_lobby",
+      <%# The planted AP's status LED, drawn on its overlay once it is tucked in a plant. Offsets measured
+          against rogue_ap_tucked, as in lab_physical_pentest. %>
+      "lighting": {
+        "emitters": {
+          "planted_rogue_ap": { "color": "#3fa8ff", "radius": 5, "intensity": 0.7, "effect": "blink", "above": true, "offsetX": -4, "offsetY": 3 }
+        }
+      },
+      "door_sign": "Reception",
+      "connections": { "north": "open_plan", "west": "partner_office", "east": "meeting_room" },
+      "objects": [
+        <%# The lobby map's own pc8 (on the west table) and two planters stay as they are. The
+            front-desk PC sits on the counter's left end, and the two plants (hiding spots for the
+            rogue AP in a later slice) stand on clear floor beside the counter. %>
+        {
+          "type": "pc",
+          "id": "reception_pc",
+          "name": "Front desk PC",
+          "sprite": "pc10",
+          "position": { "x": 3.5, "y": 3.95 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "owner": "delphine",
+          "host": "MS-FRONT-01",
+          "network": "office_lan",
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["delphine"] },
+          "observations": "Delphine's PC at the front desk.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "facilities_txt",
+              "name": "facilities.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Facilities contacts and logins.\n\nLorna Easton (facilities): door controller, user leaston, password <%= lorna_pw %>\nCleaners: Tuesday and Friday evenings.",
+              "observations": "A plain-text file of facilities contacts, left on the front desk PC."
+            },
+            {
+              "type": "text_file",
+              "id": "julian_rdp_file",
+              "name": "julian.rdp",
+              "takeable": true,
+              "droppable": true,
+              "readable": true,
+              "credential": "julian_rdp",
+              "onRead": { "setVariable": { "seen_julian_rdp": true } },
+              "onPickup": { "setVariable": { "has_julian_rdp": true } },
+              "text": "Saved connection to Julian Sallow's PC. Copy it to keep the connection.",
+              "observations": "A saved remote-desktop connection to the partner's PC."
+            }
+          ]
+        },
+        {
+          "type": "keycard",
+          "id": "visitor_card",
+          "name": "Visitor card 07",
+          "card_id": "VISITOR-07",
+          "position": { "x": 1.3, "y": 6.3, "elevation": 30 },
+          "takeable": true,
+          "observations": "A visitor card from the front desk, numbered 07."
+        },
+        <%# Both access points sit on the back wall, well clear of the front desk and the doors. %>
+        {
+          "type": "pc",
+          "id": "staff_ap",
+          "name": "MerrinSallow-Staff access point",
+          "sprite": "lw_staff_ap",
+          "position": { "x": 5.0, "y": 1.6 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "office_lan",
+          "observations": "A wall access point. Its label reads MerrinSallow-Staff. It asks for a key."
+        },
+        {
+          "type": "pc",
+          "id": "guest_ap",
+          "name": "MerrinSallow-Guest access point",
+          "sprite": "lw_guest_ap",
+          "position": { "x": 7.0, "y": 1.6 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "guest",
+          "observations": "A second access point on the wall. Its label reads MerrinSallow-Guest."
+        },
+        {
+          "type": "notes1",
+          "id": "guest_wifi_card",
+          "name": "Reception Wi-Fi card",
+          "sprite": "lw_guest_card",
+          "position": { "x": 2.5, "y": 5.95, "elevation": 30 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): MerrinSallow-Guest",
+          "observations": "A printed card on the front desk with the guest Wi-Fi name."
+        },
+        {
+          "type": "plant",
+          "id": "reception_plant_west",
+          "name": "Plant by the front desk",
+          "sprite": "planter_fig1",
+          "position": { "x": 2.1, "y": 3.3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A leafy plant in a planter at the end of the front desk, thick enough to hide a small box behind the leaves."
+        },
+        {
+          "type": "plant",
+          "id": "reception_plant_east",
+          "name": "Plant beside the front desk",
+          "sprite": "plant-large11",
+          "position": { "x": 7.8, "y": 3.95 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A big leafy plant at the other end of the front desk, thick enough to hide a small box behind the leaves."
+        },
+        {
+          "type": "notes",
+          "id": "sign_meeting_room",
+          "name": "Sign: meeting room",
+          "sprite": "uni_doorcard1",
+          "position": { "x": 9.0, "y": 2.9 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A card holder beside the meeting room door.",
+          "text": "Booked: Fenlow Managed IT, all day."
+        },
+        <%# Two USB sockets beside the front-desk PC (an item plant cannot sit on the PC itself). The
+            hub takes the stick only: the desk policy blocks storage, so the engine's own refusal line
+            shows. The socket takes the injector, which presents as a keyboard and gets past. %>
+        {
+          "type": "usb_bowl1",
+          "id": "usb_hub",
+          "name": "USB hub",
+          "position": { "x": 4.4, "y": 4.4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "policy": "desk",
+          "requiresItem": "demo_stick",
+          "requiresItemHint": "You need a USB stick to plug in here.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "hub_stick_accepted", "value": true }
+          ],
+          "observations": "A USB hub on the front desk, wired to Delphine's PC."
+        },
+        {
+          "type": "pc",
+          "id": "implant_socket",
+          "name": "USB socket by the front desk PC",
+          "sprite": "usb_bowl1",
+          "position": { "x": 5.5, "y": 4.3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "requiresItem": "kit_injector",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "observations": "A spare USB socket on the front desk. Useful only while you are signed in at the front desk PC.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke injector into the front desk PC? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "reception_pc", "needsSession": true, "needsHeld": "kit_injector" }
+              ]
+            }
+          ]
+        },
+        <%# The rogue AP's console. Not placed from room data: hiddenWith ties it to kit_rogue_ap's
+            hideable, and the engine draws it only as the overlay on whichever reception plant the
+            player hid the kit in. No secret in it: the Staff key is the capture on ama_phone. %>
+        {
+          "type": "pc",
+          "id": "planted_rogue_ap",
+          "name": "Planted rogue AP",
+          "sprite": "rogue_ap_planted",
+          "hiddenWith": "kit_rogue_ap",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "wifiTwin": true,
+          "observations": "Your pocket rogue AP, tucked into the plant. Click the plant to open its console.",
+          "apScan": [
+            {
+              "ssid": "MerrinSallow-Staff", "security": "WPA2", "signal": 4, "clients": 3, "inScope": true,
+              "cloneGlobals": { "staff_twin_up": true },
+              "cloneLog": "Copy of MerrinSallow-Staff up (open), showing the key page. Waiting for someone to pick the copy.",
+              "knownClients": [ { "npcId": "thandiwe", "label": "Thandiwe's laptop" } ]
+            },
+            {
+              "ssid": "MerrinSallow-Guest", "security": "WPA2", "signal": 3, "clients": 1, "inScope": true,
+              "cloneGlobals": { "staff_twin_up": false },
+              "cloneLog": "Copy of MerrinSallow-Guest up (open). It harvests nothing worth having: the guest network has no key, and staff laptops hold the staff network, not this one."
+            },
+            {
+              "ssid": "BT-Hub-4F2A", "security": "WPA2", "signal": 2, "clients": 2, "inScope": false,
+              "refusal": "Out of scope. BT-Hub-4F2A belongs to a neighbour, not Merrin & Sallow."
+            },
+            {
+              "ssid": "Corrigan-Dental", "security": "WPA2", "signal": 1, "clients": 1, "inScope": false,
+              "refusal": "Out of scope. Corrigan Dental is next door, not the client."
+            }
+          ],
+          "apPortal": {
+            "templates": [
+              {
+                "id": "wifi_key", "label": "Key page",
+                "page": {
+                  "brands": [ { "id": "merrin", "name": "Merrin & Sallow", "look": "generic", "realDomain": "merrinsallow.example", "domains": [ { "id": "d_wifi", "domain": "wifi-login.example", "trick": "unrelated", "tier": 0 } ] } ],
+                  "purposes": [ { "id": "wifi", "label": "Reconnect", "button": "Reconnect" } ],
+                  "wordings": [ { "id": "w_key", "match": true, "text": "MerrinSallow-Staff: the router has been updated. Enter the Wi-Fi key to reconnect." } ],
+                  "fields": ["password"],
+                  "fieldLabels": { "password": "Wi-Fi key" },
+                  "choices": { "brand": "merrin", "purpose": "wifi", "domainId": "d_wifi", "wording": "w_key", "fields": ["password"], "logo": true, "padlock": false }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ama",
+          "voice": { "name": "Autonoe", "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": { "x": 6.9, "y": 6.0 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "ama_owusu",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/ama.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "koImmune": true,
+          "timedConversation": { "delay": 0, "targetKnot": "start", "waitForEvent": "game_loaded", "skipIfGlobal": "done_t_meet_ama" }
+        },
+        {
+          "id": "ama_phone",
+          "displayName": "Ama Owusu",
+          "npcType": "phone",
+          "avatar": "assets/characters/ama_owusu_headshot.png",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/demo_access_tour/ink/ama_phone.json",
+          "currentKnot": "start",
+          "livePreview": true,
+          "eventMappings": [
+            <%# The event carries the item's type; the cloner is the tour's only rfid_cloner. %>
+            { "eventPattern": "item_picked_up:rfid_cloner", "onceOnly": true, "setGlobal": { "cloner_held": true } },
+            <%# P6: the cake went down outside the open plan. No onceOnly: the cooldown spaces repeats. %>
+            { "eventPattern": "magnet_placed:cake", "condition": "data.roomId !== 'open_plan'", "cooldown": 30000,
+              "sendTimedMessage": { "delay": 4000, "message": "Take the cake through to the open plan, where the desks are.", "targetKnot": "hint_cake" } },
+            <%# Julian's session lost when the front desk was signed out (a box-route session has no
+                fromPcId; signing out of julian_pc itself has reason sign_out). Not onceOnly: a
+                second loss resets julian_back. %>
+            { "eventPattern": "pc_signed_out:julian_pc",
+              "condition": "data.reason === 'link_dropped' && data.fromPcId === 'reception_pc'",
+              "setGlobal": { "julian_lost_with_desk": true, "julian_back": false } },
+            { "eventPattern": "pc_signed_in:julian_pc", "condition": "globalVars.julian_lost_with_desk === true",
+              "setGlobal": { "julian_back": true } },
+            <%# Stop 15: Thandiwe's laptop picks the copy and the key page takes the Staff key. The
+                secret is the psk's own render (@random_password, same binding as networks.office_lan),
+                never a pasted copy. No captureProof on Thandiwe: the address is an SSID, so this
+                mapping's own proof counts. %>
+            { "eventPattern": "npc_used:thandiwe_laptop", "condition": "globalVars.staff_twin_up === true", "onceOnly": true,
+              "addCapture": {
+                "targetId": "staff_wifi_key", "kind": "credential", "roleLabel": "Merrin & Sallow, reception",
+                "host": "MerrinSallow-Staff, rogue access point", "address": "MerrinSallow-Staff",
+                "secret": "<%= @random_password %>",
+                "note": "Thandiwe's laptop picked the copy and the key page took the Staff key (proof: planted).",
+                "proof": { "planted": "kit_rogue_ap" }
+              },
+              "completeTask": "t_capture_key" },
+            <%# Slice 5: every mapping that sets a global, completes a task or sends a timed text
+                lives here, because ama_phone registers with reception at load (the other rooms
+                load later). Delays 4000 to 6000 ms so two that fire together never land at once.
+                A skipIfGlobal goes inside sendTimedMessage. %>
+            { "eventPattern": "pc_signed_out:reception_pc", "condition": "data.reason === 'sign_out'", "setGlobal": { "front_desk_signed_out": true } },
+            { "eventPattern": "network_device_unplugged:meeting_jack", "condition": "data.endedPcIds.includes('julian_pc')", "setGlobal": { "julian_ended_by_unplug": true } },
+            { "eventPattern": "device_hidden:kit_rogue_ap", "setGlobal": { "ap_planted": true } },
+            { "eventPattern": "card_cloned", "condition": "data.cardName === \"Lorna Easton FAC card\"", "completeTask": "t_copy_badge" },
+            { "eventPattern": "network_device_unplugged:meeting_jack", "completeTask": "t_unplug" },
+            { "eventPattern": "network_foothold_gained", "condition": "data.via === 'implant'", "completeTask": "t_implant" },
+            { "eventPattern": "global_variable_changed:has_julian_rdp", "condition": "value === true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 4000, "message": "Before you use that, sign out of Delphine's PC.", "targetKnot": "hint_sign_out", "skipIfGlobal": "done_t_julian_pc" } },
+            { "eventPattern": "pc_in_use:thandiwe_laptop", "onceOnly": true, "setGlobal": { "saw_in_use": true },
+              "sendTimedMessage": { "delay": 4000, "message": "She's signed in and sitting right there. Read the coffee rota on the wall, then try her laptop while she's away.", "targetKnot": "hint_open_session" } },
+            { "eventPattern": "network_foothold_gained:meeting_jack", "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Box is talking. Have a look at the network view before you sign in anywhere.", "targetKnot": "hint_network_view" } },
+            { "eventPattern": "usb_refused:usb_hub", "onceOnly": true,
+              "sendTimedMessage": { "delay": 4000, "message": "Storage is blocked on that hub. A keyboard isn't storage.", "targetKnot": "hint_injector" } },
+            { "eventPattern": "network_device_refused:managed_port", "condition": "data.reason === 'port_security'", "onceOnly": true,
+              "sendTimedMessage": { "delay": 4000, "message": "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes." } },
+            { "eventPattern": "network_device_unplugged:meeting_jack", "condition": "globalVars.tour_full !== true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "Box is out. Have a last look if you like, then come back to reception." } },
+            { "eventPattern": "network_device_unplugged:meeting_jack", "condition": "globalVars.tour_full === true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "Box is out. Take it to the comms cupboard and see what the ports in there make of it. Then come back to reception.", "targetKnot": "hint_ports" } }
+          ]
+        },
+        {
+          "id": "delphine",
+          "voice": { "name": "Despina", "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.", "language": "en-GB" },
+          "displayName": "Delphine Arvanitis",
+          "npcType": "person",
+          "position": { "x": 4.9, "y": 3.1 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "delphine_arvanitis",
+          "spriteTalk": "assets/characters/delphine_arvanitis_talk.png",
+          "spriteVisemes": "assets/characters/delphine_arvanitis_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/delphine.json",
+          "currentKnot": "start",
+          "role": "reception",
+          "creds": { "username": "darvanitis", "password": "<%= delphine_pw %>" },
+          "habits": { "writesDown": true }
+        }
+      ]
+    },
+
+    "open_plan": {
+      "type": "room_aw_merrin_sallow",
+      "door_sign": "Open plan",
+      "connections": { "south": "reception", "north": "server_room", "west": "kitchen", "east": "comms_cupboard" },
+      "objects": [
+        <%# Two desks against the north wall, square to it, each with its owner's chair on the
+            south side. The map's conference table, studio chairs and kiosk are untouched. %>
+        <%# The shared course map draws its plan chest over this room's north door. The map stays
+            as it is: a scenario object with the chest's own sprite claims that slot (as the
+            reception PC does for pc8) and puts the chest on the east wall, south of the kiosk and clear of the table chairs. %>
+        {
+          "type": "plan_chest",
+          "id": "plan_chest",
+          "name": "Plan chest",
+          "sprite": "plan_chest2",
+          "position": { "x": 7.8, "y": 6.5 },
+          "takeable": false,
+          "observations": "A flat plan chest. The drawers hold the studio's old drawings."
+        },
+        {
+          "type": "table",
+          "id": "desk_thandiwe",
+          "name": "Thandiwe's desk",
+          "sprite": "desk3",
+          "position": { "x": 3.1, "y": 2.0 },
+          "takeable": false,
+          "observations": "A tidy desk in the west half of the open plan."
+        },
+        {
+          "type": "pc",
+          "id": "thandiwe_laptop",
+          "name": "Thandiwe's laptop",
+          "sprite": "laptop1",
+          "position": { "x": 3.54, "y": 2.125, "elevation": 30 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "owner": "thandiwe",
+          "host": "MS-LAPTOP-TM",
+          "network": "office_lan",
+          "locked": true,
+          "lockType": "login",
+          "lockChance": 0,
+          "access": { "people": ["thandiwe"] },
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 3, "useFrom": { "dx": 0, "dy": 1 } },
+          "observations": "Thandiwe's laptop on her desk."
+        },
+        {
+          "type": "chair",
+          "id": "chair_thandiwe",
+          "name": "Thandiwe's chair",
+          "sprite": "aw_studio_chair_n1",
+          "position": { "x": 3.3, "y": 3.3 },
+          "takeable": false,
+          "observations": "Thandiwe's chair."
+        },
+        {
+          "type": "table",
+          "id": "desk_yasmin",
+          "name": "Yasmin's desk",
+          "sprite": "desk3",
+          "position": { "x": 5.3, "y": 2.0 },
+          "takeable": false,
+          "observations": "A neat desk in the east half of the open plan."
+        },
+        {
+          "type": "pc",
+          "id": "yasmin_pc",
+          "name": "Yasmin's PC",
+          "sprite": "pc3",
+          "position": { "x": 5.675, "y": 2.0625, "elevation": 30 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "owner": "yasmin",
+          "host": "MS-FIN-01",
+          "network": "office_lan",
+          "locked": true,
+          "lockType": "login",
+          "locksScreenOnLeave": true,
+          "access": { "people": ["yasmin"] },
+          "observations": "Yasmin's desktop PC."
+        },
+        {
+          "type": "chair",
+          "id": "chair_yasmin",
+          "name": "Yasmin's chair",
+          "sprite": "aw_studio_chair_n1",
+          "position": { "x": 5.5, "y": 3.3 },
+          "takeable": false,
+          "observations": "Yasmin's chair."
+        },
+        <%# A second coffee machine on the north wall, east of Yasmin's desk. The engine simulates
+            only rooms that have loaded, so a kitchen nobody has opened is no coffee source and the
+            rota board would park both staff. The kitchen's machine stays for when it is visited.
+            A long brew (60 s) keeps Thandiwe away for about a minute, long enough for a player to
+            walk from the rota to her laptop; Yasmin queues behind her (maxWait 150 s). %>
+        {
+          "type": "coffee_station1",
+          "id": "coffee_station_open_plan",
+          "name": "Coffee station",
+          "position": { "x": 7.0, "y": 1.4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The studio's coffee machine, on a stand against the north wall.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 60, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": 0, "dy": 2 }, { "dx": 0, "dy": 3 }], "maxWaitSeconds": 150 }, "chatter": "coffee" }
+        },
+        {
+          "type": "notes",
+          "id": "rota_board",
+          "name": "Coffee rota",
+          "sprite": "rota_board1",
+          "position": { "x": 8.3, "y": 1.1 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "The coffee rota, on the wall by the window.",
+          "text": "Coffee rota. Whoever's name is up makes the next round."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "thandiwe",
+          "voice": { "name": "Pulcherrima", "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+          "displayName": "Thandiwe Moyo",
+          "npcType": "person",
+          "position": { "x": 3.6, "y": 5.0 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "thandiwe_moyo",
+          "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
+          "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/thandiwe.json",
+          "currentKnot": "start",
+          "role": "design",
+          "creds": { "username": "tmoyo", "password": "<%= thandiwe_pw %>" },
+          "needsHome": "thandiwe_laptop",
+          "needs": {
+            "hunger": { "decayPerMin": 0.5, "urgentAt": 30, "initial": 50 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 45 },
+            "work": { "decayPerMin": 1, "urgentAt": 30, "initial": 90 }
+          },
+          "eventMappings": [
+            <%# The rota board: the sure way to empty her desk (plan 2.6). %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Coffee rota'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            <%# Stop 15: the twin is up, so she goes to her laptop. Heard only while her room is
+                loaded; if the player was not there yet, the room_entered mapping gives the same
+                nudge on arrival (the twin flag is read from the globals). %>
+            { "eventPattern": "global_variable_changed:staff_twin_up", "condition": "data.value === true", "onceOnly": true, "fireOnlyWhenLoaded": true, "needs": { "set": { "work": 10 } } },
+            { "eventPattern": "room_entered:open_plan", "condition": "globalVars.staff_twin_up === true", "cooldown": 600000, "needs": { "set": { "work": 10 } } }
+          ]
+        },
+        {
+          "id": "yasmin",
+          "voice": { "name": "Laomedeia", "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "displayName": "Yasmin Chaudhry",
+          "npcType": "person",
+          "position": { "x": 5.8, "y": 5.0 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "yasmin_chaudhry",
+          "spriteTalk": "assets/characters/yasmin_chaudhry_talk.png",
+          "spriteVisemes": "assets/characters/yasmin_chaudhry_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/yasmin.json",
+          "currentKnot": "start",
+          "role": "finance",
+          "creds": { "username": "ychaudhry", "password": "<%= yasmin_pw %>" },
+          "habits": { "writesDown": true },
+          "needsHome": "yasmin_pc",
+          "needs": {
+            "hunger": { "decayPerMin": 0.5, "urgentAt": 30, "initial": 50 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 50 }
+          },
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Coffee rota'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } }
+          ]
+        },
+        {
+          "id": "lorna",
+          "voice": { "name": "Erinome", "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.", "language": "en-GB" },
+          "displayName": "Lorna Easton",
+          "npcType": "person",
+          "position": { "x": 8.2, "y": 5.8 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "lorna_easton",
+          "spriteTalk": "assets/characters/lorna_easton_talk.png",
+          "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/lorna.json",
+          "currentKnot": "start",
+          "role": "facilities",
+          "creds": {
+            "username": "leaston",
+            "password": "<%= lorna_pw %>",
+            "card": { "name": "Lorna Easton FAC card", "card_id": "FAC-LORNA-01", "rfid_protocol": "EM4100" }
+          }
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "door_sign": "Server room",
+      "connections": { "south": "open_plan" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "<%= server_room_pin %>",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "door_controller",
+          "name": "Door controller",
+          "host": "MS-DOOR-01",
+          "sprite": "network_rack1",
+          "network": "server_lan",
+          "policy": "infra",
+          "position": { "x": 5.0, "y": 3.0 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["facilities"] },
+          "observations": "A door controller with no screen or keyboard. It is managed over the network.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "door_codes",
+              "name": "Door codes",
+              "takeable": false,
+              "readable": true,
+              "text": "Door controller: current codes.\n\nServer room keypad: <%= server_room_pin %>",
+              "observations": "The door controller's code list."
+            }
+          ]
+        }
+      ]
+    },
+
+    "kitchen": {
+      "type": "room_qdc_break",
+      "door_sign": "Kitchen",
+      "connections": { "east": "open_plan" },
+      "objects": [
+        <%# The coffee station is the map's own espresso machine on the north counter (claimed by
+            type, so nothing doubles up). The approach cell is the floor in front of it; the queue
+            runs east along the same row. %>
+        {
+          "type": "qdc_espresso",
+          "id": "coffee_station",
+          "name": "Coffee station",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The kitchen's coffee machine, on the north counter.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": 1, "dy": 0 }, { "dx": 2, "dy": 0 }], "maxWaitSeconds": 90 }, "chatter": "coffee" }
+        },
+        {
+          "type": "notes",
+          "id": "sign_kitchen",
+          "name": "Sign: coffee",
+          "sprite": "hq_break_sign1",
+          "position": { "x": 7.7, "y": 1.0 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A sign by the coffee machine.",
+          "text": "Coffee's on a rota. The board's in the open plan. (Or just wait. Someone always comes in for coffee.)"
+        }
+      ],
+      "npcs": [
+        {
+          "id": "julian",
+          "voice": { "name": "Rasalgethi", "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "displayName": "Julian Sallow",
+          "npcType": "person",
+          "position": { "x": 1.7, "y": 6.5 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/julian.json",
+          "currentKnot": "start",
+          "role": "partner",
+          <%# Julian has no needs and no routine, so he is never tracked and julian_pc is never
+              claimed as in use. He stands in the kitchen, so a remote session there lasts. %>
+          "creds": { "username": "jsallow", "password": "<%= julian_pw %>" }
+        }
+      ]
+    },
+
+    "partner_office": {
+      "type": "room_ceo",
+      "door_sign": "Partner's office",
+      "connections": { "east": "reception" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "people": ["julian"] },
+      "lockedHint": "Julian's office. His card only.",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "julian_pc",
+          "name": "Julian's PC",
+          "sprite": "pc10",
+          "position": { "x": 4.0, "y": 3.3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "owner": "julian",
+          "host": "MS-PARTNER-01",
+          "network": "office_lan",
+          "policy": "partner",
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["julian"] },
+          "observations": "Julian's PC on the partner's desk.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "partner_note",
+              "name": "partners_notes.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Partners' notes.\n\nOffice move is off until spring. Ask Ama about the server room cabling.",
+              "observations": "A short notes file on the partner's desktop."
+            }
+          ]
+        }
+      ]
+    },
+
+    "meeting_room": {
+      "type": "room_meeting",
+      "door_sign": "Meeting room",
+      "connections": { "west": "reception" },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": ["VISITOR-07"],
+      "objects": [
+        <%# Kit table (the map has four tables along the wall, items at y about 3.9). The existing
+            table items sit at x about 2.65, 4.4, 6.25 and 7.1, so the kit takes the gaps. %>
+        {
+          "type": "rfid_cloner",
+          "id": "rfid_cloner",
+          "name": "RFID cloner",
+          "sprite": "rfid_cloner",
+          "position": { "x": 2.7, "y": 3.65, "elevation": 30 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "saved_cards": [],
+          "observations": "A handheld RFID cloner. Keep it in a pocket, chat to someone close up, and it reads the card on them."
+        },
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "network_dropbox",
+          "position": { "x": 5.25, "y": 4.25, "elevation": 30 },
+          "takeable": true,
+          "rogueDevice": true,
+          "interactable": true,
+          "active": true,
+          "observations": "A palm-sized network drop box with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+        },
+        {
+          "type": "pc",
+          "id": "meeting_jack",
+          "name": "Live wall network port",
+          "sprite": "network_port_cabinet",
+          "position": { "x": 8.2, "y": 0.78125 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "networkJack": true,
+          "network": "office_lan",
+          "plantedSprite": "network_dropbox_planted_cabinet",
+          "linkName": "Drop box: meeting room",
+          "jackConfirm": "Plug the network drop box into this live port? It joins the office network.",
+          "requiresItemHint": "You need the network drop box in hand to plant it on the port.",
+          "observations": "A grey wall port box low on the meeting room wall. It is live."
+        },
+        <%# The rest of the kit, along the same table row (slice 3). %>
+        {
+          "type": "usb",
+          "id": "kit_injector",
+          "name": "Keystroke injector",
+          "sprite": "icon_deviceB",
+          "position": { "x": 3.55, "y": 4.25, "elevation": 30 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "usbClass": "hid",
+          "observations": "Looks like a memory stick, but it presents itself to a PC as a keyboard and types on its own. It needs a desk you are already signed in at."
+        },
+        {
+          "type": "usb",
+          "id": "demo_stick",
+          "name": "USB stick",
+          "sprite": "usb_bowl1",
+          "position": { "x": 4.4, "y": 3.65, "elevation": 30 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "rogue_ap",
+          "id": "kit_rogue_ap",
+          "name": "Pocket rogue AP",
+          "sprite": "rogue_ap",
+          "position": { "x": 6.1, "y": 3.65, "elevation": 30 },
+          "takeable": true,
+          "droppable": false,
+          "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Hide it in one of the plants in reception, then set it up from its console.",
+          "hideable": {
+            "rooms": ["reception"],
+            "spots": "plants",
+            "exclude": [],
+            "device": "planted_rogue_ap",
+            "overlay": { "sprite": "rogue_ap_tucked" },
+            "confirm": "Hide the pocket rogue AP in this plant?"
+          }
+        },
+        {
+          "type": "page-builder",
+          "id": "capture_tablet",
+          "name": "Harvested Credentials",
+          "sprite": "tablet",
+          "position": { "x": 6.95, "y": 4.25, "elevation": 30 },
+          "takeable": true,
+          "observations": "Your capture tablet: the keys and passwords the test has recorded, each shown in full.",
+          "minigameData": { "view": "captures", "landingPageId": "cm_captures" }
+        }
+      ]
+    },
+
+    "comms_cupboard": {
+      "type": "room_lw_comms",
+      "door_sign": "Comms cupboard",
+      "connections": { "west": "open_plan" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["facilities", "it"] },
+      "objects": [
+        <%# Fixture layout (test_access_devices comms): the panel on the back wall, the managed port
+            beside it. guest_vlan_port is reached only through the panel (panelOf: no sprite). %>
+        {
+          "type": "notes",
+          "id": "patch_panel",
+          "name": "Patch panel and comms cabinet",
+          "sprite": "comms_cabinet1",
+          "position": { "x": 2, "y": 1 },
+          "takeable": false,
+          "readable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A wall patch panel, the ports labelled by desk.",
+          "panelPorts": [
+            { "port": 1, "label": "M01", "desk": "Managed uplink", "jack": "managed_port" },
+            { "port": 2, "label": "G02", "desk": "Guest meeting room", "jack": "guest_vlan_port" },
+            { "port": 3, "label": "D03", "desk": "Spare desk" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "managed_port",
+          "name": "Managed wall network port",
+          "sprite": "hce_comms_cabinet1",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "networkJack": true,
+          "network": "office_lan",
+          "portSecurity": true,
+          "portSecurityMessage": "Port security: this device is not the one registered to this port.",
+          "jackConfirm": "Try the network drop box in this managed switch port?",
+          "requiresItemHint": "You would need the network drop box to try this port.",
+          "observations": "A wall port running to a managed switch with port security on."
+        },
+        {
+          "type": "pc",
+          "id": "guest_vlan_port",
+          "name": "Guest VLAN port",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "networkJack": true,
+          "network": "guest",
+          "panelOf": "patch_panel",
+          "linkName": "Drop box: guest VLAN port",
+          "jackConfirm": "Plug the network drop box into the patch panel's guest port?",
+          "requiresItemHint": "You need the network drop box in hand to plant it on the port.",
+          "observations": "A patch panel port patched through to the guest network."
+        }
+      ]
+    }
+  }
+}

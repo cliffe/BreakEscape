@@ -1,0 +1,184 @@
+{
+  "objectives": [
+    {
+      "id": "main_mission",
+      "title": "Zero Day Intelligence",
+      "description": "Gather evidence of Zero Day Syndicate's exploit marketplace operations",
+      "status": "active",
+      "optional": false,
+      "aims": [
+        {
+          "id": "establish_cover",
+          "title": "Establish Undercover Access",
+          "description": "Infiltrate WhiteHat Security and clone Victoria Sterling's keycard",
+          "status": "active",
+          "tasks": [
+            {
+              "id": "meet_victoria",
+              "title": "Meet Victoria Sterling",
+              "description": "Meet Victoria Sterling at WhiteHat Security",
+              "status": "active"
+            },
+            {
+              "id": "clone_rfid_card",
+              "title": "Clone RFID Keycard",
+              "description": "Clone Victoria Sterling's executive keycard",
+              "status": "locked"
+            }
+          ]
+        },
+        {
+          "id": "network_recon",
+          "title": "Network Reconnaissance",
+          "description": "Scan Zero Day's training network to identify services and gather intelligence",
+          "status": "locked",
+          "tasks": [
+            {
+              "id": "scan_network",
+              "title": "Scan Training Network",
+              "description": "Use nmap to scan the training network (192.168.100.0/24)",
+              "status": "locked"
+            },
+            {
+              "id": "ftp_banner",
+              "title": "Gather FTP Intelligence",
+              "description": "Connect to FTP service and extract banner information",
+              "status": "locked"
+            },
+            {
+              "id": "http_analysis",
+              "title": "Analyze HTTP Service",
+              "description": "Analyze HTTP service and decode Base64 pricing data",
+              "status": "locked"
+            },
+            {
+              "id": "distcc_exploit",
+              "title": "Exploit distcc Service",
+              "description": "Exploit legacy distcc service to access operational logs",
+              "status": "locked"
+            }
+          ]
+        },
+        {
+          "id": "gather_evidence",
+          "title": "Physical Evidence Collection",
+          "description": "Collect physical evidence from WhiteHat Security offices",
+          "status": "locked",
+          "tasks": [
+            {
+              "id": "decode_whiteboard",
+              "title": "Decode Whiteboard Message",
+              "description": "Decode the ROT13 message on the server room whiteboard",
+              "status": "locked"
+            },
+            {
+              "id": "access_victoria_computer",
+              "title": "Access Victoria's Computer",
+              "description": "Access Victoria Sterling's executive office computer",
+              "status": "locked"
+            },
+            {
+              "id": "decode_client_roster",
+              "title": "Decode Client Roster",
+              "description": "Decode the hex-encoded client roster from Victoria's computer",
+              "status": "locked"
+            },
+            {
+              "id": "find_operational_logs",
+              "title": "Find Operational Logs",
+              "description": "Correlate VM operational logs with physical evidence",
+              "status": "locked"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collect_lore",
+      "title": "LORE Collection",
+      "description": "Discover hidden LORE fragments about ENTROPY and The Architect",
+      "status": "active",
+      "optional": true,
+      "aims": [
+        {
+          "id": "find_all_lore",
+          "title": "Find All LORE Fragments",
+          "description": "Locate 3 hidden LORE fragments",
+          "status": "active",
+          "tasks": [
+            {
+              "id": "lore_fragment_1",
+              "title": "Zero Day Origins",
+              "description": "Find the document detailing Zero Day Syndicate's founding",
+              "status": "active"
+            },
+            {
+              "id": "lore_fragment_2",
+              "title": "Exploit Catalog",
+              "description": "Open Victoria's safe to find the exploit catalog",
+              "status": "active"
+            },
+            {
+              "id": "lore_fragment_3",
+              "title": "The Architect's Directive",
+              "description": "Decode the double-encoded USB drive message",
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "perfect_stealth",
+      "title": "Perfect Stealth",
+      "description": "Complete the mission without being detected by the guard",
+      "status": "active",
+      "optional": true,
+      "aims": [
+        {
+          "id": "stealth_mastery",
+          "title": "Maintain Stealth",
+          "description": "Avoid detection by the night security guard",
+          "status": "active",
+          "tasks": [
+            {
+              "id": "zero_detection",
+              "title": "Complete Mission Undetected",
+              "description": "Complete all objectives without triggering guard detection",
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "moral_choices",
+      "title": "Moral Engagement",
+      "description": "Engage with the moral complexity of the mission",
+      "status": "locked",
+      "optional": true,
+      "aims": [
+        {
+          "id": "engage_moral_choices",
+          "title": "Make Key Moral Decisions",
+          "description": "Confront the moral choices in the mission",
+          "status": "locked",
+          "tasks": [
+            {
+              "id": "james_choice_made",
+              "title": "Decide James Park's Fate",
+              "description": "Decide whether to protect James Park from collateral damage",
+              "status": "locked"
+            },
+            {
+              "id": "victoria_choice_made",
+              "title": "Decide Victoria's Fate",
+              "description": "Confront Victoria Sterling and decide her fate",
+              "status": "locked"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

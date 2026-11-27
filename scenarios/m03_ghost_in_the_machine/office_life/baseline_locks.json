@@ -1,0 +1,778 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m03_ghost_in_the_machine",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "door_conference_room_01",
+        "optional": false
+      },
+      {
+        "id": "door_executive_office",
+        "optional": false
+      },
+      {
+        "id": "door_server_room",
+        "optional": false
+      },
+      {
+        "id": "lock_exec_filing_cabinet",
+        "optional": false
+      },
+      {
+        "id": "lock_server_filing_cabinet",
+        "optional": false
+      },
+      {
+        "id": "lock_victoria_computer",
+        "optional": false
+      },
+      {
+        "id": "lock_wall_safe_server",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "executive_keycard",
+        "optional": false
+      },
+      {
+        "id": "npc_ffion_rees",
+        "optional": false
+      },
+      {
+        "id": "npc_victoria_sterling",
+        "optional": false
+      },
+      {
+        "id": "staff_access_badge",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "conference_room_01",
+      "danny_office",
+      "executive_office",
+      "executive_wing_hallway",
+      "main_hallway",
+      "reception_lobby",
+      "server_room"
+    ],
+    "edges": [
+      [
+        "andgate1",
+        "door_conference_room_01",
+        false
+      ],
+      [
+        "andgate2",
+        "door_server_room",
+        false
+      ],
+      [
+        "andgate3",
+        "lock_wall_safe_server",
+        false
+      ],
+      [
+        "company_founding_plaque",
+        "lock_victoria_computer",
+        true
+      ],
+      [
+        "conference_room_01",
+        "npc_victoria_sterling",
+        false
+      ],
+      [
+        "cyberchef_workstation",
+        "andgate3",
+        true
+      ],
+      [
+        "door_conference_room_01",
+        "conference_room_01",
+        false
+      ],
+      [
+        "door_executive_office",
+        "executive_office",
+        false
+      ],
+      [
+        "door_server_room",
+        "server_room",
+        false
+      ],
+      [
+        "executive_keycard",
+        "andgate2",
+        false
+      ],
+      [
+        "executive_office",
+        "lock_exec_filing_cabinet",
+        false
+      ],
+      [
+        "executive_office",
+        "lock_victoria_computer",
+        false
+      ],
+      [
+        "executive_wing_hallway",
+        "danny_office",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "door_executive_office",
+        true
+      ],
+      [
+        "lock_pick_kit",
+        "lock_exec_filing_cabinet",
+        true
+      ],
+      [
+        "lock_pick_kit",
+        "lock_server_filing_cabinet",
+        true
+      ],
+      [
+        "lock_victoria_computer",
+        "unsent_email_to_the_night_team_raw_source",
+        true
+      ],
+      [
+        "main_hallway",
+        "executive_wing_hallway",
+        false
+      ],
+      [
+        "npc_ffion_rees",
+        "action_clone_reception_badge_talk",
+        false
+      ],
+      [
+        "npc_ffion_rees",
+        "staff_access_badge",
+        false
+      ],
+      [
+        "npc_victoria_sterling",
+        "action_clone_victoria_card",
+        false
+      ],
+      [
+        "npc_victoria_sterling",
+        "action_confront_victoria",
+        false
+      ],
+      [
+        "npc_victoria_sterling",
+        "executive_keycard",
+        false
+      ],
+      [
+        "reception_lobby",
+        "company_founding_plaque",
+        true
+      ],
+      [
+        "reception_lobby",
+        "lock_pick_kit",
+        true
+      ],
+      [
+        "reception_lobby",
+        "main_hallway",
+        false
+      ],
+      [
+        "reception_lobby",
+        "npc_ffion_rees",
+        false
+      ],
+      [
+        "reception_lobby",
+        "rfid_cloner",
+        false
+      ],
+      [
+        "rfid_cloner",
+        "andgate1",
+        true
+      ],
+      [
+        "rfid_cloner",
+        "andgate2",
+        true
+      ],
+      [
+        "server_room",
+        "cyberchef_workstation",
+        false
+      ],
+      [
+        "server_room",
+        "lock_server_filing_cabinet",
+        false
+      ],
+      [
+        "server_room",
+        "lock_wall_safe_server",
+        false
+      ],
+      [
+        "server_room",
+        "server_room_whiteboard",
+        true
+      ],
+      [
+        "server_room",
+        "training_lab_terminal",
+        false
+      ],
+      [
+        "server_room_whiteboard",
+        "andgate3",
+        false
+      ],
+      [
+        "staff_access_badge",
+        "andgate1",
+        false
+      ],
+      [
+        "training_lab_terminal",
+        "vmch_submit_network_scan_flag",
+        false
+      ],
+      [
+        "unsent_email_to_the_night_team_raw_source",
+        "andgate3",
+        false
+      ],
+      [
+        "vmch_submit_distcc_flag",
+        "vmfl_submit_distcc_flag",
+        false
+      ],
+      [
+        "vmch_submit_ftp_flag",
+        "vmfl_submit_ftp_flag",
+        false
+      ],
+      [
+        "vmch_submit_http_flag",
+        "vmfl_submit_http_flag",
+        false
+      ],
+      [
+        "vmch_submit_network_scan_flag",
+        "vmfl_submit_network_scan_flag",
+        false
+      ],
+      [
+        "vmfl_submit_ftp_flag",
+        "vmch_submit_http_flag",
+        true
+      ],
+      [
+        "vmfl_submit_http_flag",
+        "vmch_submit_distcc_flag",
+        true
+      ],
+      [
+        "vmfl_submit_network_scan_flag",
+        "vmch_submit_ftp_flag",
+        true
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/conference_room_01",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "183084ef177ced1c",
+      "requiresHash": "b4c9235961dc9855"
+    },
+    {
+      "path": "/rooms/executive_office",
+      "id": null,
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "0b56d752c4539736",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/executive_office/objects[exec_filing_cabinet]",
+      "id": "exec_filing_cabinet",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "6a51b76847c7b103",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/executive_office/objects[victoria_computer]",
+      "id": "victoria_computer",
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "c4381a1ecdae5ae7",
+      "requiresHash": "831ba4215e70b90b"
+    },
+    {
+      "path": "/rooms/server_room",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "9c3a05c83bf5d801",
+      "requiresHash": "4dbde90e1077855e"
+    },
+    {
+      "path": "/rooms/server_room/objects[server_filing_cabinet]",
+      "id": "server_filing_cabinet",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "da3775e6ea314842",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/server_room/objects[wall_safe_server]",
+      "id": "wall_safe_server",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "04cffafb764054ba",
+      "requiresHash": "eddf468f44b5d689"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "act1_gain_access",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "clone_reception_badge",
+          "type": "unlock_room",
+          "targetRoom": "conference_room_01"
+        },
+        {
+          "taskId": "copy_staff_badge",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "meet_victoria",
+          "type": "npc_conversation",
+          "targetNPC": "victoria_sterling"
+        },
+        {
+          "taskId": "clone_rfid_card",
+          "type": "custom"
+        },
+        {
+          "taskId": "leave_until_dark",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "act2_breach_server_room",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "clone_call_done",
+        "equals": true
+      },
+      "tasks": [
+        {
+          "taskId": "submit_network_scan_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:ghost_in_machine_vm_network-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_ftp_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:ghost_in_machine_vm_network-flag2"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_http_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:ghost_in_machine_vm_network-flag3"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_distcc_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:ghost_in_machine_vm_network-flag4"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "find_operational_logs",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "search_executive_office",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "exec_wing_night",
+        "equals": true
+      },
+      "tasks": [
+        {
+          "taskId": "access_victoria_computer",
+          "type": "unlock_object",
+          "targetObject": "victoria_computer"
+        },
+        {
+          "taskId": "decode_client_roster",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "danny_choice_made",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "collect_lore",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "night_explored",
+        "equals": true
+      },
+      "tasks": [
+        {
+          "taskId": "lore_fragment_1",
+          "type": "unlock_object",
+          "targetObject": "exec_filing_cabinet"
+        },
+        {
+          "taskId": "lore_fragment_2",
+          "type": "unlock_object",
+          "targetObject": "wall_safe_server"
+        },
+        {
+          "taskId": "decode_whiteboard",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "lore_fragment_3",
+          "type": "custom"
+        },
+        {
+          "taskId": "decode_directive",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "perfect_stealth",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "perfect_stealth_earned",
+        "equals": true
+      },
+      "tasks": [
+        {
+          "taskId": "zero_detection",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "moral_choices",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "night_confrontation_ready",
+        "equals": true
+      },
+      "tasks": [
+        {
+          "taskId": "victoria_choice_made",
+          "type": "custom"
+        },
+        {
+          "taskId": "call_in_after_sweep",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "hear_debrief",
+          "type": "custom"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[moral_choices]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_network_scan_flag",
+          "submit_ftp_flag",
+          "submit_http_flag",
+          "submit_distcc_flag"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99": "reception_lobby",
+    "agent_nightshade": "reception_lobby",
+    "briefing_cutscene": "reception_lobby",
+    "clone_reception_badge_talk": "reception_lobby",
+    "clone_victoria_card": "conference_room_01",
+    "closing_debrief": "reception_lobby",
+    "confront_victoria": "conference_room_01",
+    "cyberchef_workstation": "server_room",
+    "danny_foster": "danny_office",
+    "director_netherton": "reception_lobby",
+    "exec_filing_cabinet": "executive_office",
+    "ffion_rees": "reception_lobby",
+    "flag_station_dropsite": "server_room",
+    "ftp_rehearsal_note": "server_room",
+    "hallway_cooler": "main_hallway",
+    "m03_cyberchef_field_guide": "reception_lobby",
+    "m03_lockpicking_field_guide": "reception_lobby",
+    "m03_netexploit_field_guide": "reception_lobby",
+    "m03_proftpd_field_guide": "reception_lobby",
+    "m03_recon_field_guide": "reception_lobby",
+    "m03_rfid_field_guide": "reception_lobby",
+    "night_transition": "reception_lobby",
+    "reception_coffee": "reception_lobby",
+    "relayed_executive_keycard": "reception_lobby",
+    "server_filing_cabinet": "server_room",
+    "terry_mott": "executive_wing_hallway",
+    "training_network_map": "server_room",
+    "victoria_computer": "executive_office",
+    "victoria_sterling": "conference_room_01",
+    "visitor_badge": "reception_lobby",
+    "vm_launcher_zero_day": "server_room",
+    "wall_safe_server": "server_room",
+    "yusuf_demir": "reception_lobby",
+    "zainab_hussain": "reception_lobby",
+    "zainab_laptop": "reception_lobby",
+    "zero_day_price_list": "server_room",
+    "zero_day_transaction_log": "server_room"
+  },
+  "layout": {
+    "start": "reception_lobby",
+    "adj": {
+      "conference_room_01": [
+        "main_hallway"
+      ],
+      "danny_office": [
+        "executive_wing_hallway"
+      ],
+      "executive_office": [
+        "executive_wing_hallway"
+      ],
+      "executive_wing_hallway": [
+        "danny_office",
+        "executive_office",
+        "main_hallway"
+      ],
+      "main_hallway": [
+        "conference_room_01",
+        "executive_wing_hallway",
+        "reception_lobby",
+        "server_room"
+      ],
+      "reception_lobby": [
+        "main_hallway"
+      ],
+      "server_room": [
+        "main_hallway"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "conference_room_01",
+      "task clone_reception_badge",
+      null
+    ],
+    [
+      "conference_room_01",
+      "task clone_rfid_card (mapping 'npc_ko:victoria_sterling')",
+      "victoria_sterling"
+    ],
+    [
+      "conference_room_01",
+      "task hear_debrief (mapping 'room_entered:conference_room_01')",
+      null
+    ],
+    [
+      "conference_room_01",
+      "task meet_victoria",
+      "victoria_sterling"
+    ],
+    [
+      "conference_room_01",
+      "task meet_victoria (ink of 'victoria_sterling')",
+      "victoria_sterling"
+    ],
+    [
+      "conference_room_01",
+      "task meet_victoria (mapping 'npc_ko:victoria_sterling')",
+      "victoria_sterling"
+    ],
+    [
+      "conference_room_01",
+      "task victoria_choice_made (ink of 'victoria_sterling')",
+      "victoria_sterling"
+    ],
+    [
+      "conference_room_01",
+      "task victoria_choice_made (mapping 'npc_ko:victoria_sterling')",
+      "victoria_sterling"
+    ],
+    [
+      "danny_office",
+      "task hear_debrief (mapping 'room_entered:danny_office')",
+      null
+    ],
+    [
+      "executive_office",
+      "task access_victoria_computer",
+      "victoria_computer"
+    ],
+    [
+      "executive_office",
+      "task hear_debrief (mapping 'room_entered:executive_office')",
+      null
+    ],
+    [
+      "executive_office",
+      "task lore_fragment_1",
+      "exec_filing_cabinet"
+    ],
+    [
+      "executive_office",
+      "task lore_fragment_3 (mapping 'global_variable_changed:usb_seen')",
+      null
+    ],
+    [
+      "executive_wing_hallway",
+      "task hear_debrief (mapping 'room_entered:executive_wing_hallway')",
+      null
+    ],
+    [
+      "main_hallway",
+      "task hear_debrief (mapping 'room_entered:main_hallway')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task clone_rfid_card (mapping 'card_cloned')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task find_operational_logs (mapping 'global_variable_changed:revelation_heard')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task find_operational_logs (mapping 'global_variable_changed:transaction_log_read')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (ink of 'closing_debrief')",
+      "closing_debrief"
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (mapping 'room_entered:reception_lobby')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task leave_until_dark (mapping 'global_variable_changed:clone_call_done')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task lore_fragment_3 (mapping 'global_variable_changed:usb_seen')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task victoria_choice_made (mapping 'global_variable_changed:night_confrontation_ready')",
+      null
+    ],
+    [
+      "server_room",
+      "VM launcher (flag tasks)",
+      "vm_launcher_zero_day"
+    ],
+    [
+      "server_room",
+      "task find_operational_logs (mapping 'global_variable_changed:transaction_log_read')",
+      null
+    ],
+    [
+      "server_room",
+      "task hear_debrief (mapping 'room_entered:server_room')",
+      null
+    ],
+    [
+      "server_room",
+      "task lore_fragment_2",
+      "wall_safe_server"
+    ],
+    [
+      "server_room",
+      "task submit_distcc_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_ftp_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_http_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_network_scan_flag (flag station)",
+      "flag_station_dropsite"
+    ]
+  ]
+}

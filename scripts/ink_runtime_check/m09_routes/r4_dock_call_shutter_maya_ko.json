@@ -1,0 +1,11 @@
+{
+"steps": [
+{ "note": "R4: the dock call after Maya was knocked out in m01, with Quintero's answer remembered. The shutter route, Maya's names missing." },
+{ "talk": "phone", "picks": ["The shutter", "Who else is inside", "On my way"] },
+{ "said": ["Quintero's going to hate that she was right", "It's up on the north side, in the corner", "Maya Chen would have flagged him. We don't have Maya's names"],
+  "notSaid": ["It's the west door. That's the front desk", "Maya's list has a Tran on it", "Viral Dynamics' staff files"] },
+{ "expect": { "dock_done": true } }
+],
+"globals": { "raid_team_answer": "quintero" },
+"imports": { "m01_completed": true, "m01_maya_ko": true }
+}

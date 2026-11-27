@@ -1,0 +1,13 @@
+{
+  "key": "15cc9abd0b5ef8dc5a85a8eb1c0a8e29",
+  "npc": "eleanor_vance",
+  "text": "Albion is an Operator of Essential Services. They invest in cyber security. They maintain defensive capabilities. They implement mitigations like the hardwired ESD that prevented thermal runaway in March.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:31:17Z"
+}

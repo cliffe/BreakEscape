@@ -1,0 +1,13 @@
+{
+  "key": "434c6dc37fb7658581946171f992f1e2",
+  "npc": "narrator",
+  "text": "The ventilator alarm is going: a hard, repeating tone, with no relay to carry it to the desk. Mr Pryce's chest is fighting the machine.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

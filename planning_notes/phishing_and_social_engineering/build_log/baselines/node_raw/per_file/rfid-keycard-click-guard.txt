@@ -1,0 +1,44 @@
+TAP version 13
+# KEYCARD INTERACTION (inventory) - checking for cloner
+# Starting RFID clone for keycard: Staff badge
+# KEYCARD INTERACTION (inventory) - checking for cloner
+# RFID minigame already open; ignoring keycard click
+# KEYCARD INTERACTION (inventory) - checking for cloner
+# Starting RFID clone for keycard: Staff badge
+# KEYCARD INTERACTION (inventory) - checking for cloner
+# Starting RFID clone for keycard: Staff badge
+# KEYCARD INTERACTION (inventory) - checking for cloner
+# Subtest: keycard click with no minigame open starts the RFID minigame in clone mode
+ok 1 - keycard click with no minigame open starts the RFID minigame in clone mode
+  ---
+  duration_ms: 6.873542
+  ...
+# Subtest: keycard click while an RFID read is open is ignored, keeping the read
+ok 2 - keycard click while an RFID read is open is ignored, keeping the read
+  ---
+  duration_ms: 0.973252
+  ...
+# Subtest: keycard click while an RFID minigame is closing opens a fresh one
+ok 3 - keycard click while an RFID minigame is closing opens a fresh one
+  ---
+  duration_ms: 0.739139
+  ...
+# Subtest: keycard click while another minigame is open still starts the clone
+ok 4 - keycard click while another minigame is open still starts the clone
+  ---
+  duration_ms: 0.615469
+  ...
+# Subtest: keycard click without a cloner shows the no-cloner alert
+ok 5 - keycard click without a cloner shows the no-cloner alert
+  ---
+  duration_ms: 0.920825
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 150.435477

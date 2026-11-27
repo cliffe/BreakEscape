@@ -1,0 +1,13 @@
+{
+  "key": "84bf842c2534c3a97f01fb17605964ba",
+  "npc": "chidi_okeke",
+  "text": "Trust a code like that and it can empty a colleague's card, or hand over a sign-in they spend the next day winning back.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:09Z"
+}

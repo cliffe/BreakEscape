@@ -1,0 +1,13 @@
+{
+  "key": "6eab3813af6b83297921225db6c74d15",
+  "npc": "kowalczyk_post",
+  "text": "Eleven years she paid my mum's care home. Then she sold me to you.",
+  "voice": "Pulcherrima",
+  "style": "SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:11:04Z"
+}

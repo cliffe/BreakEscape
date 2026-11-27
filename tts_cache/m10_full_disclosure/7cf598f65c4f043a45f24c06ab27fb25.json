@@ -1,0 +1,21 @@
+{
+  "key": "7cf598f65c4f043a45f24c06ab27fb25",
+  "npc": "ghost_phone",
+  "text": "No. You didn't. That's the first honest thing anyone's said on this line.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:07:00Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/7cf598f65c4f043a45f24c06ab27fb25.mp3",
+    "clean_md5": "26d345b11f43baedb5bca27dbf1654c6",
+    "baked_md5": "8953bf9e0bc10c90956ca6eb84269e70",
+    "baked": "2026-11-24"
+  }
+}

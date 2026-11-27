@@ -1,0 +1,13 @@
+{
+  "key": "101efc95a877e5c27b463de69c4154b2",
+  "npc": "narrator",
+  "text": "For the first time since you walked in, he stops smiling.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:23:15Z"
+}

@@ -1,0 +1,60 @@
+== scenarios/lab_tesseract_trials/ink/closing_debrief.ink [modified]
+  structure: unchanged
+  prose: 49 -> 49 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_cliffe.ink [modified]
+  structure: unchanged
+  prose: 27 -> 27 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_jordan.ink [modified]
+  structure: unchanged
+  prose: 12 -> 12 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_megan.ink [modified]
+  structure: unchanged
+  prose: 23 -> 23 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_oleg.ink [modified]
+  structure: 11 difference(s)
+  var:
+    + L22  VAR asked_lookalike = false
+    + L27  VAR lookalike_seen = false
+  knot:
+    + L88  lookalike
+  tag:
+    + L90  [lookalike] #give_item:notes:fn13_lookalikes
+  assign:
+    + L89  [lookalike] asked_lookalike = true
+    + L95  [lookalike] quiet = true
+  divert:
+    + L51  [hub] -> lookalike
+    + L96  [lookalike] -> hub
+  choice:
+    + L50  [hub] + {lookalike_seen and not asked_lookalike} -> lookalike
+  choicecount:
+    - (old L40)  [hub] * x0, + x7
+    + L44  [hub] * x0, + x8
+  prose: 27 -> 32 lines, ~5 changed (0 old unmatched, 5 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_sidhu.ink [modified]
+  structure: unchanged
+  prose: 23 -> 23 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_tom.ink [modified]
+  structure: unchanged
+  prose: 27 -> 27 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/opening_briefing.ink [modified]
+  structure: unchanged
+  prose: 33 -> 33 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_agent_0x99.ink [modified]
+  structure: 6 difference(s)
+  assign:
+    + L142  [send_field_note] parked = true
+    + L155  [comms_reminder] parked = true
+    + L166  [device_reaction] parked = true
+    + L173  [assessments_reaction] parked = true
+    + L185  [megan_request] parked = true
+    + L331  [rung] parked = true
+  prose: 65 -> 65 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_ghost.ink [modified]
+  structure: 2 difference(s)
+  assign:
+    + L70  [intro] parked = true
+    + L108  [who_reply] parked = true
+  prose: 55 -> 55 lines, ~0 changed (0 old unmatched, 0 new unmatched); You: lines 0 -> 0
+
+19 structural differences

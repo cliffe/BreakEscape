@@ -1,0 +1,13 @@
+{
+  "key": "a00907ecac09af81bd36c5359bea6c76",
+  "npc": "narrator",
+  "text": "She nods down the row as she talks. She doesn't lower her voice. These are her patients, and they can hear.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

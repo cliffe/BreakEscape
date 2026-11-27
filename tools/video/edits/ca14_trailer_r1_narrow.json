@@ -1,0 +1,805 @@
+{
+ "mission": "ca14",
+ "id": "ca14_trailer_r1_narrow",
+ "theme": "ca",
+ "title": "Cyber Aware ca14 trailer, round 1 (narrow-panel takes for the browser, mail, drill, privacy and inbox shots; render 9:16 and 1:1 from this file)",
+ "script": {
+  "heading": "ca14 trailer script (Social media and oversharing)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca14_trailer_script.md and docs/video/takes_ca14.md (recorded 23 Nov, commit 124d19a2c). Model ca03 (attack-first). Marks and frame-time windows from the recorded takes; Sulafat VO; PeaceFolk Gently Decaying Again window from 102.341 s (lift 3.9 s, quiet bar under the flip and Julian line at 35.4 s, lifts at 56.3 and 58.9 s). Hook is Lorna's L1 bark, end line is Lorna's L2 in the chat. The landed panel is not shown (debrief rule); v6 sits on the flip page."
+ },
+ "fps": 30,
+ "length": 70.62,
+ "music": {
+  "track": "PeaceFolk/Gently Decaying Again.mp3",
+  "analysis": "gently_decaying_again_75.json",
+  "start": 102.341,
+  "length": 70.62,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Gently Decaying Again.mp3 @101.031 (bar start, quiet bar then lift at 5.2 s)",
+   "PeaceFolk/Gently Decaying Again.mp3 @25.061 (best-scored window, overlaps the ca08 window 6.1-73.3)"
+  ]
+ },
+ "beat": {
+  "bpm": 91.62,
+  "period": 0.6549,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_lorna_photo.trimmed.mkv",
+    "in": 5.66,
+    "out": 9.66
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "re-capture 24 Nov (visemes / Lorna facing): retimed from the new take marks (docs/video/takes_ca14.md): 6.21-10.21 -> 5.66-9.66 | t07 L1 bark: speech 6.51-9.224 (silencedetect -35 dB d 0.08, no pause inside, 11 words); in 6.21 = onset - 0.3 (silence from 0.94), out 10.21 inside silence 9.224-12.007, before the L2 bubble at 11.50; world bubble shows (bubble up from 5.96), room beat after Look up (kiosk panel ends 4.22); picture 4.0 s, inside the 5.0 s cold-open limit; Lorna about x 0.30 y 0.58 of the frame, player at the kiosk about x 0.5 y 0.36 (contact sheet), check the 9:16 and 1:1 crop on the render | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.47,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.3,
+     "cy": 0.5,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.35,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "lines": [
+    {
+     "start": 0.3,
+     "end": 3.014,
+     "speaker": "Lorna",
+     "text": "Got a lovely one of the team for the studio page."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Social media and oversharing",
+    "company": "Merrin & Sallow Architects",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.4
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 6.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_attack_run_narrow.trimmed.mkv",
+    "in": 8.3,
+    "out": 14.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03b profile-up 8.20 (-0.10 on t03); same window shifted by the mark offset; nothing pinned; narrow browser 528 px | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 4.4,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t03b_attack_run_narrow.trimmed.mkv",
+    "in": 14.7,
+    "out": 19.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03b pin-leave 15.23, pin-system 17.61, browser-closed 20.31; window shifted by the mark offset | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 7.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_attack_run_narrow.trimmed.mkv",
+    "in": 29.3,
+    "out": 36.3
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03b slot-when 30.86, slot-system 34.60; window shifted -0.2; narrow mail client 560 px | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "MESSAGE BUILDER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 2.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_attack_run_narrow.trimmed.mkv",
+    "in": 36.24,
+    "out": 38.44
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03b send 38.45, landed panel from 38.47; out 38.44 before it | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE SEND",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.5,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t03b_attack_run_narrow.trimmed.mkv",
+    "in": 45.5,
+    "out": 48.0
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03b mail-closed 45.31 / flip-up 45.33 (contact sheet shows the flip page by 45.0); in 45.5, out 48.0 before Continue 48.59 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "julian_flip",
+   "type": "gameplay",
+   "duration": 5.27,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_julian_flip.trimmed.mkv",
+    "in": 3.66,
+    "out": 8.93
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "masks": [
+    {
+     "x": 1548,
+     "y": 680,
+     "w": 32,
+     "h": 72,
+     "color": "#0a0a12"
+    }
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t06 J1: speech 3.911-8.532 (silencedetect -35 dB d 0.08, no pause that long); portrait up 3.19 (black frame about 3.0, audio blip 2.37-2.58 both before the in-point 3.66 = onset - 0.25); out 8.93 is 0.4 after the last word, chat-closed 9.47; J2 never starts. Caption split at the weak stop 6.18-6.24 (silencedetect -25 dB d 0.04, 0.056 s: no pause reaches 0.08 s in this line, so the split is an estimate after 'build'), 7 and 8 words; game chat bar cropped out in every aspect (zoom 1.25, cy 0.4); Julian about x 0.72, check 9:16 and 1:1 on the render | CA: spoilers not an issue (owner), mouse cursor masked on Julian's jacket (x 1552-1576, y 684-748, static)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.25,
+     "end": 2.52,
+     "speaker": "Julian",
+     "text": "That's how little it takes to build"
+    },
+    {
+     "start": 2.58,
+     "end": 4.872,
+     "speaker": "Julian",
+     "text": "a convincing message out of a colleague's posts."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 4.4,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You sort the feed and inbox"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "drill",
+   "type": "gameplay",
+   "duration": 5.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08b_post_tweak_hold_narrow.trimmed.mkv",
+    "in": 7.2,
+    "out": 12.7
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t08b card1 7.01, hover-done 13.64; narrow frame 536x440 in a 600 container; no pick | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "POST OR NOT?",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.51,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   }
+  },
+  {
+   "id": "privacy",
+   "type": "gameplay",
+   "duration": 5.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09b_privacy_panel_narrow.trimmed.mkv",
+    "in": 6.9,
+    "out": 12.3
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t09b panel-open 4.42, hover-switch 8.53, flick 8.98, tight 10.24; narrow frame 536x852 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "TIGHTEN THE SETTINGS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "inbox",
+   "type": "gameplay",
+   "duration": 6.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10b_dm_inbox_narrow.trimmed.mkv",
+    "in": 8.95,
+    "out": 14.95
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t10b list-up 5.38, hover-row:1 9.63, row 5 13.92, row 6 15.05; narrow 560 px client | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "MESSAGES AND REQUESTS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "lorna_end",
+   "type": "gameplay",
+   "duration": 3.55,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_lorna_end.trimmed.mkv",
+    "in": 12.17,
+    "out": 15.72
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "re-capture 24 Nov (visemes / Lorna facing): retimed from the new take marks (docs/video/takes_ca14.md): 13.15-16.7 -> 12.17-15.72 | t11 chat L2: portrait up 12.83 (black frame about 12.7), the cut bark audio ends 12.533, chat speech 13.4535-15.1073 then 15.502-16.2975 (pause 0.394 s measured at -35 dB d 0.08, used for the caption split); in 13.15 = onset - 0.3 inside silence 12.533-13.4535 so the cut bark is not heard; out 16.70 inside silence from 16.2975, before chat-closed 17.13; menu never shown; game chat bar cropped out in every aspect; Lorna about x 0.70 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TEAM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.3,
+     "end": 1.957,
+     "speaker": "Lorna",
+     "text": "It's all of us at our desks."
+    },
+    {
+     "start": 2.352,
+     "end": 3.148,
+     "speaker": "Lorna",
+     "text": "Fine to post?"
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Social media and oversharing",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.12,
+   "end": 9.232,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 9.6,
+   "end": 12.792,
+   "text": "Public posts say more than their owner meant.",
+   "caption": "Public posts say more than\ntheir owner meant.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 13.042,
+   "end": 15.25,
+   "text": "This episode: social media.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 16.1,
+   "end": 18.5,
+   "text": "First, you play the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 19.1,
+   "end": 21.932,
+   "text": "Pin what Dani's public posts give away.",
+   "caption": "Pin what Dani's public posts\ngive away.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 23.5,
+   "end": 26.164,
+   "text": "Write to Yasmin as Dani.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v4b",
+   "start": 26.414,
+   "end": 29.582,
+   "text": "Mention his week off and the new finance system.",
+   "caption": "Mention his week off and\nthe new finance system.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v4b.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 30.5,
+   "end": 31.412,
+   "text": "Then send it.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 32.7,
+   "end": 34.02,
+   "text": "It landed.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v7",
+   "start": 40.47,
+   "end": 43.83,
+   "text": "Now decide what to post, what to answer.",
+   "caption": "Now decide what to post,\nwhat to answer.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v7.mp3"
+  },
+  {
+   "id": "v8",
+   "start": 44.87,
+   "end": 48.302,
+   "text": "Post it, tweak it, or hold it back.",
+   "caption": "Post it, tweak it,\nor hold it back.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v8.mp3"
+  },
+  {
+   "id": "v9",
+   "start": 50.37,
+   "end": 53.73,
+   "text": "Then tighten Dani's privacy settings.",
+   "caption": "Then tighten Dani's\nprivacy settings.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v9.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 55.77,
+   "end": 58.506,
+   "text": "Six messages arrive. Which are real?",
+   "caption": "Six messages arrive.\nWhich are real?",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 65.32,
+   "end": 70.288,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack, learn to\nstop it, on Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}

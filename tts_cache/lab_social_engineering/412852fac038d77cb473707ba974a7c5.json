@@ -1,0 +1,13 @@
+{
+  "key": "412852fac038d77cb473707ba974a7c5",
+  "npc": "dev_service_desk",
+  "text": "Did they? Nobody's told me. I still go by the list, mind.",
+  "voice": "Puck",
+  "style": "Service desk analyst at a small British firm, early forties, British Indian, from the West Midlands. Speak with a consistent West Midlands (Birmingham) accent throughout — do not shift to any other accent. Bright mid-range pitch; easy, chatty pace. The friendliest voice in the building, keen to help whoever rings.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-27",
+  "recorded_at": "2026-10-27T13:47:54Z"
+}

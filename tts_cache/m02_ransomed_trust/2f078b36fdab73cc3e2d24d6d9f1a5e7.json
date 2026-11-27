@@ -1,0 +1,13 @@
+{
+  "key": "2f078b36fdab73cc3e2d24d6d9f1a5e7",
+  "npc": "gary_whitlock",
+  "text": "Her name. Her signature. Seven emails and one honest page.",
+  "voice": "Charon",
+  "style": "Hospital IT systems administrator, mid-thirties, running on vending machine coffee. Consistent Birmingham / Black Country accent throughout. Flat, tired, self-deprecating -- a man who has been right for six months and got nothing for it. Anger sits under the surface, not on top of it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:13:15Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "1a5b57037e89098f7ab56b8391829d27",
+  "npc": "kit_agnieszka_duda",
+  "text": "Audit week again.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:01:11Z"
+}

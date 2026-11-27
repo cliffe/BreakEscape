@@ -1,0 +1,10 @@
+{
+  "scenario": "test_chatter_pool_gate",
+  "start_room": "office",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

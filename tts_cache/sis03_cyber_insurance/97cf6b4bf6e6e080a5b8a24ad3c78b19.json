@@ -1,0 +1,13 @@
+{
+  "key": "97cf6b4bf6e6e080a5b8a24ad3c78b19",
+  "npc": "eleanor_vance",
+  "text": "A negotiated settlement, below the full claim.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:29:22Z"
+}

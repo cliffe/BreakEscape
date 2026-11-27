@@ -1,0 +1,13 @@
+{
+  "key": "00253ea7e62c037c2a58ab187469d3ff",
+  "npc": "agnieszka_duda",
+  "text": "Yes? Just tidying.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:37:22Z"
+}

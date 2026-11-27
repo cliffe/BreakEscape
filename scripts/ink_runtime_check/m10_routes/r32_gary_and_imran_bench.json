@@ -1,0 +1,55 @@
+{
+ "steps": [
+  {
+   "note": "Gary and Imran at the workshop bench, defaults (no m02 protection): Gary's talk-round runs to the four-way close; Imran is sent home with his phone."
+  },
+  {
+   "talk": "gary",
+   "picks": [
+    "I'm listening",
+    "And you took it"
+   ]
+  },
+  {
+   "said": [
+    "I asked you not to be the fifth person to treat him as an overhead.",
+    "They sacked IT after the inquiry and kept the board.",
+    "I took it. The rent doesn't care whose side you're on.",
+    "I've not shipped a thing. Call it a work-to-rule.",
+    "A man on their bench who ships nothing is worth something to us."
+   ],
+   "notSaid": [
+    "You saved my career."
+   ]
+  },
+  {
+   "expect": {
+    "gary_outcome": "avoided"
+   }
+  },
+  {
+   "talk": "imran",
+   "picks": [
+    "I haven't read it yet",
+    "Go home"
+   ]
+  },
+  {
+   "said": [
+    "We told the board, in writing. Nobody read it.",
+    "Casualties. His own sums, in thousands.",
+    "Let him go and the phone goes with him.",
+    "Names, not stores. Look at the log.",
+    "I'm sending her home. Don't stop me."
+   ],
+   "notSaid": [
+    "You weren't supposed to be here, Gary."
+   ]
+  },
+  {
+   "expect": {
+    "imran_outcome": "talked_round"
+   }
+  }
+ ]
+}

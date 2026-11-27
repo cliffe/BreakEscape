@@ -1,0 +1,43 @@
+{
+ "steps": [
+  {
+   "note": "Phantom on a save where the whodunit is off (taken or double-crossed): his list balances, and the 'who signed' topic and the accusation never appear."
+  },
+  {
+   "set": {
+    "whodunit_live": false
+   }
+  },
+  {
+   "talk": "phantom",
+   "picks": [
+    "Counting what"
+   ]
+  },
+  {
+   "said": [
+    "The Director's bloodhound again.",
+    "Since Portland I audit every sign-out. Tonight's count balances. I checked twice, out of habit."
+   ],
+   "notSaid": [
+    "That case went out with a cloner",
+    "Kowalczyk and Arakawa. Both signatures are good."
+   ]
+  },
+  {
+   "talk": "phantom",
+   "picks": [
+    "Carry on counting"
+   ]
+  },
+  {
+   "said": [
+    "I never stop."
+   ],
+   "notSaid": [
+    "Who signed for the case?",
+    "You're WREN."
+   ]
+  }
+ ]
+}

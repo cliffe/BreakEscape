@@ -1,0 +1,13 @@
+{
+  "key": "ff50c311b505059685b26d237a0b967c",
+  "npc": "jun_watanabe",
+  "text": "Did you see that new rota?",
+  "voice": "Puck",
+  "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:54:15Z"
+}

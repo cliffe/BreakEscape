@@ -1,0 +1,13 @@
+{
+  "key": "48cccf28406e18c273f7f40d57fa80ac",
+  "npc": "kit_anjali_rao",
+  "text": "Queue's moving along.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:00:12Z"
+}

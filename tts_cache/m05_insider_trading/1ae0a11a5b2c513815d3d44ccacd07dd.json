@@ -1,0 +1,13 @@
+{
+  "key": "1ae0a11a5b2c513815d3d44ccacd07dd",
+  "npc": "dr_halloran",
+  "text": "Security say I'm to treat David as normal on Monday. I don't know how I'll manage that.",
+  "voice": "Erinome",
+  "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:12:10Z"
+}

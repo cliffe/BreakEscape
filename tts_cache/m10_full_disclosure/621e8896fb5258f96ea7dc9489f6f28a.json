@@ -1,0 +1,14 @@
+{
+  "key": "621e8896fb5258f96ea7dc9489f6f28a",
+  "npc": "vos",
+  "text": "Who told you that. No. Don't. The door is open.",
+  "delivery": "after a pause, rattled",
+  "voice": "Schedar",
+  "style": "Zero Day's broker, fifties, from Rotterdam. Consistent Dutch-accented English throughout -- do not shift to any other accent. Flat, courteous, unhurried; everything is a delivery date.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:25:06Z"
+}

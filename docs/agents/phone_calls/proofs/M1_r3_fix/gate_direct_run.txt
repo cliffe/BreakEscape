@@ -1,0 +1,4 @@
+game 2175 (gate_direct)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+timeline: ["-|toast:false|room:reading_room@0.1","terminal_closed@0.5","-|toast:false|room:restricted_stacks@2.4","arrived_at_gate@5.4","door_unlock_attempt:restricted_cage@5.6","-|toast:true|room:restricted_stacks@6.3","nightshade_phone:ringing|toast:true|room:restricted_stacks@15.7"]
+shot gate_direct_gate_direct_end

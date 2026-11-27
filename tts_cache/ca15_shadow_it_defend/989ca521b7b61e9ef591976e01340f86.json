@@ -1,0 +1,14 @@
+{
+  "key": "989ca521b7b61e9ef591976e01340f86",
+  "npc": "kit_chidi_okeke",
+  "text": "That message wants your sign-in number read back, and that number's sat on their screen. Real IT never asks for it.",
+  "delivery": "easy-going, approving",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:43:44Z"
+}

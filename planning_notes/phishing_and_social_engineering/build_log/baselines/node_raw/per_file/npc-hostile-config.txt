@@ -1,0 +1,44 @@
+TAP version 13
+# ✅ NPC hostile system initialized
+# ⚔️ NPC torres hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for torres (isHostile=true)
+# ⚔️ NPC clerk hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for clerk (isHostile=true)
+# ⚔️ NPC bridge_npc hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for bridge_npc (isHostile=true)
+# ⚔️ NPC odd hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for odd (isHostile=true)
+# Subtest: behavior.hostile numbers reach the combat state
+ok 1 - behavior.hostile numbers reach the combat state
+  ---
+  duration_ms: 1.091981
+  ...
+# Subtest: missing numbers fall back to combat-config.js
+ok 2 - missing numbers fall back to combat-config.js
+  ---
+  duration_ms: 0.165702
+  ...
+# Subtest: with no behavior, the config passed to setNPCHostile is used
+ok 3 - with no behavior, the config passed to setNPCHostile is used
+  ---
+  duration_ms: 0.129142
+  ...
+# Subtest: nonsense values are ignored
+ok 4 - nonsense values are ignored
+  ---
+  duration_ms: 0.182781
+  ...
+# Subtest: npc-behavior.js parseConfig keeps maxHP, attackCooldown and attackRange
+ok 5 - npc-behavior.js parseConfig keeps maxHP, attackCooldown and attackRange
+  ---
+  duration_ms: 0.469335
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 111.193627

@@ -1,0 +1,13 @@
+{
+  "key": "3278fc17fde983d0283617e6e4fb9762",
+  "npc": "narrator",
+  "text": "Torres went down hard against the rack. He isn't getting up.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:35:22Z"
+}

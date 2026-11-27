@@ -1,0 +1,48 @@
+{
+ "steps": [
+  {
+   "note": "Wendell's call has gone through the switchboard (server_hall_warned): Asante will not talk, but the corrected figures left on the bench terminal earn one answer. The player then leaves her to it."
+  },
+  {
+   "set": {
+    "server_hall_warned": true,
+    "margin_note_read": true
+   }
+  },
+  {
+   "talk": "asante",
+   "picks": [
+    "You left your corrected figures"
+   ]
+  },
+  {
+   "said": [
+    "Somebody rang out through the switchboard and told the next shift to stay home. I've nothing to say to you.",
+    "Then you've read them. He thanked me and signed the old number anyway. That's all I'll say."
+   ],
+   "notSaid": [
+    "You're the one off the office wall.",
+    "I wrote it. I'd write it again."
+   ]
+  },
+  {
+   "expect": {
+    "asante_confirmed_sheet": true
+   }
+  },
+  {
+   "talk": "asante",
+   "picks": [
+    "Suit yourself"
+   ]
+  },
+  {
+   "said": [
+    "I will."
+   ],
+   "notSaid": [
+    "Then you've read them."
+   ]
+  }
+ ]
+}

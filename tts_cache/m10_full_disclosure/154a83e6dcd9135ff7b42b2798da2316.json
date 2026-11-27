@@ -1,0 +1,13 @@
+{
+  "key": "154a83e6dcd9135ff7b42b2798da2316",
+  "npc": "director_netherton",
+  "text": "Very probably. We are going in anyway, because the alternative is six o'clock.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:43:05Z"
+}

@@ -1,0 +1,784 @@
+{
+ "mission": "ca04",
+ "id": "ca04_trailer_r1_narrow",
+ "theme": "ca",
+ "title": "Cyber Aware ca04 trailer, round 1 (narrow-panel takes for the builder, landed panel and inbox; render 9:16 and 1:1 from this file)",
+ "script": {
+  "heading": "ca04 trailer script (Executive impersonation)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca04_trailer_script.md (round 1 after review) and docs/video/takes_ca04.md (recorded 23 Nov, commit 9f3f93264). Model ca01 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Guitar Motif window from 55.126 s. The hook is the owner-question placeholder (reply cold open)."
+ },
+ "fps": 30,
+ "length": 71.8,
+ "music": {
+  "track": "PeaceFolk/Guitar Motif.mp3",
+  "analysis": "guitar_motif_75.json",
+  "start": 55.126,
+  "length": 71.8,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Guitar Motif.mp3 @27.337",
+   "PeaceFolk/Guitar Motif.mp3 @29.863"
+  ]
+ },
+ "beat": {
+  "bpm": 95.0,
+  "period": 0.6316,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02n_attack_run.trimmed.mkv",
+    "in": 44.26,
+    "out": 49.26
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02n: reply-in 44.11, hook-start 44.11 (+0.15 = in), window 44.26 to 49.26 (5.0 s): green It landed panel about 0.8 s, Done pressed 44.98, Tomas's reply 'Will do, Catherine. I'll get it sorted and drop you a line once it's done. Safe travels.' readable 45.05, hook-end 49.35; silent, the reply is the game's own on-screen text so no burned caption (it would double the text); flip hazard frames start 49.37, after the window; Red flags text and Advisory hidden by CSS; PLACEHOLDER hook, owner question 1 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "MERRIN & SALLOW",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.49,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.49,
+     "cy": 0.4,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Executive impersonation",
+    "company": "Merrin & Sallow Architects",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.4
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 6.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04n_pa_inbox.A.trimmed.mkv",
+    "in": 2.0,
+    "out": 8.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04n run A: list-up 1.75, in 2.0 is after the Inbox intro panel (rules text at 1 s), list held still to 10.94, out 8.8; five rows, '0 of 5 sorted', voicemail rows show Catherine Merrin's name; no row opened, nothing pressed; 760 px client | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "PA INBOX",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.3,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 4.6,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 12.0,
+    "out": 16.6
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02: Events & talks page up from about 12.0 (after Our people, Tomas noted 9.58), calendar block noted 13.15, bio block noted 15.10, browser-closed 17.26 (frame at 17.0 is already the next panel, out 16.6 is before it); public facts only (Catherine's trip, the Lisbon Design Forum). Contact-sheet read only: frame-check the in point for a page-switch frame (the contact sheet at 12 s shows the Events page loaded) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.42,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.38,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "build_a",
+   "type": "gameplay",
+   "duration": 3.3,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02n_attack_run.trimmed.mkv",
+    "in": 25.9,
+    "out": 29.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02n: slot1 menu opens about 26.2 and the From name is chosen (slot1 mark 27.86); out is before the slot2 menu (about 29.6); pretext set earlier (closed drop-down), Red flags text hidden by CSS (counter number only) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "EMAIL BUILDER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.462,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.339,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "build_b",
+   "type": "gameplay",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02n_attack_run.trimmed.mkv",
+    "in": 32.15,
+    "out": 35.65
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02n: slot3 menu (the trip, 'the Lisbon Design Forum') opens about 32.7, slot3 chosen 34.83, counter 3; the shot ends at 35.65 where the lands shot begins (before redflags-final 35.93), v4b 'Tie it to her trip' plays over the open trip menu; THIN SCROLLBAR on the panel's right edge from about 33 s: the 9:16 and 1:1 crops (cx 0.462 / 0.339, zoom 1) drop it, check on the render that the crop edge hides no panel text | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "EMAIL BUILDER",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.15
+    },
+    "9:16": {
+     "cx": 0.462,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.339,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02n_attack_run.trimmed.mkv",
+    "in": 35.65,
+    "out": 39.65
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02n: send 37.6, landed panel at 37.66 (green It landed panel: He would open it / It reads as his boss / Fits a trip he knows she is on, pattern level), the Send click falls 1.95 s into the shot so v5 ends just after it and v6 'It landed.' plays on the panel; out is before reply-in 44.11 and before the mail client closes (49.5), so nothing repeats in the hook | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE SEND",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.49,
+     "cy": 0.4,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.49,
+     "cy": 0.45,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02n_attack_run.trimmed.mkv",
+    "in": 49.6,
+    "out": 51.6
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02n: flip-up 49.51; the unhidden debrief panel ('Your message', red-flag bullets) shows on frames 49.37 to 49.5, so in is 49.6 (heading only from about 49.53); out 51.6 is before end 52.31; 'Now you're the PA' heading and strip only (body hidden by CSS) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "thandiwe_flip",
+   "type": "gameplay",
+   "duration": 7.1,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_thandiwe_flip.trimmed.mkv",
+    "in": 9.398,
+    "out": 16.498
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t03 T1: portrait up 15.52 (Thandiwe's real portrait, no playtest portrait), speech 15.86 to 22.56 (silencedetect -35 dB, d 0.08; pauses 17.55-17.81 and 20.29-20.38), in 15.7, out 22.8 is 0.24 s after the last word and before chat-closed 23.27; no menu; chat bar cropped out in every aspect (16:9 zoom 1.25, cy 0.4, y below about 864 gone) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.76,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.74,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.16,
+     "end": 1.845,
+     "speaker": "Thandiwe",
+     "text": "Your email has gone to Tomás."
+    },
+    {
+     "start": 2.107,
+     "end": 4.59,
+     "speaker": "Thandiwe",
+     "text": "Now take his seat at the kiosk and work the inbox"
+    },
+    {
+     "start": 4.679,
+     "end": 6.861,
+     "speaker": "Thandiwe",
+     "text": "the way it lands on a travel day."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.0,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You work Tomás's inbox"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "triage",
+   "type": "gameplay",
+   "duration": 10.7,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04n_pa_inbox.B.trimmed.mkv",
+    "in": 3.2,
+    "out": 13.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04n run B: intro panel gone by 2.0 (in 3.2), hovers down the rows at 3.89, 5.84, 7.71, 9.64, 11.53; nothing pressed, no card opened; list only, five rows, voicemail rows show Catherine Merrin's name; out is before end 15.29 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "PA INBOX",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.3,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "studio",
+   "type": "gameplay",
+   "duration": 2.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_studio_after.trimmed.mkv",
+    "in": 2.0,
+    "out": 4.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05: silent static room after the defend set, staff in place, no bubble (hold-start 0.45, hold-end 7.47); take is 1.00% dup/drop (3 frames in 300, no PTS gaps) but fine to use as is | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE OFFICE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.42,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "9:16": {
+     "cx": 0.355,
+     "cy": 0.45,
+     "zoom": 0.62
+    },
+    "1:1": {
+     "cx": 0.42,
+     "cy": 0.42,
+     "zoom": 1.1
+    }
+   }
+  },
+  {
+   "id": "thandiwe_end",
+   "type": "gameplay",
+   "duration": 6.1,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_thandiwe_end.trimmed.mkv",
+    "in": 22.116,
+    "out": 28.216
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t06 T2: T3 (the verdict line) speech ends 15.89, silent 15.89 to 17.05, T2 speech 17.05 to 22.77 (pauses 18.70-19.00 and 21.41-21.49); in 16.8 catches no T3 sound and is after the T2 subtitle swap at 16.73; out 22.9 is 0.13 s after the last word, before chat-closed 24.0; no menu; chat bar cropped out in every aspect | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE TEAM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.76,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.74,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.246,
+     "end": 1.896,
+     "speaker": "Thandiwe",
+     "text": "A voice can be copied."
+    },
+    {
+     "start": 2.201,
+     "end": 4.606,
+     "speaker": "Thandiwe",
+     "text": "Ring her back on a number you already hold"
+    },
+    {
+     "start": 4.692,
+     "end": 5.969,
+     "speaker": "Thandiwe",
+     "text": "before anything leaves the account."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Executive impersonation",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 5.12,
+   "end": 10.232,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 10.6,
+   "end": 13.792,
+   "text": "An email in the boss's name asks for payment.",
+   "caption": "An email in the boss's name\nasks for payment.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 14.042,
+   "end": 17.018,
+   "text": "This episode: executive impersonation.",
+   "caption": "This episode:\nexecutive impersonation.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 17.4,
+   "end": 19.8,
+   "text": "First, you play the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 20.4,
+   "end": 23.832,
+   "text": "The firm's website says Catherine is away this week.",
+   "caption": "The firm's website says\nCatherine is away this week.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 25.0,
+   "end": 28.072,
+   "text": "Write the email as Catherine, the managing partner.",
+   "caption": "Write the email as Catherine,\nthe managing partner.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v4b",
+   "start": 28.322,
+   "end": 29.594,
+   "text": "Tie it to her trip.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v4b.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 31.8,
+   "end": 34.128,
+   "text": "Send it to her assistant, Tomás.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 34.378,
+   "end": 35.41,
+   "text": "It landed.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v8a",
+   "start": 46.9,
+   "end": 50.284,
+   "text": "Five messages are waiting, two of them voicemails.",
+   "caption": "Five messages are waiting,\ntwo of them voicemails.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v8a.mp3"
+  },
+  {
+   "id": "v8b",
+   "start": 50.534,
+   "end": 52.094,
+   "text": "Both sound like Catherine.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v8b.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 52.344,
+   "end": 56.472,
+   "text": "Payment requests from senior people deserve a second check.",
+   "caption": "Payment requests from senior\npeople deserve a second check.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 66.5,
+   "end": 71.468,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v11.mp3"
+  }
+ ]
+}

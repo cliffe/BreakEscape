@@ -1,0 +1,13 @@
+{
+  "key": "ef6a722d80d4b740b7c1a6e7b1ab7e76",
+  "npc": "victoria_sterling",
+  "text": "Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:21:19Z"
+}

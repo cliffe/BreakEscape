@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R4: the preliminary audit with every sound answer: five correct, the top reaction, no doubt lines."},
+  {"talk": "kevin", "picks": ["Happy to help", "That's what I'm here to investigate", "I'll take all of it", "preliminary security audit update",
+    "The old mechanical locks", "Derek's credentials being used", "Staff are using predictable patterns", "A manager investigating security concerns", "Derek's encrypted comms", "I'll keep investigating"]},
+  {"said": ["I requested modern electronic locks six months ago", "Thank you! I knew I wasn't crazy", "Viral2023", "Patricia was asking the right questions", "It looks less like security and more like... hiding something", "Everything you've flagged matches my concerns exactly", "I'm going to document your findings in my incident log"],
+   "notSaid": ["That's twice you've told me not to worry", "I'm starting to wonder if you've looked at anything", "I expected more than that"]},
+  {"expect": {"audit_correct_answers": 5, "audit_wrong_answers": 0, "security_audit_completed": true}}
+ ]
+}

@@ -1,0 +1,1 @@
+const t = [...document.querySelectorAll('body *')].filter(e => e.children.length < 6 && (e.textContent||'').includes('has a clock on it') && e.offsetParent !== null).sort((a,b) => a.textContent.length - b.textContent.length)[0]; if (!t) return 'no toast'; t.click(); return 'clicked: ' + t.className;

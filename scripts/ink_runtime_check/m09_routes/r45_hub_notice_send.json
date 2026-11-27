@@ -1,0 +1,13 @@
+{
+"imports": { "m04_disclosure_choice": "partial", "m04_crew_lost": true },
+"globals": { "dock_heard": true, "identity_scene_done": true },
+"steps": [
+{ "note": "R45: the hub's His notice topic after the identity scene. HaX frames it with the m04 inquiry line, the player sends it, and the topic is gone from the hub on the next open." },
+{ "talk": "phone", "knot": "support_hub", "picks": ["His notice", "Send it", "That's all for now"] },
+{ "said": ["Albion's inquiry was about what happened. This is about the hole itself, and who else has it", "Still on his box. Say the word", "[choice] Send it", "[choice] Not yet", "Vendor's acknowledged. They're saying ninety days for a fix", "Analysis is pulling the watch. It's dark by morning"],
+  "notSaid": ["It keeps. So does the hole"] },
+{ "expect": { "albion_notified": true } },
+{ "talk": "phone", "knot": "support_hub", "reload": true },
+{ "notSaid": ["[choice] His notice"] }
+]
+}

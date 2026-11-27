@@ -1,0 +1,143 @@
+/**
+ * World-play placement for an awareness episode's attack (ENG-05a, E12).
+ *
+ * `enterWorld(world)` moves the learner into `world.room` (the lobby) and puts the costume on;
+ * `leaveWorld(world)` puts them back where they stood and takes off a costume that `enterWorld`
+ * put on (never a worn wearable). Both are safe
+ * to call at any time: `leaveWorld` with nobody displaced does nothing, so every exit path
+ * (the call ending, the prep card closed, a watcher giving up) can call it without checking.
+ *
+ * `window.loadRoom` only builds and reveals a room; it does not move the player. All rooms sit
+ * on one world map, so the move here is a placement (the same call core/game.js uses to spawn
+ * the player), with any walk-to-point cancelled first.
+ *
+ * `world` is the cleaned block from episode-model.js `worldFor`:
+ *   { room, startRoom, spawn: { x, y } | null, costume: { sprite, talk? } | null }
+ * `spawn` is in tiles from the room's top-left; without it the player lands at the room's centre.
+ *
+ * Test seams: the second argument may replace `loadRoom`, `rooms`, `player`, `scenario`,
+ * `applyCostume`, `removeCostume` and `cancelPath`.
+ */
+import { TILE_SIZE } from './constants.js';
+import { applyCostume, removeCostume } from './player-costume.js';
+
+const win = () => (typeof window !== 'undefined' ? window : {});
+
+// Where the learner stood before the attack, or null while nobody is displaced.
+let origin = null;
+
+/** Whether the learner is currently away from where the attack started. */
+export function worldActive() {
+    return origin !== null;
+}
+
+function placeAt(player, x, y, deps) {
+    try { (deps.cancelPath ?? win().cancelClickToMove)?.(); } catch (e) { /* no path to cancel */ }
+    player.setPosition(x, y);
+    player.body?.reset?.(x, y);
+}
+
+/**
+ * E3: put the player at `spot` ({ x, y }): cancel any walk-to-point, then place. The one helper
+ * behind `leaveWorld` (the call's origin) and the step-away return (the spot recorded at Look up).
+ * Returns true when the player was placed.
+ */
+export function returnPlayerTo(spot, deps = {}) {
+    const player = deps.player ?? win().player;
+    if (!player || !spot || !Number.isFinite(spot.x) || !Number.isFinite(spot.y)) return false;
+    placeAt(player, spot.x, spot.y, deps);
+    return true;
+}
+
+// E3: where the learner stood when they picked Look up on a resumeOnDone beat, or null. Kept apart
+// from `origin`, so worldActive() and the call hand-back never read it.
+let stepAwaySpot = null;
+
+/** Record the step-away spot ({ x, y }); anything else clears it. */
+export function setStepAwaySpot(spot) {
+    stepAwaySpot = spot && Number.isFinite(spot.x) && Number.isFinite(spot.y) ? { x: spot.x, y: spot.y } : null;
+}
+
+export function getStepAwaySpot() {
+    return stepAwaySpot ? { ...stepAwaySpot } : null;
+}
+
+/** Forget the spot without moving anyone. */
+export function clearStepAwaySpot() {
+    stepAwaySpot = null;
+}
+
+/** Move the learner to the recorded spot, then forget it. True when they were moved. */
+export function returnToStepAwaySpot(deps = {}) {
+    const spot = stepAwaySpot;
+    stepAwaySpot = null;
+    return spot ? returnPlayerTo(spot, deps) : false;
+}
+
+function roomTarget(room, spawn) {
+    const pos = room.position || { x: 0, y: 0 };
+    if (spawn && Number.isFinite(spawn.x) && Number.isFinite(spawn.y)) {
+        return { x: pos.x + spawn.x * TILE_SIZE, y: pos.y + spawn.y * TILE_SIZE };
+    }
+    const w = room.map?.widthInPixels ?? 320;
+    const h = room.map?.heightInPixels ?? 288;
+    return { x: pos.x + w / 2, y: pos.y + h / 2 };
+}
+
+/**
+ * Load `world.room`, place the player in it and apply the costume. Returns true when the
+ * player is in the room. On a failure nothing stays half done: the player is put back.
+ */
+export async function enterWorld(world, deps = {}) {
+    const w = win();
+    const player = deps.player ?? w.player;
+    if (!world || !world.room || !player) return false;
+    const load = deps.loadRoom ?? w.loadRoom;
+    const rooms = () => deps.rooms ?? w.rooms ?? {};
+
+    if (!origin) origin = { x: player.x, y: player.y };
+    try {
+        if (!rooms()[world.room] && typeof load === 'function') await load(world.room);
+        const room = rooms()[world.room];
+        if (!room) throw new Error(`room "${world.room}" did not load`);
+        const at = roomTarget(room, world.spawn);
+        placeAt(player, at.x, at.y, deps);
+        // Costume ownership (E2): only a costume this call put on is taken off on the way out, so a
+        // wearable (which shares the costume record) stays on through the hand-back.
+        if (world.costume) {
+            const on = await (deps.applyCostume ?? applyCostume)(world.costume, deps.costumeDeps);
+            if (on === true && origin) origin.costumed = true;
+        }
+        return true;
+    } catch (e) {
+        console.error('[episode] could not enter the world room:', e);
+        await leaveWorld(world, deps);
+        return false;
+    }
+}
+
+/**
+ * Put the player back where they stood and take off the costume `enterWorld` put on (a worn
+ * wearable stays). Returns true when someone was displaced. That costume comes off even if the
+ * placement cannot be made.
+ */
+export async function leaveWorld(world, deps = {}) {
+    if (!origin) return false;
+    const w = win();
+    const player = deps.player ?? w.player;
+    const back = origin;
+    origin = null;
+    try {
+        if (player) returnPlayerTo(back, deps);
+    } catch (e) {
+        console.error('[episode] could not return the player to the start room:', e);
+    }
+    if (back.costumed === true) {
+        try {
+            await (deps.removeCostume ?? removeCostume)(deps.costumeDeps);
+        } catch (e) {
+            console.error('[episode] could not remove the costume:', e);
+        }
+    }
+    return true;
+}

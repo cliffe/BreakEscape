@@ -1,0 +1,260 @@
+/* Awareness episode runner (SE design 11 N1, packet P7-A). The layout around P7-B's views:
+   the step strip and Close in a bar, then one stage panel. Colours come from the neutral
+   skin's --aw-* tokens (css/awareness-skin.css); the fallbacks match it so the runner still
+   reads correctly if that file is missing. */
+
+.minigame-container[data-minigame="episode-runner"] .minigame-game-container { display: flex; flex-direction: column; min-height: 0; }
+
+/* C-ER1 (user pick B): the diegetic awareness kiosk. A CSS-drawn bezel in the PC monitor's look
+   (flat dark case, 2px outline, a 2px lighter inner edge, corners cut in 2px steps; no image art)
+   with the X in its top strip. The screen wraps the content and scrolls inside, so the step strip
+   keeps its natural height instead of being squeezed to a fixed aspect. Facilitated runs skip
+   .epr-kiosk and stay full-bleed for projection. */
+.minigame-container.epr-kiosk > .minigame-game-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    background: none;
+}
+.epr-kiosk-bezel {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 96vw);
+    max-height: 100%;
+    background: #3d3d3d;
+    border: 2px solid #161616;
+    box-shadow: inset 0 0 0 2px #555555;
+    clip-path: polygon(
+        0 6px, 2px 6px, 2px 4px, 4px 4px, 4px 2px, 6px 2px, 6px 0,
+        calc(100% - 6px) 0, calc(100% - 6px) 2px, calc(100% - 4px) 2px, calc(100% - 4px) 4px,
+        calc(100% - 2px) 4px, calc(100% - 2px) 6px, 100% 6px,
+        100% calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px),
+        calc(100% - 6px) 100%,
+        6px 100%, 6px calc(100% - 2px), 4px calc(100% - 2px), 4px calc(100% - 4px),
+        2px calc(100% - 4px), 2px calc(100% - 6px), 0 calc(100% - 6px)
+    );
+}
+.epr-kiosk-top {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 38px;
+    padding: 4px 10px;
+}
+.epr-kiosk-cap {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #c8c8c8;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+/* R2 m2 (a): the kiosk close is the themed steel .minigame-close-button (the PC monitor's X).
+   The bar's .se-overlay-close wears the same themed skin since D216. Keep it in the top strip's flex flow (the base rule makes it absolute). */
+.epr-kiosk-top .epr-kiosk-close {
+    position: relative;   /* in flow, and the anchor for the X's hit area */
+    top: auto;
+    right: auto;
+    flex: 0 0 auto;
+    margin: 0;
+}
+.epr-kiosk-hint {
+    flex: 0 0 auto;
+    margin-left: auto;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;
+    color: #c8c8c8;
+    white-space: nowrap;
+}
+.epr-kiosk-screen {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+    margin: 0 8px 8px;
+    border: 2px solid #111111;
+    background: var(--aw-surface, #f6f8f7);
+}
+.epr-kiosk-screen > .epr-root { flex: 1 1 auto; min-width: 0; }
+
+.epr-root {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    max-width: 100%;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    color: var(--aw-ink);
+    background: var(--aw-surface);
+    box-sizing: border-box;
+}
+
+.epr-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border-bottom: 2px solid var(--aw-line);
+}
+.epr-strip { flex: 1 1 auto; min-width: 0; }
+.epr-strip .aw-strip { border-bottom: 0; }
+.epr-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
+
+/* padding-bottom (E8 F8): the scroll area keeps room below its last control, so the debrief Finish
+   button is fully scrollable into view at a tall viewport (1400x1000) rather than clipped at the fold. */
+.epr-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
+
+.epr-panel { padding: 16px; line-height: 24px; }
+.epr-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; color: var(--aw-accent); }
+.epr-heading:focus { outline: none; }
+.epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+/* batch 13: the send-off under the Episode finished panel */
+.epr-send-off { margin: 0 0 12px; padding: 10px 12px; font-size: 16px; max-width: 60ch; border-left: 4px solid var(--aw-accent, #2f6f8f); }
+/* C-ER3: the scope note carries .se-notice (dashed box) in markup, so .epr-scope only sets its
+   flow; the left-bar quote box is gone in favour of the shared notice look. */
+.epr-scope {
+    margin: 0 0 12px;
+    max-width: 60ch;
+}
+.epr-card-count { margin: 12px 0 0; font-size: 16px; }
+.epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
+.epr-notice { margin: 0; font-size: 16px; color: #8a5a00; }
+.epr-notice:empty { display: none; }
+/* E14 F11: the write-stage "your draft starts again" reload note. */
+.epr-reload-note { margin: 4px 0 0; font-size: 16px; color: #52606d; }
+
+.epr-button {
+    margin-top: 14px;
+    padding: 8px 18px;
+    font: inherit;
+    font-weight: normal;
+    color: #fff;
+    background: var(--aw-accent);
+    border: 2px solid var(--aw-accent);
+    border-radius: 0;
+    cursor: pointer;
+}
+/* C-X9 secondary action (e.g. brief-card Back): the awareness secondary look, square 2px line,
+   no fill. Two-class selector so it beats the single-class .epr-button fill regardless of load
+   order. */
+.epr-button.aw-button-secondary { color: var(--aw-ink); background: #fff; border-color: var(--aw-line); }
+.epr-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
+/* EC1: a button that cannot be used yet (the step-away Look up before kit_defend_done). Flat grey,
+   same square 2px frame, no fade, so the label stays crisp. */
+.epr-button:disabled,
+.epr-button.aw-button-secondary:disabled { color: #6b7480; background: #e3e6ea; border-color: #b4bac2; cursor: not-allowed; }
+
+/* EC1: the step-away panel (and its Look up on the facilitated pause). The two actions sit side by
+   side; the wait line shows only while Look up is disabled. */
+.epr-step-away .epr-button + .epr-button,
+.epr-pause .epr-look-up { margin-left: 8px; }
+.epr-step-away-note { margin: 10px 0 0; font-size: 16px; color: #52606d; }
+.epr-step-away-note[hidden] { display: none; }
+
+/* Facilitated mode (11 N5, P7-I): the group prompt and the pause between stages. Large
+   enough to read from across a room on a shared screen. */
+.epr-facilitator {
+    display: block;
+    margin: 12px 16px 0;
+    padding: 10px 14px;
+    max-width: 60ch;
+    font-size: 16px;
+    background: #fff;
+    border: 2px dashed var(--aw-accent);
+    border-radius: 0;
+}
+.epr-panel .epr-facilitator { margin: 12px 0 0; }
+.epr-facilitator-label { display: block; font-size: 16px; font-weight: 700; color: var(--aw-accent); }
+.epr-facilitator-text { display: block; font-weight: 600; }
+
+@media (max-width: 767px) {
+    .epr-bar { flex-wrap: wrap; }
+    .epr-panel { padding: 12px; }
+}
+
+/* The consequence sandbox (ENG-04, D217): the `mistake` stage's own overlay, a small dialog on the
+   dark ui-themes surface with 2px lines (the document scenes keep the paper skin). One beat at a
+   time; GNF at 16px, nothing smaller. The --aw-* tokens are remapped so the shared .se-notice
+   and .epr-button fallbacks resolve to the dark surface too. */
+.epr-sbx-root {
+    --aw-accent: var(--ui-accent, #ffcc44);
+    --aw-ink: var(--ui-text, #eef1f8);
+    --aw-surface: var(--ui-surface-opaque, rgb(24, 30, 48));
+    --aw-line: var(--ui-line, #4c5b80);
+    font-family: 'GNF', sans-serif;
+    font-size: 16px;
+    color: var(--ui-text, #eef1f8);
+    box-sizing: border-box;
+    max-width: 640px;
+    max-height: min(92vh, 760px);
+    overflow-y: auto;
+    margin: 2vh auto;
+    padding: 12px;
+    background: var(--ui-surface-opaque, rgb(24, 30, 48));
+    line-height: 1.5;
+}
+.epr-sbx-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--ui-line, #4c5b80); }
+/* Same look as the shared SE window title (.se-window-title, C-X6): 16px, 24px line, no faux bold. */
+.epr-sbx-title { font-family: var(--ui-heading-font, 'GNF', sans-serif); font-size: 16px; line-height: 24px; font-weight: normal; color: var(--ui-accent, #ffcc44); }
+.epr-sbx-card { padding: 12px; background: var(--ui-surface-raised, rgb(38, 48, 74)); border: 2px solid var(--ui-line, #4c5b80); }
+.epr-sbx-intro { margin: 0 0 10px; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
+.epr-sbx-heading { margin: 0 0 6px; padding-bottom: 4px; font-size: 16px; font-weight: normal; color: var(--ui-accent, #ffcc44); border-bottom: 2px solid var(--ui-line, #4c5b80); }
+.epr-sbx-heading:focus { outline: none; }
+.epr-sbx-situation { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+.epr-sbx-options { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
+.epr-sbx-legend { padding: 0; margin: 0 0 6px; font-size: 16px; color: var(--ui-text, #eef1f8); }
+.epr-sbx-option { display: flex; align-items: flex-start; gap: 12px; padding: 8px 12px; font-size: 16px; border: 2px solid var(--ui-text-faint, #6f7a94); border-radius: 0; cursor: pointer; background: var(--ui-surface-opaque, rgb(24, 30, 48)); }
+/* Square pixel tick box: a 2px frame, a filled 8px square when picked. Picked also shows an accent
+   frame (unpicked frames are the fainter text colour, 3:1 against the option fill in every theme) and a filled box, so the state never rests on colour alone. */
+.epr-sbx-radio { appearance: none; -webkit-appearance: none; flex: none; box-sizing: border-box; width: 16px; height: 16px; margin: 4px 0 0; border: 2px solid var(--ui-text-dim, #a8b2c8); border-radius: 0; background: transparent; }
+.epr-sbx-radio:checked { border-color: var(--ui-accent, #ffcc44); background: var(--ui-accent, #ffcc44); box-shadow: inset 0 0 0 2px var(--ui-surface-opaque, rgb(24, 30, 48)); }
+.epr-sbx-radio:focus-visible { outline: 2px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
+.epr-sbx-picked { border-color: var(--ui-accent, #ffcc44); background: var(--ui-surface-raised, rgb(38, 48, 74)); box-shadow: inset 0 0 0 2px var(--ui-accent, #ffcc44); }
+.epr-sbx-root .epr-sbx-confirm { font-family: 'GNF', sans-serif; font-size: 24px; line-height: 32px; color: var(--ui-accent, #ffcc44); background: transparent; border: 2px solid var(--ui-accent, #ffcc44); }
+.epr-sbx-root .epr-sbx-confirm:focus-visible { outline: 2px solid var(--ui-text, #eef1f8); outline-offset: 2px; }
+.epr-sbx-root .epr-sbx-confirm:disabled { opacity: 1; color: var(--ui-text-dim, #a8b2c8); background: transparent; border-color: var(--ui-line, #4c5b80); cursor: default; }
+.epr-sbx-hint { margin: 8px 0 0; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
+
+/* C-X4 (n2): the shared .se-notice reads its colours from the scene tokens so it stays legible
+   on the awareness skin's light surface (the default --ui-* values suit the dark SE windows). */
+.epr-root .se-notice { color: var(--aw-ink, #1f2933); border-color: var(--aw-line, #cfd8d4); }
+
+/* CA-6 (sweep 7): the episode runner's X is a real 44x44 target, not a 30px square with a
+   hidden hit area; the strip around it grows to hold it. */
+.epr-kiosk-top .epr-kiosk-close,
+.epr-bar .se-overlay-close { box-sizing: border-box; width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.epr-kiosk-top .epr-kiosk-close::after,
+.epr-bar .se-overlay-close::after { content: none; }
+.epr-kiosk-top { min-height: 52px; }
+
+/* CA-2 / CA-5 (sweep 7): short landscape (568x320, 844x390). The kiosk takes the window less
+   8px, its top strip and step strip are one slim row each, and the debrief carries the payoff
+   (band headline and score, first in the DOM) so it is in the first view. */
+@media (max-height: 500px) {
+    .minigame-container.epr-kiosk > .minigame-game-container { margin: 0 auto; padding: 4px; height: 100%; max-height: 100%; }
+    .epr-kiosk-top { min-height: 0; padding: 2px 8px; }
+    .epr-kiosk-screen { margin: 0 4px 4px; }
+    .epr-root .aw-strip { padding: 4px 8px; flex-wrap: nowrap; }
+    .epr-root .aw-wordmark { flex: 0 0 auto; min-width: 0; max-width: 30%; margin-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .epr-root .aw-steps { min-width: 0; }
+    .epr-root .aw-step-num { flex: 0 0 auto; }
+    .epr-body { padding-bottom: 8px; }
+    .aw-debrief { padding: 8px 16px; }
+    .aw-debrief > .aw-band { margin-bottom: 8px; }
+    .aw-debrief > .aw-heading { margin-bottom: 4px; }
+}
+/* the runner focuses the debrief band by script (tabindex -1): no browser focus ring on it, the
+   same convention as .epr-heading:focus (CSL R3 m3) */
+.aw-debrief > .aw-band:focus { outline: none; }

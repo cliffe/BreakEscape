@@ -1,0 +1,21 @@
+{
+  "key": "70b143808aa0dc6f9d776386bc7ca27e",
+  "npc": "ghost_phone",
+  "text": "Don't thank me. It's not for you.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:06:17Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/70b143808aa0dc6f9d776386bc7ca27e.mp3",
+    "clean_md5": "0f82e9915d2a615c6cc324c60a31d8a2",
+    "baked_md5": "3e49da93e75d61ea9da3aa35498e9bfe",
+    "baked": "2026-11-24"
+  }
+}

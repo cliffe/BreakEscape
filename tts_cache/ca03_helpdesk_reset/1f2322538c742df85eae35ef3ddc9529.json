@@ -1,0 +1,13 @@
+{
+  "key": "1f2322538c742df85eae35ef3ddc9529",
+  "npc": "darren_price",
+  "text": "A prompt you didn't start is one to report, not approve. Number matching stops a careless tap cold.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:36Z"
+}

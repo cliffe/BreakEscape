@@ -1,0 +1,13 @@
+{
+  "key": "06567452fdc396604b02d83a2e73d280",
+  "npc": "narrator",
+  "text": "A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:37:41Z"
+}

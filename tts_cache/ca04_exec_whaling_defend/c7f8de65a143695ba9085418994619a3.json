@@ -1,0 +1,13 @@
+{
+  "key": "c7f8de65a143695ba9085418994619a3",
+  "npc": "thandiwe_moyo",
+  "text": "The sender wants the retainer in an account they control. Skipping Yasmin's approval is how it gets there, and the real Catherine never asked for it.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:48:35Z"
+}

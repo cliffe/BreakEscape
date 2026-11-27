@@ -1,0 +1,13 @@
+{
+  "key": "f644f1e85d7950a739785db8b4e69d5e",
+  "npc": "ward_nurse",
+  "text": "But you looked at Mrs Hargreaves like she was a person. I've decided that's my evidence base.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

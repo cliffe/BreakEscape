@@ -1,0 +1,13 @@
+{
+  "key": "7b460691b4ffb20c9285d317abf26408",
+  "npc": "kit_graham_whitfield",
+  "text": "Good ear. A voice on the phone proves nothing by itself.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:50Z"
+}

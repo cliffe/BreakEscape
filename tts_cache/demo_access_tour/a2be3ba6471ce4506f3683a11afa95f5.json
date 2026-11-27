@@ -1,0 +1,13 @@
+{
+  "key": "a2be3ba6471ce4506f3683a11afa95f5",
+  "npc": "ama",
+  "text": "I'll stay here. If you're stuck, check your phone. I'll text if I think of anything.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:45:48Z"
+}

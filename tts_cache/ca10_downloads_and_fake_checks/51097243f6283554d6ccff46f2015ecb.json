@@ -1,0 +1,13 @@
+{
+  "key": "51097243f6283554d6ccff46f2015ecb",
+  "npc": "kit_anjali_rao",
+  "text": "Your account's being used from somewhere we've never seen, Darren. That's not you, is it?",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:10:17Z"
+}

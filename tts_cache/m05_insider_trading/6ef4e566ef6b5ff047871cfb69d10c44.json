@@ -1,0 +1,13 @@
+{
+  "key": "6ef4e566ef6b5ff047871cfb69d10c44",
+  "npc": "bernadette_lyons",
+  "text": "One cup, then I'm back on the hoover.",
+  "voice": "Callirrhoe",
+  "style": "Quantum Dynamics' evening cleaner, in her late 50s, dry, unhurried and kind. Speak with a consistent Dublin accent throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T18:08:02Z"
+}

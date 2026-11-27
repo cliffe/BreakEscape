@@ -1,0 +1,236 @@
+{
+  "variant": "alias_out_of_order",
+  "mountEvents": [
+    [
+      "network_viewed",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [],
+        "hostList": ""
+      }
+    ],
+    [
+      "network_viewed:lab_net",
+      {
+        "footholdId": "jack_a",
+        "networkId": "lab_net",
+        "hostIds": [],
+        "hostList": ""
+      }
+    ]
+  ],
+  "controls": [
+    {
+      "index": 0,
+      "key": "check|print01|web",
+      "disabled": false,
+      "record": {
+        "calls": [
+          [
+            "check",
+            "jack_a",
+            {
+              "hostId": "print01",
+              "service": "web"
+            }
+          ]
+        ],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\" data-network-id=\"lab_net\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Devices</li>\n                <li class=\"network-row network-row-host network-row-device network-row-scanned\" data-host-id=\"print01\" data-kind=\"device\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pnw_portable_printer1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">Second floor printer</span></span>\n                        <span class=\"network-row-name\"></span></span>\n                    <span class=\"network-row-control\"></span><ul class=\"network-service-tiles\"><li class=\"network-service network-service-with-findings\" data-service=\"web\"><span class=\"network-service-line\">web · 80 · Brackley PrintPanel 2.0</span><button type=\"button\" class=\"minigame-button network-row-action network-check\" data-action=\"check\" disabled=\"\">Checking...</button><ul class=\"network-findings\"><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f1\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f1</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f1.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f2\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f2</button> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-low\">Low</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f2.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f10\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f10</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-high\">High</span> <span class=\"network-finding-status\">Confirmed</span></span><span class=\"network-finding-summary\">Summary for f10.</span></li></ul></li></ul>\n                </li>\n                    </ul>\n                </div>\n                \n                <div class=\"network-block network-techniques\" data-techniques=\"\"><h5 class=\"network-block-title\">Techniques</h5><ul class=\"network-technique-list\"><li class=\"network-technique\" data-technique=\"phish\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Phishing note</button><span class=\"network-technique-summary\">Phishing note: a note.</span><span class=\"network-technique-type\">Type: phish</span><span class=\"network-technique-works\">Default login</span></li><li class=\"network-technique\" data-technique=\"phish_sms\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Text message note</button><span class=\"network-technique-summary\">Text message note: a note.</span><span class=\"network-technique-type\">Type: phish_sms</span><span class=\"network-technique-works\">Out of date</span></li></ul><div class=\"network-technique-use\"><span class=\"network-technique-pick\">Pick a finding, then a card.</span><button type=\"button\" class=\"minigame-button network-row-action network-use\" data-action=\"use\" disabled=\"\">Use</button></div></div>\n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    },
+    {
+      "index": 1,
+      "key": "select-finding|print01|web|f1",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": null
+    },
+    {
+      "index": 2,
+      "key": "confirm|print01|web|f1",
+      "disabled": false,
+      "record": {
+        "calls": [
+          [
+            "confirm",
+            "jack_a",
+            {
+              "findingId": "print01.web.k_one"
+            }
+          ]
+        ],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\" data-network-id=\"lab_net\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Devices</li>\n                <li class=\"network-row network-row-host network-row-device network-row-scanned\" data-host-id=\"print01\" data-kind=\"device\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pnw_portable_printer1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">Second floor printer</span></span>\n                        <span class=\"network-row-name\"></span></span>\n                    <span class=\"network-row-control\"></span><ul class=\"network-service-tiles\"><li class=\"network-service network-service-with-findings\" data-service=\"web\"><span class=\"network-service-line\">web · 80 · Brackley PrintPanel 2.0</span><button type=\"button\" class=\"minigame-button network-row-action network-check\" data-action=\"check\">Check</button><ul class=\"network-findings\"><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f1\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f1</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f1.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\" disabled=\"\">Confirming...</button></li><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f2\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f2</button> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-low\">Low</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f2.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f10\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f10</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-high\">High</span> <span class=\"network-finding-status\">Confirmed</span></span><span class=\"network-finding-summary\">Summary for f10.</span></li></ul></li></ul>\n                </li>\n                    </ul>\n                </div>\n                \n                <div class=\"network-block network-techniques\" data-techniques=\"\"><h5 class=\"network-block-title\">Techniques</h5><ul class=\"network-technique-list\"><li class=\"network-technique\" data-technique=\"phish\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Phishing note</button><span class=\"network-technique-summary\">Phishing note: a note.</span><span class=\"network-technique-type\">Type: phish</span><span class=\"network-technique-works\">Default login</span></li><li class=\"network-technique\" data-technique=\"phish_sms\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Text message note</button><span class=\"network-technique-summary\">Text message note: a note.</span><span class=\"network-technique-type\">Type: phish_sms</span><span class=\"network-technique-works\">Out of date</span></li></ul><div class=\"network-technique-use\"><span class=\"network-technique-pick\">Pick a finding, then a card.</span><button type=\"button\" class=\"minigame-button network-row-action network-use\" data-action=\"use\" disabled=\"\">Use</button></div></div>\n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    },
+    {
+      "index": 3,
+      "key": "select-finding|print01|web|f2",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": null
+    },
+    {
+      "index": 4,
+      "key": "confirm|print01|web|f2",
+      "disabled": false,
+      "record": {
+        "calls": [
+          [
+            "confirm",
+            "jack_a",
+            {
+              "findingId": "print01.web.k_two"
+            }
+          ]
+        ],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\" data-network-id=\"lab_net\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Devices</li>\n                <li class=\"network-row network-row-host network-row-device network-row-scanned\" data-host-id=\"print01\" data-kind=\"device\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pnw_portable_printer1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">Second floor printer</span></span>\n                        <span class=\"network-row-name\"></span></span>\n                    <span class=\"network-row-control\"></span><ul class=\"network-service-tiles\"><li class=\"network-service network-service-with-findings\" data-service=\"web\"><span class=\"network-service-line\">web · 80 · Brackley PrintPanel 2.0</span><button type=\"button\" class=\"minigame-button network-row-action network-check\" data-action=\"check\">Check</button><ul class=\"network-findings\"><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f1\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f1</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f1.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f2\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f2</button> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-low\">Low</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f2.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\" disabled=\"\">Confirming...</button></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f10\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f10</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-high\">High</span> <span class=\"network-finding-status\">Confirmed</span></span><span class=\"network-finding-summary\">Summary for f10.</span></li></ul></li></ul>\n                </li>\n                    </ul>\n                </div>\n                \n                <div class=\"network-block network-techniques\" data-techniques=\"\"><h5 class=\"network-block-title\">Techniques</h5><ul class=\"network-technique-list\"><li class=\"network-technique\" data-technique=\"phish\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Phishing note</button><span class=\"network-technique-summary\">Phishing note: a note.</span><span class=\"network-technique-type\">Type: phish</span><span class=\"network-technique-works\">Default login</span></li><li class=\"network-technique\" data-technique=\"phish_sms\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Text message note</button><span class=\"network-technique-summary\">Text message note: a note.</span><span class=\"network-technique-type\">Type: phish_sms</span><span class=\"network-technique-works\">Out of date</span></li></ul><div class=\"network-technique-use\"><span class=\"network-technique-pick\">Pick a finding, then a card.</span><button type=\"button\" class=\"minigame-button network-row-action network-use\" data-action=\"use\" disabled=\"\">Use</button></div></div>\n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    },
+    {
+      "index": 5,
+      "key": "select-finding|print01|web|f10",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": null
+    },
+    {
+      "index": 6,
+      "key": "select-technique|phish",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": null
+    },
+    {
+      "index": 7,
+      "key": "select-technique|phish_sms",
+      "disabled": false,
+      "record": {
+        "calls": [],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": null
+    },
+    {
+      "index": 8,
+      "key": "use",
+      "disabled": true,
+      "record": {
+        "calls": [],
+        "opened": [],
+        "toasts": [],
+        "events": []
+      },
+      "pendingDom": null
+    }
+  ],
+  "sequences": [
+    {
+      "name": "select-then-use",
+      "steps": [
+        "done",
+        "done",
+        "done"
+      ],
+      "record": {
+        "calls": [
+          [
+            "technique",
+            "jack_a",
+            {
+              "findingId": "print01.web.k_one",
+              "itemId": "card_phish"
+            }
+          ]
+        ],
+        "opened": [],
+        "toasts": [],
+        "events": [
+          [
+            "network_technique_refused",
+            {
+              "findingId": "print01.web.k_one",
+              "reason": "not_found"
+            }
+          ],
+          [
+            "network_technique_refused:print01.web.k_one",
+            {
+              "findingId": "print01.web.k_one",
+              "reason": "not_found"
+            }
+          ]
+        ]
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\" data-network-id=\"lab_net\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Devices</li>\n                <li class=\"network-row network-row-host network-row-device network-row-scanned\" data-host-id=\"print01\" data-kind=\"device\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pnw_portable_printer1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">Second floor printer</span></span>\n                        <span class=\"network-row-name\"></span></span>\n                    <span class=\"network-row-control\"></span><ul class=\"network-service-tiles\"><li class=\"network-service network-service-with-findings\" data-service=\"web\"><span class=\"network-service-line\">web · 80 · Brackley PrintPanel 2.0</span><button type=\"button\" class=\"minigame-button network-row-action network-check\" data-action=\"check\">Check</button><ul class=\"network-findings\"><li class=\"network-finding network-finding-unconfirmed network-finding-selected\" data-finding=\"f1\" data-status=\"unconfirmed\" data-selected=\"true\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"true\">f1</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f1.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f2\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f2</button> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-low\">Low</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f2.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f10\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f10</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-high\">High</span> <span class=\"network-finding-status\">Confirmed</span></span><span class=\"network-finding-summary\">Summary for f10.</span></li></ul></li></ul>\n                </li>\n                    </ul>\n                </div>\n                \n                <div class=\"network-block network-techniques\" data-techniques=\"\"><h5 class=\"network-block-title\">Techniques</h5><ul class=\"network-technique-list\"><li class=\"network-technique network-technique-selected\" data-technique=\"phish\" data-selected=\"true\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"true\">Phishing note</button><span class=\"network-technique-summary\">Phishing note: a note.</span><span class=\"network-technique-type\">Type: phish</span><span class=\"network-technique-works\">Default login</span></li><li class=\"network-technique\" data-technique=\"phish_sms\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Text message note</button><span class=\"network-technique-summary\">Text message note: a note.</span><span class=\"network-technique-type\">Type: phish_sms</span><span class=\"network-technique-works\">Out of date</span></li></ul><div class=\"network-technique-use\"><span class=\"network-technique-pick\">Finding f1 with Phishing note</span><button type=\"button\" class=\"minigame-button network-row-action network-use\" data-action=\"use\" disabled=\"\">Using...</button></div></div>\n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    },
+    {
+      "name": "drag-card",
+      "steps": [
+        "done"
+      ],
+      "record": {
+        "calls": [
+          [
+            "technique",
+            "jack_a",
+            {
+              "findingId": "print01.web.k_one",
+              "itemId": "card_phish"
+            }
+          ]
+        ],
+        "opened": [],
+        "toasts": [],
+        "events": [
+          [
+            "network_technique_refused",
+            {
+              "findingId": "print01.web.k_one",
+              "reason": "not_found"
+            }
+          ],
+          [
+            "network_technique_refused:print01.web.k_one",
+            {
+              "findingId": "print01.web.k_one",
+              "reason": "not_found"
+            }
+          ]
+        ]
+      },
+      "pendingDom": "\n            <div class=\"console-window console-subtitle-essential\" data-console-window=\"\">\n                <div class=\"console-titlebar\">\n                    <div class=\"console-titles\" title=\"Drop box: Lab\nOn Lab network\">\n                        <h2 class=\"console-title\">Drop box: Lab</h2>\n                        <div class=\"console-subtitle\">On Lab network</div>\n                    </div>\n                    <button class=\"minigame-close-button minigame-close-in-frame\" id=\"minigame-close\" aria-label=\"Close\">×</button>\n                </div>\n                <div class=\"minigame-header\" style=\"display:none\"><h3></h3></div>\n                <div class=\"network-view-header\"><div class=\"network-view-header-body\">\n                    \n                    \n                    <p class=\"network-view-hint\">You can unplug the box at its port (Lab).</p></div></div><div class=\"minigame-game-container console-body pixel-scroll\">\n            <div class=\"network-view network-view-jack\">\n                \n                <div class=\"network-block network-block-own\" data-network-id=\"lab_net\">\n                    <h5 class=\"network-block-title\">Reachable</h5>\n                    <ul class=\"network-view-rows\">\n                    <li class=\"network-row-group\">Devices</li>\n                <li class=\"network-row network-row-host network-row-device network-row-scanned\" data-host-id=\"print01\" data-kind=\"device\">\n                    <img class=\"network-row-icon\" src=\"/break_escape/assets/objects/pnw_portable_printer1.png\" alt=\"\">\n                    <span class=\"network-row-label\"><span class=\"network-row-title\"><span class=\"network-row-hostname\">Second floor printer</span></span>\n                        <span class=\"network-row-name\"></span></span>\n                    <span class=\"network-row-control\"></span><ul class=\"network-service-tiles\"><li class=\"network-service network-service-with-findings\" data-service=\"web\"><span class=\"network-service-line\">web · 80 · Brackley PrintPanel 2.0</span><button type=\"button\" class=\"minigame-button network-row-action network-check\" data-action=\"check\">Check</button><ul class=\"network-findings\"><li class=\"network-finding network-finding-unconfirmed network-finding-selected\" data-finding=\"f1\" data-status=\"unconfirmed\" data-selected=\"true\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"true\">f1</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-medium\">Medium</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f1.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-unconfirmed\" data-finding=\"f2\" data-status=\"unconfirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f2</button> <span class=\"network-finding-class\">Out of date</span> <span class=\"network-finding-severity network-severity-low\">Low</span> <span class=\"network-finding-status\">Unconfirmed</span></span><span class=\"network-finding-summary\">Summary for f2.</span><button type=\"button\" class=\"minigame-button network-row-action network-confirm\" data-action=\"confirm\">Confirm</button></li><li class=\"network-finding network-finding-confirmed\" data-finding=\"f10\" data-status=\"confirmed\" data-selected=\"false\"><span class=\"network-finding-head\"><button type=\"button\" class=\"network-finding-alias network-finding-select\" data-action=\"select-finding\" aria-pressed=\"false\">f10</button> <span class=\"network-finding-class\">Default login</span> <span class=\"network-finding-severity network-severity-high\">High</span> <span class=\"network-finding-status\">Confirmed</span></span><span class=\"network-finding-summary\">Summary for f10.</span></li></ul></li></ul>\n                </li>\n                    </ul>\n                </div>\n                \n                <div class=\"network-block network-techniques\" data-techniques=\"\"><h5 class=\"network-block-title\">Techniques</h5><ul class=\"network-technique-list\"><li class=\"network-technique network-technique-selected\" data-technique=\"phish\" data-selected=\"true\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"true\">Phishing note</button><span class=\"network-technique-summary\">Phishing note: a note.</span><span class=\"network-technique-type\">Type: phish</span><span class=\"network-technique-works\">Default login</span></li><li class=\"network-technique\" data-technique=\"phish_sms\" data-selected=\"false\" draggable=\"true\"><button type=\"button\" class=\"minigame-button network-row-action network-technique-select\" data-action=\"select-technique\" aria-pressed=\"false\">Text message note</button><span class=\"network-technique-summary\">Text message note: a note.</span><span class=\"network-technique-type\">Type: phish_sms</span><span class=\"network-technique-works\">Out of date</span></li></ul><div class=\"network-technique-use\"><span class=\"network-technique-pick\">Finding f1 with Phishing note</span><button type=\"button\" class=\"minigame-button network-row-action network-use\" data-action=\"use\" disabled=\"\">Using...</button></div></div>\n                <div class=\"network-view-notice\" aria-live=\"polite\"></div>\n            </div></div><div class=\"network-view-more\" hidden=\"\" aria-hidden=\"true\"><span class=\"network-view-more-arrow\"></span><span>More below</span></div>\n                <div class=\"minigame-message-container\"></div>\n                \n            </div>\n        "
+    }
+  ]
+}

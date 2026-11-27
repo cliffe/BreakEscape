@@ -1,0 +1,13 @@
+{
+  "key": "726262cca0f558b6ff0edc8439c1d4ff",
+  "npc": "asante",
+  "text": "I will.",
+  "voice": "Callirrhoe",
+  "style": "Systems lead, forty-five, Ghanaian-British from Peckham. Consistent South London accent throughout -- do not shift to any other accent. Crisp, exact, a little impatient; a true believer in the software who wants the numbers honest.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:32:42Z"
+}

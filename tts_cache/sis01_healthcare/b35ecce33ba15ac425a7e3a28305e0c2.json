@@ -1,0 +1,13 @@
+{
+  "key": "b35ecce33ba15ac425a7e3a28305e0c2",
+  "npc": "patrol_nurse",
+  "text": "Sarah's stopped anything new going on a pump until pharmacy clears the library.",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

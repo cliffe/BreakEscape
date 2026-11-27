@@ -1,0 +1,6382 @@
+/**
+ * NPC needs system (Sims-lite): needs that decay over game time, objects that
+ * advertise affordances, a bounded selector that sends an NPC to its most urgent
+ * need, a use dwell that tops the need up, and a walk back to the NPC's post.
+ * Spec: docs/achitechture/NPC_NEEDS_SYSTEM.md.
+ *
+ * Opt-in: only NPCs whose record has a `needs` block are touched.
+ * Cyber-neutral: emits generic events (npc_used:<objectId> etc.) and applies the
+ * NPC-owned `onUse` map; it never reads the NPC's `usePayload`, only clones it
+ * onto npc_used.
+ *
+ * One static import, the import-free compass8.js (the 8 facings, shared with seating.js): the
+ * engine reaches this module through window, and the node tests import it directly with a stub
+ * world (see createEngineWorld for the live adapter).
+ *
+ * Determinism: every decision happens on a fixed 250 ms tick of the needs clock, which the
+ * engine advances by the frame step its walks use (see update);
+ * the only randomness is a per-NPC mulberry32 seeded from (seed, npcId), used for
+ * jitterPct. Arrivals are queued and handled at the next tick.
+ */
+
+import { COMPASS8, facingPointFrom } from './compass8.js';
+
+export const NEEDS_TICK_MS = 250;
+const MAX_FRAME_MS = 1000;
+const LOG_CAP = 2000;
+const FAIL_COOLDOWN_MS = 60000;
+// Access 9.2 H review R3 m2: a failed walk to a borrowed PC. FAIL_COOLDOWN_MS equals the borrow's
+// start window, so it would always drop the borrow; a short wait lets the borrower try again
+// inside the window, and startBy stays the only bound
+const BORROW_FAIL_COOLDOWN_MS = 5000;
+const HOME_EPS = 12;
+// SIMS-2 (OLMP E6): an arrival counts for a move only if the NPC is within this of the move's
+// destination (1.5 tiles). A farther arrival is a short path that ended before the cell (an async
+// path answer, a path stopped at a door); it is re-issued, not taken as "arrived".
+const ARRIVAL_NEAR_PX = 48;
+const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
+const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
+// The walk home yields to the player (stops and faces them). After this long without moving
+// it is re-issued without yielding, or a player standing near the route holds it for ever.
+export const RETURN_YIELD_MS = 3000;
+const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing still
+// Stalled needs walks (OFFICE_LIFE_STUCK_RETURN.md): a walk still for RETURN_YIELD_MS is re-issued
+// round other bodies; a stall within STUCK_SAME_PX of the last one is another try in the same place.
+// After STUCK_TRIES re-routes in one place a walk home logs return_stuck and stands for
+// RETURN_STUCK_BACKOFF_MS before trying again; an outbound leg logs walk_stuck and waits for its deadline.
+export const STUCK_SAME_PX = 24;
+export const STUCK_TRIES = 3;
+// The last re-route in one place nudges the body onto the nearest walkable cell, up to one tile
+// (NPC_STUCK_NUDGE_MAX_PX in npc-behavior.js), when that is safe. When a nudge ran, the place also
+// covers STUCK_SAME_PX round where it put the body, so a stall there, or back in the wedge, still
+// counts in the same place (code review R2 M1: a 28 px nudge used to start a new place and re-route
+// for ever). A refused nudge leaves the place at STUCK_SAME_PX (code review R3 M1).
+export const RETURN_STUCK_BACKOFF_MS = 15000;
+// Round 7 (game 5431: 8 minutes of back-offs in one place): after this many back-offs in the same
+// place the walk home ends (`return_abandoned`): the NPC idles where it stands and the next tick
+// re-plans from scratch (the selector first, else a fresh walk home). A second abandon in the same
+// place, or any abandon past RETURN_MAX_ABANDONS in one return, is final: only RETURN_FINAL_REPLANS late walks home follow, then it idles there until a
+// job moves it, so the cycle cannot run for ever.
+export const RETURN_STUCK_MAX_BACKOFFS = 2;
+// After a final abandon the NPC tries another walk home this long later (needs clock), so a
+// player who held it in a corridor and walked away does not leave it standing there for minutes
+// (code review R1, m2). At most RETURN_FINAL_REPLANS such late tries per return, wherever they
+// abandon (code review R2 m2, R3 m1), then it idles until a job moves it on. A late try that
+// started after an abandon with the player beside the NPC is not counted (R3 m2).
+export const RETURN_FINAL_REPLAN_MS = 60000;
+export const RETURN_FINAL_REPLANS = 3;
+export const RETURN_MAX_ABANDONS = 6;   // abandons in one return, quick re-plans included, before the next is final (R4 m1)
+// An outbound leg's deadline comes from the straight-line distance (at least 20 s, three times the
+// walk). A re-route round held bodies may take a longer path, so a re-route that leaves less than
+// this much before the deadline moves it out to this much, once per job (code review R2, m6).
+// A floor, not a flat extension: a blocked walk with time left still times out when it did (a
+// borrow's start window and the queue timeout depend on that). Once only: the needs layer does not
+// see the new path's length, and the deadline must still end a leg that re-routes from place to place.
+export const REROUTE_MIN_LEFT_MS = 10000;
+const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
+export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
+
+// Social pairing and chatter (OFFICE_LIFE_PLAN 2.4, 7.3; slice 8). Two compatible NPCs using one
+// object whose affordance names a `chatter` pool take turns at one-line speech bubbles, timed on
+// the needs clock and only while both are still using it. Nothing here is saved.
+export const CHAT_BASE_MS = 2500;
+export const CHAT_PER_CHAR_MS = 50;
+export const CHAT_MAX_MS = 4000;
+export const CHAT_GAP_MS = 500;
+export const OVERHEAR_RADIUS = 160;   // px, five tiles: npc_chatted `overheard`
+export const CHAT_LINE_MAX = 40;      // characters; the validator enforces it
+// SIMS-5 design R2 M4: two speakers drawing from one scenario pool keep separate bags, so the
+// partner could say the line just said. A line spoken within ECHO_WINDOW_MS by anyone within
+// ECHO_RADIUS px in the same room is passed over while the bag has another. In memory only.
+export const ECHO_WINDOW_MS = 120000;
+export const ECHO_RADIUS = 2 * OVERHEAR_RADIUS;
+// Queues at shared machines (slice 10: OFFICE_LIFE_PLAN 2.5)
+export const QUEUE_MAX_WAIT_S = 30;   // affordance.queue.maxWaitSeconds default
+export const QUEUE_COOLDOWN_MS = 60000;   // after giving up on a queue, that object is skipped this long
+export const QUEUE_CHAT_RADIUS = 48;  // px (1.5 tiles) from the approach cell: the front of the queue chats
+// Avoidance at a distance, balking and parked needs (slice 14, OFFICE_LIFE_PLAN 10)
+export const AVOID_RADIUS_TILES = 2;  // needsCompany.avoidRadius default, only for an NPC that declares avoids
+// interests.<tag>.noticeRadius default (q53 f): tiles from the NPC within which a tagged item is
+// seen. 24 tiles (768 px) spans any two points of a 20 x 10 room, the largest any interest uses,
+// so an NPC in its notice room sees everything there as before; only a far-off item waits.
+export const NOTICE_RADIUS_TILES = 24;
+export const NEEDS_DEFER_MIN = 4;     // needsDeferMin default: how long a given-up need stays parked
+export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back's grumble
+export const AVOID_RECHECK_MS = 1000;   // an avoid park re-checks whether the avoided NPC has left this often
+export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...
+export const WAKE_STEP_MS = 500;      // ...plus this per parked NPC before it (id order), so they go one by one
+// Built-in needs that are environmental: the validator warns on `deferrable: false` for these
+export const ENVIRONMENTAL_NEEDS = Object.freeze(['caffeine', 'thirst', 'hunger', 'rest']);
+/** How long a chat line's bubble shows: 2.5 s + 50 ms per character, at most 4 s. */
+export function bubbleMs(line) {
+    return Math.min(CHAT_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
+}
+// Voiced chatter (slice 15, OFFICE_LIFE_PLAN 11). Every spoken line lives in a scenario file: an
+// NPC's `chatter` pools, the scenario's shared `chatter` pools, or an ink exchange knot. The engine
+// has no spoken text of its own: a topic with nothing to say (or a speaker on cooldown) gets picture
+// chat, a speech bubble holding an icon. Lines come from a seeded shuffle-bag per NPC and topic.
+// R1 M2: the throttle between one speaker's faint lines (needs-clock ms)
+const FAINT_COOLDOWN_MS = 25000;
+export const CHATTER_COOLDOWN_MIN = 5;     // chatterCooldownMin default: needs-clock minutes between barks
+export const PICTURE_MS = 2500;            // a picture-chat bubble shows this long
+export const EXCHANGE_LINE_MAX_MS = 6000;  // an exchange line may be longer than a bark
+export const EXCHANGE_MAX_MS = 60000;      // the pair's overlap is extended by the knot, at most this
+// Picture chat by topic (icon names from npc-action-icons.js NPC_ICON_NAMES); cycled per speaker
+export const PICTURE_CHATTER = Object.freeze({
+    coffee: Object.freeze(['caffeine', 'social', 'work']),
+    cooler: Object.freeze(['thirst', 'social', 'work']),
+    greet: Object.freeze(['social']),
+    grumble: Object.freeze(['avoid']),
+    // Slice 18a (OFFICE_LIFE_PLAN 12.4): a dead machine (off) or nothing left (gone, 18b). The
+    // picture is the need's own icon (NEED_ICONS); this entry is the fallback for any other need.
+    grumble_off: Object.freeze(['avoid']),
+    grumble_gone: Object.freeze(['avoid']),
+    // Slice 22: a print with every listed printer switched off
+    grumble_printer_off: Object.freeze(['blocked']),
+    // Slice 18b-ii: word of mouth about a magnet. The picture is the magnet's first `satisfies`
+    // when that need has an icon (NEED_ICONS); this entry is the fallback.
+    news: Object.freeze(['social']),
+    // Slice 19: a desk-phone call nobody hears (or with no lines left) shows the phone
+    phone: Object.freeze(['phone']),
+    phone_message: Object.freeze(['phone']),
+    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused.
+    // User decision q27: a refused or failed use shows the barrier (was blocked, which keeps its
+    // office-life meaning: nothing permitted reachable)
+    usb_refused: Object.freeze(['barrier']),
+    // Access slice 9.2 A (plan 5.5): the failure mutters and the workaround start lines
+    station_fail: Object.freeze(['barrier']),
+    work_fail_no_access: Object.freeze(['barrier']),
+    work_fail_fed_up: Object.freeze(['barrier']),
+    social_blocked: Object.freeze(['barrier']),
+    work_fail_file_share: Object.freeze(['file']),
+    work_fail_printer: Object.freeze(['print']),
+    work_fail_email: Object.freeze(['work']),
+    work_fail: Object.freeze(['work']),
+    // User decision q21: a workaround's start line shows the workaround icon (was work)
+    wk_writes_down: Object.freeze(['workaround']),
+    wk_prop_door: Object.freeze(['workaround']),
+    wk_borrow: Object.freeze(['workaround']),
+    wk_share_login: Object.freeze(['workaround']),
+    login_aloud: Object.freeze(['social'])
+});
+const PICTURE_DEFAULT = Object.freeze(['social']);
+// The needs that have an icon of their own (npc-action-icons.js NPC_ICON_NAMES; not imported, so
+// the test harness copy lists stay as they are)
+const NEED_ICONS = Object.freeze(['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work']);
+/**
+ * Turn-back reasons (slice 18a, OFFICE_LIFE_PLAN 12.4). mindChanged: stops a second avoidance
+ * turn-back in this need episode (only `avoid`). grumble: says a line or shows a picture.
+ * fallback: re-selects for the same need with the target left out. parks: a fallback that finds
+ * nothing parks the need (a tempted job, 18b, never parks). answered and rang_out (slice 19, a
+ * phone job with no need) go straight home.
+ */
+export const TURN_BACK = Object.freeze({
+    avoid: Object.freeze({ mindChanged: true, grumble: true, fallback: true, parks: true }),
+    off: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
+    gone: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
+    answered: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
+    rang_out: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
+    // Slice 18b-i review R1 m4: a take refused because this NPC has had its perPerson share; the
+    // cake is still there, so no "Missed it." line, and the NPC goes home
+    had_share: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
+    // Access slice 9.2 A (plan 5.2): a judged use that ended with a failed verdict; parks itself
+    failed: Object.freeze({ mindChanged: false, grumble: true, fallback: false, parks: true })
+});
+/**
+ * Access slice 9.2 A (ACCESS_MODEL_SLICE_9_2_PLAN 5): the judged needs, how long getState().failed
+ * shows after a counted failure, the park reasons that are failure parks, and how long a visit
+ * whose place cannot be reached is kept (check visit, workaround visit).
+ */
+export const JUDGED_NEEDS = Object.freeze(['work', 'social_media']);
+export const FAIL_SHOW_MS = 4000;          // after the failure's grumble, if one is showing
+export const WORKAROUND_SHOW_MS = 4000;    // an emit workaround's icon (it has no visit to show it)
+export const FAILURE_PARKS = Object.freeze(['off', 'failed', 'held']);
+export const VISIT_DWELL_S = 8;
+export const VISIT_DROP_MS = Object.freeze({ check: 60000, workaround: 120000 });
+// Access 9.2 H (plan 6.4): a borrow not started this long (needs clock) after the hand-over is dropped
+export const BORROW_START_MS = 60000;
+// Access 9.2 L (6.6): how long a use at its own station waits for a lockout check in flight (the
+// queue sends at most one request every two seconds; a lost one is sent again once)
+export const LOCK_CHECK_WAIT_MS = 30000;
+// Review R1 m1 (q36): the longest a borrowed use waits at a hot desk for its check's answer
+export const BORROW_CHECK_WAIT_MS = 5000;
+/** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
+export const MAGNET_TEMPT = 30;
+/** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
+export const NEWS_RADIUS = 5;
+export const NEWS_WAIT_MS = 30000;
+// Access slice 9.2 B: how long a mutter with lines waits for the speech lock before its picture
+// (long enough for a few start lines queued behind one fail line to each be said in words), and
+// the least time a mutter's bubble stays up, so a start line is on screen long enough to notice
+export const MUTTER_WAIT_MS = 20000;
+export const MUTTER_BUBBLE_MS = 6000;
+// q42 review R1 m2: a share's line goes ahead of every other waiting mutter, so a queue of
+// start lines at one outage cannot turn it into a picture while the player stands by to hear it
+export const PRIORITY_MUTTERS = Object.freeze(new Set(['login_aloud']));
+/**
+ * Slice 19 (OFFICE_LIFE_PLAN 12.5): desk phones. A ring every RING_MS of the needs clock, `rings`
+ * times (default RINGS); a call's listening gaps between lines are seeded in CALL_GAP_MS; a pool
+ * call takes up to CALL_POOL_LINES lines; a picture call (nothing to say) shows CALL_PICTURES phones.
+ */
+export const RING_MS = 3000;
+export const PICKUP_MS = 2250;   // the owner at its post picks up this long after the first ring (one ring heard)
+export const RINGS = 4;
+export const CALL_GAP_MS = Object.freeze([1500, 3000]);
+export const CALL_POOL_LINES = 3;
+export const CALL_PICTURES = 3;
+
+/**
+ * Pure: an affordance's magnet block, normalised ({ tempt, servings, perPerson }), or null. A
+ * magnet is food the player puts out: it lowers the level at which an NPC that knows about it acts
+ * on a need it satisfies (never raising the need itself), and is eaten a serving at a time.
+ */
+// Where an NPC's feet should be to use an item: at the item's floor base, measured from the feet
+// collider (20 x 10 px, centre = body.center, so its bottom edge is centre.y + 5), not from the
+// item's centre. `rect` is the sprite's drawn box { left, right, top, bottom } and `elevation` its
+// depth lift: the sprite is drawn at depth bottom + 0.5 + elevation, so its floor base is
+// bottom + elevation (an item on a desk or hung on a back wall stands on the floor further down
+// than it is drawn). Returns { x, y, side, away, reach } (the ideal feet-centre point, the side of
+// the item it is on, the unit step away from the item and how far (px) a free cell may be taken
+// from it), or null to keep the old aim at the item's centre (no geometry, an elevated item with
+// a useFrom tile offset, or useFrom {0, 0}). useFrom now names a SIDE (the larger of |dx|, |dy|;
+// its sign picks which), not a tile distance. The drawn feet touch the base line. The 20x10 body
+// (npc-sprites.js) sits below the art: the 80x80 frames end their feet at about y 69 and the body
+// centre is y 71, so the centre goes ART_FEET_BELOW_CENTRE (2 px) below the base line, not the
+// body's bottom edge (that stood NPCs ~9 px back from a table or machine).
+export const FEET_HALF_W = 10;
+export const FEET_HALF_H = 5;
+export const FEET_TOUCH = 1;
+const ART_FEET_BELOW_CENTRE = 2;
+const AWAY = { south: { dx: 0, dy: 1 }, north: { dx: 0, dy: -1 }, east: { dx: 1, dy: 0 }, west: { dx: -1, dy: 0 } };
+export function approachTarget(obj, rect, elevation = 0) {
+    if (!obj || !rect) return null;
+    if (![rect.left, rect.right, rect.top, rect.bottom, elevation].every(Number.isFinite)) return null;
+    const elev = elevation > 0 ? elevation : 0;
+    const base = rect.bottom + elev;
+    const cx = (rect.left + rect.right) / 2;
+    const at = (side, x, y, reach) => ({ x, y, side, away: AWAY[side], reach });
+    const uf = obj.affordance?.useFrom;
+    let side = 'south';
+    if (uf && Number.isFinite(uf.dx) && Number.isFinite(uf.dy)) {
+        if (elev > 0 || (uf.dx === 0 && uf.dy === 0)) return null;
+        side = Math.abs(uf.dy) > Math.abs(uf.dx) ? (uf.dy > 0 ? 'south' : 'north') : (uf.dx > 0 ? 'east' : 'west');
+    }
+    const reach = uf ? 16 : 24;
+    const feetY = base + ART_FEET_BELOW_CENTRE;
+    // Behind the item: the drawn feet go in from its top edge to where its table top or counter
+    // ends (about a third of the way down), not a body-height above its top
+    if (side === 'north') return at(side, cx, rect.top + ART_FEET_BELOW_CENTRE + Math.min(12, (rect.bottom - rect.top) * 0.3), reach);
+    if (side === 'east') return at(side, rect.right + FEET_HALF_W + FEET_TOUCH, feetY, reach);
+    if (side === 'west') return at(side, rect.left - FEET_HALF_W - FEET_TOUCH, feetY, reach);
+    return at(side, cx, feetY, reach);
+}
+// Probe points for a nearest-open-cell search from an approachTarget: steps of `step` px away from
+// the item (never back towards it) and sideways, nearest the target first. The caller takes the
+// first probe that lands in a walkable cell.
+export function approachProbes(aim, step = 8) {
+    const out = [];
+    const n = Math.ceil(aim.reach / step);
+    const px = aim.away.dy !== 0 ? 1 : 0, py = aim.away.dx !== 0 ? 1 : 0;   // sideways axis
+    for (let k = 0; k <= n; k++) {
+        for (let j = -n; j <= n; j++) {
+            const x = aim.x + aim.away.dx * k * step + px * j * step;
+            const y = aim.y + aim.away.dy * k * step + py * j * step;
+            // sideways steps cost double, so a side stand point slides along its side before it
+            // slides round the corner, and a front one stays in front
+            out.push({ x, y, d: k * step + 2 * Math.abs(j) * step, j: Math.abs(j) });
+        }
+    }
+    return out.filter(p => p.d <= aim.reach + 0.5).sort((a, b) => a.d - b.d || a.j - b.j);
+}
+
+export function magnetOf(aff) {
+    const m = aff?.magnet;
+    if (!m || typeof m !== 'object') return null;
+    const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? clamp(n, lo, hi) : d; };
+    return {
+        tempt: num(m.tempt, MAGNET_TEMPT, 0, 95), servings: Math.floor(num(m.servings, 1, 0, 1000)), perPerson: Math.floor(num(m.perPerson, 1, 1, 1000)),
+        // Slice 18b-ii: the scenario chatter pool a knower announces it from (null: picture only)
+        // and the tiles within which the announce is heard
+        announce: typeof m.announce === 'string' && m.announce ? m.announce : null,
+        newsRadius: num(m.newsRadius, NEWS_RADIUS, 0, 50)
+    };
+}
+
+/** Pure (slice 22): revealOutput or a print command's producer as a list of ids (a string is a list of one). */
+export function printerList(v) {
+    if (typeof v === 'string') return v ? [v] : [];
+    return Array.isArray(v) ? v.filter(x => typeof x === 'string' && x) : [];
+}
+
+/** Pure: the names an offWhen (requireGlobal form) reads: a name, or the keys of { name: value }. */
+export function offWhenNames(cond) {
+    if (typeof cond === 'string') return cond ? [cond] : [];
+    if (cond && typeof cond === 'object' && !Array.isArray(cond)) return Object.keys(cond);
+    return [];
+}
+/** An exchange line's bubble: like bubbleMs, with a longer cap. */
+export function exchangeLineMs(line) {
+    return Math.min(EXCHANGE_LINE_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
+}
+/** Pure: the icons picture chat cycles through for a topic. */
+export function pictureIcons(topic) {
+    return PICTURE_CHATTER[topic] || PICTURE_DEFAULT;
+}
+/** Pure: a seeded Fisher-Yates order of 0..n-1; never starts with `avoidFirst` when n > 1. */
+export function bagOrder(n, rng, avoidFirst = -1) {
+    const order = Array.from({ length: n }, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+    }
+    if (n > 1 && order[0] === avoidFirst) [order[0], order[1]] = [order[1], order[0]];
+    return order;
+}
+
+/**
+ * Pure: a pool as { lines, hush, overhearRadius, requireGlobal } from an array or the object form
+ * { lines, hush, overhearRadius, requireGlobal }. A plain array has no gate.
+ */
+export function normalisePool(p) {
+    if (Array.isArray(p)) return { lines: p.filter(l => typeof l === 'string' && l.trim()), hush: false, overhearRadius: null };
+    if (p && typeof p === 'object') {
+        const r = Number(p.overhearRadius);
+        return { lines: (Array.isArray(p.lines) ? p.lines : []).filter(l => typeof l === 'string' && l.trim()), hush: p.hush === true, overhearRadius: r > 0 ? r : null, requireGlobal: p.requireGlobal };
+    }
+    return null;
+}
+
+/**
+ * Pure: the topic's spoken pool for one speaker: the scenario's pool of that name plus the NPC's
+ * own. There are no built-in lines (slice 15): with neither, the topic is picture chat only.
+ * `pictures` is false when the scenario sets `"chatter": false` (no picture chat either) or
+ * `"npcThoughts": false` (`thoughtsOn` false, D77): an icon-only bubble shows what an NPC wants, so it
+ * is a thought, not speech. Spoken lines are unaffected.
+ *
+ * `holds` (optional) reads a pool's `requireGlobal` gate: `holds(requireGlobal)` is true when the
+ * gate is open. A pool whose gate is closed contributes nothing (no lines, no hush, no radius), and
+ * the other pool under the same key still counts. Without `holds` a gate is ignored, as an array
+ * pool or an ungated pool always is. Called afresh at each draw, so the gate reacts live.
+ */
+export function chatterPool(topic, scenarioChatter, npcChatter, thoughtsOn = true, holds = null) {
+    let base = null;
+    if (scenarioChatter && typeof scenarioChatter === 'object' && scenarioChatter[topic] !== undefined) base = normalisePool(scenarioChatter[topic]);
+    let own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
+    const open = pool => !pool || pool.requireGlobal === undefined || typeof holds !== 'function' || !!holds(pool.requireGlobal);
+    if (!open(base)) base = null;
+    if (!open(own)) own = null;
+    return {
+        lines: [...(base?.lines || []), ...(own?.lines || [])],
+        hush: !!(base?.hush || own?.hush),
+        overhearRadius: base?.overhearRadius || own?.overhearRadius || null,
+        pictures: scenarioChatter !== false && thoughtsOn !== false
+    };
+}
+
+/**
+ * The USB policy table (ACCESS_MODEL_SLICE_9_2_PLAN 7), copied from pc-policy.js usbRefused
+ * because this file imports nothing. `usb` is the target's effective value (null: not governed).
+ */
+export function usbRefusedBy(usb, usbClass) {
+    if (usbClass !== 'storage' && usbClass !== 'hid') return false;
+    if (usb === 'blocked') return true;
+    if (usb === 'storage_blocked') return usbClass === 'storage';
+    return false;
+}
+
+/** requireGlobal: a name (truthy) or { name: value } (all must match). Copied from npc-sight-challenge.js (review m10). */
+export function requiredGlobalsHold(requireGlobal, globals) {
+    if (!requireGlobal) return true;
+    if (typeof requireGlobal === 'string') return !!globals[requireGlobal];
+    if (typeof requireGlobal === 'object') {
+        return Object.entries(requireGlobal).every(([name, value]) => globals[name] === value);
+    }
+    return true;
+}
+
+export function hash32(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+}
+
+export function createSeededRng(seed) {
+    let a = seed >>> 0;
+    return function mulberry32() {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/** One deterministic draw in [0, 1) for (seed, npcId, salt), independent of any running stream. */
+export function seededRoll(seed, npcId, salt = '') {
+    return createSeededRng(hash32(`${seed}:${npcId}:${salt}`))();
+}
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const round2 = v => Math.round(v * 100) / 100;
+const asList = v => (Array.isArray(v) ? v : (v == null ? [] : [v]));
+
+function cloneData(v) {
+    if (v === undefined) return null;
+    try {
+        return typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v));
+    } catch (e) {
+        return null;
+    }
+}
+
+/** Normalise one need's config to the documented bounds. Returns null when unusable. */
+export function normaliseNeed(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const decay = Number(raw.decayPerMin);
+    const urgentAt = Number(raw.urgentAt);
+    if (!(decay > 0) || !(urgentAt > 0)) return null;
+    return {
+        decayPerMin: clamp(decay, 0.01, 600),
+        urgentAt: clamp(urgentAt, 1, 99),
+        initial: Number.isFinite(Number(raw.initial)) ? clamp(Number(raw.initial), 0, 100) : 100,
+        weight: Number.isFinite(Number(raw.weight)) ? clamp(Number(raw.weight), 0.1, 10) : 1,
+        maxUnmetMin: Number(raw.maxUnmetMin) > 0 ? Number(raw.maxUnmetMin) : null,
+        jitterPct: Number.isFinite(Number(raw.jitterPct)) ? clamp(Number(raw.jitterPct), 0, 50) : 0
+    };
+}
+
+/**
+ * Normalise an interest (attraction to items with a tag). A number is shorthand
+ * for { weight }. Weight is on the same 0.1-10 scale as need weights.
+ */
+export function normaliseInterest(raw) {
+    const r = typeof raw === 'number' ? { weight: raw } : raw;
+    if (!r || typeof r !== 'object') return null;
+    const w = Number(r.weight);
+    if (!(w > 0)) return null;
+    const nr = Number(r.noticeRadius);
+    return {
+        weight: clamp(w, 0.1, 10),
+        noticeRooms: Array.isArray(r.noticeRooms) ? r.noticeRooms.slice() : null,
+        noticeRadius: r.noticeRadius !== undefined && r.noticeRadius !== null && Number.isFinite(nr) && nr > 0
+            ? clamp(nr, 0.5, 100) : NOTICE_RADIUS_TILES
+    };
+}
+
+/** T1 (minutes to first urgent) and P (minutes between top-ups, without travel) for a need. */
+export function needTiming(need, restores = 100) {
+    const n = normaliseNeed(need);
+    if (!n) return null;
+    const t1 = Math.max(0, (n.initial - n.urgentAt) / n.decayPerMin);
+    const p = (Math.min(100, n.urgentAt + restores) - n.urgentAt) / n.decayPerMin;
+    return { t1: round2(t1), p: round2(p) };
+}
+
+export class NPCNeedsSystem {
+    /**
+     * @param {Object} world - adapter; see createEngineWorld for the live one
+     * @param {Object} [opts] - { seed: number|string, manualClock: boolean }
+     */
+    constructor(world, opts = {}) {
+        this.world = world;
+        this._holds = cond => this._globalHolds(cond);   // bound once: the chatterPool gate check
+        this.seed = opts.seed !== undefined ? opts.seed : 0;
+        // The chatter shuffle bag alone may draw from its own seed (per game); every other roll uses this.seed.
+        this.bagSeed = opts.bagSeed !== undefined ? opts.bagSeed : this.seed;
+        this.manualClock = !!opts.manualClock;
+        this.clockMs = 0;
+        this.speakers = [];   // slice 21: who is speaking, rebuilt each tick (_buildSpeakers)
+        this.tickCount = 0;
+        this._acc = 0;
+        this._lastElapsed = null;
+        this.states = new Map();
+        this.log = [];
+        // SIMS-2 (OLMP E6): a Map npcId -> { x, y, moveId, pathLeft, synthetic } instead of a Set,
+        // so an arrival carries the position the behaviour layer reported and the move id it echoed.
+        this._arrivals = new Map();
+        // SIMS-2: every move the needs system issues carries an id; an arrival echoes it, so a stale
+        // arrival for a cancelled or superseded move is ignored.
+        this._moveSeq = 0;
+        // Tick-cost hygiene (OFFICE_LIFE_PLAN 2.0). tickCache: skip the object scan for an NPC with
+        // nothing urgent, build the object list once per tick, cache reachability per tick (the
+        // decision log is unchanged). selectBackoff: an NPC whose selection path-searched and found
+        // nothing re-selects after 1 s, not every tick. Both default on; false is for comparison tests.
+        this.tickCache = opts.tickCache !== false;
+        this.selectBackoff = opts.selectBackoff !== false;
+        this._tickObjects = null;
+        this._reachCache = null;
+        this._selectSearched = false;
+        this._knownRooms = new Set();
+        // Reveal slots set down at a target or shown as a cosmetic copy (slice 7): id -> clock ms
+        // at which the engine stows (or removes) it. Client only; a reload stows on sight instead.
+        this._placed = new Map();
+        // Social pairing (slice 8): objectId -> chat. _anyCompany: some NPC has needsCompany, so
+        // _free checks avoidances (without it the decision log is unchanged).
+        this._chats = new Map();
+        this._chatSeq = 0;
+        this._anyCompany = false;
+        // Voiced chatter (slice 15): shuffle-bags (npcId|topic), the speech lock (one voiced line at
+        // a time, across all NPCs) and exchanges played this session (the heard_<knot> global is
+        // what survives a reload)
+        this._bags = new Map();
+        // Lines said lately, for the echo check (M4): [{ text, at, roomId, x, y }], oldest first
+        this._recentLines = [];
+        this._speechUntil = 0;
+        this._faintLine = null;   // { npcId, until } while a faint ambient line holds the lock (D34)
+        // Mutters waiting for the speech lock, oldest first: [{ npcId, topic, since }] (9.2 B)
+        this._mutterWaits = [];
+        this._exPlayed = new Set();
+        // Queues (slice 10): claim order across the whole system, so queue order is deterministic
+        this._queueSeq = 0;
+        // Switched-off sources (slice 18a): objectId -> { cond, off } for every object with an
+        // object-level offWhen seen so far, with the off state last seen. A global change wakes parked
+        // needs only when one of them really turns back on.
+        this._offSeen = new Map();
+        // Print and forget (slice 17, OFFICE_LIFE_PLAN 12.3): slotId -> the owned print on it
+        // ({ ownerId, producerId, at, dueAt, forgotten, ... }). Client only: a reload files every
+        // shown slot (stow on sight), and the reservations go with it.
+        this._prints = new Map();
+        // Magnets (slice 18b-i, OFFICE_LIFE_PLAN 12.4): magnetId -> { id, cfg, aff, satisfies, key,
+        // servings, wasShown }. Found on a drop (onItemDropped), a room load or any object scan; the
+        // servings count is mirrored in the engine-owned <id>_servings global, which survives a reload.
+        // Who knows of a magnet (s.knows) is client only. _magShown: the shown magnets, per tick.
+        this._magnets = new Map();
+        this._magShown = null;
+        // Desk phones (slice 19, OFFICE_LIFE_PLAN 12.5): phoneId -> ring { phoneId, ownerId, n, total,
+        // nextAt } while it rings, and phoneId -> call while someone is on it. Client only.
+        this._rings = new Map();
+        this._calls = new Map();
+        this._callSeq = 0;
+        // Read-outs for tests and live measurement; never feed a decision
+        this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
+        // End-of-tick listeners (onTick); kept across reset()
+        this._tickListeners = [];
+    }
+
+    // ── setup ──────────────────────────────────────────────────────────────
+
+    seedFor(npcId) {
+        return hash32(`${this.seed}:${npcId}`);
+    }
+
+    /**
+     * A deterministic number in [0, 1) for (seed, npcId, salt). It uses its own stream, so asking
+     * for one never moves the per-NPC RNG that jitters need timings. Same seed, NPC and salt give
+     * the same value on every play; vary the salt (a counter, a label) for successive rolls.
+     * Used by generic scenario mechanics that want seeded variety, e.g. a workstation's lockChance.
+     */
+    roll(npcId, salt = '') {
+        return seededRoll(this.seed, npcId, salt);
+    }
+
+    /** Register (or re-register) an NPC with a needs block. Ignores NPCs without one. */
+    register(npcId) {
+        if (this.states.has(npcId)) return true;
+        const rec = this.world.getNpc(npcId);
+        if (!rec || ((!rec.needs || typeof rec.needs !== 'object') && (!rec.interests || typeof rec.interests !== 'object'))) return false;
+        const needs = {};
+        for (const name of Object.keys(rec.needs || {})) {
+            const n = normaliseNeed(rec.needs[name]);
+            if (n) needs[name] = n;
+        }
+        const interests = {};
+        if (rec.interests && typeof rec.interests === 'object') {
+            for (const tag of Object.keys(rec.interests)) {
+                const it = normaliseInterest(rec.interests[tag]);
+                if (it) interests[tag] = it;
+            }
+        }
+        if (!Object.keys(needs).length && !Object.keys(interests).length) return false;
+        const rng = createSeededRng(this.seedFor(npcId));
+        const levels = {};
+        const lastSatisfiedAt = {};
+        for (const name of Object.keys(needs)) {
+            const n = needs[name];
+            levels[name] = clamp(n.initial * (1 + (rng() * 2 - 1) * n.jitterPct / 100), 0, 100);
+            lastSatisfiedAt[name] = this.clockMs;
+        }
+        // Room leash (OFFICE_LIFE_PLAN 7.2): fixed per NPC, authored beside needsHome
+        const roomList = v => (Array.isArray(v) ? v.filter(r => typeof r === 'string' && r) : null);
+        const allow = roomList(rec.needsRooms), deny = roomList(rec.needsAvoidRooms);
+        const leash = (allow || deny?.length) ? { allow: allow ? new Set(allow) : null, deny: new Set(deny || []) } : null;
+        if (rec.needsCompany && typeof rec.needsCompany === 'object') this._anyCompany = true;
+        this.states.set(npcId, {
+            npcId, needs, interests, levels, lastSatisfiedAt, rng, leash,
+            // Slice 17: need uses per object (salts a print hook's chance) and owned prints (salts the habit)
+            useCounts: {},
+            printCount: 0,
+            // Slice 18b-i: magnets this NPC knows of, servings it has had from each (client-only: it
+            // resets on a reload, accepted like the needs reset to initial, review R1 m3), and needs whose
+            // tempted job already turned back once for avoidance (mindChanged is cleared above urgentAt)
+            knows: new Set(),
+            ate: {},
+            temptBack: {},
+            // Slice 18b-ii: magnets this NPC has announced (once each), and an announce waiting for
+            // the speech lock ({ id, since }; a picture after NEWS_WAIT_MS)
+            announced: new Set(),
+            newsWait: null,
+            // Slice 19: { phoneId, until } while this NPC speaks on a desk phone (selection waits)
+            call: null,
+            leashNoted: {},
+            avoidNoted: {},
+            privateNoted: {},
+            // Access slice 9.2 U: items a USB policy refused with nowhere else to take them (put
+            // down, and not picked up again by this NPC)
+            refused: new Set(),
+            // Access slice 9.2 A: frustration mirrored from the server (level, tell, settled), the
+            // re-arm mark per need, resources already checked this outage, queued visits, the
+            // shown failure, and the outage kick's last-seen conditions and pending needs
+            frustration: 0, tell: 0, settled: false,
+            rearm: {}, failSent: {}, checked: new Set(), visits: [], borrow: null, failedShow: null, workaroundShow: null, failCause: {},
+            kickSeen: {}, kickPending: new Set(),
+            // Access slice 9.2 L (6.6): stations where the server's check found this owner locked
+            // out (its uses there fail with locked_out), and checks sent and not yet answered
+            // (pcId -> needs clock ms sent; the first use there waits for the answer). User
+            // decision q36: a borrowed hot desk is a second kind of key here, checked when the
+            // borrower sits down, and a borrowed use there fails the same way
+            lockedOut: new Set(), lockCheck: {},
+            // The USB habit (USB_HABIT_PLAN.md, q39): judged work uses at the station so far; every
+            // work.usb.every-th carries a copy to a stick. Restarts at 0 with the state on reload.
+            usbUses: 0,
+            urgentFlag: {},
+            mode: 'idle',
+            prevMode: null,
+            job: null,
+            atPost: true,
+            // Real leaves so far (2.10, slice 11): salts the left-behind roll. Resets with the state
+            // on reload. leftItems: items this NPC left at its post on the current leave.
+            leaveCount: 0,
+            leftItems: [],
+            // Slice 14: parked needs (need -> { reason, until, since, avoidedId }), needs whose
+            // NPC has already turned back once this episode (no second turn-back until met),
+            // turn-backs so far (salts the grumble), the face bubble after a turn-back, and a
+            // one-off grumble line ({ line, topic, objectId, until })
+            parked: {},
+            mindChanged: {},
+            turnCount: 0,
+            avoidShow: null,
+            saying: null,
+            home: null,
+            cooldowns: {},
+            scriptSuspended: false,
+            blocked: false
+        });
+        this._log(npcId, 'registered');
+        this._applyRestored(this.states.get(npcId));
+        return true;
+    }
+
+    registerAll() {
+        for (const id of [...this.world.npcIds()].sort()) this.register(id);
+    }
+
+    has(npcId) {
+        return this.states.has(npcId);
+    }
+
+    reset(seed) {
+        if (seed !== undefined) { this.seed = seed; this.bagSeed = seed; }
+        const ids = [...this.states.keys()];
+        for (const id of ids) {
+            const s = this.states.get(id);
+            // A workaround visit, running or queued, is reported dropped (review 9.2 B R1 m4), so
+            // the runner frees its hand-over instead of waiting for an event that never comes
+            const wk = [];
+            if (s.job?.kind === 'visit' && s.job.visit?.kind === 'workaround') wk.push(s.job.visit);
+            for (const v of Array.isArray(s.visits) ? s.visits : []) if (v?.kind === 'workaround') wk.push(v);
+            if (s.job) this._abortJob(s, 'reset', { cancel: true });
+            for (const v of wk) this._emit(`npc_visit_dropped:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data, reason: 'reset' });
+            // A held borrow too (review R1 m2)
+            if (s.borrow) this._dropBorrow(s, 'reset');
+        }
+        // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3).
+        // failSent marks and a reload's held parks do not (review R2 n2): reset() is a debug and
+        // test path, and a missed owed ease or hold costs one report at most
+        const mirror = new Map(ids.map(id => {
+            const s = this.states.get(id);
+            return [id, { frustration: s.frustration, tell: s.tell, settled: s.settled, lockedOut: [...s.lockedOut] }];
+        }));
+        this.states.clear();
+        this._chats.clear();
+        this._chatSeq = 0;
+        this._queueSeq = 0;
+        this._bags.clear();
+        this._recentLines = [];
+        this._speechUntil = 0;
+        this._faintLine = null;
+        this._mutterWaits = [];
+        this._exPlayed.clear();
+        this._rings.clear();
+        this._calls.clear();
+        this._callSeq = 0;
+        this.log = [];
+        this.clockMs = 0;
+        this.speakers = [];
+        this.tickCount = 0;
+        this._acc = 0;
+        this._lastElapsed = null;
+        this._arrivals.clear();
+        for (const id of ids.sort()) {
+            this.register(id);
+            const m = mirror.get(id);
+            const s = this.states.get(id);
+            if (m && s) { s.frustration = m.frustration; s.tell = m.tell; s.settled = m.settled; m.lockedOut.forEach(pc => s.lockedOut.add(pc)); }
+        }
+    }
+
+    // ── clock ──────────────────────────────────────────────────────────────
+
+    /**
+     * Live frame hook: advances the needs clock.
+     * @param {number} [frameMs] - the frame step the engine moves bodies by (Phaser's smoothed
+     *   loop delta). Given, the clock follows it, so decisions and walks share one timeline:
+     *   below 5 fps Phaser holds the physics step near one normal frame, and a clock on wall
+     *   time ran up to 40 times faster than the walks, so a walk's deadline passed with the
+     *   NPC a few steps from its post (the trip failed, the owner came straight back and the
+     *   target went on a 60 s cooldown). Not given (node tests, another host), the clock
+     *   follows game elapsed time as before.
+     */
+    update(frameMs) {
+        if (this.manualClock) return;
+        const now = this.world.elapsedMs();
+        if (this._lastElapsed === null) { this._lastElapsed = now; return; }
+        const delta = Number.isFinite(frameMs) && frameMs >= 0 ? frameMs : now - this._lastElapsed;
+        this._lastElapsed = now;
+        if (this.world.isVmActive()) return;
+        this._acc += clamp(delta, 0, MAX_FRAME_MS);
+        while (this._acc >= NEEDS_TICK_MS) {
+            this._acc -= NEEDS_TICK_MS;
+            this.tick();
+        }
+    }
+
+    /** Manual clock: advance by ms (whole ticks). */
+    step(ms) {
+        const ticks = Math.floor(Math.max(0, Number(ms) || 0) / NEEDS_TICK_MS);
+        for (let i = 0; i < ticks; i++) this.tick();
+        return ticks;
+    }
+
+    // ── external notifications ─────────────────────────────────────────────
+
+    /**
+     * npc_arrived:<id> with owner 'needs' — handled at the next tick. SIMS-2 (OLMP E6): the payload
+     * carries the position the behaviour layer stopped at, the echoed move id and the steps the path
+     * had left. The step-1 diagnostic line `arrival { pathLeft, dist }` is logged only for a real
+     * behaviour-layer arrival (one that carries pathLeft); the node stub's own arrivals and the
+     * synthetic own-post arrivals carry none, so the sims-day log stays byte for byte the same.
+     */
+    onArrived(npcId, owner, payload = {}) {
+        if (owner !== 'needs' || !this.states.has(npcId)) return;
+        const p = payload || {};
+        const x = Number.isFinite(p.x) ? p.x : null;
+        const y = Number.isFinite(p.y) ? p.y : null;
+        const moveId = p.moveId ?? null;
+        const pathLeft = p.pathLeft ?? null;
+        if (pathLeft !== null) {
+            const dest = this._phaseDest(this.states.get(npcId));
+            let dist = null;
+            if (dest && x !== null && y !== null) dist = Math.round(Math.hypot(x - dest.x, y - dest.y));
+            this._log(npcId, 'arrival', { pathLeft, dist });
+        }
+        this._arrivals.set(npcId, { x, y, moveId, pathLeft });
+    }
+
+    /** SIMS-2: the destination the NPC's current move is heading for (a job phase, a queue cell or home). */
+    _phaseDest(s) {
+        if (!s) return null;
+        if (s.mode === 'returning') return s.home || null;
+        return s.job?.dest || null;
+    }
+
+    /** SIMS-2: a fresh move id for a walk the needs system issues. */
+    _nextMoveId() { return ++this._moveSeq; }
+
+    /**
+     * SIMS-2 (OLMP E6): decide whether a queued arrival counts for the current move. Move ids first:
+     * an arrival echoing another move's id is dropped (`arrival_ignored`); one with no id is treated
+     * as the current move (the transitional rule for callers that send none — the node stub, scripted
+     * moves, seating). Distance second: an arrival within ARRIVAL_NEAR_PX of the move's destination
+     * counts; a farther one is logged `arrival_far` and the move is re-issued once. A second far
+     * arrival in the same job phase fails the job and walks it home; a returning NPC never fails, so
+     * its walk home is re-issued once and `_watchReturn` covers any further stall.
+     * @returns {boolean} true when the arrival counts for this tick.
+     */
+    _acceptArrival(s, pos, arrival) {
+        const id = s.npcId;
+        // SIMS-2: an own-post shortcut or a walk home already within HOME_EPS queues its own arrival
+        // (_moveForPhase, _goHome). It is not a real walk, so it skips the distance and id checks.
+        if (arrival.synthetic) return true;
+        // SIMS-2 review R1 Design M1: only arrivals for a move the needs system actually issued go
+        // through the distance/id guard — a job's goto_item/goto_target/queued leg or a walk home.
+        // An arrival that fires in any other phase (seating's chair fetch during `using`, which walks
+        // with goToAndStay and carries no move id) is dropped silently, exactly as before the slice,
+        // so a fetch at a non-own work object is never cut short with a spurious `arrival_far`.
+        const returning = s.mode === 'returning';
+        const phase = returning ? 'returning' : (s.job?.phase ?? null);
+        if (!returning && phase !== 'goto_item' && phase !== 'goto_target' && phase !== 'queued') return false;
+        const want = returning ? (s.returnMoveId ?? null) : (s.job?.moveId ?? null);
+        const got = arrival.moveId ?? null;
+        if (got !== null && want !== null && got !== want) {
+            this._log(id, 'arrival_ignored', { moveId: got, want });
+            return false;
+        }
+        const dest = this._phaseDest(s);
+        if (!dest) return true;   // nothing to check against (a self job, or no current move)
+        const px = Number.isFinite(arrival.x) ? arrival.x : pos.x;
+        const py = Number.isFinite(arrival.y) ? arrival.y : pos.y;
+        if (Math.hypot(px - dest.x, py - dest.y) <= ARRIVAL_NEAR_PX) return true;
+        const logFar = () => this._log(id, 'arrival_far', {
+            phase, target: s.job?.targetId ?? null,
+            x: Math.round(px), y: Math.round(py),
+            dest: { x: Math.round(dest.x), y: Math.round(dest.y) }, moveId: got
+        });
+        if (returning) {
+            // SIMS-2 review R1 Design m1 / server minor 2: a returning NPC never fails. The walk home
+            // is re-issued once; a repeat far arrival is left to _watchReturn. `arrival_far` is logged
+            // on the first far arrival of this return only — `returnFarReissued` persists across the
+            // _watchReturn re-issues (keepFarFlag), so an unreachable home spins quietly, not a line a
+            // tick. A genuinely new return re-arms the flag (and the log) in _goHome.
+            if (!s.returnFarReissued) { logFar(); s.returnFarReissued = true; this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true }); }
+            return false;
+        }
+        logFar();
+        // SIMS-2 review R1 m2 (both reviews): key the far guard by phase AND destination cell, so a
+        // genuine step to a new queue cell (or a re-issue after a freeze, which resets the key) is not
+        // mistaken for a second far arrival at the same stuck cell. The job fails only when the same
+        // phase+cell goes far twice.
+        if (s.job) {
+            const farKey = `${phase}:${Math.round(dest.x)},${Math.round(dest.y)}`;
+            if (s.job._farKey === farKey) { this._failJob(s, 'arrival_far'); return false; }
+            s.job._farKey = farKey;
+            this._moveForPhase(s);
+        }
+        return false;
+    }
+
+    /** A goToAndStay not issued by needs (a script): suspend needs for this NPC. */
+    onExternalMove(npcId, owner) {
+        const s = this.states.get(npcId);
+        if (!s || owner === 'needs') return;
+        if (s.job) this._abortJob(s, 'script', { cancel: false });
+        s.mode = 'idle';
+        s.prevMode = null;
+        s.scriptSuspended = true;
+        s.atPost = false;
+        this._arrivals.delete(npcId);
+        this._log(npcId, 'suspended', { reason: 'script' });
+    }
+
+    /**
+     * door_opened (doors.js): a way may have opened to a source a parked need lacked. Clears the
+     * select back-offs and retries every parked need soon, staggered (slice 14).
+     */
+    onDoorOpened() {
+        this._clearBackoffs();
+        this._wakeParked();
+    }
+
+    /**
+     * global_variable_changed:<name> (slice 18a). set_global emits on every call, same value or
+     * not, so this compares states: parked needs retry, as for a door, only when an object whose
+     * offWhen reads `name` was last seen off and is now on.
+     */
+    onGlobalChanged(name) {
+        if (typeof name !== 'string') return;
+        // Access 9.2 A (plan 5.2): a failed park whose wakeOn names this global, and whose causes
+        // would all pass now, retries soon. Before the early return: a scenario whose only outages
+        // are resource offWhen conditions has no object-level offWhen at all.
+        this._wakeFailedFor(name);
+        if (!this._offSeen.size) return;
+        let woke = false;
+        const on = [];
+        for (const id of [...this._offSeen.keys()].sort()) {
+            const rec = this._offSeen.get(id);
+            if (!offWhenNames(rec.cond).includes(name)) continue;
+            const off = this._globalHolds(rec.cond);
+            if (rec.off && !off) { woke = true; on.push(id); }
+            rec.off = off;
+        }
+        if (woke) {
+            this._log(null, 'switched_on', { global: name });
+            this._clearBackoffs();
+            this._wakeStationFor(on);
+            this._wakeParked();
+        }
+    }
+
+    /** object-level offWhen holds: not a source (slice 18a). Records the state for onGlobalChanged. */
+    _isOff(o) {
+        const cond = o?.offWhen;
+        if (cond === undefined || cond === null || cond === false || cond === '') return false;
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        if (typeof cond === 'object' && Object.keys(cond).length === 0) return false;
+        const off = this._globalHolds(cond);
+        this._offSeen.set(o.id, { cond, off });
+        return off;
+    }
+
+    // ── magnets (slice 18b-i, OFFICE_LIFE_PLAN 12.4) ───────────────────────
+
+    /**
+     * item_dropped:<id> (item-drop.js): the player put a held item down. A magnet (affordance.magnet)
+     * becomes a source where it lies. magnet_placed lists the NPCs with a need it satisfies whose
+     * leash and privacy allow its room; with nobody, magnet_unreachable explains a dead drop.
+     * Nobody knows of it yet: NPCs learn by sight (or, in 18b-ii, by word).
+     */
+    onItemDropped(itemId) {
+        const o = typeof itemId === 'string' ? this.world.getObject(itemId) : null;
+        const cfg = o ? magnetOf(o.affordance) : null;
+        if (!cfg) return false;
+        if (!this._magnets.has(o.id)) this._addMagnet(o, cfg);
+        const m = this._magnets.get(o.id);
+        this._worldChanged();
+        this._clearBackoffs();
+        const reachable = [...this.states.keys()].sort().filter(id => {
+            const s = this.states.get(id);
+            return m.satisfies.some(n => s.needs[n]) && !this._roomForbidden(s, o.roomId);
+        });
+        this._log(null, 'magnet_placed', { target: o.id, room: o.roomId, reachable, servings: m.servings });
+        this._emit(`magnet_placed:${o.id}`, { magnetId: o.id, roomId: o.roomId ?? null, x: Math.round(o.x), y: Math.round(o.y), how: 'drop', reachable, servings: m.servings });
+        if (!reachable.length) {
+            this._log(null, 'magnet_unreachable', { target: o.id, room: o.roomId });
+            this._emit(`magnet_unreachable:${o.id}`, { magnetId: o.id, roomId: o.roomId ?? null });
+        }
+        return true;
+    }
+
+    /** Find magnets among the loaded objects (a room load, a reload). Not counted as a tick's scan. */
+    scanMagnets() {
+        if (typeof this.world.listObjects === 'function') this._noteMagnets(this.world.listObjects() || []);
+    }
+
+    _noteMagnets(list) {
+        for (const o of list || []) {
+            if (this._magnets.has(o.id)) continue;
+            const cfg = magnetOf(o.affordance);
+            if (cfg) this._addMagnet(o, cfg);
+        }
+    }
+
+    /** Servings come from the <id>_servings global when it holds a number (a reload), else the block's. */
+    _addMagnet(o, cfg) {
+        const key = `${o.id}_servings`;
+        const g = typeof this.world.getGlobal === 'function' ? Number(this.world.getGlobal(key)) : NaN;
+        const servings = Number.isFinite(g) ? Math.max(0, Math.floor(g)) : cfg.servings;
+        this._magnets.set(o.id, { id: o.id, cfg, aff: o.affordance, satisfies: asList(o.affordance.satisfies), key, servings, wasShown: false });
+        this._magShown = null;
+        // Slice 23: one standing on a table is drawn over it (a reload brings no elevation back)
+        this.world.settleMagnet?.(o);
+    }
+
+    /** The magnets showing now (in a room, not picked up, not hidden), id -> object; cached per tick. */
+    _shownMagnets() {
+        if (!this._magnets.size) return null;
+        if (this._magShown && this._magShown.tick === this.tickCount) return this._magShown.map;
+        const map = new Map();
+        for (const id of [...this._magnets.keys()].sort()) {
+            const o = this.world.getObject(id);
+            if (o && o.roomId && o.pickable !== false && !this._hidden(o)) map.set(id, o);
+        }
+        this._magShown = { tick: this.tickCount, map };
+        return map;
+    }
+
+    _servingsLeft(id) {
+        return this._magnets.get(id)?.servings ?? 0;
+    }
+
+    /** A revealOnGlobal object whose global is not true is no use target (12.4 point 7). */
+    _hidden(o) {
+        const g = o?.revealOnGlobal;
+        return typeof g === 'string' && g !== '' && !this._globalHolds(g);
+    }
+
+    /** A magnet is a source only for an NPC that knows of it, while it shows and has servings left. */
+    _magnetBarred(s, o) {
+        if (!this._magnets.has(o.id)) return !!magnetOf(o.affordance);   // not yet seen by the registry
+        return !s.knows.has(o.id) || !this._shownMagnets()?.has(o.id) || this._servingsLeft(o.id) <= 0
+            || (s.ate[o.id] || 0) >= this._magnets.get(o.id).cfg.perPerson;   // one slice each, urgent or not
+    }
+
+    /** Known, live magnets for a need; every look (tempted or urgent) skips those whose perPerson this NPC has had. */
+    _magnetsFor(s, name) {
+        if (!s.knows.size) return null;
+        const shown = this._shownMagnets();
+        const out = [];
+        for (const id of [...s.knows].sort()) {
+            const m = this._magnets.get(id), o = shown?.get(id);
+            if (!m || !o || m.servings <= 0 || !m.satisfies.includes(name)) continue;
+            if ((s.ate[id] || 0) >= m.cfg.perPerson) continue;
+            out.push(o);
+        }
+        return out;
+    }
+
+    /** The widest tempt band of a known, live magnet that still tempts this NPC for `name`; 0 if none. */
+    _temptBand(s, name) {
+        if (!s.knows.size || s.parked[name]) return 0;   // a parked need is not tempted (OQ35)
+        let band = 0;
+        for (const o of this._magnetsFor(s, name) || []) band = Math.max(band, this._magnets.get(o.id).cfg.tempt);
+        return band;
+    }
+
+    /** _select's early-return guard: some need sits in a known magnet's tempt band. */
+    _tempting(s) {
+        if (!s.knows.size) return false;
+        for (const name of Object.keys(s.needs)) {
+            const n = s.needs[name];
+            const band = this._temptBand(s, name);
+            if (band > 0 && s.levels[name] > n.urgentAt && s.levels[name] <= Math.min(95, n.urgentAt + band)) return true;
+        }
+        return false;
+    }
+
+    /** Sight: an NPC in a shown magnet's room, lit or not, knows of it. */
+    _sight(s, pos) {
+        const shown = this._shownMagnets();
+        if (!shown?.size || !pos.roomId) return;
+        for (const [id, o] of shown) {
+            if (o.roomId !== pos.roomId || s.knows.has(id)) continue;
+            s.knows.add(id);
+            s.selectRetryAt = 0;
+            this._log(s.npcId, 'magnet_seen', { target: id });
+            this._emit(`npc_saw_magnet:${s.npcId}`, { npcId: s.npcId, magnetId: id, roomId: o.roomId });
+            this._wakeParkedFor(s, this._magnets.get(id)?.satisfies || []);   // OQ35: sight or word
+        }
+    }
+
+    // ── word of mouth (slice 18b-ii, OFFICE_LIFE_PLAN 12.4 point 3, OQ33) ────
+
+    /**
+     * A knower in its own (post) room, idle, walking home or using its own post object (working at
+     * its desk), away from the magnet's room, tells
+     * once per magnet: every NPC in the same room within newsRadius tiles that does not know yet
+     * and is not avoided either way (groups do not matter) learns of it, whatever is shown. The
+     * hearers are taken when the line or picture shows; with nobody to tell there is no announce
+     * at all. The line comes from the magnet's announce pool, ignores the bark cooldown and waits
+     * for the speech lock, up to NEWS_WAIT_MS; then a `news` picture. With the player out of
+     * earshot (m7) it is a picture at once and no line is taken. Telling happens even when
+     * nothing can be shown ("chatter": false).
+     */
+    _tickNews(s, pos) {
+        if (!pos.roomId || pos.roomId !== s.home?.roomId) return;
+        const atDesk = s.mode === 'job' && s.job?.phase === 'using' && !!s.home?.objectId && s.job.targetId === s.home.objectId;
+        if (s.mode !== 'idle' && s.mode !== 'returning' && !atDesk) return;
+        if (s.saying && s.saying.until > this.clockMs) return;
+        const shown = this._shownMagnets();
+        for (const id of [...s.knows].sort()) {
+            if (s.announced.has(id)) continue;
+            const m = this._magnets.get(id), o = shown?.get(id);
+            if (!m || !o || m.servings <= 0 || o.roomId === pos.roomId) continue;
+            const hearers = this._newsHearers(s, pos, m);
+            if (!hearers.length) continue;   // nobody would learn: no line, no picture, no TTS request
+            const topic = m.cfg.announce || 'news';
+            const waited = s.newsWait?.id === id ? this.clockMs - s.newsWait.since : 0;
+            const first = m.satisfies.find(n => NEED_ICONS.includes(n));
+            // SIMS-5 design R2 m7 (E7 for announces): with the player out of earshot of the teller the
+            // telling still happens, as a picture; no line is taken from the bag, so none is voiced unheard
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).overhearRadius || OVERHEAR_RADIUS;
+            const unheard = typeof this.world.playerHears === 'function' && !(this.world.playerHears(s.npcId, radius) || {}).overheard;
+            const pick = this._pickBark(s, topic, { waitForLock: waited < NEWS_WAIT_MS, ignoreCooldown: true, unheard, icons: [first || 'social'] });
+            if (pick?.wait) {
+                if (s.newsWait?.id !== id) s.newsWait = { id, since: this.clockMs };
+                return;
+            }
+            s.newsWait = null;
+            this._announce(s, m, hearers, pick, topic);
+            return;   // one announce per tick
+        }
+    }
+
+    /** Who would learn from this speaker now: same room, within newsRadius, not knowing, not avoided either way. */
+    _newsHearers(s, pos, m) {
+        const r = m.cfg.newsRadius * 32;
+        const out = [];
+        for (const id of [...this.states.keys()].sort()) {
+            if (id === s.npcId) continue;
+            const t = this.states.get(id);
+            if (t.knows.has(m.id)) continue;
+            const p = this.world.npcPos(id);
+            if (!p || p.roomId !== pos.roomId || Math.hypot(p.x - pos.x, p.y - pos.y) > r + 0.5) continue;
+            const st = this.world.npcStatus(id) || {};
+            if (st.ko || st.hostile || st.hidden) continue;
+            if (this._avoids(s, t)) continue;
+            out.push(t);
+        }
+        return out;
+    }
+
+    _announce(s, m, hearers, pick, topic) {
+        s.announced.add(m.id);
+        if (pick) this._showSaying(s, pick, topic, m.id);
+        const heard = hearers.map(t => t.npcId);
+        this._log(s.npcId, 'announced', { target: m.id, heard, line: pick?.line ? `${topic}:${pick.idx}` : undefined, picture: pick?.picture || undefined });
+        this._emit(`npc_announced:${s.npcId}`, { npcId: s.npcId, magnetId: m.id, heard, topic, line: pick?.line || null, picture: pick?.picture || null, ...this._playerProximity(s.npcId) });
+        for (const t of hearers) {
+            t.knows.add(m.id);
+            t.selectRetryAt = 0;
+            this._log(t.npcId, 'told', { target: m.id, from: s.npcId });
+            this._emit(`npc_told:${t.npcId}`, { npcId: t.npcId, magnetId: m.id, fromId: s.npcId });
+            this._wakeParkedFor(t, m.satisfies);
+        }
+    }
+
+    /** A serving is taken as eating starts; the count is written to <id>_servings. */
+    _takeServing(s, id) {
+        const m = this._magnets.get(id);
+        if (!m || m.servings <= 0 || (s.ate[id] || 0) >= m.cfg.perPerson) return false;
+        m.servings--;
+        s.ate[id] = (s.ate[id] || 0) + 1;
+        this.world.setGlobal(m.key, m.servings);
+        this._worldChanged();
+        this._log(s.npcId, 'serving_taken', { target: id, left: m.servings });
+        this._emit(`magnet_serving:${id}`, { npcId: s.npcId, magnetId: id, left: m.servings });
+        return true;
+    }
+
+    /**
+     * Per tick: a magnet that stopped showing (picked up) is forgotten by everyone, so a re-drop is
+     * learnt again; its servings are kept. One showing at 0 servings with nobody eating is finished
+     * (also the reload case: 0 servings restored with the item still in its room).
+     */
+    _tickMagnets() {
+        const shown = this._shownMagnets() || new Map();
+        for (const id of [...this._magnets.keys()].sort()) {
+            const m = this._magnets.get(id);
+            const on = shown.has(id);
+            if (!on && m.wasShown) {
+                m.wasShown = false;
+                for (const st of this.states.values()) this._forgetMagnet(st, id);
+                this._log(null, 'magnet_gone', { target: id, left: m.servings });
+            } else if (on) m.wasShown = true;
+            if (on && m.servings <= 0 && ![...this.states.values()].some(st => st.job?.targetId === id && st.job.phase === 'using')) {
+                this._finishMagnet(id, shown.get(id));
+            }
+        }
+    }
+
+    /** Knowledge of a magnet goes with it (picked up or finished): a re-drop is learnt and told again. */
+    _forgetMagnet(st, id) {
+        st.knows.delete(id);
+        st.announced.delete(id);
+        if (st.newsWait?.id === id) st.newsWait = null;
+    }
+
+    /** The last serving is eaten: the item is taken away (room removal, so a reload keeps it gone). */
+    _finishMagnet(id, o) {
+        this._magnets.delete(id);
+        for (const st of this.states.values()) this._forgetMagnet(st, id);
+        if (typeof this.world.removeMagnet === 'function') this.world.removeMagnet(id);
+        this._worldChanged();
+        this._log(null, 'magnet_finished', { target: id });
+        this._emit(`magnet_finished:${id}`, { magnetId: id, roomId: o?.roomId ?? null });
+    }
+
+    /** eventMapping `needs` field: "resume" | "suspend" | { set: {need: level} }. */
+    control(npcId, cmd) {
+        const s = this.states.get(npcId);
+        if (!s) return false;
+        if (cmd === 'suspend') {
+            if (s.job) this._abortJob(s, 'suspend', { cancel: true });
+            s.mode = 'idle';
+            s.scriptSuspended = true;
+            this._log(npcId, 'suspended', { reason: 'mapping' });
+            return true;
+        }
+        if (cmd === 'resume') {
+            if (!s.scriptSuspended) return false;
+            s.scriptSuspended = false;
+            this._goHome(s);
+            this._log(npcId, 'resumed');
+            return true;
+        }
+        // Slice 17: { print: "<producerId>" } or { print: { producer, fetchAfterSeconds, forget } }
+        // prints as this NPC at once, owned, with its habits.print (the command's fields win)
+        if (cmd && typeof cmd === 'object' && cmd.print !== undefined) {
+            const spec = typeof cmd.print === 'string' || Array.isArray(cmd.print) ? { producer: cmd.print } : (cmd.print && typeof cmd.print === 'object' ? cmd.print : null);
+            const list = printerList(spec?.producer);
+            if (!list.length) return false;
+            const rec = this.world.getNpc(npcId) || {};
+            const own = { habit: rec.habits?.print && typeof rec.habits.print === 'object' ? rec.habits.print : {}, viaCommand: true };
+            if (Array.isArray(spec.fetchAfterSeconds)) own.fetchAfterSeconds = spec.fetchAfterSeconds;
+            if (typeof spec.forget === 'boolean') own.forget = spec.forget;
+            // Slice 22: the first listed printer that is on and has a slot; none on prints nothing
+            const pick = this._pickProducer(list);
+            this._log(npcId, 'print_command', { target: pick.producerId || list[0] });
+            if (pick.producerId) this._revealOutput(pick.producerId, npcId, own, pick.skipped);
+            else this._printBlocked(s, null, list, true);
+            return true;
+        }
+        if (cmd && typeof cmd === 'object' && cmd.set && typeof cmd.set === 'object') {
+            for (const [name, v] of Object.entries(cmd.set)) {
+                if (s.needs[name] && Number.isFinite(Number(v))) {
+                    // A mapping that sets a parked need means "now": it is unparked first (slice 14).
+                    // Access 9.2 (R5 n4): a failure or held park on a judged need is left alone;
+                    // the level is set for when it ends
+                    if (s.parked[name] && this._failurePark(s, name)) {
+                        s.parked[name].setLevel = clamp(Number(v), 0, 100);
+                        this._log(npcId, 'level_set', { need: name, level: round2(s.parked[name].setLevel), parked: true });
+                        continue;
+                    }
+                    if (s.parked[name]) this._unpark(s, name, 'set');
+                    s.levels[name] = clamp(Number(v), 0, 100);
+                    this._log(npcId, 'level_set', { need: name, level: round2(s.levels[name]) });
+                    // A tempted walk to a magnet ends quietly when the level is set above its tempt band
+                    // (a held NPC does not finish a walk it would no longer start); an urgent walk stands
+                    const j = s.job;
+                    if (j?.magnet && j.tempted && j.need === name && (j.phase === 'goto_target' || j.phase === 'queued')) {
+                        const n = s.needs[name], mc = this._magnets.get(j.targetId)?.cfg;
+                        if (!mc || s.levels[name] > Math.min(95, n.urgentAt + mc.tempt)) {
+                            this._abortJob(s, 'level_set', { cancel: true });
+                            this._goHome(s);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // ── the tick ───────────────────────────────────────────────────────────
+
+    tick() {
+        this.tickCount++;
+        this.stats.ticks++;
+        this.clockMs += NEEDS_TICK_MS;
+        this._worldChanged();
+        this._checkRooms();
+        if (this._placed.size) this._tickPlaced();
+        if (this._prints.size) this._tickPrints();
+        if (this._magnets.size) this._tickMagnets();
+        if (this._rings.size) this._tickRings();
+        if (this._answers?.length) this._applyAnswers();
+        if (this._mutterWaits.length) this._tickMutterWaits();
+        for (const id of [...this.states.keys()].sort()) {
+            try {
+                this._tickNpc(this.states.get(id));
+            } catch (e) {
+                if (typeof console !== 'undefined') console.error(`[needs] tick error for ${id}`, e);
+            }
+        }
+        this._tickQueueChats();
+        if (this._chats.size) this._tickChats();
+        if (this._calls.size) this._tickCalls();
+        this.speakers = this._buildSpeakers();
+        this._worldChanged();
+        // Slice 16 (OFFICE_LIFE_PLAN 12.2): the live adapter runs workstation auto-lock here, on
+        // the needs clock; the stubs have no afterTick, so the decision log is unchanged.
+        if (typeof this.world.afterTick === 'function') {
+            try { this.world.afterTick(this.clockMs); } catch (e) { if (typeof console !== 'undefined') console.error('[needs] afterTick error', e); }
+        }
+        if (this._tickListeners?.length) {
+            for (const fn of [...this._tickListeners]) {
+                try { fn(this); } catch (e) {
+                    if (typeof console !== 'undefined') console.error('[needs] onTick listener error', e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Who is speaking now, once per tick, for seated colleagues to look round at (slice 21,
+     * OFFICE_LIFE_PLAN 12.7): [{ npcId, roomId, x, y, until }], until on the needs clock.
+     * Chat and exchange lines, pictures and grumbles. Read-only: no roll, no log line.
+     */
+    _buildSpeakers() {
+        const out = [];
+        // radius: the earshot the line was said with, so whoever could hear it looks round (round 7)
+        const add = (npcId, until, radius) => {
+            const p = this.world.npcPos(npcId);
+            if (p) out.push({ npcId, roomId: p.roomId ?? null, x: p.x, y: p.y, until, radius: radius || OVERHEAR_RADIUS });
+        };
+        for (const c of this._chats.values()) {
+            const cur = c.current;
+            if (cur && this.clockMs < cur.until) add(cur.speakerId, cur.until, this._chatRadius(c, cur.speakerId));
+        }
+        for (const s of this.states.values()) {
+            if (s.saying && this.clockMs < s.saying.until) add(s.npcId, s.saying.until, s.saying.radius);
+        }
+        // Slice 19: a speaker on a desk phone, for the whole call (lines and listening gaps)
+        for (const c of this._calls.values()) {
+            const until = c.current ? c.current.until : Math.max(c.nextAt, this.clockMs + NEEDS_TICK_MS);
+            add(c.speakerId, until, OVERHEAR_RADIUS);
+        }
+        return out;
+    }
+
+    /**
+     * Run fn(system) at the end of every tick, after every NPC was processed (the workstation
+     * auto lock, ACCESS_MODEL_PLAN.md 5.4). Listeners survive reset(). Returns an unsubscribe.
+     */
+    onTick(fn) {
+        if (typeof fn !== 'function') return () => {};
+        if (!this._tickListeners) this._tickListeners = [];
+        this._tickListeners.push(fn);
+        return () => { this._tickListeners = this._tickListeners.filter(f => f !== fn); };
+    }
+
+    /**
+     * True when the NPC's sprite exists and it is not knocked out, hostile or hidden
+     * (ACCESS_MODEL_PLAN.md 5.4). _tickNpc blocks on it; the workstation layer's presence test
+     * uses it, so an owner removed from the scene, hidden, hostile or knocked out is not present.
+     */
+    isAvailable(npcId) {
+        if (!this.world.npcPos(npcId)) return false;
+        const status = this.world.npcStatus(npcId) || {};
+        return !(status.ko || status.hostile || status.hidden);
+    }
+
+    /** Drop the per-tick object list and reachability answers (something in the world changed). */
+    _worldChanged() {
+        this._tickObjects = null;
+        this._reachCache = null;
+        this._magShown = null;
+    }
+
+    /** emit / setGlobal through here: a listener may reveal, move or remove objects mid-tick. */
+    _emit(name, data) {
+        this.world.emit(name, data);
+        this._worldChanged();
+    }
+
+    /**
+     * Room loads. A room that appears (a door opened) can bring the object a blocked NPC lacked, so
+     * every select back-off is cleared. The world reports loaded room ids (`roomIds`); a world
+     * without it (the node stub) has no room loads to notice.
+     */
+    _checkRooms() {
+        if (typeof this.world.roomIds !== 'function') return;
+        const fresh = [];
+        for (const id of this.world.roomIds() || []) {
+            if (!this._knownRooms.has(id)) { this._knownRooms.add(id); fresh.push(id); }
+        }
+        if (fresh.length) this._onRoomsLoaded(fresh.sort());
+    }
+
+    _onRoomsLoaded(roomIds) {
+        this._clearBackoffs();
+        this._wakeParked();
+        // Slice 18b-i: a dropped magnet comes back with its room after a reload
+        this.scanMagnets();
+        // Stow on sight (OFFICE_LIFE_PLAN 2.2 Part A): after a reload a revealed slot comes back
+        // at its declared spot with its global still true and nobody holding it; file it away so
+        // the pool is whole again. At install every loaded room is new, so this covers them too.
+        if (typeof this.world.stowRevealedSlots === 'function') {
+            const stowed = this.world.stowRevealedSlots(roomIds);
+            if (stowed && stowed.length) { for (const sid of stowed) this._prints.delete(sid); this._worldChanged(); }
+        }
+    }
+
+    /** Placed slots and cosmetic copies whose time is up: someone filed them away. */
+    _tickPlaced() {
+        for (const [id, p] of [...this._placed.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+            if (this.clockMs < p.at) continue;
+            this._placed.delete(id);
+            if (p.cosmetic) this.world.removeCosmetic?.(id);
+            else if (this.world.stowSlot?.(id)) { this._prints.delete(id); this._log(p.npcId, 'stowed', { item: id, reason: 'filed' }); }
+            this._worldChanged();
+        }
+    }
+
+    /** How long a placed slot (or a producer's cosmetic copy) stays out, in ms; 0 = until a reload. */
+    _placeMs(aff) {
+        const v = Number(aff?.placeSeconds);
+        return (Number.isFinite(v) ? clamp(v, 0, 3600) : 60) * 1000;
+    }
+
+    _clearBackoffs() {
+        for (const o of this.states.values()) o.selectRetryAt = 0;
+    }
+
+    /** The loaded objects with an affordance or needsTag, scanned at most once per tick. */
+    _objects() {
+        if (this.tickCache && this._tickObjects) return this._tickObjects;
+        this.stats.objectScans++;
+        const list = this.world.listObjects();
+        if (this.tickCache) this._tickObjects = list;
+        this._noteMagnets(list);
+        return list;
+    }
+
+    /** world.reachable, answered once per (NPC, object) per tick. A world without it reaches everything. */
+    _reachable(s, o) {
+        if (typeof this.world.reachable !== 'function') return true;
+        this._selectSearched = true;
+        const key = `${s.npcId}\u0000${o.id}`;
+        if (this.tickCache && this._reachCache?.has(key)) return this._reachCache.get(key);
+        this.stats.pathSearches++;
+        const avoidRooms = this._avoidRooms(s);
+        const ok = !!(avoidRooms.length ? this.world.reachable(s.npcId, o, { avoidRooms }) : this.world.reachable(s.npcId, o));
+        if (this.tickCache) (this._reachCache || (this._reachCache = new Map())).set(key, ok);
+        return ok;
+    }
+
+    // ── room leash and private objects (OFFICE_LIFE_PLAN 7.2, slice 2a) ─────
+
+    /**
+     * The NPC's home room, from scenario data rather than the resolved home (which stays
+     * provisional at the spawn point until the needsHome object loads): a coordinate home's room;
+     * the resolved home's room; the needsHome object's room once it can be found; the spawn room.
+     */
+    _homeRoom(s) {
+        const rec = this.world.getNpc(s.npcId) || {};
+        const h = rec.needsHome;
+        if (h && typeof h === 'object' && typeof h.room === 'string') return h.room;
+        if (s.home && !s.home.provisional && s.home.roomId) return s.home.roomId;
+        if (typeof h === 'string') {
+            const o = this.world.getObject(h);
+            if (o?.roomId) return o.roomId;
+        }
+        return rec.roomId || null;
+    }
+
+    /** May this NPC's needs not enter roomId? Its home room never is (the validator errors on that). */
+    _roomForbidden(s, roomId) {
+        if (!roomId) return false;
+        const L = s.leash;
+        let out = !!L && ((L.allow && !L.allow.has(roomId)) || L.deny.has(roomId));
+        if (!out && typeof this.world.roomPrivateTo === 'function') {
+            const priv = this.world.roomPrivateTo(roomId);
+            out = Array.isArray(priv) && !priv.includes(s.npcId);
+        }
+        return out && roomId !== this._homeRoom(s);
+    }
+
+    /** Loaded rooms this NPC's routes must not enter (passed to reachable and moveTo). */
+    _avoidRooms(s) {
+        if (typeof this.world.roomIds !== 'function') return [];
+        return (this.world.roomIds() || []).filter(r => this._roomForbidden(s, r)).sort();
+    }
+
+    /**
+     * Owners of an object: its `owner` field, a single NPC id or a list of them (a private object).
+     */
+    _owners(o) {
+        const owner = o.owner;
+        if (Array.isArray(owner)) return owner;
+        if (typeof owner === 'string' && owner) return [owner];
+        return [];
+    }
+
+    /** Room rules for any object; `private` only for a use (deliveries ignore it, OQ26). */
+    _permitted(s, o, use) {
+        if (this._roomForbidden(s, o.roomId)) return false;
+        if (use && o.private === true) return this._owners(o).includes(s.npcId);
+        return true;
+    }
+
+    /** Nothing permitted was left: log and emit once per urgent episode of this need. */
+    _noteLeash(s, key, data) {
+        if (s.leashNoted[key]) return;
+        s.leashNoted[key] = true;
+        this._emitLeashed(s, { ...data, chose: undefined });
+    }
+
+    /** Only other owners' private objects were left: log once per urgent episode, no event. */
+    _notePrivate(s, key, data) {
+        if (s.privateNoted[key]) return;
+        s.privateNoted[key] = true;
+        this._log(s.npcId, 'private_skipped', { ...data, chose: undefined });
+    }
+
+    _emitLeashed(s, data) {
+        this._log(s.npcId, 'leashed', data);
+        const payload = { npcId: s.npcId };
+        for (const [k, v] of Object.entries(data)) if (v !== undefined) payload[k] = v;
+        payload.chose = data.chose || null;
+        this._emit(`npc_needs_leashed:${s.npcId}`, payload);
+    }
+
+    _tickNpc(s) {
+        const id = s.npcId;
+        this._decay(s);
+        if (s.borrow) this._tickBorrow(s);
+        // Review R2 m1: an outage fixed while the barrier shows ends it, as q17 fades the frustration icon
+        if (s.failedShow && s.failedShow.missing.length && this._causesPass(s, s.failedShow.missing)) {
+            s.failedShow = null;
+            this._log(id, 'failed_cleared');
+        }
+
+        const pos = this.world.npcPos(id);
+        if (!pos) return; // sprite not loaded: decay only
+        if (this._magnets.size) this._sight(s, pos);
+        if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
+        if (this._kickable(s)) this._tickKick(s);
+
+        if (!this.isAvailable(id)) {
+            if (!s.blocked) {
+                if (s.job) this._abortJob(s, 'unavailable', { cancel: true });
+                s.mode = 'idle';
+                s.blocked = true;
+                this._log(id, 'blocked');
+            }
+            return;
+        }
+        if (s.blocked) {
+            s.blocked = false;
+            this._log(id, 'unblocked');
+            this._goHome(s);
+        }
+        if (s.scriptSuspended) { this._arrivals.delete(id); return; }
+
+        if (this.world.inChatWith(id)) {
+            if (s.mode !== 'frozen') {
+                s.prevMode = s.mode;
+                s.mode = 'frozen';
+                if (s.job?.phase === 'using') s.job.useRemaining = Math.max(0, s.job.useUntil - this.clockMs);
+                if (s.job) s.job.frozenAt = this.clockMs;
+                this.world.cancelMove(id);
+                this._arrivals.delete(id);
+                this._log(id, 'frozen');
+            }
+            return;
+        }
+        if (s.mode === 'frozen') {
+            s.mode = s.prevMode || 'idle';
+            s.prevMode = null;
+            this._log(id, 'unfrozen');
+            if (s.mode === 'job' && s.job) {
+                if (s.job.phase === 'using') s.job.useUntil = this.clockMs + (s.job.useRemaining || 0);
+                else {
+                    s.job.deadline += this.clockMs - (s.job.frozenAt || this.clockMs);
+                    if (s.job.phase === 'queued') { s.job.queuedAt += this.clockMs - (s.job.frozenAt || this.clockMs); s.job.qCell = null; }
+                    s.job._farKey = null;   // SIMS-2 m2: a post-freeze re-issue is a fresh move, not a repeat far arrival
+                    this._moveForPhase(s);
+                }
+            } else if (s.mode === 'returning') {
+                this._goHome(s, { stayPut: s.atPost });   // at its post: the own-desk returning tick
+            }
+            return;
+        }
+
+        // SIMS-2: a queued arrival only counts where the NPC actually stands, and only for the move
+        // the needs system last issued (_acceptArrival; far/stale arrivals are re-issued or dropped).
+        const arrival = this._arrivals.get(id);
+        this._arrivals.delete(id);
+        const arrived = arrival ? this._acceptArrival(s, pos, arrival) : false;
+
+        // Coming back from a real leave: is the player at the desk? (once per return)
+        if (s.mode === 'returning' && !s.atPost && !s.caughtEmitted) this._checkCaught(s, pos);
+        // The same on a walk back that is also a job for the own post (a need for it, or a
+        // delivery to it): that walk is the return, so the player is checked on every tick of
+        // it, the arrival tick included (it runs before _advanceJob). Only goto_target: on the
+        // goto_item leg of a delivery the owner is leaving the desk to fetch the item, not back.
+        if (s.mode === 'job' && s.job?.phase === 'goto_target' && !s.atPost && !s.caughtEmitted && this._targetsOwnPost(s)) this._checkCaught(s, pos);
+
+        if (s.mode === 'returning' && arrived) {
+            s.mode = 'idle';
+            // A coordinate home with a facing: stand turned that way (a seat takes it from here)
+            if (s.home?.facing && !s.home.objectId) {
+                const p = facingPointFrom(pos, s.home.facing, 64);
+                if (p) this.world.faceTo(id, p.x, p.y);
+            }
+            // Only a real trip emits; a session at one's own post object never left it
+            s.returnAbandon = null;
+            s.returnLate = 0;   // late walks are counted per return (R3 m1)
+            s.returnAbandons = 0;
+            if (!s.atPost) {
+                s.atPost = true;
+                this._log(id, 'returned_post');
+                this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
+                this._collectLeftItems(s);
+            }
+        }
+
+        // Walking home and not getting anywhere (stopped to face the player): carry on
+        if (s.mode === 'returning' && !s.atPost) this._watchReturn(s, pos);
+
+        if (s.mode === 'job' && s.job?.windupUntil) {
+            if (this.clockMs < s.job.windupUntil) return;
+            s.job.windupUntil = 0;
+            // Slice 18b-i: a magnet picked up, finished or emptied during the windup is a `gone`
+            // turn-back now, not a silent no_approach failure (and its fail cooldown) on leaving
+            if (s.job.magnet && (!this._shownMagnets()?.has(s.job.targetId) || this._servingsLeft(s.job.targetId) <= 0)) { this._turnBack(s, 'gone'); return; }
+            this._leavePost(s);
+            return;
+        }
+
+        // Slice 18b-ii: a knower back in its own room (or working at its own desk) passes the word on
+        if (s.knows.size && this._magnets.size && !s.call) this._tickNews(s, pos);
+
+        if (s.mode === 'job') {
+            if (!arrived && this._watchWalk(s, pos)) return;
+            this._advanceJob(s, arrived);
+            return;
+        }
+
+        // Slice 19 (OQ55): on a desk-phone call nothing is selected; decay goes on, and an urgent
+        // need, a due errand or a tempted magnet starts on the first select after the call
+        if (s.call) return;
+
+        // Idle at a coordinate home with a facing: back to that facing after a conversation or a turn
+        // to the player (the world skips a seated NPC, a pose hold and a player in turn-to range)
+        if (s.home?.facing && !s.home.objectId && (s.mode === 'idle' || (s.mode === 'returning' && s.atPost))
+            && Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS * 2) {
+            const p = facingPointFrom(pos, s.home.facing, 64);
+            if (p) this.world.restoreFacing?.(id, p.x, p.y);
+        }
+
+        // Access 9.2 A (plan 5.3): a queued visit starts before the selector runs
+        if (s.visits.length && this._startVisit(s)) return;
+
+        // idle or returning: an urgent need may start a job
+        if (this.selectBackoff && s.selectRetryAt && this.tickCount < s.selectRetryAt) return;
+        // The world path grid is built a moment after the needs NPCs register on a load (a reload
+        // above all): until then every source reads as unreachable and an urgent need would park
+        // `no_source` for the full defer (CA0 wave 2 gate D). Wait instead; a world without
+        // pathReady (the node stub) is always ready.
+        if (typeof this.world.pathReady === 'function' && !this.world.pathReady()) {
+            // Once per NPC, so a grid that never builds still shows in the log (review R1 m4)
+            if (!s.pathWaitLogged) { s.pathWaitLogged = true; this._log(s.npcId, 'path_wait'); }
+            return;
+        }
+        this._selectSearched = false;
+        const pick = this._select(s, pos);
+        if (pick) {
+            s.selectRetryAt = 0;
+            s.returnAbandon = null;   // a job moves it on; its walk home is a fresh return
+            s.returnLate = 0;
+            s.returnAbandons = 0;
+            s.returnStuckUntil = 0;   // and a back-off it was standing through ends (code review R1, m7)
+            s.returnBackoffs = 0;
+            this._startJob(s, pick);
+        } else if (s.returnAbandon && s.mode === 'idle' && !s.atPost
+            && (s.returnAbandon.replan || (this.clockMs - s.returnAbandon.at >= RETURN_FINAL_REPLAN_MS
+                && (s.returnAbandon.player || (s.returnLate || 0) < RETURN_FINAL_REPLANS)))) {
+            this._replanAbandoned(s);
+        } else if (this.selectBackoff && this._selectSearched) {
+            // A free target it could not reach, or an item with nowhere to take it: searching
+            // again next tick would find the same. Waiting on a claimed target searches nothing
+            // and keeps the 250 ms check.
+            s.selectRetryAt = this.tickCount + SELECT_BACKOFF_TICKS;
+            this.stats.backoffs++;
+        }
+    }
+
+    _decay(s) {
+        for (const name of Object.keys(s.needs)) {
+            const n = s.needs[name];
+            // Parked (slice 14): level held, decay paused, until the timer runs out
+            if (s.parked[name]) {
+                const p = s.parked[name];
+                if (this.clockMs < p.until) {
+                    // An avoid park ends when the avoided NPC has gone, not only on its timer (the
+                    // timer stays the ceiling). Checked about once a needs-clock second, not per tick.
+                    if (p.reason === 'avoid' && p.targetId && this.clockMs >= (p.recheckAt || 0)) {
+                        p.recheckAt = this.clockMs + AVOID_RECHECK_MS;
+                        const obj = this.world.getObject(p.targetId);
+                        if (obj && !this._avoidedAt(s, obj)) this._unpark(s, name, 'avoid_cleared');
+                    }
+                    continue;
+                }
+                this._unpark(s, name);
+                continue;
+            }
+            if (s.job && s.job.need === name && s.job.phase === 'using') continue;
+            const before = s.levels[name];
+            s.levels[name] = clamp(before - n.decayPerMin * NEEDS_TICK_MS / 60000, 0, 100);
+            const urgent = s.levels[name] <= n.urgentAt;
+            if (urgent && !s.urgentFlag[name]) {
+                s.urgentFlag[name] = true;
+                s.selectRetryAt = 0;   // a newly urgent need is worth a look now
+                this._log(s.npcId, 'urgent', { need: name, level: round2(s.levels[name]) });
+                this._emit(`npc_need_urgent:${s.npcId}`, { npcId: s.npcId, need: name, level: round2(s.levels[name]) });
+            } else if (!urgent) {
+                s.urgentFlag[name] = false;
+                s.leashNoted[name] = false;
+                s.privateNoted[name] = false;
+                s.mindChanged[name] = false;
+            }
+        }
+    }
+
+    _starved(s, name) {
+        const n = s.needs[name];
+        return !s.parked[name] && !!n.maxUnmetMin &&(this.clockMs - s.lastSatisfiedAt[name]) >= n.maxUnmetMin * 60000;
+    }
+
+    _claims(objectId, exceptNpc) {
+        let c = 0;
+        for (const o of this.states.values()) {
+            if (o.npcId === exceptNpc || !o.job || o.job.phase === 'queued' || o.job.kind === 'visit') continue;
+            if (o.job.targetId === objectId) c++;
+        }
+        return c;
+    }
+
+    _itemClaimed(itemId, exceptNpc) {
+        for (const o of this.states.values()) {
+            if (o.npcId !== exceptNpc && o.job && o.job.itemId === itemId) return true;
+        }
+        return false;
+    }
+
+    _free(s, obj) {
+        const cap = Math.max(1, Number(obj.affordance?.capacity) || 1);
+        const claims = this._claims(obj.id, s.npcId);
+        if (claims >= cap) return false;
+        // Social compatibility (7.3): a shared object claimed by someone this NPC avoids, or who
+        // avoids it, counts as full; the NPC waits rather than standing silently beside them
+        if (cap >= 2 && claims > 0 && this._anyCompany) {
+            for (const id of [...this.states.keys()].sort()) {
+                const o = this.states.get(id);
+                if (o === s || o.job?.targetId !== obj.id) continue;
+                if (this._avoids(s, o)) { this._noteAvoided(s, o, obj); return false; }
+            }
+        }
+        // A queue is waiting (slice 10): only its front may take the place that came free
+        if (obj.affordance?.queue) {
+            const q = this._queuers(obj.id);
+            if (q.length && q[0] !== s) return false;
+        }
+        const cd = s.cooldowns[obj.id];
+        return !(cd && cd > this.clockMs);
+    }
+
+    _nearest(list, pos) {
+        let best = null, bestD = Infinity;
+        for (const o of list) {
+            const d = Math.hypot(o.x - pos.x, o.y - pos.y);
+            if (d < bestD || (d === bestD && best && o.id < best.id)) { best = o; bestD = d; }
+        }
+        return best;
+    }
+
+    /**
+     * Nearest candidate (straight-line, ties by id) that the NPC can actually walk
+     * to. Candidates are tried nearest first so findWorldPath runs only until the
+     * first hit. A world without `reachable` (the node stub) treats all as reachable.
+     */
+    _nearestReachable(s, list, pos) {
+        const sorted = [...list].sort((a, b) => {
+            const da = Math.hypot(a.x - pos.x, a.y - pos.y), db = Math.hypot(b.x - pos.x, b.y - pos.y);
+            return da - db || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+        });
+        for (const o of sorted) {
+            if (this._reachable(s, o)) return o;
+        }
+        return null;
+    }
+
+    _anyUrgent(s) {
+        for (const name of Object.keys(s.needs)) {
+            if (s.levels[name] <= s.needs[name].urgentAt || this._starved(s, name)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * `exclude` (slice 14): { need, targetId } just turned back from; that object is left out of
+     * this one selection for that need (the fallback chain). A need with no acceptable source is
+     * parked here (_useCandidate sets `s.giveUp`).
+     */
+    _select(s, pos, exclude = null) {
+        // Nothing urgent or starved and no interests: nothing to choose, so no object scan
+        // ... and no due print errand (slice 17: Tom has no interests, so without this he never fetches)
+        // ... and no known magnet in a need's tempt band (slice 18b-i)
+        if (this.tickCache && !Object.keys(s.interests).length && !this._anyUrgent(s) && !this._dueErrand(s) && !this._tempting(s)) return null;
+        this.stats.selects++;
+        const objects = this._objects();
+        let best = null;
+        for (const name of Object.keys(s.needs)) {
+            const n = s.needs[name];
+            const starved = this._starved(s, name);
+            const level = s.levels[name];
+            // Slice 18b-i: a need inside a known magnet's tempt band (urgentAt < level <= urgentAt +
+            // tempt, capped at 95, not starved, not parked) is "tempted": known magnets only, scored
+            // against the raised threshold, and a quiet look (no leash or private notes, no parking)
+            let thr = n.urgentAt, tempted = false;
+            if (!(level <= n.urgentAt) && !starved) {
+                const band = this._temptBand(s, name);
+                if (!(band > 0 && level <= Math.min(95, n.urgentAt + band))) continue;
+                thr = Math.min(95, n.urgentAt + band);
+                tempted = true;
+            }
+            const score = starved ? 1000 + n.weight : n.weight * (thr - level) / thr;
+            if (best && !(score > best.score)) continue;
+            s.giveUp = null;
+            const excludeId = exclude?.need === name ? exclude.targetId : null;
+            let cand = null;
+            // A known magnet first (an urgent need prefers it, OQ36), then the usual sources
+            const mags = this._magnets.size ? this._magnetsFor(s, name) : null;
+            if (mags?.length) cand = this._useCandidate(s, name, mags, pos, excludeId, true);
+            s.giveUp = null;
+            if (tempted) {
+                if (!cand) { this._selectSearched = true; continue; }   // the quiet look's back-off
+            } else if (!cand) {
+                // Access 9.2 C (plan 8.1): social_media has its own candidate order, the phone last but one
+                cand = name === 'social_media' && this._judged(s, name)
+                    ? this._socialCandidate(s, objects, pos, excludeId) : this._useCandidate(s, name, objects, pos, excludeId);
+            }
+            if (cand) best = { ...cand, need: name, score, ...(tempted ? { tempted: true } : {}) };
+            else if (s.giveUp && !exclude?.noPark) {
+                // Access 9.2 A (plan 5.2): a judged need whose own station is off parks `off`,
+                // counted, with its line (unless a turn-back for this need already said one)
+                // Only the NPC's own station counts: a non-desk source with an offWhen (a kiosk)
+                // parks as office life always did, since the server refuses an off cause there (R1 m5).
+                // The station is the record's needsHome, never s.home, which is provisional for a
+                // start-room NPC (plan 5.2; review R2 m3)
+                const counted = s.giveUp.reason === 'off' && this._judged(s, name)
+                    && !!this._stationId(s) && s.giveUp.targetId === this._stationId(s);
+                const why = s.giveUp;
+                if (counted) {
+                    why.missing = [{ id: why.targetId, why: 'off' }];
+                    why.grumble = exclude?.need === name ? undefined : this._failTopic(s, name, why.missing);
+                }
+                this._park(s, name, why);
+                if (counted) {
+                    if (why.grumble) this._grumble(s, why.targetId, 'off', why.grumble, { ignoreCooldown: true, icons: this._failIcons(why.grumble) });
+                    this._countFailure(s, name, why.missing, why.targetId);
+                }
+            }
+            s.giveUp = null;
+        }
+        // Interests: a reachable item with the tag is the stimulus. No item, no
+        // option (the NPC holds still); an item scores the flat interest weight.
+        for (const tag of Object.keys(s.interests)) {
+            const it = s.interests[tag];
+            if (best && !(it.weight > best.score)) continue;
+            const cand = this._carryCandidate(s, tag, it, objects, pos);
+            if (cand) best = { ...cand, need: null, score: it.weight };
+        }
+        // A due print errand (slice 17): scored like an interest, habits.print.weight (default 2)
+        if (this._prints.size) {
+            const e = this._errandCandidate(s);
+            if (e && (!best || e.score > best.score)) best = e;
+        }
+        return best;
+    }
+
+    _useCandidate(s, name, objects, pos, excludeId = null, quiet = false) {
+        // Access 9.2 H (plan 6.4): a borrowed PC is this need's candidate ahead of the home object.
+        // One in use, unreachable, off, hidden or not loaded is waited for: no other source, no park
+        if (!quiet && s.borrow && s.borrow.need === name) return this._borrowCandidate(s, excludeId);
+        // A switched-off source (object-level offWhen, slice 18a) is no candidate at all; nor (18b-i) a
+        // hidden object (revealOnGlobal not true), nor a magnet this NPC does not know of or that is
+        // gone or empty. quiet: a magnet look that found nothing notes nothing and parks nothing.
+        const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId && !this._isOff(o)
+            && !this._hidden(o) && !this._magnetBarred(s, o) && !this._otherDesk(s, name, o));
+        const free = sat.filter(o => this._free(s, o));
+        // Room leash and private objects, before the home preference (OFFICE_LIFE_PLAN 7.2)
+        let opts = free.filter(o => this._permitted(s, o, true));
+        // Unacceptable targets (slice 14): someone avoided at, queued for or near the object; a
+        // story need (deferrable: false) takes no notice and goes anyway (the bubble shows it)
+        const deferrable = this._deferrable(s, name);
+        const avoidOf = new Map();
+        const avoidedAt = (o) => {
+            if (!avoidOf.has(o.id)) avoidOf.set(o.id, this._avoidedAt(s, o));
+            return avoidOf.get(o.id);
+        };
+        const social = this._avoidRadius(s) > 0;
+        const ctx = { exclude: excludeId, avoidedAt: deferrable && social ? avoidedAt : null, balked: deferrable ? new Set() : null };
+        const allOpts = opts;
+        if (ctx.avoidedAt) opts = opts.filter(o => !avoidedAt(o));
+        // Only a room rule makes a choice "leashed"; another owner's private object is expected
+        // to be passed over (colleagues' desks), so it is logged as private_skipped instead
+        let skipped = null, priv = null;
+        if (free.length > allOpts.length) {
+            for (const o of free) {
+                if (allOpts.includes(o)) continue;
+                if (this._roomForbidden(s, o.roomId)) (skipped || (skipped = [])).push(o.id);
+                else (priv || (priv = [])).push(o.id);
+            }
+        }
+        const nothing = () => {
+            if (quiet) return null;
+            if (skipped) this._noteLeash(s, name, { need: name, skipped });
+            if (priv) this._notePrivate(s, name, { need: name, skipped: priv });
+            s.giveUp = this._giveUpReason(s, sat, pos, ctx, name);
+            return null;
+        };
+        const withAnyway = (pick) => {
+            // A story need heading for someone it avoids: the face bubble on the way
+            if (!deferrable && social) { const who = avoidedAt(this.world.getObject(pick.targetId) || { id: pick.targetId }); if (who) pick.goingAnyway = who; }
+            return pick;
+        };
+        const queued = () => {
+            const q = this._queueCandidate(s, name, objects, pos, ctx);
+            if (!q) return nothing();
+            if (skipped) q.leashed = skipped;
+            if (priv) q.privateSkipped = priv;
+            return withAnyway(q);
+        };
+        if (!opts.length) return queued();
+        // Prefer the NPC's own post object (needsHome) when it satisfies this need
+        // and is reachable, so a person works at their own desk rather than the
+        // nearest free one. Only bites when the home object is among the options
+        // (e.g. the work need at an own-desk PC); other needs fall back to nearest.
+        const homeObj = s.home?.objectId ? opts.find(o => o.id === s.home.objectId) : null;
+        const target = (homeObj && this._reachable(s, homeObj))
+            ? homeObj : this._nearestReachable(s, opts, pos);
+        if (!target) return queued();
+        const pick = { kind: 'use', targetId: target.id };
+        if (target.offWhen !== undefined) pick.offWhen = target.offWhen;
+        if (skipped && !quiet) pick.leashed = skipped;
+        if (priv && !quiet) pick.privateSkipped = priv;
+        return withAnyway(pick);
+    }
+
+    /** The borrowed PC as a use pick when it can be sat at now, else null (waited for, 6.4). */
+    _borrowCandidate(s, excludeId) {
+        const b = s.borrow;
+        if (b.pcId === excludeId) return null;
+        const o = this.world.getObject(b.pcId);
+        if (!o || this._isOff(o) || this._hidden(o) || !this._free(s, o) || !this._reachable(s, o)) return null;
+        const pick = { kind: 'use', targetId: o.id, borrowed: true };
+        if (o.offWhen !== undefined) pick.offWhen = o.offWhen;
+        return pick;
+    }
+
+    /**
+     * Access 9.2 H (plan 6.4): the runner hands a borrow_session over. The borrowed PC becomes the
+     * failing need's first candidate and the need is unparked, so the NPC gets up at once. A run
+     * already set (same index and hand) is a copy and changes nothing.
+     */
+    setBorrow(npcId, run) {
+        const s = this.states.get(npcId);
+        if (!s || !run || typeof run.pc !== 'string' || !run.pc) return false;
+        if (!Number.isInteger(run.index) || !Number.isInteger(run.hand)) return false;
+        if (s.borrow && s.borrow.index === run.index && s.borrow.hand === run.hand) return true;
+        // Review R1 m2: a borrow already being used is not replaced (the new one is refused, so
+        // the runner gives it back as dropped); one not started yet is reported dropped first,
+        // so its hand-over is freed instead of waiting for an event that never comes
+        if (s.borrow && s.job && s.job.borrow === s.borrow) return false;
+        const need = typeof run.need === 'string' && s.needs[run.need] ? run.need : 'work';
+        if (!s.needs[need]) return false;
+        if (s.borrow) this._dropBorrow(s, 'replaced');
+        const routes = run.routes && typeof run.routes === 'object' && !Array.isArray(run.routes) ? run.routes : null;
+        s.borrow = { index: run.index, hand: run.hand, pcId: run.pc, need, routes, leavesOpen: run.leavesOpen !== false,
+            startBy: this.clockMs + BORROW_START_MS, started: false };
+        this._log(npcId, 'borrow_set', { need, target: run.pc });
+        if (s.parked[need]) this._unpark(s, need, 'borrow');
+        else if (s.levels[need] > s.needs[need].urgentAt) s.levels[need] = s.needs[need].urgentAt;
+        s.selectRetryAt = 0;
+        return true;
+    }
+
+    /**
+     * Access 9.2 H (6.5): whether the player hears this NPC now: in the same room, within the chat
+     * overhear radius, with a clear line (the world's playerHears, as chatter uses it).
+     */
+    playerHears(npcId, radius = OVERHEAR_RADIUS) {
+        if (typeof this.world.playerHears !== 'function') return false;
+        return !!(this.world.playerHears(npcId, radius) || {}).overheard;
+    }
+
+    /**
+     * User decision q42: a running visit's dwell ends `ms` from now (0 ends it at the next tick).
+     * The runner holds a share beside its colleague while its line waits for the speech lock,
+     * then gives it the share's dwell from the moment the line is said. False when the NPC is not
+     * standing out a visit.
+     */
+    holdVisit(npcId, ms) {
+        const job = this.states.get(npcId)?.job;
+        if (!job || job.kind !== 'visit' || job.phase !== 'using') return false;
+        const v = Number(ms);
+        const left = Number.isFinite(v) ? clamp(v, 0, 600000) : 0;
+        job.useUntil = this.clockMs + left;
+        // Review R1 n1: a frozen visit (a conversation) takes its end from useRemaining when it unfreezes
+        if (this.states.get(npcId)?.mode === 'frozen') job.useRemaining = left;
+        return true;
+    }
+
+    /** A borrow that has not started by its startBy is dropped and reported (6.4). */
+    _tickBorrow(s) {
+        const b = s.borrow;
+        if (!b || this.clockMs < b.startBy || (s.job && s.job.borrow === b)) return;
+        this._dropBorrow(s);
+    }
+
+    _dropBorrow(s, reason = null) {
+        const b = s.borrow;
+        if (!b) return;
+        s.borrow = null;
+        this._log(s.npcId, 'borrow_dropped', reason ? { target: b.pcId, reason } : { target: b.pcId });
+        this._emit(`npc_borrow_dropped:${s.npcId}`, { npcId: s.npcId, index: b.index, hand: b.hand, pcId: b.pcId });
+    }
+
+    /**
+     * Access 9.2 H (plan 6.4): the NPC using an object now (the workstation's `userOf`): a job in
+     * its `using` phase at that object that is not a visit. Null when nobody is.
+     */
+    userOf(objectId) {
+        for (const id of [...this.states.keys()].sort()) {
+            const j = this.states.get(id).job;
+            if (j && j.kind !== 'visit' && j.phase === 'using' && j.targetId === objectId) return id;
+        }
+        return null;
+    }
+
+    // ── avoidance at a distance, balking, parked needs (slice 14: OFFICE_LIFE_PLAN 10) ──
+
+    _rec(s) {
+        return this.world.getNpc(s.npcId) || {};
+    }
+
+    /** needsCompany.avoidRadius in tiles; default 2 only when the NPC declares avoids, else 0 (slice 8 only). */
+    _avoidRadius(s) {
+        const c = this._company(s);
+        if (!c) return 0;
+        if (c.avoidRadius !== undefined && c.avoidRadius !== null && Number.isFinite(Number(c.avoidRadius))) return clamp(Number(c.avoidRadius), 0, 10);
+        return Array.isArray(c.avoids) && c.avoids.length ? AVOID_RADIUS_TILES : 0;
+    }
+
+    /** maxQueue: refuse to join a line with this many or more already in it; null = no limit. */
+    _maxQueue(s) {
+        const v = this._rec(s).maxQueue;
+        if (v === undefined || v === null || !Number.isFinite(Number(v))) return null;
+        return Math.max(0, Math.floor(Number(v)));
+    }
+
+    _deferMs(s) {
+        const v = Number(this._rec(s).needsDeferMin);
+        return (Number.isFinite(v) && v > 0 ? clamp(v, 0.1, 120) : NEEDS_DEFER_MIN) * 60000;
+    }
+
+    /** Read from the NPC's record each time, so a live check can flip it. Default true. */
+    _deferrable(s, need) {
+        return this._rec(s).needs?.[need]?.deferrable !== false;
+    }
+
+    /**
+     * The first NPC (id order) that this one avoids, or that avoids it, and that is using `obj`,
+     * holds a place in its queue, or stands (same room, not hidden) within this NPC's avoidRadius
+     * of its approach cell; null if none, or with radius 0. Any NPC counts, needs or not. The
+     * NPC's own post object (needsHome) is exempt: nobody abandons their own desk for a passer-by.
+     */
+    _avoidedAt(s, obj) {
+        const r = this._avoidRadius(s);
+        if (r <= 0 || !obj) return null;
+        if (s.home?.objectId && s.home.objectId === obj.id) return null;
+        let cell = null, cellDone = false;
+        for (const id of [...this.world.npcIds()].sort()) {
+            if (id === s.npcId) continue;
+            const o = this.states.get(id) || { npcId: id };
+            if (!this._avoids(s, o)) continue;
+            const j = o.job;
+            if (j && j.targetId === obj.id && (j.phase === 'using' || j.phase === 'queued')) return id;
+            const p = this.world.npcPos(id);
+            if (!p) continue;
+            if (p.roomId && obj.roomId && p.roomId !== obj.roomId) continue;
+            const st = this.world.npcStatus(id) || {};
+            if (st.hidden || st.ko) continue;
+            if (!cellDone) { cell = this.world.approachCell(obj); cellDone = true; }
+            if (cell && Math.hypot(p.x - cell.x, p.y - cell.y) <= r * 32 + 0.5) return id;
+        }
+        return null;
+    }
+
+    /** Would joining obj's queue break this NPC's maxQueue? */
+    _balks(s, obj) {
+        const m = this._maxQueue(s);
+        if (m === null) return false;
+        return this._queuers(obj.id).filter(o => o !== s).length >= m;
+    }
+
+    /**
+     * Why a need found nothing, or null to wait as before. A source that is only busy (claimed,
+     * cooling down) means wait; one an avoided NPC is at, or one whose queue is too long, means
+     * give up with that reason (the nearest such source's); none permitted means the leash rule
+     * (unchanged, no parking); nothing at all, or nothing reachable, means `no_source`.
+     */
+    _giveUpReason(s, sat, pos, ctx, need = null) {
+        // Access 9.2 A (plan 5.2): a judged need whose own station satisfies it and is off always
+        // parks `off`, before both null returns below
+        const dead = need ? this._deadStation(s, need) : null;
+        if (dead) return { reason: 'off', targetId: dead };
+        const permitted = sat.filter(o => this._permitted(s, o, true));
+        if (sat.length && !permitted.length) return null;
+        const sorted = [...permitted].sort((a, b) => {
+            const da = Math.hypot(a.x - pos.x, a.y - pos.y), db = Math.hypot(b.x - pos.x, b.y - pos.y);
+            return da - db || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+        });
+        let rejected = null, busy = false;
+        for (const o of sorted) {
+            const who = ctx.avoidedAt ? ctx.avoidedAt(o) : null;
+            if (who) { rejected = rejected || { reason: 'avoid', avoidedId: who, targetId: o.id }; continue; }
+            if (ctx.balked?.has(o.id)) { rejected = rejected || { reason: 'queue', targetId: o.id }; continue; }
+            if (!this._free(s, o)) busy = true;
+        }
+        if (busy) return null;
+        return rejected || { reason: 'no_source' };
+    }
+
+    /** Give up on a need for now: level held at urgentAt + 1, decay and the unmet clock paused. */
+    _park(s, name, why) {
+        const n = s.needs[name];
+        const until = this.clockMs + (Number.isFinite(why.untilMs) ? Math.max(0, why.untilMs) : this._deferMs(s));
+        s.parked[name] = { reason: why.reason, until, since: this.clockMs, avoidedId: why.avoidedId || null };
+        // Access 9.2 A (plan 5.2): a failure park keeps its station, the globals it wakes on and its causes
+        if (why.targetId && (FAILURE_PARKS.includes(why.reason) || why.reason === 'avoid')) s.parked[name].targetId = why.targetId;
+        if (why.wakeOn) s.parked[name].wakeOn = [...why.wakeOn];
+        if (why.missing) s.parked[name].missing = why.missing.map(c => ({ ...c }));
+        s.levels[name] = clamp(n.urgentAt + 1, 0, 100);
+        this._log(s.npcId, 'parked', { need: name, reason: why.reason, avoided: why.avoidedId || undefined, target: why.targetId || undefined, grumble: why.grumble || undefined });
+        this._emit(`npc_need_parked:${s.npcId}`, {
+            npcId: s.npcId, need: name, reason: why.reason, targetId: why.targetId || null,
+            ...(why.avoidedId ? { avoidedId: why.avoidedId } : {}), untilMs: until - this.clockMs,
+            ...(why.missing && why.reason === 'failed' ? { missing: why.missing.map(c => ({ ...c })) } : {}),
+            ...(why.wakeOn ? { wakeOn: [...why.wakeOn] } : {})
+        });
+    }
+
+    /** Timer up (or woken): urgent again at exactly urgentAt, retried on this tick's select. */
+    _unpark(s, name, why = null) {
+        const p = s.parked[name];
+        delete s.parked[name];
+        s.lastSatisfiedAt[name] += this.clockMs - p.since;
+        s.levels[name] = Number.isFinite(p.setLevel) ? p.setLevel : s.needs[name].urgentAt;   // access 9.2: R5 n4
+        s.selectRetryAt = 0;
+        this._log(s.npcId, 'unparked', { need: name, reason: why || (p.woken ? 'woken' : 'timer') });
+    }
+
+    /** A room loaded or a door opened: every parked need retries soon, one NPC after another. */
+    _wakeParked() {
+        let k = 0;
+        for (const id of [...this.states.keys()].sort()) {
+            const s = this.states.get(id);
+            // Access 9.2 A (plan 5.2): failure and held parks wake only by their own cause
+            const names = Object.keys(s.parked).sort().filter(n => !this._failurePark(s, n));
+            if (!names.length) continue;
+            const at = this.clockMs + WAKE_BASE_MS + k * WAKE_STEP_MS;
+            k++;
+            for (const name of names) {
+                const p = s.parked[name];
+                if (at < p.until) { p.until = at; p.woken = true; }
+            }
+        }
+    }
+
+    /** Slice 18b-ii (OQ35): learning of a magnet wakes this NPC's parked needs it satisfies, and no others. */
+    _wakeParkedFor(s, needs) {
+        const at = this.clockMs + WAKE_BASE_MS;
+        for (const name of needs) {
+            const p = s.parked[name];
+            if (p && this._failurePark(s, name)) continue;   // access 9.2: R5 n4
+            if (p && at < p.until) { p.until = at; p.woken = true; }
+        }
+    }
+
+    /**
+     * While walking to a target or queued for it: an avoided NPC arriving, joining or coming
+     * within the radius turns this one back, at most once per need episode (until the need is
+     * met). Acts on a change only. A story need, or a second time, goes on with the bubble.
+     */
+    _recheck(s) {
+        const job = s.job;
+        if (!job.need || job.kind !== 'use' || this._avoidRadius(s) <= 0) return false;
+        const obj = this.world.getObject(job.targetId);
+        const who = obj ? this._avoidedAt(s, obj) : null;
+        if ((who || '') === (job.avoidSig || '')) return false;
+        job.avoidSig = who || '';
+        job.goingAnyway = null;
+        if (!who) return false;
+        if (!this._deferrable(s, job.need) || s.mindChanged[job.need] || (job.tempted && s.temptBack[job.need])) { job.goingAnyway = who; return false; }
+        this._turnBack(s, 'avoid', who);
+        return true;
+    }
+
+    /** One turn-back for every reason; what each does is the TURN_BACK table (slice 18a). */
+    _turnBack(s, reason, avoidedId, fail = null) {
+        const id = s.npcId;
+        const rule = TURN_BACK[reason] || TURN_BACK.avoid;
+        const { need, targetId } = s.job;
+        const tempted = !!s.job.tempted;   // slice 18b-i: a tempted job never parks
+        if (rule.mindChanged && need) s.mindChanged[need] = true;
+        if (rule.mindChanged && need && tempted) s.temptBack[need] = true;   // _decay clears mindChanged above urgentAt
+        s.turnCount++;
+        // Access 9.2 A (plan 5.5): a judged need's failure line comes from its own pool order
+        const judged = need && (reason === 'failed' || reason === 'off') && this._judged(s, need);
+        const missing = fail?.missing || (reason === 'off' ? [{ id: targetId, why: 'off' }] : null);
+        const topic = rule.grumble ? (judged ? this._failTopic(s, need, missing) : this._grumbleTopic(s, reason)) : undefined;
+        this._log(id, 'turned_back', { need, target: targetId, reason, avoided: avoidedId || undefined, grumble: topic });
+        this._emit(`npc_turned_back:${id}`, { npcId: id, need, targetId, reason, ...(avoidedId ? { avoidedId } : {}),
+            ...(reason === 'failed' && missing ? { missing: missing.map(c => ({ ...c })) } : {}), ...this._playerProximity(id) });
+        // The grumble's speech bubble hides the thought bubble, so the face shows after the line
+        if (rule.grumble) {
+            if (judged) this._grumble(s, targetId, reason, topic, { ignoreCooldown: true, icons: this._failIcons(topic) });
+            else this._grumble(s, targetId, reason, topic);
+        }
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        if (avoidedId) s.avoidShow = { npcId: avoidedId, until: this.clockMs + said + AVOID_BUBBLE_MS };
+        this._abortJob(s, 'turned_back', { cancel: true });
+        // Access 9.2 A (plan 5.2): a reason that parks with no fallback parks the need itself
+        // A failed use parks even on a tempted job, or the NPC could retry at once (R1 m10)
+        if (rule.parks && !rule.fallback && need && (!tempted || reason === 'failed')) {
+            this._park(s, need, { reason, targetId, wakeOn: fail?.wakeOn || [], missing: missing || [], grumble: topic });
+            if (judged && !fail?.borrowed) this._countFailure(s, need, missing || [], targetId);
+        }
+        // Fallback chain: the next acceptable source for the same need, else the need parks
+        if (rule.fallback && need) {
+            const pos = this.world.npcPos(id);
+            const pick = pos ? this._select(s, pos, { need, targetId, noPark: !rule.parks || tempted }) : null;
+            if (pick) { this._startJob(s, pick); return; }
+        }
+        this._goHome(s);
+    }
+
+    /**
+     * One line from the `grumble` pool as a speech bubble (getState().talking), seeded by the
+     * turn-back count. Overheard like a chat line (npc_overheard); no npc_chatted (it is no chat).
+     */
+    _grumble(s, objectId, reason = 'avoid', chosen = null, opts = null) {
+        // Slice 18a: the topic is chosen before _pickBark, by lines: grumble_<reason> when that pool
+        // has lines, else grumble when it has (the lab's spoken grumbles), else grumble_<reason>'s
+        // picture. _pickBark gives a picture, never null, for a topic with no lines, so it cannot be
+        // tried and fallen back from. An off or gone picture is the need's own icon.
+        const topic = chosen || this._grumbleTopic(s, reason);
+        const need = s.job?.need;
+        // Access 9.2: a caller's options ({ ignoreCooldown, icons }) win; icons: null is the topic's own picture
+        const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
+        // SIMS-5 design R3 m1 (E7 for grumbles, as chatter and announces): with the player out of
+        // earshot the grumble still shows, as a picture; no line is taken from the bag, so none is
+        // voiced unheard. Mutters follow the same rule (a workaround's start line is as ambient as
+        // a grumble); only a line the player is meant to overhear (always: true, the priority
+        // mutters such as login_aloud, whose listening window opens when it is said) keeps its line.
+        let unheard = !opts?.always && this._unheard(s, topic);
+        // R1 m6 (D34 (a), "ambient chatter and grumbles"): an unheard grumble or mutter within the
+        // falloff range is a faint line too, on the faint throttle; it never counts as heard
+        let faint = false;
+        if (unheard && typeof this.world.faintVolume === 'function') {
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).overhearRadius || OVERHEAR_RADIUS;
+            try { faint = this.world.faintVolume(s.npcId, radius) > 0; } catch (e) { faint = false; }
+            if (faint) unheard = false;
+        }
+        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown, unheard, faint });
+        if (!pick) return;
+        this._showSaying(s, pick, topic, objectId, opts?.minMs, !!opts?.always);
+    }
+
+    /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
+    _unheard(s, topic) {
+        if (typeof this.world.playerHears !== 'function') return false;
+        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).overhearRadius || OVERHEAR_RADIUS;
+        return !(this.world.playerHears(s.npcId, radius) || {}).overheard;
+    }
+
+    /**
+     * Access slice 9.2 (user decision q21): the workaround icon with no job (getState().workaround)
+     * for WORKAROUND_SHOW_MS after any line showing now. The runner calls it for an `emit`, which
+     * has no visit; a workaround visit calls it when done, since the start line (shown from the
+     * hand-over) can hide the action icon for a short visit's whole length. False for an NPC the
+     * system does not run. Review R2 m2: an emit landing while the NPC has a job shows nothing,
+     * since the job shows its own icon and a new job clears this one; it is not saved for later.
+     */
+    showWorkaround(npcId) {
+        const s = this.states.get(npcId);
+        if (!s) return false;
+        if (s.job) { this._log(npcId, 'workaround_skipped', { job: s.job.kind }); return true; }
+        this._showWorkaround(s);
+        return true;
+    }
+
+    /** The workaround icon for WORKAROUND_SHOW_MS after any line (also as a visit or borrow ends). */
+    _showWorkaround(s) {
+        const npcId = s.npcId;
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.workaroundShow = { until: this.clockMs + said + WORKAROUND_SHOW_MS };
+        this._log(npcId, 'workaround_shown');
+    }
+
+    /**
+     * Access slice 9.2 (plan 5.5): one line from `topic` (a mutter) over one NPC, through the grumble
+     * path with the chatter cooldown ignored; the topic's own picture with no line. False for an
+     * NPC the system does not run.
+     */
+    mutter(npcId, topic) {
+        const s = this.states.get(npcId);
+        if (!s || typeof topic !== 'string' || !topic) return false;
+        this._log(npcId, 'mutter', { topic });
+        // A workaround's hand-over comes in the answer to the failure that brought it, while that
+        // failure's own grumble still holds the speech lock: a topic with lines waits for the lock
+        // (up to MUTTER_WAIT_MS, then its picture), so the start line is said after the fail line
+        // instead of being swapped for a picture (slice 9.2 B run, game 1197)
+        // Several can wait at once (two hand-overs at one failure, or several NPCs' at one outage):
+        // a queue, said one per free lock in the order they came
+        // Review 9.2 B R2 m1: an NPC in conversation with the player, not placed or not available
+        // says nothing now (nor is voiced over the conversation): the mutter waits, held, under
+        // the same rule as one waiting for the lock
+        // A priority topic (PRIORITY_MUTTERS) waits only for the lock and for other priority
+        // lines, and is queued ahead of every other mutter
+        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).lines.length > 0;
+        const priority = PRIORITY_MUTTERS.has(topic);
+        const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
+        // R1 M3: a mutter the player hears in full takes the lock from a faint ambient line (the
+        // order keeps `ahead` first, so the preempt only fires when the mutter is said now)
+        const full = priority || !this._unheard(s, topic);
+        if (this._mutterHeld(npcId) || (lines && (ahead || !this._speechFreeFor(!full)))) {
+            const wait = { npcId, topic, since: this.clockMs, lines };
+            if (priority) {
+                wait.priority = true;
+                const at = this._mutterWaits.findIndex(w => !w.priority);
+                if (at < 0) this._mutterWaits.push(wait); else this._mutterWaits.splice(at, 0, wait);
+            } else {
+                this._mutterWaits.push(wait);
+            }
+            return true;
+        }
+        this._sayMutter(s, topic);
+        return true;
+    }
+
+    /** A mutter for this NPC must wait: it is in conversation with the player, not placed, or unavailable (hidden, KO). */
+    _mutterHeld(npcId) {
+        return !this.world.npcPos(npcId) || !this.isAvailable(npcId) || !!this.world.inChatWith?.(npcId);
+    }
+
+    /**
+     * Waiting mutters, once a tick, oldest first. Each is said in words when the speech lock is
+     * free (which it then takes, so the next waits again); one that waited MUTTER_WAIT_MS gets
+     * its picture. A mutter is never said late: one whose NPC is in conversation with the
+     * player, not on screen or not available (hidden, KO) is held, and dropped once it has
+     * waited MUTTER_WAIT_MS.
+     */
+    _tickMutterWaits() {
+        const keep = [];
+        for (const w of this._mutterWaits) {
+            const s = this.states.get(w.npcId);
+            if (!s) continue;
+            const late = this.clockMs - w.since >= MUTTER_WAIT_MS;
+            if (this._mutterHeld(w.npcId)) {
+                if (late) this._log(w.npcId, 'mutter_dropped', { topic: w.topic });
+                else keep.push(w);
+                continue;
+            }
+            const full = PRIORITY_MUTTERS.has(w.topic) || !this._unheard(s, w.topic);
+            if (late || w.lines === false || this._speechFreeFor(!full)) this._sayMutter(s, w.topic);
+            else keep.push(w);
+        }
+        this._mutterWaits = keep;
+    }
+
+    /** Review R1 n3: drop an NPC's waiting mutter of `topic` (a share whose visit was dropped). How many went. */
+    cancelMutter(npcId, topic) {
+        const before = this._mutterWaits.length;
+        this._mutterWaits = this._mutterWaits.filter(w => !(w.npcId === npcId && w.topic === topic));
+        const n = before - this._mutterWaits.length;
+        if (n) this._log(npcId, 'mutter_cancelled', { topic });
+        return n;
+    }
+
+    /** Mutters waiting for the speech lock (a test and debug read). */
+    mutterWaits() {
+        return this._mutterWaits.map(w => ({ ...w }));
+    }
+
+    _sayMutter(s, topic) {
+        const npcId = s.npcId;
+        const before = s.saying;
+        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS, always: PRIORITY_MUTTERS.has(topic) });
+        // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
+        // a failure mutter or a workaround's start line (npc_overheard fires only within earshot)
+        const said = s.saying !== before ? s.saying : null;
+        if (said) {
+            this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: said.line || null, picture: said.picture || null });
+        } else if (!this._thoughtsOn()) {
+            // Picture chat is off (npcThoughts false): a mutter with no line shows nothing, but say so, so a
+            // share_login visit waiting on its login_aloud line ends at once as it did with a picture
+            this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: null, picture: null });
+        }
+    }
+
+    /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
+    _showSaying(s, pick, topic, objectId, minMs = 0, secret = false) {
+        const { line, idx, picture, pool } = pick;
+        const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
+        const radius = pool.overhearRadius || OVERHEAR_RADIUS;
+        s.saying = { line, picture, topic, objectId, until, radius, faint: !!pick.faint };
+        const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
+        // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
+        // long as the words, so the next line on the floor can start when this one ends
+        if (line) this._speak(s.npcId, line, this.clockMs + bubbleMs(line), { topic, objectId, overheard: !!h.overheard, faint: !!pick.faint, secret, radius });
+        if (h.overheard) {
+            this._emit(`npc_overheard:${s.npcId}`, {
+                speakerId: s.npcId, partnerId: null, topic, lineId: picture ? `picture:${picture}` : `${topic}:${idx}`, line, picture, objectId,
+                overheard: true, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+            });
+        }
+    }
+
+    /** The grumble topic for a turn-back reason (slice 18a): chosen by which pools have lines. */
+    _grumbleTopic(s, reason) {
+        const own = `grumble_${reason}`;
+        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).lines.length > 0;
+        if (reason !== 'avoid' && lines(own)) return own;
+        if (lines('grumble')) return 'grumble';
+        return PICTURE_CHATTER[own] ? own : 'grumble';
+    }
+
+    // ── access slice 9.2 A: judged uses, failures, frustration (ACCESS_MODEL_SLICE_9_2_PLAN 5) ──
+
+    /** The server's work plan on the NPC record (`work`), or null. */
+    _plan(s) {
+        const w = this._rec(s).work;
+        return w && typeof w === 'object' && Array.isArray(w.needs) ? w : null;
+    }
+
+    /** Judged (5.2): work by an NPC with a work plan, or social_media. */
+    _judged(s, need) {
+        if (!s.needs[need]) return false;
+        if (need === 'work') return !!this._plan(s)?.needs.length;
+        return need === 'social_media';
+    }
+
+    _stationId(s) {
+        const h = this._rec(s).needsHome;
+        return typeof h === 'string' && h ? h : null;
+    }
+
+    /** A desk that is not this NPC's own station (nor a PC it borrowed for the need): no source for a judged need. */
+    _otherDesk(s, need, o) {
+        if (!o?.desk || !this._judged(s, need)) return false;
+        if (o.id === this._stationId(s)) return false;
+        return !(s.borrow && s.borrow.pcId === o.id && s.borrow.need === need);
+    }
+
+    /** The own station's id when it satisfies the judged need and is off; else null (5.2). */
+    _deadStation(s, need) {
+        if (!this._judged(s, need)) return null;
+        if (need === 'social_media' && this._rec(s).phone !== false) return null;
+        const id = this._stationId(s);
+        const obj = id ? this.world.getObject(id) : null;
+        const source = need === 'social_media' ? !!obj?.desk : asList(obj?.affordance?.satisfies).includes(need);
+        if (!obj?.affordance || !source) return null;
+        return this._isOff(obj) ? id : null;
+    }
+
+    /**
+     * Access 9.2 C (plan 8.1): the candidates for social_media, in order. 1, a PC borrowed for it;
+     * 2, the own workstation when its policy allows social media (and it is not off); 3, any
+     * non-desk object that satisfies the need, nearest reachable; 4, the phone, unless
+     * `"phone": false`; 5, the own workstation under a policy that blocks it, an attempt that
+     * fails. The own workstation is a source whatever its affordance says (a use there takes
+     * socialUse's time and restores), as AccessWork.social_station? says on the server.
+     * User decision q33: a station the NPC is flagged locked out at (sub-slice L) is unusable for
+     * social media as for work, so it is passed over like a blocked one (to the next source and
+     * the phone) and, with no phone, is the attempt that fails. A lockout at a borrowed PC (user
+     * decision q36) is learnt by the check sent when the borrower sits down there, and the
+     * borrowed use then fails (see the use verdict).
+     */
+    _socialCandidate(s, objects, pos, excludeId) {
+        if (s.borrow && s.borrow.need === 'social_media') {
+            return this._useCandidate(s, 'social_media', objects, pos, excludeId);
+        }
+        const stId = this._stationId(s);
+        let station = null;
+        const others = [];
+        for (const o of objects) {
+            if (o.id === stId && o.desk) {
+                const aff = o.affordance && typeof o.affordance === 'object' ? o.affordance : {};
+                station = { ...o, affordance: { ...aff, satisfies: [...new Set([...asList(aff.satisfies), 'social_media'])] } };
+            } else others.push(o);
+        }
+        const blocked = !!station?.socialBlocked || (!!station && s.lockedOut.has(stId));
+        let cand = this._useCandidate(s, 'social_media', station && !blocked ? [station, ...others] : others, pos, excludeId);
+        if (cand) return cand;
+        if (this._rec(s).phone !== false) {
+            // The phone: never parks for want of a source, and a dead PC counts nothing (8.1)
+            s.giveUp = null;
+            return { kind: 'self', targetId: null };
+        }
+        if (station && blocked) cand = this._useCandidate(s, 'social_media', [station], pos, excludeId);
+        return cand;
+    }
+
+    /** socialUse (plan 8.1): a social media use at the own PC or on the phone; defaults 20 s and 60. */
+    _socialUseSeconds(s) {
+        const v = Number(this._rec(s).socialUse?.useSeconds);
+        return Number.isFinite(v) ? clamp(v, 0, 600) : 20;
+    }
+
+    _socialRestores(s) {
+        const v = Number(this._rec(s).socialUse?.restores);
+        return Number.isFinite(v) ? clamp(v, 0, 100) : 60;
+    }
+
+    _failurePark(s, name) {
+        const p = s.parked[name];
+        return !!p && FAILURE_PARKS.includes(p.reason) && this._judged(s, name);
+    }
+
+    _hasLines(s, topic) {
+        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).lines.length > 0;
+    }
+
+    /**
+     * The pool a judged failure speaks from (5.5), chosen from the tell held now: fed up at tell 2,
+     * else the cause's own pool, else work_fail; with no line anywhere, the cause's own pool (its picture).
+     */
+    _failTopic(s, need, missing) {
+        const first = (missing || [])[0] || null;
+        let own = 'work_fail';
+        if (first) {
+            if (first.why === 'off' || first.why === 'locked_out') own = 'station_fail';
+            else if (first.why === 'social_blocked') own = 'social_blocked';
+            else if (first.why === 'usb_refused') own = 'usb_refused';
+            else if (first.why === 'no_access') own = 'work_fail_no_access';
+            else {
+                const kind = this._plan(s)?.needs.find(r => r.id === first.id)?.kind;
+                own = typeof kind === 'string' && kind ? `work_fail_${kind}` : 'work_fail';
+            }
+        }
+        if (s.tell >= 2 && this._hasLines(s, 'work_fail_fed_up')) return 'work_fail_fed_up';
+        if (this._hasLines(s, own)) return own;
+        if (this._hasLines(s, 'work_fail')) return 'work_fail';
+        return own;
+    }
+
+    /** A failure's picture is its pool's own; a work_fail_<kind> with no entry shows work_fail's. */
+    _failIcons(topic) {
+        if (PICTURE_CHATTER[topic]) return null;
+        return topic && topic.startsWith('work_fail_') ? PICTURE_CHATTER.work_fail : null;
+    }
+
+    /**
+     * A counted failure (5.2, 5.4): shown for FAIL_SHOW_MS, every other need drained by breakDrain,
+     * reported to the server, and a check visit queued for the first down resource with an object.
+     */
+    _countFailure(s, need, missing, objectId) {
+        const id = s.npcId;
+        // User decision q27: counted from the end of the failure's grumble, which hides the action
+        // icon while it shows, so the barrier icon is seen after the line (as avoidShow is)
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + said + FAIL_SHOW_MS };
+        // q17 (2026-11-11): the causes of the last counted failure of each need, for causeCleared
+        s.failCause[need] = (missing || []).map(c => ({ ...c }));
+        const drain = Number(this._plan(s)?.breakDrain);
+        const d = Number.isFinite(drain) ? clamp(drain, 0, 50) : 10;
+        for (const other of Object.keys(s.needs)) {
+            if (other === need || s.parked[other]) continue;
+            s.levels[other] = clamp(s.levels[other] - d, 0, 100);
+        }
+        const rearmed = !!s.rearm[need];
+        delete s.rearm[need];
+        this._log(id, 'failure_counted', { need, causes: (missing || []).map(c => `${c.id}:${c.why}`).join(','), rearmed: rearmed || undefined });
+        if (typeof this.world.reportUse === 'function') {
+            this.world.reportUse(id, { event: 'fail', need, objectId: objectId ?? null, missing: (missing || []).map(c => ({ ...c })), ...(rearmed ? { rearmed: true } : {}) });
+            // The mirror lags the server by one answer: an ease is owed even while it says 0 (R1 m3)
+            s.failSent[need] = true;
+        }
+        const plan = this._plan(s);
+        for (const c of missing || []) {
+            if (c.why !== 'down') continue;
+            const r = plan?.needs.find(x => x.id === c.id);
+            if (!r?.object || s.checked.has(r.id)) continue;
+            s.checked.add(r.id);
+            this.enqueueVisit(id, { kind: 'check', at: { objectId: r.object }, data: { resourceId: r.id } });
+            break;
+        }
+    }
+
+    /**
+     * q17 (user decision 2026-11-11): whether what frustrated the NPC has cleared: a failure has
+     * been counted (or a judged use met) for at least one need, and for each such need the causes
+     * of its last counted failure would all pass now, or a judged use of it has been met since.
+     * The frustration icon then fades while the mood lingers (npc-action-icons.js). After a reload
+     * the causes are seeded from the server's failWhy (_seedFailCause, review R3 m1).
+     */
+    _causeCleared(s) {
+        const needs = Object.keys(s.failCause || {});
+        if (!needs.length) return false;
+        if (!this.world.workRules?.causesClear) return false;
+        return needs.every(n => this._causesPass(s, s.failCause[n] || []));
+    }
+
+    /** Whether every cause in `list` would pass now (causesClear, plus a switched-off station). */
+    _causesPass(s, list) {
+        const rules = this.world.workRules;
+        if (!rules?.causesClear) return false;
+        // A switched-off station (`off`) has cleared once its offWhen no longer holds
+        const offClear = c => { const rec = this._offSeen.get(c.id); return !!rec && !this._globalHolds(rec.cond); };
+        const off = list.filter(c => c.why === 'off');
+        return off.every(offClear) && rules.causesClear(this._plan(s), list.filter(c => c.why !== 'off'), g => this._globalValue(g));
+    }
+
+    /** A failed park whose wakeOn names `name` and whose causes would all pass now retries soon (5.2). */
+    _wakeFailedFor(name) {
+        const rules = this.world.workRules;
+        for (const id of [...this.states.keys()].sort()) {
+            const s = this.states.get(id);
+            for (const need of Object.keys(s.parked).sort()) {
+                const p = s.parked[need];
+                if (p.reason !== 'failed' || !Array.isArray(p.wakeOn) || !p.wakeOn.includes(name)) continue;
+                const clear = rules?.causesClear ? rules.causesClear(this._plan(s), p.missing, n => this._globalValue(n)) : false;
+                if (!clear) continue;
+                const at = this.clockMs + WAKE_BASE_MS;
+                if (at < p.until) { p.until = at; p.woken = true; }
+                s.rearm[need] = true;
+                this._log(id, 'failure_woken', { need, global: name });
+            }
+        }
+    }
+
+    /** An off failure park whose station came back on retries one use time of that station later (5.2). */
+    _wakeStationFor(ids) {
+        if (!ids.length) return;
+        for (const id of [...this.states.keys()].sort()) {
+            const s = this.states.get(id);
+            for (const need of Object.keys(s.parked).sort()) {
+                const p = s.parked[need];
+                if (p.reason !== 'off' || !ids.includes(p.targetId) || !this._judged(s, need)) continue;
+                const secs = Number(this.world.getObject(p.targetId)?.affordance?.useSeconds);
+                const at = this.clockMs + Math.max(WAKE_BASE_MS, (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000);
+                if (at < p.until) { p.until = at; p.woken = true; }
+                s.rearm[need] = true;
+                this._log(id, 'failure_woken', { need, target: p.targetId });
+            }
+        }
+    }
+
+    _globalValue(name) {
+        return typeof this.world.globalValue === 'function' ? this.world.globalValue(name) : (this._globalHolds(name) ? true : false);
+    }
+
+    /** Needs the outage kick watches for this NPC (5.6): work with a plan; social_media with no phone. */
+    _kickable(s) {
+        return this._judged(s, 'work') || (this._judged(s, 'social_media') && this._rec(s).phone === false);
+    }
+
+    /**
+     * The outage kick (5.6): when a global the work plan names, or the station's offWhen, turns
+     * on (or is on at register), the need's level drops to urgentAt once, so the NPC tries at its
+     * next selection. Parked needs are left alone; a change during a use of the need, or while the
+     * home is provisional, waits.
+     */
+    _tickKick(s) {
+        const rules = this.world.workRules;
+        const conds = [];
+        const st = this._stationId(s) ? this.world.getObject(this._stationId(s)) : null;
+        const stationOff = st?.offWhen;
+        if (this._judged(s, 'work')) {
+            const names = rules?.planGlobals ? rules.planGlobals(this._plan(s)) : [];
+            for (const n of names) conds.push({ key: `g:${n}`, cond: n, need: 'work' });
+            if (stationOff !== undefined && stationOff !== null && stationOff !== false && stationOff !== '') conds.push({ key: `w:${JSON.stringify(stationOff)}`, cond: stationOff, need: 'work' });
+        }
+        if (this._judged(s, 'social_media') && this._rec(s).phone === false && stationOff !== undefined && stationOff !== null && stationOff !== false && stationOff !== '') {
+            conds.push({ key: `s:${JSON.stringify(stationOff)}`, cond: stationOff, need: 'social_media' });
+        }
+        for (const c of conds) {
+            const on = this._globalHolds(c.cond);
+            const was = s.kickSeen[c.key];
+            s.kickSeen[c.key] = on;
+            if (on && !was) s.kickPending.add(c.need);
+        }
+        if (!s.kickPending.size || s.home?.provisional || !s.home) return;
+        for (const need of [...s.kickPending].sort()) {
+            if (s.parked[need]) { s.kickPending.delete(need); continue; }
+            if (s.job && s.job.need === need && s.job.phase === 'using') continue;
+            s.kickPending.delete(need);
+            const n = s.needs[need];
+            if (!n || !(s.levels[need] > n.urgentAt)) continue;
+            s.levels[need] = n.urgentAt;
+            s.selectRetryAt = 0;
+            this._log(s.npcId, 'kicked', { need, level: round2(n.urgentAt) });
+        }
+    }
+
+    // ── visits (5.3) ──
+
+    /**
+     * Queue a walk the needs system is told to make: go to { objectId } or { npcId }, stay
+     * useSeconds (default 8), come back. A running job is never interrupted.
+     */
+    enqueueVisit(npcId, { kind = 'visit', at, useSeconds, data } = {}) {
+        const s = this.states.get(npcId);
+        if (!s || !at || (typeof at.objectId !== 'string' && typeof at.npcId !== 'string')) return false;
+        s.visits.push({ kind, at: { ...at }, useSeconds, data: data ?? null, queuedAt: this.clockMs, triedAt: -Infinity });
+        this._log(npcId, 'visit_queued', { kind, target: at.objectId || at.npcId });
+        return true;
+    }
+
+    _visitPlace(s, v) {
+        if (v.at.objectId) {
+            const obj = this.world.getObject(v.at.objectId);
+            if (!obj || !this._reachable(s, obj) || this._roomForbidden(s, obj.roomId)) return null;
+            return { targetId: obj.id };
+        }
+        const p = this.world.npcPos(v.at.npcId);
+        if (!p || this._roomForbidden(s, p.roomId)) return null;
+        const cell = typeof this.world.cellBeside === 'function' ? this.world.cellBeside(v.at.npcId, s.npcId, { avoidRooms: this._avoidRooms(s) }) : { x: p.x + 32, y: p.y };
+        return cell ? { targetId: v.at.npcId, cell } : null;
+    }
+
+    _startVisit(s) {
+        const v = s.visits[0];
+        const limit = VISIT_DROP_MS[v.kind === 'check' ? 'check' : 'workaround'];
+        // Review R2 m1: nobody walks off to check a resource that works again; the resource is
+        // freed, so a later failure on it queues a check afresh
+        const cleared = v.kind === 'check' && v.data?.resourceId && this._causesPass(s, [{ id: v.data.resourceId, why: 'down' }]);
+        if (cleared || this.clockMs - v.queuedAt >= limit) {
+            s.visits.shift();
+            if (cleared) s.checked.delete(v.data.resourceId);
+            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId, reason: cleared ? 'cleared' : undefined });
+            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data, ...(cleared ? { reason: 'cleared' } : {}) });
+            return false;
+        }
+        // Review R1 M1: a check visit waits out the barrier or workaround icon (a job's icon would
+        // hide it), and nothing else starts meanwhile: the line, the icon, then off to check.
+        // Not guarded by _judged (review R2 n2): only _countFailure queues a check, from a judged
+        // use, and the hold lasts only while an icon shows, so a check some future caller queues
+        // for an office-life NPC would wait at most WORKAROUND_SHOW_MS, which is harmless
+        if (v.kind === 'check' && this._iconShowing(s)) return true;
+        if (this.clockMs - v.triedAt < 1000) return false;
+        v.triedAt = this.clockMs;
+        const place = this._visitPlace(s, v);
+        if (!place) return false;
+        s.visits.shift();
+        this._startJob(s, { kind: 'visit', targetId: place.targetId, visit: { ...v, cell: place.cell || null } });
+        return true;
+    }
+
+    /** The barrier (failedShow) or workaround (workaroundShow) icon is still in its time. */
+    _iconShowing(s) {
+        return !!((s.failedShow && this.clockMs < s.failedShow.until) || (s.workaroundShow && this.clockMs < s.workaroundShow.until));
+    }
+
+    _completeVisit(s) {
+        const id = s.npcId;
+        const v = s.job.visit;
+        this._log(id, 'visit_done', { kind: v.kind, target: v.at.objectId || v.at.npcId });
+        this._emit(`npc_visit_done:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data });
+        if (v.kind === 'check' && v.at.objectId) this._emit(`npc_checked:${v.at.objectId}`, { npcId: id, objectId: v.at.objectId, data: v.data });
+        // q21: the start line can cover a short visit's whole icon, so it stays a moment after
+        if (v.kind === 'workaround') this._showWorkaround(s);
+        const stayPut = s.atPost && this._targetsOwnPost(s);
+        s.job = null;
+        this._goHome(s, { stayPut });
+    }
+
+    // ── frustration from the server (5.4) ──
+
+    /** Answers from POST /npc_frustration, applied at the next tick. */
+    applyFrustration(answers) {
+        if (!Array.isArray(answers) || !answers.length) return;
+        (this._answers || (this._answers = [])).push(...answers.filter(a => a && typeof a.npcId === 'string'));
+    }
+
+    /**
+     * Access 9.2 L (6.6): the report queue sent a `check` for this owner at its own station (on a
+     * locked return). Until the answer is applied the first use there holds its verdict, so a
+     * slow answer never lets one use through as met. False for any PC but the NPC's station.
+     */
+    lockCheckSent(npcId, pcId) {
+        const s = this.states.get(npcId);
+        // User decision q36: the PC of a borrow in use too (the check goes when the borrower sits)
+        const borrowPc = s?.job?.borrowed ? s.job.borrow?.pcId : null;
+        if (!s || typeof pcId !== 'string' || (pcId !== this._stationId(s) && pcId !== borrowPc)) return false;
+        s.lockCheck[pcId] = this.clockMs;
+        this._log(npcId, 'lock_check', { target: pcId });
+        return true;
+    }
+
+    /** Access 9.2 L (6.6): whether the server's check found this owner locked out at this PC. */
+    isLockedOut(npcId, pcId) {
+        return !!this.states.get(npcId)?.lockedOut.has(pcId);
+    }
+
+    _applyLockCheck(s, a) {
+        const pc = typeof a.forObject === 'string' ? a.forObject : null;
+        if (!pc) return;
+        // q36: a borrowed PC's answer counts only for a check this owner sent there
+        const asked = Object.prototype.hasOwnProperty.call(s.lockCheck, pc);
+        delete s.lockCheck[pc];
+        if (a.lockedOut !== true || (pc !== this._stationId(s) && !asked) || s.lockedOut.has(pc)) return;
+        s.lockedOut.add(pc);
+        this._log(s.npcId, 'locked_out', { target: pc });
+        this._emit(`npc_locked_out:${s.npcId}`, { npcId: s.npcId, objectId: pc });
+    }
+
+    _applyAnswers() {
+        const list = this._answers;
+        this._answers = [];
+        for (const a of list) {
+            // Access 9.2 L (6.6): a check's answer (the report queue sends one for every check,
+            // refused or lost as lockedOut false) only sets or clears the station flag
+            // (Review R1 n4: with no state the answer is dropped, unlike a level; the return that
+            // sent the check needed a live state, and a reload restores the server's record)
+            if (a.forEvent === 'check') { const cs = this.states.get(a.npcId); if (cs) this._applyLockCheck(cs, a); continue; }
+            if (a.refused || a.stale) continue;
+            const s = this.states.get(a.npcId);
+            if (!s) { (this._pendingLevels || (this._pendingLevels = new Map())).set(a.npcId, a); continue; }
+            this._setFrustration(s, a);
+            this._emitDue(s, a);
+        }
+    }
+
+    /**
+     * An answer's hand-overs to the workaround runner: `run`, then every unspent one in `pending`
+     * (review R3 m2, oldest first). The runner starts each (npcId, index, hand) once, so the copies
+     * of one it holds are ignored.
+     */
+    _emitDue(s, a) {
+        const runs = [a.run, ...(Array.isArray(a.pending) ? a.pending : [])];
+        for (const run of runs) {
+            if (run && typeof run === 'object') this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run, level: s.frustration });
+        }
+    }
+
+    _setFrustration(s, a) {
+        if (!Number.isFinite(Number(a.level))) return;
+        // The server's own previous level when the answer carries one, else the mirror (R1 m4)
+        const previous = a.previous !== undefined && a.previous !== null && Number.isFinite(Number(a.previous))
+            ? clamp(Number(a.previous), 0, 100) : s.frustration;
+        s.frustration = clamp(Number(a.level), 0, 100);
+        // Review R2 n1: an answer to a fail clears that need's mark only; an answer that does not
+        // say what it answers (a test, an old queue) clears them all, as before
+        if (s.failSent) {
+            if (a.forEvent === 'fail' && typeof a.forNeed === 'string') delete s.failSent[a.forNeed];
+            else if (a.forEvent === undefined) s.failSent = {};
+        }
+        s.tell = Number.isFinite(Number(a.tell)) ? Number(a.tell) : s.tell;
+        s.settled = !!a.settled;
+        this.world.setGlobal?.(`${s.npcId}_frustration`, s.frustration);
+        this._log(s.npcId, 'frustration', { level: round2(s.frustration), tell: s.tell });
+        this._emit(`npc_frustration_changed:${s.npcId}`, { npcId: s.npcId, level: s.frustration, previous, tell: s.tell });
+    }
+
+    /**
+     * A reload's level (review R2 m1): the mirror, tell and settled are set with no
+     * npc_frustration_changed event, since nothing rose or fell, so a mapping on a rise does not run
+     * again at each load. The global is written only when it differs from the saved one.
+     */
+    _restoreFrustration(s, e) {
+        if (!Number.isFinite(Number(e.level))) return;
+        s.frustration = clamp(Number(e.level), 0, 100);
+        s.tell = Number.isFinite(Number(e.tell)) ? Number(e.tell) : s.tell;
+        s.settled = !!e.settled;
+        const key = `${s.npcId}_frustration`;
+        const had = typeof this.world.getGlobal === 'function' ? this.world.getGlobal(key) : undefined;
+        if (had === undefined || had === null || Number(had) !== s.frustration) this.world.setGlobal?.(key, s.frustration);
+        this._log(s.npcId, 'frustration', { level: round2(s.frustration), tell: s.tell, restored: true });
+    }
+
+    /**
+     * Review R3 m1 (q17 on resume): a reload's failCause, from the server's failWhy (need -> the
+     * whys of its last counted failure), so the frustration icon fades as it would have before the
+     * reload. For a down or unreachable cause the resources failing a use now are recorded (none
+     * when the outage is over, so the icon fades at once); any other why (locked_out,
+     * social_blocked, off) is recorded against the station and clears only with a met use (or, for
+     * off, once the station has been seen off and its offWhen no longer holds), as before.
+     * Nothing is seeded over causes this session recorded.
+     */
+    _seedFailCause(s, failWhy) {
+        if (!failWhy || typeof failWhy !== 'object' || Object.keys(s.failCause || {}).length) return;
+        const plan = this._plan(s);
+        const station = this._stationId(s);
+        const rules = this.world.workRules;
+        for (const need of Object.keys(failWhy).sort()) {
+            const whys = Array.isArray(failWhy[need]) ? failWhy[need].filter(w => typeof w === 'string') : [];
+            if (!whys.length || !this._judged(s, need)) continue;
+            const list = typeof rules?.failures === 'function'
+                ? rules.failures(plan, need, null, g => this._globalValue(g)).filter(c => c.why === 'down' || c.why === 'unreachable')
+                : [];
+            for (const why of whys) {
+                if (why !== 'down' && why !== 'unreachable') list.push({ id: station || s.npcId, why });
+            }
+            s.failCause[need] = list;
+        }
+    }
+
+    /** The scenario response's npcFrustration, kept and applied as each NPC registers (5.4). */
+    restoreFrustration(map) {
+        this._restored = map && typeof map === 'object' ? { ...map } : null;
+        this._restoredAt = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
+        // NPCs already registered (the start room) take theirs now; the rest as they register
+        for (const id of [...this.states.keys()].sort()) this._applyRestored(this.states.get(id));
+    }
+
+    _applyRestored(s) {
+        if (!s) return;
+        // Review R2 n3: the GET entry first, then a newer pending answer over it
+        const e = this._restored?.[s.npcId];
+        const restored = !!e && typeof e === 'object';
+        if (restored) {
+            delete this._restored[s.npcId];
+            this._restoreFrustration(s, e);
+            this._seedFailCause(s, e.failWhy);
+            // Access 9.2 L (6.6, 9.4): the stations a check found this owner locked out at, so it
+            // does not sit back down and work until its next locked return; q36 adds the hot
+            // desks it borrowed (the server sends only its station and its handed-over PCs)
+            for (const pc of Array.isArray(e.lockedOut) ? e.lockedOut : []) {
+                if (typeof pc === 'string' && pc && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
+            }
+        }
+        const pending = this._pendingLevels?.get(s.npcId);
+        if (pending) {
+            this._pendingLevels.delete(s.npcId);
+            this._setFrustration(s, pending);
+            this._emitDue(s, pending);
+        }
+        if (!restored) return;
+        // Sub-slice B (5.4, 9.4): a hand-over the server made and has not seen spent is started
+        // again now its NPC is registered; the workaround runner starts each one once
+        for (const run of Array.isArray(e.pending) ? e.pending : []) {
+            if (run && typeof run === 'object') this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run, level: s.frustration, restored: true });
+        }
+        // R5 n3: the hold is measured from the response; the time since it arrived is taken off
+        const now = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
+        const elapsed = Math.max(0, now - (this._restoredAt || 0));
+        for (const [need, secs] of Object.entries(e.hold || {})) {
+            const ms = Number(secs) * 1000 - elapsed;
+            if (!s.needs[need] || !this._judged(s, need) || !(ms > 0)) continue;
+            this._park(s, need, { reason: 'held', untilMs: ms });
+        }
+    }
+
+    // ── voiced chatter: bag, cooldown, speech lock, picture chat (slice 15) ──
+
+    /** The next line index from this NPC's bag for a topic: no repeat until the bag is empty. */
+    _bagNext(npcId, topic, lines) {
+        const key = `${npcId}|${topic}`;
+        const sig = lines.join('\n');
+        let b = this._bags.get(key);
+        if (!b || b.sig !== sig) { b = { sig, order: [], round: 0, last: -1 }; this._bags.set(key, b); }
+        if (!b.order.length) b.order = bagOrder(lines.length, createSeededRng(hash32(`${this.bagSeed}:${key}:bag:${b.round++}`)), b.last);
+        b.last = b.order.shift();
+        return b.last;
+    }
+
+    /**
+     * M4: was `text` said lately near this speaker? Same room, within ECHO_RADIUS of where it was
+     * said and within ECHO_WINDOW_MS. Old entries are dropped as they are read.
+     */
+    _echoes(s, text) {
+        const cut = this.clockMs - ECHO_WINDOW_MS;
+        while (this._recentLines.length && this._recentLines[0].at < cut) this._recentLines.shift();
+        if (!this._recentLines.length) return false;
+        const pos = this.world.npcPos?.(s.npcId);
+        return this._recentLines.some(r => r.text === text && (!pos || !r.roomId || !pos.roomId
+            || (r.roomId === pos.roomId && Math.hypot(pos.x - r.x, pos.y - r.y) <= ECHO_RADIUS)));
+    }
+
+    /** M4: note a line as said by this speaker now (at most 32 kept). */
+    _noteSaid(s, text) {
+        const pos = this.world.npcPos?.(s.npcId) || {};
+        this._recentLines.push({ text, at: this.clockMs, roomId: pos.roomId || null, x: pos.x || 0, y: pos.y || 0 });
+        if (this._recentLines.length > 32) this._recentLines.shift();
+    }
+
+    /**
+     * The order left in this speaker's bag for a topic, as _bagNext would draw it, without changing
+     * the bag (R1 M1: draw only what fits): the bag's own order, or the refill it would make.
+     */
+    _bagOrderLeft(npcId, topic, lines) {
+        const key = `${npcId}|${topic}`;
+        const b = this._bags.get(key);
+        const fresh = !b || b.sig !== lines.join('\n');
+        if (!fresh && b.order.length) return b.order;
+        const round = fresh ? 0 : b.round, last = fresh ? -1 : b.last;
+        return bagOrder(lines.length, createSeededRng(hash32(`${this.bagSeed}:${key}:bag:${round}`)), last);
+    }
+
+    /**
+     * M4: the index the next draw for this speaker gives: the first line left in the bag that is not
+     * an echo (_echoes), else the bag's own next line. Changes nothing (the fit check reads it).
+     */
+    _bagPeek(s, topic, lines) {
+        const order = this._bagOrderLeft(s.npcId, topic, lines);
+        if (!this._recentLines.length || !this._echoes(s, lines[order[0]])) return order[0];
+        const k = order.find(i => !this._echoes(s, lines[i]));
+        return k === undefined ? order[0] : k;
+    }
+
+    /**
+     * M4: draw the line _bagPeek names. A line passed over stays in the bag in its place, so it
+     * comes later in the round; the bag still never repeats a line before it is empty.
+     */
+    _bagTake(s, topic, lines) {
+        const want = this._bagPeek(s, topic, lines);
+        const idx = this._bagNext(s.npcId, topic, lines);   // fills the bag if it was empty
+        if (idx === want) return idx;
+        const b = this._bags.get(`${s.npcId}|${topic}`);
+        const j = b.order.indexOf(want);
+        if (j < 0) return idx;
+        b.order.splice(j, 1, idx);   // the passed-over line takes the drawn line's place
+        b.last = want;
+        return want;
+    }
+
+    _cooldownMs(s) {
+        const v = Number(this._rec(s).chatterCooldownMin);
+        return (Number.isFinite(v) && v >= 0 ? v : CHATTER_COOLDOWN_MIN) * 60000;
+    }
+
+    _speechFree() {
+        return this.clockMs >= this._speechUntil;
+    }
+
+    /**
+     * Is the speech lock free for this line? A FAINT line (D34, an ambient line drawn out of earshot)
+     * holds the lock only until a line that matters wants it: when the lock is held by nothing but a
+     * faint line, a non-faint asker (`yields` false) takes it at once and the faint voice fades out.
+     * A faint asker never takes the lock from anything.
+     */
+    _speechFreeFor(faint = false) {
+        if (this._speechFree()) return true;
+        const f = this._faintLine;
+        if (faint || !f || this.clockMs >= f.until || this._speechUntil > f.until) return false;
+        this._speechUntil = this.clockMs;
+        this._faintLine = null;
+        try { this.world.fadeFaint?.(f.npcId); } catch (e) { /* audio never breaks a tick */ }
+        this._log(f.npcId, 'faint_preempted', {});
+        return true;
+    }
+
+    /**
+     * What a speaker says on a turn: a bark from the bag when it has lines, is off cooldown and the
+     * speech lock is free; otherwise a picture. Returns { line, idx, picture, pool } or null (silent:
+     * `"chatter": false` and nothing to say). Taking a bark starts the cooldown. `unheard` (E7, a
+     * chat turn nobody can hear) skips the bark as if the speaker were on cooldown: no line is taken
+     * from the bag, the cooldown is not started and there is no wait, so the result is a picture
+     * (or null with `pictures: false`).
+     * `maxMs` (a chat's time left in the overlap) skips the bark the same way when the bag's next
+     * line would outlast it, so a line taken is always a line said.
+     */
+    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, faint = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
+        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds);
+        // M4: the next line passes over one said lately nearby (an echo), for the fit check and the draw
+        const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
+            && !(faint && s.faintQuietUntil > this.clockMs)
+            && !(maxMs < CHAT_MAX_MS && bubbleMs(pool.lines[this._bagPeek(s, topic, pool.lines)]) > maxMs);
+        if (ready && this._speechFreeFor(faint)) {
+            const idx = this._bagTake(s, topic, pool.lines);
+            // R1 M2 (E7): a faint line is not heard, so it spends only its own short throttle and
+            // leaves the full cooldown for when the player walks up
+            if (faint) s.faintQuietUntil = this.clockMs + FAINT_COOLDOWN_MS;
+            else s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
+            this._noteSaid(s, pool.lines[idx]);
+            return { line: pool.lines[idx], idx, picture: null, pool, faint };
+        }
+        if (ready && waitForLock) return { wait: true, pool };
+        if (!pool.pictures) return null;
+        const icons = iconsFor || pictureIcons(topic);
+        s.pictureN = (s.pictureN || 0) + 1;
+        return { line: null, idx: -1, picture: icons[(s.pictureN - 1) % icons.length], pool };
+    }
+
+    /** A voiced line: take the speech lock until it ends and hand it to the world to speak. */
+    _speak(npcId, line, until, info) {
+        this._speechUntil = Math.max(this._speechUntil, until);
+        // Slice 20: room tone ducks the bed only for a line the player hears
+        if (info?.overheard) this._heardUntil = Math.max(this._heardUntil || 0, until);
+        // D34: a faint line is remembered so a line that matters can take the lock back from it
+        if (info?.faint) this._faintLine = { npcId, until };
+        else if (this._faintLine && until > this._faintLine.until) this._faintLine = null;
+        // R3 M1: whether a line is a background voice is decided here, once, from what the player
+        // hears, so no call site can miss it: out of earshot and not a faint draw (a desk call is only voiced when overheard).
+        // A `secret` line (a priority mutter such as login_aloud) that is not overheard is not voiced
+        // at all (the voice drops it); an overheard one is voiced in full, exactly as before.
+        const unheard = !info?.overheard && !info?.faint;
+        if (typeof this.world.speak === 'function') {
+            try { this.world.speak(npcId, line, { ...info, unheard, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
+        }
+    }
+
+    // ── scripted exchanges (slice 15, OFFICE_LIFE_PLAN 11.4) ────────────────
+
+    _exchangeHeard(knot) {
+        return this._exPlayed.has(knot) || this._globalHolds(`heard_${knot}`);
+    }
+
+    /** Does an exchanges[] entry's `with` name the other NPC (an id or "group:<name>")? */
+    _exchangeWith(entry, other) {
+        const w = entry?.with;
+        if (typeof w !== 'string' || !w) return false;
+        if (w === other.npcId) return true;
+        return w.startsWith('group:') && this._groups(other).includes(w.slice(6));
+    }
+
+    /**
+     * The first unplayed exchange for this pair whose speakers are exactly the two of them. The lower
+     * id's list is read first. Lines come from the world (a separate ink story instance). Results:
+     * - { knot, ownerId, lines, i }: playable now;
+     * - { pending: true }: an entry's story is not loaded yet (null lines), so a later turn tries again;
+     * - { gated: true }: an unheard entry is waiting only on its requireGlobal (E9), so a later turn of
+     *   the same meeting looks again, and the exchange can start once the gate opens;
+     * - null: nothing in this meeting can become playable (no entries for the pair, all heard,
+     *   malformed, or lines naming another speaker), so the meeting stops looking.
+     *
+     * `topic` is the chat's chatter topic (the object's affordance `chatter`). When an entry sets
+     * its own `topic`, it plays only on a chat whose topic matches, so an exchange written for the
+     * water cooler does not fire at another chatter object (such as a dropped cake). An entry with no
+     * `topic` plays at any chatter object, as before.
+     */
+    _findExchange(A, B, topic) {
+        let pending = false, gated = false;
+        for (const [own, other] of [A, B].sort((x, y) => (x.npcId < y.npcId ? -1 : 1)).map((x, i, arr) => [x, arr[1 - i]])) {
+            const list = this._rec(own).exchanges;
+            if (!Array.isArray(list)) continue;
+            for (const e of list) {
+                if (!e || typeof e.knot !== 'string' || !e.knot || !this._exchangeWith(e, other)) continue;
+                if (e.topic !== undefined && e.topic !== topic) continue;
+                if (this._exchangeHeard(e.knot)) continue;
+                if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) { gated = true; continue; }
+                const lines = typeof this.world.exchangeLines === 'function' ? this.world.exchangeLines(own.npcId, e.knot) : null;
+                if (lines === null || lines === undefined) { pending = true; continue; }
+                if (!Array.isArray(lines) || !lines.length) continue;
+                if (!lines.every(l => l && typeof l.text === 'string' && (l.speakerId === A.npcId || l.speakerId === B.npcId))) continue;
+                return { knot: e.knot, ownerId: own.npcId, lines: lines.map(l => ({ speakerId: l.speakerId, text: l.text })), i: 0 };
+            }
+        }
+        if (pending) return { pending: true };
+        return gated ? { gated: true } : null;
+    }
+
+    /**
+     * The earshot radius of a chat for one speaker (E7 to E9): the object's overhearRadius, else the
+     * overhearRadius of that speaker's pool for the chat's topic, else OVERHEAR_RADIUS. Bark turns,
+     * the exchange start gate and the exchange-line heard check all use it, so one rule decides.
+     */
+    _chatRadius(c, speakerId) {
+        if (c.overhearRadius) return c.overhearRadius;
+        const st = this.states.get(speakerId);
+        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null, this._thoughtsOn(), this._holds);
+        return pool.overhearRadius || OVERHEAR_RADIUS;
+    }
+
+    /** Start an exchange on a chat: hold both uses for the knot's length (capped). */
+    _startExchange(c, ex, A, B) {
+        let total = 0;
+        for (const l of ex.lines) total += exchangeLineMs(l.text) + CHAT_GAP_MS;
+        ex.startedAt = this.clockMs;
+        ex.holdCap = this.clockMs + EXCHANGE_MAX_MS;
+        ex.heardLines = 0;
+        c.ex = ex;
+        // A hush comes from the bark pool of an earlier line in this chat. An exchange starts only
+        // with its first speaker in earshot and is meant to be overheard, so that hush must not cut it
+        c.hush = false;
+        c.hushed = false;
+        // The use each NPC had before the hold raised it to the knot's end. A cut gives this back
+        // (EXCHANGE_HEARD_FIX_REVIEW_R1 n2), so a cut exchange does not strand the NPC at the object
+        // for the rest of its lines while the queue waits. Only the held sides (A always; B unless
+        // it is a queue front, which _holdExchange leaves alone) are recorded.
+        ex.aUseBefore = A.job ? A.job.useUntil : undefined;
+        ex.bUseBefore = (!c.queue && B.job) ? B.job.useUntil : undefined;
+        this._holdExchange(c, A, B, total);
+        this._log(ex.ownerId, 'exchange_started', { knot: ex.knot, with: ex.ownerId === c.a ? c.b : c.a });
+    }
+
+    /**
+     * Hold the pair for what is left of the exchange (`ms` from now, capped at EXCHANGE_MAX_MS from
+     * its start). Run again before each line: a line that waited for the speech lock pushes the rest
+     * later, and the use must not end under it. A queue's front NPC is not using anything: its queue
+     * wait does not run out while the exchange is held (_tickQueue reads c.ex).
+     */
+    _holdExchange(c, A, B, ms) {
+        const end = Math.min(this.clockMs + ms, c.ex.holdCap);
+        if (A.job && A.job.useUntil < end) A.job.useUntil = end;
+        if (!c.queue && B.job && B.job.useUntil < end) B.job.useUntil = end;
+    }
+
+    /**
+     * Record an exchange or call as heard: the session set and the saved scalar global heard_<knot>.
+     * Idempotent; returns true only when this call marked it, so a caller emits its event on that.
+     */
+    _markExchangeHeard(knot) {
+        if (this._exPlayed.has(knot)) return false;
+        this._exPlayed.add(knot);
+        if (typeof this.world.setGlobal === 'function') {
+            try { this.world.setGlobal(`heard_${knot}`, true); } catch (e) { /* keep the session flag */ }
+        }
+        return true;
+    }
+
+    /**
+     * The exchange ends, played to the end (`complete`) or cut short (`reason`: the pair broke up;
+     * a hush cannot cut it, since _startExchange clears the chat's hush). The rule for heard (E9,
+     * NPC_NEEDS_SYSTEM.md 5.6a): the player overheard at least one of its lines, whether it played to
+     * the end or was cut. Heard: heard_<knot> (a global: one key per knot, set once) and
+     * npc_exchange_heard:<knot>, both at the first overheard line (_tickChats), never played again;
+     * this finish logs exchange_heard { complete } (a heard cut
+     * also logs exchange_cut first). No line reached the player (cut, or
+     * played to the end to an empty room, logged exchange_unheard): unplayed, so a later meeting in
+     * earshot plays it from the start. c.exDone stays true either way: not again in this meeting.
+     */
+    _finishExchange(c, { complete = true, reason = null } = {}) {
+        const ex = c.ex;
+        c.ex = null;
+        c.exDone = true;
+        const front = c.queue ? this.states.get(c.b) : null;
+        if (front?.job?.phase === 'queued') front.job.queuedAt += this.clockMs - ex.startedAt;
+        const heard = ex.heardLines > 0;
+        if (!complete) this._log(ex.ownerId, 'exchange_cut', { knot: ex.knot, reason, line: ex.i, of: ex.lines.length, heardLines: ex.heardLines, heard });
+        else if (!heard) this._log(ex.ownerId, 'exchange_unheard', { knot: ex.knot, of: ex.lines.length });
+        if (!heard) return;
+        this._log(ex.ownerId, 'exchange_heard', { knot: ex.knot, complete });
+    }
+
+    /**
+     * Give back the hold an exchange put on a still-running NPC's use. `before` is the use end it
+     * had before the hold; lower `useUntil` to that (never below now) so it leaves the object
+     * instead of standing for the lines that will not play. A frozen NPC (a player conversation)
+     * carries its end as `useRemaining`, inflated by the same hold, so take the hold back off that
+     * too; its `useUntil` is recomputed from `useRemaining` on unfreeze. (EXCHANGE_HEARD R1 n2.)
+     */
+    _releaseExchangeHold(state, before) {
+        const job = state?.job;
+        if (!job || !Number.isFinite(before) || job.phase !== 'using') return;
+        const added = Math.max(0, job.useUntil - before);
+        job.useUntil = Math.max(before, this.clockMs);
+        if (Number.isFinite(job.useRemaining)) job.useRemaining = Math.max(0, job.useRemaining - added);
+    }
+
+    /** A chat ends: an exchange still running finishes first (complete if its last line is over). */
+    _endChat(oid, c, reason) {
+        if (c.ex) {
+            const ex = c.ex;
+            const over = ex.i >= ex.lines.length && (!c.current || this.clockMs >= c.current.until);
+            this._finishExchange(c, over ? {} : { complete: false, reason });
+            // A cut leaves lines unplayed: hand the held time back, so the NPC is not pinned to the
+            // object for the rest of the exchange while anyone queued behind it waits.
+            if (!over) {
+                this._releaseExchangeHold(this.states.get(c.a), ex.aUseBefore);
+                this._releaseExchangeHold(this.states.get(c.b), ex.bUseBefore);
+            }
+        }
+        this._chats.delete(oid);
+    }
+
+    _carryCandidate(s, tag, it, objects, pos) {
+        const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
+        const reach = (it.noticeRadius || NOTICE_RADIUS_TILES) * 32;   // q53 f: seen from where the NPC stands
+        const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
+            && Math.hypot(o.x - pos.x, o.y - pos.y) <= reach
+            && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false)
+            && !this._reservedFrom(o.id, s.npcId)   // slice 17: someone else's printout
+            && !s.refused?.has(o.id));   // access 9.2 U: a device refused with nowhere to take it
+        const item = this._nearestReachable(s, items, pos);
+        if (!item) return null;
+        // Deliveries honour the room rules only: `private` limits uses, not drops (OQ26)
+        const targets = objects.filter(o => o.affordance && asList(o.affordance.accepts).includes(tag) && this._free(s, o)
+            && this._permitted(s, o, false));
+        if (!targets.length) return null;
+        const homeObj = s.home?.objectId ? targets.find(t => t.id === s.home.objectId) : null;
+        const target = (homeObj && this._reachable(s, homeObj))
+            ? homeObj : this._nearestReachable(s, targets, item);
+        if (!target) return null;
+        return { kind: 'carry', targetId: target.id, itemId: item.id, tag };
+    }
+
+    _startJob(s, pick) {
+        const id = s.npcId;
+        // Review R1 m4, R2 m2: a job shows its own icon, so neither an emit's workaround icon nor
+        // the barrier comes back after it (failCause stays: q17's fade needs it). A phone use too.
+        s.workaroundShow = null;
+        s.failedShow = null;
+        if (pick.kind === 'self') { this._startSelfJob(s, pick); return; }
+        s.job = {
+            need: pick.need, kind: pick.kind, targetId: pick.targetId,
+            itemId: pick.itemId || null, tag: pick.tag || null,
+            phase: pick.kind === 'carry' ? 'goto_item' : (pick.queue ? 'queued' : 'goto_target'),
+            startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
+        };
+        if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
+        if (pick.visit) s.job.visit = pick.visit;   // access 9.2 A: a visit (5.3)
+        // Access 9.2 H (6.4): a borrowed use carries its borrow (cleared on completion, dropped if never done).
+        // `started` is set when the borrower sits down (q43), not here
+        if (pick.borrowed && s.borrow) { s.job.borrowed = true; s.job.borrow = s.borrow; }
+        // Access 9.2 C (8.1): social media at the own PC takes socialUse's time and restores
+        if (pick.need === 'social_media' && pick.kind === 'use' && pick.targetId === this._stationId(s) && !pick.borrowed) s.job.socialDesk = true;
+        if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
+        // Slice 19: a colleague answering a desk phone; the call (and its length) is chosen at the claim
+        if (pick.phoneCall) { s.job.phone = true; s.job.call = pick.phoneCall; s.job.callMs = pick.phoneCall.total; }
+        const mag = pick.kind === 'use' ? this._magnets.get(pick.targetId) : null;
+        if (mag) { s.job.magnet = true; s.job.aff = mag.aff; }   // kept: a finished or picked-up magnet is gone
+        if (pick.queue) { s.job.qSeq = this._queueSeq++; s.job.queuedAt = this.clockMs; s.job.qCell = null; s.job.qArrived = false; }
+        s.avoidNoted = {};   // a new episode: npc_avoided may fire again next time
+        if (pick.goingAnyway) { s.job.goingAnyway = pick.goingAnyway; s.job.avoidSig = pick.goingAnyway; }   // slice 14
+        if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
+        if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
+        // For the action icons (OFFICE_LIFE_PLAN 9.1): a use that prints, a carry to a stow target
+        // Slice 17: a print hook's chance is rolled here, so the icon never promises a print the job
+        // will not make, nor a fetch when the producer has no free or recyclable slot
+        if (pick.kind === 'use') {
+            const hook = this.world.getNpc(id)?.onUse?.[pick.targetId];
+            if (hook?.revealOutput) {
+                const n = s.useCounts[pick.targetId] || 0;
+                s.useCounts[pick.targetId] = n + 1;
+                const chance = Number(hook.chance);
+                const prints = !(Number.isFinite(chance) && chance < 1) || this.roll(id, `print:${n}`) < Math.max(0, chance);
+                const list = printerList(hook.revealOutput);
+                if (prints && list.length) {
+                    // Slice 22: a list of printers; the icon only when one is on and has a slot
+                    s.job.printTo = list;
+                    const pick = this._pickProducer(list);
+                    if (pick.producerId && pick.slot) s.job.prints = true;
+                }
+            }
+        }
+        if (pick.errand) {
+            s.job.errand = true;
+            s.job.viaCommand = !!pick.viaCommand;
+            const p = this._prints.get(pick.itemId);
+            if (p) p.errand = true;
+        }
+        if (pick.kind === 'carry') {
+            if (this.world.getObject(pick.targetId)?.affordance?.onDeliver === 'stow') s.job.stowAt = true;
+            if (this.world.getObject(pick.itemId)?.slot) s.job.slot = true;   // known from the start, so the wind-up shows "file" too
+        }
+        s.mode = 'job';
+        this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
+        if (pick.queue) {
+            const place = this._queuers(pick.targetId).indexOf(s) + 1;
+            this._log(id, 'queued', { need: pick.need || undefined, target: pick.targetId, place });
+            this._emit(`npc_queued:${pick.targetId}`, { npcId: id, objectId: pick.targetId, need: pick.need, place, ...this._playerProximity(id) });
+        }
+        if (pick.leashed) this._emitLeashed(s, { need: pick.need || undefined, skipped: pick.leashed, chose: pick.targetId });
+        if (pick.privateSkipped) this._log(id, 'private_skipped', { need: pick.need || undefined, skipped: pick.privateSkipped, chose: pick.targetId });
+        // Pre-action tell: a short wind-up while the NPC is still at its post, so the
+        // leaving-desk window is catchable. world.windupMs() is 0 in stub worlds (no wind-up).
+        const windup = s.atPost && !this._atOwnPost(s) ? Math.max(0, Number(this.world.windupMs?.() || 0)) : 0;
+        if (windup > 0) {
+            s.job.windupUntil = this.clockMs + windup;
+            this._log(id, 'windup', { target: pick.targetId });
+            this._emit(`npc_action_windup:${id}`, { npcId: id, need: pick.need, targetId: pick.targetId, tag: pick.tag || null, ms: windup });
+            return;
+        }
+        this._leavePost(s);
+    }
+
+    /**
+     * Access 9.2 C (plan 8.2): a phone use, a job with no target. No wind-up, no npc_left_post, no
+     * move: the NPC stays where it is (at its post, its screen stays attended); one walking home
+     * stops, uses the phone and walks on. A conversation freezes it and a knock-out aborts it.
+     */
+    _startSelfJob(s, pick) {
+        const id = s.npcId;
+        s.job = {
+            need: pick.need, kind: 'self', targetId: null, itemId: null, tag: null, phase: 'using',
+            startedAt: this.clockMs, deadline: 0, useUntil: this.clockMs + this._socialUseSeconds(s) * 1000, carrying: false
+        };
+        if (pick.tempted) s.job.tempted = true;
+        s.avoidNoted = {};
+        if (s.mode === 'returning' && !s.atPost) this.world.cancelMove(id);
+        this._arrivals.delete(id);
+        s.mode = 'job';
+        this._log(id, 'job_start', { need: pick.need, target: 'phone' });
+        this._log(id, 'using', { need: pick.need, target: 'phone' });
+    }
+
+    _completeSelfJob(s) {
+        const id = s.npcId;
+        const job = s.job;
+        const need = job.need;
+        const n = need ? s.needs[need] : null;
+        if (n) {
+            const restores = this._socialRestores(s) * (1 + (s.rng() * 2 - 1) * n.jitterPct / 100);
+            s.levels[need] = clamp(s.levels[need] + restores, 0, 100);
+            s.lastSatisfiedAt[need] = this.clockMs;
+            if (s.temptBack[need]) delete s.temptBack[need];
+        }
+        this._log(id, 'used', { need, target: 'phone', level: n ? round2(s.levels[need]) : undefined });
+        this._emit(`npc_used_phone:${id}`, { npcId: id, need, ...this._playerProximity(id) });
+        // A met judged use: re-arm and ease, as at a PC; the server takes a null object for the phone
+        if (need && this._judged(s, need)) {
+            s.rearm[need] = true;
+            s.failCause[need] = [];
+            if ((s.frustration > 0 || s.failSent[need]) && typeof this.world.reportUse === 'function') {
+                this.world.reportUse(id, { event: 'ease', need, objectId: null });
+                delete s.failSent[need];
+            }
+        }
+        s.job = null;
+        this._clearBackoffs();
+        this._goHome(s, { stayPut: s.atPost });
+    }
+
+    /** True while the current job is a `use` of the NPC's own needsHome object, or a visit to it
+     *  (plan 5.3: an at-post job that never leaves the desk): they stay at their post. */
+    _atOwnPost(s) {
+        const j = s.job;
+        return !!(j && (j.kind === 'use' || j.kind === 'visit') && s.home?.objectId && j.targetId === s.home.objectId);
+    }
+
+    /** True while the current job ends at the NPC's own needsHome object, whatever its kind
+     *  (a `use` of it, or a `carry` that delivers to it): arriving there is being back. */
+    _targetsOwnPost(s) {
+        const j = s.job;
+        return !!(j && s.home?.objectId && j.targetId === s.home.objectId);
+    }
+
+    _leavePost(s) {
+        const id = s.npcId;
+        if (s.atPost && !this._atOwnPost(s)) {
+            s.atPost = false;
+            s.caughtEmitted = false;
+            s.leaveCount++;
+            const left = this._leaveItemsBehind(s);
+            this._emit(`npc_left_post:${id}`, {
+                npcId: id, need: s.job.need, targetId: s.job.targetId,
+                expectedAwayMs: this._expectedAwayMs(s), ...this._playerProximity(id),
+                ...(left.length ? { leftBehind: left } : {})
+            });
+        }
+        this._moveForPhase(s);
+    }
+
+    /**
+     * Left-behind items (OFFICE_LIFE_PLAN 2.10, slice 11): on a real leave, each declared item with
+     * owner this NPC is shown at the post when a seeded roll falls under its
+     * leftBehindChance. The roll is keyed on the leave count and the item id, so a day replays the
+     * same. A world without leftBehindItems (the plain stubs) has none, and the log is unchanged.
+     */
+    _leaveItemsBehind(s) {
+        const out = [];
+        if (typeof this.world.leftBehindItems !== 'function') return out;
+        for (const it of this.world.leftBehindItems(s.npcId) || []) {
+            const chance = clamp(Number(it?.chance) || 0, 0, 1);
+            if (!it?.id || chance <= 0) continue;
+            if (this.roll(s.npcId, `left:${s.leaveCount}:${it.id}`) >= chance) continue;
+            if (!this.world.revealLeftBehind?.(it.id, s.npcId)) continue;
+            s.leftItems.push(it.id);
+            out.push(it.id);
+            this._log(s.npcId, 'left_behind', { item: it.id, leave: s.leaveCount });
+        }
+        if (out.length) this._worldChanged();
+        return out;
+    }
+
+    /**
+     * Back at the post: the owner picks up what it left (stow: hidden at its spot, global false, no
+     * server call), so a later leave can show it again. One the player took is gone for good:
+     * logged and emitted once, so a scenario can map the owner noticing.
+     */
+    _collectLeftItems(s) {
+        if (!s.leftItems.length) return;
+        const items = s.leftItems.splice(0);
+        for (const itemId of items) {
+            if (this.world.stowSlot?.(itemId)) {
+                this._log(s.npcId, 'stowed', { item: itemId, reason: 'collected' });
+            } else {
+                this._log(s.npcId, 'left_item_gone', { item: itemId });
+                this._emit(`npc_left_item_gone:${s.npcId}`, { npcId: s.npcId, itemId, ...this._playerProximity(s.npcId) });
+            }
+        }
+        this._worldChanged();
+    }
+
+    /**
+     * Rough length of this absence: the walk out and back at the NPC's needs speed (via the item for
+     * a carry) plus the target's dwell. The legs follow the route the NPC will actually walk — through
+     * doors, round furniture — via world.routeLength (the same pathfinder and leash as moveTo), so a
+     * trip to another room is not underestimated. Falls back per leg to the straight-line lower bound
+     * when the route cannot be computed (grid not ready, room not loaded, or a stub world with no
+     * routeLength). Queued (slice 11): plus one dwell per place in the line, shared across capacity.
+     */
+    _expectedAwayMs(s) {
+        const job = s.job;
+        const start = this.world.npcPos(s.npcId) || s.home;
+        if (!job || !start) return null;
+        const cellOf = (oid) => { const o = this.world.getObject(oid); return o ? { o, c: this.world.approachCell(o) } : null; };
+        const legs = [start];
+        if (job.kind === 'carry' && job.itemId) { const it = cellOf(job.itemId); if (it?.c) legs.push(it.c); }
+        const t = cellOf(job.targetId);
+        if (!t?.c) return null;
+        legs.push(t.c, s.home || start);
+        const canRoute = typeof this.world.routeLength === 'function';
+        const avoid = canRoute ? this._avoidRooms(s) : [];
+        const opts = avoid.length ? { avoidRooms: avoid } : undefined;
+        let dist = 0;
+        for (let i = 1; i < legs.length; i++) {
+            const a = legs[i - 1], b = legs[i];
+            let leg = null;
+            if (canRoute) { const r = this.world.routeLength(a, b, opts); if (Number.isFinite(r) && r > 0) leg = r; }
+            dist += leg != null ? leg : Math.hypot(b.x - a.x, b.y - a.y);
+        }
+        const speed = Math.max(1, Number(this.world.speedFor(s.npcId)) || 80);
+        const secs = Number(t.o.affordance?.useSeconds);
+        // A print errand never enters `using` (slice 17): no dwell at the desk
+        // A desk-phone answer (slice 19) lasts the call chosen at the claim, not the phone's 0 s
+        const useMs = job.errand ? 0 : job.phone ? (job.callMs || 0) : (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
+        let waitMs = 0;
+        if (job.phase === 'queued') {
+            const line = this._queuers(job.targetId);
+            const place = line.includes(s) ? line.indexOf(s) + 1 : line.length + 1;
+            const cap = Math.max(1, Number(t.o.affordance?.capacity) || 1);
+            waitMs = Math.ceil(place / cap) * useMs;
+        }
+        return Math.round(dist / speed * 1000 + useMs + waitMs);
+    }
+
+    /**
+     * While an NPC walks back from a real leave and is in its home room: the player within 1.5
+     * tiles of the home object's approach cell, or with a minigame open on that object, emits
+     * npc_caught_at_post:<npcId> once per return. Needs world.playerAtPost (absent: never).
+     */
+    _checkCaught(s, pos) {
+        const home = s.home;
+        if (!home?.objectId || typeof this.world.playerAtPost !== 'function') return;
+        if (home.roomId && pos?.roomId && pos.roomId !== home.roomId) return;
+        const p = this.world.playerAtPost(s.npcId, home) || {};
+        const near = Number.isFinite(p.distance) && p.distance <= CAUGHT_RADIUS;
+        if (!near && !p.inMinigame) return;
+        s.caughtEmitted = true;
+        s.caughtAt = this.clockMs;   // getState().noticed for NOTICED_MS (the action icons)
+        const playerDistance = Number.isFinite(p.distance) ? Math.round(p.distance) : null;
+        this._log(s.npcId, 'caught_at_post', { target: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
+        this._emit(`npc_caught_at_post:${s.npcId}`, { npcId: s.npcId, objectId: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
+    }
+
+    _moveForPhase(s, { reroute = false, nudge = false, noSwap = false } = {}) {
+        const id = s.npcId;
+        const job = s.job;
+        const destId = job.phase === 'goto_item' ? job.itemId : job.targetId;
+        const obj = job.visit?.cell ? null : this.world.getObject(destId);
+        let cell = job.visit?.cell ? { ...job.visit.cell } : (obj ? this.world.approachCell(obj) : null);
+        if (!cell) { this._failJob(s, 'no_approach'); return; }
+        if (job.phase === 'queued') {
+            const place = this._queuePlace(s, obj);
+            if (!place) { this._leaveQueue(s, 'no_queue_cell'); return; }
+            cell = place.cell;
+            job.qCell = `${Math.round(cell.x)},${Math.round(cell.y)}`;
+            job.qArrived = false;
+        }
+        let swapWith = null;
+        // A shared object (capacity 2+) someone else is already headed for: stand beside them, so
+        // the two can face each other (slice 8). Only a world with besideCell (the live adapter).
+        if (job.phase === 'goto_target' && typeof this.world.besideCell === 'function' && obj
+            && (Number(obj.affordance?.capacity) || 1) >= 2) {
+            const taken = [];
+            for (const o of this.states.values()) {
+                if (o !== s && o.job?.targetId === job.targetId && o.job.dest) taken.push(o.job.dest);
+            }
+            if (taken.some(d => Math.hypot(d.x - cell.x, d.y - cell.y) <= HOME_EPS)) {
+                // E8: the side cell must be reachable from where this NPC stands (its leash kept).
+                // None: fail now (npc_job_failed no_beside_cell, the fail cooldown, the walk home),
+                // rather than stand on the first user's cell or walk to a cut-off cell until the
+                // deadline. _startJob has already run _leavePost (npc_left_post) by this point.
+                const alt = this.world.besideCell(cell, taken, { from: this.world.npcPos(id), avoidRooms: this._avoidRooms(s) });
+                if (!alt) { this._failJob(s, 'no_beside_cell'); return; }
+                // A pair arriving from the same side: the side cell lies on the first user's way to
+                // the main cell, so whoever stands there first blocks the other (coffee pair, m03
+                // reception: the later claimant is often nearer, stops at the side cell, and the
+                // first waits behind it until its job times out). The nearer NPC takes the main
+                // cell and the first is re-routed to the side cell, so neither passes the other.
+                if (!noSwap) swapWith = this._sideBlocker(s, cell, alt);
+                if (!swapWith) cell = alt;
+            }
+        }
+        const pos = this.world.npcPos(id) || cell;
+        const speed = this.world.speedFor(id);
+        const dist = Math.hypot(cell.x - pos.x, cell.y - pos.y);
+        job.deadline = this.clockMs + Math.max(20000, 3 * dist / speed * 1000);
+        job.dest = { x: cell.x, y: cell.y };
+        if (swapWith) {
+            // The first user, still walking, gives up the main cell for the side cell (it is
+            // routed again with this NPC's dest now in `taken`)
+            this._log(swapWith.npcId, 'pair_side_swap', { target: job.targetId, with: id });
+            this._moveForPhase(swapWith, { noSwap: true });
+        }
+        // Own-desk work never moves the NPC: seated, its body sits ~30 px off the home cell, and a
+        // move would stand it up (goToAndStay unseats)
+        if (dist <= HOME_EPS || (s.atPost && this._atOwnPost(s))) { job.moveId = null; this._arrivals.set(id, { synthetic: true, moveId: null }); return; }
+        // SIMS-2: stamp this move's id so a stale arrival for a superseded move is ignored.
+        const moveId = this._nextMoveId();
+        job.moveId = moveId;
+        // arriveWithin: walk on to the cell itself (the behaviour layer's default stops a tile short)
+        return this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 3, moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
+    }
+
+    /**
+     * The other user of a shared object (capacity 2+), still walking to `cell`, who would have to
+     * pass the side cell `alt` to get there while `s` is nearer to `cell` than it is. null: no such
+     * user (it has arrived, is using, does not pass `alt`, or is not further away than `s`).
+     */
+    _sideBlocker(s, cell, alt) {
+        const me = this.world.npcPos(s.npcId);
+        if (!me) return null;
+        const dMe = Math.hypot(me.x - cell.x, me.y - cell.y);
+        for (const o of this.states.values()) {
+            if (o === s || o.job?.phase !== 'goto_target' || o.job.targetId !== s.job.targetId || o.job.visit || !o.job.dest) continue;
+            // R7 M1: one frozen in a conversation cannot be re-routed (it holds still; unfreezing re-issues its move)
+            if (o.mode === 'frozen') continue;
+            if (Math.hypot(o.job.dest.x - cell.x, o.job.dest.y - cell.y) > HOME_EPS) continue;
+            const p = this.world.npcPos(o.npcId);
+            if (!p) continue;
+            const dO = Math.hypot(p.x - cell.x, p.y - cell.y);
+            const onWay = Math.hypot(p.x - alt.x, p.y - alt.y) + Math.hypot(alt.x - cell.x, alt.y - cell.y) <= dO + 16;
+            if (!(dO > dMe && onWay)) continue;
+            // R7 M2: the re-routed user must be able to get a side cell by its own besideCell call
+            // (its leash, avoided rooms, other users' cells), or the swap would fail its job
+            const taken = [{ x: cell.x, y: cell.y }];
+            for (const u of this.states.values()) {
+                if (u !== s && u !== o && u.job?.targetId === s.job.targetId && u.job.dest) taken.push(u.job.dest);
+            }
+            if (!this.world.besideCell(cell, taken, { from: p, avoidRooms: this._avoidRooms(o) })) continue;
+            return o;
+        }
+        return null;
+    }
+
+    _advanceJob(s, arrived) {
+        const id = s.npcId;
+        const job = s.job;
+        if (job.kind === 'self') { if (this.clockMs >= job.useUntil) this._completeJob(s); return; }
+        // Slice 17: the print errand's leg back to the desk is the return. _checkCaught has no
+        // once-per-return guard of its own, and the errand holds job.errand from its start
+        if (job.errand && job.carrying && !s.atPost && !s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
+        // Slice 18a: the target was switched off while on the way or in its queue. Not in _recheck,
+        // which returns at once for an NPC with no avoidance radius. One already using it finishes.
+        if ((job.phase === 'goto_target' || job.phase === 'queued') && job.kind === 'use' && job.offWhen !== undefined
+            && this._globalHolds(job.offWhen)) {
+            const rec = this._offSeen.get(job.targetId);
+            if (rec) rec.off = true; else this._offSeen.set(job.targetId, { cond: job.offWhen, off: true });
+            this._turnBack(s, 'off');
+            return;
+        }
+        // Slice 18b-i: a magnet picked up, finished or out of servings. Walkers and queuers turn back
+        // with `gone`; one eating finishes at once (its serving was taken at the start)
+        if (job.magnet) {
+            const live = !!this._shownMagnets()?.has(job.targetId);
+            if (job.phase === 'using' && !live) { this._log(id, 'magnet_left', { target: job.targetId }); this._completeJob(s); return; }
+            if ((job.phase === 'goto_target' || job.phase === 'queued') && (!live || this._servingsLeft(job.targetId) <= 0)) { this._turnBack(s, 'gone'); return; }
+        }
+        // Slice 14: someone avoided turned up at the target while on the way or in its queue
+        if ((job.phase === 'goto_target' || job.phase === 'queued') && this._recheck(s)) return;
+        if (job.phase === 'queued') { this._advanceQueued(s, arrived); return; }
+        if (job.phase === 'goto_item' || job.phase === 'goto_target') {
+            if (job.phase === 'goto_item') {
+                const item = this.world.getObject(job.itemId);
+                if (!item || !item.pickable) { this._itemGone(s); this._abortJob(s, 'item_gone', { cancel: true }); this._goHome(s); return; }
+                if (item.slot) job.slot = true;
+                if (typeof item.usbClass === 'string') job.usbClass = item.usbClass;   // access 9.2 U
+            }
+            if (!arrived) {
+                if (this.clockMs >= job.deadline) this._failJob(s, 'timeout');
+                return;
+            }
+            if (job.phase === 'goto_item') {
+                const took = this.world.pickUp(id, job.itemId);
+                this._worldChanged();
+                if (!took) { this._itemGone(s); this._abortJob(s, 'item_gone', { cancel: false }); this._goHome(s); return; }
+                job.carrying = true;
+                this._log(id, 'picked_up', { item: job.itemId });
+                this._emit(`npc_picked_up:${job.itemId}`, { npcId: id, itemId: job.itemId, tag: job.tag });
+                job.phase = 'goto_target';
+                this._moveForPhase(s);
+                return;
+            }
+            const obj = this.world.getObject(job.targetId);
+            if (obj) this.world.faceTo(id, obj.x, obj.y);
+            // A need for its own post object turned urgent on the walk home, so the walk became
+            // this job; or the job is a delivery to the own post (a printout taken back to the
+            // desk). Arriving for it is the return: say so now, or the post's owner sits
+            // through the whole session before anything hears that it is back (a workstation
+            // stayed locked, with its owner at it, for the length of the session). The test is
+            // the target, not the job's kind; _atOwnPost stays `use` only for the wind-up and
+            // stayPut decisions. The player at the desk was already checked this tick, by the
+            // per-tick check on a goto_target walk to the own post in tick().
+            if (!s.atPost && this._targetsOwnPost(s)) {
+                s.atPost = true;
+                this._log(id, 'returned_post');
+                this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
+            }
+            // A print errand completes on arrival, without `using` (no post stop, no chair fetch)
+            if (job.errand) { this._completeJob(s); return; }
+            // Slice 19: a colleague at a ringing desk phone picks up (the call chosen at the claim)
+            if (job.phone) { this._colleagueAnswers(s, obj); return; }
+            // Slice 18b-i: a serving is taken as eating starts, so nobody eats one that is not there
+            if (job.magnet && !this._takeServing(s, job.targetId)) {
+                // Selection keeps a fed NPC off the cake, so the share case is a guard; it goes home quietly
+                this._turnBack(s, (s.ate[job.targetId] || 0) >= (this._magnets.get(job.targetId)?.cfg.perPerson ?? Infinity) && this._servingsLeft(job.targetId) > 0 ? 'had_share' : 'gone');
+                return;
+            }
+            job.phase = 'using';
+            if (job.kind === 'visit') {
+                // Access 9.2 A (5.3): a visit's dwell; it claims nothing and pairs with nobody
+                const vs = Number(job.visit?.useSeconds);
+                job.useUntil = this.clockMs + (Number.isFinite(vs) ? clamp(vs, 0, 600) : VISIT_DWELL_S) * 1000;
+                this._log(id, 'visiting', { kind: job.visit?.kind, target: job.targetId });
+                // Access 9.2 H (6.5): the runner says a share's line on arrival and listens from then
+                const v = job.visit || {};
+                // world.emit, not _emit: an arrival changes no world state, so it clears no NPC's
+                // select back-off (review R1 n1)
+                this.world.emit(`npc_visit_arrived:${id}`, { npcId: id, kind: v.kind, at: { ...(v.at || {}) }, data: v.data ?? null });
+                return;
+            }
+            const secs = job.socialDesk ? this._socialUseSeconds(s) : Number(obj?.affordance?.useSeconds);
+            job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
+            this._log(id, 'using', { need: job.need, target: job.targetId });
+            // Slice 20: room tone's startSound. world.emit, not _emit: the per-tick object cache stays
+            this.world.emit(`npc_use_started:${job.targetId}`, { npcId: id, objectId: job.targetId, need: job.need });
+            // Access 9.2 H (6.4): the borrower signs in there; the workstation layer displaces a held session.
+            // From here the borrow has started (q43): cut short, it still counts as done (_abortJob)
+            if (job.borrowed) {
+                if (job.borrow) job.borrow.started = true;
+                this._emit(`npc_sat_at:${job.targetId}`, { npcId: id, objectId: job.targetId });
+            }
+            if (obj) this._maybePair(s, obj);
+            return;
+        }
+        // Slice 19: a colleague's answer ends with its call (tick rounding can carry a call past useUntil)
+        if (job.phase === 'using' && this.clockMs >= job.useUntil && !(job.phone && s.call)) this._completeJob(s);
+    }
+
+    _completeJob(s) {
+        const id = s.npcId;
+        const job = s.job;
+        if (job.kind === 'self') { this._completeSelfJob(s); return; }
+        const n = job.need ? s.needs[job.need] : null;
+        const obj = this.world.getObject(job.targetId);
+        const aff = obj?.affordance || job.aff || {};
+        // Access slice 9.2 U (plan 7): the target's USB policy refuses the carried device's class
+        if (job.carrying && job.usbClass && usbRefusedBy(obj?.usbPolicy ?? null, job.usbClass)) { this._refuseUse(s); return; }
+        // Access slice 9.2 A (plan 5.3): a visit restores nothing and fires no npc_used
+        if (job.kind === 'visit') { this._completeVisit(s); return; }
+        // Access slice 9.2 A (plan 5.2): a judged use is checked before anything is restored
+        const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
+        // Access 9.2 L (6.6): at its own station, a use waits at the desk for a check in flight
+        const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
+        // User decision q36: at a borrowed PC too, for the check sent as the borrower sat down.
+        // Review R1 m1: the report queue can stall before it sends (a sync PUT that never
+        // settles), so the hold there lasts at most BORROW_CHECK_WAIT_MS (needs clock) from when it
+        // began. Review R2 m1: a lapse there fails closed, as at the station. The use is skipped
+        // unjudged (nothing restored, no npc_used, no ease or feed request) and the borrow ends
+        // not met, with `lapsed: true` on both borrow events (review R3 m1); the check stays in
+        // flight, so a late answer still flags the PC and the next borrow there waits again
+        const atBorrow = judged && !!job.borrowed && (job.need === 'work' || job.need === 'social_media');
+        if (atBorrow && s.lockCheck[job.targetId] !== undefined) {
+            if (!job.lockHeld) { job.lockHeld = true; job.lockHeldAt = this.clockMs; this._log(id, 'use_held', { target: job.targetId }); }
+            if (this.clockMs - job.lockHeldAt < BORROW_CHECK_WAIT_MS) return;
+            this._log(id, 'lock_check_lapsed', { target: job.targetId, borrowed: true });
+            this._borrowDone(s, job, false, null, { lapsed: true });
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut: false });
+            return;
+        }
+        if (atStation && s.lockCheck[job.targetId] !== undefined) {
+            if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {
+                if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
+                return;
+            }
+            // Review R1 n1 (6.6: a slow answer never lets one use through as met): a lapse is not
+            // judged. The use is skipped (nothing restored, no npc_used, no report) and the check
+            // stays in flight with its wait started again, so the next use there waits for the
+            // answer too; the NPC never freezes, and only an answer ends the wait
+            s.lockCheck[job.targetId] = this.clockMs;
+            this._log(id, 'lock_check_lapsed', { target: job.targetId });
+            const stayPut = s.atPost && this._atOwnPost(s);
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut });
+            return;
+        }
+        let v = { met: true };
+        if (judged && typeof this.world.useVerdict === 'function') {
+            // Access 9.2 H (6.4): at a borrowed PC the verdict runs with that PC's routes
+            v = (job.borrowed ? this.world.useVerdict(id, job.need, obj, job.borrow?.routes || null) : this.world.useVerdict(id, job.need, obj)) || { met: true };
+        }
+        // Access 9.2 L (6.6): a station failure, first in the list (5.2), never at a borrowed PC
+        // (per PC). User decision q33: social media too, since a lockout stops every use of the PC.
+        // An NPC with a phone never fails social media (8.1): a use that reaches a locked station
+        // (flagged while it was on its way, or by the check it waited for) is dropped unjudged,
+        // like a lapse, and the next choice passes the station over for the phone
+        if (atStation && job.need === 'social_media' && s.lockedOut.has(job.targetId) && this._rec(s).phone !== false) {
+            this._log(id, 'use_dropped_locked_out', { target: job.targetId, need: job.need });
+            const stayPut = s.atPost && this._atOwnPost(s);
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut });
+            return;
+        }
+        if (atStation && (job.need === 'work' || job.need === 'social_media') && s.lockedOut.has(job.targetId)) {
+            const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
+            v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
+        }
+        // The USB habit (q39): never at a borrowed PC, nor where the owner is locked out
+        if (atStation && job.need === 'work' && !s.lockedOut.has(job.targetId)) v = this._usbAttempt(s, obj, v);
+        // User decision q36: the borrower's username is locked out at the hot desk, so its sign-in
+        // there fails and the use is not met (a failed borrowed use is still not reported, 6.4)
+        if (atBorrow && s.lockedOut.has(job.targetId)) {
+            const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
+            v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest] };
+        }
+        // Access 9.2 H (6.4): the borrower signed in before finding out, so a session is left either
+        // way; said before anything else (before a failed verdict's turn-back)
+        if (job.borrowed) this._borrowDone(s, job, !!v.met);
+        if (!v.met) { this._failUse(s, v); return; }
+        if (n && s.temptBack[job.need]) delete s.temptBack[job.need];
+        if (n) {
+            let restores = job.socialDesk ? this._socialRestores(s) : (asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0);
+            restores *= 1 + (s.rng() * 2 - 1) * n.jitterPct / 100;
+            s.levels[job.need] = clamp(s.levels[job.need] + restores, 0, 100);
+            s.lastSatisfiedAt[job.need] = this.clockMs;
+        }
+        // The outcome follows the item's kind (2.2 Part A): a plain item is consumed (today's path);
+        // a reveal slot is set down on the target, or filed at once when the target says stow
+        let outcome = null;
+        if (job.carrying && job.slot) {
+            outcome = aff.onDeliver === 'stow' ? 'stow' : 'place';
+            if (outcome === 'place' && this.world.placeHeld?.(id, job.itemId, obj)) {
+                const ms = this._placeMs(aff);
+                if (ms > 0) this._placed.set(job.itemId, { at: this.clockMs + ms, npcId: id });
+            } else {
+                outcome = 'stow';
+                this.world.stowHeld?.(id, job.itemId);
+            }
+            this._worldChanged();
+        } else if (job.carrying) { this.world.consumeHeld(id, job.itemId); this._worldChanged(); }
+        const rec = this.world.getNpc(id) || {};
+        this._log(id, 'used', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, item: job.itemId || undefined, outcome: outcome || undefined, level: n ? round2(s.levels[job.need]) : undefined, payloadPresent: rec.usePayload !== undefined });
+        this._emit(`npc_used:${job.targetId}`, {
+            npcId: id, objectId: job.targetId, need: job.need,
+            itemId: job.carrying ? job.itemId : null, tag: job.carrying ? job.tag : null,
+            payload: cloneData(rec.usePayload),
+            ...this._playerProximity(id),
+            ...(judged ? { met: true } : {})
+        });
+        // Access 9.2 A (5.4): a met judged use eases frustration, re-arms the need and ends the outage's check
+        if (judged) {
+            s.rearm[job.need] = true;
+            s.failCause[job.need] = [];   // met: nothing holds for this need now
+            if (job.need === 'work') s.checked.clear();
+            // The USB habit (review R1 m1): every met work use at a station that refuses the stick is
+            // reported, even at level 0, since the server counts them to know which use carries a copy
+            const usbCount = atStation && job.need === 'work' && this._usbStickHeld(s) && usbRefusedBy(obj?.usbPolicy ?? null, 'storage');
+            if ((s.frustration > 0 || s.failSent[job.need] || usbCount) && typeof this.world.reportUse === 'function') {
+                this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
+                delete s.failSent[job.need];
+            }
+        }
+        const hook = rec.onUse && rec.onUse[job.targetId];
+        if (hook && typeof hook === 'object') {
+            if (typeof hook.setGlobal === 'string' && hook.setGlobal) { this.world.setGlobal(hook.setGlobal, true); this._worldChanged(); }
+            if (typeof hook.emitEvent === 'string' && hook.emitEvent) this._emit(hook.emitEvent, { npcId: id, objectId: job.targetId });
+            // Something that prints: show the producer's first free reveal slot (2.2 Part A). Only a
+            // need use prints (slice 17), never a delivery, and only when the start-time roll said so;
+            // the print is owned (reserved, fetched or forgotten) only when the NPC has a habits.print
+            // Slice 22: the producer is chosen now, from the list, by which printers are on
+            if (printerList(hook.revealOutput).length && job.need && !job.carrying && job.printTo) {
+                const habit = rec.habits?.print && typeof rec.habits.print === 'object' ? rec.habits.print : null;
+                const pick = this._pickProducer(job.printTo);
+                if (pick.producerId) this._revealOutput(pick.producerId, id, habit ? { habit } : null, pick.skipped);
+                else this._printBlocked(s, job.targetId, job.printTo, false);
+            }
+        }
+        if (job.errand) {
+            const producerId = this._prints.get(job.itemId)?.producerId ?? null;
+            this._prints.delete(job.itemId);
+            this._log(id, 'print_fetched', { item: job.itemId, viaCommand: !!job.viaCommand });
+            this._emit(`npc_print_fetched:${id}`, { npcId: id, slotId: job.itemId, producerId, viaCommand: !!job.viaCommand });
+        }
+        const stayPut = s.atPost && this._atOwnPost(s);
+        s.job = null;
+        this._clearBackoffs();   // a target or item may have come free; waiting NPCs do not know which
+        this._goHome(s, { stayPut });
+    }
+
+    /**
+     * Access slice 9.2 U (plan 7): the target refused the carried device. Nothing is consumed and
+     * no npc_used fires; npc_use_refused and a usb_refused mutter do. The job carries on to the
+     * nearest other free, reachable object that accepts the tag and does not refuse the class;
+     * with none, the NPC puts the device down where it stands, remembers it and goes home.
+     */
+    _refuseUse(s) {
+        const id = s.npcId;
+        const job = s.job;
+        this._log(id, 'use_refused', { tag: job.tag || undefined, target: job.targetId, item: job.itemId, usbClass: job.usbClass });
+        this._emit(`npc_use_refused:${job.targetId}`, { npcId: id, objectId: job.targetId, itemId: job.itemId, tag: job.tag, usbClass: job.usbClass });
+        this._grumble(s, job.targetId, 'usb_refused', 'usb_refused', { ignoreCooldown: true, icons: null });
+        (job.refusedBy || (job.refusedBy = [])).push(job.targetId);
+        const pos = this.world.npcPos(id);
+        const targets = this._objects().filter(o => o.affordance && asList(o.affordance.accepts).includes(job.tag)
+            && !job.refusedBy.includes(o.id) && !usbRefusedBy(o.usbPolicy ?? null, job.usbClass)
+            && this._free(s, o) && this._permitted(s, o, false));
+        const next = pos ? this._nearestReachable(s, targets, pos) : null;
+        if (next) {
+            job.targetId = next.id;
+            job.phase = 'goto_target';
+            job.useUntil = 0;
+            this._log(id, 'retarget', { target: next.id, item: job.itemId });
+            this._leavePost(s);
+            return;
+        }
+        this.world.dropHeld(id, job.itemId);
+        this._worldChanged();
+        s.refused.add(job.itemId);
+        this._log(id, 'put_down', { item: job.itemId });
+        const stayPut = s.atPost && this._targetsOwnPost(s);
+        s.job = null;
+        this._clearBackoffs();
+        this._goHome(s, { stayPut });
+    }
+
+    /**
+     * The USB habit (USB_HABIT_PLAN.md, q39): every work.usb.every-th judged work use at the
+     * station copies a file to a stick. Where the station's policy refuses storage the use fails
+     * with usb_refused (after any other cause), npc_usb_refused fires and the habit's setGlobal
+     * (the NPC emails the file to itself instead) is set; the server sets it too when it accepts
+     * the fail. Where the policy allows it, npc_usb_copied fires and the verdict stands.
+     */
+    _usbAttempt(s, obj, v) {
+        const usb = this._plan(s)?.usb;
+        const every = Number.isInteger(usb?.every) && usb.every >= 1 && usb.every <= 10 ? usb.every : 0;
+        // No stick, nothing to copy: the use is a plain use (2026-11-12), and the count stands still
+        if (!every || !this._usbStickHeld(s)) return v;
+        s.usbUses += 1;
+        if (s.usbUses % every !== 0) return v;
+        const id = s.npcId;
+        const objectId = s.job.targetId;
+        if (!usbRefusedBy(obj?.usbPolicy ?? null, 'storage')) {
+            this._log(id, 'usb_copied', { target: objectId });
+            this._emit(`npc_usb_copied:${id}`, { npcId: id, objectId });
+            return v;
+        }
+        this._log(id, 'usb_refused', { target: objectId });
+        this._emit(`npc_usb_refused:${id}`, { npcId: id, objectId });
+        if (typeof usb.setGlobal === 'string' && usb.setGlobal) { this.world.setGlobal(usb.setGlobal, true); this._worldChanged(); }
+        const rest = Array.isArray(v.missing) ? v.missing.filter(c => c && c.why !== 'usb_refused') : [];
+        return { met: false, missing: [...rest, { id: objectId, why: 'usb_refused' }], station: !!v.station };
+    }
+
+    /**
+     * The USB habit's stick (2026-11-12): the plan names it (work.usb.stick) and the NPC's record
+     * still holds an item with that id. A give, a pickpocket or a knock-out takes it out of
+     * itemsHeld (and the server leaves it out of room data on a reload), so the habit stops.
+     */
+    _usbStickHeld(s) {
+        const stick = this._plan(s)?.usb?.stick;
+        if (typeof stick !== 'string' || !stick) return false;
+        const held = this._rec(s).itemsHeld;
+        return Array.isArray(held) && held.some(i => i && i.id === stick);
+    }
+
+    /**
+     * Ends a borrow: emits `npc_borrowed_session:<pcId>` (when the borrow leaves a session open)
+     * and `npc_borrow_done:<npcId>`. `met: false` alone means the borrowed use was judged and
+     * failed. Review R3 m1: `met: false` with `lapsed: true` means the use was skipped unjudged
+     * (a lock check hold that ran past BORROW_CHECK_WAIT_MS), not refused, so a mapping for
+     * "failed there" should require `!data.lapsed`. `lapsed` is only present on a lapse.
+      * `cut` names the abort that ended the use early (q43); a lapse passes `cut` null.
+     */
+    _borrowDone(s, job, met, cut = null, { lapsed = false } = {}) {
+        const id = s.npcId;
+        const b = job.borrow;
+        if (!b || b.done) return;
+        b.done = true;   // a failed use is done before its turn-back aborts the job
+        if (s.borrow === b) s.borrow = null;
+        const extra = { ...(cut ? { cut } : {}), ...(lapsed ? { lapsed: true } : {}) };
+        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen, ...extra });
+        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met, ...extra });
+        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand, ...extra });
+        // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
+        this._showWorkaround(s);
+    }
+
+    /**
+     * Access slice 9.2 A (plan 5.2): a judged use whose verdict failed. Nothing is restored, no
+     * npc_used fires and no onUse hook applies; npc_use_failed fires and the job ends as a
+     * `failed` turn-back, which parks the need with the globals it wakes on.
+     */
+    _failUse(s, v) {
+        const id = s.npcId;
+        const job = s.job;
+        const missing = (v.missing || []).map(c => ({ ...c }));
+        const rules = this.world.workRules;
+        const wakeOn = rules?.wakeOnFor ? rules.wakeOnFor(this._plan(s), missing, n => this._globalValue(n)) : [];
+        this._log(id, 'use_failed', { need: job.need, target: job.targetId, causes: missing.map(c => `${c.id}:${c.why}`).join(',') });
+        this._emit(`npc_use_failed:${id}`, { npcId: id, objectId: job.targetId, need: job.need, missing, station: !!v.station });
+        const borrowed = !!job.borrowed;   // 6.4: a failed borrowed use is not reported (sub-slice H)
+        this._turnBack(s, 'failed', null, { missing, wakeOn, borrowed });
+    }
+
+    /** Player proximity at use time: { playerNearby, playerDistance }. */
+    _playerProximity(npcId) {
+        const p = typeof this.world.playerProximity === 'function' ? this.world.playerProximity(npcId) : null;
+        return { playerNearby: !!(p && p.nearby), playerDistance: p && Number.isFinite(p.distance) ? Math.round(p.distance) : null };
+    }
+
+    _failJob(s, reason) {
+        const job = s.job;
+        if (job) s.cooldowns[job.phase === 'goto_item' ? job.itemId : job.targetId] = this.clockMs + (job.borrowed ? BORROW_FAIL_COOLDOWN_MS : FAIL_COOLDOWN_MS);
+        this._emit(`npc_job_failed:${s.npcId}`, { npcId: s.npcId, need: job?.need, targetId: job?.targetId, reason });
+        this._abortJob(s, reason, { cancel: true, failed: true });
+        this._goHome(s);
+    }
+
+    /** The player took the item an NPC was fetching: a scenario can map the owner noticing. */
+    _itemGone(s) {
+        const job = s.job;
+        this._emit(`npc_job_failed:${s.npcId}`, { npcId: s.npcId, need: job?.need, targetId: job?.targetId, itemId: job?.itemId, reason: 'item_gone' });
+    }
+
+    /**
+     * revealOutput hook: the producer's first free slot (id order) is shown; with none free, a
+     * cosmetic copy that nobody can take stands in for the producer's placeSeconds.
+     */
+    _revealOutput(producerId, npcId, own = null, skipped = null) {
+        if (typeof this.world.revealOutput !== 'function') return null;
+        // Slice 17: a full pool recycles the oldest forgotten reserved slot of this producer, for any
+        // print, owned or not (read-in-place slots first, so the takeable one is the last to go)
+        let full = false;
+        if (typeof this.world.freeSlotOf === 'function' && !this.world.freeSlotOf(producerId)) {
+            const old = this._recyclable(producerId);
+            if (old) {
+                this._prints.delete(old);
+                this._placed.delete(old);
+                if (this.world.stowSlot?.(old)) this._log(npcId, 'recycled', { item: old, target: producerId });
+            } else full = true;
+        }
+        const r = this.world.revealOutput(producerId, npcId, { printedBy: own ? npcId : null }) || {};
+        this._worldChanged();
+        if (r.slotId) {
+            this._log(npcId, 'revealed', { target: producerId, item: r.slotId, skipped: skipped?.length ? skipped : undefined });
+            this._prints.delete(r.slotId);
+            if (own) this._reserve(r.slotId, producerId, npcId, own);
+            return r.slotId;
+        }
+        this._log(npcId, 'revealed', { target: producerId, reason: 'no_free_slot' });
+        if (full) this._log(npcId, 'print_no_slot', { target: producerId });
+        if (r.cosmetic) {
+            const ms = this._placeMs(this.world.getObject(producerId)?.affordance);
+            if (ms > 0) this._placed.set(r.cosmetic, { at: this.clockMs + ms, npcId, cosmetic: true });
+        }
+        return null;
+    }
+
+    /**
+     * Slice 22 (OFFICE_LIFE_PLAN 12.12): where a print goes. The first listed producer that is on
+     * (offWhen does not hold) and has a free or recyclable slot; else the first that is
+     * on (today's full-pool path); else none. A producer the world does not know (its room not
+     * loaded) is off in a list of two or more; a list of one keeps the old behaviour.
+     * Returns { producerId, slot, skipped }: skipped lists the producers passed over before it.
+     */
+    _pickProducer(list) {
+        const on = [];
+        for (const id of list) {
+            const o = this.world.getObject(id);
+            if (o ? !this._isOff(o) : list.length === 1) on.push(id);
+        }
+        const withSlot = on.find(id => this._slotAvailable(id));
+        const producerId = withSlot || on[0] || null;
+        const skipped = producerId ? list.slice(0, list.indexOf(producerId)) : list.slice();
+        return { producerId, slot: !!withSlot, skipped };
+    }
+
+    /**
+     * Slice 22: every listed printer is off, so nothing prints. Logged and emitted; the owner at its
+     * desk grumbles from grumble_printer_off (lines), else shows the blocked picture. A command
+     * (the NPC is elsewhere) does not grumble.
+     */
+    _printBlocked(s, objectId, list, viaCommand) {
+        const id = s.npcId;
+        this._log(id, 'print_blocked', { target: objectId || undefined, producers: list.slice(), viaCommand: viaCommand || undefined });
+        this._emit(`npc_print_blocked:${id}`, { npcId: id, objectId: objectId || null, producers: list.slice(), viaCommand: !!viaCommand, ...this._playerProximity(id) });
+        if (viaCommand) return;
+        const pick = this._pickBark(s, 'grumble_printer_off', { unheard: this._unheard(s, 'grumble_printer_off') });
+        if (pick) this._showSaying(s, pick, 'grumble_printer_off', objectId);
+    }
+
+    // ── print and forget (slice 17, OFFICE_LIFE_PLAN 12.3) ──────────────────
+
+    /** True when someone other than npcId owns the print on this slot (a reservation). */
+    _reservedFrom(slotId, npcId) {
+        if (!this._prints.size) return false;
+        const p = this._prints.get(slotId);
+        return !!(p && p.ownerId !== npcId);
+    }
+
+    /** The slot is shown on its tray: loaded, visible, not in a hand or set down, not taken. */
+    _onTray(slotId) {
+        const o = this.world.getObject(slotId);
+        return !!(o && o.pickable && o.roomId);
+    }
+
+    /** A print can land on a real slot: one is free, or a forgotten one can be recycled. */
+    _slotAvailable(producerId) {
+        if (typeof this.world.freeSlotOf !== 'function') return true;
+        return !!(this.world.freeSlotOf(producerId) || this._recyclable(producerId));
+    }
+
+    /** The oldest forgotten reserved slot of a producer still on its tray, read-in-place ones first. */
+    _recyclable(producerId) {
+        let best = null;
+        for (const [id, p] of this._prints) {
+            if (p.producerId !== producerId || !p.forgotten || p.errand || !this._onTray(id)) continue;
+            const key = [p.readInPlace ? 0 : 1, p.at, id];
+            if (!best || key[0] < best[0] || (key[0] === best[0] && (key[1] < best[1] || (key[1] === best[1] && key[2] < best[2])))) best = key;
+        }
+        return best ? best[2] : null;
+    }
+
+    /**
+     * An owned print: two seeded rolls on <ownerId>:<printCount> (a per-owner count, so a re-used
+     * slot does not repeat its fate): forget (forgetChance, default 0), else a due time inside
+     * fetchAfterSeconds (default [20, 60]). A command's forget / fetchAfterSeconds win.
+     */
+    _reserve(slotId, producerId, ownerId, own) {
+        const s = this.states.get(ownerId);
+        const habit = own.habit || {};
+        const count = s ? ++s.printCount : 0;
+        const range = Array.isArray(own.fetchAfterSeconds) ? own.fetchAfterSeconds : habit.fetchAfterSeconds;
+        let lo = 20, hi = 60;
+        if (Array.isArray(range) && range.length === 2 && range.every(v => Number.isFinite(Number(v)))) {
+            lo = clamp(Number(range[0]), 0, 3600); hi = clamp(Number(range[1]), lo, 3600);
+        }
+        let forgotten;
+        if (typeof own.forget === 'boolean') forgotten = own.forget;
+        else {
+            const fc = clamp(Number(habit.forgetChance) || 0, 0, 1);
+            forgotten = fc > 0 && this.roll(ownerId, `print_forget:${count}`) < fc;
+        }
+        const dueAt = forgotten ? null : this.clockMs + Math.round((lo + this.roll(ownerId, `print_due:${count}`) * (hi - lo)) * 1000);
+        const aff = this.world.getObject(producerId)?.affordance;
+        const unc = Number(aff?.uncollectedAfterSeconds);
+        const share = Number(habit.shareAfterSeconds);
+        const w = Number(habit.weight);
+        this._prints.set(slotId, {
+            ownerId, producerId, at: this.clockMs, dueAt, forgotten, viaCommand: !!own.viaCommand,
+            weight: Number.isFinite(w) && w > 0 ? clamp(w, 0.1, 10) : 2,
+            uncollectedAt: this.clockMs + (Number.isFinite(unc) ? clamp(unc, 0, 3600) : 60) * 1000,
+            shareAt: Number.isFinite(share) && share > 0 ? this.clockMs + share * 1000 : null,
+            readInPlace: this.world.getObject(slotId)?.takeable !== true,
+            uncollected: false, errand: false
+        });
+        this._log(ownerId, 'print_reserved', { item: slotId, target: producerId, forgotten, dueMs: dueAt === null ? undefined : dueAt - this.clockMs, viaCommand: own.viaCommand ? true : undefined });
+    }
+
+    /** This NPC has an owned print whose fetch is due (the _select early-return guard). */
+    _dueErrand(s) {
+        if (!this._prints.size) return false;
+        for (const p of this._prints.values()) {
+            if (p.ownerId === s.npcId && !p.forgotten && !p.errand && this.clockMs >= p.dueAt) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The fetch errand: the owner's earliest due print still on the tray, carried to its needsHome
+     * object (no accepts check). Only the usual room rules and reachability apply.
+     */
+    _errandCandidate(s) {
+        const homeId = s.home?.objectId;
+        if (!homeId || !this.world.getObject(homeId)) return null;
+        let pick = null;
+        for (const [id, p] of [...this._prints.entries()].sort((a, b) => (a[1].dueAt - b[1].dueAt) || (a[0] < b[0] ? -1 : 1))) {
+            if (p.ownerId !== s.npcId || p.forgotten || p.errand || !(this.clockMs >= p.dueAt)) continue;
+            if (s.cooldowns[id] > this.clockMs) continue;
+            const item = this.world.getObject(id);
+            if (!item || !item.pickable || !this._permitted(s, item, false) || !this._reachable(s, item)) continue;
+            pick = { kind: 'carry', targetId: homeId, itemId: id, tag: item.needsTag || null, need: null, score: p.weight, errand: true, viaCommand: p.viaCommand };
+            break;
+        }
+        return pick;
+    }
+
+    /** Per tick: a print taken before its fetch, uncollected prints, and shared ones. */
+    _tickPrints() {
+        for (const [id, p] of [...this._prints.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+            if (p.errand) continue;
+            const onTray = this._onTray(id);
+            if (!onTray) {
+                if (p.forgotten) { this._prints.delete(id); continue; }
+                if (this.clockMs < p.dueAt) continue;
+                // Taken first: the owner finds it gone at the due time and does not walk
+                this._prints.delete(id);
+                this._log(p.ownerId, 'print_gone', { item: id });
+                this._emit(`npc_print_gone:${p.ownerId}`, { npcId: p.ownerId, slotId: id, ...this._playerProximity(p.ownerId) });
+                continue;
+            }
+            if (!p.uncollected && this.clockMs >= p.uncollectedAt) {
+                p.uncollected = true;
+                const ageMs = this.clockMs - p.at;
+                this._log(p.ownerId, 'print_uncollected', { item: id, ageMs, forgotten: p.forgotten });
+                this._emit(`npc_print_uncollected:${p.ownerId}`, { ownerId: p.ownerId, slotId: id, producerId: p.producerId, ageMs, forgotten: p.forgotten });
+            }
+            if (p.shareAt !== null && this.clockMs >= p.shareAt) {
+                this._prints.delete(id);
+                this.world.setPrintedBy?.(id, null);
+                this._log(p.ownerId, 'print_shared', { item: id });
+                this._clearBackoffs();
+            }
+        }
+    }
+
+    _abortJob(s, reason, { cancel, failed } = {}) {
+        const job = s.job;
+        if (!job) return;
+        if (cancel) this.world.cancelMove(s.npcId);
+        // A slot is filed rather than dropped: the server cannot save where an NPC left it
+        if (job.carrying && job.slot && typeof this.world.stowHeld === 'function') { this.world.stowHeld(s.npcId, job.itemId); this._worldChanged(); }
+        else if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
+        this._log(s.npcId, failed ? 'job_failed' : 'job_aborted', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, reason });
+        // User decision q43: a borrow cut short after the borrower sat down (a script move, a
+        // suspend, a knock-out or hide, a turn-back; a conversation only freezes it) counts as
+        // done with the session left: the borrower signed in there, so the runner reports it
+        // done and the player can find the guest session. Unmet, since the use never finished.
+        // A reset reports it dropped instead (reset())
+        if (job.borrowed && job.borrow?.started && reason !== 'reset') this._borrowDone(s, job, false, reason);
+        // Slice 17: a print errand that never picked its slot up may try again; one that did, or found
+        // it gone, is over (the slot was filed, or the player has it)
+        if (job.errand) {
+            const p = this._prints.get(job.itemId);
+            if (p && (job.carrying || reason === 'item_gone')) this._prints.delete(job.itemId);
+            else if (p) p.errand = false;
+        }
+        // Review R2 m5: a visit cut short (walk deadline, turn-back, any abort) is dropped, so a
+        // listener waiting on npc_visit_done or npc_visit_dropped always hears one; a check visit
+        // frees its resource so the next failure queues it again. A reset rebuilds every state.
+        if (job.kind === 'visit' && job.visit && reason !== 'reset') {
+            const v = job.visit;
+            if (v.kind === 'check' && v.data?.resourceId) s.checked.delete(v.data.resourceId);
+            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at?.objectId || v.at?.npcId, reason });
+            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data, reason });
+        }
+        s.job = null;
+        this._clearBackoffs();
+    }
+
+    /**
+     * Resolve (or re-resolve) the NPC's post. A `needsHome` object that isn't registered yet
+     * (start-room NPCs register before the room's objects) gives a provisional home at the
+     * current spot, retried every HOME_RETRY_TICKS until the object is there; a resolved
+     * home is cached and never looked up again.
+     */
+    _updateHome(s, pos) {
+        const h = this._resolveHome(s, pos);
+        if (!h.provisional) {
+            if (s.home?.provisional) {
+                this._log(s.npcId, 'home_resolved', { target: h.objectId || undefined });
+                // A start-room NPC's needs can go urgent before the room's objects register, and
+                // park `no_source` for the full defer. Its sources exist now, so those parks retry
+                // (once: a genuine no_source parks again for the full timer).
+                const woken = Object.keys(s.parked).sort().filter(n => s.parked[n].reason === 'no_source');
+                this._wakeParkedFor(s, woken);
+            }
+            const first = !s.home || s.home.provisional;
+            s.home = h;
+            // Spawn and reload: a coordinate home with a facing turns the NPC at it once, the first time
+            // the home resolves while it stands there (a trip's return turns it separately)
+            if (first && h.facing && !h.objectId && pos && Math.hypot(pos.x - h.x, pos.y - h.y) <= HOME_EPS * 2) {
+                const p = facingPointFrom(pos, h.facing, 64);
+                if (p) this.world.faceTo?.(s.npcId, p.x, p.y);
+            }
+            return;
+        }
+        if (!s.home) s.home = h;   // keep the first provisional spot; don't chase the NPC's position
+        s.homeRetryAt = this.tickCount + HOME_RETRY_TICKS;
+    }
+
+    _resolveHome(s, pos) {
+        const rec = this.world.getNpc(s.npcId) || {};
+        const h = rec.needsHome;
+        if (typeof h === 'string') {
+            const obj = this.world.getObject(h);
+            const cell = obj ? this.world.approachCell(obj) : null;
+            if (cell) return { x: cell.x, y: cell.y, roomId: obj.roomId, objectId: h };
+            return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null, provisional: true };
+        } else if (h && typeof h === 'object' && h.room) {
+            const w = this.world.tileToWorld(h.room, h.x, h.y);
+            if (w) {
+                const home = { x: w.x, y: w.y, roomId: h.room, objectId: null };
+                if (COMPASS8.includes(h.facing)) home.facing = h.facing;   // seating.js turns the sitter this way
+                return home;
+            }
+        }
+        return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null };
+    }
+
+    /**
+     * stayPut: an own-desk use just ended; the NPC is at its post (maybe seated off the cell).
+     * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
+     * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
+     * reroute: plan round held bodies first (ring, tight, then plain). Every stall re-issue (the far
+     * re-issue and each return_resumed retry) now passes it, so the option matters only for the first
+     * walk home, which stays plain (docs/IDEAS_BACKLOG.md, "Plan the first needs walk home ring-first").
+     */
+    _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false, reroute = false, nudge = false } = {}) {
+        const id = s.npcId;
+        s.mode = 'returning';
+        s.returnWatch = null;
+        // SIMS-2: a fresh return re-arms the one far re-issue; a re-issue from _acceptArrival keeps it.
+        // A fresh return also clears the stall count and the once-per-return return_stuck line.
+        if (!keepFarFlag) { s.returnFarReissued = false; s.stall = null; s.returnStuckLogged = false; s.returnStuckUntil = 0; s.returnBackoffs = 0; }
+        const pos = this.world.npcPos(id);
+        if (!s.home || !pos) { s.mode = 'idle'; return; }
+        if (stayPut || Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
+            s.returnMoveId = null;
+            this._arrivals.set(id, { synthetic: true, moveId: null });
+            return;
+        }
+        const moveId = this._nextMoveId();
+        s.returnMoveId = moveId;
+        return this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s), moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
+    }
+
+    /**
+     * A walk home that has not moved RETURN_STILL_PX for RETURN_YIELD_MS of needs clock is
+     * re-issued without yielding to the player. The behaviour layer's face_player has no time
+     * limit, so a player standing within 96 px of the route (watching the desk, or idle at the
+     * coffee machine) used to hold the NPC in `returning` for good: it never got home, never
+     * sat. A re-issue also re-plans the path, which covers a walk wedged for another reason.
+     */
+    _watchReturn(s, pos) {
+        // Gave up for now (return_stuck): stand still until the back-off ends, then try again
+        if (s.returnStuckUntil) {
+            if (this.clockMs < s.returnStuckUntil) return;
+            s.returnStuckUntil = 0;
+            this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true });
+            s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+            return;
+        }
+        const w = s.returnWatch;
+        if (!w || Math.hypot(pos.x - w.x, pos.y - w.y) >= RETURN_STILL_PX) {
+            s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+            return;
+        }
+        if (this.clockMs - w.since < RETURN_YIELD_MS) return;
+        // OFFICE_LIFE_STUCK_RETURN.md: re-routes in one place are counted, and the walk gives up
+        // (one return_stuck line per return) rather than log return_resumed for ever.
+        const tries = this._stallTry(s, pos);
+        // A stall in a new place starts the back-off count again: back-offs count in one place
+        // (a back-off leaves s.stall at its place with tries 1, so a stall there again counts on)
+        if (tries === 1) s.returnBackoffs = 0;
+        if (tries > STUCK_TRIES) {
+            if (!s.returnStuckLogged) {
+                s.returnStuckLogged = true;
+                this._log(s.npcId, 'return_stuck', { x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
+            }
+            // Back-offs are counted in one place (s.stall carries the place across them; reset above)
+            const backoffs = (s.returnBackoffs || 0) + 1;
+            if (backoffs > RETURN_STUCK_MAX_BACKOFFS) { this._abandonReturn(s, pos); return; }
+            s.returnBackoffs = backoffs;
+            // The next stall here re-routes at once. The place keeps its first centre and any nudge
+            // landing: re-centring on each back-off let it drift along a cluttered route (R3 M1)
+            s.stall = { ...s.stall, tries: 1 };
+            s.returnWatch = null;
+            s.returnStuckUntil = this.clockMs + RETURN_STUCK_BACKOFF_MS;
+            this.world.cancelMove(s.npcId);
+            return;
+        }
+        this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
+        // SIMS-2 m1: keep returnFarReissued so an unreachable home logs `arrival_far` once per return,
+        // not once per _watchReturn cycle; this re-plans the walk without re-arming the far log.
+        // Every re-issue plans round other bodies, seated and held ones included (ring, tight, then
+        // plain). The first used to keep the plain path because a player who held the walk had gone,
+        // but a plain plan from the stop can run through a standing NPC's avoidance lane (m08 game
+        // 9532: 10.6 px off Vector, held 6 s). A plan round a body that has left costs nothing: the
+        // avoid cells are the bodies' positions now, and no path falls back to the plain one.
+        // The 3 s re-issue always comes before the behaviour layer's 4 s stuck watch (a new path re-arms
+        // it), so its nudge onto a walkable cell never runs for a needs walk; the last re-route in one
+        // place does that nudge itself (code review R1, m3)
+        // The place also covers where the nudge put the body, only when a nudge ran (R2 M1, R3 M1)
+        const r = this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true, nudge: tries === STUCK_TRIES });
+        this._markNudge(s.stall, r);
+        s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+    }
+
+    /**
+     * End a walk home that backed off RETURN_STUCK_MAX_BACKOFFS times in one place: idle where it
+     * stands (`return_abandoned`). `s.returnAbandon` asks the next tick for a fresh plan
+     * (_replanAbandoned); a second abandon in the same place as the previous one (_samePlace:
+     * within STUCK_SAME_PX of its first stall or of where a nudge there put the body) is final: no
+     * quick re-plan, only one late one per RETURN_FINAL_REPLAN_MS of needs clock. Late walks are
+     * counted per return in s.returnLate, whatever the place, RETURN_FINAL_REPLANS at most (R3 m1);
+     * one that started while the player stood beside the NPC is not counted, and is allowed past the
+     * cap, still after the 60 s wait (R3 m2, R4 m2). Every abandon is counted in s.returnAbandons;
+     * past RETURN_MAX_ABANDONS the next is final (R4 m1).
+     */
+    _abandonReturn(s, pos) {
+        const prev = s.returnAbandon;
+        // Every abandon is counted per return; past RETURN_MAX_ABANDONS the next is final wherever it is,
+        // so wedges alternating between places on quick re-plans end too (R4 m1)
+        s.returnAbandons = (s.returnAbandons || 0) + 1;
+        const again = !!(prev && this._samePlace(prev, pos)) || s.returnAbandons > RETURN_MAX_ABANDONS;
+        const st = s.stall;
+        // The abandon's place: the previous one when it is the same place (no drift), else this stall's
+        const place = again && prev && this._samePlace(prev, pos) ? { x: prev.x, y: prev.y, nx: prev.nx, ny: prev.ny }
+            : st ? { x: st.x, y: st.y, nx: st.nx, ny: st.ny } : { x: pos.x, y: pos.y };
+        const player = typeof this.world.playerBlocks === 'function' && !!this.world.playerBlocks(s.npcId);
+        this.world.cancelMove(s.npcId);
+        s.mode = 'idle';
+        s.returnMoveId = null;
+        s.returnWatch = null;
+        s.returnStuckUntil = 0;
+        s.returnBackoffs = 0;
+        s.stall = null;
+        s.returnAbandon = { ...place, replan: !again, tick: this.tickCount, at: this.clockMs, player };
+        this._log(s.npcId, 'return_abandoned', { x: Math.round(pos.x), y: Math.round(pos.y), final: again || undefined });
+    }
+
+    /** After return_abandoned, when the selector chose nothing: one fresh walk home, planned round held bodies. */
+    _replanAbandoned(s) {
+        const a = s.returnAbandon;
+        if (!a || s.mode !== 'idle' || s.atPost || s.job || this.tickCount <= a.tick) return;   // the next tick, not this one
+        if (!a.replan && (!(this.clockMs - a.at >= RETURN_FINAL_REPLAN_MS) || (!a.player && (s.returnLate || 0) >= RETURN_FINAL_REPLANS))) return;
+        // A late try after a final abandon (R2 m2), counted per return (R3 m1); not when the player
+        // held the walk up, a blocker who steps away (R3 m2)
+        if (!a.replan && !a.player) s.returnLate = (s.returnLate || 0) + 1;
+        a.replan = false;
+        a.at = this.clockMs;   // a final abandon's late re-plan: once per RETURN_FINAL_REPLAN_MS
+        this._goHome(s, { yieldToPlayer: false, reroute: true });
+    }
+
+    /**
+     * Count a stalled walk: another try when in the same place as the last stall (_samePlace),
+     * else the first.
+     */
+    _stallTry(s, pos) {
+        const st = s.stall;
+        if (st && this._samePlace(st, pos)) st.tries++;
+        else s.stall = { x: pos.x, y: pos.y, tries: 1 };
+        return s.stall.tries;
+    }
+
+    /**
+     * Is pos the same stall place as `place`: within STUCK_SAME_PX of its first stall, or of where
+     * a nudge there put the body (nx, ny)? Code review R3 M1: this replaces a flat 32 px widening,
+     * which reached 56 px whether or not a nudge ran.
+     */
+    _samePlace(place, pos) {
+        if (Math.hypot(pos.x - place.x, pos.y - place.y) <= STUCK_SAME_PX) return true;
+        return Number.isFinite(place.nx) && Math.hypot(pos.x - place.nx, pos.y - place.ny) <= STUCK_SAME_PX;
+    }
+
+    /** Record a nudge that ran (the moveTo result's `nudged` landing) on a stall place. */
+    _markNudge(place, result) {
+        const n = result?.nudged;
+        if (place && n && Number.isFinite(n.x) && Number.isFinite(n.y)) { place.nx = n.x; place.ny = n.y; }
+    }
+
+    /**
+     * Outbound counterpart of _watchReturn (OFFICE_LIFE_STUCK_RETURN.md): a goto_item or
+     * goto_target leg that has not moved RETURN_STILL_PX for RETURN_YIELD_MS is re-issued round
+     * other bodies (`walk_rerouted`), keeping the job's deadline (moved out to
+     * REROUTE_MIN_LEFT_MS once per job when the re-route comes close to it); after STUCK_TRIES re-routes in
+     * one place it logs `walk_stuck` once and stops, and the deadline fails the job (`timeout`).
+     * @returns {boolean} true when the job ended here
+     */
+    _watchWalk(s, pos) {
+        const job = s.job;
+        if (!job || (job.phase !== 'goto_item' && job.phase !== 'goto_target') || job.moveId == null || job.windupUntil) {
+            if (job) job.walkWatch = null;
+            return false;
+        }
+        const w = job.walkWatch;
+        if (!w || w.phase !== job.phase || Math.hypot(pos.x - w.x, pos.y - w.y) >= RETURN_STILL_PX) {
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+            return false;
+        }
+        if (this.clockMs - w.since < RETURN_YIELD_MS) return false;
+        if (!job.stall || job.stall.phase !== job.phase) job.stall = null;
+        const st = job.stall;
+        if (st && this._samePlace(st, pos)) st.tries++;
+        else job.stall = { x: pos.x, y: pos.y, tries: 1, phase: job.phase };
+        const tries = job.stall.tries;
+        if (tries > STUCK_TRIES) {
+            // Give up re-routing: one walk_stuck line, then the job's own deadline fails it
+            // (`timeout`, its cooldown and the walk home), as before this watch
+            if (!job.walkStuckLogged) {
+                job.walkStuckLogged = true;
+                this._log(s.npcId, 'walk_stuck', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y), tries: tries - 1 });
+            }
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+            return false;
+        }
+        this._log(s.npcId, 'walk_rerouted', { phase: job.phase, x: Math.round(pos.x), y: Math.round(pos.y) });
+        // A re-route may take a longer path round held bodies: close to the deadline it gets at
+        // least REROUTE_MIN_LEFT_MS to walk it, once per job (R2 m6), only while the deadline is still
+        // ahead: one already reached on this tick fails the job as before (R3 m3)
+        let deadline = job.deadline;
+        if (!job.rerouteGrace && deadline > this.clockMs && deadline - this.clockMs < REROUTE_MIN_LEFT_MS) {
+            deadline = this.clockMs + REROUTE_MIN_LEFT_MS;
+            job.rerouteGrace = true;
+        }
+        const r = this._moveForPhase(s, { reroute: true, nudge: tries === STUCK_TRIES });
+        if (s.job === job) {
+            this._markNudge(job.stall, r);   // the place covers the nudge landing only when one ran (R3 M1)
+            job.deadline = deadline;
+            job.walkWatch = { x: pos.x, y: pos.y, since: this.clockMs, phase: job.phase };
+        }
+        return s.job !== job;
+    }
+
+    // ── social pairing and compatibility (slice 8: OFFICE_LIFE_PLAN 2.4, 7.3) ──
+
+    _company(s) {
+        const nc = this.world.getNpc(s.npcId)?.needsCompany;
+        return nc && typeof nc === 'object' ? nc : null;
+    }
+
+    _groups(s) {
+        const g = this._company(s)?.groups;
+        return Array.isArray(g) ? g.filter(x => typeof x === 'string' && x) : [];
+    }
+
+    /** Asks the world; a world that cannot judge a gate (no globalHolds) reads as closed. */
+    _globalHolds(cond) {
+        return typeof this.world.globalHolds === 'function' ? !!this.world.globalHolds(cond) : false;
+    }
+
+    /** Does a's own avoids list name b? (an id, "group:<name>", "*", or { npc | group, requireGlobal }) */
+    _avoidsOneWay(a, b) {
+        const list = this._company(a)?.avoids;
+        if (!Array.isArray(list)) return false;
+        const hit = (who) => {
+            if (who === '*' || who === b.npcId) return true;
+            return typeof who === 'string' && who.startsWith('group:') && this._groups(b).includes(who.slice(6));
+        };
+        for (const e of list) {
+            if (typeof e === 'string') { if (hit(e)) return true; continue; }
+            if (!e || typeof e !== 'object') continue;
+            const named = typeof e.npc === 'string' ? hit(e.npc) : (typeof e.group === 'string' && this._groups(b).includes(e.group));
+            if (!named) continue;
+            if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) continue;
+            return true;
+        }
+        return false;
+    }
+
+    /** Declared one way, acts both ways. */
+    _avoids(a, b) {
+        return this._avoidsOneWay(a, b) || this._avoidsOneWay(b, a);
+    }
+
+    /** May a and b chat? No avoidance either way, and a shared group unless one has no groups. */
+    _compatible(a, b) {
+        if (this._avoids(a, b)) return false;
+        const ga = this._groups(a), gb = this._groups(b);
+        return !ga.length || !gb.length || ga.some(g => gb.includes(g));
+    }
+
+    _noteAvoided(s, other, obj) {
+        const key = `${other.npcId}|${obj.id}`;
+        if (s.avoidNoted[key]) return;
+        s.avoidNoted[key] = true;
+        this._log(s.npcId, 'avoided', { avoided: other.npcId, target: obj.id });
+        this._emit(`npc_avoided:${s.npcId}`, { npcId: s.npcId, avoidedId: other.npcId, objectId: obj.id });
+    }
+
+    _usingObj(s, objectId) {
+        return !!(s && s.mode === 'job' && s.job?.phase === 'using' && s.job.targetId === objectId);
+    }
+
+    /** On entering `using`: pair with a compatible NPC already using the same chatter object. */
+    _maybePair(s, obj) {
+        const aff = obj.affordance || {};
+        if (typeof aff.chatter !== 'string' || !aff.chatter) return;
+        if ((Number(aff.capacity) || 1) < 2 || this._chats.has(obj.id)) return;
+        for (const id of [...this.states.keys()].sort()) {
+            const o = this.states.get(id);
+            if (o === s || !this._usingObj(o, obj.id)) continue;
+            if (!this._compatible(s, o)) continue;   // share in silence
+            const seq = this._chatSeq++;
+            const first = this.roll(`${o.npcId}+${s.npcId}`, `chat:${obj.id}:${seq}:first`) < 0.5 ? o.npcId : s.npcId;
+            this._chats.set(obj.id, {
+                objectId: obj.id, topic: aff.chatter, overhearRadius: Number(aff.overhearRadius) > 0 ? Number(aff.overhearRadius) : null,
+                a: o.npcId, b: s.npcId, seq, n: 0, speaker: first, nextAt: this.clockMs, current: null, hushed: false
+            });
+            const pa = this.world.npcPos(o.npcId), pb = this.world.npcPos(s.npcId);
+            if (pa && pb) { this.world.faceTo(o.npcId, pb.x, pb.y); this.world.faceTo(s.npcId, pa.x, pa.y); }
+            return;
+        }
+    }
+
+    /** False when the scenario sets `"npcThoughts": false` (D77): no picture chat either. */
+    _thoughtsOn() {
+        return typeof this.world.npcThoughtsOn === 'function' ? this.world.npcThoughtsOn() !== false : true;
+    }
+
+    _scenarioChatter() {
+        return typeof this.world.chatterConfig === 'function' ? this.world.chatterConfig() : undefined;
+    }
+
+    _tickChats() {
+        for (const oid of [...this._chats.keys()].sort()) {
+            const c = this._chats.get(oid);
+            const A = this.states.get(c.a), B = this.states.get(c.b);
+            // Either one frozen in a conversation, gone, or finished: the pairing ends
+            if (!this._usingObj(A, oid) || !(c.queue ? this._queuedFront(B, oid) : this._usingObj(B, oid))) { this._endChat(oid, c, 'pair_ended'); continue; }
+            if (c.current && this.clockMs >= c.current.until) {
+                c.current = null;
+                if (c.ex && c.ex.i >= c.ex.lines.length) this._finishExchange(c);
+            }
+            if (c.current) {
+                if (c.hush && !c.hushed && this._playerWithin([c.a, c.b])) c.hushed = true;
+                continue;
+            }
+            if (c.hushed) { this._endChat(oid, c, 'hushed'); continue; }
+            if (this.clockMs < c.nextAt) continue;
+            const overlapEnd = c.queue ? A.job.useUntil : Math.min(A.job.useUntil, B.job.useUntil);
+            // Order of preference (11.4): an unplayed exchange with its first speaker in earshot, then
+            // a bark from the bag (only for a speaker the player hears, E7), then picture chat
+            if (!c.ex && !c.exDone) {
+                const ex = this._findExchange(A, B, c.topic);
+                // E9: start only when the player hears the first line's speaker. A pending or gated
+                // result looks again on the next free turn; only null ends the search this meeting.
+                if (ex && ex.lines) {
+                    const first = ex.lines[0].speakerId;
+                    if (this.playerHears(first, this._chatRadius(c, first))) this._startExchange(c, ex, A, B);
+                } else if (!ex) c.exDone = true;
+            }
+            if (c.ex) {
+                // Hold the pair for the lines left, from when the next one can start
+                let rest = Math.max(0, this._speechUntil - this.clockMs);
+                for (const r of c.ex.lines.slice(c.ex.i)) rest += exchangeLineMs(r.text) + CHAT_GAP_MS;
+                this._holdExchange(c, A, B, rest);
+                // A line the player will hear takes the lock from a faint ambient line; one nobody hears queues
+                const nextHeard = this.playerHears(c.ex.lines[c.ex.i].speakerId, this._chatRadius(c, c.ex.lines[c.ex.i].speakerId));
+                if (!this._speechFreeFor(!nextHeard)) { c.nextAt = this._speechUntil; continue; }   // queue behind another line
+                const l = c.ex.lines[c.ex.i];
+                const ms = exchangeLineMs(l.text);
+                const partnerId = l.speakerId === c.a ? c.b : c.a;
+                const exHears = typeof this.world.playerHears === 'function';
+                const h = exHears ? (this.world.playerHears(l.speakerId, this._chatRadius(c, l.speakerId)) || {}) : {};
+                // R1 m8: a line voiced out of earshot shows dimmed (bubble only; the voice keeps the
+                // lock, since cutting an exchange line would break the exchange)
+                c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot, faint: exHears && !h.overheard };
+                c.ex.i++;
+                // Heard from the first line the player overhears, not at the finish (5.6a): the flag and
+                // npc_exchange_heard go out together, so a reload during the exchange loses neither.
+                // The running exchange is not affected: _exchangeHeard is only read when choosing one.
+                let firstHeard = false;
+                if (h.overheard) { c.ex.heardLines++; firstHeard = c.ex.heardLines === 1; }
+                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, radius: this._chatRadius(c, l.speakerId) });
+                const pa = this.world.npcPos(partnerId);
+                if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
+                const data = {
+                    speakerId: l.speakerId, partnerId, topic: c.topic, lineId: `${c.ex.knot}:${c.ex.i - 1}`, line: l.text, objectId: oid,
+                    exchange: c.ex.knot, overheard: !!h.overheard, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+                };
+                this._emit(`npc_chatted:${oid}`, data);
+                if (data.overheard) this._emit(`npc_overheard:${l.speakerId}`, { ...data });
+                if (firstHeard && this._markExchangeHeard(data.exchange)) {
+                    this._emit(`npc_exchange_heard:${data.exchange}`, { knot: data.exchange, ownerId: c.ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId });
+                }
+                c.speaker = partnerId;
+                c.nextAt = c.current.until + CHAT_GAP_MS;
+                continue;
+            }
+            const partnerId = c.speaker === c.a ? c.b : c.a;
+            const sp = this.states.get(c.speaker);
+            const rec = this.world.getNpc(c.speaker) || {};
+            const salt = `chat:${oid}:${c.seq}:${c.n}`;
+            c.n++;
+            // chattiness: the seeded chance this speaker says something on its turn (default 1)
+            const chatty = Number.isFinite(Number(rec.chattiness)) && rec.chattiness !== null ? clamp(Number(rec.chattiness), 0, 1) : 1;
+            // E7: one hearing check a turn, at the chat's radius for this speaker. Nobody in earshot:
+            // a picture, with no bag line taken and no cooldown started (a world with no playerHears,
+            // a unit stub, keeps speaking as before). The same `h` gives `overheard` below.
+            const canHear = typeof this.world.playerHears === 'function';
+            const h = canHear ? (this.world.playerHears(c.speaker, this._chatRadius(c, c.speaker)) || {}) : {};
+            let unheard = canHear && !h.overheard;
+            const tries = this.roll(c.speaker, `${salt}:chatty`) < chatty;
+            // D34 (a): out of earshot but within the falloff range (or next door through an open door)
+            // the turn still draws a line, voiced faintly. It never counts as heard (overheard stays
+            // false), never waits for the lock and never takes it from another line.
+            let faint = false;
+            if (unheard && tries && typeof this.world.faintVolume === 'function') {
+                try { faint = this.world.faintVolume(c.speaker, this._chatRadius(c, c.speaker)) > 0; } catch (e) { faint = false; }
+                if (faint) unheard = false;
+            }
+            // The overlap left is passed on, so a bark that could not be said is never drawn (R1 M1)
+            const pick = tries ? this._pickBark(sp, c.topic, { waitForLock: !faint, unheard, faint, maxMs: overlapEnd - this.clockMs }) : null;
+            if (pick?.wait) { c.n--; c.nextAt = this._speechUntil; continue; }   // a voiced line is playing: queue
+            // An unheard turn with nothing to show (`pictures: false`) is not a silent turn: it does
+            // not count towards giving up, so a player who walks in later still finds the pair talking
+            if (!pick && tries && unheard) { c.n--; c.speaker = partnerId; c.nextAt = this.clockMs + CHAT_GAP_MS; continue; }
+            if (!pick) {
+                if (c.n > 40) { this._chats.delete(oid); continue; }   // two silent NPCs: give up
+                c.speaker = partnerId;
+                c.nextAt = this.clockMs + CHAT_GAP_MS;
+                continue;
+            }
+            const { line, idx, picture, pool } = pick;
+            const ms = picture ? PICTURE_MS : bubbleMs(line);
+            // Only while both are still using it: a line that would outlast the overlap is not started
+            if (this.clockMs + ms > overlapEnd) { this._chats.delete(oid); continue; }
+            const faintLine = !!(faint && line);
+            c.current = { speakerId: c.speaker, partnerId, line, picture, until: this.clockMs + ms, faint: faintLine };
+            c.hush = pool.hush;
+            if (line) this._speak(c.speaker, line, c.current.until, { topic: c.topic, objectId: oid, overheard: !!h.overheard, faint: faintLine, radius: this._chatRadius(c, c.speaker) });
+            const data = {
+                speakerId: c.speaker, partnerId, topic: c.topic, lineId: picture ? `picture:${picture}` : `${c.topic}:${idx}`, line, picture, objectId: oid,
+                overheard: !!h.overheard, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+            };
+            this._emit(`npc_chatted:${oid}`, data);
+            if (data.overheard) this._emit(`npc_overheard:${c.speaker}`, { ...data });
+            if (c.hush && this._playerWithin([c.a, c.b])) c.hushed = true;
+            c.speaker = partnerId;
+            c.nextAt = c.current.until + CHAT_GAP_MS;
+        }
+    }
+
+    /** Is the player near any of these NPCs: playerProximity's `nearby` (96 px, same room, clear line)? */
+    _playerWithin(ids) {
+        return ids.some(id => this._playerProximity(id).playerNearby);
+    }
+
+    /** The line an NPC is saying now, or null: { line, partnerId, topic, objectId, remainingMs }. */
+    _talking(npcId) {
+        for (const c of this._chats.values()) {
+            const cur = c.current;
+            if (cur && cur.speakerId === npcId && this.clockMs < cur.until) {
+                return { line: cur.line, picture: cur.picture || null, knot: cur.knot || null, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs, faint: !!cur.faint };
+            }
+        }
+        // Slice 19: half a desk-phone call (no partner in the room)
+        for (const c of this._calls.values()) {
+            const cur = c.current;
+            // An unheard item with picture chat off has no line and no picture: not talking (the call still runs its time)
+            if (cur && c.speakerId === npcId && this.clockMs < cur.until && (cur.line || cur.picture)) {
+                return { line: cur.line, picture: cur.picture || null, knot: c.knot || null, partnerId: null, topic: c.topic, objectId: c.phoneId, call: true, remainingMs: cur.until - this.clockMs };
+            }
+        }
+        // A grumble (slice 14) is a one-off line with no partner
+        const say = this.states.get(npcId)?.saying;
+        if (say && this.clockMs < say.until) return { line: say.line, picture: say.picture || null, knot: null, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs, faint: !!say.faint };
+        return null;
+    }
+
+    /** The NPC's chat partner while paired at an object, or null. */
+    _chatPartner(npcId) {
+        for (const c of this._chats.values()) {
+            if (c.a === npcId) return c.b;
+            if (c.b === npcId) return c.a;
+        }
+        return null;
+    }
+
+    // ── desk phones (slice 19, OFFICE_LIFE_PLAN 12.5) ─────────────────────────
+
+    /**
+     * desk_phone_ring:<phoneId> (a mapping's emitEvent or an object's emit_event): the phone rings
+     * `rings` times (default RINGS), one every RING_MS of the needs clock, from the next tick. A
+     * phone already ringing or in a call ignores it (no ring on a busy line). True when it starts.
+     */
+    onPhoneRing(phoneId) {
+        const o = typeof phoneId === 'string' ? this.world.getObject(phoneId) : null;
+        const ownerId = o && o.deskPhone === true && typeof o.owner === 'string' ? o.owner : null;
+        if (!o || !ownerId) { this._log(null, 'ring_ignored', { target: phoneId, reason: 'no_phone' }); return false; }
+        if (this._rings.has(o.id) || this._calls.has(o.id)) {
+            this._log(ownerId, 'ring_ignored', { target: o.id, reason: this._calls.has(o.id) ? 'call' : 'ringing' });
+            return false;
+        }
+        const n = Number(o.rings);
+        const total = Number.isFinite(n) && n >= 1 ? Math.min(20, Math.floor(n)) : RINGS;
+        this._rings.set(o.id, { phoneId: o.id, ownerId, roomId: o.roomId ?? null, n: 0, total, nextAt: this.clockMs, answerAt: Infinity });
+        this._log(ownerId, 'phone_ring', { target: o.id, rings: total });
+        // Start loading the stories of whoever may answer (preload at install can run before the NPCs
+        // exist); the first ring's 2.25 s is time enough, and a story still loading falls to the pool
+        if (typeof this.world.warmStory === 'function') {
+            for (const id of [...this.states.keys()].sort()) {
+                if (id === ownerId || this._rec(this.states.get(id)).answersPhones === true) {
+                    try { this.world.warmStory(id); } catch (e) { /* lines come from the pool */ }
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Per tick, before the NPCs: the owner at its post answers (and wins over a colleague on the
+     * way); else the next ring; from the second ring an answersPhones colleague may claim it. The
+     * phone keeps ringing past `rings` while an answerer not frozen in a chat holds a claim; when it
+     * rings out every answerer turns back with `rang_out`.
+     */
+    _tickRings() {
+        for (const id of [...this._rings.keys()].sort()) {
+            const r = this._rings.get(id);
+            const owner = this.states.get(r.ownerId);
+            if (r.n >= 1 && this.clockMs >= r.answerAt && owner && this._ownerCanAnswer(owner)) { this._ownerAnswers(r, owner); continue; }
+            const answerers = this._answerers(id);
+            if (this.clockMs >= r.nextAt) {
+                if (r.n >= r.total && !answerers.some(a => a.mode !== 'frozen')) { this._ringOut(r, answerers); continue; }
+                r.n++;
+                if (r.n === 1) r.answerAt = this.clockMs + PICKUP_MS;
+                r.nextAt = this.clockMs + RING_MS;
+                this._log(r.ownerId, 'phone_ringing', { target: id, ring: r.n });
+                this._emit(`desk_phone_ringing:${id}`, { phoneId: id, ownerId: r.ownerId, ring: r.n, roomId: r.roomId });
+            }
+            if (r.n >= 2 && !answerers.length) this._claimAnswerer(r);
+        }
+    }
+
+    /** Idle at its post, or in a use of its own desk, and free: not on a call, in a chat or unavailable. */
+    _ownerCanAnswer(s) {
+        if (s.call || s.blocked || s.scriptSuspended || !s.atPost || s.mode === 'frozen') return false;
+        if (this.world.inChatWith(s.npcId)) return false;
+        const st = this.world.npcStatus(s.npcId) || {};
+        if (st.ko || st.hostile || st.hidden) return false;
+        if (s.mode === 'idle' || s.mode === 'returning') return true;   // returning at its post: the own-desk tick
+        // Access 9.2 C (review R1 m5): an owner on its own phone (a `self` job) does not answer its
+        // desk phone; a colleague is claimed or it rings out (NPC_NEEDS_SYSTEM.md 5.10)
+        return s.mode === 'job' && this._atOwnPost(s) && s.job.phase === 'using';
+    }
+
+    /** NPCs holding a claim on this phone (a colleague's answer job not yet picked up). */
+    _answerers(phoneId) {
+        const out = [];
+        for (const id of [...this.states.keys()].sort()) {
+            const s = this.states.get(id);
+            if (s.job?.phone && s.job.targetId === phoneId && s.job.phase !== 'using') out.push(s);
+        }
+        return out;
+    }
+
+    _ownerAnswers(r, s) {
+        this._rings.delete(r.phoneId);
+        for (const a of this._answerers(r.phoneId)) this._endAnswerer(a, 'answered');
+        this._beginCall(r, s, this._chooseCall(s, 'owner'), 'owner');
+    }
+
+    /**
+     * The nearest answersPhones NPC in the phone's room that is idle at its post, not on a call of
+     * its own and does not avoid the owner (either way) takes an ordinary use job on the phone: a
+     * real leave. The call and its length are chosen now, since npc_left_post fires at the end of
+     * the wind-up with the expected absence.
+     */
+    _claimAnswerer(r) {
+        const phone = this.world.getObject(r.phoneId);
+        if (!phone) return;
+        const owner = this.states.get(r.ownerId);
+        let best = null, bestD = Infinity;
+        for (const id of [...this.states.keys()].sort()) {
+            if (id === r.ownerId) continue;
+            const s = this.states.get(id);
+            if (this._rec(s).answersPhones !== true) continue;
+            if (s.mode !== 'idle' || !s.atPost || s.job || s.call || s.scriptSuspended || s.blocked || this.world.inChatWith(id)) continue;
+            const pos = this.world.npcPos(id);
+            if (!pos || pos.roomId !== phone.roomId || (s.home?.roomId && s.home.roomId !== phone.roomId)) continue;
+            const st = this.world.npcStatus(id) || {};
+            if (st.ko || st.hostile || st.hidden) continue;
+            if (owner && this._avoids(s, owner)) continue;
+            if (!this._reachable(s, phone)) continue;
+            const d = Math.hypot(pos.x - phone.x, pos.y - phone.y);
+            if (d < bestD) { best = s; bestD = d; }
+        }
+        if (!best) return;
+        const call = this._chooseCall(best, 'colleague');
+        this._log(best.npcId, 'phone_claimed', { target: r.phoneId, owner: r.ownerId, ring: r.n, knot: call.knot || undefined, ms: call.total });
+        this._startJob(best, { kind: 'use', need: null, targetId: r.phoneId, phoneCall: call });
+    }
+
+    /**
+     * An answerer on the way turns back (`answered`: the owner picked up; `rang_out`). One frozen in a
+     * chat has its job cleared and goes home when the chat ends, with no move now (a moveTo during
+     * the chat would be cancelled by the next tick anyway).
+     */
+    _endAnswerer(s, reason) {
+        if (s.mode !== 'frozen') { this._turnBack(s, reason); return; }
+        const job = s.job;
+        s.turnCount++;
+        this._log(s.npcId, 'turned_back', { need: job.need, target: job.targetId, reason });
+        this._emit(`npc_turned_back:${s.npcId}`, { npcId: s.npcId, need: job.need, targetId: job.targetId, reason, ...this._playerProximity(s.npcId) });
+        this._abortJob(s, 'turned_back', { cancel: false });
+        s.prevMode = 'returning';
+    }
+
+    _ringOut(r, answerers) {
+        this._rings.delete(r.phoneId);
+        for (const a of answerers) this._endAnswerer(a, 'rang_out');
+        this._log(r.ownerId, 'phone_unanswered', { target: r.phoneId, rings: r.n });
+        this._emit(`desk_phone_unanswered:${r.phoneId}`, { phoneId: r.phoneId, ownerId: r.ownerId, ...this._phoneProximity(r.phoneId) });
+    }
+
+    /** The player's distance to a phone: { playerNearby, playerDistance } (world.playerProximityAt). */
+    _phoneProximity(phoneId) {
+        const o = this.world.getObject(phoneId);
+        const p = o && typeof this.world.playerProximityAt === 'function' ? this.world.playerProximityAt(o) : null;
+        return { playerNearby: !!(p && p.nearby), playerDistance: p && Number.isFinite(p.distance) ? Math.round(p.distance) : null };
+    }
+
+    /** A colleague reached a still-ringing phone: it picks up and the use lasts the call. */
+    _colleagueAnswers(s, obj) {
+        const job = s.job;
+        const r = this._rings.get(job.targetId);
+        if (!r) { this._turnBack(s, 'rang_out'); return; }
+        this._rings.delete(r.phoneId);
+        job.phase = 'using';
+        job.useUntil = this.clockMs + (job.callMs || 0);
+        this._log(s.npcId, 'using', { target: job.targetId });
+        this._beginCall(r, s, job.call, 'colleague');
+    }
+
+    /**
+     * What a speaker says on this call: the first unheard phoneCalls knot whose lines are all its own
+     * (a story still loading falls to the pool for this call), else up to CALL_POOL_LINES lines from
+     * its `phone` (owner) or `phone_message` (colleague) pool, else CALL_PICTURES phone pictures.
+     * Listening gaps are seeded; the total is capped at EXCHANGE_MAX_MS.
+     */
+    _chooseCall(s, kind) {
+        const seq = this._callSeq++;
+        const topic = kind === 'owner' ? 'phone' : 'phone_message';
+        const rec = this._rec(s);
+        let knot = null, texts = null;
+        for (const e of Array.isArray(rec.phoneCalls) ? rec.phoneCalls : []) {
+            if (!e || typeof e.knot !== 'string' || !e.knot || this._exchangeHeard(e.knot)) continue;
+            if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) continue;
+            const lines = typeof this.world.exchangeLines === 'function' ? this.world.exchangeLines(s.npcId, e.knot) : null;
+            if (!Array.isArray(lines) || !lines.length) continue;
+            if (!lines.every(l => l && typeof l.text === 'string' && l.text && l.speakerId === s.npcId)) continue;
+            knot = e.knot;
+            texts = lines.map(l => l.text);
+            break;
+        }
+        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter, this._thoughtsOn(), this._holds);
+        if (!texts && pool.lines.length) {
+            texts = [];
+            for (let k = 0; k < Math.min(CALL_POOL_LINES, pool.lines.length); k++) texts.push(pool.lines[this._bagNext(s.npcId, topic, pool.lines)]);
+        }
+        const items = texts ? texts.map(t => ({ text: t, ms: exchangeLineMs(t) })) : Array.from({ length: CALL_PICTURES }, () => ({ text: null, ms: PICTURE_MS }));
+        const [lo, hi] = CALL_GAP_MS;
+        const gaps = items.map((_, i) => (i === 0 ? 0 : Math.round(lo + (hi - lo) * this.roll(s.npcId, `callgap:${seq}:${i}`))));
+        let total = 0;
+        items.forEach((it, i) => { total += gaps[i] + it.ms; });
+        return { knot, topic, items, gaps, pictures: pool.pictures !== false, total: Math.min(total, EXCHANGE_MAX_MS), seq };
+    }
+
+    _beginCall(r, s, call, kind) {
+        this._calls.set(r.phoneId, {
+            phoneId: r.phoneId, ownerId: r.ownerId, speakerId: s.npcId, kind, knot: call.knot, topic: call.topic,
+            items: call.items, gaps: call.gaps, pictures: call.pictures, i: 0, nextAt: this.clockMs, current: null,
+            heardAll: true, lockUntil: 0, waitLock: false
+        });
+        s.call = { phoneId: r.phoneId, until: this.clockMs + call.total };
+        // The owner's own-desk use is pushed back by the call, not aborted (an idle owner selects nothing)
+        if (kind === 'owner' && s.mode === 'job' && s.job?.phase === 'using') s.job.useUntil += call.total;
+        this._log(s.npcId, 'phone_answered', { target: r.phoneId, owner: r.ownerId, kind, knot: call.knot || undefined, ms: call.total });
+        this._emit(`desk_phone_answered:${r.phoneId}`, { phoneId: r.phoneId, ownerId: r.ownerId, answeredBy: s.npcId, knot: call.knot || null, ...this._phoneProximity(r.phoneId) });
+    }
+
+    /** Is the player in earshot of this speaker (the exchange audience rule: same room, lit, in range)? */
+    _callHeard(c) {
+        if (typeof this.world.playerHears !== 'function') return { overheard: false, distance: null };
+        return this.world.playerHears(c.speakerId, OVERHEAR_RADIUS) || { overheard: false, distance: null };
+    }
+
+    /** Release the speech lock this call holds (its line, or a listening gap). */
+    _releaseLock(c) {
+        if (c.lockUntil > this.clockMs && this._speechUntil <= c.lockUntil) this._speechUntil = this.clockMs;
+        c.lockUntil = 0;
+    }
+
+    /** Another voiced line holds the lock: the next line waits for it, and the call (and its use) is pushed back. */
+    _delayCall(c, ms) {
+        c.nextAt = this.clockMs + ms;
+        c.waitLock = true;
+        const s = this.states.get(c.speakerId);
+        if (s?.call) s.call.until += ms;
+        if (s?.job?.phase === 'using' && (c.kind === 'colleague' ? s.job.phone : this._atOwnPost(s))) s.job.useUntil += ms;
+    }
+
+    /**
+     * The call runner, after the chats each tick: one speaker, a line per bubble, seeded listening
+     * gaps. A line is voiced (through _speak, overheard) only with the player in earshot, checked
+     * line by line; otherwise it shows as the phone picture and the knot stays unplayed. Through a
+     * gap the lock is held only while the player is in earshot. A chat with the speaker hangs up
+     * (`player`); KO, hostile, hidden, script-suspended or a lost answer job hangs up (`unavailable`).
+     */
+    _tickCalls() {
+        for (const id of [...this._calls.keys()].sort()) {
+            const c = this._calls.get(id);
+            const s = this.states.get(c.speakerId);
+            const st = this.world.npcStatus(c.speakerId) || {};
+            if (!s || st.ko || st.hostile || st.hidden || s.scriptSuspended || s.blocked
+                || (c.kind === 'colleague' && !(s.job?.phone && s.job.targetId === id))) { this._hangUp(c, 'unavailable'); continue; }
+            if (this.world.inChatWith(c.speakerId)) { this._hangUp(c, 'player'); continue; }
+            if (c.current && this.clockMs >= c.current.until) c.current = null;
+            if (c.current) continue;
+            if (c.i >= c.items.length) { this._finishCall(c); continue; }
+            const h = this._callHeard(c);
+            if (this.clockMs < c.nextAt) {
+                if (c.waitLock) continue;
+                if (h.overheard) { c.lockUntil = c.nextAt; this._speechUntil = Math.max(this._speechUntil, c.nextAt); } else this._releaseLock(c);
+                continue;
+            }
+            const it = c.items[c.i];
+            const voiced = !!it.text && !!h.overheard;
+            if (voiced && !this._speechFreeFor(false)) { this._delayCall(c, this._speechUntil - this.clockMs); continue; }
+            c.waitLock = false;
+            if (!voiced) c.heardAll = false;
+            const until = this.clockMs + it.ms;
+            c.current = { line: voiced ? it.text : null, picture: voiced || !c.pictures ? null : 'phone', until };
+            const lineId = it.text ? `${c.knot || c.topic}:${c.i}` : 'picture:phone';
+            c.i++;
+            c.nextAt = until + (c.gaps[c.i] || 0);
+            if (voiced) {
+                this._speak(c.speakerId, it.text, until, { topic: c.topic, objectId: id, knot: c.knot || undefined, call: true, overheard: true });
+                c.lockUntil = until;
+                this._emit(`npc_overheard:${c.speakerId}`, {
+                    speakerId: c.speakerId, partnerId: null, topic: c.topic, lineId, line: it.text, picture: null, objectId: id,
+                    call: id, overheard: true, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+                });
+            } else this._releaseLock(c);
+            this._log(c.speakerId, 'call_line', { target: id, line: lineId, heard: voiced });
+        }
+    }
+
+    /** The last line ended: heard to the end, the knot is played (heard_<knot>, npc_call_heard). */
+    _finishCall(c) {
+        this._calls.delete(c.phoneId);
+        this._releaseLock(c);
+        const s = this.states.get(c.speakerId);
+        if (s) {
+            s.call = null;
+            s.selectRetryAt = 0;
+            if (c.kind === 'colleague' && s.job?.phone) s.job.useUntil = Math.min(s.job.useUntil, this.clockMs);
+        }
+        const heard = !!(c.knot && c.heardAll);
+        if (heard) this._markExchangeHeard(c.knot);   // a call keeps the heard-to-the-end rule
+        this._log(c.speakerId, 'call_ended', { target: c.phoneId, reason: 'done', knot: c.knot || undefined, heard: c.knot ? heard : undefined });
+        if (heard) this._emit(`npc_call_heard:${c.knot}`, { knot: c.knot, speakerId: c.speakerId, ownerId: c.ownerId, phoneId: c.phoneId });
+    }
+
+    /**
+     * End a call early: the rest dropped, the lock released, the line in flight stopped, the knot
+     * unplayed; the colleague's use ends (its frozen remainder too), the owner's desk use loses the
+     * rest of the call. desk_phone_hung_up:<phoneId> { speakerId, reason }.
+     */
+    _hangUp(c, reason) {
+        this._calls.delete(c.phoneId);
+        c.current = null;
+        this._releaseLock(c);
+        if (typeof this.world.cancelSpeech === 'function') {
+            try { this.world.cancelSpeech(c.speakerId); } catch (e) { /* audio never breaks a tick */ }
+        }
+        const s = this.states.get(c.speakerId);
+        if (s) {
+            const left = s.call ? Math.max(0, s.call.until - this.clockMs) : 0;
+            s.call = null;
+            s.selectRetryAt = 0;
+            const job = s.job;
+            if (job && c.kind === 'colleague' && job.phone && job.targetId === c.phoneId) {
+                job.useRemaining = 0;
+                job.useUntil = Math.min(job.useUntil, this.clockMs);
+            } else if (job && c.kind === 'owner' && job.phase === 'using' && this._atOwnPost(s)) {
+                job.useUntil = Math.max(this.clockMs, job.useUntil - left);
+                if (Number.isFinite(job.useRemaining)) job.useRemaining = Math.max(0, job.useRemaining - left);
+            }
+        }
+        this._log(c.speakerId, 'call_ended', { target: c.phoneId, reason, knot: c.knot || undefined, line: c.i });
+        this._emit(`desk_phone_hung_up:${c.phoneId}`, { phoneId: c.phoneId, ownerId: c.ownerId, speakerId: c.speakerId, reason });
+    }
+
+    // ── queues at shared machines (slice 10: OFFICE_LIFE_PLAN 2.5, 7.3) ──────
+
+    /** affordance.queue as { offsets, maxWaitMs }, or null (no queue: today's wait at the desk). */
+    _queueCfg(obj) {
+        const q = obj?.affordance?.queue;
+        if (!q || typeof q !== 'object' || !Array.isArray(q.cells)) return null;
+        const offsets = q.cells.filter(c => c && Number.isFinite(Number(c.dx)) && Number.isFinite(Number(c.dy)))
+            .map(c => ({ dx: Number(c.dx), dy: Number(c.dy) }));
+        if (!offsets.length) return null;
+        const w = Number(q.maxWaitSeconds);
+        return { offsets, maxWaitMs: (Number.isFinite(w) && w > 0 ? clamp(w, 1, 600) : QUEUE_MAX_WAIT_S) * 1000 };
+    }
+
+    /**
+     * The queue's cells in order, as world points with a room: the live adapter snaps each offset
+     * (tiles from the approach cell) to a walkable cell and drops one that does not snap; a world
+     * without queueCells (the node stub) takes the offsets as they are, in the object's room.
+     */
+    _queueCells(obj) {
+        const cfg = this._queueCfg(obj);
+        if (!cfg) return [];
+        if (typeof this.world.queueCells === 'function') return this.world.queueCells(obj, cfg.offsets) || [];
+        const base = this.world.approachCell(obj);
+        if (!base) return [];
+        return cfg.offsets.map(o => ({ x: base.x + o.dx * 32, y: base.y + o.dy * 32, roomId: obj.roomId }));
+    }
+
+    /** NPCs queued for an object, in claim order (tick, then NPC id: the order ticks run in). */
+    _queuers(objectId) {
+        const out = [];
+        for (const o of this.states.values()) if (o.job?.phase === 'queued' && o.job.targetId === objectId) out.push(o);
+        return out.sort((a, b) => a.job.qSeq - b.job.qSeq);
+    }
+
+    /**
+     * Each queuer, in order, takes the first cell that is in a room it may enter and that nobody
+     * ahead of it holds (review m8). `who` may be a newcomer not yet queued: it goes last.
+     * Returns { index, cell } for `who`, or null when no permitted cell is left.
+     */
+    _queuePlace(who, obj) {
+        const cells = this._queueCells(obj);
+        const line = this._queuers(obj.id);
+        if (!line.includes(who)) line.push(who);
+        const held = new Set();
+        for (const o of line) {
+            let got = null;
+            for (let i = 0; i < cells.length; i++) {
+                if (held.has(i) || this._roomForbidden(o, cells[i].roomId)) continue;
+                got = i;
+                break;
+            }
+            if (got === null) { if (o === who) return null; continue; }
+            held.add(got);
+            if (o === who) return { index: got, cell: cells[got] };
+        }
+        return null;
+    }
+
+    /** No free target for this need: the nearest claimed one with a queue place for this NPC. */
+    _queueCandidate(s, name, objects, pos, ctx = null) {
+        let list = objects.filter(o => o.affordance?.queue && asList(o.affordance.satisfies).includes(name)
+            && o.id !== ctx?.exclude && !this._isOff(o) && !this._otherDesk(s, name, o)
+            && this._permitted(s, o, true) && !(s.cooldowns[o.id] > this.clockMs)
+            && !this._free(s, o) && this._queuePlace(s, o));
+        // Slice 14: not behind someone avoided, and not into a line that is too long (balking)
+        if (ctx && list.length) {
+            list = list.filter(o => {
+                if (ctx.avoidedAt && ctx.avoidedAt(o)) return false;
+                if (ctx.balked && this._balks(s, o)) { ctx.balked.add(o.id); return false; }
+                return true;
+            });
+        }
+        if (!list.length) return null;
+        const target = this._nearestReachable(s, list, pos);
+        if (!target) return null;
+        const pick = { kind: 'use', targetId: target.id, queue: true };
+        if (target.offWhen !== undefined) pick.offWhen = target.offWhen;
+        return pick;
+    }
+
+    _advanceQueued(s, arrived) {
+        const job = s.job;
+        const obj = this.world.getObject(job.targetId);
+        if (!obj || !this._queueCfg(obj)) { this._leaveQueue(s, 'gone'); return; }
+        // The need was met some other way (a mapping, a refill): no reason to stand here
+        if (job.need && s.needs[job.need] && s.levels[job.need] > s.needs[job.need].urgentAt && !this._starved(s, job.need)) {
+            this._leaveQueue(s, 'need_met');
+            return;
+        }
+        // The front of the queue in an exchange with the user waits for its end (_finishExchange
+        // then takes the exchange's length off the wait, as a conversation's freeze does), but no
+        // longer than the exchange's hold cap: on a long use a starved exchange keeps c.ex set
+        const inEx = this._chats.get(job.targetId);
+        const exWait = inEx?.ex && inEx.b === s.npcId && this.clockMs < inEx.ex.holdCap;
+        if (this.clockMs - job.queuedAt >= this._queueCfg(obj).maxWaitMs && !exWait) {
+            s.cooldowns[job.targetId] = this.clockMs + QUEUE_COOLDOWN_MS;
+            this._leaveQueue(s, 'max_wait');
+            return;
+        }
+        // The front of the queue takes the place as soon as one is free
+        if (this._queuers(job.targetId)[0] === s && this._free(s, obj)) {
+            job.phase = 'goto_target';
+            job.qCell = null;
+            this._log(s.npcId, 'queue_front', { target: job.targetId });
+            this._moveForPhase(s);
+            return;
+        }
+        // Someone ahead left or moved up: step forward to this NPC's cell now
+        const place = this._queuePlace(s, obj);
+        if (!place) { this._leaveQueue(s, 'no_queue_cell'); return; }
+        const key = `${Math.round(place.cell.x)},${Math.round(place.cell.y)}`;
+        if (key !== job.qCell) { job._farKey = null; this._moveForPhase(s); return; }   // SIMS-2 m2: a step to a new queue cell is a fresh move
+        if (arrived) {
+            job.qArrived = true;
+            this.world.faceTo(s.npcId, obj.x, obj.y);
+        } else if (!job.qArrived && this.clockMs >= job.deadline) {
+            this._failJob(s, 'timeout');
+        }
+    }
+
+    /** Leave a queue and walk back to the post. */
+    _leaveQueue(s, reason) {
+        this._log(s.npcId, 'queue_left', { target: s.job?.targetId, reason });
+        this._abortJob(s, reason, { cancel: true });
+        this._goHome(s);
+    }
+
+    /** Is s the front of the queue for objectId and standing in its cell? */
+    _queuedFront(s, objectId) {
+        return !!(s && s.mode === 'job' && s.job?.phase === 'queued' && s.job.targetId === objectId
+            && s.job.qArrived && this._queuers(objectId)[0] === s);
+    }
+
+    /**
+     * Queue chatter: the NPC using a chatter object pairs with the first queued NPC, once it stands
+     * within 1.5 tiles of the approach cell, with slice 8's turn-taking, if the two are compatible
+     * (7.3). An incompatible front queues in silence; the second in line never chats.
+     */
+    _tickQueueChats() {
+        let objIds = null;
+        for (const o of this.states.values()) {
+            if (o.job?.phase === 'queued' && o.job.qArrived) (objIds || (objIds = new Set())).add(o.job.targetId);
+        }
+        if (!objIds) return;
+        for (const oid of [...objIds].sort()) {
+            if (this._chats.has(oid)) continue;
+            const obj = this.world.getObject(oid);
+            const aff = obj?.affordance || {};
+            if (typeof aff.chatter !== 'string' || !aff.chatter) continue;
+            const front = this._queuers(oid)[0];
+            if (!this._queuedFront(front, oid)) continue;
+            const cell = this.world.approachCell(obj);
+            const fp = this.world.npcPos(front.npcId);
+            if (!cell || !fp || Math.hypot(fp.x - cell.x, fp.y - cell.y) > QUEUE_CHAT_RADIUS) continue;
+            let user = null;
+            for (const id of [...this.states.keys()].sort()) {
+                if (this._usingObj(this.states.get(id), oid)) { user = this.states.get(id); break; }
+            }
+            if (!user || !this._compatible(user, front)) continue;   // queue in silence
+            const seq = this._chatSeq++;
+            const first = this.roll(`${user.npcId}+${front.npcId}`, `chat:${oid}:${seq}:first`) < 0.5 ? user.npcId : front.npcId;
+            this._chats.set(oid, {
+                objectId: oid, topic: aff.chatter, overhearRadius: Number(aff.overhearRadius) > 0 ? Number(aff.overhearRadius) : null,
+                a: user.npcId, b: front.npcId, queue: true, seq, n: 0, speaker: first, nextAt: this.clockMs, current: null, hushed: false
+            });
+            const pa = this.world.npcPos(user.npcId);
+            if (pa) { this.world.faceTo(user.npcId, fp.x, fp.y); this.world.faceTo(front.npcId, pa.x, pa.y); }
+        }
+    }
+
+    // ── read-outs ──────────────────────────────────────────────────────────
+
+    _log(npcId, ev, extra = {}) {
+        const entry = { t: this.tickCount, npc: npcId, ev };
+        for (const [k, v] of Object.entries(extra)) if (v !== undefined) entry[k] = v;
+        this.log.push(entry);
+        if (this.log.length > LOG_CAP) this.log.shift();
+    }
+
+    getLog() {
+        return this.log.map(e => ({ ...e }));
+    }
+
+    /**
+     * The most pressing need the NPC is not acting on (OFFICE_LIFE_PLAN 9.2): at or below its
+     * urgentAt, not the current job's need; lowest level / urgentAt, ties by need name. null if none.
+     */
+    _pressing(s) {
+        let best = null;
+        for (const name of Object.keys(s.needs).sort()) {
+            if (s.job && s.job.need === name) continue;
+            const urgentAt = s.needs[name].urgentAt;
+            if (!(s.levels[name] <= urgentAt)) continue;
+            const ratio = s.levels[name] / urgentAt;
+            if (!best || ratio < best.ratio) best = { need: name, ratio };
+        }
+        return best ? { need: best.need, ratio: round2(best.ratio) } : null;
+    }
+
+    /** With no job: an urgent need that a room rule left nothing permitted for (the leashed back-off). */
+    _blockedNeed(s) {
+        if (s.job) return null;
+        for (const name of Object.keys(s.needs).sort()) {
+            if (s.leashNoted[name] && s.levels[name] <= s.needs[name].urgentAt) return name;
+        }
+        return null;
+    }
+
+    /** Access 9.2 C (8.2): on the phone now (cheap; the sight challenge asks every check). */
+    isDistracted(npcId) {
+        const s = this.states.get(npcId);
+        return !!(s && s.mode === 'job' && s.job?.kind === 'self');
+    }
+
+    getState(npcId) {
+        const s = this.states.get(npcId);
+        if (!s) return null;
+        const levels = {};
+        for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
+        return {
+            npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
+            // workaround (q21): a workaround visit, or the use of a PC borrowed by a workaround
+            job: s.job ? { workaround: !!(s.job.borrowed || (s.job.kind === 'visit' && s.job.visit?.kind === 'workaround')), windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
+            pressing: this._pressing(s),
+            talking: this._talking(npcId),
+            chatPartner: this._chatPartner(npcId),
+            blockedNeed: this._blockedNeed(s),
+            noticed: Number.isFinite(s.caughtAt) && this.clockMs - s.caughtAt < NOTICED_MS,
+            leaveCount: s.leaveCount, leftItems: [...s.leftItems],
+            // Slice 14: parked needs (greyed bubble with a badge) and whose face the avoidance bubble shows
+            parked: Object.keys(s.parked).sort().map(n => ({ need: n, reason: s.parked[n].reason, remainingMs: Math.max(0, s.parked[n].until - this.clockMs) })),
+            // Slice 19: on a desk-phone call (the action icon shows the phone)
+            call: s.call ? { phoneId: s.call.phoneId, remainingMs: Math.max(0, s.call.until - this.clockMs) } : null,
+            avoiding: (s.avoidShow && this.clockMs < s.avoidShow.until) ? s.avoidShow.npcId : (s.job?.goingAnyway || null),
+            home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
+            // Access slice 9.2 A (5.4, 5.5): frustration and tell from the server, the failure just
+            // counted (for FAIL_SHOW_MS), queued visits, and whether a visit is running
+            frustration: s.frustration, tell: s.tell, settled: s.settled,
+            failed: s.failedShow && this.clockMs < s.failedShow.until ? { need: s.failedShow.need, missing: s.failedShow.missing.map(c => ({ ...c })) } : null,
+            // q21: an emit workaround just done (showWorkaround), for WORKAROUND_SHOW_MS
+            workaround: !!(s.workaroundShow && this.clockMs < s.workaroundShow.until),
+            visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
+            visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
+            judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
+            // Access 9.2 C (8.2): on the phone; a sight challenge does not fire meanwhile
+            distracted: this.isDistracted(npcId),
+            causeCleared: this._causeCleared(s),
+            // Access 9.2 H (6.4): a borrow handed over and not yet done
+            borrow: s.borrow ? { index: s.borrow.index, hand: s.borrow.hand, pcId: s.borrow.pcId, need: s.borrow.need, leavesOpen: s.borrow.leavesOpen, started: s.borrow.started } : null,
+            // Access 9.2 L (6.6): stations the owner is locked out at, and checks in flight
+            lockedOut: [...s.lockedOut].sort(), lockCheck: Object.keys(s.lockCheck).sort(),
+            clockMs: this.clockMs, tick: this.tickCount
+        };
+    }
+}
+
+// ── live engine adapter ───────────────────────────────────────────────────
+
+/**
+ * Access 9.2 H (6.4): a work plan judged from a borrowed PC. `routes` maps a resource id to the
+ * routes from that PC (the server's `run.routes`); each listed resource's routes are replaced.
+ */
+export function planWithRoutes(plan, routes) {
+    if (!plan || !routes || typeof routes !== 'object' || !Array.isArray(plan.needs)) return plan;
+    return { ...plan, needs: plan.needs.map(r => (r && Object.prototype.hasOwnProperty.call(routes, r.id) ? { ...r, routes: routes[r.id] } : r)) };
+}
+
+/**
+ * Is a person-chat or phone-chat open? The one rule, used by the engine world below (what the
+ * player overhears), by the chatter voice and by room tone (R3 m3: it lived in room-hearing.js with
+ * an inline copy here; this file has no imports, so every other module can take it from here).
+ * Read the open minigame's own scene type (stamped by the minigame manager), never the sticky
+ * `currentConversationMinigameType`: that stays 'phone-chat' after a call closes, because only
+ * person-chat clears it. `returnTo` covers a minigame opened from inside a conversation (a cloner,
+ * a lockpick): the chat is suspended under it and still counts as open (R2 m8). `w` is the window.
+ */
+export function conversationOpen(w = (typeof window !== 'undefined' ? window : {})) {
+    const mg = w.MinigameFramework?.currentMinigame;
+    if (!mg) return false;
+    const chat = t => t === 'person-chat' || t === 'phone-chat';
+    return chat(mg._sceneType) || chat(mg.params?.returnTo?.sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
+}
+const conversationOpenIn = conversationOpen;
+
+/**
+ * The world as the needs system sees it, read from the running engine through
+ * window. Each method is small so the stub in the node tests mirrors it.
+ */
+export function createEngineWorld() {
+    const W = () => (typeof window !== 'undefined' ? window : {});
+    // R1 m4: is a person-chat or phone-chat open? One shared rule, exported above (R3 m3)
+    const conversationOpen = () => conversationOpenIn(W());
+    const TILE = 32;
+    const centreOf = (sp) => {
+        if (sp.body?.center) return { x: sp.body.center.x, y: sp.body.center.y };
+        const w = sp.displayWidth || sp.width || 0;
+        const h = sp.displayHeight || sp.height || 0;
+        const ox = sp.originX ?? 0.5, oy = sp.originY ?? 0.5;
+        return { x: sp.x + w * (0.5 - ox), y: sp.y + h * (0.5 - oy) };
+    };
+    // The sprite's drawn box in world px, origin-aware (null with no size)
+    const spriteRect = (sp) => {
+        const w = sp.displayWidth || sp.width || 0, h = sp.displayHeight || sp.height || 0;
+        if (!w || !h) return null;
+        const left = sp.x - w * (sp.originX ?? 0.5), top = sp.y - h * (sp.originY ?? 0.5);
+        return { left, right: left + w, top, bottom: top + h };
+    };
+    // Affordance presets (office-presets.js, slice 4): window.officePresets resolves the object's
+    // own fields over its type's preset when the scenario says "officePresets": true
+    const affordanceOf = (sp) => {
+        const op = W().officePresets;
+        if (op?.spriteAffordance) return op.spriteAffordance(sp, W().gameScenario);
+        const a = sp?.scenarioData?.affordance;
+        return a && typeof a === 'object' ? a : null;
+    };
+    // Reveal slots (OFFICE_LIFE_PLAN 2.2 Part A): a declared object with outputOf (or leftBehindChance)
+    // and an engine-owned revealOnGlobal. Delivered, it is placed or stowed, never consumed.
+    const globalOf = sp => sp?.revealOnGlobal || sp?.scenarioData?.revealOnGlobal || null;
+    const isSlot = sp => {
+        const sd = sp?.scenarioData || {};
+        return !!((sd.outputOf || sd.leftBehindChance !== undefined) && globalOf(sp));
+    };
+    const globalTrue = name => W().gameState?.globalVariables?.[name] === true;
+    const inInventory = sp => {
+        const items = W().inventory?.items;
+        if (!Array.isArray(items)) return false;
+        const id = sp.scenarioData?.id || sp.objectId;
+        return items.some(it => it === sp || (id && (it?.scenarioData?.id === id || it?.objectId === id)));
+    };
+    // The desk rule (plan 5.2): workstation-state.js isWorkstation, copied, or the desk_pc preset
+    const isDeskData = (sd) => {
+        if (!sd || typeof sd !== 'object' || !sd.id) return false;
+        if (sd.workstation === true || sd.locksScreenOnLeave !== undefined || sd.lockChance !== undefined || sd.lockType === 'login') return true;
+        const op = W().officePresets;
+        return !!(op?.presetIdFor && op.presetsOn?.(W().gameScenario) && op.presetIdFor(sd) === 'desk_pc');
+    };
+    // Access 9.2 C review R1 M2 (plan 8.1): the own workstation of an NPC with a social_media need
+    // is a source whatever its affordance, as AccessWork.social_station? says on the server, so a
+    // desk that is such an NPC's needsHome is listed with an empty affordance when it has none
+    const socialHomes = () => {
+        const ids = new Set();
+        const npcs = W().npcManager?.npcs;
+        if (npcs?.values) {
+            for (const rec of npcs.values()) {
+                if (typeof rec?.needsHome === 'string' && rec.needs?.social_media && typeof rec.needs.social_media === 'object') ids.add(rec.needsHome);
+            }
+        }
+        return ids;
+    };
+    const describe = (roomId, key, sp, homes = null) => {
+        const sd = sp.scenarioData || {};
+        const id = sd.id || sp.objectId || key;
+        const c = centreOf(sp);
+        let affordance = affordanceOf(sp);
+        if (!affordance && isDeskData(sd) && (homes || socialHomes()).has(id)) affordance = {};
+        const out = {
+            id, roomId, x: c.x, y: c.y,
+            affordance,
+            needsTag: typeof sd.needsTag === 'string' ? sd.needsTag : null,
+            owner: (typeof sd.owner === 'string' && sd.owner) || Array.isArray(sd.owner) ? sd.owner : null,
+            private: sd.private === true,
+            // A slot an NPC set down is not a carry candidate, or the deliverer would pick it straight up
+            pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp._npcPlacedBy && !sp.destroyed,
+            _sprite: sp
+        };
+        // Slice 18a outage: the object-level offWhen (format 8a moved it off the affordance; the
+        // format upgrade guarantees object-level, so no affordance.offWhen path is left to read).
+        // _isOff and the pick paths read out.offWhen, so without this the live world never switches
+        // a source off (the stub world in the node tests supplies offWhen directly).
+        if (sd.offWhen !== undefined) out.offWhen = sd.offWhen;
+        if (isSlot(sp)) { out.slot = true; out.takeable = sd.takeable === true; }
+        // Slice 19: a desk phone (deskPhone flag and ring count; its owner is on out.owner)
+        if (sd.deskPhone === true) { out.deskPhone = true; if (sd.rings !== undefined) out.rings = sd.rings; }
+        // Slice 18b-i: a hidden object (reveal global not true) is no use target
+        if (sd.affordance && globalOf(sp)) out.revealOnGlobal = globalOf(sp);
+        // Access slice 9.2 U (plan 7): a device's class, and a target's effective USB policy
+        if (typeof sd.usbClass === 'string') out.usbClass = sd.usbClass;
+        const usbPolicy = W().pcPolicy?.usbPolicyFor?.(sd, W().gameScenario) ?? null;
+        if (usbPolicy) out.usbPolicy = usbPolicy;
+        // Access slice 9.2 A (plan 5.2): a desk (a workstation by its fields, or the desk_pc preset)
+        // is no source for another NPC's judged need
+        if (isDeskData(sd)) out.desk = true;
+        // Access slice 9.2 C (plan 8.1): a PC whose effective policy blocks social media
+        if (out.desk && W().pcPolicy?.effectivePolicy?.(sd, W().gameScenario)?.social === 'blocked') out.socialBlocked = true;
+        return out;
+    };
+    // A producer's reveal slots, by id, and the free test (loaded, not destroyed, active, global not
+    // true, not held, placed or in the inventory)
+    const slotsOf = (producerId) => {
+        const slots = [];
+        const rooms = W().rooms || {};
+        for (const roomId of Object.keys(rooms)) {
+            const objs = rooms[roomId]?.objects || {};
+            for (const k of Object.keys(objs)) {
+                const sp = objs[k];
+                if (sp?.scenarioData?.outputOf === producerId && isSlot(sp)) slots.push({ id: sp.scenarioData.id || sp.objectId || k, roomId, key: k, sp });
+            }
+        }
+        return slots.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    };
+    const freeSlot = ({ sp }) => !sp.destroyed && sp.active !== false && !globalTrue(globalOf(sp))
+        && !sp._npcCarried && !sp._npcPlacedBy && !inInventory(sp);
+    const findSprite = (id) => {
+        const rooms = W().rooms || {};
+        for (const roomId of Object.keys(rooms)) {
+            const objs = rooms[roomId]?.objects;
+            if (!objs) continue;
+            if (objs[id]) return { roomId, key: id, sp: objs[id] };
+            for (const k of Object.keys(objs)) {
+                if (objs[k]?.scenarioData?.id === id) return { roomId, key: k, sp: objs[k] };
+            }
+        }
+        return null;
+    };
+    const behaviour = id => W().npcBehaviorManager?.getBehavior?.(id) || null;
+    const setCentre = (sp, at) => {
+        const w = sp.displayWidth || sp.width || 0, h = sp.displayHeight || sp.height || 0;
+        const ox = sp.originX ?? 0.5, oy = sp.originY ?? 0.5;
+        sp.x = at.x - w * (0.5 - ox);
+        sp.y = at.y - h * (0.5 - oy);
+    };
+    // A slot's declared spot, recorded the first time the engine handles it (it is on its tray then)
+    const slotHome = (sp, roomId, key) => {
+        if (sp._slotHome) return sp._slotHome;
+        sp._slotHome = { x: sp.x, y: sp.y, depth: sp.depth, roomId: sp.roomId || roomId, key: key || sp.objectId };
+        return sp._slotHome;
+    };
+    const stowSprite = (sp, fromRoomId, fromKey) => {
+        if (!sp || sp.destroyed || sp.active === false || inInventory(sp)) return false;
+        const home = slotHome(sp, fromRoomId, fromKey);
+        try { W().clearObjectHighlight?.(sp); } catch (e) { /* cosmetic */ }
+        const hide = W().hideRevealedObject;
+        if (typeof hide === 'function') hide(sp);
+        else { sp.setVisible?.(false); sp.interactable = false; try { sp.disableInteractive?.(); } catch (e) { /* ok */ } }
+        sp.x = home.x; sp.y = home.y;
+        if (Number.isFinite(home.depth)) sp.setDepth?.(home.depth);
+        sp._npcCarried = null;
+        sp._npcPlacedBy = null;
+        sp._printedBy = null;   // slice 17: filed, so nobody's print any more
+        if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
+        const rooms = W().rooms || {};
+        if (fromRoomId && rooms[fromRoomId]?.objects?.[fromKey] === sp) delete rooms[fromRoomId].objects[fromKey];
+        const room = rooms[home.roomId];
+        if (room) { room.objects = room.objects || {}; room.objects[home.key] = sp; }
+        const g = globalOf(sp);
+        if (g) setGlobalVar(g, false);
+        return true;
+    };
+    const setGlobalVar = (name, value) => {
+        const gs = W().gameState;
+        if (!gs) return;
+        gs.globalVariables = gs.globalVariables || {};
+        const old = gs.globalVariables[name];
+        if (typeof W().setGlobalVariable === 'function') { W().setGlobalVariable(name, value); return; }
+        gs.globalVariables[name] = value;
+        W().eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value, oldValue: old });
+    };
+    // No free slot: a copy of the first slot's texture (or notes1) on the producer, never takeable
+    const cosmetics = new Map();
+    let cosmeticSeq = 0;
+    const makeCosmetic = (producerId, first) => {
+        const scene = W().game;
+        const prod = findSprite(producerId);
+        if (!scene?.add?.sprite || !prod) return null;
+        let tex = first?.sp?.texture?.key || first?.sp?.scenarioData?.type || 'notes1';
+        if (scene.textures?.exists && !scene.textures.exists(tex)) tex = 'notes1';
+        let at = centreOf(prod.sp);
+        const fh = first?.sp?._slotHome;
+        if (fh) {
+            const fs = first.sp, w = fs.displayWidth || fs.width || 0, h = fs.displayHeight || fs.height || 0;
+            at = { x: fh.x + w * (0.5 - (fs.originX ?? 0.5)), y: fh.y + h * (0.5 - (fs.originY ?? 0.5)) };
+        }
+        const sp = scene.add.sprite(at.x, at.y, tex);
+        sp.setOrigin?.(0.5, 0.5);
+        sp.setDepth?.((prod.sp.depth || at.y) + 1);
+        const handle = `cosmetic:${producerId}:${++cosmeticSeq}`;
+        cosmetics.set(handle, sp);
+        // drawn as part of the producer: the behind-wall fade dims it with the producer
+        (prod.sp._fadeCompanions ||= new Set()).add(sp);
+        sp._fadeOwner = prod.sp;
+        return handle;
+    };
+
+    return {
+        // Wind-up before an NPC leaves its post (ms). scenario.npcWindupMs, default 700; 0 turns it off.
+        windupMs: () => { const v = W().gameScenario?.npcWindupMs; return Number.isFinite(v) ? v : 700; },
+        elapsedMs: () => (W().gameClock ? W().gameClock.elapsedMs() : Date.now()),
+        isVmActive: () => !!W().isVmContextActive?.(),
+        npcIds: () => [...(W().npcManager?.npcs?.keys?.() || [])],
+        // Loaded rooms; a new id is a room load (the needs system clears its select back-offs)
+        roomIds: () => Object.keys(W().rooms || {}),
+        // Room leash: a loaded room's needsPrivateTo (createRoom keeps it; the bootstrap scenario
+        // strips room fields it does not list, so the scenario copy is only a fallback)
+        roomPrivateTo(roomId) {
+            const v = W().rooms?.[roomId]?.needsPrivateTo ?? W().gameScenario?.rooms?.[roomId]?.needsPrivateTo;
+            return Array.isArray(v) ? v : null;
+        },
+        getNpc: id => W().npcManager?.getNPC?.(id) || W().npcManager?.npcs?.get?.(id) || null,
+        npcPos(id) {
+            const b = behaviour(id);
+            const sp = b?.sprite;
+            if (!sp || sp.destroyed || !sp.body) return null;
+            const c = sp.body.center;
+            return { x: c.x, y: c.y, roomId: b.roomId };
+        },
+        npcStatus(id) {
+            const b = behaviour(id);
+            const hs = W().npcHostileSystem;
+            return {
+                ko: !!hs?.isNPCKO?.(id),
+                hostile: !!hs?.isNPCHostile?.(id),
+                hidden: !b?.sprite?.body?.enable
+            };
+        },
+        inChatWith(id) {
+            // A chat that handed over to a child minigame (the NPC's inventory, the card reader) and
+            // will resume counts as open the whole time. A pending return counts only while the
+            // chat is coming back (back.returning: the child completed and the restart is queued,
+            // cleared once the chat has restarted) or a minigame is actually open. One left behind
+            // by a force close, a displaced child or a failed open names nobody
+            // (R3 M1; the framework also clears it when the child ends any other way).
+            const mg = W().MinigameFramework?.currentMinigame;
+            const back = W().pendingConversationReturn;
+            if (back && back.npcId === id && (back.type || 'person-chat') === 'person-chat'
+                && (back.returning === true || (mg && !mg._ending))) return true;
+            if (!mg) return false;
+            // Base on the open minigame's own npcId: person-chat swaps
+            // currentConversationNPCId briefly around nested calls.
+            const isPerson = W().currentConversationMinigameType === 'person-chat' || /person/i.test(mg.constructor?.name || '');
+            return isPerson && mg.npcId === id;
+        },
+        listObjects() {
+            const out = [];
+            const rooms = W().rooms || {};
+            const homes = socialHomes();
+            for (const roomId of Object.keys(rooms).sort()) {
+                const objs = rooms[roomId]?.objects;
+                if (!objs) continue;
+                for (const k of Object.keys(objs).sort()) {
+                    const sp = objs[k];
+                    const sd = sp?.scenarioData;
+                    if (!sd) continue;
+                    const home = homes.has(sd.id || sp.objectId || k) && isDeskData(sd);
+                    if (typeof sd.needsTag !== 'string' && !affordanceOf(sp) && !home) continue;
+                    out.push(describe(roomId, k, sp, homes));
+                }
+            }
+            return out;
+        },
+        getObject(id) {
+            const f = findSprite(id);
+            return f ? describe(f.roomId, f.key, f.sp) : null;
+        },
+        approachCell(obj, opts) {
+            const pm = W().pathfindingManager;
+            const uf = obj.affordance?.useFrom;
+            if (pm?.findNearestWalkableWorldCell) {
+                // Feet at the item's floor base (approachTarget): a desk keeps the old aim (its user
+                // sits behind it), and window.__needsLegacyApproach restores the old one for A/B checks
+                const sp = obj._sprite;
+                const geo = !obj.desk && !opts?.legacy && !W().__needsLegacyApproach && sp && !sp.destroyed ? spriteRect(sp) : null;
+                const aim = geo ? approachTarget(obj, geo, sp.elevation ?? 0) : null;
+                const magnetOnTable = !!(obj.affordance?.magnet && sp && W().tableDrop?.approach);
+                if (aim && !magnetOnTable) {
+                    for (const p of approachProbes(aim)) {
+                        const c = pm.findNearestWalkableWorldCell(p.x, p.y, 0);
+                        if (c) return c;
+                    }
+                }
+                if (uf && Number.isFinite(uf.dx) && Number.isFinite(uf.dy)) {
+                    const c = pm.findNearestWalkableWorldCell(obj.x + uf.dx * TILE, obj.y + uf.dy * TILE, 1);
+                    if (c) return c;
+                }
+                // Slice 23: a magnet standing on a table is used from the table's edge (item-drop.js)
+                if (magnetOnTable) {
+                    const c = W().tableDrop.approach(sp, obj.roomId, (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r));
+                    if (c) return c;
+                }
+                // Item on the floor: stand on it. Furniture: the nearest walkable cell.
+                return pm.findNearestWalkableWorldCell(obj.x, obj.y, 3);
+            }
+            return { x: obj.x, y: obj.y + TILE };
+        },
+        // The world path grid is built (npc-pathfinding.js): before it, findWorldPath answers null
+        // and approachCell finds no cell, so the needs layer waits rather than park. No
+        // pathfinding manager at all reads as ready, as reachable() treats it.
+        pathReady() {
+            const pm = W().pathfindingManager;
+            if (!pm?.findWorldPath) return true;
+            return !!(pm.worldPathfinder && pm.worldGrid && pm.worldGridBounds);
+        },
+        reachable(id, obj, opts) {
+            const pm = W().pathfindingManager;
+            const pos = this.npcPos(id);
+            if (!pm?.findWorldPath || !pos) return true;
+            const cell = this.approachCell(obj);
+            if (!cell) return false;
+            // Already standing at it (an NPC at its own desk): EasyStar gives no path
+            // when start and end share a tile, which read as unreachable and sent the
+            // NPC to the next desk instead of its own.
+            if (Math.hypot(pos.x - cell.x, pos.y - cell.y) < TILE) return true;
+            // EasyStar 0.4 hands its result to the callback through setTimeout unless
+            // sync is on, so the answer would arrive after we return. Turn sync on for
+            // this one call (single-threaded: nothing else can be queued meanwhile).
+            const pf = pm.worldPathfinder;
+            const canSync = !!(pf && pf.enableSync && pf.disableSync);
+            let ok = false, called = false;
+            if (canSync) pf.enableSync();
+            try {
+                const cb = p => { called = true; ok = !!(p && p.length); };
+                if (opts?.avoidRooms?.length) pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, cb, false, { avoidRooms: opts.avoidRooms });
+                else pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, cb);
+            } catch (e) {
+                return false;
+            } finally {
+                if (canSync) pf.disableSync();
+            }
+            // No answer (world grid not ready, or sync unsupported): unknown, so do
+            // not block the NPC. The job timeout still catches a truly unreachable target.
+            return called ? ok : true;
+        },
+        // Walked length (px) of the route the NPC would take between two world cells, following the
+        // same pathfinder (and leash rings) as moveTo, so a trip through a door is measured round the
+        // wall rather than straight through it. Used by _expectedAwayMs. Returns null when no path is
+        // found or the grid is not ready, so the caller can fall back to the straight-line lower bound.
+        // E8: with opts.detail the result is { length, known }: `known` is true only when the
+        // pathfinder answered (a path, a definite empty one, or the same tile; a grid not yet built
+        // is not an answer), and `length` is null
+        // for no path. Without it, the plain length or null as before.
+        routeLength(from, to, opts) {
+            const out = (length, known) => (opts?.detail ? { length, known } : length);
+            const pm = W().pathfindingManager;
+            if (!pm?.findWorldPath || !from || !to) return out(null, false);
+            const straight = Math.hypot(to.x - from.x, to.y - from.y);
+            // Same tile: EasyStar gives no path when start and end share a cell (see reachable).
+            if (straight < TILE) return out(straight, true);
+            const pf = pm.worldPathfinder;
+            // findWorldPath answers null at once while the world grid is not ready: that is no
+            // answer, not "no path" (R1 m3), so it is unknown and never read as unreachable
+            if (!pf || !pm.worldGridBounds) return out(null, false);
+            const canSync = !!(pf.enableSync && pf.disableSync);
+            let path = null, called = false;
+            if (canSync) pf.enableSync();
+            try {
+                const cb = p => { called = true; path = p; };
+                if (opts?.avoidRooms?.length) pm.findWorldPath(from.x, from.y, to.x, to.y, cb, false, { avoidRooms: opts.avoidRooms });
+                else pm.findWorldPath(from.x, from.y, to.x, to.y, cb);
+            } catch (e) {
+                return out(null, false);
+            } finally {
+                if (canSync) pf.disableSync();
+            }
+            if (!called) return out(null, false);
+            if (!path || !path.length) return out(null, true);
+            // Sum the legs from `from` through the tile-centre waypoints (the last is `to`'s cell).
+            let d = 0, prev = from;
+            for (const w of path) { d += Math.hypot(w.x - prev.x, w.y - prev.y); prev = w; }
+            return out(d, true);
+        },
+        playerProximity(id) {
+            const pl = W().player;
+            const pos = this.npcPos(id);
+            if (!pl || !pos) return { nearby: false, distance: null };
+            const pr = pl.body?.center || { x: pl.x, y: pl.y };
+            const distance = Math.hypot(pr.x - pos.x, pr.y - pos.y);
+            const sameRoom = !W().currentPlayerRoom || !pos.roomId || W().currentPlayerRoom === pos.roomId;
+            // Clear of walls and closed doors: the same test the NPC uses to turn to the
+            // player (not the physics line, which furniture between them would block).
+            let clear = true;
+            const b = behaviour(id);
+            if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
+            return { nearby: sameRoom && distance <= 96 && clear, distance };
+        },
+        // Slice 19: the player's distance to a desk phone (same room, 96 px for nearby)
+        playerProximityAt(obj) {
+            const pl = W().player;
+            if (!pl || !obj) return { nearby: false, distance: null };
+            const pr = pl.body?.center || { x: pl.x, y: pl.y };
+            const distance = Math.hypot(pr.x - obj.x, pr.y - obj.y);
+            const sameRoom = !W().currentPlayerRoom || !obj.roomId || W().currentPlayerRoom === obj.roomId;
+            return { nearby: sameRoom && distance <= 96, distance };
+        },
+        // Chat overhearing (slice 8): the playerProximity tests (same room, clear line) at a chat radius
+        playerHears(id, radius) {
+            // A person-chat or phone-chat is open: no chatter is overheard, so none counts as heard
+            if (conversationOpen()) return { overheard: false, distance: null };
+            const pl = W().player;
+            const pos = this.npcPos(id);
+            if (!pl || !pos) return { overheard: false, distance: null };
+            const pr = pl.body?.center || { x: pl.x, y: pl.y };
+            const distance = Math.hypot(pr.x - pos.x, pr.y - pos.y);
+            const sameRoom = !W().currentPlayerRoom || !pos.roomId || W().currentPlayerRoom === pos.roomId;
+            if (!sameRoom || distance > radius) return { overheard: false, distance };
+            // Lit: nobody overhears in a dark room (slice 15 audience rule, OFFICE_LIFE_PLAN 11.4)
+            const ls = W().lightingSystem, lit = ls?.rooms?.get?.(pos.roomId);
+            if (lit && typeof ls.roomLevel === 'function' && ls.roomLevel(lit) < 0.5) return { overheard: false, distance };   // roomIsDark (DARK_LEVEL)
+            let clear = true;
+            const b = behaviour(id);
+            if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
+            return { overheard: clear, distance };
+        },
+        // Scenario chatter pools (object, false, or undefined for the built-ins)
+        chatterConfig: () => W().gameScenario?.chatter,
+        // `"npcThoughts": false` (D77): picture chat is off too (same flag as npcThoughtsOn in npc-action-icons.js)
+        npcThoughtsOn: () => W().gameScenario?.npcThoughts !== false,
+        // Voiced chatter (slice 15): npc-needs-chatter.js speaks lines and runs exchange knots on
+        // a separate ink story instance; until it has loaded, lines are bubbles only. The voice
+        // waits for the bubble layer to place the line, and a line with no room is not voiced
+        // (UX slice 5 R4 n4). An exchange or call line (info.knot or info.call) is not deferred:
+        // it is voiced at once and the bubble layer toasts it when no bubble fits, since the
+        // exchange counts as heard (heard_<knot>) when the player overheard at least one of its lines (E9, 5.6a)
+        speak: (id, line, info) => {
+            const v = W().npcChatterVoice;
+            // Chatter is silent for the whole of a person-chat or phone-chat: no voice, no toast
+            if (conversationOpen() || v?.conversationOpen?.()) return undefined;
+            const wb = W().npcWorldBubbles;
+            if (info?.knot || info?.call) {
+                try { wb?.mustShowChatter?.(id, line); } catch (e) { /* display never breaks a tick */ }
+                return v ? v.say(id, line, info) : undefined;
+            }
+            if (!v) return undefined;
+            const say = () => v.say(id, line, info);
+            if (wb?.deferChatterVoice?.(id, line, say)) return undefined;
+            return say();
+        },
+        // Slice 19: a call hung up stops its speaker's line in flight and drops its queued lines
+        cancelSpeech: id => W().npcChatterVoice?.cancel?.(id),
+        // D34 (a): the faint volume an ambient line out of earshot would have (0: none; the scenario
+        // flag "faintChatter": false opts out), and a full line taking the voice from a faint one
+        faintVolume: (id, radius) => (W().gameScenario?.faintChatter === false ? 0 : (W().npcChatterVoice?.faintVolume?.(id, radius) || 0)),
+        fadeFaint: id => W().npcChatterVoice?.fadeFaint?.(id),
+        warmStory: id => W().npcChatterVoice?.warm?.(id),
+        exchangeLines: (id, knot) => W().npcChatterVoice?.exchangeLines(id, knot) ?? null,
+        setGlobal(name, value) {
+            const v = W().npcChatterVoice;
+            if (v?.setGlobal) { v.setGlobal(name, value); return; }
+            const g = W().gameState?.globalVariables;
+            if (g) g[name] = value;
+        },
+        // needsCompany requireGlobal (requiredGlobalsHold, copied from npc-sight-challenge.js)
+        globalHolds: cond => requiredGlobalsHold(cond, W().gameState?.globalVariables || {}),
+        // Access slice 9.2 A (ACCESS_MODEL_SLICE_9_2_PLAN 5): a global's value, the pure work rules
+        // (systems/npc-work.js, set on window when loaded), the use verdict and the report queue
+        globalValue: name => W().gameState?.globalVariables?.[name],
+        get workRules() { return W().npcWork || null; },
+        useVerdict(npcId, need, obj, routes = null) {
+            const rules = W().npcWork;
+            const rec = W().npcManager?.getNPC?.(npcId) || W().npcManager?.npcs?.get?.(npcId) || null;
+            if (!rules || !rec) return { met: true, missing: [] };
+            const stationId = typeof rec.needsHome === 'string' ? rec.needsHome : null;
+            // lockedOut stays false here: the needs core adds a lockout from its own flag (9.2 L, 6.6);
+            // socialBlocked is the PC's policy (9.2 C, 8.1)
+            const station = obj && obj.id === stationId ? { id: obj.id, lockedOut: false, socialBlocked: !!obj.socialBlocked } : null;
+            return rules.useVerdict(planWithRoutes(rec.work, routes), need, station, W().gameState?.globalVariables || {});
+        },
+        reportUse(npcId, report) { W().npcReports?.queue?.(npcId, report); },
+        // A free cell beside where an NPC stands now (a visit to an NPC, 5.3)
+        cellBeside(npcId, visitorId, opts) {
+            const sp = W().npcManager?.npcs?.get?.(npcId)?._sprite || W().npcManager?.getNPC?.(npcId)?._sprite;
+            const pm = W().pathfindingManager;
+            if (!sp || !pm?.findNearestWalkableWorldCell) return null;
+            const c = centreOf(sp);
+            // The first side the visitor can walk to (routeLength, the moveTo pathfinder and
+            // leash). A walkable cell can still be cut off, such as the gap behind a colleague's
+            // desk: a share_login visit to Ruth stood still there until it timed out (browser
+            // run H, game 1222). With no visitor, or no side reachable, the first walkable cell.
+            const from = visitorId ? this.npcPos(visitorId) : null;
+            let first = null;
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                const cell = pm.findNearestWalkableWorldCell(c.x + dx * TILE, c.y + dy * TILE, 0);
+                if (!cell) continue;
+                if (!from || this.routeLength(from, cell, opts) !== null) return cell;
+                if (!first) first = cell;
+            }
+            return first;
+        },
+        // A second user of a shared object stands one tile beside the first: right, left, below, above.
+        // E8: with opts.from (the partner's position; opts.avoidRooms its leash), a walkable free side
+        // is passed over only on a definite "no path" (routeLength detail: known, length null); a
+        // side whose route is unknown counts as reachable, as reachable() treats "no answer". So a
+        // pathfinder that cannot answer synchronously gives the first walkable free side, as before.
+        // None passes: null, and the caller fails the job (no_beside_cell).
+        besideCell(cell, taken, opts = {}) {
+            const pm = W().pathfindingManager;
+            if (!pm?.findNearestWalkableWorldCell) return null;
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                const c = pm.findNearestWalkableWorldCell(cell.x + dx * TILE, cell.y + dy * TILE, 0);
+                if (!c || taken.some(t => Math.hypot(t.x - c.x, t.y - c.y) < TILE / 2)) continue;
+                if (!opts?.from) return c;
+                const r = this.routeLength(opts.from, c, { avoidRooms: opts.avoidRooms, detail: true });
+                if (r.known && r.length === null) continue;
+                return c;
+            }
+            return null;
+        },
+        // Queue cells (slice 10): offsets in tiles from the approach cell, each snapped to the exact
+        // walkable 8 px cell there (no search: a cell on furniture is dropped, not moved), with the
+        // room it lies in (the object's room first, for a cell on a shared edge)
+        queueCells(obj, offsets) {
+            const pm = W().pathfindingManager;
+            const base = this.approachCell(obj);
+            if (!base || !pm?.findNearestWalkableWorldCell) return [];
+            const rooms = W().rooms || {};
+            const roomAt = (x, y) => {
+                const inside = r => r?.position && r.map && x >= r.position.x && y >= r.position.y
+                    && x < r.position.x + r.map.widthInPixels && y < r.position.y + r.map.heightInPixels;
+                if (inside(rooms[obj.roomId])) return obj.roomId;
+                for (const id of Object.keys(rooms).sort()) if (inside(rooms[id])) return id;
+                return obj.roomId;
+            };
+            const out = [];
+            for (const o of offsets) {
+                const c = pm.findNearestWalkableWorldCell(base.x + o.dx * TILE, base.y + o.dy * TILE, 0);
+                if (!c) continue;
+                if ([base, ...out].some(t => Math.hypot(t.x - c.x, t.y - c.y) < TILE / 2)) continue;
+                out.push({ x: c.x, y: c.y, roomId: roomAt(c.x, c.y) });
+            }
+            return out;
+        },
+        // After every needs tick: workstation auto-lock (workstation-state.js), on the needs clock.
+        afterTick(clockMs) {
+            W().workstationState?.tick?.(clockMs);
+        },
+        // For npc_caught_at_post: the player's distance to an NPC's home point (null when the
+        // player is in another room) and whether the open minigame belongs to the home object.
+        // PC-type minigames carry their object in a param (lockable, sprite, containerItem).
+        playerAtPost(id, home) {
+            const pl = W().player;
+            let distance = null;
+            if (pl && (!W().currentPlayerRoom || !home.roomId || W().currentPlayerRoom === home.roomId)) {
+                const pr = pl.body?.center || { x: pl.x, y: pl.y };
+                distance = Math.hypot(pr.x - home.x, pr.y - home.y);
+            }
+            const params = W().MinigameFramework?.currentMinigame?.params;
+            // The examine view names its object by a string itemId (as workstation-state's minigameOnObject)
+            const inMinigame = !!(params && home.objectId && (params.itemId === home.objectId || params.objectId === home.objectId
+                || Object.values(params).some(v => v && typeof v === 'object' && (v.scenarioData?.id === home.objectId || v.objectId === home.objectId))));
+            return { distance, inMinigame };
+        },
+        tileToWorld(roomId, x, y) {
+            const room = W().rooms?.[roomId];
+            if (!room?.position) return null;
+            return { x: room.position.x + x * TILE, y: room.position.y + y * TILE };
+        },
+        speedFor(id) {
+            const rec = W().npcManager?.getNPC?.(id);
+            const v = Number(rec?.needsSpeed);
+            if (v > 0) return v;
+            return behaviour(id)?.config?.patrol?.speed || 80;
+        },
+        moveTo(id, x, y, speed, opts) {
+            W().npcBehaviorManager?.goToAndStay(id, x, y, speed, { owner: 'needs', yieldToPlayer: !!opts?.yieldToPlayer, avoidRooms: opts?.avoidRooms || [], arriveWithin: opts?.arriveWithin || 0, moveId: opts?.moveId,
+                // A stalled walk's re-issue plans round held bodies, and its last re-route in one place
+                // first steps onto the nearest walkable cell (code review R1: these were dropped here)
+                reroute: !!opts?.reroute, nudge: !!opts?.nudge });
+            // Where a requested nudge put the body, or null when none ran (code review R3, M1)
+            return { nudged: opts?.nudge ? (behaviour(id)?._lastNudge || null) : null };
+        },
+        /** Is the player's body close enough to be what holds this NPC up (NPC_STUCK_PLAYER_PX)? */
+        playerBlocks(id) {
+            const b = behaviour(id);
+            const at = b?.npcBodyPos?.();
+            return !!(at && b._playerBeside?.(at.x, at.y));
+        },
+        cancelMove(id) {
+            W().npcBehaviorManager?.cancelMove?.(id);
+        },
+        faceTo(id, x, y) {
+            behaviour(id)?.faceWorldPoint?.(x, y);
+        },
+        /** Turn an idle, standing NPC back to a point unless it is seated, held in a pose, or the player is close enough to be faced. */
+        restoreFacing(id, x, y) {
+            const b = behaviour(id);
+            if (!b || b._seat || b._seatMove || b._poseHoldFacing || !b.npcBodyPos) return;
+            const p = b.npcBodyPos();
+            const pl = W().player;
+            const range = b.config?.facePlayerDistance || 96;
+            if (b.config?.facePlayer && pl && Math.hypot((pl.x ?? 0) - p.x, (pl.y ?? 0) - p.y) < range) return;
+            const dir = b.calculateDirection(x - p.x, y - p.y);
+            if (b.direction !== dir) { b.direction = dir; b.playAnimation?.('idle', dir); }
+        },
+        pickUp(npcId, itemId) {
+            const f = findSprite(itemId);
+            if (!f || f.sp._npcCarried || f.sp.visible === false) return false;
+            const sp = f.sp;
+            const slot = isSlot(sp);
+            if (slot) slotHome(sp, f.roomId, f.key);   // its declared spot, for a later stow
+            sp._npcCarried = npcId;
+            // Office visuals (slice 3) keep it visible in the carrier's hand (npc-office-visuals.js
+            // follows it on postupdate); with "officeVisuals": false it is hidden, as before
+            if (W().gameScenario?.officeVisuals === false) sp.setVisible?.(false);
+            else if (sp.body && sp.body.enable !== false) { sp._carryBodyOff = true; sp.body.enable = false; }
+            sp.interactable = false;
+            try { sp.disableInteractive?.(); } catch (e) { /* no input zone */ }
+            // the per-frame highlight loop only walks room.objects, so end the highlight (tint, ghost) now
+            try { W().clearObjectHighlight?.(sp); } catch (e) { /* highlight is cosmetic */ }
+            delete W().rooms[f.roomId].objects[f.key];
+            const rec = W().npcManager?.getNPC?.(npcId);
+            if (rec) {
+                rec.itemsHeld = rec.itemsHeld || [];
+                rec._needsCarried = rec._needsCarried || {};
+                rec._needsCarried[itemId] = { sprite: sp, roomId: f.roomId, key: f.key };
+                // Record the carried object as a held item of the NPC (server serves
+                // it in itemsHeld; this is the local mirror for an offline frame). A
+                // reveal slot (copier output) keeps its own client-only place-then-file
+                // flow, outside the server allowlist, so it is never mirrored here nor
+                // sent a server carry (review R1 m5): no 422 is logged for it.
+                const sd = sp.scenarioData || {};
+                if (!slot && !rec.itemsHeld.some(i => i && i.id === itemId)) {
+                    rec.itemsHeld.push({ id: itemId, type: sd.type, name: sd.name, _needsCarried: true });
+                }
+            }
+            // The server holds the carry (NPC_CARRIED_ITEMS_PLAN.md): it leaves the
+            // origin room and is served in the NPC's itemsHeld. Replaces the old
+            // client-only carry that left the object in its scenario room. On a server
+            // refusal, undo the local pick-up so the client stops diverging (review R1 m2).
+            if (!slot) {
+                try {
+                    Promise.resolve(W().RoomStateSync?.carryObject?.(npcId, itemId, f.roomId))
+                        .then(ok => { if (ok === false) this._uncarryToOrigin(npcId, itemId); })
+                        .catch(() => {});
+                } catch (e) { /* offline */ }
+            }
+            return true;
+        },
+        consumeHeld(npcId, itemId) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            if (!held) return;
+            delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+            const sp = held.sprite;
+            const sd = sp?.scenarioData || {};
+            // Hide the carried sprite but keep it until the server confirms (review R2 m3):
+            // on a refusal the NPC still holds it server-side, so _reinstateHeld gets this
+            // same sprite back and the hand is never left holding an invisible item.
+            // Destroy it only once the consume is confirmed.
+            try { sp?.setVisible?.(false); if (sp) sp.interactable = false; sp?.disableInteractive?.(); } catch (e) { /* already gone */ }
+            // Used up: tell the server the NPC consumed it, so the carry is cleared
+            // and a reload keeps it gone. No room is named (the old remove_object sent
+            // the carrier's room and 422'd), so there is no wrong-room failure.
+            const npcRoom = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
+            try {
+                Promise.resolve(W().RoomStateSync?.consumeCarried?.(npcId, itemId, npcRoom))
+                    .then(ok => {
+                        if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name });
+                        else {
+                            try { sp?.destroy?.(); } catch (e) { /* already gone */ }
+                            // slice C C2: the use's globals (e.g. kp_usb_foothold) are written
+                            // synchronously right after this consume, by the npc_used event mapping
+                            // (npc-manager.js _runMapping: a direct globalVariables write, no sync
+                            // request of its own). They otherwise ride only the periodic delta and the
+                            // pagehide flush, so a tab killed in that gap would leave the object consumed
+                            // server-side with the global unset. Request the debounced near-immediate
+                            // sync (the KO path's) to carry the global promptly.
+                            try { W().stateSync?.requestSoon?.(); } catch (e) { /* no sync in this context */ }
+                        }
+                    })
+                    .catch(() => {});
+            } catch (e) { try { sp?.destroy?.(); } catch (er) { /* ok */ } }
+        },
+        dropHeld(npcId, itemId) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            const pos = this.npcPos(npcId);
+            if (!held) return;
+            delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+            const sp = held.sprite;
+            const roomId = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
+            if (pos) { sp.x = pos.x - (sp.displayWidth || 0) / 2; sp.y = pos.y - (sp.displayHeight || 0) / 2; }
+            sp._npcCarried = null;
+            if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
+            sp.setVisible?.(true);
+            sp.interactable = true;
+            try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
+            const room = W().rooms?.[roomId] || W().rooms?.[held.roomId];
+            if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = roomId; }
+            // The server lands the object in the room the NPC set it down in, from the
+            // scenario definition, and clears the carry. Only the position is the client's.
+            // On a refusal (e.g. an unreachable room) the server still holds the carry, so
+            // reinstate the held record so the client stops diverging (review R1 m2).
+            const sd = sp?.scenarioData || {};
+            try {
+                Promise.resolve(W().RoomStateSync?.putDownObject?.(npcId, itemId, roomId, pos ? { px: pos.x, py: pos.y } : null))
+                    .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name }); })
+                    .catch(() => {});
+            } catch (e) { /* offline */ }
+        },
+        // ── reveal slots (slice 7) ──
+        // Set a delivered slot down on the target: at its centre plus placeAt {dx, dy} tiles, else
+        // halfway from the centre towards the approach cell. The sprite is registered under the room
+        // it now sits in, keyed by its object id (what player pickup looks up); sp.roomId stays the
+        // declared room, the one the server knows it in. Client only.
+        placeHeld(npcId, itemId, target) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            if (!held || !target) return false;
+            const sp = held.sprite;
+            slotHome(sp, held.roomId, held.key);
+            const pa = target.affordance?.placeAt;
+            let at;
+            if (pa && Number.isFinite(pa.dx) && Number.isFinite(pa.dy)) at = { x: target.x + pa.dx * TILE, y: target.y + pa.dy * TILE };
+            else {
+                // The old aim: a delivered item lands on the near side of the target's centre, not
+                // at the (now lower) feet-at-base stand point
+                const cell = this.approachCell(target, { legacy: true });
+                at = cell ? { x: (target.x + cell.x) / 2, y: (target.y + cell.y) / 2 } : { x: target.x, y: target.y };
+            }
+            delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+            setCentre(sp, at);
+            sp._npcCarried = null;
+            sp._npcPlacedBy = npcId;
+            const base = target._sprite?.depth;
+            sp.setDepth?.(Number.isFinite(base) ? base + 1 : at.y + 1);
+            sp.setVisible?.(true);
+            sp.interactable = true;
+            try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
+            const room = W().rooms?.[target.roomId] || W().rooms?.[held.roomId];
+            if (room) { room.objects = room.objects || {}; room.objects[sp.objectId || held.key] = sp; }
+            // A reveal slot keeps its client-only place-then-file flow (it is outside the
+            // server carry allowlist), so no server put-down is sent for it and no 422 is
+            // logged (review R1 m5). A non-slot carried item placed here still syncs, and
+            // reinstates its held record on a refusal (review R1 m2).
+            if (!isSlot(sp)) {
+                const sd = sp?.scenarioData || {};
+                try {
+                    Promise.resolve(W().RoomStateSync?.putDownObject?.(npcId, itemId, target.roomId, { px: at.x, py: at.y }))
+                        .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name }); })
+                        .catch(() => {});
+                } catch (e) { /* offline */ }
+            }
+            W().eventDispatcher?.emit(`npc_placed:${itemId}`, { npcId, itemId, targetId: target.id, roomId: target.roomId });
+            return true;
+        },
+        // Undo a local pick-up after the server refused the carry (review R1 m2): the
+        // server kept the object in its origin room, so restore it there and clear the
+        // carry state the client set optimistically.
+        _uncarryToOrigin(npcId, itemId) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            if (!held) return;
+            delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+            const sp = held.sprite;
+            if (sp) {
+                sp._npcCarried = null;
+                if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
+                sp.setVisible?.(true);
+                sp.interactable = true;
+                try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
+                const room = W().rooms?.[held.roomId];
+                if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = held.roomId; }
+            }
+        },
+        // Reinstate the held record after the server refused a put-down or consume
+        // (review R1 m2): the server still holds the carry, so keep the client's model
+        // in step (the object stays in the NPC's hand). Tolerant of a destroyed sprite.
+        _reinstateHeld(npcId, itemId, info = {}) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            if (!rec) return;
+            rec._needsCarried = rec._needsCarried || {};
+            rec._needsCarried[itemId] = { sprite: info.sprite || null, roomId: info.roomId, key: info.key };
+            rec.itemsHeld = rec.itemsHeld || [];
+            if (!rec.itemsHeld.some(i => i && i.id === itemId)) {
+                rec.itemsHeld.push({ id: itemId, type: info.type, name: info.name, _needsCarried: true });
+            }
+            const sp = info.sprite;
+            if (sp && !sp.destroyed) {
+                sp._npcCarried = npcId;
+                if (W().gameScenario?.officeVisuals === false) sp.setVisible?.(false);
+                else if (sp.body && sp.body.enable !== false) { sp._carryBodyOff = true; sp.body.enable = false; }
+                sp.interactable = false;
+                try { sp.disableInteractive?.(); } catch (e) { /* ok */ }
+                try { W().clearObjectHighlight?.(sp); } catch (e) { /* cosmetic */ }
+                const room = W().rooms?.[info.roomId];
+                if (room?.objects) delete room.objects[info.key];
+            }
+        },
+        // KO while carrying (review R1 M1, slice C): the carrying NPC is knocked out, so
+        // every carried item drops to the KO room floor and the carry ends. Re-shows the
+        // carried sprite in the KO room at the body position, and tells the server to end
+        // the carry as a KO put-down (ko_drop_carried: it trusts the recorded KO, clears
+        // npcCarry, lands the object once). Returns the ids dropped.
+        koDropCarried(npcId, koRoomId, pos) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            if (!rec || !rec._needsCarried) return [];
+            const dropped = [];
+            for (const itemId of Object.keys(rec._needsCarried)) {
+                const held = rec._needsCarried[itemId];
+                if (!held) continue;
+                const sp = held.sprite;
+                const toRoom = koRoomId || W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
+                delete rec._needsCarried[itemId];
+                if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+                if (sp && !sp.destroyed) {
+                    if (pos) { sp.x = pos.x - (sp.displayWidth || 0) / 2; sp.y = pos.y - (sp.displayHeight || 0) / 2; }
+                    sp._npcCarried = null;
+                    if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
+                    sp.setVisible?.(true);
+                    sp.interactable = true;
+                    try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
+                    const room = W().rooms?.[toRoom] || W().rooms?.[held.roomId];
+                    if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = toRoom; }
+                }
+                // On a server refusal the carry survives server-side, so the floor copy
+                // the client just drew is not backed (review R2 m5). Reinstate the held
+                // record pointing at the drop room, which removes that floor copy and puts
+                // the object back in the hand, matching the server until the KO catches up.
+                const sd = sp?.scenarioData || {};
+                const heldKey = held.key;
+                try {
+                    Promise.resolve(W().RoomStateSync?.koDropObject?.(npcId, itemId, toRoom, pos ? { px: pos.x, py: pos.y } : null))
+                        .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: toRoom, key: heldKey, type: sd.type, name: sd.name }); })
+                        .catch(() => {});
+                } catch (e) { /* offline */ }
+                dropped.push(itemId);
+            }
+            return dropped;
+        },
+        // File a slot away: hidden at its declared spot, back in its declared room's objects under its
+        // original key, global false. No server call. False when it is gone (the player took it).
+        stowSlot(itemId) {
+            const f = findSprite(itemId);
+            if (!f) return false;
+            return stowSprite(f.sp, f.roomId, f.key);
+        },
+        stowHeld(npcId, itemId) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            if (!held) return false;
+            delete rec._needsCarried[itemId];
+            slotHome(held.sprite, held.roomId, held.key);
+            return stowSprite(held.sprite, null, null);
+        },
+        // revealOutput hook: the first free slot of the producer, by id. Free = loaded, not destroyed,
+        // active, global not true, not held, placed or in the inventory. Shown by a direct call (after
+        // a reload there is no reveal listener). None free: a cosmetic copy nobody can take.
+        // opts.printedBy (slice 17): the owner stamped on the slot, or null; every reveal sets or
+        // clears it, since slot sprites are reused.
+        revealOutput(producerId, npcId, opts = null) {
+            const slots = slotsOf(producerId);
+            const free = slots.find(freeSlot);
+            if (free) {
+                slotHome(free.sp, free.roomId, free.key);
+                free.sp._printedBy = opts?.printedBy || null;
+                this.setGlobal(globalOf(free.sp), true);
+                W().showRevealedObject?.(free.sp);
+                // On its producer's tray: drawn above the producer whatever their y-sorted depths
+                const prod = findSprite(producerId)?.sp;
+                if (prod && Number.isFinite(prod.depth) && !(free.sp.depth > prod.depth)) free.sp.setDepth?.(prod.depth + 0.5);
+                W().eventDispatcher?.emit(`object_revealed:${free.id}`, { producerId, npcId, objectId: free.id });
+                return { slotId: free.id };
+            }
+            const cosmetic = makeCosmetic(producerId, slots[0]);
+            // Slice 20: a cosmetic copy is a print too, so the producer's outputSound can play
+            if (cosmetic) W().eventDispatcher?.emit(`object_revealed:${producerId}`, { producerId, npcId, objectId: producerId, cosmetic: true });
+            return cosmetic ? { cosmetic } : {};
+        },
+        // Slice 17: the id of the producer's first free slot, or null (the full-pool check)
+        freeSlotOf(producerId) {
+            return slotsOf(producerId).find(freeSlot)?.id || null;
+        },
+        setPrintedBy(slotId, npcId) {
+            const f = findSprite(slotId);
+            if (f) f.sp._printedBy = npcId || null;
+        },
+        // Left-behind items (2.10, slice 11): loaded declared items with owner this NPC that
+        // could be shown now (not taken, not already shown, not in a hand or set down), by id.
+        leftBehindItems(npcId) {
+            const out = [];
+            const rooms = W().rooms || {};
+            for (const roomId of Object.keys(rooms)) {
+                const objs = rooms[roomId]?.objects || {};
+                for (const k of Object.keys(objs)) {
+                    const sp = objs[k];
+                    const sd = sp?.scenarioData;
+                    if (!sd || sd.owner !== npcId || !isSlot(sp)) continue;
+                    if (sp.destroyed || sp.active === false || sp._npcCarried || sp._npcPlacedBy || inInventory(sp)) continue;
+                    if (globalTrue(globalOf(sp))) continue;
+                    out.push({ id: sd.id || sp.objectId || k, chance: Number(sd.leftBehindChance) || 0 });
+                }
+            }
+            return out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+        },
+        // Show a left-behind item at its declared spot by a direct call (after a reload there is no
+        // reveal listener), global true, object_revealed:<id> with owner.
+        revealLeftBehind(itemId, npcId) {
+            const f = findSprite(itemId);
+            if (!f || f.sp.destroyed || f.sp.active === false || inInventory(f.sp)) return false;
+            slotHome(f.sp, f.roomId, f.key);
+            this.setGlobal(globalOf(f.sp), true);
+            W().showRevealedObject?.(f.sp);
+            // On the owner's desk: drawn above the desk's dressing (it shares the home object's depth),
+            // as a tray slot is lifted above its copier. Stow puts the declared depth back.
+            const homeId = this.getNpc(npcId)?.needsHome;
+            const home = typeof homeId === 'string' ? findSprite(homeId) : null;
+            if (home && home.roomId === f.roomId && Number.isFinite(home.sp.depth) && !(f.sp.depth > home.sp.depth)) {
+                const a = centreOf(home.sp), b = centreOf(f.sp);
+                if (Math.hypot(a.x - b.x, a.y - b.y) <= 2 * TILE) f.sp.setDepth?.(home.sp.depth + 0.1);
+            }
+            W().eventDispatcher?.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, owner: npcId });
+            return true;
+        },
+        removeCosmetic(handle) {
+            const sp = cosmetics.get(handle);
+            cosmetics.delete(handle);
+            sp?._fadeOwner?._fadeCompanions?.delete(sp);
+            try { sp?.destroy?.(); } catch (e) { /* gone */ }
+        },
+        // Stow on sight: every revealed slot in these rooms that no NPC holds (after a reload the
+        // needs state is fresh, so nobody does). Returns the ids stowed.
+        stowRevealedSlots(roomIds) {
+            const out = [];
+            for (const roomId of roomIds || []) {
+                const objs = W().rooms?.[roomId]?.objects || {};
+                for (const k of Object.keys(objs)) {
+                    const sp = objs[k];
+                    if (!sp || !isSlot(sp) || sp._npcCarried || sp.destroyed || sp.active === false) continue;
+                    if (!globalTrue(globalOf(sp))) continue;
+                    slotHome(sp, roomId, k);
+                    if (stowSprite(sp, roomId, k)) out.push(sp.scenarioData?.id || k);
+                }
+            }
+            if (out.length) console.log('[needs] stowed on sight:', out.join(', '));
+            return out;
+        },
+        emit(name, data) {
+            W().eventDispatcher?.emit(name, data);
+        },
+        setGlobal(name, value) {
+            setGlobalVar(name, value);
+        },
+        // Slice 18b-i: magnets. The servings global as saved; a finished dropped magnet is removed as a
+        // room object (consumeHeld's path), so the server forgets it and a reload keeps it gone.
+        getGlobal: name => W().gameState?.globalVariables?.[name],
+        removeMagnet(id) {
+            const f = findSprite(id);
+            if (!f) return false;
+            const sp = f.sp;
+            if (f.sp.proximityGhost) { try { f.sp.proximityGhost.destroy(); } catch (e) { /* ok */ } delete f.sp.proximityGhost; }
+            delete W().rooms[f.roomId].objects[f.key];
+            try { sp.destroy?.(); } catch (e) { /* already gone */ }
+            try { Promise.resolve(W().RoomStateSync?.removeItemFromRoom?.(sp.roomId || f.roomId, id)).catch(() => {}); } catch (e) { /* offline */ }
+            return true;
+        },
+        // Slice 23: a magnet standing on a table draws over it (item-drop.js); no-op on the floor
+        settleMagnet(o) {
+            if (o?._sprite && o.roomId) W().tableDrop?.settle?.(o._sprite, o.roomId);
+        },
+        // A picked-up item stays in its old room's objects, inactive; a re-drop in another room must
+        // not be shadowed by it (findSprite takes the first match)
+        dropStale(id) {
+            const rooms = W().rooms || {};
+            for (const roomId of Object.keys(rooms)) {
+                const objs = rooms[roomId]?.objects || {};
+                for (const k of Object.keys(objs)) {
+                    const sp = objs[k];
+                    if ((k === id || sp?.scenarioData?.id === id) && (sp.active === false || sp.destroyed)) delete objs[k];
+                }
+            }
+        }
+    };
+}
+
+/**
+ * The seed for every roll except the chatter bag (lockChance, prints, left items, exchange order,
+ * chattiness, call gaps): opts.seed, then the scenario's npcNeedsSeed, then the scenario name.
+ * It never includes the game id, so those rolls are the same function of the scenario as ever.
+ */
+export function resolveNeedsSeed(optSeed, scenario) {
+    if (optSeed !== undefined) return optSeed;
+    if (scenario?.npcNeedsSeed !== undefined) return scenario.npcNeedsSeed;
+    return scenario?.scenario_name || scenario?.name || 'scenario';
+}
+
+/**
+ * The seed for the chatter shuffle bag only. An explicit seed (opts.seed, then npcNeedsSeed) is
+ * used exactly as given. Otherwise the scenario name is mixed with the game id, so each game
+ * draws its chatter in its own order (the same game gets the same order on reload). Without a
+ * game id it falls back to the scenario name alone.
+ */
+export function resolveBagSeed(optSeed, scenario, gameId) {
+    if (optSeed !== undefined || scenario?.npcNeedsSeed !== undefined) return resolveNeedsSeed(optSeed, scenario);
+    const name = resolveNeedsSeed(undefined, scenario);
+    return (gameId === undefined || gameId === null || gameId === '') ? name : `${name}#${gameId}`;
+}
+
+/** Build the live system, register needs NPCs and hook the arrival event. Idempotent. */
+export function installNpcNeeds(opts = {}) {
+    const w = typeof window !== 'undefined' ? window : null;
+    if (!w) return null;
+    if (!w.npcNeedsSystem) {
+        const seed = resolveNeedsSeed(opts.seed, w.gameScenario);
+        const bagSeed = resolveBagSeed(opts.seed, w.gameScenario, w.breakEscapeConfig?.gameId);
+        w.npcNeedsSystem = new NPCNeedsSystem(createEngineWorld(), { seed, bagSeed });
+        w.eventDispatcher?.on('npc_arrived:*', (data) => {
+            if (data?.npcId) w.npcNeedsSystem.onArrived(data.npcId, data.owner, data);
+        });
+        // Slice 14: an opened door retries parked needs (room loads are noticed by _checkRooms)
+        w.eventDispatcher?.on('door_opened', () => w.npcNeedsSystem.onDoorOpened());
+        // Slice 18b-i: a dropped magnet (affordance.magnet) becomes a source where it lies
+        w.eventDispatcher?.on('item_dropped:*', (data) => {
+            if (typeof data?.itemId !== 'string') return;
+            w.npcNeedsSystem?.world?.dropStale?.(data.itemId);
+            w.npcNeedsSystem?.onItemDropped(data.itemId);
+        });
+        // Slice 19: a desk phone rings (a mapping's emitEvent or an object's emit_event)
+        w.eventDispatcher?.on('desk_phone_ring:*', (data, name) => {
+            const id = typeof name === 'string' && name.startsWith('desk_phone_ring:') ? name.slice('desk_phone_ring:'.length) : data?.phoneId;
+            if (typeof id === 'string' && id) w.npcNeedsSystem?.onPhoneRing(id);
+        });
+        // Slice 18a: a source switched back on (offWhen) retries parked needs
+        w.eventDispatcher?.on('global_variable_changed:*', (data, name) => {
+            const g = data?.name || (typeof name === 'string' ? name.slice('global_variable_changed:'.length) : null);
+            w.npcNeedsSystem?.onGlobalChanged(g);
+        });
+    }
+    w.npcNeedsSystem.registerAll();
+    return w.npcNeedsSystem;
+}

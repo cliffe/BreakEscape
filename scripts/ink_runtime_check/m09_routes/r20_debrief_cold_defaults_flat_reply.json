@@ -1,0 +1,13 @@
+{
+"globals": { "hax_confession_answer": "same_in_your_place" },
+"steps": [
+{ "note": "R20: debrief on default state: nothing bought, nobody told, a flat reply to Kowalczyk. The player asks about WREN and the Recruiter, then the hub offers Montana and the leaving-early warning appears for the unasked archive." },
+{ "talk": "debrief", "picks": ["It was in my pocket", "No. Not about any of it", "Hold it", "WREN", "The Recruiter", "Montana", "One more thing", "Montana", "Sign it"] },
+{ "said": ["High praise. I'll have it framed", "She grins anyway and goes back to the ramp", "In 2017 he told the board to warn the vendor", "One of four", "She is at large, and you did not let her set the price",
+          "Then I sign, and that is the night closed", "Analysis found the lease an hour ago", "I said thank you once. I'm not saying it twice", "If I bench anyone tonight", "He caps the pen."],
+  "notSaid": ["Halina Kowalczyk.", "Two names", "We take her at the briefing", "Across the hangar, Kowalczyk waves", "Her crate is still on the ramp", "Sun River. Nightshade's coordinate"] },
+{ "credits": true },
+{ "said": ["Thanked, once", "Asked after her cracker. Got a shrug", "Fed the shredder all night", "Walked the fence. Saw nothing"],
+  "notSaid": ["Given her own line back", "Wrote down every box", "Told she should have said it"] }
+]
+}

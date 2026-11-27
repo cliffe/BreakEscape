@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: social P7 channels",
+  "description": "Fixture for the Phase 7 triage proofs: one message of every non-email kind (text, voicemail, QR notice, web page, call, sign-in prompt) and a pre/post check pair for the comparison panel. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

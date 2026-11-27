@@ -1,0 +1,13 @@
+{
+  "key": "4626752633d4adf1b837159485eba79c",
+  "npc": "dr_sharma",
+  "text": "The SIEM had the alerts that mattered, and the clock ran out before anyone escalated them.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:56:04Z"
+}

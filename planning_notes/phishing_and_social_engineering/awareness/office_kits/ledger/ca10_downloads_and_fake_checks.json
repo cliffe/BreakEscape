@@ -1,0 +1,36 @@
+{
+ "scenario": "ca10_downloads_and_fake_checks",
+ "lists": {
+  "host": [
+   {"k": null, "h": "58f26eac"},
+   {"k": null, "h": "22da2dc1"},
+   {"k": "quiet_on", "h": "f1503899"},
+   {"k": "attack_done", "h": "fc89fb72"},
+   {"k": "defend_done", "h": "760c59a4"},
+   {"k": "caught", "h": "9a7dd4e8"},
+   {"k": "quiet_off_debrief", "h": "9faf0f85"},
+   {"k": "quiet_off_debrief_seen", "h": "c75dd823"},
+   {"k": "step_away", "h": "49b973d8"}
+  ],
+  "npc:kit_anjali_rao": [
+   {"k": "chg_out", "h": "5ac4f563"},
+   {"k": "chg_out_2", "h": "615589e9"},
+   {"k": "chg_ca10_check_choice", "h": "430abc51"},
+   {"k": "chg_ca10_done", "h": "0bb35886"}
+  ],
+  "npc:kit_darren_price": [
+   {"k": "chg_out_sets_ca10_there", "h": "525541b4"},
+   {"k": "chg_out", "h": "fca61793"},
+   {"k": "chg_ca10_there_knot_ca10_check", "h": "0d35b1a9"},
+   {"k": "chg_ca10_there_sets_ca10_asked", "h": "b9e72f3a"},
+   {"k": "conversation_closed_darren_price_sets_ca10_check_choice", "h": "70ccecb1"},
+   {"k": "chg_ca10_check_choice_sets_ca10_moved", "h": "fa35200a"},
+   {"k": "chg_ca10_check_choice_sets_ca10_done", "h": "f6f859fd"},
+   {"k": "chg_ca10_moved_sets_ca10_done", "h": "566627d2"},
+   {"k": "chg_ca10_done_sets_ca10_check_choice", "h": "6044c2fb"},
+   {"k": "chg_ca10_there_knot_ca10_check~rearm", "h": "4d5ef0c3"},
+   {"k": "chg_ca10_there_sets_ca10_asked~rearm", "h": "c07a147d"},
+   {"k": "chg_ca10_there_sets_ca10_asked~rearm_cue", "h": "f2b1aae0"}
+  ]
+ }
+}

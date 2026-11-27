@@ -1,0 +1,13 @@
+{
+  "key": "7d5537aaf36e715795ba0ecd3752a1e6",
+  "npc": "graham_whitfield",
+  "text": "You again. Still quarter close, I'm afraid.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:53:07Z"
+}

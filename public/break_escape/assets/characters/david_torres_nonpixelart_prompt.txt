@@ -1,0 +1,10 @@
+Make portrait for David Torres
+A Spanish man of about 48 with light olive skin, dark curly hair going grey and in need of a cut, two days of salt-and-pepper stubble, tired dark eyes with heavy shadows under them, a senior engineer who hasn't slept for a week. He wears a creased pale blue Oxford shirt with the sleeves rolled to the forearm and the collar open, a loosened dark navy tie, a lanyard with a blank white staff card, navy chinos and a brown leather belt. Exhausted and grieving, past the point of lying. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is david_torres_concept_1_raw.png.

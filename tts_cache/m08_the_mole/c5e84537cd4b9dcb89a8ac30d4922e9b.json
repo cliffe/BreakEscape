@@ -1,0 +1,13 @@
+{
+  "key": "c5e84537cd4b9dcb89a8ac30d4922e9b",
+  "npc": "director_netherton",
+  "text": "Quiet. The instant the mole knows the net is out, they burn their access and walk. We lose the thread to The Architect with them.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:25:22Z"
+}

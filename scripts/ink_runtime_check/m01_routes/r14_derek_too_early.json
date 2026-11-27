@@ -1,0 +1,16 @@
+{
+ "steps": [
+  {"note": "R14: Derek before the archive has been read: a brush-off hub that never opens the confrontation, and every reply closes the chat. Once the archive flag is set he talks properly, and once the confrontation is over he ends the chat at once."},
+  {"talk": "derek", "picks": ["We should talk about some irregularities", "I'll come back later"]},
+  {"said": ["I'm kind of busy. Maybe check back later", "If you don't have specifics, I've got work to do", "Good idea. I'm sure the server room has plenty to keep you busy"],
+   "notSaid": ["You're not an IT contractor. And you've found Operation Shatter", "I have here a launch device"]},
+  {"expect": {"derek_confronted": false}},
+  {"set": {"entropy_reveal_read": true}},
+  {"talk": "derek", "reload": true, "picks": ["I've seen the casualty projections", "42 to 85 people", "I don't need to hear this"]},
+  {"said": ["You're not an IT contractor. And you've found Operation Shatter", "Between 42 and 85 people will die in the first 24 hours", "I calculated every one of them", "I have here a launch device to remotely activate Operation Shatter"],
+   "notSaid": ["I'm kind of busy. Maybe check back later"]},
+  {"set": {"derek_confronted": true}},
+  {"talk": "derek", "reload": true},
+  {"notSaid": ["You're not an IT contractor", "I have here a launch device"]}
+ ]
+}

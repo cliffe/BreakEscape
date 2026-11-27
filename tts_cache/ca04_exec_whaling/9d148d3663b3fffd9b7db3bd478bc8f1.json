@@ -1,0 +1,13 @@
+{
+  "key": "9d148d3663b3fffd9b7db3bd478bc8f1",
+  "npc": "thandiwe_moyo",
+  "text": "Money, in a hurry, or kept from finance? Ring her on a number you already hold, even when the voice is hers.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T17:14:36Z"
+}

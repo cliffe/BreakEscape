@@ -1,0 +1,13 @@
+{
+  "key": "67a2626ff1cf1c53bcd1ede8f61eab62",
+  "npc": "zainab_hussain",
+  "text": "Eight years in vans. I live on water.",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:45:55Z"
+}

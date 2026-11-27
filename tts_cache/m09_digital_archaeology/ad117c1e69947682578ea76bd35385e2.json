@@ -1,0 +1,14 @@
+{
+  "key": "ad117c1e69947682578ea76bd35385e2",
+  "npc": "old_coyote",
+  "text": "Hold on, sis, I'll call you back. Hey. Building's closed. Who let you in?",
+  "delivery": "first sentence into the phone, then sharper, to a stranger",
+  "voice": "Rasalgethi",
+  "style": "Night guard in his twenties from Lodge Grass, Montana, Crow (Apsaalooke). Consistent rural Montana American accent throughout -- do not shift to any other accent. Easy, dry, a little bored; sharp when treated as furniture. An ordinary young man, not a mystic and not a stoic.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:23:07Z"
+}

@@ -1,0 +1,809 @@
+/* ============================================================
+   Drug Library Integrity Checker Minigame — MG-09
+   Clinical software aesthetic: dark navy, monospace, BD Alaris
+   Colour language:
+     #cc3333  — integrity failure, tampered values
+     #33cc66  — verified, backup values, pass
+     #ccaa00  — warnings, active-today flags, caution states
+     #0088cc  — informational, timestamps, neutral data
+   ============================================================ */
+
+/* ── Root scoping ──────────────────────────────────────────── */
+.dli-wrap {
+  background: #0a0e1a;
+  font-family: 'VT323', monospace;
+  color: #c9d1d9;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Console header ────────────────────────────────────────── */
+.dli-console-header {
+  background: #0d1117;
+  border-bottom: 2px solid #21262d;
+  padding: 8px 16px;
+  flex-shrink: 0;
+}
+
+.dli-console-files {
+  font-size: 16px;
+  color: #0088cc;
+  display: flex;
+  gap: 16px;
+}
+
+/* ── Tab bar ───────────────────────────────────────────────── */
+.dli-tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px 0;
+  background: #0d1117;
+  border-bottom: 2px solid #21262d;
+  flex-shrink: 0;
+}
+
+.dli-tab {
+  padding: 6px 14px;
+  border: 2px solid #30363d;
+  border-bottom: none;
+  border-radius: 0;
+  background: #161b22;
+  color: #7d8590;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.dli-tab:hover:not(.dli-tab-disabled) {
+  color: #c9d1d9;
+  background: #1c2128;
+}
+
+.dli-tab-active {
+  background: #0a0e1a;
+  color: #e6edf3;
+  border-color: #30363d;
+  border-bottom-color: #0a0e1a;
+  cursor: default;
+}
+
+.dli-tab-seen:not(.dli-tab-active) {
+  color: #8b949e;
+}
+
+.dli-tab-disabled {
+  color: #3d444d !important;
+  background: #0d1117 !important;
+  cursor: not-allowed !important;
+  border-color: #21262d !important;
+}
+
+/* ── Status bar ────────────────────────────────────────────── */
+.dli-status-bar {
+  padding: 6px 16px;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.dli-status-not-verified {
+  background: #1c2128;
+  color: #7d8590;
+  border-bottom: 2px solid #30363d;
+}
+
+.dli-status-compromised {
+  background: #1a0808;
+  color: #cc3333;
+  border-bottom: 2px solid #cc3333;
+  animation: dli-pulse-status-red 2s ease-in-out infinite;
+}
+
+.dli-status-verified {
+  background: #081a0d;
+  color: #33cc66;
+  border-bottom: 2px solid #33cc66;
+}
+
+@keyframes dli-pulse-status-red {
+  0%, 100% { border-bottom-color: #cc3333; }
+  50%       { border-bottom-color: #ff5555; }
+}
+
+/* ── Progress bar ──────────────────────────────────────────── */
+.dli-progress-wrap {
+  height: 3px;
+  background: #21262d;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.dli-progress-bar {
+  height: 3px;
+  background: #33cc66;
+  width: 0%;
+  transition: width 4.5s ease-in-out;
+}
+
+/* ── Panel (main scrollable area) ──────────────────────────── */
+.dli-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 16px;
+}
+
+/* ── Library table ─────────────────────────────────────────── */
+.dli-lib-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  margin-top: 6px;
+}
+
+.dli-lib-table th {
+  background: #161b22;
+  color: #7d8590;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 8px;
+  border-bottom: 2px solid #30363d;
+  text-align: left;
+}
+
+.dli-lib-table td {
+  padding: 4px 8px;
+  border-bottom: 2px solid #1c2128;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.dli-lib-table tbody tr:nth-child(even) td { background: #0e1424; }
+.dli-lib-table tbody tr:nth-child(odd)  td { background: #111830; }
+
+.dli-row-pass td { background: #0a1a10 !important; }
+.dli-row-fail td { background: #1a0808 !important; border-left: 3px solid #cc3333; }
+
+.dli-col-drug { min-width: 140px; color: #e6edf3; }
+.dli-col-conc { min-width: 60px; color: #8b949e; text-align: right; }
+.dli-col-dmin { min-width: 60px; color: #8b949e; text-align: right; }
+.dli-col-dmax { min-width: 70px; color: #e6edf3; text-align: right; }
+.dli-col-unit { min-width: 80px; color: #8b949e; }
+.dli-col-rate { min-width: 70px; color: #8b949e; text-align: right; }
+.dli-col-status { min-width: 90px; }
+
+/* ── Scan badges ───────────────────────────────────────────── */
+.dli-badge-pass {
+  color: #33cc66;
+}
+
+.dli-badge-fail {
+  color: #cc3333;
+  animation: dli-pulse-fail 1.2s ease-in-out infinite;
+}
+
+.dli-badge-scanning {
+  color: #33aa44;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+@keyframes dli-pulse-fail {
+  0%, 100% { color: #cc3333; }
+  50%       { color: #ff5555; }
+}
+
+/* ── Run button ────────────────────────────────────────────── */
+/* The shared minigame button (critique B DLI2); only the width and spacing are the scene's */
+.dli-run-btn {
+  display: block;
+  width: 100%;
+  margin: 14px 0 0;
+}
+
+.dli-run-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Result banner ─────────────────────────────────────────── */
+.dli-result-banner {
+  margin: 12px 0 8px;
+  padding: 10px 14px;
+  border: 2px solid #cc3333;
+  border-radius: 0;
+  background: #1a0808;
+}
+
+.dli-result-banner-title {
+  color: #cc3333;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dli-result-banner p {
+  margin: 4px 0 0;
+  font-size: 16px;
+  color: #c9d1d9;
+}
+
+/* ── Hash detail panel ─────────────────────────────────────── */
+.dli-hash-detail {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 2px solid #30363d;
+  border-radius: 0;
+  background: #0d1117;
+}
+
+.dli-hash-detail-title {
+  color: #cc3333;
+  font-size: 16px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.dli-hash-meta {
+  font-size: 16px;
+  color: #7d8590;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 20px;
+}
+
+.dli-hash-meta .dli-ts { color: #cc3333; }
+
+.dli-hash-row {
+  margin: 4px 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;   /* a 64-hex SHA-256 must not widen the panel */
+}
+
+.dli-hash-label {
+  color: #7d8590;
+  display: inline-block;
+  width: 85px;
+}
+
+.dli-hash-match     { color: #e6edf3; }
+.dli-hash-exp-diff  { color: #33cc66; }
+.dli-hash-cmp-diff  { color: #cc3333; }
+
+.dli-hash-note {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #7d8590;
+  font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
+}
+
+.dli-sha-label {
+  color: #0088cc;
+  cursor: help;
+  border-bottom: 2px dashed #0088cc;
+}
+
+.dli-hash-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.dli-backup-btn {
+  padding: 6px 14px;
+  background: #0a1a0f;
+  border: 2px solid #33cc66;
+  border-radius: 0;
+  color: #33cc66;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dli-backup-btn:hover { background: #1a4a2a; }
+
+/* ── Diff view ─────────────────────────────────────────────── */
+.dli-diff-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 2px solid #30363d;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.dli-diff-panel { overflow-x: auto; }
+
+.dli-diff-col { min-width: 0; }
+
+.dli-diff-col:first-child { border-right: 2px solid #30363d; }
+
+.dli-diff-panel-header {
+  padding: 8px 10px;
+  background: #161b22;
+  border-bottom: 2px solid #30363d;
+}
+
+.dli-diff-panel-file {
+  color: #e6edf3;
+  font-size: 16px;
+}
+
+.dli-diff-panel-meta {
+  color: #7d8590;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.dli-verified-ok   { color: #33cc66; }
+.dli-modified-at   { color: #cc3333; }
+
+.dli-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+
+.dli-diff-table td {
+  padding: 3px 8px;
+  white-space: nowrap;
+  border-bottom: 2px solid #1c2128;
+}
+
+.dli-diff-unchanged td { opacity: 0.35; background: #0e1424; }
+
+.dli-diff-row-current td {
+  background: #1a0808;
+  border-left: 3px solid #cc3333;
+}
+
+.dli-diff-row-backup td {
+  background: #081a0d;
+  border-left: 3px solid #33cc66;
+}
+
+.dli-diff-value-large { font-size: 22px; line-height: 1; }
+.dli-diff-val-tampered { color: #cc3333; }
+.dli-diff-val-correct  { color: #33cc66; }
+
+.dli-diff-summary {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #1c1600;
+  border: 2px solid #ccaa00;
+  border-radius: 0;
+  color: #ccaa00;
+  font-size: 16px;
+}
+
+.dli-diff-summary-title { margin-bottom: 3px; }
+
+/* ── Verification tab ──────────────────────────────────────── */
+.dli-verify-title {
+  font-size: 18px;
+  color: #e6edf3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #30363d;
+}
+
+.dli-verify-values {
+  font-size: 16px;
+  display: flex;
+  gap: 20px;
+  margin-bottom: 6px;
+}
+
+.dli-verify-backup-val  { color: #33cc66; }
+.dli-verify-tampered-val { color: #cc3333; }
+
+.dli-verify-instruction {
+  margin: 6px 0 14px;
+  font-size: 16px;
+  color: #7d8590;
+  line-height: 1.5;
+}
+
+.dli-source-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #0d1117;
+  border: 2px solid #21262d;
+  border-radius: 0;
+}
+
+.dli-source-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
+  border: 2px solid #3d444d;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: transparent;
+}
+
+.dli-source-indicator-done {
+  border-color: #33cc66;
+  background: #33cc66;
+  color: #0a0e1a;
+}
+
+.dli-source-label { flex: 1; font-size: 16px; color: #c9d1d9; }
+
+.dli-source-label small {
+  display: block;
+  color: #7d8590;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.dli-source-btn {
+  padding: 5px 12px;
+  border: 2px solid #33cc66;
+  border-radius: 0;
+  background: #0f2d1a;
+  color: #33cc66;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dli-source-btn:hover:not(:disabled) { background: #1a4a2a; }
+
+.dli-source-btn:disabled {
+  border-color: #21262d;
+  color: #3d444d;
+  cursor: not-allowed;
+  background: #0d1117;
+}
+
+.dli-source-consulted {
+  padding: 5px 12px;
+  border: 2px solid #33cc66;
+  border-radius: 0;
+  background: #081a0d;
+  color: #33cc66;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.dli-restore-btn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: #21262d;
+  color: #3d444d;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  border: 2px solid #30363d;
+  border-radius: 0;
+  cursor: not-allowed;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.dli-restore-btn-active {
+  background: #0f2d1a;
+  color: #33cc66;
+  border-color: #33cc66;
+  cursor: pointer;
+  animation: dli-glow-green 1.5s ease-in-out 1;
+}
+
+.dli-restore-btn-active:hover { background: #1a4a2a; }
+
+.dli-restore-btn-done {
+  background: #0a1a0f;
+  color: #33cc66;
+  border-color: #33cc66;
+  cursor: default;
+}
+
+.dli-restore-hint {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #7d8590;
+  text-align: center;
+}
+
+@keyframes dli-glow-green {
+  0%   { box-shadow: 0 0 0 0 rgba(51,204,102,0); }
+  35%  { box-shadow: 0 0 0 4px rgba(51,204,102,0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(51,204,102,0); }
+}
+
+/* ── Source modal ──────────────────────────────────────────── */
+.dli-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dli-modal {
+  background: #0d1117;
+  border: 2px solid #30363d;
+  border-radius: 0;
+  padding: 20px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80%;
+  overflow-y: auto;
+}
+
+.dli-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 2px solid #21262d;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+/* The shared X, in the pop-up's header row (not floated over the title) */
+.dli-modal-head .dli-modal-close {
+  position: relative;   /* anchors the X's hit area */
+  flex: none;
+}
+
+.dli-modal-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  color: #e6edf3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dli-modal-body {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #c9d1d9;
+}
+
+.dli-modal-row {
+  display: flex;
+  margin: 4px 0;
+}
+
+.dli-modal-key {
+  width: 140px;
+  color: #7d8590;
+  flex-shrink: 0;
+}
+
+.dli-modal-val          { color: #e6edf3; }
+.dli-modal-val-green    { color: #33cc66; }
+.dli-modal-val-amber    { color: #ccaa00; }
+
+.dli-modal-warning {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #1c1600;
+  border-left: 3px solid #ccaa00;
+  border-radius: 0;
+  font-size: 16px;
+  color: #ccaa00;
+  line-height: 1.5;
+}
+
+/* Same look as the pop-up's other confirm: the DLI green-on-dark button (matches .dli-restore-btn-active;
+   the log filter's .lf-flag-confirm-btn is the same look), 2px border, no blue. */
+.dli-modal-confirm-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px;
+  background: #0f2d1a;
+  color: #33cc66;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  border: 2px solid #33cc66;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.dli-modal-confirm-btn:hover { background: #1a4a2a; }
+
+.dli-modal-confirm-btn:focus-visible,
+.dli-source-btn:focus-visible,
+.dli-restore-btn:focus-visible,
+.dli-backup-btn:focus-visible,
+.dli-view-log-btn:focus-visible {
+  outline: 2px solid #33cc66;
+  outline-offset: 2px;
+}
+
+/* ── Fleet report tab ──────────────────────────────────────── */
+.dli-fleet-title {
+  font-size: 18px;
+  color: #e6edf3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #30363d;
+}
+
+.dli-fleet-subtitle {
+  font-size: 16px;
+  color: #cc3333;
+  margin-bottom: 10px;
+}
+
+.dli-fleet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  margin-top: 6px;
+}
+
+.dli-fleet-table th {
+  background: #161b22;
+  color: #7d8590;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+  border-bottom: 2px solid #30363d;
+  text-align: left;
+}
+
+.dli-fleet-table td {
+  padding: 7px 10px;
+  border-bottom: 2px solid #1c2128;
+  background: #111830;
+}
+
+.dli-fleet-row-inactive td { opacity: 0.6; }
+
+.dli-fleet-row-active td {
+  background: #1c1200;
+  border-left: 3px solid #ccaa00;
+  animation: dli-pulse-amber 2s ease-in-out infinite;
+}
+
+@keyframes dli-pulse-amber {
+  0%, 100% { border-left-color: #ccaa00; }
+  50%       { border-left-color: #ffdd44; }
+}
+
+.dli-badge-active-today {
+  color: #ccaa00;
+  animation: dli-pulse-amber-text 2s ease-in-out infinite;
+}
+
+@keyframes dli-pulse-amber-text {
+  0%, 100% { color: #ccaa00; }
+  50%       { color: #ffdd44; }
+}
+
+.dli-badge-inactive { color: #3d444d; }
+.dli-serial-bold { color: #e6edf3; }
+
+.dli-view-log-btn {
+  margin-top: 14px;
+  padding: 7px 16px;
+  background: #1c1200;
+  border: 2px solid #ccaa00;
+  border-radius: 0;
+  color: #ccaa00;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dli-view-log-btn:hover { background: #2a1c00; }
+
+/* ── Pump activity log ─────────────────────────────────────── */
+.dli-activity-log {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #0d1117;
+  border: 2px solid #30363d;
+  border-radius: 0;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.dli-activity-log-title {
+  font-size: 16px;
+  color: #e6edf3;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid #21262d;
+  padding-bottom: 4px;
+}
+
+.dli-log-ts       { color: #0088cc; }
+.dli-log-event    { color: #e6edf3; }
+.dli-log-field    { color: #7d8590; }
+.dli-log-val      { color: #c9d1d9; }
+.dli-log-tampered { color: #cc3333; }
+.dli-log-correct  { color: #33cc66; }
+
+.dli-outcome-safe {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #081a0d;
+  border-left: 3px solid #33cc66;
+  border-radius: 0;
+  color: #33cc66;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.dli-outcome-risk {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #1a0808;
+  border-left: 3px solid #cc3333;
+  border-radius: 0;
+  color: #cc3333;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.dli-outcome-unknown {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #1c1600;
+  border-left: 3px solid #ccaa00;
+  border-radius: 0;
+  color: #ccaa00;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ── Fleet closing narrative ───────────────────────────────── */
+.dli-fleet-closing {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: #1a0808;
+  border: 2px solid #cc3333;
+  border-radius: 0;
+  font-size: 16px;
+  color: #c9d1d9;
+  line-height: 1.6;
+}
+
+.dli-fleet-closing p { margin: 3px 0; }
+
+/* Phones: the console tabs wrap, the library table scrolls sideways inside the panel */
+@media (max-width: 600px) {
+  .dli-console-files {
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .dli-tab {
+    padding: 4px 10px;
+  }
+
+  .dli-panel {
+    padding: 10px;
+  }
+}

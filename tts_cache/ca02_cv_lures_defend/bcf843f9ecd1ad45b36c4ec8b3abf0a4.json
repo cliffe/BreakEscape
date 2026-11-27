@@ -1,0 +1,13 @@
+{
+  "key": "bcf843f9ecd1ad45b36c4ec8b3abf0a4",
+  "npc": "kit_chidi_okeke",
+  "text": "Good one, spotting that dodgy application. The lads in HR open attachments all day, so nice to have someone watching their backs.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:29Z"
+}

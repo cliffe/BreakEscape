@@ -1,0 +1,153 @@
+{
+  "scenario_id": "test_npc_patrol_override",
+  "scenario_name": "Test: NPC Patrol Override (Emergency Movement)",
+  "scenario_brief": "PATROL OVERRIDE TEST (Phase 2-4)\n\nThis scenario tests the patrolOverride and speed/dwell actions (npc-behavior.js goToAndStay method).\n\nTEST PROCEDURE:\n1. Game starts — observe nurse patrolling between Station (5,3) → Bed1 (2,5) → Bed2 (8,5)\n2. Normal patrol cycle takes ~15 seconds per leg\n3. Interact with the EMERGENCY BUTTON in the room\n4. This triggers 'emergency_activated' global = true\n5. OBSERVE: Nurse immediately abandons patrol\n6. Nurse walks directly to Emergency Station (5,8) at faster speed (150px/s vs 80px/s)\n7. Nurse stands at Emergency Station with no dwell time\n8. Monitor NPC says: 'Emergency response engaged'\n\nEXPECTED BEHAVIOR:\n- Nurse never completes current patrol leg (immediate interrupt)\n- Direct path to emergency location (not following patrol waypoints)\n- Visibly faster movement speed\n- Stops at destination and remains stationary\n\nTEST DURATION: 1-2 minutes\n\nKEY VALIDATION:\n✓ goToAndStay() successfully interrupts patrol\n✓ Speed increase is visibly noticeable\n✓ NPC reaches target and stops permanently\n✓ patrolOverride action triggers correctly",
+  "endGoal": "Verify nurse abandons patrol and walks to emergency location at increased speed.",
+  "startRoom": "test_room_emergency",
+  "globalVariables": {
+    "emergency_activated": false,
+    "nurse_at_station": false
+  },
+  "rooms": {
+    "test_room_emergency": {
+      "type": "room_hospital_ward",
+      "door_sign": "Emergency Response Test",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "patrol_test_nurse",
+          "displayName": "Test Nurse",
+          "npcType": "person",
+          "position": { "x": 5, "y": 3 },
+          "spriteSheet": "female_security_guard_v2",
+          "storyPath": "scenarios/test_npc_patrol_override/ink/test_nurse.ink.json",
+          "currentKnot": "patrol_idle",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "pauseForPlayer": false,
+              "waypoints": [
+                { "x": 5, "y": 3, "dwellTime": 2000 },
+                { "x": 2, "y": 5, "dwellTime": 3000 },
+                { "x": 8, "y": 5, "dwellTime": 3000 }
+              ],
+              "waypointMode": "sequential",
+              "loop": true
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:emergency_activated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "emergency_response",
+              "patrolOverride": {
+                "targetTile": { "x": 5, "y": 8 },
+                "speed": 150,
+                "stopOnArrival": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "monitor_npc",
+          "displayName": "Control Monitor",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "male_nerd_v2",
+          "storyPath": "scenarios/test_npc_patrol_override/ink/test_monitor.ink.json",
+          "currentKnot": "idle",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:emergency_activated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "alert_response",
+              "bark": "Emergency response engaged!"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Test Instructions",
+          "position": { "x": 2, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "text": "PATROL OVERRIDE TEST\n\n1. OBSERVE Normal Patrol:\n   • Nurse walks: Station → Bed1 → Bed2 → Station (loop)\n   • Speed: 80 px/s\n   • Pauses at each location (dwell time)\n\n2. TRIGGER Emergency:\n   • Interact with RED BUTTON below\n   • This sets 'emergency_activated' = true\n\n3. OBSERVE Emergency Response:\n   • Nurse STOPS current patrol leg\n   • Walks directly to Emergency Station (5,8)\n   • Speed increases to 150 px/s (VISIBLY FASTER)\n   • No dwelling at destination\n   • Remains standing at Emergency Station\n\n4. VALIDATION:\n   ✓ Immediate interrupt (goToAndStay works)\n   ✓ Direct path to destination\n   ✓ Speed increase noticeable\n   ✓ Stationary at destination"
+        },
+        {
+          "type": "pc",
+          "id": "emergency_button",
+          "name": "RED EMERGENCY BUTTON",
+          "position": { "x": 11, "y": 7 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A large red button on the wall. Pressing it triggers emergency response.",
+          "locked": false,
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "emergency_activated", "value": true }
+          ]
+        },
+        {
+          "type": "table",
+          "name": "Test Table (with elevation override)",
+          "position": { "x": 8, "y": 2, "elevation": 32 },
+          "takeable": false,
+          "readable": false,
+          "observations": "This table uses an explicit elevation value (32 = 1 tile) to push it in front of the back wall. Items placed on this table will use the elevation override feature.",
+          "sprite": "smalldesk2"
+        },
+        {
+          "type": "notes",
+          "name": "Emergency Station Marker",
+          "position": { "x": 5, "y": 8 },
+          "takeable": false,
+          "readable": false,
+          "observations": "A marked location at coordinates (5,8) where emergency responses converge."
+        }
+      ]
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "obj_patrol_override",
+      "title": "Test Patrol Override",
+      "description": "Trigger emergency response and observe nurse movement changes.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "task_observe_patrol",
+          "title": "Normal patrol",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_trigger_emergency",
+          "title": "Trigger emergency",
+          "type": "unlock_object",
+          "targetObject": "emergency_button",
+          "status": "active"
+        },
+        {
+          "taskId": "task_observe_speed",
+          "title": "Speed increase",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "task_observe_stop",
+          "title": "Stops at destination",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

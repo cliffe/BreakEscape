@@ -1,0 +1,14 @@
+{
+  "key": "43bf51a1bf0e1f2cc1575e1e2cce1ca6",
+  "npc": "kit_darren_price",
+  "text": "Someone saw through that verify box. No real check tells you to press keys and paste. That paste runs a hidden command.",
+  "delivery": "approving, dry",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:42:57Z"
+}

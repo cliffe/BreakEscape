@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: dusting examine panel resolves observation and text variants
+ok 1 - dusting examine panel resolves observation and text variants
+  ---
+  duration_ms: 3.219376
+  ...
+# Subtest: picking the right pattern clears the last wrong guess
+ok 2 - picking the right pattern clears the last wrong guess
+  ---
+  duration_ms: 1.465111
+  ...
+# Subtest: .dusting-quote wraps unbroken strings
+ok 3 - .dusting-quote wraps unbroken strings
+  ---
+  duration_ms: 0.935419
+  ...
+# Subtest: lockpick and container headers read observations through resolveObjectField
+ok 4 - lockpick and container headers read observations through resolveObjectField
+  ---
+  duration_ms: 0.550846
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 232.38097

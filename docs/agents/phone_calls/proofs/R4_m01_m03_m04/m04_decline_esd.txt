@@ -1,0 +1,15 @@
+game 2324 (decline_esd)
+dial read: anomaly_detected=true esd=false
+ringing: {"npc":"agent_0x99","state":"ringing"} banner="Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline"
+shot decline_esd_ringing
+"opened agent_0x99"
+after decline: header="☎\nCall back" rows=["Missed call"]
+shot decline_esd_after_decline
+voltage down: esd_authorized=true
+"opened agent_0x99"
+after ESD: header=null thread="Agent, status check. Are you inside the facility? | 04:05 | The workshop wants a Level 2 card. Vance hasn't got one. Relay has, and it's old prox, like his. She walks the inverter room. | 04:05 | ☎ | Missed call | Got your reading. Ring me back. | 04:05 | He's out of the way, the sixty-one degrees in Hall 1 is on record, and so is the attack. Grid control's standing by. The ESD is live. Press it. | 04:05"
+shot decline_esd_after_esd
+row call buttons: 0
+"no header button"
+after press: ringer=null in-call=false
+["phone_call_declined:agent_0x99@26.8","global_variable_changed:esd_authorized@36.2"]

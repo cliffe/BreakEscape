@@ -1,0 +1,13 @@
+{
+  "key": "6f93210bf5b42c4dde093c1aaa47d15c",
+  "npc": "closing_debrief",
+  "text": "Thomas Park was found unconscious in the cable vault, four minutes from cutting the backup power that control centre needed to restart.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:58:52Z"
+}

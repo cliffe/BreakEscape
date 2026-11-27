@@ -1,0 +1,13 @@
+{
+  "key": "5d66ce68b6b8640c5020ba0c80e5e9b2",
+  "npc": "nightshade_table",
+  "text": "So you'll have all of it. Every door down there, and the catalogue entry he built it from.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:48:11Z"
+}

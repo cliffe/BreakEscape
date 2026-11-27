@@ -1,0 +1,13 @@
+{
+  "key": "b179b3fec8fc81b428d2a447b2b70b35",
+  "npc": "imran",
+  "text": "I build casings. Somebody else decides what goes in them.",
+  "voice": "Puck",
+  "style": "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:25:37Z"
+}

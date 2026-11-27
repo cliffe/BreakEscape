@@ -1,0 +1,13 @@
+{
+  "key": "1c506e61ad0cdb6744899adfe2519a09",
+  "npc": "kit_lorna_easton",
+  "text": "Nice one. When it's urgent and hush-hush, that's the tell.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:09Z"
+}

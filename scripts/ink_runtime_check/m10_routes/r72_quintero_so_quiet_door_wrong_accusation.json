@@ -1,0 +1,58 @@
+{
+ "steps": [
+  {
+   "note": "Quintero's security-office copy on a quiet door, both clues held: the accusation is taken back once ('Already have'), then confirmed. She is sent to the post and the sent-back copy only says 'Going'."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "security_office_entered": true
+   }
+  },
+  {
+   "talk": "qso",
+   "picks": [
+    "You're WREN",
+    "Forget I said it",
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "Quiet door. I like it better that way.",
+    "If that's wrong, Quintero's off the raid till you can clear her. Sure?",
+    "Already have.",
+    "I took the drain. I didn't pack the case. Read the sheet.",
+    "Agent Quintero, come back up to the post. Now, please."
+   ],
+   "notSaid": [
+    "Good likeness.",
+    "Service side."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "quintero",
+    "wrong_accusation": true,
+    "accused": ""
+   }
+  },
+  {
+   "talk": "qso",
+   "picks": [
+    "Go on"
+   ]
+  },
+  {
+   "said": [
+    "Going."
+   ],
+   "notSaid": [
+    "Quiet door."
+   ]
+  }
+ ]
+}

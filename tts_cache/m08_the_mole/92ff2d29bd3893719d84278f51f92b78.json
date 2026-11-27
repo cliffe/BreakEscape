@@ -1,0 +1,13 @@
+{
+  "key": "92ff2d29bd3893719d84278f51f92b78",
+  "npc": "closing_debrief",
+  "text": "You knocked down one of the night watch while they were on duty. They were keeping the log, not hiding anything in it.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:46:40Z"
+}

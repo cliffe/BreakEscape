@@ -1,0 +1,13 @@
+{
+  "key": "f31d8f337e579bae587db15541abf803",
+  "npc": "narrator",
+  "text": "She isn't ambling any more. She closes the distance before you've decided what to do with it, and plants herself between you and her office door.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

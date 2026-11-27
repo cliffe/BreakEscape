@@ -1,0 +1,13 @@
+{
+  "key": "002002b14271acb706037c24b09c78b9",
+  "npc": "dr_hartley",
+  "text": "Then she's being careful in the wrong place. The seventy-two hours run from awareness, contained or not.",
+  "voice": "Gacrux",
+  "style": "Consultant and Caldicott Guardian in her late fifties, cautious, precise, slightly formal. Speak with a consistent Edinburgh, Scottish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

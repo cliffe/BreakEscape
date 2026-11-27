@@ -1,0 +1,14 @@
+{
+  "key": "48fc03fcb1233496197e558a097aa314",
+  "npc": "patient_bed4",
+  "text": "...the machine... it's...",
+  "delivery": "straining",
+  "voice": "Rasalgethi",
+  "style": "Retired London bus engineer in his late sixties, on a ventilator. White working-class south Londoner -- dry, flat, unhurried vowels. Very weak, very short of breath, four or five words at a time with long gaps. Dignified, not frightened.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:45:19Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "11c3231bb821e0e3d82d291a4494ce7a",
+  "npc": "kevin_park",
+  "text": "She kept her notes in her briefcase. I think it's still in her office.",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T08:26:23Z"
+}

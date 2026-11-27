@@ -1,0 +1,13 @@
+{
+  "key": "5993b06d6a4114444ae308fee92922ff",
+  "npc": "it_line",
+  "text": "Fill in the form, and we'll ring the number we hold for that account to check.",
+  "voice": "Charon",
+  "style": "IT service desk phone agent at Merrin & Sallow, in his 30s, even and procedural. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_second_step",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:52:53Z"
+}

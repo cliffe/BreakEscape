@@ -1,0 +1,21 @@
+{
+  "key": "1a24b995d6d8e6611ae6fb530b39137d",
+  "npc": "the_architect",
+  "text": "Don't look for the trace. It isn't there.",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:18:09Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/1a24b995d6d8e6611ae6fb530b39137d.mp3",
+    "clean_md5": "d81c5dc4be6c069d54cd85c1416e47f5",
+    "baked_md5": "eac5c1a2d619d183204384a9ada73984",
+    "baked": "2026-11-24"
+  }
+}

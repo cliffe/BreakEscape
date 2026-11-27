@@ -1,0 +1,13 @@
+{
+  "key": "3ed7b9777ca6ee07fd533bc1ef766b0d",
+  "npc": "arakawa_gate",
+  "text": "Our clock runs on UTC. At home it's her bedtime. Thirty seconds, I promise.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:04:10Z"
+}

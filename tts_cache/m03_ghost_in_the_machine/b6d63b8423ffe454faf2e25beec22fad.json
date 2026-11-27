@@ -1,0 +1,14 @@
+{
+  "key": "b6d63b8423ffe454faf2e25beec22fad",
+  "npc": "terry_mott",
+  "text": "Right. I warned you.",
+  "delivery": "cold and final, flat and low, no shouting; a tired man done with it, each word measured Every word clearly enunciated, his South London accent and age kept.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T01:53:58Z"
+}

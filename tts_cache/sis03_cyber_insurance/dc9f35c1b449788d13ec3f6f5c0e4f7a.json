@@ -1,0 +1,13 @@
+{
+  "key": "dc9f35c1b449788d13ec3f6f5c0e4f7a",
+  "npc": "eleanor_vance",
+  "text": "You've got the access slip; the archive code is on it. North door. The cabinet inside is PIN-locked too; its reference code is in the CMS Policy Info section.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:01Z"
+}

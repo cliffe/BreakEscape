@@ -1,0 +1,173 @@
+
+## R34 (engine regression 2026-10-17, finding 3): Park and Hollis go hostile and the player is knocked out. The Restart calms both (engine 7.1d: npc_hostile_state_changed {isHostile:false, reset:true}), so their 'ko' resolutions clear. Park speaks first on entry again and can be talked round; the credits don't say 'Fought off' or 'Went for you'. A plain calm without reset (not emitted in m07) and a KO'd NPC are left alone.
+   {event player_spotted:ray_hollis}
+   [opens ray_hollis @start (person-chat)]
+
+--- hollis @start ---
+  Narrator: He clocks you at thirty feet. His hand goes to his belt before his face moves. The flashlight finds your chest.
+  Ray Hollis: Building's evacuating. So you're lost, or you're the other thing.
+     (4 options)
+ > Walk at him. "I'm not here to fight you, Ray."
+  Narrator: He backs into the turnstile frame. Nowhere left to go. One more push and this turns into a fight.
+  Ray Hollis: Stay there. STAY THERE.
+     (2 options)
+ > Put it down. (Fight him.)
+  Ray Hollis: I can't afford you. I'm sorry. I mean it.
+  Narrator: He comes off the frame at you with his fists up. This is going to be a fight.
+      [ink: hollis_resolved="ko"]
+      [set_global hollis_resolved=ko]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+      [engine: ray_hollis hostile]
+   [text agent_0x99 +1000ms] He's coming for you. Fists up, face him, hit him. Q a second time throws the harder punch.
+   [text agent_0x99 +5500ms] He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else.
+  [chat closes]
+   [PASS] hollis_resolved = "ko" (expected "ko")
+   {enter generator_room}
+      [mapping agent_0x99: set generator_hall_reached=true]
+   {enter cable_vault}
+      [mapping agent_0x99: set vault_entered=true]
+   [opens thomas_park @start (person-chat)]
+
+--- park ---
+  Narrator: He is kneeling at an open junction box on the control run to the transfer switch. He doesn't stop working.
+  Thomas Park: Four minutes and I'd have been out. Four.
+     (4 options)
+ > Then finish it and see what happens. (Fight him.)
+  Thomas Park: Right.
+  Narrator: He comes up off his knees with the crimping tool swinging. This is going to be a fight.
+      [ink: park_resolved="ko"]
+      [set_global park_resolved=ko]
+      [engine: thomas_park hostile]
+   [text agent_0x99 +1000ms] Park's swinging. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.
+   [text agent_0x99 +5500ms] To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the vault, and won't wait while you read.
+  [chat closes]
+   [PASS] park_resolved = "ko" (expected "ko")
+   {event npc_hostile_state_changed}
+   [PASS] park_resolved = "ko" (expected "ko")
+   {event npc_hostile_state_changed}
+      [mapping agent_0x99: set hollis_resolved=""]
+   {event npc_hostile_state_changed}
+      [mapping agent_0x99: set park_resolved=""]
+   [PASS] hollis_resolved = "" (expected "")
+   [PASS] park_resolved = "" (expected "")
+   [PASS] credits don't say: "Fought off, not stopped"
+   [PASS] credits don't say: "Went for you, left standing"
+      [reads: Signed Casualty Projection]
+   {set {"casualty_projection_found":true}}
+
+--- park ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: He is kneeling at an open junction box on the control run to the transfer switch. He doesn't stop working.
+  Thomas Park: Four minutes and I'd have been out. Four.
+     (5 options)
+ > Read this. It's the projection for what you're covering.
+  Narrator: You hold the page where the flashlight can find it. He reads two lines. The number is on the second.
+  Thomas Park: Two hundred and forty. Three hundred and eighty-five.
+  Narrator: The trunk runs hum.
+  Thomas Park: They said a building. Empty, they said. Nobody in it.
+     (2 options)
+ > The building's empty. The people are on the other end of the wires.
+      [ink: park_resolved="talked"]
+      [set_global park_resolved=talked]
+      [task: neutralise_park]
+  Narrator: He lays the wire down on the mat and puts his hands on his knees.
+  Thomas Park: I'm not helping you. Put that on record. I'm just not doing this one.
+  Thomas Park: The north trunk run's tapped. Months ago. Not me.
+  Narrator: He picks up his bag and walks out past you, unhurried.
+  Narrator: The junction box cover is back on, finger-tight. His flashlight lies on the mat, burning down.
+  [chat closes]
+   [PASS] said: "He is kneeling at an open junction box"
+   [PASS] said: "They said a building"
+   [PASS] park_resolved = "talked" (expected "talked")
+   [PASS] credits say: "THOMAS PARK: Talked"
+
+## Mercer: a fight reset by a Restart clears mercer_fate; a KO'd Mercer keeps his.
+
+--- mercer ---
+      [task: confront_mercer]
+  Narrator: The control room is warm and quiet. One man at the master console, sleeves turned back, typing. He does not stop when the door opens.
+  Dr. James Mercer: You're early. Not by much.
+  Dr. James Mercer: James Mercer. I'd offer a hand, but you'd refuse it and we'd both be embarrassed.
+  Dr. James Mercer: Sit if you like. You've walked a long way through my building.
+  Dr. James Mercer: Before you start. Tell me how you've decided to hold this. It changes how long it takes.
+     (3 options)
+ > (Say nothing. Let him fill the silence.)
+      [ink: mercer_stance="silent"]
+      [set_global mercer_stance=silent]
+  Narrator: The display on the wall behind him hums. He waits as well.
+  Dr. James Mercer: All right. It's a decent technique. It won't work on me, but I'll take the invitation.
+  Dr. James Mercer: I spent twenty years being listened to politely by people who had already decided. I know what silence in a room means.
+     (5 options)
+ > Doctor, this ends here. How do you want it to end?
+  Dr. James Mercer: End it how? This chair takes no abort while the host drives it, and the sequence doesn't care what happens to me.
+  Dr. James Mercer: I built it that way so I couldn't be leaned on.
+  Dr. James Mercer: You don't need me. That's the part everyone gets wrong. You need the host in the server hall.
+  Dr. James Mercer: So. Your decision, not mine.
+     (4 options)
+ > Away from the console, or I put you on the floor. (Fight him.)
+      [ink: mercer_fate="ko"]
+      [set_global mercer_fate=ko]
+  Narrator: He stands. He is fifty-eight and not quick, and he comes towards you anyway. This is going to be a fight.
+  Dr. James Mercer: You've come a very long way to be one more person who won't listen.
+  Narrator: The console is behind him. Whatever happens in here, the sequence still waits on the host in the server hall.
+      [engine: james_mercer hostile]
+   [text agent_0x99 +1000ms] Mercer's coming at you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.
+   [text agent_0x99 +5500ms] To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the control room, and won't wait while you read.
+  Narrator: The console position is empty. The chair is still turned towards the door.
+  [chat closes]
+   [PASS] mercer_fate = "ko" (expected "ko")
+   {event npc_hostile_state_changed}
+      [mapping agent_0x99: set mercer_fate=""]
+   [PASS] mercer_fate = "" (expected "")
+
+## Blind A m2: the splice gets its own question once; repeats of 'Step away' get a shorter answer; the stand-down doesn't repeat the tap line as news.
+   {set {"park_resolved":""}}
+      [reads: Trunk Cable Runs]
+      [task: search_cable_vault]
+
+--- park ---
+   (after a wipe: synced globals only, ink locals lost)
+  Narrator: He is kneeling at an open junction box on the control run to the transfer switch. He doesn't stop working.
+  Thomas Park: Four minutes and I'd have been out. Four.
+     (6 options)
+ > Step away from the cable.
+  Thomas Park: No.
+  Narrator: He doesn't look up. The stripped wire in his hand stays a finger's width from the terminal.
+  Thomas Park: I lean four inches and this building goes to candles. Talk quieter.
+     (6 options)
+ > Step away from the cable.
+  Thomas Park: Still no.
+     (6 options)
+ > The north trunk's spliced. Someone's been listening to this building for months.
+  Narrator: For the first time his hands stop.
+  Thomas Park: That's not mine. I cut wires. I don't listen in.
+  Thomas Park: If somebody's had a tap on that run for months, they didn't need me for the building. They needed me for the dark.
+  Narrator: He goes back to the junction box, slower than before.
+     (5 options)
+ > Read this. It's the projection for what you're covering.
+  Narrator: You hold the page where the flashlight can find it. He reads two lines. The number is on the second.
+  Thomas Park: Two hundred and forty. Three hundred and eighty-five.
+  Narrator: The trunk runs hum.
+  Thomas Park: They said a building. Empty, they said. Nobody in it.
+     (2 options)
+ > The building's empty. The people are on the other end of the wires.
+      [ink: park_resolved="talked"]
+      [set_global park_resolved=talked]
+  Narrator: He lays the wire down on the mat and puts his hands on his knees.
+  Thomas Park: I'm not helping you. Put that on record. I'm just not doing this one.
+  Thomas Park: That tap on the north run. Find who put it in. It wasn't me.
+  Narrator: He picks up his bag and walks out past you, unhurried.
+  Narrator: The junction box cover is back on, finger-tight. His flashlight lies on the mat, burning down.
+  [chat closes]
+   [PASS] said: "I lean four inches"
+   [PASS] said: "They didn't need me for the building"
+   [PASS] said: "Find who put it in"
+   [PASS] not said: "The north trunk run's tapped. Months ago."
+   [PASS] park_resolved = "talked" (expected "talked")
+   [PASS] longest run 5 (park) <= 9
+
+[stats] spoken/narrated lines 56, choices 13, longest run without a choice 5 (park); runs>=6: 
+[result] all expectations met

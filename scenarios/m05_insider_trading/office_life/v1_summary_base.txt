@@ -1,0 +1,13 @@
+OFFICE-LIFE SUMMARY (V1): 12 NPC(s)
+  agent_0x99_handler (reception_lobby) class=task,task-mapping,conv,key post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  agent_nightshade (reception_lobby) class=attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  closing_debrief_trigger (reception_lobby) class=task,conv,attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  david_torres (data_center) class=task,conv,fights,attackable post=data_center leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  director_netherton (reception_lobby) class=attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  dr_halloran (research_lab) class=task,key,attackable post=research_lab leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  lisa_park (break_room) class=task,attackable post=break_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  opening_briefing (reception_lobby) class=task,attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  owen_gallagher (open_office_area) class=task,key,attackable post=open_office_area leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  patricia_morgan (patricia_office) class=task,key,attackable post=patricia_office leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  patricia_phone (reception_lobby) class=task post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  recruiter (reception_lobby) class=conv post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0

@@ -1,0 +1,47 @@
+{
+ "imports": {
+  "m08_nightshade_arrested": true
+ },
+ "steps": [
+  {
+   "note": "Quintero at the open outer lock, after the player backed her at the briefing and turned Nightshade down twice: the stance line, the arrested-Nightshade line, then she holds her side of the door. A second talk gives only 'Go on. I've got this side.'"
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "quintero_stance": "quintero",
+    "nightshade_deal": "refused"
+   }
+  },
+  {
+   "talk": "qlock",
+   "picks": [
+    "Hold the door"
+   ]
+  },
+  {
+   "said": [
+    "You said I was right. Now we're both in.",
+    "You turned him down twice. I'd have taken the deal. I'm glad you didn't.",
+    "He wants you on your own. I'll be on this side of the door.",
+    "Holding it."
+   ],
+   "notSaid": [
+    "You picked the clock.",
+    "When he ran his countdown"
+   ]
+  },
+  {
+   "talk": "qlock",
+   "picks": []
+  },
+  {
+   "said": [
+    "Go on. I've got this side."
+   ],
+   "notSaid": [
+    "You said I was right."
+   ]
+  }
+ ]
+}

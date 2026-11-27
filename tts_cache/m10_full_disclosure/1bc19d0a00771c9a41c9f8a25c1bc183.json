@@ -1,0 +1,13 @@
+{
+  "key": "1bc19d0a00771c9a41c9f8a25c1bc183",
+  "npc": "narrator",
+  "text": "On the table, the screen turns over to six. Nothing happens.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:18:54Z"
+}

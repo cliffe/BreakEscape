@@ -1,0 +1,21 @@
+# Cross-plan round 6: decisions
+
+- M1: applied. CORE request 4 and MFA's technique-session test row now say a technique-granted saved connection used at an MFA PC answers 422 `typeToSignIn: "second_step"`, no session, no pending record; typing the password then answers `mfaRequired`.
+- m1: applied (ruled: the file holds every ops route's codes). CORE says twelve plus CRACK's two plus PRIV's three; PRIV S5b adds `not_admin`, `locked`, `not_reachable` to the file and `REFUSAL_TEXT`, and the collect panel reads `REFUSAL_TEXT`; CRACK's count text and SKIN's four "twelve" places now say each code in the file. CORE:2004 "the codes are twelve" left as the network routes' own count.
+- m2: applied. CRACK `password_held_for?` names its sources exactly and excludes MFA's `<npcId>.reset`; S8b-time test row added in CRACK section 11.
+- m3: applied. PRIV collect `keyringRev` is `keyring_for_client(...)[:rev]`, with a test that it equals the next `GET /keyring` rev.
+- m4: applied. MFA section 5.2 and request 6 now say the crack reads `creds.password` and the collect yields no password.
+- m5: applied. PRIV words the recipe's classes and the habit values as two lists; `common` is recipe-only.
+- m6: applied. PRIV's duplicate `crack` validator rule removed; it points to CRACK's "class resolves" rule.
+- m7: applied. PRIV section 12 says S5c adds `kind` to L1b's `signin_refused` call when `account_kind_admits?` refused (it runs first); row tests added to `account_kind_test.rb`.
+- m8: applied. LOCK's `item_identity.rb` row names CRACK C2; LOCK's `games_controller.rb` row lists the privilege, core, cracking and log co-editors; PRIV's shared list names `#container`; MFA's `network_access.rb` row adds L1a.
+- n1: applied. SKIN drops the "session badges" clause.
+- n2: applied. SKIN real-product list applies under either option.
+- n3: applied. If the brief is unchanged when K3 starts, K3 builds option 2.
+- n4: applied. CRACK says "the require and the run line".
+- n5: applied. PRIV drops the "if the cracking plan has not added it" clause.
+- n6: applied. LOCK section 3 names outline stage S8c (after S8b).
+- n7: applied. PRIV `cachedAccounts` entry stated closed, `^_` notes allowed.
+- n8: applied. CRACK's Sync deltas line names `crackFacts`.
+- n9: applied. MFA decision says "open, unlocked session".
+- n10: applied. LOG request 5 says both changes are taken in the MFA plan.

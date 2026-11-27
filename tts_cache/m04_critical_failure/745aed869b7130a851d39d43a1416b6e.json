@@ -1,0 +1,13 @@
+{
+  "key": "745aed869b7130a851d39d43a1416b6e",
+  "npc": "narrator",
+  "text": "For the first time something moves behind his face. His eyes go to the laptop clock.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:13:17Z"
+}

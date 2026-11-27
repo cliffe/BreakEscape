@@ -1,0 +1,698 @@
+{
+  "_note": "One row per shell. Wave 0 held only the hand-authored flag; wave 1A adds the kit fields. Kit fields (only when tier is not 'none'): tier (none|S|T|O|E), company (a kit file in this folder), ep (the string kit_ep holds, e.g. ca01), chainId (optional, names kit_<chainId>_out; defaults to ep), ambient (two person keys from the kit's staff), stub (the shared stub knot; defaults to ep), setPiece (name in the kit's setPieces, or null), attack (true for a full shell with an attack half: adds the kit_attack_done mapping), stepAway (the row is the one source: written to social.awarenessEpisode.stepAway), stepAwayBark (optional host line on the step-away mapping), keyMessage (optional: the id of the message in the shell's first triage set that the episode's key lesson rides on; the tool writes outcome.messageGlobals {<id>: kit_key_caught} on that set and declares the generic global kit_key_caught, the one name every episode's stubs and host ink read; the validator errors if the global clashes with the set's own result names), hostLine (optional, true when the shell has a host layer-2 line: declares kit_<ep>_host_said, the line's said-once flag; independent of keyMessage), override (optional: deep-merges into the kit before building, keyed sources by id and staff by person; a value of null deletes that key; used only to pin a test fixture to its frozen placeholder positions and timings). A row with handAuthored true is never written by a generator (it is touched only by apply_training_room.py). A row with fixture true is a test scenario, not a course shell. A row for a test scenario that is not a fixture (test_ca01_panel) is regenerated like a course shell: --kit rebuilds its kit content from the set piece and refuses to erase hand-written kit content. convention (optional, true only for ca00_first_play: no triage set, staff start on the stub knot, no chatter, no host mappings, kit_ep the only kit global).",
+  "episodes": [
+    {
+      "id": "ca13_ai_assistant_defend",
+      "handAuthored": true,
+      "tier": "S",
+      "company": "brightwell_foods",
+      "ep": "ca13",
+      "ambient": [
+        "agnieszka_duda",
+        "graham_whitfield"
+      ],
+      "setPiece": "ca13_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e13_supplier_injection",
+      "hostLine": true,
+      "why": "Carries Gwen's optional deepfake demo call (e13_demo_offered, her event mapping and ink knots), which gen_e8_e17_shells.py does not write."
+    },
+    {
+      "id": "test_ca_office_kit",
+      "fixture": true,
+      "handAuthored": true,
+      "tier": "E",
+      "company": "brightwell_foods",
+      "ep": "ca01",
+      "chainId": "e1",
+      "stub": "ca01",
+      "ambient": [
+        "gwen_pritchard",
+        "agnieszka_duda"
+      ],
+      "setPiece": null,
+      "attack": true,
+      "stepAway": true,
+      "stepAwayBark": "Have you got a minute? Someone in finance just took a call like that one.",
+      "override": {
+        "pool": { "lines": ["Busy inbox today.", "Kettle's on in a sec.", "Audit week again."] },
+        "sources": {
+          "kit_coffee": { "position": { "x": 2, "y": 7 }, "affordance": { "useSeconds": 8 } },
+          "kit_cooler": { "position": { "x": 7, "y": 7 }, "affordance": { "useSeconds": 6 } }
+        },
+        "staff": {
+          "gwen_pritchard": { "voice": null, "chatterLines": ["Morning, all.", "Tea round shortly?"] },
+          "agnieszka_duda": { "voice": null, "chatterLines": ["Long week.", "Any biscuits left?"] }
+        }
+      }
+    },
+    {
+      "id": "ca01_invoice_fraud",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "brightwell_foods",
+      "ep": "ca01",
+      "ambient": [
+        "agnieszka_duda",
+        "gwen_pritchard"
+      ],
+      "setPiece": "ca01_recall_fallback",
+      "attack": true,
+      "stepAway": false,
+      "keyMessage": "e1_lookalike_bank",
+      "hostLine": true
+    },
+    {
+      "id": "test_ca01_panel",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "brightwell_foods",
+      "ep": "ca01",
+      "ambient": [
+        "agnieszka_duda",
+        "gwen_pritchard"
+      ],
+      "setPiece": "ca01_recall",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e1_lookalike_bank",
+      "hostLine": true
+    },
+    {
+      "id": "ca01_invoice_fraud_defend",
+      "tier": "S",
+      "company": "brightwell_foods",
+      "ep": "ca01",
+      "ambient": [
+        "agnieszka_duda",
+        "gwen_pritchard"
+      ],
+      "setPiece": "ca01_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e1_lookalike_bank",
+      "hostLine": true,
+      "why": "Defend-only twin, tier S (plan 5): kit room, ambient staff, pool and stubs; no chain, no panel, no step-away, no set piece. The host layer-2 line is not written yet (new spoken content)."
+    },
+    {
+      "id": "ca12_visitor_tailgater",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "merrin_sallow",
+      "ep": "ca12",
+      "ambient": [
+        "thandiwe_moyo",
+        "julian_sallow"
+      ],
+      "setPiece": "ca12_visitor",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e12_call_tailgater",
+      "hostLine": true
+    },
+    {
+      "id": "ca12_visitor_tailgater_defend",
+      "tier": "S",
+      "company": "merrin_sallow",
+      "ep": "ca12",
+      "ambient": [
+        "thandiwe_moyo",
+        "julian_sallow"
+      ],
+      "setPiece": null,
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e12_call_tailgater",
+      "hostLine": true,
+      "why": "Defend-only twin, tier S: kit room, ambient pair, pool, stubs; one host line; no lobby, no visitor, no screen beat, no panel, no step-away, no set piece."
+    },
+    {
+      "id": "test_ca12_fallback",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "merrin_sallow",
+      "ep": "ca12",
+      "ambient": [
+        "thandiwe_moyo",
+        "julian_sallow"
+      ],
+      "setPiece": "ca12_visitor_fallback",
+      "attack": true,
+      "stepAway": false,
+      "keyMessage": "e12_call_tailgater",
+      "hostLine": true
+    },
+    {
+      "id": "ca00_first_play",
+      "tier": "S",
+      "company": "quayholt_insurance",
+      "ep": "ca00",
+      "stub": "ca00",
+      "ambient": [
+        "darren_price",
+        "niamh_doherty"
+      ],
+      "setPiece": null,
+      "attack": false,
+      "stepAway": false,
+      "convention": true
+    },
+    {
+      "id": "ca02_cv_lures",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "tarrowby_logistics",
+      "ep": "ca02",
+      "ambient": [
+        "chidi_okeke",
+        "zainab_hussain"
+      ],
+      "setPiece": "ca02_enable_editing",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e2_enable_content",
+      "hostLine": true
+    },
+    {
+      "id": "ca03_helpdesk_reset",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "quayholt_insurance",
+      "ep": "ca03",
+      "ambient": [
+        "anjali_rao",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca03_people_locked_out",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e3_push_early",
+      "hostLine": true
+    },
+    {
+      "id": "ca04_exec_whaling",
+      "handAuthored": true,
+      "tier": "T",
+      "company": "merrin_sallow",
+      "ep": "ca04",
+      "ambient": [
+        "lorna_easton",
+        "julian_sallow"
+      ],
+      "setPiece": null,
+      "attack": true,
+      "stepAway": false,
+      "keyMessage": "e4_boarding_payment",
+      "hostLine": true
+    },
+    {
+      "id": "ca05_signin_pages",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "quayholt_insurance",
+      "ep": "ca05",
+      "ambient": [
+        "anjali_rao",
+        "darren_price"
+      ],
+      "setPiece": "ca05_signin_prompt",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e5_sso_lookalike",
+      "hostLine": true
+    },
+    {
+      "id": "ca06_texts_and_qr",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "tarrowby_logistics",
+      "ep": "ca06",
+      "ambient": [
+        "fatima_begum",
+        "zainab_hussain"
+      ],
+      "setPiece": "ca06_notice",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e6_parking_permit",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca07_voice_ceo",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "brightwell_foods",
+      "ep": "ca07",
+      "ambient": [
+        "gwen_pritchard",
+        "graham_whitfield"
+      ],
+      "setPiece": "ca07_call_on_hold",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e7_ceo_wire",
+      "hostLine": true
+    },
+    {
+      "id": "ca08_after_the_click",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "quayholt_insurance",
+      "ep": "ca08",
+      "ambient": [
+        "darren_price",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca08_machine_out",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e8_push_abroad",
+      "keyCaughtVerdicts": ["report"],
+      "hostLine": true
+    },
+    {
+      "id": "ca09_passwords",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "tarrowby_logistics",
+      "ep": "ca09",
+      "ambient": [
+        "fatima_begum",
+        "chidi_okeke"
+      ],
+      "setPiece": "ca09_note_on_screen",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e9_fake_it_number",
+      "hostLine": true
+    },
+    {
+      "id": "ca10_downloads_and_fake_checks",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "quayholt_insurance",
+      "ep": "ca10",
+      "ambient": [
+        "anjali_rao",
+        "darren_price"
+      ],
+      "setPiece": "ca10_paste_check",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e10_fake_check",
+      "hostLine": true
+    },
+    {
+      "id": "ca11_misdirected_data",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "carrholme_services",
+      "ep": "ca11",
+      "ambient": [
+        "yusuf_demir"
+      ],
+      "setPiece": "ca11_stray_printout",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e11_wrong_sam_breach",
+      "keyCaughtVerdicts": ["report"],
+      "hostLine": true
+    },
+    {
+      "id": "ca13_ai_assistant",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "brightwell_foods",
+      "ep": "ca13",
+      "ambient": [
+        "agnieszka_duda",
+        "graham_whitfield"
+      ],
+      "setPiece": "ca13_summary_says_send",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e13_supplier_injection",
+      "hostLine": true
+    },
+    {
+      "id": "ca14_social_media",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "merrin_sallow",
+      "ep": "ca14",
+      "ambient": [
+        "lorna_easton",
+        "delphine_arvanitis"
+      ],
+      "setPiece": "ca14_team_photo",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e14_fake_merrin",
+      "hostLine": true
+    },
+    {
+      "id": "ca15_shadow_it",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "tarrowby_logistics",
+      "ep": "ca15",
+      "ambient": [
+        "fatima_begum",
+        "chidi_okeke"
+      ],
+      "setPiece": "ca15_found_stick",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e15_posted_stick",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca16_insider_risk",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "quayholt_insurance",
+      "ep": "ca16",
+      "ambient": [
+        "darren_price",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca16_borrowed_login",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e16_shared_login_req",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca18_credential_attacks_at_scale",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "merrin_sallow",
+      "ep": "ca18",
+      "ambient": [
+        "lorna_easton",
+        "delphine_arvanitis"
+      ],
+      "setPiece": "ca18_reset_password",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e18_lockout_fake",
+      "hostLine": true
+    },
+    {
+      "id": "ca19_malware_and_updates",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "quayholt_insurance",
+      "ep": "ca19",
+      "ambient": [
+        "darren_price",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca19_isolated_beside_running",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e19_ransom_note",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca20_remote_and_mobile_working",
+      "handAuthored": true,
+      "tier": "T",
+      "company": "tarrowby_logistics",
+      "ep": "ca20",
+      "ambient": [
+        "fatima_begum",
+        "chidi_okeke"
+      ],
+      "setPiece": null,
+      "attack": true,
+      "stepAway": false,
+      "keyMessage": "e20_wifi_page_fake",
+      "hostLine": true
+    },
+    {
+      "id": "ca02_cv_lures_defend",
+      "tier": "S",
+      "company": "tarrowby_logistics",
+      "ep": "ca02",
+      "ambient": [
+        "chidi_okeke",
+        "zainab_hussain"
+      ],
+      "setPiece": "ca02_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e2_enable_content",
+      "hostLine": true
+    },
+    {
+      "id": "ca03_helpdesk_reset_defend",
+      "tier": "S",
+      "company": "quayholt_insurance",
+      "ep": "ca03",
+      "ambient": [
+        "anjali_rao",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca03_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e3_push_early",
+      "hostLine": true
+    },
+    {
+      "id": "ca04_exec_whaling_defend",
+      "tier": "S",
+      "company": "merrin_sallow",
+      "ep": "ca04",
+      "ambient": [
+        "lorna_easton",
+        "julian_sallow"
+      ],
+      "setPiece": "ca04_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e4_boarding_payment",
+      "hostLine": true
+    },
+    {
+      "id": "ca05_signin_pages_defend",
+      "tier": "S",
+      "company": "quayholt_insurance",
+      "ep": "ca05",
+      "ambient": [
+        "anjali_rao",
+        "darren_price"
+      ],
+      "setPiece": "ca05_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e5_sso_lookalike",
+      "hostLine": true
+    },
+    {
+      "id": "ca06_texts_and_qr_defend",
+      "tier": "S",
+      "company": "tarrowby_logistics",
+      "ep": "ca06",
+      "ambient": [
+        "fatima_begum",
+        "zainab_hussain"
+      ],
+      "setPiece": "ca06_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e6_parking_permit",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca07_voice_ceo_defend",
+      "tier": "S",
+      "company": "brightwell_foods",
+      "ep": "ca07",
+      "ambient": [
+        "gwen_pritchard",
+        "graham_whitfield"
+      ],
+      "setPiece": "ca07_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e7_ceo_wire",
+      "hostLine": true
+    },
+    {
+      "id": "ca08_after_the_click_defend",
+      "tier": "S",
+      "company": "quayholt_insurance",
+      "ep": "ca08",
+      "ambient": [
+        "darren_price",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca08_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e8_push_abroad",
+      "keyCaughtVerdicts": ["report"],
+      "hostLine": true
+    },
+    {
+      "id": "ca09_passwords_defend",
+      "tier": "S",
+      "company": "tarrowby_logistics",
+      "ep": "ca09",
+      "ambient": [
+        "fatima_begum",
+        "chidi_okeke"
+      ],
+      "setPiece": "ca09_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e9_fake_it_number",
+      "hostLine": true
+    },
+    {
+      "id": "ca10_downloads_and_fake_checks_defend",
+      "tier": "S",
+      "company": "quayholt_insurance",
+      "ep": "ca10",
+      "ambient": [
+        "anjali_rao",
+        "darren_price"
+      ],
+      "setPiece": "ca10_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e10_fake_check",
+      "hostLine": true
+    },
+    {
+      "id": "ca11_misdirected_data_defend",
+      "tier": "S",
+      "company": "carrholme_services",
+      "ep": "ca11",
+      "ambient": [
+        "yusuf_demir"
+      ],
+      "setPiece": "ca11_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e11_wrong_sam_breach",
+      "keyCaughtVerdicts": ["report"],
+      "hostLine": true
+    },
+    {
+      "id": "ca14_social_media_defend",
+      "tier": "S",
+      "company": "merrin_sallow",
+      "ep": "ca14",
+      "ambient": [
+        "lorna_easton",
+        "delphine_arvanitis"
+      ],
+      "setPiece": "ca14_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e14_fake_merrin",
+      "hostLine": true
+    },
+    {
+      "id": "ca15_shadow_it_defend",
+      "tier": "S",
+      "company": "tarrowby_logistics",
+      "ep": "ca15",
+      "ambient": [
+        "fatima_begum",
+        "chidi_okeke"
+      ],
+      "setPiece": "ca15_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e15_posted_stick",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca16_insider_risk_defend",
+      "tier": "S",
+      "company": "quayholt_insurance",
+      "ep": "ca16",
+      "ambient": [
+        "darren_price",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca16_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e16_shared_login_req",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca18_credential_attacks_at_scale_defend",
+      "tier": "S",
+      "company": "merrin_sallow",
+      "ep": "ca18",
+      "ambient": [
+        "lorna_easton",
+        "delphine_arvanitis"
+      ],
+      "setPiece": "ca18_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e18_lockout_fake",
+      "hostLine": true
+    },
+    {
+      "id": "ca19_malware_and_updates_defend",
+      "tier": "S",
+      "company": "quayholt_insurance",
+      "ep": "ca19",
+      "ambient": [
+        "darren_price",
+        "niamh_doherty"
+      ],
+      "setPiece": "ca19_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e19_ransom_note",
+      "keyCaughtVerdicts": ["report", "verify"],
+      "hostLine": true
+    },
+    {
+      "id": "ca20_remote_and_mobile_working_defend",
+      "tier": "S",
+      "company": "tarrowby_logistics",
+      "ep": "ca20",
+      "ambient": [
+        "fatima_begum",
+        "chidi_okeke"
+      ],
+      "setPiece": "ca20_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e20_wifi_page_fake",
+      "hostLine": true
+    },
+    {
+      "id": "ca17_acceptable_use_defend",
+      "tier": "S",
+      "company": "tarrowby_logistics",
+      "ep": "ca17",
+      "ambient": [
+        "fatima_begum",
+        "chidi_okeke"
+      ],
+      "setPiece": "ca17_defend_react",
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e17_meeting_app"
+    }
+  ]
+}

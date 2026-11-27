@@ -1,0 +1,13 @@
+{
+  "key": "7a61632d6a1e8ebbbcd246e2a5ed4f4e",
+  "npc": "narrator",
+  "text": "SAFETYNET headquarters. The handler's office at four in the morning, the city still lit beyond the glass.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:25:58Z"
+}

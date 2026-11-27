@@ -1,0 +1,13 @@
+{
+  "key": "f01b28c8d8738ee2f69a2b92f0bdb84a",
+  "npc": "jordan_pike",
+  "text": "Some email thing they sell. Tells you when people open stuff? No idea how. I just do the stand.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

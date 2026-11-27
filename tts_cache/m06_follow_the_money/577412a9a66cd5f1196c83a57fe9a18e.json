@@ -1,0 +1,13 @@
+{
+  "key": "577412a9a66cd5f1196c83a57fe9a18e",
+  "npc": "narrator",
+  "text": "A broad man in his late fifties, grey at the temples, stands between you and the corner office as if he were part of the wall.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:18:27Z"
+}

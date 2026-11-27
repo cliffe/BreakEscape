@@ -1,0 +1,24 @@
+{
+  "display_name": "RFID Test",
+  "description": "Test scenario for RFID card mechanics and access control.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["RFID authentication", "Access control", "Physical tokens"]
+    },
+    {
+      "ka": "HS",
+      "topic": "Hardware Security",
+      "keywords": ["RFID technology", "Smart cards"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["RFID cloning", "Physical access control"]
+    }
+  ]
+}

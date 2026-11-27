@@ -1,0 +1,21 @@
+{
+  "key": "1447e8a28c8e20646c27ba7e399df8a0",
+  "npc": "the_architect",
+  "text": "You covered Washington. San Francisco and the vendors are on your clock.",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, on a handset he took without being invited. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:16:35Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/1447e8a28c8e20646c27ba7e399df8a0.mp3",
+    "clean_md5": "4f0117bbf9d5b65b5e6be89f9d572641",
+    "baked_md5": "a0a8bdd6d1dbd8e7b0811a38bbd0b88d",
+    "baked": "2026-11-24"
+  }
+}

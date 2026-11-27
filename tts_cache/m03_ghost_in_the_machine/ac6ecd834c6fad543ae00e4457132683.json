@@ -1,0 +1,13 @@
+{
+  "key": "ac6ecd834c6fad543ae00e4457132683",
+  "npc": "zainab_hussain",
+  "text": "Still about? The sofa's not getting any comfier.",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:41:44Z"
+}

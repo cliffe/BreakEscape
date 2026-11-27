@@ -1,0 +1,13 @@
+{
+  "key": "d6ebdf876d852a62b56f352dd499a610",
+  "npc": "tunnel_guard",
+  "text": "You're on every screen in this room. You know that?",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:22:59Z"
+}

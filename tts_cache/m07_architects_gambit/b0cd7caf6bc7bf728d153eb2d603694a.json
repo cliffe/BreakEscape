@@ -1,0 +1,13 @@
+{
+  "key": "b0cd7caf6bc7bf728d153eb2d603694a",
+  "npc": "narrator",
+  "text": "A page with a number on it might move him. Somebody in this building signed one.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A building full of machinery that is about to be used against people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:40:09Z"
+}

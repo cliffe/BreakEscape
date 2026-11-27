@@ -1,0 +1,13 @@
+{
+  "key": "9295c509852b38716f740aac42685874",
+  "npc": "ama_owusu",
+  "text": "A cracked password works like any other, and the PC even offered it. She's an ordinary user, so no Administrator on the taskbar.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_passwords",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:44:32Z"
+}

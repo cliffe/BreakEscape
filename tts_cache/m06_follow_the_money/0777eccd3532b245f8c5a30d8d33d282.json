@@ -1,0 +1,13 @@
+{
+  "key": "0777eccd3532b245f8c5a30d8d33d282",
+  "npc": "narrator",
+  "text": "You lay Priya's write-up on her desk. Money in from the cells, money back out.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:13Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "86f035a2e3bc7778c2bc347c397055fc",
+  "npc": "kit_chidi_okeke",
+  "text": "Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout \u2014 do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:21:59Z"
+}

@@ -1,0 +1,1416 @@
+{
+ "mission": "m06",
+ "id": "m06_trailer60_v2",
+ "title": "SAFETYNET: Licence to Hack, m06 Follow the Money 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v1 (2026-11-23): first cut, not rendered. Music Shadow Cipher from 116.606 s (downbeat): quiet bars, lift at 12.00 on the HaX threat, tracing card on the beat at 29.57 after the 28.05 hit, track's own decay under the logo. Real Hacking slot is the m02 slate placeholder. Compromises: no briefcase/manifesto shot and no VM launcher (no takes); no tracer unmatched pass before the match (only the matching pass exists); the t28 pizza shot is a cut from the lab, not a continuous walk (player placed off camera); Kemal's pick shows no pins (the engine stops a seen pick), so the walk plus 'No.' carries it; walk to the VM is t22b's out-and-back beside the station; Irina cut after 'passwords.' for length.",
+ "music": {
+  "track": "SpyAgro/Shadow Cipher.mp3",
+  "analysis": "shadow_cipher_60.json",
+  "start": 116.606,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2.0,
+  "alternatives": [
+   "Shadow Cipher window 92.61 (analysis best)",
+   "Noir Encrypted Shadows (window 105.537, re-check for 60 s)"
+  ]
+ },
+ "beat": {
+  "bpm": 140.02,
+  "period": 0.42852,
+  "offset": 0,
+  "note": "window times: bars every 1.71407 s from 0; quiet 0-12.0, lift 12.00 (threat_hax), dip 25.71-27.42, strongest hit 28.05 (inside Priya), full energy 29.14-56.56, track decays 56.56-60. Not judged by ear. Frame-aligned, snap false."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "Netherton shots only from t10c_briefing (24 Nov, new mouth-only visemes; t10b and t10 superseded)",
+  "never use 'Take me in if you like...' (removed from the game, D356)",
+  "player portrait ('playtest') frames kept out: t10c 26.3-27.7 (t10b 25.0-26.0), t13 to 29.7, t29 35.2-41.5, t16 145.9-147.5",
+  "use t22b, never t22",
+  "no codes, PINs, passwords, slot numbers or flag values; tracer slot labels mosaicked",
+  "no outcome menu, no ending"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false
+  },
+  {
+   "id": "hook_netherton",
+   "type": "gameplay",
+   "duration": 4.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10c_briefing.trimmed.mkv",
+    "in": 14.705,
+    "out": 19.105
+   },
+   "note": "hook: J-cut pre 1.55, take audio 12.70-18.65 only (voice 12.82-16.00, 'Tonight' 16.58-17.12, 'we chase the money.' 17.59-18.55); 'Agent 0x00.' (ends 12.31) and 'HaX.' (19.97) stay out. The bar shows the whole ink line, so 16:9 is UI-free (bar y 0.84+ off); captions 9:16/1:1 carry the kept words only",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 1.55,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Netherton premise line from t10c only; no name, no code"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "Every cell we have hit is being paid by someone. Tonight we chase the money.",
+     "start": -1.43,
+     "end": 4.3
+    }
+   ]
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.6,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 6",
+    "Follow the",
+    "Money"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "threat_hax",
+   "type": "gameplay",
+   "duration": 6.2333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10c_briefing.trimmed.mkv",
+    "in": 27.9,
+    "out": 34.1333
+   },
+   "note": "threat on the music lift (12.00): voice 26.57-32.63; out before 'The Crypto Anarchists run it.' (33.04). Frame 26.4+ is HaX (player portrait 25.0-26.0 kept out). Bar shows the cut sentence too, so 16:9 is UI-free",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "names the target exchange, not the cell behind it"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent HaX",
+     "text": "HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know.",
+     "start": 0.07,
+     "end": 6.13
+    }
+   ]
+  },
+  {
+   "id": "walk_checkpoint",
+   "type": "gameplay",
+   "duration": 0.8333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_checkpoint_walk.trimmed.mkv",
+    "in": 1.6,
+    "out": 2.4333
+   },
+   "note": "player crosses the security checkpoint past the guard's cone; the room drifts with the camera (x 0.26-0.75 at 1.6 to 0.36-0.86 at 2.3), crop centred on the drift. Length set so the tracing card lands on the beat at 29.57 v2: 9:16 at 2x (was 0.9, sat small).",
+   "framing": {
+    "16:9": {
+     "cx": 0.56,
+     "cy": 0.58,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.56,
+     "cy": 0.58,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.56,
+     "cy": 0.58,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "player crosses the security checkpoint past the guard's cone; the room drifts with the camera (x 0.26-0.75 at 1.6 to 0.36-0.86 at 2.3), crop centred on the drift. Length set so the tracing card lands on the beat at 29.57"
+   }
+  },
+  {
+   "id": "irina",
+   "type": "gameplay",
+   "duration": 5.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_irina_badges.trimmed.mkv",
+    "in": 24.0667,
+    "out": 29.6667
+   },
+   "note": "cut after 'about passwords.' (ends 29.56); 'Exactly backwards.' (30.26) dropped for length. Frames 24.07 and 29.67 clean. The bar still shows 'Exactly backwards.', so 16:9 is UI-free",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "weakness line, no password"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Dr Irina Volkova",
+     "text": "Satoshi is paranoid about doors and careless about passwords.",
+     "start": 0.07,
+     "end": 5.49
+    }
+   ]
+  },
+  {
+   "id": "priya",
+   "type": "gameplay",
+   "duration": 4.9,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_priya_mixer.trimmed.mkv",
+    "in": 29.7667,
+    "out": 34.6667
+   },
+   "note": "in 29.7667: frame 29.7 is still the player portrait ('playtest'); 29.733 onward is Priya (viewed 29.733-30.0), one frame of margin. Voice 29.80-34.54, out 34.67 clean (next line 35.53). Bar shows exactly this line",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "method line, no wallet or address"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Priya Raghavan",
+     "text": "You can't see through Monero. You don't need to. Watch what goes in and what comes out.",
+     "start": 0.03,
+     "end": 4.77
+    }
+   ]
+  },
+  {
+   "id": "card_tracing",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Blockchain",
+    "Tracing"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "tracer",
+   "type": "gameplay",
+   "duration": 3.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t14_tracer.trimmed.mkv",
+    "in": 12.9,
+    "out": 16.4
+   },
+   "note": "tracer board: deposit picked 14.0, green match 16.4 (Matched 1/3); slot labels mosaicked in the take; board spans x 0.17-0.83: 9:16 zooms out to fit (0.75); 1:1 cannot go below 1.0, so the board edges (x <0.22, >0.78) are cropped there v2: 9:16 and 1:1 centred on the deposit column and the matched outflow (x 0.37-0.81), left column off.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 0.7
+    },
+    "1:1": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "slot labels mosaicked; no wallet, slot number or amount readable"
+   }
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "walk_vm",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t22b_server_walk_flag.trimmed.mkv",
+    "in": 8.2667,
+    "out": 9.2667
+   },
+   "note": "t22b (not t22): player walks right along the server-room desk front, camera follows (player x 0.5, y 0.46-0.50 at 8.3/9.3). Only an out-and-back exists, no walk to the VM launcher",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "no launcher panel, post-it or flag"
+   }
+  },
+  {
+   "id": "real_hacking",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m06_console_recon_clip.mp4",
+    "in": 0.4,
+    "out": 2.2
+   },
+   "note": "m06 console recon (~/safetynet-footage/m06/solution/vm_console_recon_s960.trimmed.mkv, 48.13-50.73 s): crop x0-345 y0-250 of the 1024x768 console scaled 3x nearest on #21242D, 1920x1080 (m06_console_recon_clip.mp4, 2.6 s, shot uses 0.4-2.2). full-port nmap -Pn -sV -p- command, then the open-port list (ssh, tcpwrapped, zookeeper, five Jetty http ports) appears; crop stops before the long version string and below the MAC/vendor line. No flag, password or credential on screen. BE_CLIPS_DIR=$HOME/video-takes-local/m06/clips",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "placeholder": false,
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "terminal scan output only, no credential or flag"
+   }
+  },
+  {
+   "id": "card_minder",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Get Past",
+    "the Minder"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "kemal_watch",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t29_kemal_picks.trimmed.mkv",
+    "in": 3.7,
+    "out": 4.9
+   },
+   "note": "executive wing: player at the door, Kemal pacing with his sight cone sweeping (room x 0.40-0.90, y 0.14-0.67, static); out before interact 5.02. The seen pick shows no pins (engine stops it), so the pick reads through Kemal's 'No.'",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.42,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "map only, no panel"
+   }
+  },
+  {
+   "id": "kemal_no",
+   "type": "gameplay",
+   "duration": 0.7,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t29_kemal_picks.trimmed.mkv",
+    "in": 18.1667,
+    "out": 18.8667
+   },
+   "note": "'No.' 18.29-18.69 by silencedetect; narrator ends 17.52. Bar shows only 'No.'",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "refusal, no code"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Kemal Aydin",
+     "text": "No.",
+     "start": 0.12,
+     "end": 0.52
+    }
+   ]
+  },
+  {
+   "id": "kemal_move",
+   "type": "gameplay",
+   "duration": 2.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t29_kemal_picks.trimmed.mkv",
+    "in": 42.1667,
+    "out": 44.4667
+   },
+   "note": "voice 42.28-44.20; player portrait 35.2-37.4 and narrator 37.6-41.2 kept out; out 44.47 before the 'turns on you' toast (45.2). Bar shows only this line",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "threat line, no code"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Kemal Aydin",
+     "text": "Then come and move me.",
+     "start": 0.11,
+     "end": 2.03
+    }
+   ]
+  },
+  {
+   "id": "card_money",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Before the",
+    "Money Moves"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "cr_pins",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t17_guard_lockpick.trimmed.mkv",
+    "in": 15.8,
+    "out": 16.2
+   },
+   "note": "lockpick pins setting (checkpoint door; title bar cropped in 16:9)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 0.6
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins only, no code"
+   }
+  },
+  {
+   "id": "cr_guard",
+   "type": "gameplay",
+   "duration": 0.3667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_guard_lockpick.trimmed.mkv",
+    "in": 3.5,
+    "out": 3.8667
+   },
+   "note": "contract guard face, narrator bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.22,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.28,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.25,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_clone",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_rfid_chain.trimmed.mkv",
+    "in": 4.3,
+    "out": 4.6333
+   },
+   "note": "cloner 'Saved: CTO Access Badge' tick; data rows mosaicked in the take",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "no UID or number"
+   }
+  },
+  {
+   "id": "cr_dani",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_floor_faces.trimmed.mkv",
+    "in": 4.4,
+    "out": 4.7333
+   },
+   "note": "Dani face, narrator bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.69,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.26,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.69,
+     "cy": 0.23,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_password",
+   "type": "gameplay",
+   "duration": 0.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_password_screen.trimmed.mkv",
+    "in": 5.8,
+    "out": 6.1
+   },
+   "note": "server-room password panel, masked dots, never submitted",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "masked dots only"
+   }
+  },
+  {
+   "id": "cr_tomasz",
+   "type": "gameplay",
+   "duration": 0.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_floor_faces.trimmed.mkv",
+    "in": 9.4,
+    "out": 9.7
+   },
+   "note": "Tomasz face, subtitle bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.68,
+     "cy": 0.25,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.31,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.28,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_deskphone",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_floor_props.trimmed.mkv",
+    "in": 14.0,
+    "out": 14.2667
+   },
+   "note": "desk phone answered: Lerato's bubble 'Trading floor, Lerato speaking.' on the floor map (owner: desk-phone flash)",
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.45,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.4,
+     "cy": 0.45,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.4,
+     "cy": 0.45,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "speech bubble only"
+   }
+  },
+  {
+   "id": "cr_dust",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t25_dust_plaque.trimmed.mkv",
+    "in": 17.4,
+    "out": 17.6667
+   },
+   "note": "dusting canvas only (ridges); side panel off",
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.44,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.4,
+     "cy": 0.44,
+     "zoom": 1.7
+    },
+    "1:1": {
+     "cx": 0.4,
+     "cy": 0.44,
+     "zoom": 2.25
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ridges only"
+   }
+  },
+  {
+   "id": "cr_lerato",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_floor_faces.trimmed.mkv",
+    "in": 15.0,
+    "out": 15.2667
+   },
+   "note": "Lerato face, subtitle bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.67,
+     "cy": 0.25,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.67,
+     "cy": 0.31,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.67,
+     "cy": 0.28,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_pinpad",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t23_pin_door.trimmed.mkv",
+    "in": 6.9,
+    "out": 7.1333
+   },
+   "note": "PIN pad 'Data Centre' with three non-matching decorative digits, ENTER never pressed (only pad used: t24/t26 show the same digits)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "three wrong digits"
+   }
+  },
+  {
+   "id": "cr_pizza",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t28_pizza_bait.trimmed.mkv",
+    "in": 15.0,
+    "out": 15.2333
+   },
+   "note": "pizza bait: Lerato walks to the dropped boxes (768x432 crop at 576,400 viewed clean); HUD, objectives, tray and toasts all outside the crop. A cut from the lab, not a walk",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.57,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.57,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.57,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "HUD cropped off"
+   }
+  },
+  {
+   "id": "cr_nightshade",
+   "type": "gameplay",
+   "duration": 0.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10c_briefing.trimmed.mkv",
+    "in": 23.363,
+    "out": 23.563
+   },
+   "note": "Nightshade face (t10c), subtitle bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.32999999999999996,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "satoshi_wide",
+   "type": "gameplay",
+   "duration": 1.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_satoshi_ending.trimmed.mkv",
+    "in": 148.5,
+    "out": 149.8333
+   },
+   "note": "J-cut pre 0.85 under the crescendo tail: take audio from 147.65 (player portrait 145.9-147.5 kept out, silent before 147.70). Voice 147.70-149.72. Bar shows both sentences, so 16:9 UI-free",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.85,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "villain line, no ending or outcome menu"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Satoshi Nakamoto II",
+     "text": "Murder's what they call it when you lose.",
+     "start": -0.8,
+     "end": 1.22
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "id": "satoshi_close",
+   "type": "gameplay",
+   "duration": 2.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_satoshi_ending.trimmed.mkv",
+    "in": 149.8333,
+    "out": 152.1333
+   },
+   "note": "hard cut in the pause (149.72-150.33) to a 3x headshot, bar off; 'The winners get statues.' 150.33-151.64; out 152.13 (frame 152.1 viewed clean) before 'Call your police' (152.83)",
+   "framing": {
+    "16:9": {
+     "cx": 0.72,
+     "cy": 0.22,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.22,
+     "zoom": 2.0
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.22,
+     "zoom": 2.25
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "headshot, no menu, no ending"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Satoshi Nakamoto II",
+     "text": "The winners get statues.",
+     "start": 0.5,
+     "end": 1.81
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false
+  }
+ ]
+}

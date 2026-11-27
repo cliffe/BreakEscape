@@ -1,0 +1,13 @@
+{
+  "key": "de03f68df7d1c8b3a1a467d350eea8ff",
+  "npc": "patrol_nurse",
+  "text": "Don't go near a pump without the paper chart in your hand.",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

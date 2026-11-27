@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Break Escape</title>
+  <%# Self-hosted pixel fonts (GNF, Press Start 2P) via fonts.css %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/fonts.css') %>">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #10131a;
+      color: #e8e8e8;
+      font-family: 'GNF', monospace;
+    }
+    .format-refusal-wrap {
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .format-refusal-card {
+      max-width: 520px;
+      width: 100%;
+      box-sizing: border-box;
+      background: #1b2030;
+      border: 2px solid #4a5578;
+      padding: 28px 24px;
+      text-align: center;
+    }
+    .format-refusal-card h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0 0 20px;
+      color: #ffd166;
+    }
+    .format-refusal-card p {
+      font-size: 18px;
+      line-height: 1.5;
+      margin: 0;
+      color: #cfd6e6;
+    }
+  </style>
+</head>
+<body>
+  <div class="format-refusal-wrap">
+    <div class="format-refusal-card">
+      <h1>Cannot Open Game</h1>
+      <p><%= @format_message %></p>
+    </div>
+  </div>
+</body>
+</html>

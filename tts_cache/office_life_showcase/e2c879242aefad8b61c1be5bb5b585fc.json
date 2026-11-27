@@ -1,0 +1,13 @@
+{
+  "key": "e2c879242aefad8b61c1be5bb5b585fc",
+  "npc": "ama_owusu",
+  "text": "Some lock, some don't. An open screen is an opening, but owners come back.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:35:37Z"
+}

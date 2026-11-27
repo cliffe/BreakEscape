@@ -1,0 +1,13 @@
+{
+  "key": "428420acb71e651002c5b3f70d44473e",
+  "npc": "dr_sharma",
+  "text": "Cloud restore, started before the isolation. If the attacker reaches it, you start again. That was a gamble.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

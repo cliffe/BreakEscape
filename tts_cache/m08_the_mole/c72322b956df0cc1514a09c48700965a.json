@@ -1,0 +1,13 @@
+{
+  "key": "c72322b956df0cc1514a09c48700965a",
+  "npc": "opening_briefing_cutscene",
+  "text": "Portland happened. Your tasking order sent the one team to Austin, so no backdoor went anywhere. Today is day nine, and dispatch in eleven counties is still answering.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI, running at a heightened security posture. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, faintly wrong -- a voice built to reassure, doing it in a building where nobody is reassured.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:06:53Z"
+}

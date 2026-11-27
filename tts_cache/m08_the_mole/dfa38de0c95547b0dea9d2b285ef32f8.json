@@ -1,0 +1,13 @@
+{
+  "key": "dfa38de0c95547b0dea9d2b285ef32f8",
+  "npc": "receptionist_ai",
+  "text": "I will say only this. The calmest person in a frightened building is not always the bravest. Sometimes they are simply the one who is not surprised.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI at reception. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, unnervingly helpful.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:17:48Z"
+}

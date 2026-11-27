@@ -1,0 +1,13 @@
+{
+  "key": "9f0822db083b5baff472e592b6070167",
+  "npc": "narrator",
+  "text": "He's up the rack row, a handset already half out of its clip.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:46:29Z"
+}

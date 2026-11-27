@@ -1,0 +1,34 @@
+Compiling ink files in lab_tesseract_trials
+----------------------------------------
+Found ink directory: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scenarios/lab_tesseract_trials/ink
+Compiling: closing_debrief.ink
+✓ Success: closing_debrief.ink -> closing_debrief.json
+
+Compiling: npc_cliffe.ink
+✓ Success: npc_cliffe.ink -> npc_cliffe.json
+
+Compiling: npc_jordan.ink
+✓ Success: npc_jordan.ink -> npc_jordan.json
+
+Compiling: npc_megan.ink
+✓ Success: npc_megan.ink -> npc_megan.json
+
+Compiling: npc_sidhu.ink
+✓ Success: npc_sidhu.ink -> npc_sidhu.json
+
+Compiling: npc_tom.ink
+✓ Success: npc_tom.ink -> npc_tom.json
+
+Compiling: opening_briefing.ink
+✓ Success: opening_briefing.ink -> opening_briefing.json
+
+Compiling: phone_agent_0x99.ink
+✓ Success: phone_agent_0x99.ink -> phone_agent_0x99.json
+
+Compiling: phone_ghost.ink
+✓ Success: phone_ghost.ink -> phone_ghost.json
+
+----------------------------------------
+Compilation complete!
+  Compiled: 9 files
+  Failed: 0 files

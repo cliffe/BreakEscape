@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: threshold prefers door properties, then scenarioData, then legacy, then 0.4
+ok 1 - threshold prefers door properties, then scenarioData, then legacy, then 0.4
+  ---
+  duration_ms: 0.661305
+  ...
+# Subtest: threshold treats values above 1 as percentages and ignores junk
+ok 2 - threshold treats values above 1 as percentages and ignores junk
+  ---
+  duration_ms: 0.073163
+  ...
+# Subtest: no fingerprint samples gives no_samples
+ok 3 - no fingerprint samples gives no_samples
+  ---
+  duration_ms: 0.551406
+  ...
+# Subtest: chosen sample: accepted, low_quality, no_match
+ok 4 - chosen sample: accepted, low_quality, no_match
+  ---
+  duration_ms: 0.117484
+  ...
+# Subtest: a lift exactly at the threshold passes; 0.85 fails a 0.9 reader
+ok 5 - a lift exactly at the threshold passes; 0.85 fails a 0.9 reader
+  ---
+  duration_ms: 0.055754
+  ...
+# Subtest: without a chosen sample the best enrolled lift is used
+ok 6 - without a chosen sample the best enrolled lift is used
+  ---
+  duration_ms: 0.087393
+  ...
+# Subtest: requires may be a list of owners
+ok 7 - requires may be a list of owners
+  ---
+  duration_ms: 0.093526
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 74.146102

@@ -1,0 +1,196 @@
+
+## R38 (phase 4 dialogue C2, D5C2-20/-5/-6): hand-over without the deal; one last line from Torres after 'nothing to say to you'; Lisa's side door matches Patricia's; Halloran's post-fate choice doesn't repeat her own news.
+
+--- patricia ---
+      [task: meet_handler]
+  Narrator: A woman in her early fifties looks up from a wall of access logs. Military bearing, and a mug of tea gone cold by the keyboard.
+  Patricia Morgan: You'll be the consultant. Patricia Morgan, Chief Security Officer. Thanks for coming at short notice.
+     (3 options)
+ > Fill me in. What have you found so far?
+  Patricia Morgan: Data leaving the building. Four point two terabytes over six weeks.
+  Patricia Morgan: Project Heisenberg. Quantum-safe key material for the national emergency dispatch rollout.
+  Patricia Morgan: If ENTROPY gets the rest of it, people die waiting for ambulances that come too late.
+     (2 options)
+ > Who has access to the data?
+  Patricia Morgan: Eight people with developed vetting in the cryptography division.
+  Patricia Morgan: Dr Ruth Halloran leads the team. Five senior researchers, two junior engineers.
+  Patricia Morgan: All vetted. All trusted. One of them shouldn't be.
+     (2 options)
+ > Can you get me in front of them without tipping anyone off?
+  Patricia Morgan: Already done. As far as the building knows, you're a routine security audit.
+      [kit: Visitor Badge]
+  Patricia Morgan: Here. Visitor badge. It gets you through the front of the building and nowhere that matters.
+  Patricia Morgan: Owen Gallagher in IT holds the spare cards. Dr Halloran's badge opens the server side. I can lean on either of them if you need me to.
+  Patricia Morgan: My log of what's been flagged is on the desk, by your hand. Read it before you go. The who starts in there.
+     (2 options)
+ > Where should I start?
+  Patricia Morgan: People. Someone in this building has noticed something and not said it. Then the servers.
+  Patricia Morgan: When you think you have a name, bring me the why and the proof. Both.
+  [chat closes]
+      [mapping patricia_phone: set patricia_phone_available=true]
+   [text patricia_phone +2500ms] Patricia. This is my mobile. Ring me if anything changes; don't walk it back through reception.
+
+--- owen ---
+      [task: talk_to_owen]
+  Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels to face you.
+  Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmin.
+  Owen Gallagher: Finally. Someone to fix our mess who isn't me.
+     (3 options)
+ > Point me at the logs. I'll take it from here.
+  Owen Gallagher: Right. Terminal's over there. Shout if you need anything.
+     (7 options)
+ > That's everything for now. Catch you later.
+  Owen Gallagher: Cool. I'll be here. I'm always here.
+  [chat closes]
+
+--- halloran ---
+      [task: talk_to_dr_halloran]
+  Narrator: A woman in her mid-forties looks up from a whiteboard dense with lattice notation.
+  Dr Ruth Halloran: You're the consultant. Ruth Halloran. I run Heisenberg.
+  Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're wrong about my team.
+     (3 options)
+ > I need to talk to everyone with access to Heisenberg.
+  Dr Ruth Halloran: My team didn't do this.
+  Dr Ruth Halloran: My team are brilliant, and vetted to the hilt.
+  Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure. Coercion.
+     (2 options)
+ > I'm not here to judge. Whoever did this might be a victim too.
+  Dr Ruth Halloran: Thank you. Not many in your line would say that.
+  Dr Ruth Halloran: What else?
+     (3 options)
+ > That's all for now.
+  Dr Ruth Halloran: Good luck. I mean that.
+  [chat closes]
+
+--- lisa ---
+      [task: talk_to_lisa]
+  Narrator: A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.
+  Lisa Park: Hi. You're the security person, right? Everyone's been whispering.
+  Lisa Park: Lisa Park, marketing. I don't go near the crypto stuff, but I sit by the kettle. I notice things.
+     (3 options)
+ > Who's the collection tin for?
+      [ink: heard_tin_story=true]
+  Lisa Park: Someone on the crypto team. I promised I wouldn't say who, so don't ask.
+  Lisa Park: His wife's got cancer. Stage 3. The treatment that might work is a trial in the States, and the insurer won't touch it. Hence the tin.
+  Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks like he hasn't slept in months.
+     (3 options)
+ > That's rough. Thanks for telling me.
+  Lisa Park: He'd hate that I told you even that much. He can't stand a fuss.
+     (2 options)
+ > That's all, thanks.
+  Lisa Park: Any time. I'll be here. Apparently forever.
+  [chat closes]
+   {set {"briefing_played":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"torres_identified":true}}
+      [task: access_bludit_vm]
+   [text agent_0x99_handler +1500ms] Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into.
+   [text agent_0x99_handler +1500ms] Foothold flag in. You're on the research portal's box now. Find out who's been living on it.
+      [mapping agent_0x99_handler: set privesc_guide_offered=true]
+   [text agent_0x99_handler +1500ms] Manifest flag verified. Staged by badge 4471, no name on it. Find who carries that spare. The authorisation sits where only root can read. Sudo guide's yours.
+      [mapping agent_0x99_handler: set architect_approval_confirmed=true]
+   [text agent_0x99_handler +1500ms] Root flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this.
+      [aim unlocked: confront_insider]
+      [david_torres shown]
+
+--- torres ---
+  Narrator: Eight-fourteen. The data centre. The racks roar.
+  Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94 per cent. Sixteen minutes to the window.
+  Narrator: He doesn't turn around.
+  David Torres: I know you're there. Patricia sent you.
+  David Torres: "Security consultant." You're not an auditor.
+  David Torres: The vault logged me in twice tonight. One of them was you.
+     (2 options)
+ > It's over, David. Step away from the terminal.
+  Narrator: He turns slowly. His hand stays near the keyboard.
+  David Torres: Is it?
+  David Torres: Do you know what a clinical trial costs, when the insurer says no? I do. To the dollar.
+     (2 options)
+ > They lied to you. What did they tell you it was for?
+      [ink: confront_stance="sympathetic"]
+  David Torres: At first? Investigative journalists, exposing a corrupt contractor. That's what the Recruiter said. For about two weeks.
+  David Torres: Then they showed me the paperwork you've clearly found. The Architect's signature under a number.
+  David Torres: I've known for two months. It was never going to a newspaper. ENTROPY wants the dispatch network for themselves.
+  David Torres: Thirty to forty-five people, the first time they use it. Ambulances that don't arrive.
+     (2 options)
+ > You knew people would die. Why did you keep going?
+  David Torres: Because the system is rotten. Because it would all come down anyway, and better it comes down on purpose...
+  David Torres: Because Elena was dying and nobody else was going to pay...
+  David Torres: Because thirty to forty-five people is... is...
+  David Torres: Is thirty to forty-five families. Like mine.
+  David Torres: Three months ago I was trying to save my wife.
+  David Torres: Now I'm sixteen minutes from getting people killed.
+  Narrator: The transfer bar ticks to 95 per cent.
+     (4 options)
+ > It's over. You're staying here until the police arrive.
+      [task: confront_torres]
+  David Torres: You're not police. So Patricia's ringing them.
+  David Torres: So what are you?
+     (2 options)
+ > It doesn't matter. What matters is who arrives next.
+  David Torres: That's not an answer.
+  David Torres: Elena's trial. If I'm in a cell, nobody pays for it.
+  David Torres: She dies. Sofia and Miguel watch it happen.
+     (2 options)
+ > I'm not a social worker, David.
+  David Torres: No. Of course not.
+  David Torres: Then I've got nothing to say to you. I'll wait for them.
+      [ink: final_choice="arrest"]
+      [ink: torres_arrested=true]
+      [task unlocked: call_in_after_sweep]
+      [task: make_critical_choice]
+  Narrator: The transfer bar sits at 97 per cent. His hand is still beside the keyboard.
+     (2 options)
+ > Pull the drive myself.
+  Narrator: You pull the USB drive out of the port. The transfer window stalls, then throws an error. The last of it stays in the building.
+  David Torres: Elena will be dead before I get out.
+  Narrator: Operation Schrödinger is stopped.
+  [chat closes]
+   [text agent_0x99_handler +2000ms] Upload's dead. Sweep the vault before you go: whatever's on that desk is ours if you read it. Then call me and I'll bring you in.
+   [PASS] said: "Then I've got nothing to say to you."
+   [PASS] said: "Elena will be dead before I get out."
+   [PASS] not said: "How long will I get"
+   [PASS] not said: "That's for a court"
+   [PASS] final_choice = "arrest" (expected "arrest")
+
+--- lisa ---
+  Lisa Park: Someone's had the side door propped open for ten minutes. Nobody will say why.
+     [0] How's the office mood these days?
+     [1] Is the tin for David Torres?
+     [2] It's David. I'm sorry.
+     [3] That's all, thanks.
+  [stopped: no pick]
+   [PASS] said: "Someone's had the side door propped open for ten minutes."
+   [PASS] not said: "police in reception"
+
+--- halloran ---
+  Dr Ruth Halloran: The police have David. Nobody's told me anything else.
+     (4 options)
+ > It was David. I'm sorry.
+  Dr Ruth Halloran: I should have seen it. He was pulling away. Working late, alone. Avoiding my eye.
+  Dr Ruth Halloran: I signed his overtime every week and never once asked what it was for.
+     (2 options)
+ > He made his choice.
+  Dr Ruth Halloran: He did. So did they, when they picked him.
+     [0] What exactly is Heisenberg?
+     [1] Tell me about your team.
+     [2] That's all for now.
+  [stopped: no pick]
+   [PASS] said: "The police have David. Nobody's told me anything else."
+   [PASS] said: "I signed his overtime every week"
+   [PASS] not said: "[choice] It's David."
+
+--- patricia ---
+  Patricia Morgan: The police are with him now. I gave them the side door. Nobody in this building needs to watch.
+     [0] How far did your own investigation get?
+     [1] Who's on the suspect list?
+     [2] Why did management shut you down?
+     [3] I need your help with something.
+     [4] That's everything for now. I'll keep you posted.
+  [stopped: no pick]
+      [mapping recruiter: set recruiter_texted=true]
+   [text agent_0x99_handler +12000ms] That TalentStack number is the Recruiter. Hear her out if you want. Just don't give her anything.
+   [text recruiter +7500ms] TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R.
+   [PASS] said: "I gave them the side door."
+   [PASS] longest run 7 (torres) <= 9
+
+[stats] spoken/narrated lines 73, choices 21, longest run without a choice 7 (torres); runs>=6: torres:6, torres:7
+[result] all expectations met

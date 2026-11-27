@@ -1,0 +1,13 @@
+{
+  "key": "f2fa8d0d754e5fc6cbfad98aa4610e02",
+  "npc": "narrator",
+  "text": "The bed is still. The ventilator cycles on, breathing for a man who has stopped fighting it. Someone has half-drawn the curtain.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "dba2fd679ab3ca8e02110c637e5b0215",
+  "npc": "ama",
+  "text": "Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:46:34Z"
+}

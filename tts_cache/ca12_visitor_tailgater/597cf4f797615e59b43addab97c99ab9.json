@@ -1,0 +1,13 @@
+{
+  "key": "597cf4f797615e59b43addab97c99ab9",
+  "npc": "ca12_jun_watanabe",
+  "text": "Morning, Yusuf.",
+  "voice": "Puck",
+  "style": "A junior architect at Merrin & Sallow, in his early 20s, in his first job, eager and polite; Japanese-British, grew up in the UK. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-26",
+  "recorded_at": "2026-11-26T01:32:14Z"
+}

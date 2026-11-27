@@ -1,0 +1,13 @@
+{
+  "key": "a0ec9f2e54f8e9e1d44f34def874d802",
+  "npc": "tomasz_wisniewski",
+  "text": "Dani, is that your fifth coffee tonight?",
+  "voice": "Algieba",
+  "style": "Evening app-support lead at a cryptocurrency exchange, in his 50s, careful and reassuring. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:09:01Z"
+}

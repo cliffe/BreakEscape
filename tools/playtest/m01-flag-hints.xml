@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<flag_hints xmlns="http://www.github/cliffe/SecGen/marker">
+  <system>
+    <system_name>shatter_server</system_name>
+    <challenge><flag>flag{m01_decrypt_key_aaa111}</flag></challenge>
+    <challenge><flag>flag{m01_ssh_access_bbb222}</flag></challenge>
+    <challenge><flag>flag{m01_launch_code_ccc333}</flag></challenge>
+    <challenge><flag>flag{m01_sudo_root_ddd444}</flag></challenge>
+  </system>
+  <system>
+    <system_name>kali</system_name>
+  </system>
+</flag_hints>

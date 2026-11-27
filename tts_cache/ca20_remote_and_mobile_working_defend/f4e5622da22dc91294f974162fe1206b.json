@@ -1,0 +1,14 @@
+{
+  "key": "f4e5622da22dc91294f974162fe1206b",
+  "npc": "kit_chidi_okeke",
+  "text": "Good call. Posted in or dropped in a car park, it's the same bait, left hoping someone plugs it in for a look.",
+  "delivery": "easy-going, approving",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca20_remote_and_mobile_working_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:43:54Z"
+}

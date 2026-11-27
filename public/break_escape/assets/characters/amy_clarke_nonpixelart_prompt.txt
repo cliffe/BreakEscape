@@ -1,0 +1,15 @@
+Make portrait for Amy Clarke
+A white British woman in her late twenties with fair skin, an NHS staff nurse, brisk and practical. Light brown hair tied back in a practical ponytail. She wears a plain mid-blue (hospital blue) collarless V-neck scrub top with short sleeves, a belt, navy trousers, a silver fob watch pinned on her chest and a staff ID card on a lanyard. Bare forearms below the elbow: no wristwatch, no jacket, no white coat. No text, no writing and no logos anywhere; the ID card is blank.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention).
+# Revised 2026-10-02 (user review): gemini_edit_image on the chosen concept removed the white piping (it would not survive at pixel-art size). Edited image already faced right; reframe_portrait.py run without --flip.
+# Revised again 2026-10-02 (user review of PixelLab busts): gemini_edit_image on the concept, with wip/female_nurse1_nonpixelart.png as a smooth reference for the garment shape, changed the collared tunic to a collarless V-neck scrub top in the same colour. Already faced right; reframe_portrait.py run without --flip.
+
+# Saved 2026-10-12 from tmp/pixellab/amy_clarke/concept.png (the concept the pipeline used)

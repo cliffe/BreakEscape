@@ -1,0 +1,13 @@
+{
+  "key": "e1e255f90dc482df6c6dad047af9f7ee",
+  "npc": "minder_blast",
+  "text": "Will do.",
+  "voice": "Sulafat",
+  "style": "SAFETYNET van-team minder. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, low, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:18Z"
+}

@@ -1,0 +1,14 @@
+{
+  "key": "c0d515826996f3b72aaec0d01ea9dde6",
+  "npc": "trader_npc",
+  "text": "Between us? Some of it's weird. Big round sums going in late at night. Same wallets, like clockwork.",
+  "delivery": "lowering her voice",
+  "voice": "Puck",
+  "style": "Young man, a cryptocurrency trader in his early twenties, British-Nigerian, jittery on caffeine and increasingly frightened by what he has noticed. Speak with a consistent south-east London (Peckham) accent throughout — do not shift to any other accent. Mid-to-high pitch; fast, nervy pace, over-explaining.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:49:36Z"
+}

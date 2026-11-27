@@ -1,0 +1,13 @@
+{
+  "key": "293fdb4a402d5e2b936ef0acf00abc7c",
+  "npc": "chidi_okeke",
+  "text": "You flagged that barrier code, so it got checked before a card or a sign-in was tapped into it.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:00Z"
+}

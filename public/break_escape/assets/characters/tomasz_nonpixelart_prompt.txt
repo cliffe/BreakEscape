@@ -1,0 +1,10 @@
+Make portrait for Tomasz
+A Polish British man of about 35, with fair skin, a lean face, short dark-brown hair and a neat, short dark-brown beard, the security lead (a team of one and a half) at a small accountancy firm, an IT defender who works at a desk, not a guard or site worker. Grey-blue eyes and a quick, dry, practical look, tired but amused. He wears a plain black hoodie under an open charcoal-grey casual jacket, two lanyards round his neck with blank white cards, dark jeans and a black belt; his hands rest at his sides. No hi-vis, no safety vest, no uniform, no tool belt. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (SE art batch A). Reframed with reframe_portrait.py --flip; unflipped original is wip/tomasz_concept_1_raw.png.

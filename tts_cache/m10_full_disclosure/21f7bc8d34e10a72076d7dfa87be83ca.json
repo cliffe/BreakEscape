@@ -1,0 +1,13 @@
+{
+  "key": "21f7bc8d34e10a72076d7dfa87be83ca",
+  "npc": "gary_voice",
+  "text": "I'd have come quietly, you know. I did at St. Catherine's.",
+  "voice": "Charon",
+  "style": "Hospital IT systems administrator, mid-thirties, running on vending machine coffee. Consistent Birmingham / Black Country accent throughout. Flat, tired, self-deprecating -- a man who has been right for six months and got nothing for it. Anger sits under the surface, not on top of it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:13:15Z"
+}

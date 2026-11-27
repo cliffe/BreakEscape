@@ -1,0 +1,13 @@
+{
+  "key": "8d6b96fd96ea9ccf9755e43c39073e62",
+  "npc": "niamh_doherty",
+  "text": "I'll be here till late, sadly.",
+  "voice": "Leda",
+  "style": "Quantum Dynamics' internal communications officer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T18:07:17Z"
+}

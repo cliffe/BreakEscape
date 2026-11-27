@@ -1,0 +1,13 @@
+{
+  "key": "ae4ba04c0df8eb1cfadad43fbcf64134",
+  "npc": "niamh_doherty",
+  "text": "You read the address before signing in, so that lookalike page never got your password.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:50:41Z"
+}

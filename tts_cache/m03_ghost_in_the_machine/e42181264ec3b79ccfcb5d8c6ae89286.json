@@ -1,0 +1,13 @@
+{
+  "key": "e42181264ec3b79ccfcb5d8c6ae89286",
+  "npc": "terry_mott",
+  "text": "You don't work here. You were in reception at three with a visitor badge.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:29:55Z"
+}

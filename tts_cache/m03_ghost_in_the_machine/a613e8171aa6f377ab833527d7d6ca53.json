@@ -1,0 +1,13 @@
+{
+  "key": "a613e8171aa6f377ab833527d7d6ca53",
+  "npc": "victoria_sterling",
+  "text": "I don't make holes. I find them, and I'm honest about the invoice.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:17:25Z"
+}

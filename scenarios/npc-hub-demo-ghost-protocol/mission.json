@@ -1,0 +1,14 @@
+{
+  "display_name": "NPC Hub Demo - Ghost Protocol",
+  "description": "Demonstration scenario for NPC hub interactions and the Ghost Protocol narrative.",
+  "difficulty_level": 2,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["NPC interaction", "Social engineering", "Dialogue systems"]
+    }
+  ]
+}

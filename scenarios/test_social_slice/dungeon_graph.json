@@ -1,0 +1,10 @@
+{
+  "scenario": "test_social_slice",
+  "start_room": "slice_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}
