@@ -7,20 +7,22 @@ import { approachTarget, approachProbes, createEngineWorld } from '../../public/
 
 // A water cooler 24 x 47, drawn with its top-left at (100, 200): base y 247
 const cooler = { left: 100, right: 124, top: 200, bottom: 247 };
-const feetBottom = (aim) => aim.y + 5;
+// the drawn feet end 2 px above the body centre (art y 69, body centre y 71), so the aim's
+// centre sits 2 px below the base line for the art to touch it
+const feetBottom = (aim) => aim.y - 2;
 
-test('no useFrom: centred in front of the base, body bottom 2 px past the base line', () => {
+test('no useFrom: centred in front of the base, drawn feet on the base line', () => {
     const a = approachTarget({ affordance: {} }, cooler, 0);
     assert.equal(a.side, 'south');
     assert.equal(a.x, 112);
-    assert.equal(feetBottom(a), 249);   // base 247 + 2
+    assert.equal(feetBottom(a), 247);   // base 247
 });
 
 test('floor item and elevation: the floor base is bottom + elevation', () => {
     const flat = approachTarget({ affordance: {} }, cooler, 0);
     const lifted = approachTarget({ affordance: {} }, cooler, 24);
     assert.equal(lifted.y - flat.y, 24);
-    assert.equal(feetBottom(lifted), 247 + 24 + 2);
+    assert.equal(feetBottom(lifted), 247 + 24);
     // a negative elevation is no lift
     assert.equal(approachTarget({ affordance: {} }, cooler, -5).y, flat.y);
 });
@@ -32,13 +34,13 @@ test('useFrom names a side, not a tile distance', () => {
     const west = approachTarget({ affordance: { useFrom: { dx: -1, dy: 0 } } }, cooler, 0);
     assert.equal(west.side, 'west');
     assert.equal(west.x, 100 - 10 - 1);        // body right edge 1 px off the item
-    assert.equal(feetBottom(west), 249);       // feet level with the base
+    assert.equal(feetBottom(west), 247);       // feet level with the base
     const east = approachTarget({ affordance: { useFrom: { dx: 1, dy: 0.5 } } }, cooler, 0);
     assert.equal(east.side, 'east');
     assert.equal(east.x, 124 + 10 + 1);
     const north = approachTarget({ affordance: { useFrom: { dx: 0, dy: -1 } } }, cooler, 0);
     assert.equal(north.side, 'north');
-    assert.equal(feetBottom(north), 200 + 2);  // feet at the item's top edge
+    assert.equal(feetBottom(north), 200 + 12);  // behind the item, 12 px in from its top edge (47 px tall)
 });
 
 test('elevated item with a useFrom, or useFrom 0,0, keeps the old tile aim', () => {
@@ -112,11 +114,11 @@ test('approachCell: a cooler is used from just below its base, not from behind i
 });
 
 test('approachCell: useFrom west puts the feet beside the item, level with its base', () => {
-    const blocked = [{ l: 84, r: 132, t: 217, b: 249 }];   // 8 px padding left, right and below
+    const blocked = [{ l: 84, r: 132, t: 217, b: 255 }];   // 8 px padding left, right and below
     const t = worldWith({ blocked, sprite: mkSprite(), affordance: { useFrom: { dx: -1, dy: 0 } } });
     const c = withWindow(t.win, () => t.world.approachCell(t.obj));
     assert.equal(c.x, 76);
-    assert.ok(Math.abs(c.y + 5 - 249) <= 8);
+    assert.ok(Math.abs(c.y - 2 - 247) <= 4, `feet at ${c.y - 2}`);   // drawn feet at the base (247)
 });
 
 test('approachCell: a blocked ideal cell slides further from the item, never into the collider', () => {
@@ -146,6 +148,6 @@ test('approachCell: elevated item without useFrom stands at bottom + elevation',
     const sp = mkSprite({ elevation: 24 });
     const t = worldWith({ blocked: [], sprite: sp, affordance: {} });
     const c = withWindow(t.win, () => t.world.approachCell(t.obj));
-    // base 247 + 24 = 271; feet bottom lands 2 past it, so the cell centre is near 268
-    assert.ok(Math.abs(c.y - 268) <= 4, `cell y ${c.y}`);
+    // base 247 + 24 = 271; drawn feet on it, so the cell centre is near 273
+    assert.ok(Math.abs(c.y - 273) <= 4, `cell y ${c.y}`);
 });

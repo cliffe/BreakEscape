@@ -239,12 +239,14 @@ export const CALL_PICTURES = 3;
 // the item it is on, the unit step away from the item and how far (px) a free cell may be taken
 // from it), or null to keep the old aim at the item's centre (no geometry, an elevated item with
 // a useFrom tile offset, or useFrom {0, 0}). useFrom now names a SIDE (the larger of |dx|, |dy|;
-// its sign picks which), not a tile distance. The feet end just past the base line: body bottom
-// 2 px beyond it, so the drawn feet touch the item.
+// its sign picks which), not a tile distance. The drawn feet touch the base line. The 20x10 body
+// (npc-sprites.js) sits below the art: the 80x80 frames end their feet at about y 69 and the body
+// centre is y 71, so the centre goes ART_FEET_BELOW_CENTRE (2 px) below the base line, not the
+// body's bottom edge (that stood NPCs ~9 px back from a table or machine).
 export const FEET_HALF_W = 10;
 export const FEET_HALF_H = 5;
 export const FEET_TOUCH = 1;
-const FEET_OVER_BASE = 2;
+const ART_FEET_BELOW_CENTRE = 2;
 const AWAY = { south: { dx: 0, dy: 1 }, north: { dx: 0, dy: -1 }, east: { dx: 1, dy: 0 }, west: { dx: -1, dy: 0 } };
 export function approachTarget(obj, rect, elevation = 0) {
     if (!obj || !rect) return null;
@@ -260,8 +262,10 @@ export function approachTarget(obj, rect, elevation = 0) {
         side = Math.abs(uf.dy) > Math.abs(uf.dx) ? (uf.dy > 0 ? 'south' : 'north') : (uf.dx > 0 ? 'east' : 'west');
     }
     const reach = uf ? 16 : 24;
-    const feetY = base + FEET_OVER_BASE - FEET_HALF_H;
-    if (side === 'north') return at(side, cx, rect.top + FEET_OVER_BASE - FEET_HALF_H, reach);
+    const feetY = base + ART_FEET_BELOW_CENTRE;
+    // Behind the item: the drawn feet go in from its top edge to where its table top or counter
+    // ends (about a third of the way down), not a body-height above its top
+    if (side === 'north') return at(side, cx, rect.top + ART_FEET_BELOW_CENTRE + Math.min(12, (rect.bottom - rect.top) * 0.3), reach);
     if (side === 'east') return at(side, rect.right + FEET_HALF_W + FEET_TOUCH, feetY, reach);
     if (side === 'west') return at(side, rect.left - FEET_HALF_W - FEET_TOUCH, feetY, reach);
     return at(side, cx, feetY, reach);
@@ -3575,7 +3579,7 @@ export class NPCNeedsSystem {
         const moveId = this._nextMoveId();
         job.moveId = moveId;
         // arriveWithin: walk on to the cell itself (the behaviour layer's default stops a tile short)
-        return this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
+        return this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 3, moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
     }
 
     /**
