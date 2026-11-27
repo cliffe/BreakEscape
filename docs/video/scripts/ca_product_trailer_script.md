@@ -4,7 +4,7 @@ Purpose: sell the Cyber Aware course as a whole, in the /cyber-aware landing pag
 
 Audience: an individual who might play a course, and someone who buys training for an organisation's staff. The first 42 s sell the experience to both; the organisation beat follows; the end card speaks to both.
 
-Spine (USP): the player runs the scam first, in the attacker's own terms, then switches seats and catches the same kind of trick as staff. One episode carries the spine from end to end (ca12: talk past the front desk, then sit at that desk). The invoice trick (ca01) opens the cut, is caught in beats 7 and 8, and comes back from both seats under the USP line at the close. The cut carries two tricks only, each shown from both sides.
+Spine (USP): the player runs the scam first, in the attacker's own terms, then switches seats and catches the same kind of trick as staff. One episode carries the spine from end to end (ca12: talk past the front desk, then sit at that desk). The invoice trick (ca01) opens the cut, is caught in beats 7 and 8, and comes back from both seats under the USP line at the close. Two tricks carry the spine from both seats (the invoice and the front desk); the text lure and the call in beats 3, 4 and 7 are glimpses of the same attack and defend seats, not new ideas to explain.
 
 ## Rules this script keeps
 
@@ -12,7 +12,7 @@ Spine (USP): the player runs the scam first, in the attacker's own terms, then s
 - No narrator over a character line.
 - Claims come only from the live landing page (Hacktivity `app/views/cyber_aware/`, copy as of 4be873cd) and the features in Hacktivity's code: about 15 minutes per episode, about an hour per course, nothing to install, staff invited to an organisation, courses chosen for the organisation, a progress page per course, results exported as CSV.
 - No line says "every episode": six of the twenty swap the attack seat for everyday choices.
-- No new trick after beat 8. The close reprises a trick the viewer has already seen from both seats; it never introduces a third.
+- No new idea after beat 8. The close reprises the invoice trick, already seen from both seats.
 - The attacker's own terms stay. VO3 keeps "pretext": speaking as the attacker speaks is the USP, and the word lands on the shot of the pretext card being filled, which shows what it means.
 - Topic chips (beat 9) use only names of real course modules or episode topics, checked against the module README titles in `planning_notes/security_awareness_course/modules/` and the episode topics in the shot bank. The landing page prints course and episode names from the database and no topic list of its own, so the chips are course content names, never a new claim. Four at most, 28 characters or fewer each.
 - The USP line makes no claim about the rest of the market. "Only" is an owner option (item causp, still open), never the default: if the owner picks it, the owner holds the evidence.
@@ -39,9 +39,9 @@ Every shot gets a frame check before lock (the right UI on screen, the staff act
 | 6 | 18.1-24.3 | Same visitors | ca12 `t13_lorna_flip` 2.44-8.64 | YOU: THE STAFF | Lorna (2.65-8.29): "You talked your way through that door just now. Here you're the one being asked, same visitors." |
 | 7 | 24.3-29.7 | Defend seat | ca01 `t04_payments_inbox` 4.2-6.4 (a lookalike bank-change email; the click), ca06 `t05_work_phone_runB` 14.9-16.5 (a text on the work phone; the tap at 15.16), ca12 `t12_tailgater_card` 4.4-6.0 (a visitor at the desk; the click). Cuts at 26.5 and 28.1 | YOU: THE STAFF, with place tags on the cuts: INBOX (24.4), PHONE (26.5), FRONT DESK (28.1) | VO5 at 24.1 (Lorna ends at 23.95): "inbox" about 26.7, "phone" about 27.5, "front desk" about 28.3 |
 | 8 | 29.7-37.0 | The catch, in a voice | ca01 `t05_adaeze_end` 14.7-22.0 | YOU: THE STAFF | Adaeze (14.95-21.73): "Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny." |
-| 9 | 37.0-42.4 | Length | ca20 `t03_choices_reveal` 16.0-17.8 (the laptop choice), the same take 26.5-28.3 ("Later that day": what that choice led to; frame-check 9:16 at zoom 1.125 so more than the heading reads), ca10 `t03_fake_check_builder` 6.0-7.8 (a pick at 6.17) | Length chip: ABOUT 15 MIN / EPISODE 37.3-39.8, then ABOUT 1 HOUR / COURSE 39.8-42.4, on the spoken phrases. Topic chips in their own stack (layout below): WORKING AWAY 38.0, VISITORS AND TAILGATING 38.9, PHISHING EMAILS 40.5, PASSWORDS 41.4, each held to 42.4 | VO7 at 37.3 |
+| 9 | 37.0-42.4 | Length | ca20 `t03_choices_reveal` 16.0-17.8 (the laptop choice), the same take 26.5-28.3 ("Later that day": what that choice led to; frame-check 9:16 at zoom 1.125 so more than the heading reads), ca10 `t03_fake_check_builder` 6.0-7.8 (a pick at 6.17) | Length chip: ABOUT 15 MIN / EPISODE 37.3-39.8, then ABOUT 1 HOUR / COURSE 39.8-42.4, on the spoken phrases. Topic chips in their own stack (layout below): WORKING AWAY 38.0, VISITORS AND TAILGATING 39.2, PHISHING EMAILS 40.3, each held to 42.4 (as built in r4: cuts moved to 38.6 and 40.9 so no chip enters within 0.5 s of a cut) | VO7 at 37.3 |
 | 10 | 42.4-49.6 | For organisations | PLACEHOLDER until the owner picks. If captured: three organiser screens on a demo organisation with fictional CA-cast names, 2.4 s each, captured at a narrow viewport and placed at 1x or 2x in a bordered frame: (a) staff and courses; (b) the progress page cropped to its column headings and two or three named rows, the summary strip out of frame, no cell drawer opened; (c) the "Export progress CSV" button being clicked, not the file. If not captured: ca12 `t01_studio_wide` 0.5-4.9 (the training room), with the chips ORGANISERS and PROGRESS only | ORGANISERS, PROGRESS, RESULTS on the spoken nouns (fallback: ORGANISERS, PROGRESS) | VO8 at 42.7 |
-| 11 | 49.6-54.6 | USP, on the trick the viewer knows | ca01 `t02_attack_run` 32.3-35.0 (the supplier email still being written; inside the builder range, clear of beat 1's 30.3-31.7 and 38.0-39.6), then ca01 `t04_payments_inbox` a 2.3 s range from 8.0-18.16 with a click in it, about 9.0-11.3 (the payments clerk's inbox; clear of beat 7's 4.2-6.4). Cut at about 52.3, on the pause between VO9's two sentences. Both in-points set by frame check | YOU: THE ATTACKER, then YOU: THE STAFF on the cut. No claim chips | VO9 at 49.9: "Your staff run the attack first." over the email, "Then they stop it." over the inbox |
+| 11 | 49.6-54.6 | USP, on the trick the viewer knows | ca01 `t02_attack_run` 32.3-35.0 (the supplier email still being written; inside the builder range, clear of beat 1's 30.3-31.7 and 38.0-39.6), then ca01 `t06_payments_verify` (new take, 27 Nov: the payments clerk opens the bank-change email and clicks the verdict, and the result shows; 2.3 s around the click). No older ca01 take presses a verdict, so the stop must be seen, not implied. Cut at about 52.3, on the pause between VO9's two sentences. Both in-points set by frame check | YOU: THE ATTACKER, then YOU: THE STAFF on the cut. No claim chips | VO9 at 49.9: "Your staff run the attack first." over the email, "Then they stop it." over the inbox |
 | 12 | 54.6-60.0 | End card | hero line over the Cyber Aware title; hacktivity.co.uk/cyber-aware; small line "Play an episode free · Nothing to install" (owner, 26 Nov: a timeless free CTA, never a whole course and never "One course is free at a time") | none | VO10 at 54.9; URL held 2 s after; music resolves |
 
 ### Beat 9 chip layout
@@ -51,9 +51,9 @@ Two chip systems share the beat, so they get separate places and separate times.
 - The length chip keeps the claim-chip slot and the times r3 built: one chip at a time, changing once at 39.8 on the spoken word.
 - The topic chips use the small place-tag style from beat 7, stacked in the corner opposite the length chip (16:9), or in the top bar (9:16, 1:1). Each one appears and stays, so the list builds to four and is whole for the last second.
 - No topic chip enters within 0.5 s of a length-chip change (37.3, 39.8), and none enters on a cut (38.8, 40.6). Entries: 38.0, 38.9, 40.5, 41.4.
-- WORKING AWAY comes first because the ca20 laptop choice is on screen then. The two longest names come early so they get the longest read; PASSWORDS, the shortest, gets the last 1.0 s.
-- The names: PHISHING EMAILS (core_01, "Phishing emails"), PASSWORDS (ca09 and core_03), VISITORS AND TAILGATING (ca12, the flagship episode; the front desk has been on screen twice by now), WORKING AWAY (ca20, "working away from the office"; core_09). Longest is 22 characters.
-- If a frame check shows six chips in 5.4 s is too much to read, drop PASSWORDS and keep three.
+- WORKING AWAY comes first because the ca20 laptop choice is on screen then. The longest name comes early so it gets the longest read.
+- The names: PHISHING EMAILS (core_01, "Phishing emails"), VISITORS AND TAILGATING (ca12, the flagship episode; the front desk has been on screen twice by now), WORKING AWAY (ca20, "working away from the office"; core_09). Longest is 23 characters.
+- Three topic chips is the default (R6 delta review: four ran at about 3.1 words a second). PASSWORDS is dropped.
 
 ### Beat 11: the option not taken
 
@@ -63,7 +63,7 @@ Keep the ca13 AI shots and give them their own line before VO9 ("Even the office
 
 Narrator (Sulafat), with start times:
 - VO1, 0.2: "This is a scam. You're writing it." (7 words, about 2.6 s)
-- VO2, 5.5 (ca00 v1, 5.11 s): "Hacktivity Cyber Aware: Security awareness training you can play."
+- VO2, 5.4 (ca00 v1, 5.11 s): "Hacktivity Cyber Aware: Security awareness training you can play."
 - VO3, 10.9: "Pick a target, build the pretext, make the call." (9 words, about 3.5 s; "target", "pretext" and "call" on their shots). "Pretext" stays: the attacker's own terms are the USP, and the card on screen shows the cover story it names.
 - VO5, 24.1: "Then it lands on you. Your inbox, your phone, your front desk." (12 words, about 4.6 s; ends by about 29.0, clear of Adaeze at 29.95 on the timeline)
 - VO7, 37.3: "About fifteen minutes an episode. About an hour a course." (10 words, about 3.8 s)
