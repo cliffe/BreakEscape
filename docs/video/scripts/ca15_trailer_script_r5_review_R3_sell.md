@@ -32,7 +32,7 @@ Verdict: the script does what owner direction (a) asks. A first viewer gets the 
 ## Checks that passed
 
 - Truth, line by line: v30 against erb :657 and ink :68; v32 against erb :588; v33's second sentence against erb :691; v35 against erb :699 ("copied the folders it could reach"); hook erb :1583; found-stick bark erb :1596; Nilesh ink :65; `SIX MONTHS LATER` against `flipHeading` erb :659; `IT SERVICE DESK` against ink :68.
-- `mistake.scored` is false (erb :573), so beats 5 and 7 narrate over unscored choices and not over verdict buttons. Beat 11 hides the verb row, advice and counter, so no narration runs over verdict buttons.
+- `mistake.scored` is false (erb :574), so beats 5 and 7 narrate over unscored choices and not over verdict buttons. Beat 11 hides the verb row, advice and counter, so no narration runs over verdict buttons.
 - No answer, tell, tally or score on screen as scripted. The consequence pages are the unscored half with tags hidden and the border neutralised.
 - VO rate: every line at or under 1.58 words a second. 86 words, recounted. No dashes in VO.
 - Card and caption lines: all at or under 28 characters (longest: "tell us rather than building", 28; `YOU TRY IT: AUTHORISED TEST`, 27).
