@@ -31,7 +31,7 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
   const hSize = fitSize(hLines, GNF_FONT, sizes, inner);
   // bullets wrap inside the column, so the size is chosen for two lines at most
   const bSizes = stacked ? [72, 64, 56] : [96, 88, 80, 72];
-  const vtW = (t: string, sz: number) => t.length * sz * 0.42; // VT323 advance is 0.4 em; measured by rule so a cold canvas cannot fool the fit
+  const vtW = (t: string, sz: number) => Math.max(...t.split('\n').map((l) => l.length)) * sz * 0.42; // the longest forced line sets the width; // VT323 advance is 0.4 em; measured by rule so a cold canvas cannot fool the fit
   const sq = Math.round(Math.min(w, h) * 0.032 / 2) * 2;
   const colW = inner - sq - 3 * sq;
   const bSize = bSizes.find((s) => bullets.every((b) => vtW(b, s) <= colW * (stacked ? 2 : 1) * 0.92)) || bSizes[bSizes.length - 1];
@@ -56,7 +56,7 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
         {bullets.map((b, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: sq, marginBottom: Math.round(bSize * 0.3), opacity: rv ? fadeIn(i) : (frame >= revealAt(i) ? 1 : 0), width: inner }}>
             <div style={{ flex: 'none', width: sq, height: sq, marginTop: Math.round((bSize * 0.9 - sq) / 2), boxSizing: 'border-box', background: '#fff', border: `${2 * u}px solid ${CA.ink}` }} />
-            <div style={{ fontFamily: VT_FONT, fontSize: bSize, lineHeight: 0.95, color: '#fff', maxWidth: colW }}>{b}</div>
+            <div style={{ fontFamily: VT_FONT, fontSize: bSize, lineHeight: 0.95, color: '#fff', maxWidth: colW, whiteSpace: 'pre-line' }}>{b}</div>
           </div>
         ))}
       </div>

@@ -148,3 +148,11 @@ export function chapterRevealFrame(reveal, i, count, fps = 30) {
   if (reveal) return Math.round(((reveal.start ?? 1.2) + i * (reveal.each ?? 2)) * fps);
   return 14 + Math.round(i * 0.7 * fps * (count > 2 ? 0.8 : 1));
 }
+
+/**
+ * Lines a burned caption occupies. wrap(segment) gives the wrapped line count of one piece of text.
+ * Without breaks the whole text wraps as one paragraph; with breaks (shot.caption_breaks) every forced "\n" line wraps on its own, minimum one each.
+ */
+export const captionLineCount = (text, breaks, wrap) => breaks
+  ? String(text).split('\n').reduce((n, seg) => n + Math.max(1, wrap(seg)), 0)
+  : Math.max(1, wrap(String(text)));

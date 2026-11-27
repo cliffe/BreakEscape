@@ -1,7 +1,7 @@
 import React from 'react';
 import { CA, CaTab, unit, tabFont, crisp, textWidth } from '../ca';
 import { CAPTION_FONT } from '../fonts';
-import { chipTextAt } from '../timeline.js';
+import { chipTextAt, captionLineCount } from '../timeline.js';
 
 export const seatOf = (shot: any): { seat: 'attack' | 'defend' | 'full'; chip?: string; chips?: { from: number; to: number; text: string }[]; chip_px?: number; stripe?: string } | null => {
   const s = shot.seat; if (!s) return null;
@@ -40,6 +40,12 @@ export const CaSeats: React.FC<{ shot: any; w: number; h: number; children: Reac
   );
 };
 
+/** Top of the plain caption box in 16:9: 80% of the height, but with caption_breaks a taller box is lifted so its foot stays 4% above the bottom edge (default: unchanged). */
+const captionTop169 = (h: number, boxHeight: number, breaks?: boolean): number => {
+  const top = Math.round(h * 0.8);
+  return breaks ? Math.min(top, h - Math.round(h * 0.04) - boxHeight) : top;
+};
+
 /** Cyber Aware burned caption (for gameplay shots with a seat): Source Sans 3, white on 80% ink, 2 unit border, lower third. */
 export const CaCaption: React.FC<{ shot: any; w: number; h: number; localSec: number }> = ({ shot, w, h, localSec }) => {
   const line = (shot.lines || []).find((l: any) => localSec >= l.start && localSec < l.end);
@@ -48,8 +54,8 @@ export const CaCaption: React.FC<{ shot: any; w: number; h: number; localSec: nu
   if (shot.caption_skin === 'pixel') return <CaCaptionPixel line={line} w={w} h={h} u={u} />;
   const size = Math.round(Math.min(w, h) * 0.052);
   return (
-    <div style={{ position: 'absolute', left: 0, right: 0, ...(w > h ? { top: Math.round(h * 0.8) } : { bottom: Math.round(h * 0.05) }), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-      <div style={{ maxWidth: Math.round(w * (portrait ? 0.88 : 0.7)), padding: `${Math.round(size * 0.35)}px ${Math.round(size * 0.6)}px`, background: 'rgba(31,41,51,0.8)', border: `${2 * u}px solid ${CA.ink}`, boxSizing: 'border-box', fontFamily: CAPTION_FONT, fontSize: size, lineHeight: 1.25, color: '#fff', textAlign: 'center' }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, ...(w > h ? { top: captionTop169(h, caCaptionBox(w, h, line, undefined, !!shot.caption_breaks).height, shot.caption_breaks) } : { bottom: Math.round(h * 0.05) }), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+      <div style={{ maxWidth: Math.round(w * (portrait ? 0.88 : 0.7)), padding: `${Math.round(size * 0.35)}px ${Math.round(size * 0.6)}px`, background: 'rgba(31,41,51,0.8)', border: `${2 * u}px solid ${CA.ink}`, boxSizing: 'border-box', fontFamily: CAPTION_FONT, fontSize: size, lineHeight: 1.25, color: '#fff', textAlign: 'center', ...(shot.caption_breaks ? { whiteSpace: 'pre-line' } : {}) }}>
         {line.speaker ? <span style={{ color: CA.line, marginRight: Math.round(size * 0.4) }}>{line.speaker}:</span> : null}{line.text}
       </div>
     </div>
@@ -80,7 +86,7 @@ const CaCaptionPixel: React.FC<{ line: any; w: number; h: number; u: number }> =
 };
 
 /** Height of the burned dialogue caption's box (CaCaption) at this size, estimated from the text width, so the VO plate can sit above it. */
-export const caCaptionBox = (w: number, h: number, line: any, skin?: string): { size: number; height: number; occupied: number } => {
+export const caCaptionBox = (w: number, h: number, line: any, skin?: string, breaks?: boolean): { size: number; height: number; occupied: number } => {
   if (skin === 'pixel') {
     const px = pixelCaptionSize(w, h, line), n = String(line.text).split('\n').length + (line.speaker ? 1 : 0), hh = Math.round(n * px * 1.6 + px * 1.2 + 4 * unit(w, h));
     return { size: px, height: hh, occupied: w > h ? h - Math.round(h * 0.8) : Math.round(h * 0.05) + hh };
@@ -88,8 +94,10 @@ export const caCaptionBox = (w: number, h: number, line: any, skin?: string): { 
   const u = unit(w, h), portrait = h > w, size = Math.round(Math.min(w, h) * 0.052);
   const padX = Math.round(size * 0.6), padY = Math.round(size * 0.35), maxW = Math.round(w * (portrait ? 0.88 : 0.7));
   const text = `${line.speaker ? line.speaker + ': ' : ''}${line.text}`;
-  const lines = Math.max(1, Math.ceil((textWidth(text, CAPTION_FONT, size) * 1.06) / (maxW - 2 * padX - 4 * u)));
+  const avail = maxW - 2 * padX - 4 * u;
+  // caption_breaks: each forced (\n) line wraps on its own, so the line count is the sum over the segments
+  const lines = captionLineCount(text, breaks, (seg: string) => Math.ceil((textWidth(seg, CAPTION_FONT, size) * 1.06) / avail));
   const height = Math.round(lines * size * 1.25 + 2 * padY + 4 * u);
   // occupied: distance from the frame's bottom edge to the top of the caption box (CaCaption sits at 80% height in 16:9, 5% from the bottom otherwise)
-  return { size, height, occupied: w > h ? h - Math.round(h * 0.8) : Math.round(h * 0.05) + height };
+  return { size, height, occupied: w > h ? h - captionTop169(h, height, breaks) : Math.round(h * 0.05) + height };
 };
