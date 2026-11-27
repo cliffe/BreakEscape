@@ -86,8 +86,8 @@
     "_notes": "flipMontageByChoice goes into the FULL erb only, at social.awarenessEpisode.strings.flipMontageByChoice. It is ERB-ONLY and must be added to STRINGS_ERB_ONLY_OK in test/js/social-awareness-fragment-erb-parity.test.mjs (ENG-04 adds it there, like flipDefenderLineByChoice). flipHeading ('Six months later') is NOT here: it lives in defend.json's strings and is shared by both shells. Keyed beat then option; every outer key is a real beat and every inner key a real option of that beat (ENG-04 lint). personal_email is shown first (it is the flipBeat); the montage still shows every beat. Text is verbatim from E15 section 10. The 'Your choice' / 'the version where it was taken instead' framing is in the text, not applied by the engine, so a line is authored for BOTH options of every beat (the unsafe-option fallback never fires for E15).",
     "flipMontageByChoice": {
       "personal_email": {
-        "send_personal": "Months on, the personal inbox was broken into with a reused password; the client files sat in its sent items, and the client got a convincing fake invoice built from it.",
-        "ask_nilesh": "Through remote access the client files never left the firm, so there was nothing outside to find. In the version where they went to a personal inbox, that inbox was broken into with a reused password and the files were copied."
+        "send_personal": "Months on, the personal inbox was broken into. The client files were still in its sent items, and IT had never known the copy was there, so nobody could protect it or take it back. The client got a convincing fake invoice built from them.",
+        "ask_nilesh": "Through remote access the client files never left the firm, so there was nothing outside to find. In the version where they went to a personal inbox, that inbox was broken into, and IT never knew a copy was there to protect."
       },
       "drivers_chat": {
         "add_to_group": "The chat grew to forty people, two of them long gone from the firm. A photo of a delivery note with a customer's home address was passed on outside it.",
